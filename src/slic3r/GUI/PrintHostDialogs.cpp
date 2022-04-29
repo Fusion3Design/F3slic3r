@@ -467,7 +467,9 @@ void PrintHostQueueDialog::on_progress(Event &evt)
         wxVariant nm, hst;
         job_list->GetValue(nm, evt.job_id, COL_FILENAME);
         job_list->GetValue(hst, evt.job_id, COL_HOST);
-        wxGetApp().notification_manager()->set_upload_job_notification_percentage(evt.job_id + 1, boost::nowide::narrow(nm.GetString()), boost::nowide::narrow(hst.GetString()), evt.progress / 100.f);
+        const wchar_t * nm_str = nm.GetString();
+        const wchar_t * hst_str = hst.GetString();
+        wxGetApp().notification_manager()->set_upload_job_notification_percentage(evt.job_id + 1, boost::nowide::narrow(nm_str), boost::nowide::narrow(hst_str), evt.progress / 100.f);
     }
 }
 
@@ -488,7 +490,7 @@ void PrintHostQueueDialog::on_error(Event &evt)
     wxVariant nm, hst;
     job_list->GetValue(nm, evt.job_id, COL_FILENAME);
     job_list->GetValue(hst, evt.job_id, COL_HOST);
-    wxGetApp().notification_manager()->upload_job_notification_show_error(evt.job_id + 1, boost::nowide::narrow(nm.GetString()), boost::nowide::narrow(hst.GetString()));
+    wxGetApp().notification_manager()->upload_job_notification_show_error(evt.job_id + 1, into_u8(nm.GetString()), into_u8(hst.GetString()));
 }
 
 void PrintHostQueueDialog::on_cancel(Event &evt)
@@ -503,7 +505,7 @@ void PrintHostQueueDialog::on_cancel(Event &evt)
     wxVariant nm, hst;
     job_list->GetValue(nm, evt.job_id, COL_FILENAME);
     job_list->GetValue(hst, evt.job_id, COL_HOST);
-    wxGetApp().notification_manager()->upload_job_notification_show_canceled(evt.job_id + 1, boost::nowide::narrow(nm.GetString()), boost::nowide::narrow(hst.GetString()));
+    wxGetApp().notification_manager()->upload_job_notification_show_canceled(evt.job_id + 1, into_u8(nm.GetString()), into_u8(hst.GetString()));
 }
 
 void PrintHostQueueDialog::on_info(Event& evt)

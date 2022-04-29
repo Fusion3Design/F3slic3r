@@ -123,7 +123,7 @@ void resolve_path_from_var(const std::string& var, std::vector<std::string>& pat
     wxString wxdirs;
     if (! wxGetEnv(boost::nowide::widen(var), &wxdirs) || wxdirs.empty() )
         return;
-    std::string dirs = boost::nowide::narrow(wxdirs);
+    std::string dirs = into_u8(wxdirs);
     for (size_t i = dirs.find(':'); i != std::string::npos; i = dirs.find(':'))
     {
         paths.push_back(dirs.substr(0, i));

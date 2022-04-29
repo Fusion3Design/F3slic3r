@@ -581,7 +581,6 @@ target_link_libraries(libslic3r
     miniz
     boost_libs
     clipper
-    nowide
     libexpat
     glu-libtess
     qhull
