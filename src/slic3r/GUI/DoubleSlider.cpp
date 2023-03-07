@@ -26,6 +26,7 @@
 #include <wx/statline.h>
 #include <wx/dcclient.h>
 #include <wx/colordlg.h>
+#include <wx/glcanvas.h>
 
 #include <cmath>
 #include <boost/algorithm/string/replace.hpp>
@@ -33,6 +34,8 @@
 #include "Field.hpp"
 #include "format.hpp"
 #include "NotificationManager.hpp"
+
+#include "ImGuiPureWrap.hpp"
 
 namespace Slic3r {
 
@@ -558,6 +561,34 @@ void Control::render()
         // draw mouse position
         draw_tick_on_mouse_position(dc);
     }
+}
+
+void Control::imgui_render(GUI::GLCanvas3D& canvas)
+{
+    GUI::Size         cnv_size   = canvas.get_canvas_size();
+    ImVec2            mouse_pos  = ImGui::GetMousePos();
+    const float width = get_min_size().x*5;
+    const float height = float(cnv_size.get_height());
+
+    ImVec2 win_pos(1.0f * (float)cnv_size.get_width(), 1.0f);
+    ImGuiPureWrap::set_next_window_pos(win_pos.x, win_pos.y, ImGuiCond_Always, 1.0f, 0.0f);
+    ImGuiPureWrap::set_next_window_size(width, height - 2.f, ImGuiCond_Always);
+
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+
+    // name of window indentifies window - has to be unique string
+    std::string name = "DblSlider";
+
+    int flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar |
+                ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_NoScrollbar |
+                ImGuiWindowFlags_NoScrollWithMouse |
+                ImGuiWindowFlags_NoFocusOnAppearing;
+
+    if (ImGuiPureWrap::begin(name, flags)) {
+
+    }
+    ImGuiPureWrap::end();
 }
 
 bool Control::is_wipe_tower_layer(int tick) const

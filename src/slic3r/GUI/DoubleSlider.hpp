@@ -7,6 +7,7 @@
 
 #include "libslic3r/CustomGCode.hpp"
 #include "wxExtensions.hpp"
+#include "GLCanvas3D.hpp"
 
 #include <wx/window.h>
 #include <wx/control.h>
@@ -302,7 +303,7 @@ public:
     void show_cog_icon_context_menu();
     void auto_color_change();
 
-    ExtrudersSequence m_extruders_sequence;
+    void imgui_render(GUI::GLCanvas3D& canvas);
 
 protected:
 
@@ -430,6 +431,8 @@ private:
     std::string         m_print_obj_idxs;
 
     std::vector<double> m_alternate_values;
+
+    ExtrudersSequence   m_extruders_sequence;
 
 // control's view variables
     wxCoord SLIDER_MARGIN; // margin around slider

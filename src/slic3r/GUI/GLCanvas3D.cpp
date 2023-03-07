@@ -1950,6 +1950,8 @@ void GLCanvas3D::render()
 
     wxGetApp().plater()->get_notification_manager()->render_notifications(*this, get_overlay_window_width());
 
+    wxGetApp().plater()->render_imgui_double_slider(*this);
+
     wxGetApp().imgui()->render();
 
     m_canvas->SwapBuffers();

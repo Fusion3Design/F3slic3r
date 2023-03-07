@@ -140,6 +140,8 @@ public:
     void move_layers_slider(wxKeyEvent& evt);
     void edit_layers_slider(wxKeyEvent& evt);
 
+    void render_imgui_double_slider(GLCanvas3D& canvas);
+
     bool is_loaded() const { return m_loaded; }
 
     void update_moves_slider(std::optional<int> visible_range_min = std::nullopt, std::optional<int> visible_range_max = std::nullopt);

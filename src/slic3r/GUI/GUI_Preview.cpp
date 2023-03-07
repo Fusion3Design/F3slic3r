@@ -347,6 +347,13 @@ void Preview::sys_color_changed()
         m_layers_slider->sys_color_changed();
 }
 
+
+void Preview::render_imgui_double_slider(GLCanvas3D& canvas)
+{
+    if (m_layers_slider && m_layers_slider->IsShown())
+        m_layers_slider->imgui_render(canvas);
+}
+
 void Preview::jump_layers_slider(wxKeyEvent& evt)
 {
     if (m_layers_slider) m_layers_slider->OnChar(evt);
