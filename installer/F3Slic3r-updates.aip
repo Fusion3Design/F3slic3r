@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DOCUMENT Type="Advanced Installer" CreateVersion="20.4.1" version="20.4.1" Modules="update" RootPath="." Language="en" Id="{1D96AB1A-EE57-4872-8555-74BF002D89B9}">
+  <COMPONENT cid="caphyon.advinst.msicomp.DictionaryComponent">
+    <ROW Path="&lt;AI_DICTS&gt;aiu-ue.ail"/>
+    <ROW Path="&lt;AI_DICTS&gt;aiu-ue_en.ail"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.UpdaterEditorComponent">
+    <ROW Section="Update 1.0.1" Key="Name" Value="F3Slic3r"/>
+    <ROW Section="Update 1.0.1" Key="ProductVersion" Value="1.0.1.0" ValueLocId="-"/>
+    <ROW Section="Update 1.0.1" Key="URL" Value="http://138.43.95.87/downloads/F3Slic3r-1.0.1.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.1" Key="Size" Value="F3Slic3r-x64_Release-SetupFiles\F3Slic3r-1.0.1.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.1" Key="SHA256" Value="F3Slic3r-x64_Release-SetupFiles\F3Slic3r-1.0.1.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.1" Key="MD5" Value="F3Slic3r-x64_Release-SetupFiles\F3Slic3r-1.0.1.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.1" Key="ServerFileName" Value="F3Slic3r-1.0.1.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.1" Key="Flags" Value="Sys64" ValueLocId="-"/>
+    <ROW Section="Update 1.0.1" Key="RegistryKey" Value="HKUD\Software\Fusion3\F3Slic3r\Version" ValueLocId="-"/>
+    <ROW Section="Update 1.0.1" Key="Version" Value="1.0.1.0" ValueLocId="-"/>
+    <ROW Section="Update 1.0.1" Key="UpdatedApplications" Value="F3Slic3r[1.0-1.0.1)" ValueLocId="-"/>
+    <ROW Section="Update 1.0.1" Key="Description" Value="Release notes here."/>
+    <ROW Section="Update 1.0.2" Key="Name" Value="F3Slic3r"/>
+    <ROW Section="Update 1.0.2" Key="ProductVersion" Value="1.0.2.0" ValueLocId="-"/>
+    <ROW Section="Update 1.0.2" Key="URL" Value="http://www.example.com/downloads/F3Slic3r-1.0.2.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.2" Key="Size" Value="F3Slic3r-x64_Release-SetupFiles\F3Slic3r-1.0.2.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.2" Key="SHA256" Value="F3Slic3r-x64_Release-SetupFiles\F3Slic3r-1.0.2.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.2" Key="MD5" Value="F3Slic3r-x64_Release-SetupFiles\F3Slic3r-1.0.2.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.2" Key="ServerFileName" Value="F3Slic3r-1.0.2.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.2" Key="Flags" Value="Sys64" ValueLocId="-"/>
+    <ROW Section="Update 1.0.2" Key="RegistryKey" Value="HKUD\Software\Fusion3\F3Slic3r\Version" ValueLocId="-"/>
+    <ROW Section="Update 1.0.2" Key="Version" Value="1.0.2.0" ValueLocId="-"/>
+    <ATTRIBUTE name="OutputFileName" value=".txt"/>
+  </COMPONENT>
+</DOCUMENT>
