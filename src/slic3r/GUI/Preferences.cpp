@@ -289,13 +289,13 @@ void PreferencesDialog::build()
 #ifdef _WIN32
 		// Please keep in sync with ConfigWizard
 		append_bool_option(m_optgroup_general, "associate_3mf",
-			L("Associate .3mf files to PrusaSlicer"),
-			L("If enabled, sets PrusaSlicer as default application to open .3mf files."),
+			L("Associate .3mf files to F3Slic3r"),
+			L("If enabled, sets F3Slic3r as default application to open .3mf files."),
 			app_config->get_bool("associate_3mf"));
 
 		append_bool_option(m_optgroup_general, "associate_stl",
-			L("Associate .stl files to PrusaSlicer"),
-			L("If enabled, sets PrusaSlicer as default application to open .stl files."),
+			L("Associate .stl files to F3Slic3r"),
+			L("If enabled, sets F3Slic3r as default application to open .stl files."),
 			app_config->get_bool("associate_stl"));
 #endif // _WIN32
 
@@ -343,8 +343,8 @@ void PreferencesDialog::build()
 			L("On OSX there is always only one instance of app running by default. However it is allowed to run multiple instances "
 			  "of same app from the command line. In such case this settings will allow only one instance."),
 #else
-			L("Allow just a single PrusaSlicer instance"),
-			L("If this is enabled, when starting PrusaSlicer and another instance of the same PrusaSlicer is already running, that instance will be reactivated instead."),
+			L("Allow just a single F3Slic3r instance"),
+			L("If this is enabled, when starting F3Slic3r and another instance of the same F3Slic3r is already running, that instance will be reactivated instead."),
 #endif
 		app_config->has("single_instance") ? app_config->get_bool("single_instance") : false );
 
@@ -353,7 +353,7 @@ void PreferencesDialog::build()
 		append_bool_option(m_optgroup_general, "default_action_on_dirty_project",
 			L("Ask for unsaved changes in project"),
 			L("Always ask for unsaved changes in project, when: \n"
-						"- Closing PrusaSlicer,\n"
+						"- Closing F3Slic3r,\n"
 						"- Loading or creating a new project"),
 			app_config->get("default_action_on_dirty_project").empty());
 
@@ -362,7 +362,7 @@ void PreferencesDialog::build()
 		append_bool_option(m_optgroup_general, "default_action_on_close_application",
 			L("Ask to save unsaved changes in presets when closing the application or when loading a new project"),
 			L("Always ask for unsaved changes in presets, when: \n"
-						"- Closing PrusaSlicer while some presets are modified,\n"
+						"- Closing F3Slic3r while some presets are modified,\n"
 						"- Loading a new project while some presets are modified"),
 			app_config->get("default_action_on_close_application") == "none");
 
@@ -379,8 +379,8 @@ void PreferencesDialog::build()
 #ifdef _WIN32
 	else {
 		append_bool_option(m_optgroup_general, "associate_gcode",
-			L("Associate .gcode files to PrusaSlicer G-code Viewer"),
-			L("If enabled, sets PrusaSlicer G-code Viewer as default application to open .gcode files."),
+			L("Associate .gcode files to F3Slic3r G-code Viewer"),
+			L("If enabled, sets F3Slic3r G-code Viewer as default application to open .gcode files."),
 			app_config->get_bool("associate_gcode"));
 	}
 #endif // _WIN32
@@ -403,7 +403,7 @@ void PreferencesDialog::build()
 
 	append_bool_option(m_optgroup_general, "restore_win_position",
 		L("Restore window position on start"),
-		L("If enabled, PrusaSlicer will be open at the position it was closed"),
+		L("If enabled, F3Slic3r will be open at the position it was closed"),
 		app_config->get_bool("restore_win_position"));
 
     // Clear Undo / Redo stack on new project
@@ -591,14 +591,14 @@ void PreferencesDialog::build()
 
 		append_bool_option(m_optgroup_other, "suppress_hyperlinks",
 			L("Suppress to open hyperlink in browser"),
-			L("If enabled, PrusaSlicer will not open a hyperlinks in your browser."),
+			L("If enabled, F3Slic3r will not open a hyperlinks in your browser."),
 			//L("If enabled, the descriptions of configuration parameters in settings tabs wouldn't work as hyperlinks. "
 			//  "If disabled, the descriptions of configuration parameters in settings tabs will work as hyperlinks."),
 			app_config->get_bool("suppress_hyperlinks"));
 		
 		append_bool_option(m_optgroup_other, "downloader_url_registered",
 			L("Allow downloads from Printables.com"),
-			L("If enabled, PrusaSlicer will allow to download from Printables.com"),
+			L("If enabled, F3Slic3r will allow to download from Printables.com"),
 			app_config->get_bool("downloader_url_registered"));
 
 		activate_options_tab(m_optgroup_other);

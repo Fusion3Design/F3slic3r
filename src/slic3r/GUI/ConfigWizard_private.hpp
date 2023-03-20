@@ -603,7 +603,7 @@ struct ConfigWizard::priv
     wxBoxSizer *btnsizer = nullptr;
     ConfigWizardPage *page_current = nullptr;
     ConfigWizardIndex *index = nullptr;
-    wxButton *btn_sel_all = nullptr;
+    //wxButton *btn_sel_all = nullptr;
     wxButton *btn_prev = nullptr;
     wxButton *btn_next = nullptr;
     wxButton *btn_finish = nullptr;

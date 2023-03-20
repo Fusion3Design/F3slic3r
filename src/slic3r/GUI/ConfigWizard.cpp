@@ -1475,8 +1475,8 @@ bool DownloaderUtils::Worker::perform_register(const std::string& path_override/
     //std::string key_string = "\"" + binary_string + "\" \"%1\"";
     std::string key_string = "\"" + binary_string + "\" \"--single-instance\" \"%1\"";
 
-    wxRegKey key_first(wxRegKey::HKCU, "Software\\Classes\\prusaslicer");
-    wxRegKey key_full(wxRegKey::HKCU, "Software\\Classes\\prusaslicer\\shell\\open\\command");
+    wxRegKey key_first(wxRegKey::HKCU, "Software\\Classes\\f3slic3r");
+    wxRegKey key_full(wxRegKey::HKCU, "Software\\Classes\\f3slic3r\\shell\\open\\command");
     if (!key_first.Exists()) {
         key_first.Create(false);
     }
@@ -1501,7 +1501,7 @@ void DownloaderUtils::Worker::deregister()
 {
 #ifdef _WIN32
     std::string key_string = "";
-    wxRegKey key_full(wxRegKey::HKCU, "Software\\Classes\\prusaslicer\\shell\\open\\command");
+    wxRegKey key_full(wxRegKey::HKCU, "Software\\Classes\\f3slic3r\\shell\\open\\command");
     if (!key_full.Exists()) {
         return;
     }
@@ -1560,9 +1560,9 @@ PageReloadFromDisk::PageReloadFromDisk(ConfigWizard* parent)
 PageFilesAssociation::PageFilesAssociation(ConfigWizard* parent)
     : ConfigWizardPage(parent, _L("Files association"), _L("Files association"))
 {
-    cb_3mf = new wxCheckBox(this, wxID_ANY, _L("Associate .3mf files to PrusaSlicer"));
-    cb_stl = new wxCheckBox(this, wxID_ANY, _L("Associate .stl files to PrusaSlicer"));
-//    cb_gcode = new wxCheckBox(this, wxID_ANY, _L("Associate .gcode files to PrusaSlicer G-code Viewer"));
+    cb_3mf = new wxCheckBox(this, wxID_ANY, _L("Associate .3mf files to F3Slic3r"));
+    cb_stl = new wxCheckBox(this, wxID_ANY, _L("Associate .stl files to F3Slic3r"));
+//    cb_gcode = new wxCheckBox(this, wxID_ANY, _L("Associate .gcode files to F3Slic3r G-code Viewer"));
 
     append(cb_3mf);
     append(cb_stl);
@@ -1573,7 +1573,7 @@ PageFilesAssociation::PageFilesAssociation(ConfigWizard* parent)
 PageMode::PageMode(ConfigWizard *parent)
     : ConfigWizardPage(parent, _L("View mode"), _L("View mode"))
 {
-    append_text(_L("PrusaSlicer's user interfaces comes in three variants:\nSimple, Advanced, and Expert.\n"
+    append_text(_L("F3Slic3r's user interfaces comes in three variants:\nSimple, Advanced, and Expert.\n"
         "The Simple mode shows only the most frequently used settings relevant for regular 3D printing. "
         "The other two offer progressively more sophisticated fine-tuning, "
         "they are suitable for advanced and expert users, respectively."));
@@ -2260,20 +2260,20 @@ void ConfigWizard::priv::load_pages()
     index->clear();
 
     index->add_page(page_welcome);
-
+    //CJW - removed wizard pages
     // Printers
     if (!only_sla_mode)
-        index->add_page(page_fff);
-    index->add_page(page_msla);
+   //     index->add_page(page_fff);
+   // index->add_page(page_msla);
     if (!only_sla_mode) {
-        index->add_page(page_vendors);
+        //index->add_page(page_vendors);
         for (const auto &pages : pages_3rdparty) {
             for ( PagePrinters* page : { pages.second.first, pages.second.second })
                 if (page && page->install)
                     index->add_page(page);
         }
 
-        index->add_page(page_custom);
+        //index->add_page(page_custom);
         if (page_custom->custom_wanted()) {
             index->add_page(page_firmware);
             index->add_page(page_bed);
@@ -2283,12 +2283,12 @@ void ConfigWizard::priv::load_pages()
         }
    
         // Filaments & Materials
-        if (any_fff_selected) { index->add_page(page_filaments); }
+        //if (any_fff_selected) { index->add_page(page_filaments); }
         // Filaments page if only custom printer is selected 
         const AppConfig* app_config = wxGetApp().app_config;
         if (!any_fff_selected && (custom_printer_selected || custom_printer_in_bundle) && (app_config->get("no_templates") == "0")) {
             update_materials(T_ANY);
-            index->add_page(page_filaments);
+            //index->add_page(page_filaments);
         }
     }
     if (any_sla_selected) { index->add_page(page_sla_materials); }
@@ -3300,8 +3300,8 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     topsizer->AddSpacer(INDEX_MARGIN);
     topsizer->Add(p->hscroll, 1, wxEXPAND);
 
-    p->btn_sel_all = new wxButton(this, wxID_ANY, _L("Select all standard printers"));
-    p->btnsizer->Add(p->btn_sel_all);
+    //p->btn_sel_all = new wxButton(this, wxID_ANY, _L("Select all standard printers"));
+    //p->btnsizer->Add(p->btn_sel_all);
 
     p->btn_prev = new wxButton(this, wxID_ANY, _L("< &Back"));
     p->btn_next = new wxButton(this, wxID_ANY, _L("&Next >"));
@@ -3313,7 +3313,7 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     p->btnsizer->Add(p->btn_finish, 0, wxLEFT, BTN_SPACING);
     p->btnsizer->Add(p->btn_cancel, 0, wxLEFT, BTN_SPACING);
 
-    wxGetApp().UpdateDarkUI(p->btn_sel_all);
+    //wxGetApp().UpdateDarkUI(p->btn_sel_all);
     wxGetApp().UpdateDarkUI(p->btn_prev);
     wxGetApp().UpdateDarkUI(p->btn_next);
     wxGetApp().UpdateDarkUI(p->btn_finish);
@@ -3411,13 +3411,13 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
             this->EndModal(wxID_OK);
     });
 
-    p->btn_sel_all->Bind(wxEVT_BUTTON, [this](const wxCommandEvent &) {
+   /* p->btn_sel_all->Bind(wxEVT_BUTTON, [this](const wxCommandEvent &) {
         p->any_sla_selected = true;
         p->load_pages();
         p->page_fff->select_all(true, false);
         p->page_msla->select_all(true, false);
         p->index->go_to(p->page_mode);
-    });
+    });*/
 
     p->index->Bind(EVT_INDEX_PAGE, [this](const wxCommandEvent &) {
         const bool is_last = p->index->active_is_last();
@@ -3495,12 +3495,12 @@ void ConfigWizard::on_dpi_changed(const wxRect &suggested_rect)
 
     const int em = em_unit();
 
-    msw_buttons_rescale(this, em, { wxID_APPLY, 
+    /* msw_buttons_rescale(this, em, {wxID_APPLY, 
                                     wxID_CANCEL,
                                     p->btn_sel_all->GetId(),
                                     p->btn_next->GetId(),
                                     p->btn_prev->GetId() });
-
+                                    */
     for (auto printer_picker: p->page_fff->printer_pickers)
         msw_buttons_rescale(this, em, printer_picker->get_button_indexes());
 
