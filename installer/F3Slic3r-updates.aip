@@ -27,6 +27,17 @@
     <ROW Section="Update 1.0.2" Key="Flags" Value="Sys64" ValueLocId="-"/>
     <ROW Section="Update 1.0.2" Key="RegistryKey" Value="HKUD\Software\Fusion3\F3Slic3r\Version" ValueLocId="-"/>
     <ROW Section="Update 1.0.2" Key="Version" Value="1.0.2.0" ValueLocId="-"/>
+    <ROW Section="Update 1.0.3" Key="Name" Value="F3Slic3r"/>
+    <ROW Section="Update 1.0.3" Key="ProductVersion" Value="1.0.3.0" ValueLocId="-"/>
+    <ROW Section="Update 1.0.3" Key="URL" Value="http://www.example.com/downloads/F3Slic3r-1.0.3.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.3" Key="Size" Value="F3Slic3r-x64_Release-SetupFiles\F3Slic3r-1.0.3.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.3" Key="SHA256" Value="F3Slic3r-x64_Release-SetupFiles\F3Slic3r-1.0.3.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.3" Key="MD5" Value="F3Slic3r-x64_Release-SetupFiles\F3Slic3r-1.0.3.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.3" Key="ServerFileName" Value="F3Slic3r-1.0.3.exe" ValueLocId="-"/>
+    <ROW Section="Update 1.0.3" Key="Flags" Value="Sys64" ValueLocId="-"/>
+    <ROW Section="Update 1.0.3" Key="RegistryKey" Value="HKUD\Software\Fusion3\F3Slic3r\Version" ValueLocId="-"/>
+    <ROW Section="Update 1.0.3" Key="Version" Value="1.0.3.0" ValueLocId="-"/>
+    <ROW Section="Update 1.0.3" Key="Description" Value="First version released for testing. Most logos fixed."/>
     <ATTRIBUTE name="OutputFileName" value=".txt"/>
   </COMPONENT>
 </DOCUMENT>
