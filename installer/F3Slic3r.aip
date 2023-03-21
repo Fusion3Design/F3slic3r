@@ -20,11 +20,12 @@
     <ROW Property="ARPCOMMENTS" Value="This installer database contains the logic and data required to install [|ProductName]." ValueLocId="*"/>
     <ROW Property="ARPNOREPAIR" Value="1" MultiBuildValue="x64_Release:1"/>
     <ROW Property="ARPSYSTEMCOMPONENT" Value="1"/>
+    <ROW Property="AppLogoIcon" Value="applogoicon.bmp" MultiBuildValue="x64_Release:PrusaSlicerinstaller.bmp" Type="1" MsiKey="AppLogoIcon"/>
     <ROW Property="Manufacturer" Value="Fusion3"/>
-    <ROW Property="ProductCode" Value="1033:{F0878E31-B39A-4EE2-BA93-920CD9EA2451} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{F4947F08-0351-45CF-B68F-4B67BD2D5415} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="F3Slic3r"/>
-    <ROW Property="ProductVersion" Value="1.0.2"/>
+    <ROW Property="ProductVersion" Value="1.0.3"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND;AI_SETUPEXEPATH;SETUPEXEDIR"/>
     <ROW Property="UpgradeCode" Value="{CB697882-2A97-44B2-A06B-DB1B95C036A7}"/>
     <ROW Property="WindowsType9X" MultiBuildValue="x64_Release:Windows 9x/ME" ValueLocId="-"/>
@@ -109,7 +110,7 @@
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
     <ROW Component="A250_bed.stl" ComponentId="{D7118D13-0CFB-4199-86D1-038270BDB156}" Directory_="Snapmaker_Dir" Attributes="0" KeyPath="A250_bed.stl" Type="0"/>
     <ROW Component="ABS_0.4_DraftFast.ini" ComponentId="{4EE54B07-4FF9-4A20-9901-B6B041E5C109}" Directory_="filament_Dir" Attributes="0" KeyPath="ABS_0.4_DraftFast.ini" Type="0"/>
-    <ROW Component="AI_CustomARPName" ComponentId="{0D6A57B5-BFF7-4454-B4B4-AFC3B334E368}" Directory_="APPDIR" Attributes="260" KeyPath="DisplayName" Options="1"/>
+    <ROW Component="AI_CustomARPName" ComponentId="{62950554-E634-4884-B254-08C208309FDB}" Directory_="APPDIR" Attributes="260" KeyPath="DisplayName" Options="1"/>
     <ROW Component="AI_ExePath" ComponentId="{A4289296-8B99-4132-AF74-51935FF4306D}" Directory_="APPDIR" Attributes="260" KeyPath="AI_ExePath"/>
     <ROW Component="APPDIR" ComponentId="{474D491E-FF73-421C-815B-79394243B4AB}" Directory_="APPDIR" Attributes="0"/>
     <ROW Component="AQI_thumbnail.png" ComponentId="{1227526C-295A-4DC8-A7C0-E0D4F2F02215}" Directory_="TriLAB_Dir" Attributes="0" KeyPath="AQI_thumbnail.png" Type="0"/>
@@ -1157,6 +1158,9 @@
     <ROW Path="&lt;AI_DICTS&gt;ui.ail"/>
     <ROW Path="&lt;AI_DICTS&gt;ui_en.ail"/>
   </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.DigCertStoreComponent">
+    <ROW SignerDescription="[|ProductName]" SignOptions="7" SignTool="0" UseSha256="1"/>
+  </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.FragmentComponent">
     <ROW Fragment="CommonUI.aip" Path="&lt;AI_FRAGS&gt;CommonUI.aip"/>
     <ROW Fragment="InstallDlg.aip" Path="&lt;AI_THEMES&gt;surface\fragments\InstallDlg.aip"/>
@@ -1184,6 +1188,7 @@
   <COMPONENT cid="caphyon.advinst.msicomp.MsiBinaryComponent">
     <ROW Name="ExternalUICleaner.dll" SourcePath="&lt;AI_CUSTACTS&gt;ExternalUICleaner.dll"/>
     <ROW Name="Prereq.dll" SourcePath="&lt;AI_CUSTACTS&gt;Prereq.dll"/>
+    <ROW Name="PrusaSlicerinstaller.bmp" SourcePath="..\resources\icons\PrusaSlicer-installer.bmp"/>
     <ROW Name="aicustact.dll" SourcePath="&lt;AI_CUSTACTS&gt;aicustact.dll"/>
     <ROW Name="lzmaextractor.dll" SourcePath="&lt;AI_CUSTACTS&gt;lzmaextractor.dll"/>
   </COMPONENT>
