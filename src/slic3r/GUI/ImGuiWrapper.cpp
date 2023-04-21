@@ -107,7 +107,7 @@ static const std::map<const wchar_t, std::string> font_icons_large = {
 };
 
 static const std::map<const wchar_t, std::string> font_icons_extra_large = {
-    {ImGui::ClippyMarker            , "notification_clippy"             },
+    {ImGui::ClippyMarker            , "PrusaSlicer"             },//change clippy logo
 };
 
 const ImVec4 ImGuiWrapper::COL_GREY_DARK         = { 0.33f, 0.33f, 0.33f, 1.0f };
