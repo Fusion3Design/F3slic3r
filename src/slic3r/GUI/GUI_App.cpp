@@ -293,8 +293,8 @@ private:
             version = _L("Version") + " " + std::string(SLIC3R_VERSION);
 
             // credits infornation
-            credits = "\n" + title + " " +
-                _L("is based on Slic3r by Alessandro Ranellucci and the RepRap community.") + "\n\n" +
+            credits = title + " " +
+                _L("is based on PrusaSlicer by Prusa Research, Slic3r by Alessandro Ranellucci and the RepRap community.") + "\n" +
                 _L("Developed by Prusa Research.") + "\n\n" +
                 _L("Licensed under GNU AGPLv3.") + "\n\n\n\n\n\n\n";
 
