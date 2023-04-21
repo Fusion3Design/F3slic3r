@@ -2297,7 +2297,8 @@ void ConfigWizard::priv::load_pages()
     btn_finish->Enable(any_fff_selected || any_sla_selected || custom_printer_selected || custom_printer_in_bundle);
 
     index->add_page(page_update);
-    index->add_page(page_downloader);
+    //CJW removed printables
+    //index->add_page(page_downloader);
     index->add_page(page_reload_from_disk);
 #ifdef _WIN32
     index->add_page(page_files_association);
