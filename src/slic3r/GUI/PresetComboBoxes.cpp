@@ -264,7 +264,7 @@ void PresetComboBox::update(std::string select_preset_name)
     std::vector<PresetData> incomp_presets;
 
     wxString selected = "";
-    if (!presets.front().is_visible)
+    /* if (!presets.front().is_visible)
         set_label_marker(Append(separator(L("System presets")), NullBitmapBndl()));
 
     for (size_t i = presets.front().is_visible ? 0 : m_collection->num_default_presets(); i < presets.size(); ++i)
@@ -321,21 +321,7 @@ void PresetComboBox::update(std::string select_preset_name)
         }
         if (i + 1 == m_collection->num_default_presets())
             set_label_marker(Append(separator(L("System presets")), NullBitmapBndl()));
-    }
-    
-    if (!system_presets.empty())
-    {
-        std::sort(system_presets.begin(), system_presets.end(), [](const PresetData& a, const PresetData& b) {
-            return a.lower_name < b.lower_name;
-            });
-
-        for (std::vector<PresetData>::iterator it = system_presets.begin(); it != system_presets.end(); ++it) {
-            int item_id = Append(it->name, *it->bitmap);
-            if (!it->enabled)
-                set_label_marker(item_id, LABEL_ITEM_DISABLED);
-            validate_selection(it->name == selected);
-        }
-    }
+    }//*///CJW removed printer from list
     if (!nonsys_presets.empty())
     {
         std::sort(nonsys_presets.begin(), nonsys_presets.end(), [](const PresetData& a, const PresetData& b) {
