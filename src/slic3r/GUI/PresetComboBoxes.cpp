@@ -250,7 +250,7 @@ void PresetComboBox::update(std::string select_preset_name)
     std::map<wxString, wxBitmapBundle*>                   incomp_presets;
 
     wxString selected = "";
-    if (!presets.front().is_visible)
+    /* if (!presets.front().is_visible)
         set_label_marker(Append(separator(L("System presets")), NullBitmapBndl()));
 
     for (size_t i = presets.front().is_visible ? 0 : m_collection->num_default_presets(); i < presets.size(); ++i)
@@ -304,7 +304,7 @@ void PresetComboBox::update(std::string select_preset_name)
         }
         if (i + 1 == m_collection->num_default_presets())
             set_label_marker(Append(separator(L("System presets")), NullBitmapBndl()));
-    }
+    }//*///CJW removed printer from list
     if (!nonsys_presets.empty())
     {
         set_label_marker(Append(separator(L("User presets")), NullBitmapBndl()));
