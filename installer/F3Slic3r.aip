@@ -5,16 +5,10 @@
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiPropsComponent">
     <ROW Property="AI_BITMAP_DISPLAY_MODE" Value="0"/>
-    <ROW Property="AI_COLOR_DISABLED_TEXT" Value="3026478" MultiBuildValue="x64_Release:15461355" MsiKey="AI_COLOR_DISABLED_TEXT"/>
-    <ROW Property="AI_CONTROL_VISUAL_STYLE" Value="2960685;4276545;6776679;16176031" MultiBuildValue="x64_Release:16777215;15464703;42495;5161471" MsiKey="AI_CONTROL_VISUAL_STYLE"/>
-    <ROW Property="AI_CONTROL_VISUAL_STYLE_EX" Value="1513239;3026478;3026478" MultiBuildValue="x64_Release:42495;42495;42495" MsiKey="AI_CONTROL_VISUAL_STYLE_EX"/>
-    <ROW Property="AI_CONTROL_VISUAL_STYLE_FLAT" MultiBuildValue="x64_Release:15464703;15464703;42495;5161471" MsiKey="AI_CONTROL_VISUAL_STYLE_FLAT"/>
+    <ROW Property="AI_CF_TYPE" Value="1" MultiBuildValue="x64_Release:0" Type="4" MsiKey="AI_CF_TYPE"/>
     <ROW Property="AI_EXTERNALUIUNINSTALLERNAME" MultiBuildValue="x64_Release:aiui"/>
     <ROW Property="AI_FINDEXE_TITLE" Value="Select the installation package for [|ProductName]" ValueLocId="AI.Property.FindExeTitle"/>
-    <ROW Property="AI_FrameBtnsColor" Value="metroblack" MultiBuildValue="x64_Release:metroorange" MsiKey="AI_FrameBtnsColor"/>
-    <ROW Property="AI_FrameColor" Value="metroblack" MultiBuildValue="x64_Release:metroorange" MsiKey="AI_FrameColor"/>
     <ROW Property="AI_PRODUCTNAME_ARP" Value="F3Slic3r"/>
-    <ROW Property="AI_ThemeStyle" Value="default" MultiBuildValue="x64_Release:metroorange" MsiKey="AI_ThemeStyle"/>
     <ROW Property="AI_UNINSTALLER" Value="msiexec.exe"/>
     <ROW Property="ALLUSERS" Value="1"/>
     <ROW Property="ARPCOMMENTS" Value="This installer database contains the logic and data required to install [|ProductName]." ValueLocId="*"/>
@@ -22,10 +16,10 @@
     <ROW Property="ARPSYSTEMCOMPONENT" Value="1"/>
     <ROW Property="AppLogoIcon" Value="applogoicon.bmp" MultiBuildValue="x64_Release:PrusaSlicerinstaller.bmp" Type="1" MsiKey="AppLogoIcon"/>
     <ROW Property="Manufacturer" Value="Fusion3"/>
-    <ROW Property="ProductCode" Value="1033:{F4947F08-0351-45CF-B68F-4B67BD2D5415} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{1A4CFE45-BC88-4EE8-A73B-3E4922D6220E} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="F3Slic3r"/>
-    <ROW Property="ProductVersion" Value="1.0.3"/>
+    <ROW Property="ProductVersion" Value="1.0.4"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND;AI_SETUPEXEPATH;SETUPEXEDIR"/>
     <ROW Property="UpgradeCode" Value="{CB697882-2A97-44B2-A06B-DB1B95C036A7}"/>
     <ROW Property="WindowsType9X" MultiBuildValue="x64_Release:Windows 9x/ME" ValueLocId="-"/>
@@ -110,7 +104,7 @@
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
     <ROW Component="A250_bed.stl" ComponentId="{D7118D13-0CFB-4199-86D1-038270BDB156}" Directory_="Snapmaker_Dir" Attributes="0" KeyPath="A250_bed.stl" Type="0"/>
     <ROW Component="ABS_0.4_DraftFast.ini" ComponentId="{4EE54B07-4FF9-4A20-9901-B6B041E5C109}" Directory_="filament_Dir" Attributes="0" KeyPath="ABS_0.4_DraftFast.ini" Type="0"/>
-    <ROW Component="AI_CustomARPName" ComponentId="{62950554-E634-4884-B254-08C208309FDB}" Directory_="APPDIR" Attributes="260" KeyPath="DisplayName" Options="1"/>
+    <ROW Component="AI_CustomARPName" ComponentId="{A8D4ACE9-0112-4237-9F58-8C5B2EDDFFD4}" Directory_="APPDIR" Attributes="260" KeyPath="DisplayName" Options="1"/>
     <ROW Component="AI_ExePath" ComponentId="{A4289296-8B99-4132-AF74-51935FF4306D}" Directory_="APPDIR" Attributes="260" KeyPath="AI_ExePath"/>
     <ROW Component="APPDIR" ComponentId="{474D491E-FF73-421C-815B-79394243B4AB}" Directory_="APPDIR" Attributes="0"/>
     <ROW Component="AQI_thumbnail.png" ComponentId="{1227526C-295A-4DC8-A7C0-E0D4F2F02215}" Directory_="TriLAB_Dir" Attributes="0" KeyPath="AQI_thumbnail.png" Type="0"/>
@@ -1159,7 +1153,7 @@
     <ROW Path="&lt;AI_DICTS&gt;ui_en.ail"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.DigCertStoreComponent">
-    <ROW SignerDescription="[|ProductName]" SignOptions="7" SignTool="0" EnableLUAPatching="1" UseSha256="1" Subject="E=support@fusion3design.com, CN=Fusion3 Design LLC, O=Fusion3 Design LLC, STREET=4321 S Elm Eugene St, L=Greensboro, S=North Carolina, C=US, OID.1.3.6.1.4.1.311.60.2.1.2=North Carolina, OID.1.3.6.1.4.1.311.60.2.1.3=US, SERIALNUMBER=1326813, OID.2.5.4.15=Private Organization"/>
+    <ROW SignerDescription="[|ProductName]" SignOptions="7" SignTool="0" EnableLUAPatching="1" UseSha256="1" Subject="CN=TestCert_2023-3-21_18-43-6"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.FragmentComponent">
     <ROW Fragment="CommonUI.aip" Path="&lt;AI_FRAGS&gt;CommonUI.aip"/>
@@ -1485,15 +1479,8 @@
     <ROW Shortcut="F3Slic3rr" Directory_="SHORTCUTDIR" Name="F3Slic3r" Component_="updater.exe" Target="[#updater.exe]" Arguments="/silent -restartapp prusa-slicer.exe -startappfirst" Hotkey="0" Icon_="prusaslicer.exe" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiTextStyleComponent">
-    <ROW TextStyle="BrandingStyle" FaceName="Segoe UI" Size="8" Color="2171376" MultiBuildColor="x64_Release:15395562" StyleBits="0" MsiKey="BrandingStyle"/>
-    <ROW TextStyle="DlgFont8" FaceName="Segoe UI" Size="11" Color="14079702" MultiBuildColor="x64_Release:4473924" StyleBits="0" MsiKey="DlgFont8"/>
-    <ROW TextStyle="ImageButton" FaceName="Segoe UI" Size="11" Color="14079702" MultiBuildColor="x64_Release:4473924" StyleBits="1" MsiKey="ImageButton"/>
-    <ROW TextStyle="InputCtrlFont" FaceName="Segoe UI" Size="8" Color="16777215" MultiBuildColor="x64_Release:8289918" StyleBits="0" MsiKey="InputCtrlFont"/>
-    <ROW TextStyle="Manufacturer" FaceName="Verdana" Size="10" Color="16777215" MultiBuildColor="x64_Release:22144" StyleBits="0" MsiKey="Manufacturer"/>
-    <ROW TextStyle="MetroInstallButton" FaceName="Segoe UI" Size="22" Color="14079702" MultiBuildColor="x64_Release:4473924" StyleBits="0" MsiKey="MetroInstallButton"/>
-    <ROW TextStyle="ProductNameForSplash" FaceName="Segoe UI Symbol" Size="30" Color="16777215" MultiBuildColor="x64_Release:4473924" StyleBits="1" MsiKey="ProductNameForSplash"/>
-    <ROW TextStyle="SubTitle" FaceName="Segoe UI" Size="14" Color="14079702" MultiBuildColor="x64_Release:8289918" StyleBits="0" MsiKey="SubTitle"/>
-    <ROW TextStyle="SubnoteFont" FaceName="Segoe UI" Size="8" Color="9671571" MultiBuildColor="x64_Release:14079702" StyleBits="0" MsiKey="SubnoteFont"/>
+    <ROW TextStyle="BrandingStyle" FaceName="Segoe UI" Size="8" Color="2171376" MultiBuildColor="x64_Release:2565927" StyleBits="0" MsiKey="BrandingStyle"/>
+    <ROW TextStyle="InputCtrlFont" FaceName="Segoe UI" Size="8" Color="16777215" MultiBuildColor="x64_Release:14079702" StyleBits="0" MsiKey="InputCtrlFont"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiThemeComponent">
     <ATTRIBUTE name="UsedTheme" value="surface"/>
