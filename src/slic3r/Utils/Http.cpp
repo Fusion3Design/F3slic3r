@@ -71,11 +71,11 @@ struct CurlGlobalInit
 
             if (!bundle)
                 message = _u8L("Could not detect system SSL certificate store. "
-                               "PrusaSlicer will be unable to establish secure "
+                               "F3Slic3r will be unable to establish secure "
                                "network connections.");
             else
                 message = Slic3r::GUI::format(
-					_L("PrusaSlicer detected system SSL certificate store in: %1%"),
+					_L("F3Slic3r detected system SSL certificate store in: %1%"),
                     bundle);
 
             message += "\n" + Slic3r::GUI::format(

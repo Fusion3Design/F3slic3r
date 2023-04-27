@@ -1296,7 +1296,7 @@ PageUpdate::PageUpdate(ConfigWizard *parent)
          "This is only a notification mechanisms, no automatic installation is done."), SLIC3R_APP_NAME));
 
     append_spacer(VERTICAL_SPACING);
-
+    /*
     auto *box_presets = new wxCheckBox(this, wxID_ANY, _L("Update built-in Presets automatically"));
     box_presets->SetValue(app_config->get_bool("preset_update"));
     append(box_presets);
@@ -1310,9 +1310,9 @@ PageUpdate::PageUpdate(ConfigWizard *parent)
     label_bold->Wrap(WRAP_WIDTH);
     append(label_bold);
     append_text(_L("Additionally a backup snapshot of the whole configuration is created before an update is applied."));
-
+    *///cjw removed
     box_slic3r->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &event) { this->version_check = event.IsChecked(); });
-    box_presets->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &event) { this->preset_update = event.IsChecked(); });
+   // box_presets->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &event) { this->preset_update = event.IsChecked(); });
 }
 
 
