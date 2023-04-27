@@ -339,7 +339,7 @@ void PreferencesDialog::build()
 
 		append_bool_option(m_optgroup_general, "single_instance",
 #if __APPLE__
-			L("Allow just a single PrusaSlicer instance"),
+			L("Allow just a single F3Slic3r instance"),
 			L("On OSX there is always only one instance of app running by default. However it is allowed to run multiple instances "
 			  "of same app from the command line. In such case this settings will allow only one instance."),
 #else

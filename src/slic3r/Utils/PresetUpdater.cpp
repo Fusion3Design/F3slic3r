@@ -936,7 +936,7 @@ Updates PresetUpdater::priv::get_config_updates(const Semver &old_slic3r_version
 					found = true;
 				} else {
 					BOOST_LOG_TRIVIAL(warning) << format("The recommended config version for vendor `%1%` in resources does not match the recommended\n"
-			                                             " config version for this version of PrusaSlicer. Corrupted installation?", idx.vendor());
+			                                             " config version for this version of F3Slic3r. Corrupted installation?", idx.vendor());
 				}
 			}
 		}

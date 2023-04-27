@@ -718,13 +718,13 @@ bool CLI::setup(int argc, char **argv)
     // We hope that if a DLL is being injected into a PrusaSlicer process, it happens at the very start of the application,
     // thus we shall detect them now.
     if (BlacklistedLibraryCheck::get_instance().perform_check()) {
-        std::wstring text = L"Following DLLs have been injected into the PrusaSlicer process:\n\n";
+        std::wstring text = L"Following DLLs have been injected into the F3Slic3r process:\n\n";
         text += BlacklistedLibraryCheck::get_instance().get_blacklisted_string();
         text += L"\n\n"
-                L"PrusaSlicer is known to not run correctly with these DLLs injected. "
+                L"F3Slic3r is known to not run correctly with these DLLs injected. "
                 L"We suggest stopping or uninstalling these services if you experience "
-                L"crashes or unexpected behaviour while using PrusaSlicer.\n"
-                L"For example, ASUS Sonic Studio injects a Nahimic driver, which makes PrusaSlicer "
+                L"crashes or unexpected behaviour while using F3Slic3r.\n"
+                L"For example, ASUS Sonic Studio injects a Nahimic driver, which makes F3Slic3r "
                 L"to crash on a secondary monitor, see PrusaSlicer github issue #5573";
         MessageBoxW(NULL, text.c_str(), L"Warning"/*L"Incopatible library found"*/, MB_OK);
     }

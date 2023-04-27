@@ -283,7 +283,7 @@ int wmain(int argc, wchar_t **argv)
         bool res = opengl_version_check.unload_opengl_dll();
         if (!res) {
             MessageBox(nullptr, L"F3Slic3r was unable to automatically switch to MESA OpenGL library\nPlease, try to run the application using the '--sw-renderer' option.\n",
-                L"PrusaSlicer Warning", MB_OK);
+                L"F3Slic3r Warning", MB_OK);
             return -1;
         }
         else {
