@@ -33,48 +33,24 @@
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiDirsComponent">
     <ROW Directory="APPDIR" Directory_Parent="TARGETDIR" DefaultDir="APPDIR:." IsPseudoRoot="1"/>
-    <ROW Directory="Anker_Dir" Directory_Parent="profiles_Dir" DefaultDir="Anker"/>
-    <ROW Directory="Anycubic_Dir" Directory_Parent="profiles_Dir" DefaultDir="Anycubic"/>
     <ROW Directory="AppDataFolder" Directory_Parent="TARGETDIR" DefaultDir="APPDAT~1|AppDataFolder" IsPseudoRoot="1"/>
-    <ROW Directory="Artillery_Dir" Directory_Parent="profiles_Dir" DefaultDir="ARTILL~1|Artillery"/>
-    <ROW Directory="BIBO_Dir" Directory_Parent="profiles_Dir" DefaultDir="BIBO"/>
-    <ROW Directory="BIQU_Dir" Directory_Parent="profiles_Dir" DefaultDir="BIQU"/>
-    <ROW Directory="Creality_Dir" Directory_Parent="profiles_Dir" DefaultDir="Creality"/>
     <ROW Directory="DesktopFolder" Directory_Parent="TARGETDIR" DefaultDir="DESKTO~1|DesktopFolder" IsPseudoRoot="1"/>
     <ROW Directory="ES_Dir" Directory_Parent="shaders_Dir" DefaultDir="ES"/>
-    <ROW Directory="Elegoo_Dir" Directory_Parent="profiles_Dir" DefaultDir="Elegoo"/>
+    <ROW Directory="F3Slic3r_1_Dir" Directory_Parent="profiles_Dir" DefaultDir="F3Slic3r"/>
     <ROW Directory="F3Slic3r_Dir" Directory_Parent="AppDataFolder" DefaultDir="F3Slic3r"/>
-    <ROW Directory="FLSun_Dir" Directory_Parent="profiles_Dir" DefaultDir="FLSun"/>
-    <ROW Directory="Geeetech_Dir" Directory_Parent="profiles_Dir" DefaultDir="Geeetech"/>
-    <ROW Directory="INAT_Dir" Directory_Parent="profiles_Dir" DefaultDir="INAT"/>
-    <ROW Directory="Infinity3D_Dir" Directory_Parent="profiles_Dir" DefaultDir="INFINI~1|Infinity3D"/>
-    <ROW Directory="Jubilee_Dir" Directory_Parent="profiles_Dir" DefaultDir="Jubilee"/>
-    <ROW Directory="LulzBot_Dir" Directory_Parent="profiles_Dir" DefaultDir="LulzBot"/>
-    <ROW Directory="MakerGear_Dir" Directory_Parent="profiles_Dir" DefaultDir="MAKERG~1|MakerGear"/>
-    <ROW Directory="Print4Taste_Dir" Directory_Parent="profiles_Dir" DefaultDir="PRINT4~1|Print4Taste"/>
     <ROW Directory="PrusaResearch_Dir" Directory_Parent="profiles_Dir" DefaultDir="PRUSAR~1|PrusaResearch"/>
-    <ROW Directory="RatRig_Dir" Directory_Parent="profiles_Dir" DefaultDir="RatRig"/>
-    <ROW Directory="Rigid3D_Dir" Directory_Parent="profiles_Dir" DefaultDir="Rigid3D"/>
     <ROW Directory="SHORTCUTDIR" Directory_Parent="TARGETDIR" DefaultDir="SHORTC~1|SHORTCUTDIR" IsPseudoRoot="1"/>
-    <ROW Directory="Snapmaker_Dir" Directory_Parent="profiles_Dir" DefaultDir="SNAPMA~1|Snapmaker"/>
     <ROW Directory="TARGETDIR" DefaultDir="SourceDir"/>
-    <ROW Directory="TriLAB_Dir" Directory_Parent="profiles_Dir" DefaultDir="TriLAB"/>
-    <ROW Directory="Ultimaker_Dir" Directory_Parent="profiles_Dir" DefaultDir="ULTIMA~1|Ultimaker"/>
-    <ROW Directory="Voron_Dir" Directory_Parent="profiles_Dir" DefaultDir="Voron"/>
-    <ROW Directory="Zonestar_Dir" Directory_Parent="profiles_Dir" DefaultDir="Zonestar"/>
     <ROW Directory="__1_Dir" Directory_Parent="shaders_Dir" DefaultDir="140"/>
     <ROW Directory="__Dir" Directory_Parent="shaders_Dir" DefaultDir="110"/>
     <ROW Directory="ca_Dir" Directory_Parent="localization_Dir" DefaultDir="ca"/>
-    <ROW Directory="cache_Dir" Directory_Parent="F3Slic3r_Dir" DefaultDir="cache"/>
     <ROW Directory="cs_Dir" Directory_Parent="localization_Dir" DefaultDir="cs"/>
     <ROW Directory="data_Dir" Directory_Parent="resources_Dir" DefaultDir="data"/>
     <ROW Directory="de_Dir" Directory_Parent="localization_Dir" DefaultDir="de"/>
     <ROW Directory="en_Dir" Directory_Parent="localization_Dir" DefaultDir="en"/>
     <ROW Directory="es_Dir" Directory_Parent="localization_Dir" DefaultDir="es"/>
-    <ROW Directory="filament_Dir" Directory_Parent="F3Slic3r_Dir" DefaultDir="filament"/>
     <ROW Directory="fonts_Dir" Directory_Parent="resources_Dir" DefaultDir="fonts"/>
     <ROW Directory="fr_Dir" Directory_Parent="localization_Dir" DefaultDir="fr"/>
-    <ROW Directory="gCreate_Dir" Directory_Parent="profiles_Dir" DefaultDir="gCreate"/>
     <ROW Directory="hu_Dir" Directory_Parent="localization_Dir" DefaultDir="hu"/>
     <ROW Directory="icons_Dir" Directory_Parent="resources_Dir" DefaultDir="icons"/>
     <ROW Directory="it_Dir" Directory_Parent="localization_Dir" DefaultDir="it"/>
@@ -85,8 +61,6 @@
     <ROW Directory="mesa_Dir" Directory_Parent="APPDIR" DefaultDir="mesa"/>
     <ROW Directory="nl_Dir" Directory_Parent="localization_Dir" DefaultDir="nl"/>
     <ROW Directory="pl_Dir" Directory_Parent="localization_Dir" DefaultDir="pl"/>
-    <ROW Directory="print_Dir" Directory_Parent="F3Slic3r_Dir" DefaultDir="print"/>
-    <ROW Directory="printer_Dir" Directory_Parent="F3Slic3r_Dir" DefaultDir="printer"/>
     <ROW Directory="profiles_Dir" Directory_Parent="resources_Dir" DefaultDir="profiles"/>
     <ROW Directory="pt_BR_Dir" Directory_Parent="localization_Dir" DefaultDir="pt_BR"/>
     <ROW Directory="resources_Dir" Directory_Parent="APPDIR" DefaultDir="RESOUR~1|resources"/>
@@ -96,39 +70,21 @@
     <ROW Directory="tr_Dir" Directory_Parent="localization_Dir" DefaultDir="tr"/>
     <ROW Directory="udev_Dir" Directory_Parent="resources_Dir" DefaultDir="udev"/>
     <ROW Directory="uk_Dir" Directory_Parent="localization_Dir" DefaultDir="uk"/>
-    <ROW Directory="vendor_Dir" Directory_Parent="F3Slic3r_Dir" DefaultDir="vendor"/>
     <ROW Directory="wx_locale_Dir" Directory_Parent="localization_Dir" DefaultDir="WX_LOC~1|wx_locale"/>
     <ROW Directory="zh_CN_Dir" Directory_Parent="localization_Dir" DefaultDir="zh_CN"/>
     <ROW Directory="zh_TW_Dir" Directory_Parent="localization_Dir" DefaultDir="zh_TW"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
-    <ROW Component="A250_bed.stl" ComponentId="{D7118D13-0CFB-4199-86D1-038270BDB156}" Directory_="Snapmaker_Dir" Attributes="0" KeyPath="A250_bed.stl" Type="0"/>
-    <ROW Component="ABS_0.4_DraftFast.ini" ComponentId="{4EE54B07-4FF9-4A20-9901-B6B041E5C109}" Directory_="filament_Dir" Attributes="0" KeyPath="ABS_0.4_DraftFast.ini" Type="0"/>
     <ROW Component="AI_CustomARPName" ComponentId="{A8D4ACE9-0112-4237-9F58-8C5B2EDDFFD4}" Directory_="APPDIR" Attributes="260" KeyPath="DisplayName" Options="1"/>
     <ROW Component="AI_ExePath" ComponentId="{A4289296-8B99-4132-AF74-51935FF4306D}" Directory_="APPDIR" Attributes="260" KeyPath="AI_ExePath"/>
     <ROW Component="APPDIR" ComponentId="{474D491E-FF73-421C-815B-79394243B4AB}" Directory_="APPDIR" Attributes="0"/>
-    <ROW Component="AQI_thumbnail.png" ComponentId="{1227526C-295A-4DC8-A7C0-E0D4F2F02215}" Directory_="TriLAB_Dir" Attributes="0" KeyPath="AQI_thumbnail.png" Type="0"/>
-    <ROW Component="Anker.idx" ComponentId="{F6FB69D7-017B-4013-883E-D60477DEA132}" Directory_="profiles_Dir" Attributes="0" KeyPath="Anker.idx" Type="0"/>
-    <ROW Component="Anycubic.idx" ComponentId="{D3AAA654-3BA7-482D-8F18-2D16F5F4B8B3}" Directory_="cache_Dir" Attributes="0" KeyPath="Anycubic.idx" Type="0"/>
-    <ROW Component="BIBO2.svg" ComponentId="{F66628A1-E0FE-471F-B885-3480197906AF}" Directory_="BIBO_Dir" Attributes="0" KeyPath="BIBO2.svg" Type="0"/>
-    <ROW Component="BIQUBX_thumbnail.png" ComponentId="{EB83C3B5-7A9B-4FB9-B2B6-B185CD2C47E3}" Directory_="BIQU_Dir" Attributes="0" KeyPath="BIQUBX_thumbnail.png" Type="0"/>
-    <ROW Component="DEV200_thumbnail.png" ComponentId="{F45019AC-A3D0-47F6-807E-2175C1649C29}" Directory_="Infinity3D_Dir" Attributes="0" KeyPath="DEV200_thumbnail.png" Type="0"/>
-    <ROW Component="EDGE0.4DRAFT.ini" ComponentId="{F9C0F6B4-E1CF-40A9-818B-91A72AF1624D}" Directory_="print_Dir" Attributes="0" KeyPath="EDGE0.4DRAFT.ini" Type="0"/>
-    <ROW Component="F3EDGE0.4.ini" ComponentId="{14C18CC0-D0BD-4DF2-BF6E-D65CEA898DCE}" Directory_="printer_Dir" Attributes="0" KeyPath="F3EDGE0.4.ini" Type="0"/>
-    <ROW Component="Jubilee_bed.stl" ComponentId="{6931DD27-6404-4C44-801E-073C16875F33}" Directory_="Jubilee_Dir" Attributes="0" KeyPath="Jubilee_bed.stl" Type="0"/>
-    <ROW Component="M2_M3.stl" ComponentId="{16250473-995E-406C-A4D4-302CFD58C7F0}" Directory_="MakerGear_Dir" Attributes="0" KeyPath="M2_M3.stl" Type="0"/>
-    <ROW Component="M5bed.stl" ComponentId="{E2C12AF5-8712-4004-AED0-B8ACFA09B506}" Directory_="Anker_Dir" Attributes="0" KeyPath="M5bed.stl" Type="0"/>
-    <ROW Component="MAXPRO20_bed.stl" ComponentId="{D0A82AD4-DB20-4E21-ACC0-F4420E1922B3}" Directory_="Anycubic_Dir" Attributes="0" KeyPath="MAXPRO20_bed.stl" Type="0"/>
-    <ROW Component="MC2.0_bed.stl" ComponentId="{15BC2BB4-AEAB-48AA-91DC-286B3DB4926F}" Directory_="Print4Taste_Dir" Attributes="0" KeyPath="MC2.0_bed.stl" Type="0"/>
-    <ROW Component="MINI_AERO_thumbnail.png" ComponentId="{F09381AF-580F-4638-AECD-BC0E7DFDDBF4}" Directory_="LulzBot_Dir" Attributes="0" KeyPath="MINI_AERO_thumbnail.png" Type="0"/>
-    <ROW Component="NEPTUNE1_thumbnail.png" ComponentId="{43F695EE-0937-4BD8-8C84-B3CD59ADB0E8}" Directory_="Elegoo_Dir" Attributes="0" KeyPath="NEPTUNE1_thumbnail.png" Type="0"/>
+    <ROW Component="Anker.idx" ComponentId="{F6FB69D7-017B-4013-883E-D60477DEA132}" Directory_="profiles_Dir" Attributes="0" KeyPath="PrusaResearch.idx_1" Type="0"/>
+    <ROW Component="F3Edge_thumbnail.png" ComponentId="{9D16C4BF-9EBE-4ABD-A6D9-6B4DF069DEEE}" Directory_="F3Slic3r_1_Dir" Attributes="0" KeyPath="F3Edge_thumbnail.png" Type="0"/>
+    <ROW Component="F3Slic3r" ComponentId="{C8094E42-728A-4BB5-8957-DC632F6DD80E}" Directory_="F3Slic3r_Dir" Attributes="0"/>
     <ROW Component="NotoSansRegular.ttf" ComponentId="{759F6AA5-EA33-4906-BE86-6E43C5F9679C}" Directory_="fonts_Dir" Attributes="0" Type="0"/>
     <ROW Component="OCCTWrapper.dll" ComponentId="{00737D01-D763-4460-B77E-8E9504BE4CD7}" Directory_="APPDIR" Attributes="0" KeyPath="OCCTWrapper.dll"/>
-    <ROW Component="PROTON_XE750_thumbnail.png" ComponentId="{45792178-5DAC-4CF9-8ABA-ACEEAEFC557E}" Directory_="INAT_Dir" Attributes="0" KeyPath="PROTON_XE750_thumbnail.png" Type="0"/>
     <ROW Component="ProductInformation" ComponentId="{C7B038B5-701C-48DD-A263-5F3D72F0FD81}" Directory_="APPDIR" Attributes="260" KeyPath="Version"/>
-    <ROW Component="PrusaResearch.ini" ComponentId="{E92529C2-8BB0-45FF-880A-05C5914FF29D}" Directory_="vendor_Dir" Attributes="0" KeyPath="PrusaResearch.ini" Type="0"/>
     <ROW Component="PrusaSlicer.dll" ComponentId="{1091C055-BCEC-4280-A7B8-6A0D42AE33BF}" Directory_="APPDIR" Attributes="0" KeyPath="PrusaSlicer.dll"/>
-    <ROW Component="PrusaSlicer.ini" ComponentId="{C3D25CBB-0A05-4DA9-B05B-523856D79B71}" Directory_="F3Slic3r_Dir" Attributes="0" KeyPath="PrusaSlicer.ini" Type="0"/>
     <ROW Component="PrusaSlicer.mo" ComponentId="{B9B3D5E0-CCB0-47B2-8173-97EE07F24EBD}" Directory_="ca_Dir" Attributes="0" KeyPath="PrusaSlicer.mo" Type="0"/>
     <ROW Component="PrusaSlicer.mo_1" ComponentId="{7CCC1809-E239-464D-8887-7D0B50229AB0}" Directory_="cs_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_1" Type="0"/>
     <ROW Component="PrusaSlicer.mo_10" ComponentId="{CA5A343C-34BF-4868-A409-5D4CC34E0F29}" Directory_="ko_KR_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_10" Type="0"/>
@@ -148,34 +104,24 @@
     <ROW Component="PrusaSlicer.mo_7" ComponentId="{36EEA15F-E1D7-4345-82CA-B191CB3B6BFE}" Directory_="it_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_7" Type="0"/>
     <ROW Component="PrusaSlicer.mo_8" ComponentId="{30761EBF-3642-4324-A837-BC8B1AD6CCA9}" Directory_="ja_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_8" Type="0"/>
     <ROW Component="PrusaSlicer.mo_9" ComponentId="{48B64147-B619-48CF-9997-FEF9AE5023E6}" Directory_="ko_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_9" Type="0"/>
-    <ROW Component="Q5.svg" ComponentId="{D7DF2CBC-D05A-4237-A7FC-1ADDF1D3FD6A}" Directory_="FLSun_Dir" Attributes="0" KeyPath="Q5.svg" Type="0"/>
     <ROW Component="SHORTCUTDIR" ComponentId="{7489D54E-2336-41FE-936F-C43A25ECF170}" Directory_="SHORTCUTDIR" Attributes="0"/>
-    <ROW Component="X130.stl" ComponentId="{2F7E97BA-0452-418B-A716-94138AE7CFAD}" Directory_="Geeetech_Dir" Attributes="0" KeyPath="X130.stl" Type="0"/>
-    <ROW Component="_texture.svg" ComponentId="{78AC9F22-A44B-4107-9582-8AB711ED3A22}" Directory_="Zonestar_Dir" Attributes="0" KeyPath="_texture.svg" Type="0"/>
     <ROW Component="add.svg" ComponentId="{A009E2C9-772E-4E11-B691-D83C08DE5DC7}" Directory_="icons_Dir" Attributes="0" KeyPath="add.svg" Type="0"/>
     <ROW Component="af.po" ComponentId="{671A19FD-8DAC-456B-BC4F-3A5D4027FB90}" Directory_="wx_locale_Dir" Attributes="0" KeyPath="af.po" Type="0"/>
     <ROW Component="background.fs" ComponentId="{963AB7D4-FB0D-4657-9BE3-3B562803F9F0}" Directory_="__Dir" Attributes="0" KeyPath="background.fs" Type="0"/>
     <ROW Component="background.fs_1" ComponentId="{0790B6C3-5FD2-4065-B569-32D5E1F1D912}" Directory_="__1_Dir" Attributes="0" KeyPath="background.fs_1" Type="0"/>
     <ROW Component="background.fs_2" ComponentId="{ECD6BE3C-FA12-4C89-938E-A2F9C2778F94}" Directory_="ES_Dir" Attributes="0" KeyPath="background.fs_2" Type="0"/>
-    <ROW Component="bedgenius.png" ComponentId="{F60DD75C-0AAB-41C2-85F6-6A6F5A628C49}" Directory_="Artillery_Dir" Attributes="0" KeyPath="bedgenius.png" Type="0"/>
-    <ROW Component="bedtexturev0120.png" ComponentId="{3C85762F-541D-4EFB-B095-694C3EA1847A}" Directory_="Voron_Dir" Attributes="0" KeyPath="bedtexturev0120.png" Type="0"/>
     <ROW Component="box.png" ComponentId="{51393945-0347-48E9-B870-132C7C7851A5}" Directory_="shapes_Dir" Attributes="0" KeyPath="box.png" Type="0"/>
-    <ROW Component="cr10.svg" ComponentId="{5155FCAB-20AD-4BFB-81FA-7E95503A4DCB}" Directory_="Creality_Dir" Attributes="0" KeyPath="cr10.svg" Type="0"/>
     <ROW Component="dconnexion.rules" ComponentId="{C3B3D8BD-A558-4512-8237-782BF0C99B9C}" Directory_="udev_Dir" Attributes="0" KeyPath="dconnexion.rules" Type="0"/>
     <ROW Component="embossed_text.obj" ComponentId="{7BF59D7C-446B-41F2-8417-A449E1672741}" Directory_="data_Dir" Attributes="0" KeyPath="embossed_text.obj" Type="0"/>
-    <ROW Component="gmax15p.svg" ComponentId="{41FC85F7-F4C7-4361-8C0B-82090156A521}" Directory_="gCreate_Dir" Attributes="0" KeyPath="gmax15p.svg" Type="0"/>
     <ROW Component="libgmp10.dll" ComponentId="{7B646215-CF29-4B35-9FE5-D6EBB5738648}" Directory_="APPDIR" Attributes="256" KeyPath="libgmp10.dll"/>
     <ROW Component="libmpfr4.dll" ComponentId="{C51BB43E-AED2-4040-873F-AAC3D0BCC08B}" Directory_="APPDIR" Attributes="256" KeyPath="libmpfr4.dll"/>
     <ROW Component="list.txt" ComponentId="{3ED9F3A2-8F4B-4869-94CA-949E254534A4}" Directory_="localization_Dir" Attributes="0" KeyPath="list.txt" Type="0"/>
     <ROW Component="mini.svg" ComponentId="{DEA50475-7950-40D6-AC41-D031B99616CE}" Directory_="PrusaResearch_Dir" Attributes="0" KeyPath="mini.svg" Type="0"/>
     <ROW Component="msvcp140.dll" ComponentId="{22B07D1C-312C-4924-B858-72F97677D978}" Directory_="APPDIR" Attributes="256" KeyPath="msvcp140.dll"/>
-    <ROW Component="mucit2_bed.png" ComponentId="{32D2A7DB-25A5-4A5F-935D-FFFA974382D6}" Directory_="Rigid3D_Dir" Attributes="0" KeyPath="mucit2_bed.png" Type="0"/>
     <ROW Component="opengl32.dll" ComponentId="{F172C944-4791-498E-815E-35618A67C581}" Directory_="mesa_Dir" Attributes="256" KeyPath="opengl32.dll"/>
     <ROW Component="prusagcodeviewer.exe" ComponentId="{0E8F92B7-7A0E-47C7-A532-1B9A63913913}" Directory_="APPDIR" Attributes="0" KeyPath="prusagcodeviewer.exe"/>
     <ROW Component="prusaslicer.exe" ComponentId="{4FDCABFA-93DA-42FC-83B5-3FAD34828BCC}" Directory_="APPDIR" Attributes="0" KeyPath="prusaslicer.exe"/>
     <ROW Component="prusaslicerconsole.exe" ComponentId="{3239CE8B-6E87-4359-A536-83D1BF5910FB}" Directory_="APPDIR" Attributes="256" KeyPath="prusaslicerconsole.exe"/>
-    <ROW Component="rrvc300.stl" ComponentId="{307A6E8B-883A-44EB-89B5-2B92AFE41B5C}" Directory_="RatRig_Dir" Attributes="0" KeyPath="rrvc300.stl" Type="0"/>
-    <ROW Component="ultimaker2.svg" ComponentId="{0C6921C8-5736-4E88-9D5B-5D85E3966C45}" Directory_="Ultimaker_Dir" Attributes="0" KeyPath="ultimaker2.svg" Type="0"/>
     <ROW Component="updater.exe" ComponentId="{D6EEBA84-30A7-4C85-8C40-149FED1297A1}" Directory_="APPDIR" Attributes="0" KeyPath="updater.exe"/>
     <ROW Component="vcruntime140.dll" ComponentId="{A7696C76-D45F-4CCD-8017-DEBD1EC47CEB}" Directory_="APPDIR" Attributes="256" KeyPath="vcruntime140.dll"/>
     <ROW Component="vcruntime140_1.dll" ComponentId="{FB850B5B-56E7-411C-AD76-74BCA60087B6}" Directory_="APPDIR" Attributes="256" KeyPath="vcruntime140_1.dll"/>
@@ -190,91 +136,6 @@
     <ROW File="OCCTWrapper.dll" Component_="OCCTWrapper.dll" FileName="OCCTWR~1.DLL|OCCTWrapper.dll" Attributes="0" SourcePath="..\build\src\Release\OCCTWrapper.dll" SelfReg="false"/>
     <ROW File="prusagcodeviewer.exe" Component_="prusagcodeviewer.exe" FileName="PRUSA-~3.EXE|prusa-gcodeviewer.exe" Attributes="0" SourcePath="..\build\src\Release\prusa-gcodeviewer.exe" SelfReg="false"/>
     <ROW File="updater.exe" Component_="updater.exe" FileName="updater.exe" Version="65535.65535.65535.65535" Attributes="0" SourcePath="&lt;AI_STUBS&gt;updater.exe" SelfReg="false" DigSign="true"/>
-    <ROW File="PrusaSlicer.ini" Component_="PrusaSlicer.ini" FileName="PRUSAS~1.INI|PrusaSlicer.ini" Attributes="0" SourcePath="..\f3slic3r_resources\PrusaSlicer.ini" SelfReg="false"/>
-    <ROW File="PrusaSlicer.ini.bak" Component_="PrusaSlicer.ini" FileName="PRUSAS~1.BAK|PrusaSlicer.ini.bak" Attributes="0" SourcePath="..\f3slic3r_resources\PrusaSlicer.ini.bak" SelfReg="false"/>
-    <ROW File="PrusaSlicerGcodeViewer.ini" Component_="PrusaSlicer.ini" FileName="PRUSAS~2.INI|PrusaSlicerGcodeViewer.ini" Attributes="0" SourcePath="..\f3slic3r_resources\PrusaSlicerGcodeViewer.ini" SelfReg="false"/>
-    <ROW File="PrusaSlicerGcodeViewer.ini.bak" Component_="PrusaSlicer.ini" FileName="PRUSAS~2.BAK|PrusaSlicerGcodeViewer.ini.bak" Attributes="0" SourcePath="..\f3slic3r_resources\PrusaSlicerGcodeViewer.ini.bak" SelfReg="false"/>
-    <ROW File="PrusaResearch.ini" Component_="PrusaResearch.ini" FileName="PRUSAR~1.INI|PrusaResearch.ini" Attributes="0" SourcePath="..\f3slic3r_resources\vendor\PrusaResearch.ini" SelfReg="false"/>
-    <ROW File="F3EDGE0.4.ini" Component_="F3EDGE0.4.ini" FileName="F3EDGE~1.INI|F3 EDGE 0.4.ini" Attributes="0" SourcePath="..\f3slic3r_resources\printer\F3 EDGE 0.4.ini" SelfReg="false"/>
-    <ROW File="F3EDGE0.6.ini" Component_="F3EDGE0.4.ini" FileName="F3EDGE~2.INI|F3 EDGE 0.6.ini" Attributes="0" SourcePath="..\f3slic3r_resources\printer\F3 EDGE 0.6.ini" SelfReg="false"/>
-    <ROW File="F3EDGE0.8.ini" Component_="F3EDGE0.4.ini" FileName="F3EDGE~3.INI|F3 EDGE 0.8.ini" Attributes="0" SourcePath="..\f3slic3r_resources\printer\F3 EDGE 0.8.ini" SelfReg="false"/>
-    <ROW File="EDGE0.4DRAFT.ini" Component_="EDGE0.4DRAFT.ini" FileName="EDGE04~1.INI|EDGE 0.4 DRAFT.ini" Attributes="0" SourcePath="..\f3slic3r_resources\print\EDGE 0.4 DRAFT.ini" SelfReg="false"/>
-    <ROW File="EDGE0.4FAST.ini" Component_="EDGE0.4DRAFT.ini" FileName="EDGE04~2.INI|EDGE 0.4 FAST.ini" Attributes="0" SourcePath="..\f3slic3r_resources\print\EDGE 0.4 FAST.ini" SelfReg="false"/>
-    <ROW File="EDGE0.4FINE.ini" Component_="EDGE0.4DRAFT.ini" FileName="EDGE04~3.INI|EDGE 0.4 FINE.ini" Attributes="0" SourcePath="..\f3slic3r_resources\print\EDGE 0.4 FINE.ini" SelfReg="false"/>
-    <ROW File="EDGE0.4STANDARD.ini" Component_="EDGE0.4DRAFT.ini" FileName="EDGE04~4.INI|EDGE 0.4 STANDARD.ini" Attributes="0" SourcePath="..\f3slic3r_resources\print\EDGE 0.4 STANDARD.ini" SelfReg="false"/>
-    <ROW File="EDGE0.6STANDARD.ini" Component_="EDGE0.4DRAFT.ini" FileName="EDGE06~1.INI|EDGE 0.6 STANDARD.ini" Attributes="0" SourcePath="..\f3slic3r_resources\print\EDGE 0.6 STANDARD.ini" SelfReg="false"/>
-    <ROW File="EDGE0.8STANDARD.ini" Component_="EDGE0.4DRAFT.ini" FileName="EDGE08~1.INI|EDGE 0.8 STANDARD.ini" Attributes="0" SourcePath="..\f3slic3r_resources\print\EDGE 0.8 STANDARD.ini" SelfReg="false"/>
-    <ROW File="ABS_0.4_DraftFast.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ABS_04~1.INI|ABS_0.4_Draft-Fast.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\ABS_0.4_Draft-Fast.ini" SelfReg="false"/>
-    <ROW File="ABS_0.4_Fine.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ABS_04~2.INI|ABS_0.4_Fine.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\ABS_0.4_Fine.ini" SelfReg="false"/>
-    <ROW File="ABS_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ABS_04~3.INI|ABS_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\ABS_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="ABS_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ABS_06~1.INI|ABS_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\ABS_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="ABS_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ABS_08~1.INI|ABS_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\ABS_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="Alloy910_0.4_DraftFast.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ALLOY9~1.INI|Alloy910_0.4_Draft-Fast.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Alloy910_0.4_Draft-Fast.ini" SelfReg="false"/>
-    <ROW File="Alloy910_0.4_Fine.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ALLOY9~2.INI|Alloy910_0.4_Fine.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Alloy910_0.4_Fine.ini" SelfReg="false"/>
-    <ROW File="Alloy910_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ALLOY9~3.INI|Alloy910_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Alloy910_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="Alloy910_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ALLOY9~4.INI|Alloy910_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Alloy910_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="Alloy910_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ALLOY9~5.INI|Alloy910_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Alloy910_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="ASA_0.4_DraftFast.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ASA_04~1.INI|ASA_0.4_Draft-Fast.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\ASA_0.4_Draft-Fast.ini" SelfReg="false"/>
-    <ROW File="ASA_0.4_Fine.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ASA_04~2.INI|ASA_0.4_Fine.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\ASA_0.4_Fine.ini" SelfReg="false"/>
-    <ROW File="ASA_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ASA_04~3.INI|ASA_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\ASA_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="ASA_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ASA_06~1.INI|ASA_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\ASA_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="ASA_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ASA_08~1.INI|ASA_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\ASA_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="AtomicNuclearNylonPACF_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ATOMIC~1.INI|AtomicNuclearNylonPA-CF_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\AtomicNuclearNylonPA-CF_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="AtomicNuclearNylonPACF_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ATOMIC~2.INI|AtomicNuclearNylonPA-CF_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\AtomicNuclearNylonPA-CF_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="AtomicNuclearNylonPACF_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ATOMIC~3.INI|AtomicNuclearNylonPA-CF_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\AtomicNuclearNylonPA-CF_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="Cheetah_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="CHEETA~1.INI|Cheetah_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Cheetah_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="Cheetah_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="CHEETA~2.INI|Cheetah_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Cheetah_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="Cheetah_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="CHEETA~3.INI|Cheetah_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Cheetah_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="KVPNylon_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="KVPNYL~1.INI|KVPNylon_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\KVPNylon_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="KVPNylon_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="KVPNYL~2.INI|KVPNylon_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\KVPNylon_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="KVPNylon_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="KVPNYL~3.INI|KVPNylon_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\KVPNylon_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="MHNylonX_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="MHNYLO~1.INI|MHNylonX_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\MHNylonX_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="MHNylonX_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="MHNYLO~2.INI|MHNylonX_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\MHNylonX_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="MHNylonX_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="MHNYLO~3.INI|MHNylonX_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\MHNylonX_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="MHProNylon_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="MHPRON~1.INI|MHProNylon_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\MHProNylon_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="MHProNylon_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="MHPRON~2.INI|MHProNylon_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\MHProNylon_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="MHProNylon_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="MHPRON~3.INI|MHProNylon_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\MHProNylon_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="Nylon645_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="NYLON6~1.INI|Nylon645_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Nylon645_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="Nylon645_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="NYLON6~2.INI|Nylon645_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Nylon645_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="Nylon645_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="NYLON6~3.INI|Nylon645_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Nylon645_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="PCPBT_0.4_DraftFast.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PC-PBT~1.INI|PC-PBT_0.4_Draft-Fast.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PC-PBT_0.4_Draft-Fast.ini" SelfReg="false"/>
-    <ROW File="PCPBT_0.4_Fine.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PC-PBT~2.INI|PC-PBT_0.4_Fine.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PC-PBT_0.4_Fine.ini" SelfReg="false"/>
-    <ROW File="PCPBT_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PC-PBT~3.INI|PC-PBT_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PC-PBT_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="PCPBT_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PC-PBT~4.INI|PC-PBT_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PC-PBT_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="PCPBT_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PC-PBT~5.INI|PC-PBT_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PC-PBT_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="PC_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PC_04_~1.INI|PC_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PC_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="PC_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PC_06_~1.INI|PC_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PC_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="PC_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PC_08_~1.INI|PC_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PC_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="PETG_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PETG_0~1.INI|PETG_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PETG_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="PETG_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PETG_0~2.INI|PETG_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PETG_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="PETG_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PETG_0~3.INI|PETG_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PETG_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="PLA_0.4_DraftFast.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PLA_04~1.INI|PLA_0.4_Draft-Fast.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PLA_0.4_Draft-Fast.ini" SelfReg="false"/>
-    <ROW File="PLA_0.4_Fine.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PLA_04~2.INI|PLA_0.4_Fine.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PLA_0.4_Fine.ini" SelfReg="false"/>
-    <ROW File="PLA_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PLA_04~3.INI|PLA_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PLA_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="PLA_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PLA_06~1.INI|PLA_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PLA_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="PLA_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="PLA_08~1.INI|PLA_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\PLA_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="Polypropylene_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="POLYPR~1.INI|Polypropylene_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Polypropylene_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="Polypropylene_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="POLYPR~2.INI|Polypropylene_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Polypropylene_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="Polypropylene_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="POLYPR~3.INI|Polypropylene_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Polypropylene_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="Anycubic.idx" Component_="Anycubic.idx" FileName="Anycubic.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\Anycubic.idx" SelfReg="false"/>
-    <ROW File="Artillery.idx" Component_="Anycubic.idx" FileName="ARTILL~1.IDX|Artillery.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\Artillery.idx" SelfReg="false"/>
-    <ROW File="BIBO.idx" Component_="Anycubic.idx" FileName="BIBO.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\BIBO.idx" SelfReg="false"/>
-    <ROW File="Creality.idx" Component_="Anycubic.idx" FileName="Creality.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\Creality.idx" SelfReg="false"/>
-    <ROW File="Elegoo.idx" Component_="Anycubic.idx" FileName="Elegoo.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\Elegoo.idx" SelfReg="false"/>
-    <ROW File="FLSun.idx" Component_="Anycubic.idx" FileName="FLSun.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\FLSun.idx" SelfReg="false"/>
-    <ROW File="gCreate.idx" Component_="Anycubic.idx" FileName="gCreate.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\gCreate.idx" SelfReg="false"/>
-    <ROW File="hints.cereal" Component_="Anycubic.idx" FileName="HINTS~1.CER|hints.cereal" Attributes="0" SourcePath="..\f3slic3r_resources\cache\hints.cereal" SelfReg="false"/>
-    <ROW File="INAT.idx" Component_="Anycubic.idx" FileName="INAT.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\INAT.idx" SelfReg="false"/>
-    <ROW File="Infinity3D.idx" Component_="Anycubic.idx" FileName="INFINI~1.IDX|Infinity3D.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\Infinity3D.idx" SelfReg="false"/>
-    <ROW File="Jubilee.idx" Component_="Anycubic.idx" FileName="Jubilee.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\Jubilee.idx" SelfReg="false"/>
-    <ROW File="LulzBot.idx" Component_="Anycubic.idx" FileName="LulzBot.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\LulzBot.idx" SelfReg="false"/>
-    <ROW File="PrusaResearch.idx" Component_="Anycubic.idx" FileName="PRUSAR~1.IDX|PrusaResearch.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\PrusaResearch.idx" SelfReg="false"/>
-    <ROW File="RatRig.idx" Component_="Anycubic.idx" FileName="RatRig.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\RatRig.idx" SelfReg="false"/>
-    <ROW File="Snapmaker.idx" Component_="Anycubic.idx" FileName="SNAPMA~1.IDX|Snapmaker.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\Snapmaker.idx" SelfReg="false"/>
-    <ROW File="TriLAB.idx" Component_="Anycubic.idx" FileName="TriLAB.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\TriLAB.idx" SelfReg="false"/>
-    <ROW File="Ultimaker.idx" Component_="Anycubic.idx" FileName="ULTIMA~1.IDX|Ultimaker.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\Ultimaker.idx" SelfReg="false"/>
-    <ROW File="Voron.idx" Component_="Anycubic.idx" FileName="Voron.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\Voron.idx" SelfReg="false"/>
-    <ROW File="Zonestar.idx" Component_="Anycubic.idx" FileName="Zonestar.idx" Attributes="0" SourcePath="..\f3slic3r_resources\cache\Zonestar.idx" SelfReg="false"/>
     <ROW File="libgmp10.dll" Component_="libgmp10.dll" FileName="LIBGMP~1.DLL|libgmp-10.dll" Attributes="0" SourcePath="..\build\src\Release\libgmp-10.dll" SelfReg="false"/>
     <ROW File="libmpfr4.dll" Component_="libmpfr4.dll" FileName="LIBMPF~1.DLL|libmpfr-4.dll" Attributes="0" SourcePath="..\build\src\Release\libmpfr-4.dll" SelfReg="false"/>
     <ROW File="prusaslicerconsole.exe" Component_="prusaslicerconsole.exe" FileName="PRUSA-~1.EXE|prusa-slicer-console.exe" Attributes="0" SourcePath="..\build\src\Release\prusa-slicer-console.exe" SelfReg="false" DigSign="true"/>
@@ -620,253 +481,6 @@
     <ROW File="PrusaSlicer_zh_CN.po" Component_="PrusaSlicer.mo_17" FileName="PRUSAS~1.PO|PrusaSlicer_zh_CN.po" Attributes="0" SourcePath="..\resources\localization\zh_CN\PrusaSlicer_zh_CN.po" SelfReg="false"/>
     <ROW File="PrusaSlicer.mo_18" Component_="PrusaSlicer.mo_18" FileName="PRUSAS~1.MO|PrusaSlicer.mo" Attributes="0" SourcePath="..\resources\localization\zh_TW\PrusaSlicer.mo" SelfReg="false"/>
     <ROW File="PrusaSlicer_zh_TW.po" Component_="PrusaSlicer.mo_18" FileName="PRUSAS~1.PO|PrusaSlicer_zh_TW.po" Attributes="0" SourcePath="..\resources\localization\zh_TW\PrusaSlicer_zh_TW.po" SelfReg="false"/>
-    <ROW File="M5bed.stl" Component_="M5bed.stl" FileName="M5-bed.stl" Attributes="0" SourcePath="..\resources\profiles\Anker\M5-bed.stl" SelfReg="false"/>
-    <ROW File="M5texture.svg" Component_="M5bed.stl" FileName="M5-TEX~1.SVG|M5-texture.svg" Attributes="0" SourcePath="..\resources\profiles\Anker\M5-texture.svg" SelfReg="false"/>
-    <ROW File="M5_thumbnail.png" Component_="M5bed.stl" FileName="M5_THU~1.PNG|M5_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anker\M5_thumbnail.png" SelfReg="false"/>
-    <ROW File="Anker.idx" Component_="Anker.idx" FileName="Anker.idx" Attributes="0" SourcePath="..\resources\profiles\Anker.idx" SelfReg="false"/>
-    <ROW File="Anker.ini" Component_="Anker.idx" FileName="Anker.ini" Attributes="0" SourcePath="..\resources\profiles\Anker.ini" SelfReg="false"/>
-    <ROW File="MAXPRO20_bed.stl" Component_="MAXPRO20_bed.stl" FileName="4MAXPR~1.STL|4MAXPRO20_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Anycubic\4MAXPRO20_bed.stl" SelfReg="false"/>
-    <ROW File="MAXPRO20_texture.svg" Component_="MAXPRO20_bed.stl" FileName="4MAXPR~1.SVG|4MAXPRO20_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Anycubic\4MAXPRO20_texture.svg" SelfReg="false"/>
-    <ROW File="MAXPRO20_thumbnail.png" Component_="MAXPRO20_bed.stl" FileName="4MAXPR~1.PNG|4MAXPRO20_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anycubic\4MAXPRO20_thumbnail.png" SelfReg="false"/>
-    <ROW File="AK.png" Component_="MAXPRO20_bed.stl" FileName="AK.png" Attributes="0" SourcePath="..\resources\profiles\Anycubic\AK.png" SelfReg="false"/>
-    <ROW File="AK.svg" Component_="MAXPRO20_bed.stl" FileName="AK.svg" Attributes="0" SourcePath="..\resources\profiles\Anycubic\AK.svg" SelfReg="false"/>
-    <ROW File="AKLP_Bed.stl" Component_="MAXPRO20_bed.stl" FileName="AKLP_Bed.stl" Attributes="0" SourcePath="..\resources\profiles\Anycubic\AKLP_Bed.stl" SelfReg="false"/>
-    <ROW File="AKLP_thumbnail.png" Component_="MAXPRO20_bed.stl" FileName="AKLP_T~1.PNG|AKLP_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anycubic\AKLP_thumbnail.png" SelfReg="false"/>
-    <ROW File="AK_Bed.stl" Component_="MAXPRO20_bed.stl" FileName="AK_Bed.stl" Attributes="0" SourcePath="..\resources\profiles\Anycubic\AK_Bed.stl" SelfReg="false"/>
-    <ROW File="AK_thumbnail.png" Component_="MAXPRO20_bed.stl" FileName="AK_THU~1.PNG|AK_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anycubic\AK_thumbnail.png" SelfReg="false"/>
-    <ROW File="i3megas.svg" Component_="MAXPRO20_bed.stl" FileName="i3megas.svg" Attributes="0" SourcePath="..\resources\profiles\Anycubic\i3megas.svg" SelfReg="false"/>
-    <ROW File="i3megas_bed.stl" Component_="MAXPRO20_bed.stl" FileName="I3MEGA~1.STL|i3megas_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Anycubic\i3megas_bed.stl" SelfReg="false"/>
-    <ROW File="I3MEGAS_thumbnail.png" Component_="MAXPRO20_bed.stl" FileName="I3MEGA~1.PNG|I3MEGAS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anycubic\I3MEGAS_thumbnail.png" SelfReg="false"/>
-    <ROW File="I3MEGA_thumbnail.png" Component_="MAXPRO20_bed.stl" FileName="I3MEGA~2.PNG|I3MEGA_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anycubic\I3MEGA_thumbnail.png" SelfReg="false"/>
-    <ROW File="mega0.svg" Component_="MAXPRO20_bed.stl" FileName="mega0.svg" Attributes="0" SourcePath="..\resources\profiles\Anycubic\mega0.svg" SelfReg="false"/>
-    <ROW File="mega0_bed.stl" Component_="MAXPRO20_bed.stl" FileName="MEGA0_~1.STL|mega0_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Anycubic\mega0_bed.stl" SelfReg="false"/>
-    <ROW File="MEGA0_thumbnail.png" Component_="MAXPRO20_bed.stl" FileName="MEGA0_~1.PNG|MEGA0_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anycubic\MEGA0_thumbnail.png" SelfReg="false"/>
-    <ROW File="PHOTONMONOX_thumbnail.png" Component_="MAXPRO20_bed.stl" FileName="PHOTON~1.PNG|PHOTON MONO X_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anycubic\PHOTON MONO X_thumbnail.png" SelfReg="false"/>
-    <ROW File="PREDATOR_thumbnail.png" Component_="MAXPRO20_bed.stl" FileName="PREDAT~1.PNG|PREDATOR_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anycubic\PREDATOR_thumbnail.png" SelfReg="false"/>
-    <ROW File="Anycubic.idx_1" Component_="Anker.idx" FileName="Anycubic.idx" Attributes="0" SourcePath="..\resources\profiles\Anycubic.idx" SelfReg="false"/>
-    <ROW File="Anycubic.ini" Component_="Anker.idx" FileName="Anycubic.ini" Attributes="0" SourcePath="..\resources\profiles\Anycubic.ini" SelfReg="false"/>
-    <ROW File="bedgenius.png" Component_="bedgenius.png" FileName="BED-GE~1.PNG|bed-genius.png" Attributes="0" SourcePath="..\resources\profiles\Artillery\bed-genius.png" SelfReg="false"/>
-    <ROW File="bedgenius.stl" Component_="bedgenius.png" FileName="BED-GE~1.STL|bed-genius.stl" Attributes="0" SourcePath="..\resources\profiles\Artillery\bed-genius.stl" SelfReg="false"/>
-    <ROW File="bedhornet.png" Component_="bedgenius.png" FileName="BED-HO~1.PNG|bed-hornet.png" Attributes="0" SourcePath="..\resources\profiles\Artillery\bed-hornet.png" SelfReg="false"/>
-    <ROW File="bedhornet.stl" Component_="bedgenius.png" FileName="BED-HO~1.STL|bed-hornet.stl" Attributes="0" SourcePath="..\resources\profiles\Artillery\bed-hornet.stl" SelfReg="false"/>
-    <ROW File="bedx1.png" Component_="bedgenius.png" FileName="bed-x1.png" Attributes="0" SourcePath="..\resources\profiles\Artillery\bed-x1.png" SelfReg="false"/>
-    <ROW File="bedx1.stl" Component_="bedgenius.png" FileName="bed-x1.stl" Attributes="0" SourcePath="..\resources\profiles\Artillery\bed-x1.stl" SelfReg="false"/>
-    <ROW File="Genius_thumbnail.png" Component_="bedgenius.png" FileName="GENIUS~1.PNG|Genius_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Artillery\Genius_thumbnail.png" SelfReg="false"/>
-    <ROW File="Hornet_thumbnail.png" Component_="bedgenius.png" FileName="HORNET~1.PNG|Hornet_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Artillery\Hornet_thumbnail.png" SelfReg="false"/>
-    <ROW File="X1_thumbnail.png" Component_="bedgenius.png" FileName="X1_THU~1.PNG|X1_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Artillery\X1_thumbnail.png" SelfReg="false"/>
-    <ROW File="Artillery.idx_1" Component_="Anker.idx" FileName="ARTILL~1.IDX|Artillery.idx" Attributes="0" SourcePath="..\resources\profiles\Artillery.idx" SelfReg="false"/>
-    <ROW File="Artillery.ini" Component_="Anker.idx" FileName="ARTILL~1.INI|Artillery.ini" Attributes="0" SourcePath="..\resources\profiles\Artillery.ini" SelfReg="false"/>
-    <ROW File="BIBO2.svg" Component_="BIBO2.svg" FileName="BIBO2.svg" Attributes="0" SourcePath="..\resources\profiles\BIBO\BIBO2.svg" SelfReg="false"/>
-    <ROW File="BIBO2_bed.stl" Component_="BIBO2.svg" FileName="BIBO2_~1.STL|BIBO2_bed.stl" Attributes="0" SourcePath="..\resources\profiles\BIBO\BIBO2_bed.stl" SelfReg="false"/>
-    <ROW File="BIBO2_thumbnail.png" Component_="BIBO2.svg" FileName="BIBO2_~1.PNG|BIBO2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\BIBO\BIBO2_thumbnail.png" SelfReg="false"/>
-    <ROW File="BIBO.idx_1" Component_="Anker.idx" FileName="BIBO.idx" Attributes="0" SourcePath="..\resources\profiles\BIBO.idx" SelfReg="false"/>
-    <ROW File="BIBO.ini" Component_="Anker.idx" FileName="BIBO.ini" Attributes="0" SourcePath="..\resources\profiles\BIBO.ini" SelfReg="false"/>
-    <ROW File="BIQUBX_thumbnail.png" Component_="BIQUBX_thumbnail.png" FileName="BIQUBX~1.PNG|BIQUBX_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\BIQU\BIQUBX_thumbnail.png" SelfReg="false"/>
-    <ROW File="BX_Bed.stl" Component_="BIQUBX_thumbnail.png" FileName="BX_Bed.stl" Attributes="0" SourcePath="..\resources\profiles\BIQU\BX_Bed.stl" SelfReg="false"/>
-    <ROW File="BX_Texture.png" Component_="BIQUBX_thumbnail.png" FileName="BX_TEX~1.PNG|BX_Texture.png" Attributes="0" SourcePath="..\resources\profiles\BIQU\BX_Texture.png" SelfReg="false"/>
-    <ROW File="BIQU.idx" Component_="Anker.idx" FileName="BIQU.idx" Attributes="0" SourcePath="..\resources\profiles\BIQU.idx" SelfReg="false"/>
-    <ROW File="BIQU.ini" Component_="Anker.idx" FileName="BIQU.ini" Attributes="0" SourcePath="..\resources\profiles\BIQU.ini" SelfReg="false"/>
-    <ROW File="cr10.svg" Component_="cr10.svg" FileName="cr10.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\cr10.svg" SelfReg="false"/>
-    <ROW File="cr10max.svg" Component_="cr10.svg" FileName="cr10max.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\cr10max.svg" SelfReg="false"/>
-    <ROW File="cr10max_bed.stl" Component_="cr10.svg" FileName="CR10MA~1.STL|cr10max_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\cr10max_bed.stl" SelfReg="false"/>
-    <ROW File="CR10MAX_thumbnail.png" Component_="cr10.svg" FileName="CR10MA~1.PNG|CR10MAX_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR10MAX_thumbnail.png" SelfReg="false"/>
-    <ROW File="cr10mini.svg" Component_="cr10.svg" FileName="cr10mini.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\cr10mini.svg" SelfReg="false"/>
-    <ROW File="cr10mini_bed.stl" Component_="cr10.svg" FileName="CR10MI~1.STL|cr10mini_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\cr10mini_bed.stl" SelfReg="false"/>
-    <ROW File="CR10MINI_thumbnail.png" Component_="cr10.svg" FileName="CR10MI~1.PNG|CR10MINI_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR10MINI_thumbnail.png" SelfReg="false"/>
-    <ROW File="cr10s4.svg" Component_="cr10.svg" FileName="cr10s4.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\cr10s4.svg" SelfReg="false"/>
-    <ROW File="cr10s4_bed.stl" Component_="cr10.svg" FileName="CR10S4~1.STL|cr10s4_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\cr10s4_bed.stl" SelfReg="false"/>
-    <ROW File="CR10S4_thumbnail.png" Component_="cr10.svg" FileName="CR10S4~1.PNG|CR10S4_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR10S4_thumbnail.png" SelfReg="false"/>
-    <ROW File="cr10s5.svg" Component_="cr10.svg" FileName="cr10s5.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\cr10s5.svg" SelfReg="false"/>
-    <ROW File="cr10s5_bed.stl" Component_="cr10.svg" FileName="CR10S5~1.STL|cr10s5_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\cr10s5_bed.stl" SelfReg="false"/>
-    <ROW File="CR10S5_thumbnail.png" Component_="cr10.svg" FileName="CR10S5~1.PNG|CR10S5_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR10S5_thumbnail.png" SelfReg="false"/>
-    <ROW File="CR10SMARTPRO_thumbnail.png" Component_="cr10.svg" FileName="CR10SM~1.PNG|CR10SMARTPRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR10SMARTPRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="CR10SMART_thumbnail.png" Component_="cr10.svg" FileName="CR10SM~2.PNG|CR10SMART_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR10SMART_thumbnail.png" SelfReg="false"/>
-    <ROW File="cr10spro.svg" Component_="cr10.svg" FileName="cr10spro.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\cr10spro.svg" SelfReg="false"/>
-    <ROW File="CR10SPROV2_thumbnail.png" Component_="cr10.svg" FileName="CR10SP~1.PNG|CR10SPROV2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR10SPROV2_thumbnail.png" SelfReg="false"/>
-    <ROW File="CR10SPRO_thumbnail.png" Component_="cr10.svg" FileName="CR10SP~2.PNG|CR10SPRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR10SPRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="CR10S_thumbnail.png" Component_="cr10.svg" FileName="CR10S_~1.PNG|CR10S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR10S_thumbnail.png" SelfReg="false"/>
-    <ROW File="cr10v2_bed.stl" Component_="cr10.svg" FileName="CR10V2~1.STL|cr10v2_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\cr10v2_bed.stl" SelfReg="false"/>
-    <ROW File="CR10V2_thumbnail.png" Component_="cr10.svg" FileName="CR10V2~1.PNG|CR10V2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR10V2_thumbnail.png" SelfReg="false"/>
-    <ROW File="CR10V3_thumbnail.png" Component_="cr10.svg" FileName="CR10V3~1.PNG|CR10V3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR10V3_thumbnail.png" SelfReg="false"/>
-    <ROW File="cr10_bed.stl" Component_="cr10.svg" FileName="cr10_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\cr10_bed.stl" SelfReg="false"/>
-    <ROW File="CR10_thumbnail.png" Component_="cr10.svg" FileName="CR10_T~1.PNG|CR10_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR10_thumbnail.png" SelfReg="false"/>
-    <ROW File="cr20.svg" Component_="cr10.svg" FileName="cr20.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\cr20.svg" SelfReg="false"/>
-    <ROW File="cr200b.svg" Component_="cr10.svg" FileName="cr200b.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\cr200b.svg" SelfReg="false"/>
-    <ROW File="cr200b_bed.stl" Component_="cr10.svg" FileName="CR200B~1.STL|cr200b_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\cr200b_bed.stl" SelfReg="false"/>
-    <ROW File="CR200B_thumbnail.png" Component_="cr10.svg" FileName="CR200B~1.PNG|CR200B_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR200B_thumbnail.png" SelfReg="false"/>
-    <ROW File="CR20PRO_thumbnail.png" Component_="cr10.svg" FileName="CR20PR~1.PNG|CR20PRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR20PRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="CR20_thumbnail.png" Component_="cr10.svg" FileName="CR20_T~1.PNG|CR20_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR20_thumbnail.png" SelfReg="false"/>
-    <ROW File="cr5pro.svg" Component_="cr10.svg" FileName="cr5pro.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\cr5pro.svg" SelfReg="false"/>
-    <ROW File="CR5PROH_thumbnail.png" Component_="cr10.svg" FileName="CR5PRO~1.PNG|CR5PROH_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR5PROH_thumbnail.png" SelfReg="false"/>
-    <ROW File="cr5pro_bed.stl" Component_="cr10.svg" FileName="CR5PRO~1.STL|cr5pro_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\cr5pro_bed.stl" SelfReg="false"/>
-    <ROW File="CR5PRO_thumbnail.png" Component_="cr10.svg" FileName="CR5PRO~2.PNG|CR5PRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR5PRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="CR6MAX_thumbnail.png" Component_="cr10.svg" FileName="CR6MAX~1.PNG|CR6MAX_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR6MAX_thumbnail.png" SelfReg="false"/>
-    <ROW File="cr6se.svg" Component_="cr10.svg" FileName="cr6se.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\cr6se.svg" SelfReg="false"/>
-    <ROW File="cr6se_bed.stl" Component_="cr10.svg" FileName="CR6SE_~1.STL|cr6se_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\cr6se_bed.stl" SelfReg="false"/>
-    <ROW File="CR6SE_thumbnail.png" Component_="cr10.svg" FileName="CR6SE_~1.PNG|CR6SE_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR6SE_thumbnail.png" SelfReg="false"/>
-    <ROW File="cr8.svg" Component_="cr10.svg" FileName="cr8.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\cr8.svg" SelfReg="false"/>
-    <ROW File="cr8_bed.stl" Component_="cr10.svg" FileName="cr8_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\cr8_bed.stl" SelfReg="false"/>
-    <ROW File="CR8_thumbnail.png" Component_="cr10.svg" FileName="CR8_TH~1.PNG|CR8_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CR8_thumbnail.png" SelfReg="false"/>
-    <ROW File="CRXPRO_thumbnail.png" Component_="cr10.svg" FileName="CRXPRO~1.PNG|CRXPRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CRXPRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="CRX_thumbnail.png" Component_="cr10.svg" FileName="CRX_TH~1.PNG|CRX_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\CRX_thumbnail.png" SelfReg="false"/>
-    <ROW File="ender2.svg" Component_="cr10.svg" FileName="ender2.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\ender2.svg" SelfReg="false"/>
-    <ROW File="ender2pro.svg" Component_="cr10.svg" FileName="ENDER2~1.SVG|ender2pro.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\ender2pro.svg" SelfReg="false"/>
-    <ROW File="ender2pro_bed.stl" Component_="cr10.svg" FileName="ENDER2~1.STL|ender2pro_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\ender2pro_bed.stl" SelfReg="false"/>
-    <ROW File="ENDER2PRO_thumbnail.png" Component_="cr10.svg" FileName="ENDER2~1.PNG|ENDER2PRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER2PRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="ender2_bed.stl" Component_="cr10.svg" FileName="ENDER2~2.STL|ender2_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\ender2_bed.stl" SelfReg="false"/>
-    <ROW File="ENDER2_thumbnail.png" Component_="cr10.svg" FileName="ENDER2~2.PNG|ENDER2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER2_thumbnail.png" SelfReg="false"/>
-    <ROW File="ender3.svg" Component_="cr10.svg" FileName="ender3.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\ender3.svg" SelfReg="false"/>
-    <ROW File="ENDER3BLTOUCH_thumbnail.png" Component_="cr10.svg" FileName="ENDER3~1.PNG|ENDER3BLTOUCH_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER3BLTOUCH_thumbnail.png" SelfReg="false"/>
-    <ROW File="ENDER3MAXNEO_thumbnail.png" Component_="cr10.svg" FileName="ENDER3~2.PNG|ENDER3MAXNEO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER3MAXNEO_thumbnail.png" SelfReg="false"/>
-    <ROW File="ENDER3MAX_thumbnail.png" Component_="cr10.svg" FileName="ENDER3~3.PNG|ENDER3MAX_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER3MAX_thumbnail.png" SelfReg="false"/>
-    <ROW File="ENDER3NEO_thumbnail.png" Component_="cr10.svg" FileName="ENDER3~4.PNG|ENDER3NEO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER3NEO_thumbnail.png" SelfReg="false"/>
-    <ROW File="ENDER3PRO_thumbnail.png" Component_="cr10.svg" FileName="ENDER3~5.PNG|ENDER3PRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER3PRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="ENDER3S1PLUS_thumbnail.png" Component_="cr10.svg" FileName="ENDER3~6.PNG|ENDER3S1PLUS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER3S1PLUS_thumbnail.png" SelfReg="false"/>
-    <ROW File="ENDER3S1PRO_thumbnail.png" Component_="cr10.svg" FileName="ENDER3~7.PNG|ENDER3S1PRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER3S1PRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="ENDER3S1_thumbnail.png" Component_="cr10.svg" FileName="ENDER3~8.PNG|ENDER3S1_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER3S1_thumbnail.png" SelfReg="false"/>
-    <ROW File="ender3v2.svg" Component_="cr10.svg" FileName="ender3v2.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\ender3v2.svg" SelfReg="false"/>
-    <ROW File="ENDER3V2NEO_thumbnail.png" Component_="cr10.svg" FileName="ENDER3~9.PNG|ENDER3V2NEO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER3V2NEO_thumbnail.png" SelfReg="false"/>
-    <ROW File="ender3v2_bed.stl" Component_="cr10.svg" FileName="ENDER3~1.STL|ender3v2_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\ender3v2_bed.stl" SelfReg="false"/>
-    <ROW File="ENDER3V2_thumbnail.png" Component_="cr10.svg" FileName="ENDER~10.PNG|ENDER3V2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER3V2_thumbnail.png" SelfReg="false"/>
-    <ROW File="ender3_bed.stl" Component_="cr10.svg" FileName="ENDER3~2.STL|ender3_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\ender3_bed.stl" SelfReg="false"/>
-    <ROW File="ENDER3_thumbnail.png" Component_="cr10.svg" FileName="ENDER~11.PNG|ENDER3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER3_thumbnail.png" SelfReg="false"/>
-    <ROW File="ENDER4_thumbnail.png" Component_="cr10.svg" FileName="ENDER4~1.PNG|ENDER4_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER4_thumbnail.png" SelfReg="false"/>
-    <ROW File="ender5plus.svg" Component_="cr10.svg" FileName="ENDER5~1.SVG|ender5plus.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\ender5plus.svg" SelfReg="false"/>
-    <ROW File="ender5plus_bed.stl" Component_="cr10.svg" FileName="ENDER5~1.STL|ender5plus_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\ender5plus_bed.stl" SelfReg="false"/>
-    <ROW File="ENDER5PLUS_thumbnail.png" Component_="cr10.svg" FileName="ENDER5~1.PNG|ENDER5PLUS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER5PLUS_thumbnail.png" SelfReg="false"/>
-    <ROW File="ENDER5PRO_thumbnail.png" Component_="cr10.svg" FileName="ENDER5~2.PNG|ENDER5PRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER5PRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="ENDER5S1_thumbnail.png" Component_="cr10.svg" FileName="ENDER5~3.PNG|ENDER5S1_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER5S1_thumbnail.png" SelfReg="false"/>
-    <ROW File="ENDER5_thumbnail.png" Component_="cr10.svg" FileName="ENDER5~4.PNG|ENDER5_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER5_thumbnail.png" SelfReg="false"/>
-    <ROW File="ender6.svg" Component_="cr10.svg" FileName="ender6.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\ender6.svg" SelfReg="false"/>
-    <ROW File="ender6_bed.stl" Component_="cr10.svg" FileName="ENDER6~1.STL|ender6_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\ender6_bed.stl" SelfReg="false"/>
-    <ROW File="ENDER6_thumbnail.png" Component_="cr10.svg" FileName="ENDER6~1.PNG|ENDER6_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER6_thumbnail.png" SelfReg="false"/>
-    <ROW File="ender7.svg" Component_="cr10.svg" FileName="ender7.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\ender7.svg" SelfReg="false"/>
-    <ROW File="ender7_bed.stl" Component_="cr10.svg" FileName="ENDER7~1.STL|ender7_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\ender7_bed.stl" SelfReg="false"/>
-    <ROW File="ENDER7_thumbnail.png" Component_="cr10.svg" FileName="ENDER7~1.PNG|ENDER7_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\ENDER7_thumbnail.png" SelfReg="false"/>
-    <ROW File="sermoond1.svg" Component_="cr10.svg" FileName="SERMOO~1.SVG|sermoond1.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\sermoond1.svg" SelfReg="false"/>
-    <ROW File="sermoond1_bed.stl" Component_="cr10.svg" FileName="SERMOO~1.STL|sermoond1_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\sermoond1_bed.stl" SelfReg="false"/>
-    <ROW File="SERMOOND1_thumbnail.png" Component_="cr10.svg" FileName="SERMOO~1.PNG|SERMOOND1_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\SERMOOND1_thumbnail.png" SelfReg="false"/>
-    <ROW File="sermoonv1.svg" Component_="cr10.svg" FileName="SERMOO~2.SVG|sermoonv1.svg" Attributes="0" SourcePath="..\resources\profiles\Creality\sermoonv1.svg" SelfReg="false"/>
-    <ROW File="SERMOONV1PRO_thumbnail.png" Component_="cr10.svg" FileName="SERMOO~2.PNG|SERMOONV1PRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\SERMOONV1PRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="sermoonv1_bed.stl" Component_="cr10.svg" FileName="SERMOO~2.STL|sermoonv1_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Creality\sermoonv1_bed.stl" SelfReg="false"/>
-    <ROW File="SERMOONV1_thumbnail.png" Component_="cr10.svg" FileName="SERMOO~3.PNG|SERMOONV1_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Creality\SERMOONV1_thumbnail.png" SelfReg="false"/>
-    <ROW File="Creality.idx_1" Component_="Anker.idx" FileName="Creality.idx" Attributes="0" SourcePath="..\resources\profiles\Creality.idx" SelfReg="false"/>
-    <ROW File="Creality.ini" Component_="Anker.idx" FileName="Creality.ini" Attributes="0" SourcePath="..\resources\profiles\Creality.ini" SelfReg="false"/>
-    <ROW File="NEPTUNE1_thumbnail.png" Component_="NEPTUNE1_thumbnail.png" FileName="NEPTUN~1.PNG|NEPTUNE1_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Elegoo\NEPTUNE1_thumbnail.png" SelfReg="false"/>
-    <ROW File="NEPTUNE2D_thumbnail.png" Component_="NEPTUNE1_thumbnail.png" FileName="NEPTUN~2.PNG|NEPTUNE2D_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Elegoo\NEPTUNE2D_thumbnail.png" SelfReg="false"/>
-    <ROW File="NEPTUNE2S_thumbnail.png" Component_="NEPTUNE1_thumbnail.png" FileName="NEPTUN~3.PNG|NEPTUNE2S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Elegoo\NEPTUNE2S_thumbnail.png" SelfReg="false"/>
-    <ROW File="NEPTUNE2_thumbnail.png" Component_="NEPTUNE1_thumbnail.png" FileName="NEPTUN~4.PNG|NEPTUNE2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Elegoo\NEPTUNE2_thumbnail.png" SelfReg="false"/>
-    <ROW File="NEPTUNE3MAX_thumbnail.png" Component_="NEPTUNE1_thumbnail.png" FileName="NEPTUN~5.PNG|NEPTUNE3MAX_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Elegoo\NEPTUNE3MAX_thumbnail.png" SelfReg="false"/>
-    <ROW File="NEPTUNE3PLUS_thumbnail.png" Component_="NEPTUNE1_thumbnail.png" FileName="NEPTUN~6.PNG|NEPTUNE3PLUS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Elegoo\NEPTUNE3PLUS_thumbnail.png" SelfReg="false"/>
-    <ROW File="NEPTUNE3PRO_thumbnail.png" Component_="NEPTUNE1_thumbnail.png" FileName="NEPTUN~7.PNG|NEPTUNE3PRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Elegoo\NEPTUNE3PRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="NEPTUNE3_thumbnail.png" Component_="NEPTUNE1_thumbnail.png" FileName="NEPTUN~8.PNG|NEPTUNE3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Elegoo\NEPTUNE3_thumbnail.png" SelfReg="false"/>
-    <ROW File="NEPTUNEX_thumbnail.png" Component_="NEPTUNE1_thumbnail.png" FileName="NEPTUN~9.PNG|NEPTUNEX_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Elegoo\NEPTUNEX_thumbnail.png" SelfReg="false"/>
-    <ROW File="Elegoo.idx_1" Component_="Anker.idx" FileName="Elegoo.idx" Attributes="0" SourcePath="..\resources\profiles\Elegoo.idx" SelfReg="false"/>
-    <ROW File="Elegoo.ini" Component_="Anker.idx" FileName="Elegoo.ini" Attributes="0" SourcePath="..\resources\profiles\Elegoo.ini" SelfReg="false"/>
-    <ROW File="Q5.svg" Component_="Q5.svg" FileName="Q5.svg" Attributes="0" SourcePath="..\resources\profiles\FLSun\Q5.svg" SelfReg="false"/>
-    <ROW File="Q5_bed.stl" Component_="Q5.svg" FileName="Q5_bed.stl" Attributes="0" SourcePath="..\resources\profiles\FLSun\Q5_bed.stl" SelfReg="false"/>
-    <ROW File="Q5_thumbnail.png" Component_="Q5.svg" FileName="Q5_THU~1.PNG|Q5_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\FLSun\Q5_thumbnail.png" SelfReg="false"/>
-    <ROW File="QQSP.svg" Component_="Q5.svg" FileName="QQSP.svg" Attributes="0" SourcePath="..\resources\profiles\FLSun\QQSP.svg" SelfReg="false"/>
-    <ROW File="QQSP_bed.stl" Component_="Q5.svg" FileName="QQSP_bed.stl" Attributes="0" SourcePath="..\resources\profiles\FLSun\QQSP_bed.stl" SelfReg="false"/>
-    <ROW File="QQSP_thumbnail.png" Component_="Q5.svg" FileName="QQSP_T~1.PNG|QQSP_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\FLSun\QQSP_thumbnail.png" SelfReg="false"/>
-    <ROW File="FLSun.idx_1" Component_="Anker.idx" FileName="FLSun.idx" Attributes="0" SourcePath="..\resources\profiles\FLSun.idx" SelfReg="false"/>
-    <ROW File="FLSun.ini" Component_="Anker.idx" FileName="FLSun.ini" Attributes="0" SourcePath="..\resources\profiles\FLSun.ini" SelfReg="false"/>
-    <ROW File="gmax15p.svg" Component_="gmax15p.svg" FileName="gmax15p.svg" Attributes="0" SourcePath="..\resources\profiles\gCreate\gmax15p.svg" SelfReg="false"/>
-    <ROW File="gmax15p_bed.stl" Component_="gmax15p.svg" FileName="GMAX15~1.STL|gmax15p_bed.stl" Attributes="0" SourcePath="..\resources\profiles\gCreate\gmax15p_bed.stl" SelfReg="false"/>
-    <ROW File="GMAX15P_thumbnail.png" Component_="gmax15p.svg" FileName="GMAX15~1.PNG|GMAX15P_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\gCreate\GMAX15P_thumbnail.png" SelfReg="false"/>
-    <ROW File="gmax2.svg" Component_="gmax15p.svg" FileName="gmax2.svg" Attributes="0" SourcePath="..\resources\profiles\gCreate\gmax2.svg" SelfReg="false"/>
-    <ROW File="GMAX2DUAL2IN1_thumbnail.png" Component_="gmax15p.svg" FileName="GMAX2D~1.PNG|GMAX2DUAL2IN1_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\gCreate\GMAX2DUAL2IN1_thumbnail.png" SelfReg="false"/>
-    <ROW File="GMAX2DUAL_thumbnail.png" Component_="gmax15p.svg" FileName="GMAX2D~2.PNG|GMAX2DUAL_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\gCreate\GMAX2DUAL_thumbnail.png" SelfReg="false"/>
-    <ROW File="GMAX2PRO_thumbnail.png" Component_="gmax15p.svg" FileName="GMAX2P~1.PNG|GMAX2PRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\gCreate\GMAX2PRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="gmax2_bed.stl" Component_="gmax15p.svg" FileName="GMAX2_~1.STL|gmax2_bed.stl" Attributes="0" SourcePath="..\resources\profiles\gCreate\gmax2_bed.stl" SelfReg="false"/>
-    <ROW File="GMAX2_thumbnail.png" Component_="gmax15p.svg" FileName="GMAX2_~1.PNG|GMAX2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\gCreate\GMAX2_thumbnail.png" SelfReg="false"/>
-    <ROW File="gCreate.idx_1" Component_="Anker.idx" FileName="gCreate.idx" Attributes="0" SourcePath="..\resources\profiles\gCreate.idx" SelfReg="false"/>
-    <ROW File="gCreate.ini" Component_="Anker.idx" FileName="gCreate.ini" Attributes="0" SourcePath="..\resources\profiles\gCreate.ini" SelfReg="false"/>
-    <ROW File="X130.stl" Component_="X130.stl" FileName="125X130.stl" Attributes="0" SourcePath="..\resources\profiles\Geeetech\125X130.stl" SelfReg="false"/>
-    <ROW File="x130.svg" Component_="X130.stl" FileName="125x130.svg" Attributes="0" SourcePath="..\resources\profiles\Geeetech\125x130.svg" SelfReg="false"/>
-    <ROW File="x150.stl" Component_="X130.stl" FileName="150x150.stl" Attributes="0" SourcePath="..\resources\profiles\Geeetech\150x150.stl" SelfReg="false"/>
-    <ROW File="x150.svg" Component_="X130.stl" FileName="150x150.svg" Attributes="0" SourcePath="..\resources\profiles\Geeetech\150x150.svg" SelfReg="false"/>
-    <ROW File="x160.stl" Component_="X130.stl" FileName="160x160.stl" Attributes="0" SourcePath="..\resources\profiles\Geeetech\160x160.stl" SelfReg="false"/>
-    <ROW File="x160.svg" Component_="X130.stl" FileName="160x160.svg" Attributes="0" SourcePath="..\resources\profiles\Geeetech\160x160.svg" SelfReg="false"/>
-    <ROW File="X150.stl_1" Component_="X130.stl" FileName="180X150.stl" Attributes="0" SourcePath="..\resources\profiles\Geeetech\180X150.stl" SelfReg="false"/>
-    <ROW File="x150.svg_1" Component_="X130.stl" FileName="180x150.svg" Attributes="0" SourcePath="..\resources\profiles\Geeetech\180x150.svg" SelfReg="false"/>
-    <ROW File="x200.stl" Component_="X130.stl" FileName="200x200.stl" Attributes="0" SourcePath="..\resources\profiles\Geeetech\200x200.stl" SelfReg="false"/>
-    <ROW File="x200.svg" Component_="X130.stl" FileName="200x200.svg" Attributes="0" SourcePath="..\resources\profiles\Geeetech\200x200.svg" SelfReg="false"/>
-    <ROW File="x220.stl" Component_="X130.stl" FileName="220x220.stl" Attributes="0" SourcePath="..\resources\profiles\Geeetech\220x220.stl" SelfReg="false"/>
-    <ROW File="x220.svg" Component_="X130.stl" FileName="220x220.svg" Attributes="0" SourcePath="..\resources\profiles\Geeetech\220x220.svg" SelfReg="false"/>
-    <ROW File="x250.stl" Component_="X130.stl" FileName="250x250.stl" Attributes="0" SourcePath="..\resources\profiles\Geeetech\250x250.stl" SelfReg="false"/>
-    <ROW File="x250.svg" Component_="X130.stl" FileName="250x250.svg" Attributes="0" SourcePath="..\resources\profiles\Geeetech\250x250.svg" SelfReg="false"/>
-    <ROW File="x255.stl" Component_="X130.stl" FileName="255x255.stl" Attributes="0" SourcePath="..\resources\profiles\Geeetech\255x255.stl" SelfReg="false"/>
-    <ROW File="x255.svg" Component_="X130.stl" FileName="255x255.svg" Attributes="0" SourcePath="..\resources\profiles\Geeetech\255x255.svg" SelfReg="false"/>
-    <ROW File="x180.stl" Component_="X130.stl" FileName="300x180.stl" Attributes="0" SourcePath="..\resources\profiles\Geeetech\300x180.stl" SelfReg="false"/>
-    <ROW File="x180.svg" Component_="X130.stl" FileName="300x180.svg" Attributes="0" SourcePath="..\resources\profiles\Geeetech\300x180.svg" SelfReg="false"/>
-    <ROW File="x320.stl" Component_="X130.stl" FileName="320x320.stl" Attributes="0" SourcePath="..\resources\profiles\Geeetech\320x320.stl" SelfReg="false"/>
-    <ROW File="x320.svg" Component_="X130.stl" FileName="320x320.svg" Attributes="0" SourcePath="..\resources\profiles\Geeetech\320x320.svg" SelfReg="false"/>
-    <ROW File="A10M_thumbnail.png" Component_="X130.stl" FileName="A10M_T~1.PNG|A10M_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\A10M_thumbnail.png" SelfReg="false"/>
-    <ROW File="A10Pro_thumbnail.png" Component_="X130.stl" FileName="A10PRO~1.PNG|A10Pro_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\A10Pro_thumbnail.png" SelfReg="false"/>
-    <ROW File="A10T_thumbnail.png" Component_="X130.stl" FileName="A10T_T~1.PNG|A10T_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\A10T_thumbnail.png" SelfReg="false"/>
-    <ROW File="A20M_thumbnail.png" Component_="X130.stl" FileName="A20M_T~1.PNG|A20M_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\A20M_thumbnail.png" SelfReg="false"/>
-    <ROW File="A20T_thumbnail.png" Component_="X130.stl" FileName="A20T_T~1.PNG|A20T_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\A20T_thumbnail.png" SelfReg="false"/>
-    <ROW File="A20_thumbnail.png" Component_="X130.stl" FileName="A20_TH~1.PNG|A20_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\A20_thumbnail.png" SelfReg="false"/>
-    <ROW File="A30M_thumbnail.png" Component_="X130.stl" FileName="A30M_T~1.PNG|A30M_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\A30M_thumbnail.png" SelfReg="false"/>
-    <ROW File="A30Pro_thumbnail.png" Component_="X130.stl" FileName="A30PRO~1.PNG|A30Pro_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\A30Pro_thumbnail.png" SelfReg="false"/>
-    <ROW File="A30T_thumbnail.png" Component_="X130.stl" FileName="A30T_T~1.PNG|A30T_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\A30T_thumbnail.png" SelfReg="false"/>
-    <ROW File="E180_thumbnail.png" Component_="X130.stl" FileName="E180_T~1.PNG|E180_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\E180_thumbnail.png" SelfReg="false"/>
-    <ROW File="GiantArmD200_thumbnail.png" Component_="X130.stl" FileName="GIANTA~1.PNG|GiantArmD200_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\GiantArmD200_thumbnail.png" SelfReg="false"/>
-    <ROW File="I3ProB_thumbnail.png" Component_="X130.stl" FileName="I3PROB~1.PNG|I3ProB_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\I3ProB_thumbnail.png" SelfReg="false"/>
-    <ROW File="I3ProC_thumbnail.png" Component_="X130.stl" FileName="I3PROC~1.PNG|I3ProC_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\I3ProC_thumbnail.png" SelfReg="false"/>
-    <ROW File="I3ProW_thumbnail.png" Component_="X130.stl" FileName="I3PROW~1.PNG|I3ProW_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\I3ProW_thumbnail.png" SelfReg="false"/>
-    <ROW File="MeCreator2_thumbnail.png" Component_="X130.stl" FileName="MECREA~1.PNG|MeCreator2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\MeCreator2_thumbnail.png" SelfReg="false"/>
-    <ROW File="MeCreator_thumbnail.png" Component_="X130.stl" FileName="MECREA~2.PNG|MeCreator_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\MeCreator_thumbnail.png" SelfReg="false"/>
-    <ROW File="MeDucer_thumbnail.png" Component_="X130.stl" FileName="MEDUCE~1.PNG|MeDucer_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\MeDucer_thumbnail.png" SelfReg="false"/>
-    <ROW File="MizarMax_thumbnail.png" Component_="X130.stl" FileName="MIZARM~1.PNG|MizarMax_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\MizarMax_thumbnail.png" SelfReg="false"/>
-    <ROW File="MizarM_thumbnail.png" Component_="X130.stl" FileName="MIZARM~2.PNG|MizarM_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\MizarM_thumbnail.png" SelfReg="false"/>
-    <ROW File="MizarPro_thumbnail.png" Component_="X130.stl" FileName="MIZARP~1.PNG|MizarPro_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\MizarPro_thumbnail.png" SelfReg="false"/>
-    <ROW File="MizarS_thumbnail.png" Component_="X130.stl" FileName="MIZARS~1.PNG|MizarS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\MizarS_thumbnail.png" SelfReg="false"/>
-    <ROW File="Mizar_thumbnail.png" Component_="X130.stl" FileName="MIZAR_~1.PNG|Mizar_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\Mizar_thumbnail.png" SelfReg="false"/>
-    <ROW File="ThunderPro_thumbnail.png" Component_="X130.stl" FileName="THUNDE~1.PNG|ThunderPro_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\ThunderPro_thumbnail.png" SelfReg="false"/>
-    <ROW File="Thunder_thumbnail.png" Component_="X130.stl" FileName="THUNDE~2.PNG|Thunder_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Geeetech\Thunder_thumbnail.png" SelfReg="false"/>
-    <ROW File="Geeetech.idx" Component_="Anker.idx" FileName="Geeetech.idx" Attributes="0" SourcePath="..\resources\profiles\Geeetech.idx" SelfReg="false"/>
-    <ROW File="Geeetech.ini" Component_="Anker.idx" FileName="Geeetech.ini" Attributes="0" SourcePath="..\resources\profiles\Geeetech.ini" SelfReg="false"/>
-    <ROW File="PROTON_XE750_thumbnail.png" Component_="PROTON_XE750_thumbnail.png" FileName="PROTON~1.PNG|PROTON_XE750_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\INAT\PROTON_XE750_thumbnail.png" SelfReg="false"/>
-    <ROW File="PROTON_X_RAIL_thumbnail.png" Component_="PROTON_XE750_thumbnail.png" FileName="PROTON~2.PNG|PROTON_X_RAIL_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\INAT\PROTON_X_RAIL_thumbnail.png" SelfReg="false"/>
-    <ROW File="PROTON_X_ROD_thumbnail.png" Component_="PROTON_XE750_thumbnail.png" FileName="PROTON~3.PNG|PROTON_X_ROD_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\INAT\PROTON_X_ROD_thumbnail.png" SelfReg="false"/>
-    <ROW File="INAT.idx_1" Component_="Anker.idx" FileName="INAT.idx" Attributes="0" SourcePath="..\resources\profiles\INAT.idx" SelfReg="false"/>
-    <ROW File="INAT.ini" Component_="Anker.idx" FileName="INAT.ini" Attributes="0" SourcePath="..\resources\profiles\INAT.ini" SelfReg="false"/>
-    <ROW File="DEV200_thumbnail.png" Component_="DEV200_thumbnail.png" FileName="DEV-20~1.PNG|DEV-200_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Infinity3D\DEV-200_thumbnail.png" SelfReg="false"/>
-    <ROW File="DEV350_thumbnail.png" Component_="DEV200_thumbnail.png" FileName="DEV-35~1.PNG|DEV-350_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Infinity3D\DEV-350_thumbnail.png" SelfReg="false"/>
-    <ROW File="DEV_200_bed.stl" Component_="DEV200_thumbnail.png" FileName="DEV_20~1.STL|DEV_200_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Infinity3D\DEV_200_bed.stl" SelfReg="false"/>
-    <ROW File="DEV_200_texture.svg" Component_="DEV200_thumbnail.png" FileName="DEV_20~1.SVG|DEV_200_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Infinity3D\DEV_200_texture.svg" SelfReg="false"/>
-    <ROW File="DEV_350_bed.stl" Component_="DEV200_thumbnail.png" FileName="DEV_35~1.STL|DEV_350_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Infinity3D\DEV_350_bed.stl" SelfReg="false"/>
-    <ROW File="DEV_350_texture.svg" Component_="DEV200_thumbnail.png" FileName="DEV_35~1.SVG|DEV_350_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Infinity3D\DEV_350_texture.svg" SelfReg="false"/>
-    <ROW File="Infinity3D.idx_1" Component_="Anker.idx" FileName="INFINI~1.IDX|Infinity3D.idx" Attributes="0" SourcePath="..\resources\profiles\Infinity3D.idx" SelfReg="false"/>
-    <ROW File="Infinity3D.ini" Component_="Anker.idx" FileName="INFINI~1.INI|Infinity3D.ini" Attributes="0" SourcePath="..\resources\profiles\Infinity3D.ini" SelfReg="false"/>
-    <ROW File="Jubilee_bed.stl" Component_="Jubilee_bed.stl" FileName="JUBILE~1.STL|Jubilee_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Jubilee\Jubilee_bed.stl" SelfReg="false"/>
-    <ROW File="Jubilee_texture.svg" Component_="Jubilee_bed.stl" FileName="JUBILE~1.SVG|Jubilee_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Jubilee\Jubilee_texture.svg" SelfReg="false"/>
-    <ROW File="Jubilee_thumbnail.png" Component_="Jubilee_bed.stl" FileName="JUBILE~1.PNG|Jubilee_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Jubilee\Jubilee_thumbnail.png" SelfReg="false"/>
-    <ROW File="Jubilee.idx_1" Component_="Anker.idx" FileName="Jubilee.idx" Attributes="0" SourcePath="..\resources\profiles\Jubilee.idx" SelfReg="false"/>
-    <ROW File="Jubilee.ini" Component_="Anker.idx" FileName="Jubilee.ini" Attributes="0" SourcePath="..\resources\profiles\Jubilee.ini" SelfReg="false"/>
-    <ROW File="MINI_AERO_thumbnail.png" Component_="MINI_AERO_thumbnail.png" FileName="MINI_A~1.PNG|MINI_AERO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\LulzBot\MINI_AERO_thumbnail.png" SelfReg="false"/>
-    <ROW File="TAZ6_AERO_thumbnail.png" Component_="MINI_AERO_thumbnail.png" FileName="TAZ6_A~1.PNG|TAZ6_AERO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\LulzBot\TAZ6_AERO_thumbnail.png" SelfReg="false"/>
-    <ROW File="TAZ_WORKHORSE_thumbnail.png" Component_="MINI_AERO_thumbnail.png" FileName="TAZ_WO~1.PNG|TAZ_WORKHORSE_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\LulzBot\TAZ_WORKHORSE_thumbnail.png" SelfReg="false"/>
-    <ROW File="LulzBot.idx_1" Component_="Anker.idx" FileName="LulzBot.idx" Attributes="0" SourcePath="..\resources\profiles\LulzBot.idx" SelfReg="false"/>
-    <ROW File="LulzBot.ini" Component_="Anker.idx" FileName="LulzBot.ini" Attributes="0" SourcePath="..\resources\profiles\LulzBot.ini" SelfReg="false"/>
-    <ROW File="M2_M3.stl" Component_="M2_M3.stl" FileName="M2_M3.stl" Attributes="0" SourcePath="..\resources\profiles\MakerGear\M2_M3.stl" SelfReg="false"/>
-    <ROW File="M2_M3.svg" Component_="M2_M3.stl" FileName="M2_M3.svg" Attributes="0" SourcePath="..\resources\profiles\MakerGear\M2_M3.svg" SelfReg="false"/>
-    <ROW File="MAKERGEAR_M2_DUAL_thumbnail.png" Component_="M2_M3.stl" FileName="MAKERG~1.PNG|MAKERGEAR_M2_DUAL_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\MakerGear\MAKERGEAR_M2_DUAL_thumbnail.png" SelfReg="false"/>
-    <ROW File="MAKERGEAR_M2_thumbnail.png" Component_="M2_M3.stl" FileName="MAKERG~2.PNG|MAKERGEAR_M2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\MakerGear\MAKERGEAR_M2_thumbnail.png" SelfReg="false"/>
-    <ROW File="MAKERGEAR_M3_DUPLICATION_thumbnail.png" Component_="M2_M3.stl" FileName="MAKERG~3.PNG|MAKERGEAR_M3_DUPLICATION_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\MakerGear\MAKERGEAR_M3_DUPLICATION_thumbnail.png" SelfReg="false"/>
-    <ROW File="MAKERGEAR_M3_SE_thumbnail.png" Component_="M2_M3.stl" FileName="MAKERG~4.PNG|MAKERGEAR_M3_SE_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\MakerGear\MAKERGEAR_M3_SE_thumbnail.png" SelfReg="false"/>
-    <ROW File="MAKERGEAR_M3_thumbnail.png" Component_="M2_M3.stl" FileName="MAKERG~5.PNG|MAKERGEAR_M3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\MakerGear\MAKERGEAR_M3_thumbnail.png" SelfReg="false"/>
-    <ROW File="MAKERGEAR_MICRO_thumbnail.png" Component_="M2_M3.stl" FileName="MAKERG~6.PNG|MAKERGEAR_MICRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\MakerGear\MAKERGEAR_MICRO_thumbnail.png" SelfReg="false"/>
-    <ROW File="MAKERGEAR_U1_thumbnail.png" Component_="M2_M3.stl" FileName="MAKERG~7.PNG|MAKERGEAR_U1_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\MakerGear\MAKERGEAR_U1_thumbnail.png" SelfReg="false"/>
-    <ROW File="MakerGear.idx" Component_="Anker.idx" FileName="MAKERG~1.IDX|MakerGear.idx" Attributes="0" SourcePath="..\resources\profiles\MakerGear.idx" SelfReg="false"/>
-    <ROW File="MakerGear.ini" Component_="Anker.idx" FileName="MAKERG~1.INI|MakerGear.ini" Attributes="0" SourcePath="..\resources\profiles\MakerGear.ini" SelfReg="false"/>
-    <ROW File="MC2.0_bed.stl" Component_="MC2.0_bed.stl" FileName="MC20_B~1.STL|MC2.0_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Print4Taste\MC2.0_bed.stl" SelfReg="false"/>
-    <ROW File="MC2.0_texture.svg" Component_="MC2.0_bed.stl" FileName="MC20_T~1.SVG|MC2.0_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Print4Taste\MC2.0_texture.svg" SelfReg="false"/>
-    <ROW File="MC2.0_thumbnail.png" Component_="MC2.0_bed.stl" FileName="MC20_T~1.PNG|MC2.0_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Print4Taste\MC2.0_thumbnail.png" SelfReg="false"/>
-    <ROW File="Print4Taste.idx" Component_="Anker.idx" FileName="PRINT4~1.IDX|Print4Taste.idx" Attributes="0" SourcePath="..\resources\profiles\Print4Taste.idx" SelfReg="false"/>
-    <ROW File="Print4Taste.ini" Component_="Anker.idx" FileName="PRINT4~1.INI|Print4Taste.ini" Attributes="0" SourcePath="..\resources\profiles\Print4Taste.ini" SelfReg="false"/>
     <ROW File="mini.svg" Component_="mini.svg" FileName="mini.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mini.svg" SelfReg="false"/>
     <ROW File="mini_bed.stl" Component_="mini.svg" FileName="mini_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mini_bed.stl" SelfReg="false"/>
     <ROW File="MINI_thumbnail.png" Component_="mini.svg" FileName="MINI_T~1.PNG|MINI_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MINI_thumbnail.png" SelfReg="false"/>
@@ -892,101 +506,6 @@
     <ROW File="SL1_thumbnail.png" Component_="mini.svg" FileName="SL1_TH~1.PNG|SL1_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\SL1_thumbnail.png" SelfReg="false"/>
     <ROW File="PrusaResearch.idx_1" Component_="Anker.idx" FileName="PRUSAR~1.IDX|PrusaResearch.idx" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch.idx" SelfReg="false"/>
     <ROW File="PrusaResearch.ini_1" Component_="Anker.idx" FileName="PRUSAR~1.INI|PrusaResearch.ini" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch.ini" SelfReg="false"/>
-    <ROW File="rrvc300.stl" Component_="rrvc300.stl" FileName="RR-VC-~1.STL|rr-vc-300.stl" Attributes="0" SourcePath="..\resources\profiles\RatRig\rr-vc-300.stl" SelfReg="false"/>
-    <ROW File="rrvc300.svg" Component_="rrvc300.stl" FileName="RR-VC-~1.SVG|rr-vc-300.svg" Attributes="0" SourcePath="..\resources\profiles\RatRig\rr-vc-300.svg" SelfReg="false"/>
-    <ROW File="rrvc400.stl" Component_="rrvc300.stl" FileName="RR-VC-~2.STL|rr-vc-400.stl" Attributes="0" SourcePath="..\resources\profiles\RatRig\rr-vc-400.stl" SelfReg="false"/>
-    <ROW File="rrvc400.svg" Component_="rrvc300.stl" FileName="RR-VC-~2.SVG|rr-vc-400.svg" Attributes="0" SourcePath="..\resources\profiles\RatRig\rr-vc-400.svg" SelfReg="false"/>
-    <ROW File="rrvc500.stl" Component_="rrvc300.stl" FileName="RR-VC-~3.STL|rr-vc-500.stl" Attributes="0" SourcePath="..\resources\profiles\RatRig\rr-vc-500.stl" SelfReg="false"/>
-    <ROW File="rrvc500.svg" Component_="rrvc300.stl" FileName="RR-VC-~3.SVG|rr-vc-500.svg" Attributes="0" SourcePath="..\resources\profiles\RatRig\rr-vc-500.svg" SelfReg="false"/>
-    <ROW File="rrvminion.stl" Component_="rrvc300.stl" FileName="RR-VMI~1.STL|rr-vminion.stl" Attributes="0" SourcePath="..\resources\profiles\RatRig\rr-vminion.stl" SelfReg="false"/>
-    <ROW File="rrvminion.svg" Component_="rrvc300.stl" FileName="RR-VMI~1.SVG|rr-vminion.svg" Attributes="0" SourcePath="..\resources\profiles\RatRig\rr-vminion.svg" SelfReg="false"/>
-    <ROW File="VC3_300_thumbnail.png" Component_="rrvc300.stl" FileName="VC3_30~1.PNG|VC3_300_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\RatRig\VC3_300_thumbnail.png" SelfReg="false"/>
-    <ROW File="VC3_400_thumbnail.png" Component_="rrvc300.stl" FileName="VC3_40~1.PNG|VC3_400_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\RatRig\VC3_400_thumbnail.png" SelfReg="false"/>
-    <ROW File="VC3_500_thumbnail.png" Component_="rrvc300.stl" FileName="VC3_50~1.PNG|VC3_500_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\RatRig\VC3_500_thumbnail.png" SelfReg="false"/>
-    <ROW File="VMINION_thumbnail.png" Component_="rrvc300.stl" FileName="VMINIO~1.PNG|VMINION_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\RatRig\VMINION_thumbnail.png" SelfReg="false"/>
-    <ROW File="RatRig.idx_1" Component_="Anker.idx" FileName="RatRig.idx" Attributes="0" SourcePath="..\resources\profiles\RatRig.idx" SelfReg="false"/>
-    <ROW File="RatRig.ini" Component_="Anker.idx" FileName="RatRig.ini" Attributes="0" SourcePath="..\resources\profiles\RatRig.ini" SelfReg="false"/>
-    <ROW File="mucit2_bed.png" Component_="mucit2_bed.png" FileName="MUCIT2~1.PNG|mucit2_bed.png" Attributes="0" SourcePath="..\resources\profiles\Rigid3D\mucit2_bed.png" SelfReg="false"/>
-    <ROW File="mucit2_bed.stl" Component_="mucit2_bed.png" FileName="MUCIT2~1.STL|mucit2_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Rigid3D\mucit2_bed.stl" SelfReg="false"/>
-    <ROW File="Mucit2_thumbnail.png" Component_="mucit2_bed.png" FileName="MUCIT2~2.PNG|Mucit2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Rigid3D\Mucit2_thumbnail.png" SelfReg="false"/>
-    <ROW File="mucit_bed.png" Component_="mucit2_bed.png" FileName="MUCIT_~1.PNG|mucit_bed.png" Attributes="0" SourcePath="..\resources\profiles\Rigid3D\mucit_bed.png" SelfReg="false"/>
-    <ROW File="mucit_bed.stl" Component_="mucit2_bed.png" FileName="MUCIT_~1.STL|mucit_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Rigid3D\mucit_bed.stl" SelfReg="false"/>
-    <ROW File="Mucit_thumbnail.png" Component_="mucit2_bed.png" FileName="MUCIT_~2.PNG|Mucit_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Rigid3D\Mucit_thumbnail.png" SelfReg="false"/>
-    <ROW File="zero2_bed.png" Component_="mucit2_bed.png" FileName="ZERO2_~1.PNG|zero2_bed.png" Attributes="0" SourcePath="..\resources\profiles\Rigid3D\zero2_bed.png" SelfReg="false"/>
-    <ROW File="Zero2_thumbnail.png" Component_="mucit2_bed.png" FileName="ZERO2_~2.PNG|Zero2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Rigid3D\Zero2_thumbnail.png" SelfReg="false"/>
-    <ROW File="zero3_bed.png" Component_="mucit2_bed.png" FileName="ZERO3_~1.PNG|zero3_bed.png" Attributes="0" SourcePath="..\resources\profiles\Rigid3D\zero3_bed.png" SelfReg="false"/>
-    <ROW File="Zero3_thumbnail.png" Component_="mucit2_bed.png" FileName="ZERO3_~2.PNG|Zero3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Rigid3D\Zero3_thumbnail.png" SelfReg="false"/>
-    <ROW File="zero_bed.stl" Component_="mucit2_bed.png" FileName="zero_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Rigid3D\zero_bed.stl" SelfReg="false"/>
-    <ROW File="Rigid3D.idx" Component_="Anker.idx" FileName="Rigid3D.idx" Attributes="0" SourcePath="..\resources\profiles\Rigid3D.idx" SelfReg="false"/>
-    <ROW File="Rigid3D.ini" Component_="Anker.idx" FileName="Rigid3D.ini" Attributes="0" SourcePath="..\resources\profiles\Rigid3D.ini" SelfReg="false"/>
-    <ROW File="A250_bed.stl" Component_="A250_bed.stl" FileName="A250_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\A250_bed.stl" SelfReg="false"/>
-    <ROW File="A250_texture.svg" Component_="A250_bed.stl" FileName="A250_T~1.SVG|A250_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\A250_texture.svg" SelfReg="false"/>
-    <ROW File="A250_thumbnail.png" Component_="A250_bed.stl" FileName="A250_T~1.PNG|A250_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\A250_thumbnail.png" SelfReg="false"/>
-    <ROW File="A350_bed.stl" Component_="A250_bed.stl" FileName="A350_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\A350_bed.stl" SelfReg="false"/>
-    <ROW File="A350_texture.svg" Component_="A250_bed.stl" FileName="A350_T~1.SVG|A350_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\A350_texture.svg" SelfReg="false"/>
-    <ROW File="A350_thumbnail.png" Component_="A250_bed.stl" FileName="A350_T~1.PNG|A350_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\A350_thumbnail.png" SelfReg="false"/>
-    <ROW File="Snapmaker.idx_1" Component_="Anker.idx" FileName="SNAPMA~1.IDX|Snapmaker.idx" Attributes="0" SourcePath="..\resources\profiles\Snapmaker.idx" SelfReg="false"/>
-    <ROW File="Snapmaker.ini" Component_="Anker.idx" FileName="SNAPMA~1.INI|Snapmaker.ini" Attributes="0" SourcePath="..\resources\profiles\Snapmaker.ini" SelfReg="false"/>
-    <ROW File="Templates.idx" Component_="Anker.idx" FileName="TEMPLA~1.IDX|Templates.idx" Attributes="0" SourcePath="..\resources\profiles\Templates.idx" SelfReg="false"/>
-    <ROW File="Templates.ini" Component_="Anker.idx" FileName="TEMPLA~1.INI|Templates.ini" Attributes="0" SourcePath="..\resources\profiles\Templates.ini" SelfReg="false"/>
-    <ROW File="AQI_thumbnail.png" Component_="AQI_thumbnail.png" FileName="AQI_TH~1.PNG|AQI_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\TriLAB\AQI_thumbnail.png" SelfReg="false"/>
-    <ROW File="aqp_bed.stl" Component_="AQI_thumbnail.png" FileName="aqp_bed.stl" Attributes="0" SourcePath="..\resources\profiles\TriLAB\aqp_bed.stl" SelfReg="false"/>
-    <ROW File="aq_bed.stl" Component_="AQI_thumbnail.png" FileName="aq_bed.stl" Attributes="0" SourcePath="..\resources\profiles\TriLAB\aq_bed.stl" SelfReg="false"/>
-    <ROW File="DQ2FP2_thumbnail.png" Component_="AQI_thumbnail.png" FileName="DQ2_FP~1.PNG|DQ2+FP2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\TriLAB\DQ2+FP2_thumbnail.png" SelfReg="false"/>
-    <ROW File="DQ2FP_thumbnail.png" Component_="AQI_thumbnail.png" FileName="DQ2_FP~2.PNG|DQ2+FP_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\TriLAB\DQ2+FP_thumbnail.png" SelfReg="false"/>
-    <ROW File="DQ2PFP2_thumbnail.png" Component_="AQI_thumbnail.png" FileName="DQ2P_F~1.PNG|DQ2P+FP2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\TriLAB\DQ2P+FP2_thumbnail.png" SelfReg="false"/>
-    <ROW File="DQ2PFP_thumbnail.png" Component_="AQI_thumbnail.png" FileName="DQ2P_F~2.PNG|DQ2P+FP_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\TriLAB\DQ2P+FP_thumbnail.png" SelfReg="false"/>
-    <ROW File="DQ2P_thumbnail.png" Component_="AQI_thumbnail.png" FileName="DQ2P_T~1.PNG|DQ2P_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\TriLAB\DQ2P_thumbnail.png" SelfReg="false"/>
-    <ROW File="dq2_bed.stl" Component_="AQI_thumbnail.png" FileName="dq2_bed.stl" Attributes="0" SourcePath="..\resources\profiles\TriLAB\dq2_bed.stl" SelfReg="false"/>
-    <ROW File="DQ2_thumbnail.png" Component_="AQI_thumbnail.png" FileName="DQ2_TH~1.PNG|DQ2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\TriLAB\DQ2_thumbnail.png" SelfReg="false"/>
-    <ROW File="DQL_thumbnail.png" Component_="AQI_thumbnail.png" FileName="DQL_TH~1.PNG|DQL_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\TriLAB\DQL_thumbnail.png" SelfReg="false"/>
-    <ROW File="DQM_thumbnail.png" Component_="AQI_thumbnail.png" FileName="DQM_TH~1.PNG|DQM_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\TriLAB\DQM_thumbnail.png" SelfReg="false"/>
-    <ROW File="DQXL_thumbnail.png" Component_="AQI_thumbnail.png" FileName="DQXL_T~1.PNG|DQXL_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\TriLAB\DQXL_thumbnail.png" SelfReg="false"/>
-    <ROW File="TriLAB.idx_1" Component_="Anker.idx" FileName="TriLAB.idx" Attributes="0" SourcePath="..\resources\profiles\TriLAB.idx" SelfReg="false"/>
-    <ROW File="TriLAB.ini" Component_="Anker.idx" FileName="TriLAB.ini" Attributes="0" SourcePath="..\resources\profiles\TriLAB.ini" SelfReg="false"/>
-    <ROW File="ultimaker2.svg" Component_="ultimaker2.svg" FileName="ULTIMA~1.SVG|ultimaker2.svg" Attributes="0" SourcePath="..\resources\profiles\Ultimaker\ultimaker2.svg" SelfReg="false"/>
-    <ROW File="ultimaker2_bed.stl" Component_="ultimaker2.svg" FileName="ULTIMA~1.STL|ultimaker2_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Ultimaker\ultimaker2_bed.stl" SelfReg="false"/>
-    <ROW File="ULTIMAKER2_thumbnail.png" Component_="ultimaker2.svg" FileName="ULTIMA~1.PNG|ULTIMAKER2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Ultimaker\ULTIMAKER2_thumbnail.png" SelfReg="false"/>
-    <ROW File="Ultimaker.idx_1" Component_="Anker.idx" FileName="ULTIMA~1.IDX|Ultimaker.idx" Attributes="0" SourcePath="..\resources\profiles\Ultimaker.idx" SelfReg="false"/>
-    <ROW File="Ultimaker.ini" Component_="Anker.idx" FileName="ULTIMA~1.INI|Ultimaker.ini" Attributes="0" SourcePath="..\resources\profiles\Ultimaker.ini" SelfReg="false"/>
-    <ROW File="bedtexturev0120.png" Component_="bedtexturev0120.png" FileName="BEDTEX~1.PNG|bedtexture-v0-120.png" Attributes="0" SourcePath="..\resources\profiles\Voron\bedtexture-v0-120.png" SelfReg="false"/>
-    <ROW File="bedtexturev1250.png" Component_="bedtexturev0120.png" FileName="BEDTEX~2.PNG|bedtexture-v1-250.png" Attributes="0" SourcePath="..\resources\profiles\Voron\bedtexture-v1-250.png" SelfReg="false"/>
-    <ROW File="bedtexturev1300.png" Component_="bedtexturev0120.png" FileName="BEDTEX~3.PNG|bedtexture-v1-300.png" Attributes="0" SourcePath="..\resources\profiles\Voron\bedtexture-v1-300.png" SelfReg="false"/>
-    <ROW File="bedtexturev2250.png" Component_="bedtexturev0120.png" FileName="BEDTEX~4.PNG|bedtexture-v2-250.png" Attributes="0" SourcePath="..\resources\profiles\Voron\bedtexture-v2-250.png" SelfReg="false"/>
-    <ROW File="bedtexturev2300.png" Component_="bedtexturev0120.png" FileName="BEDTEX~5.PNG|bedtexture-v2-300.png" Attributes="0" SourcePath="..\resources\profiles\Voron\bedtexture-v2-300.png" SelfReg="false"/>
-    <ROW File="bedtexturev2350.png" Component_="bedtexturev0120.png" FileName="BEDTEX~6.PNG|bedtexture-v2-350.png" Attributes="0" SourcePath="..\resources\profiles\Voron\bedtexture-v2-350.png" SelfReg="false"/>
-    <ROW File="printbedv0120.stl" Component_="bedtexturev0120.png" FileName="PRINTB~1.STL|printbed-v0-120.stl" Attributes="0" SourcePath="..\resources\profiles\Voron\printbed-v0-120.stl" SelfReg="false"/>
-    <ROW File="printbedv1250.stl" Component_="bedtexturev0120.png" FileName="PRINTB~2.STL|printbed-v1-250.stl" Attributes="0" SourcePath="..\resources\profiles\Voron\printbed-v1-250.stl" SelfReg="false"/>
-    <ROW File="printbedv1300.stl" Component_="bedtexturev0120.png" FileName="PRINTB~3.STL|printbed-v1-300.stl" Attributes="0" SourcePath="..\resources\profiles\Voron\printbed-v1-300.stl" SelfReg="false"/>
-    <ROW File="printbedv1350.stl" Component_="bedtexturev0120.png" FileName="PRINTB~4.STL|printbed-v1-350.stl" Attributes="0" SourcePath="..\resources\profiles\Voron\printbed-v1-350.stl" SelfReg="false"/>
-    <ROW File="printbedv2250.stl" Component_="bedtexturev0120.png" FileName="PRINTB~5.STL|printbed-v2-250.stl" Attributes="0" SourcePath="..\resources\profiles\Voron\printbed-v2-250.stl" SelfReg="false"/>
-    <ROW File="printbedv2300.stl" Component_="bedtexturev0120.png" FileName="PRINTB~6.STL|printbed-v2-300.stl" Attributes="0" SourcePath="..\resources\profiles\Voron\printbed-v2-300.stl" SelfReg="false"/>
-    <ROW File="printbedv2350.stl" Component_="bedtexturev0120.png" FileName="PRINTB~7.STL|printbed-v2-350.stl" Attributes="0" SourcePath="..\resources\profiles\Voron\printbed-v2-350.stl" SelfReg="false"/>
-    <ROW File="Voron_v0_120_thumbnail.png" Component_="bedtexturev0120.png" FileName="VORON_~1.PNG|Voron_v0_120_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Voron\Voron_v0_120_thumbnail.png" SelfReg="false"/>
-    <ROW File="Voron_v1_250_afterburner_thumbnail.png" Component_="bedtexturev0120.png" FileName="VORON_~2.PNG|Voron_v1_250_afterburner_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Voron\Voron_v1_250_afterburner_thumbnail.png" SelfReg="false"/>
-    <ROW File="Voron_v1_300_afterburner_thumbnail.png" Component_="bedtexturev0120.png" FileName="VORON_~3.PNG|Voron_v1_300_afterburner_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Voron\Voron_v1_300_afterburner_thumbnail.png" SelfReg="false"/>
-    <ROW File="Voron_v1_350_afterburner_thumbnail.png" Component_="bedtexturev0120.png" FileName="VORON_~4.PNG|Voron_v1_350_afterburner_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Voron\Voron_v1_350_afterburner_thumbnail.png" SelfReg="false"/>
-    <ROW File="Voron_v2_250_afterburner_thumbnail.png" Component_="bedtexturev0120.png" FileName="VORON_~5.PNG|Voron_v2_250_afterburner_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Voron\Voron_v2_250_afterburner_thumbnail.png" SelfReg="false"/>
-    <ROW File="Voron_v2_250_thumbnail.png" Component_="bedtexturev0120.png" FileName="VORON_~6.PNG|Voron_v2_250_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Voron\Voron_v2_250_thumbnail.png" SelfReg="false"/>
-    <ROW File="Voron_v2_300_afterburner_thumbnail.png" Component_="bedtexturev0120.png" FileName="VORON_~7.PNG|Voron_v2_300_afterburner_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Voron\Voron_v2_300_afterburner_thumbnail.png" SelfReg="false"/>
-    <ROW File="Voron_v2_300_thumbnail.png" Component_="bedtexturev0120.png" FileName="VORON_~8.PNG|Voron_v2_300_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Voron\Voron_v2_300_thumbnail.png" SelfReg="false"/>
-    <ROW File="Voron_v2_350_afterburner_thumbnail.png" Component_="bedtexturev0120.png" FileName="VORON_~9.PNG|Voron_v2_350_afterburner_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Voron\Voron_v2_350_afterburner_thumbnail.png" SelfReg="false"/>
-    <ROW File="Voron_v2_350_thumbnail.png" Component_="bedtexturev0120.png" FileName="VORON~10.PNG|Voron_v2_350_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Voron\Voron_v2_350_thumbnail.png" SelfReg="false"/>
-    <ROW File="Voron.idx_1" Component_="Anker.idx" FileName="Voron.idx" Attributes="0" SourcePath="..\resources\profiles\Voron.idx" SelfReg="false"/>
-    <ROW File="Voron.ini" Component_="Anker.idx" FileName="Voron.ini" Attributes="0" SourcePath="..\resources\profiles\Voron.ini" SelfReg="false"/>
-    <ROW File="_texture.svg" Component_="_texture.svg" FileName="150_TE~1.SVG|150_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Zonestar\150_texture.svg" SelfReg="false"/>
-    <ROW File="_texture.svg_1" Component_="_texture.svg" FileName="220_TE~1.SVG|220_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Zonestar\220_texture.svg" SelfReg="false"/>
-    <ROW File="_texture.svg_2" Component_="_texture.svg" FileName="310_TE~1.SVG|310_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Zonestar\310_texture.svg" SelfReg="false"/>
-    <ROW File="bed_150.stl" Component_="_texture.svg" FileName="bed_150.stl" Attributes="0" SourcePath="..\resources\profiles\Zonestar\bed_150.stl" SelfReg="false"/>
-    <ROW File="bed_220.stl" Component_="_texture.svg" FileName="bed_220.stl" Attributes="0" SourcePath="..\resources\profiles\Zonestar\bed_220.stl" SelfReg="false"/>
-    <ROW File="bed_310.stl" Component_="_texture.svg" FileName="bed_310.stl" Attributes="0" SourcePath="..\resources\profiles\Zonestar\bed_310.stl" SelfReg="false"/>
-    <ROW File="Z5X_thumbnail.png" Component_="_texture.svg" FileName="Z5X_TH~1.PNG|Z5X_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Zonestar\Z5X_thumbnail.png" SelfReg="false"/>
-    <ROW File="Z5_thumbnail.png" Component_="_texture.svg" FileName="Z5_THU~1.PNG|Z5_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Zonestar\Z5_thumbnail.png" SelfReg="false"/>
-    <ROW File="Z6_thumbnail.png" Component_="_texture.svg" FileName="Z6_THU~1.PNG|Z6_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Zonestar\Z6_thumbnail.png" SelfReg="false"/>
-    <ROW File="Z8_thumbnail.png" Component_="_texture.svg" FileName="Z8_THU~1.PNG|Z8_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Zonestar\Z8_thumbnail.png" SelfReg="false"/>
-    <ROW File="Z9_thumbnail.png" Component_="_texture.svg" FileName="Z9_THU~1.PNG|Z9_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Zonestar\Z9_thumbnail.png" SelfReg="false"/>
-    <ROW File="Zonestar.idx_1" Component_="Anker.idx" FileName="Zonestar.idx" Attributes="0" SourcePath="..\resources\profiles\Zonestar.idx" SelfReg="false"/>
-    <ROW File="Zonestar.ini" Component_="Anker.idx" FileName="Zonestar.ini" Attributes="0" SourcePath="..\resources\profiles\Zonestar.ini" SelfReg="false"/>
     <ROW File="background.fs" Component_="background.fs" FileName="BACKGR~1.FS|background.fs" Attributes="0" SourcePath="..\resources\shaders\110\background.fs" SelfReg="false"/>
     <ROW File="background.vs" Component_="background.fs" FileName="BACKGR~1.VS|background.vs" Attributes="0" SourcePath="..\resources\shaders\110\background.vs" SelfReg="false"/>
     <ROW File="flat.fs" Component_="background.fs" FileName="flat.fs" Attributes="0" SourcePath="..\resources\shaders\110\flat.fs" SelfReg="false"/>
@@ -1107,40 +626,10 @@
     <ROW File="universalwallmounthole.png" Component_="box.png" FileName="UNIVER~1.PNG|universal wall mount hole.png" Attributes="0" SourcePath="..\resources\shapes\universal wall mount hole.png" SelfReg="false"/>
     <ROW File="universalwallmounthole.stl" Component_="box.png" FileName="UNIVER~1.STL|universal wall mount hole.stl" Attributes="0" SourcePath="..\resources\shapes\universal wall mount hole.stl" SelfReg="false"/>
     <ROW File="dconnexion.rules" Component_="dconnexion.rules" FileName="90-3DC~1.RUL|90-3dconnexion.rules" Attributes="0" SourcePath="..\resources\udev\90-3dconnexion.rules" SelfReg="false"/>
-    <ROW File="Armadillo_Flexible_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="ARMADI~1.INI|Armadillo_Flexible_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Armadillo_Flexible_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="BASF_316LX_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="BASF_3~1.INI|BASF_316LX_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\BASF_316LX_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="BASF_316LX_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="BASF_3~2.INI|BASF_316LX_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\BASF_316LX_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="BASF_316L_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="BASF_3~3.INI|BASF_316L_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\BASF_316L_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="BasicNylon_0.4_Fine.ini" Component_="ABS_0.4_DraftFast.ini" FileName="BASICN~1.INI|BasicNylon_0.4_Fine.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\BasicNylon_0.4_Fine.ini" SelfReg="false"/>
-    <ROW File="BasicNylon_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="BASICN~2.INI|BasicNylon_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\BasicNylon_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="BasicNylon_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="BASICN~3.INI|BasicNylon_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\BasicNylon_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="BasicNylon_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="BASICN~4.INI|BasicNylon_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\BasicNylon_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="Basic_Flexible_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="BASIC_~1.INI|Basic_Flexible_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Basic_Flexible_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="Basic_Flexible_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="BASIC_~2.INI|Basic_Flexible_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Basic_Flexible_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="Basic_Flexible_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="BASIC_~3.INI|Basic_Flexible_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Basic_Flexible_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="ColorfabbPACF_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="COLORF~1.INI|Colorfabb PA-CF_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Colorfabb PA-CF_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="Colorfabb_PACF_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="COLORF~2.INI|Colorfabb_PA-CF_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Colorfabb_PA-CF_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="Colorfabb_PACF_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="COLORF~3.INI|Colorfabb_PA-CF_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Colorfabb_PA-CF_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="CoPoly_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="COPOLY~1.INI|CoPoly_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\CoPoly_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="CoPoly_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="COPOLY~2.INI|CoPoly_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\CoPoly_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="CoPoly_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="COPOLY~3.INI|CoPoly_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\CoPoly_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="Filaments_EasyPC_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="FILAME~1.INI|Filaments_EasyPC_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Filaments_EasyPC_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="Filaments_EasyPC_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="FILAME~2.INI|Filaments_EasyPC_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Filaments_EasyPC_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="HIPS_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="HIPS_0~1.INI|HIPS_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\HIPS_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="HIPS_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="HIPS_0~2.INI|HIPS_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\HIPS_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="HIPS_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="HIPS_0~3.INI|HIPS_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\HIPS_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="IC3DPETG_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="IC3DPE~1.INI|IC3D PETG_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\IC3D PETG_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="KVP_SemperFlex98_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="KVP_SE~1.INI|KVP_SemperFlex98_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\KVP_SemperFlex98_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="KVP_SemperFlexx98_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="KVP_SE~2.INI|KVP_SemperFlexx98_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\KVP_SemperFlexx98_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="MHNylonG_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="MHNYLO~4.INI|MHNylonG_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\MHNylonG_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="NylonPolymidePA6CF_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="NYLONP~1.INI|NylonPolymide PA6-CF_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\NylonPolymide PA6-CF_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="Other_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="OTHER_~1.INI|Other_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Other_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="Polymaker_Polymide_PA6CF_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="POLYMA~1.INI|Polymaker_Polymide_PA6-CF_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Polymaker_Polymide_PA6-CF_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="Polymaker_Polymide_PA6CF_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="POLYMA~2.INI|Polymaker_Polymide_PA6-CF_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Polymaker_Polymide_PA6-CF_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="Polymaker_Polymide_PA6CF_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="POLYMA~3.INI|Polymaker_Polymide_PA6-CF_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\Polymaker_Polymide_PA6-CF_0.8_Standard.ini" SelfReg="false"/>
-    <ROW File="TREED_CARBONIO_Nylon_0.4_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="TREED_~1.INI|TREED_CARBONIO_Nylon_0.4_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\TREED_CARBONIO_Nylon_0.4_Standard.ini" SelfReg="false"/>
-    <ROW File="TREED_CARBONIO_Nylon_0.6_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="TREED_~2.INI|TREED_CARBONIO_Nylon_0.6_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\TREED_CARBONIO_Nylon_0.6_Standard.ini" SelfReg="false"/>
-    <ROW File="TREED_CARBONIO_Nylon_0.8_Standard.ini" Component_="ABS_0.4_DraftFast.ini" FileName="TREED_~3.INI|TREED_CARBONIO_Nylon_0.8_Standard.ini" Attributes="0" SourcePath="..\f3slic3r_resources\filament\TREED_CARBONIO_Nylon_0.8_Standard.ini" SelfReg="false"/>
+    <ROW File="F3Slic3r.idx" Component_="Anker.idx" FileName="F3Slic3r.idx" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r.idx" SelfReg="false"/>
+    <ROW File="F3Slic3r.ini" Component_="Anker.idx" FileName="F3Slic3r.ini" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r.ini" SelfReg="false"/>
+    <ROW File="F3Edge_thumbnail.png" Component_="F3Edge_thumbnail.png" FileName="F3EDGE~1.PNG|F3 Edge_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 Edge_thumbnail.png" SelfReg="false"/>
+    <ROW File="f3slic3r_r4.STL" Component_="F3Edge_thumbnail.png" FileName="F3SLIC~1.STL|f3slic3r_r4.STL" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\f3slic3r_r4.STL" SelfReg="false"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
     <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2"/>
@@ -1264,6 +753,7 @@
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCreateFolderComponent">
     <ROW Directory_="APPDIR" Component_="APPDIR" ManualDelete="true"/>
     <ROW Directory_="SHORTCUTDIR" Component_="SHORTCUTDIR" ManualDelete="false"/>
+    <ROW Directory_="F3Slic3r_Dir" Component_="F3Slic3r" ManualDelete="false"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCustActComponent">
     <ROW Action="AI_BACKUP_AI_SETUPEXEPATH" Type="51" Source="AI_SETUPEXEPATH_ORIGINAL" Target="[AI_SETUPEXEPATH]"/>
@@ -1304,13 +794,7 @@
     <ROW Feature_="MainFeature" Component_="OCCTWrapper.dll"/>
     <ROW Feature_="MainFeature" Component_="prusagcodeviewer.exe"/>
     <ROW Feature_="MainFeature" Component_="updater.exe"/>
-    <ROW Feature_="MainFeature" Component_="PrusaSlicer.ini"/>
-    <ROW Feature_="MainFeature" Component_="PrusaResearch.ini"/>
-    <ROW Feature_="MainFeature" Component_="F3EDGE0.4.ini"/>
     <ROW Feature_="MainFeature" Component_="libgmp10.dll"/>
-    <ROW Feature_="MainFeature" Component_="EDGE0.4DRAFT.ini"/>
-    <ROW Feature_="MainFeature" Component_="ABS_0.4_DraftFast.ini"/>
-    <ROW Feature_="MainFeature" Component_="Anycubic.idx"/>
     <ROW Feature_="MainFeature" Component_="libmpfr4.dll"/>
     <ROW Feature_="MainFeature" Component_="prusaslicerconsole.exe"/>
     <ROW Feature_="MainFeature" Component_="msvcp140.dll"/>
@@ -1341,31 +825,9 @@
     <ROW Feature_="MainFeature" Component_="af.po"/>
     <ROW Feature_="MainFeature" Component_="PrusaSlicer.mo_17"/>
     <ROW Feature_="MainFeature" Component_="PrusaSlicer.mo_18"/>
-    <ROW Feature_="MainFeature" Component_="M5bed.stl"/>
     <ROW Feature_="MainFeature" Component_="Anker.idx"/>
-    <ROW Feature_="MainFeature" Component_="MAXPRO20_bed.stl"/>
-    <ROW Feature_="MainFeature" Component_="bedgenius.png"/>
-    <ROW Feature_="MainFeature" Component_="BIBO2.svg"/>
-    <ROW Feature_="MainFeature" Component_="BIQUBX_thumbnail.png"/>
-    <ROW Feature_="MainFeature" Component_="cr10.svg"/>
-    <ROW Feature_="MainFeature" Component_="NEPTUNE1_thumbnail.png"/>
-    <ROW Feature_="MainFeature" Component_="Q5.svg"/>
-    <ROW Feature_="MainFeature" Component_="gmax15p.svg"/>
-    <ROW Feature_="MainFeature" Component_="X130.stl"/>
-    <ROW Feature_="MainFeature" Component_="PROTON_XE750_thumbnail.png"/>
-    <ROW Feature_="MainFeature" Component_="DEV200_thumbnail.png"/>
-    <ROW Feature_="MainFeature" Component_="Jubilee_bed.stl"/>
-    <ROW Feature_="MainFeature" Component_="MINI_AERO_thumbnail.png"/>
-    <ROW Feature_="MainFeature" Component_="M2_M3.stl"/>
-    <ROW Feature_="MainFeature" Component_="MC2.0_bed.stl"/>
+    <ROW Feature_="MainFeature" Component_="F3Edge_thumbnail.png"/>
     <ROW Feature_="MainFeature" Component_="mini.svg"/>
-    <ROW Feature_="MainFeature" Component_="rrvc300.stl"/>
-    <ROW Feature_="MainFeature" Component_="mucit2_bed.png"/>
-    <ROW Feature_="MainFeature" Component_="A250_bed.stl"/>
-    <ROW Feature_="MainFeature" Component_="AQI_thumbnail.png"/>
-    <ROW Feature_="MainFeature" Component_="ultimaker2.svg"/>
-    <ROW Feature_="MainFeature" Component_="bedtexturev0120.png"/>
-    <ROW Feature_="MainFeature" Component_="_texture.svg"/>
     <ROW Feature_="MainFeature" Component_="background.fs"/>
     <ROW Feature_="MainFeature" Component_="background.fs_1"/>
     <ROW Feature_="MainFeature" Component_="background.fs_2"/>
@@ -1374,6 +836,7 @@
     <ROW Feature_="MainFeature" Component_="AI_ExePath"/>
     <ROW Feature_="MainFeature" Component_="AI_CustomARPName"/>
     <ROW Feature_="MainFeature" Component_="SHORTCUTDIR"/>
+    <ROW Feature_="MainFeature" Component_="F3Slic3r"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFileHashComponent">
     <ATTRIBUTE name="HashFiles" value="1"/>
