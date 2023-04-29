@@ -86,7 +86,10 @@ bool Bed3D::set_shape(const Pointfs& bed_shape, const double max_print_height, c
 
     auto check_model = [](const std::string& model) {
         boost::system::error_code ec;
-        return !model.empty() && boost::algorithm::iends_with(model, ".stl") && boost::filesystem::exists(model, ec);
+        bool                      empty = !model.empty();
+        bool                      endswith=boost::algorithm::iends_with(model, ".stl");
+        bool                      exists   = boost::filesystem::exists(model, ec);
+        return empty && endswith && exists;
     };
 
     Type type;
