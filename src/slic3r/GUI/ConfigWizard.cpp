@@ -1296,8 +1296,8 @@ PageUpdate::PageUpdate(ConfigWizard *parent)
          "This is only a notification mechanisms, no automatic installation is done."), SLIC3R_APP_NAME));
 
     append_spacer(VERTICAL_SPACING);
-    /*
-    auto *box_presets = new wxCheckBox(this, wxID_ANY, _L("Update built-in Presets automatically"));
+
+   /* auto *box_presets = new wxCheckBox(this, wxID_ANY, _L("Update built-in Presets automatically"));
     box_presets->SetValue(app_config->get_bool("preset_update"));
     append(box_presets);
     append_text(wxString::Format(_L(
@@ -1309,10 +1309,11 @@ PageUpdate::PageUpdate(ConfigWizard *parent)
     label_bold->SetFont(boldfont);
     label_bold->Wrap(WRAP_WIDTH);
     append(label_bold);
-    append_text(_L("Additionally a backup snapshot of the whole configuration is created before an update is applied."));
-    *///cjw removed
+    append_text(_L("Additionally a backup snapshot of the whole configuration is created before an update is applied."));*/
+
     box_slic3r->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &event) { this->version_check = event.IsChecked(); });
-   // box_presets->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &event) { this->preset_update = event.IsChecked(); });
+    //box_presets->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &event) { this->preset_update = event.IsChecked(); });
+    this->preset_update = false;
 }
 
 
@@ -1417,7 +1418,8 @@ PageDownloader::PageDownloader(ConfigWizard* parent)
     auto* box_allow_downloads = new wxCheckBox(this, wxID_ANY, _L("Allow build-in downloader"));
     // TODO: Do we want it like this? The downloader is allowed for very first time the wizard is run. 
     bool box_allow_value = (app_config->has("downloader_url_registered") ? app_config->get_bool("downloader_url_registered") : true);
-    box_allow_downloads->SetValue(box_allow_value);
+    //box_allow_downloads->SetValue(box_allow_value);
+    box_allow_downloads->SetValue(false);
     append(box_allow_downloads);
 
     append_text(wxString::Format(_L(
@@ -1614,7 +1616,7 @@ void PageMode::serialize_mode(AppConfig *app_config) const
 }
 
 PageVendors::PageVendors(ConfigWizard *parent)
-    : ConfigWizardPage(parent, _L("Other Vendors"), _L("Other Vendors"))
+    : ConfigWizardPage(parent, _L("Fusion 3"), _L("Fusion 3"))
 {
     const AppConfig &appconfig = this->wizard_p()->appconfig_new;
 
@@ -2260,35 +2262,35 @@ void ConfigWizard::priv::load_pages()
     index->clear();
 
     index->add_page(page_welcome);
-    //CJW - removed wizard pages
+    
     // Printers
     if (!only_sla_mode)
-   //     index->add_page(page_fff);
-   // index->add_page(page_msla);
+        index->add_page(page_fff);
+    //index->add_page(page_msla);
     if (!only_sla_mode) {
-        //index->add_page(page_vendors);
+        /* index->add_page(page_vendors);
         for (const auto &pages : pages_3rdparty) {
             for ( PagePrinters* page : { pages.second.first, pages.second.second })
                 if (page && page->install)
                     index->add_page(page);
-        }
+        }*/
 
-        //index->add_page(page_custom);
+        /*index->add_page(page_custom);
         if (page_custom->custom_wanted()) {
             index->add_page(page_firmware);
             index->add_page(page_bed);
             index->add_page(page_bvolume);
             index->add_page(page_diams);
             index->add_page(page_temps);
-        }
+        }*/
    
         // Filaments & Materials
-        //if (any_fff_selected) { index->add_page(page_filaments); }
+        if (any_fff_selected) { index->add_page(page_filaments); }
         // Filaments page if only custom printer is selected 
         const AppConfig* app_config = wxGetApp().app_config;
         if (!any_fff_selected && (custom_printer_selected || custom_printer_in_bundle) && (app_config->get("no_templates") == "0")) {
             update_materials(T_ANY);
-            //index->add_page(page_filaments);
+            index->add_page(page_filaments);
         }
     }
     if (any_sla_selected) { index->add_page(page_sla_materials); }
@@ -2297,7 +2299,6 @@ void ConfigWizard::priv::load_pages()
     btn_finish->Enable(any_fff_selected || any_sla_selected || custom_printer_selected || custom_printer_in_bundle);
 
     index->add_page(page_update);
-    //CJW removed printables
     //index->add_page(page_downloader);
     index->add_page(page_reload_from_disk);
 #ifdef _WIN32
@@ -2353,7 +2354,7 @@ void ConfigWizard::priv::load_vendors()
 
                 const auto &model = needle->second.first;
                 const auto &variant = needle->second.second;
-                appconfig_new.set_variant("PrusaResearch", model, variant, true);
+                appconfig_new.set_variant("F3Slic3r", model, variant, true);
             }
     }
 
@@ -3167,7 +3168,8 @@ bool ConfigWizard::priv::apply_config(AppConfig *app_config, PresetBundle *prese
                 return (app_config->has_section(section_name) ? app_config->get_section(section_name) : std::map<std::string, std::string>()) != appconfig_new.get_section(section_name);
             };
             bool is_filaments_changed     = changed(AppConfig::SECTION_FILAMENTS);
-            bool is_sla_materials_changed = changed(AppConfig::SECTION_MATERIALS);
+            bool is_sla_materials_changed = false;
+            //changed(AppConfig::SECTION_MATERIALS); CJW crash here
             if ((check_unsaved_preset_changes = is_filaments_changed || is_sla_materials_changed)) {
                 header = is_filaments_changed ? _L("Some filaments were uninstalled.") : _L("Some SLA materials were uninstalled.");
                 if (!wxGetApp().check_and_keep_current_preset_changes(caption, header, act_btns, &apply_keeped_changes))
@@ -3320,14 +3322,15 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     wxGetApp().UpdateDarkUI(p->btn_finish);
     wxGetApp().UpdateDarkUI(p->btn_cancel);
 
-    const auto prusa_it = p->bundles.find("PrusaResearch");
+    //const auto prusa_it = p->bundles.find("PrusaResearch");
+    const auto prusa_it = p->bundles.find("F3Slic3r");
     wxCHECK_RET(prusa_it != p->bundles.cend(), "Vendor PrusaResearch not found");
     const VendorProfile *vendor_prusa = prusa_it->second.vendor_profile;
 
     p->add_page(p->page_welcome = new PageWelcome(this));
 
     
-    p->page_fff = new PagePrinters(this, _L("Prusa FFF Technology Printers"), "Prusa FFF", *vendor_prusa, 0, T_FFF);
+    p->page_fff = new PagePrinters(this, _L("Fusion3 FFF Technology Printers"), "Fusion3 FFF", *vendor_prusa, 0, T_FFF);
     p->only_sla_mode = !p->page_fff->has_printers;
     if (!p->only_sla_mode) {
         p->add_page(p->page_fff);
@@ -3336,9 +3339,9 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
   
 
     p->page_msla = new PagePrinters(this, _L("Prusa MSLA Technology Printers"), "Prusa MSLA", *vendor_prusa, 0, T_SLA);
-    p->add_page(p->page_msla);
+    //p->add_page(p->page_msla);
     if (p->only_sla_mode) {
-        p->page_msla->is_primary_printer_page = true;
+      //  p->page_msla->is_primary_printer_page = true;
     }
 
     if (!p->only_sla_mode) {
