@@ -16,10 +16,10 @@
     <ROW Property="ARPSYSTEMCOMPONENT" Value="1"/>
     <ROW Property="AppLogoIcon" Value="applogoicon.bmp" MultiBuildValue="x64_Release:PrusaSlicerinstaller.bmp" Type="1" MsiKey="AppLogoIcon"/>
     <ROW Property="Manufacturer" Value="Fusion3"/>
-    <ROW Property="ProductCode" Value="1033:{1A4CFE45-BC88-4EE8-A73B-3E4922D6220E} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{0849447C-E0A5-459F-A232-D5600BAF2248} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="F3Slic3r"/>
-    <ROW Property="ProductVersion" Value="1.0.4"/>
+    <ROW Property="ProductVersion" Value="1.0.5"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND;AI_SETUPEXEPATH;SETUPEXEDIR"/>
     <ROW Property="UpgradeCode" Value="{CB697882-2A97-44B2-A06B-DB1B95C036A7}"/>
     <ROW Property="WindowsType9X" MultiBuildValue="x64_Release:Windows 9x/ME" ValueLocId="-"/>
@@ -75,7 +75,7 @@
     <ROW Directory="zh_TW_Dir" Directory_Parent="localization_Dir" DefaultDir="zh_TW"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
-    <ROW Component="AI_CustomARPName" ComponentId="{A8D4ACE9-0112-4237-9F58-8C5B2EDDFFD4}" Directory_="APPDIR" Attributes="260" KeyPath="DisplayName" Options="1"/>
+    <ROW Component="AI_CustomARPName" ComponentId="{32D008DD-B561-44E9-9C53-AA9A94EDA134}" Directory_="APPDIR" Attributes="260" KeyPath="DisplayName" Options="1"/>
     <ROW Component="AI_ExePath" ComponentId="{A4289296-8B99-4132-AF74-51935FF4306D}" Directory_="APPDIR" Attributes="260" KeyPath="AI_ExePath"/>
     <ROW Component="APPDIR" ComponentId="{474D491E-FF73-421C-815B-79394243B4AB}" Directory_="APPDIR" Attributes="0"/>
     <ROW Component="Anker.idx" ComponentId="{F6FB69D7-017B-4013-883E-D60477DEA132}" Directory_="profiles_Dir" Attributes="0" KeyPath="PrusaResearch.idx_1" Type="0"/>
@@ -642,7 +642,7 @@
     <ROW Path="&lt;AI_DICTS&gt;ui_en.ail"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.DigCertStoreComponent">
-    <ROW SignerDescription="[|ProductName]" SignOptions="7" SignTool="0" EnableLUAPatching="1" UseSha256="1" Subject="CN=TestCert_2023-3-21_18-43-6"/>
+    <ROW SignerDescription="[|ProductName]" SignOptions="7" SignTool="0" EnableLUAPatching="1" UseSha256="1"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.FragmentComponent">
     <ROW Fragment="CommonUI.aip" Path="&lt;AI_FRAGS&gt;CommonUI.aip"/>
@@ -854,7 +854,7 @@
     <ROW IniFile="DownloadsFolder" FileName="updater.ini" DirProperty="APPDIR" Section="General" Key="DownloadsFolder" Value="[CommonAppDataFolder][Manufacturer]\[ProductName]\updates\" Action="0" Component_="updater.exe"/>
     <ROW IniFile="Flags" FileName="updater.ini" DirProperty="APPDIR" Section="General" Key="Flags" Value="PerMachine|ShowConfigOptionsButton" Action="0" Component_="updater.exe"/>
     <ROW IniFile="ID" FileName="updater.ini" DirProperty="APPDIR" Section="General" Key="ID" Value="[UpgradeCode]" Action="0" Component_="updater.exe"/>
-    <ROW IniFile="URL" FileName="updater.ini" DirProperty="APPDIR" Section="General" Key="URL" Value="http://138.43.95.87/downloads/F3Slic3r-updates.txt" Action="0" Component_="updater.exe"/>
+    <ROW IniFile="URL" FileName="updater.ini" DirProperty="APPDIR" Section="General" Key="URL" Value="http://127.0.0.1/downloads/F3Slic3r-updates.txt" Action="0" Component_="updater.exe"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiInstExSeqComponent">
     <ROW Action="AI_DOWNGRADE" Condition="AI_NEWERPRODUCTFOUND AND (UILevel &lt;&gt; 5)" Sequence="210"/>
