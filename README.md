@@ -2,10 +2,14 @@
 
 #F3Slic3r
 
-The 'f3slic3r_resources' folder contains the working copy of settings(%appdata%) used for Fusion 3 printers. These settings get merged by merge.bat and placed into the vendor bundle /resources/profiles/F3Slic3r.ini
+The 'f3slic3r_resources' folder contains the working copy of settings(%appdata%) used for Fusion 3 printers. These settings get merged by merge.bat and placed into the vendor bundle /resources/profiles/F3Slic3r.ini. F3Slic3rBASE.ini and /resources/profiles/F3Slic3r.idx should be updated with the latest config version and changelog notes.
 
-F3Slic3rBASE.ini and /resources/profiles/F3Slic3r.idx should be updated with the latest config version and changelog notes.
-
+Preset Update Summary
+	* Copy in all changed .ini files in printer,print or filament subfolders.
+	* Add a new line in /f3slic3r_resources/F3Slic3r.idx with new version and changelog.
+	* Update /f3slic3r_resources/F3Slic3r.ini with the same new version.
+	* Run merge.bat.
+	* Commit and push and then changes are live.
 
 
 # PrusaSlicer
