@@ -1616,7 +1616,7 @@ void PageMode::serialize_mode(AppConfig *app_config) const
 }
 
 PageVendors::PageVendors(ConfigWizard *parent)
-    : ConfigWizardPage(parent, _L("Fusion 3"), _L("Fusion 3"))
+    : ConfigWizardPage(parent, _L("Fusion3"), _L("Fusion3"))
 {
     const AppConfig &appconfig = this->wizard_p()->appconfig_new;
 
