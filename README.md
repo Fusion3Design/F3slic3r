@@ -7,7 +7,7 @@ The 'f3slic3r_resources' folder contains the working copy of settings(%appdata%)
 Preset Update Summary:
 * Copy in all changed .ini files in printer,print or filament subfolders.
 * Add a new line in /f3slic3r_resources/F3Slic3r.idx with new version and changelog.
-* Update /f3slic3r_resources/F3Slic3r.ini with the **same** new version.
+* Update /f3slic3r_resources/F3Slic3rBASE.ini with the **same** new version.
 * Run merge.bat.
 * Commit and push and then changes are live.
 
