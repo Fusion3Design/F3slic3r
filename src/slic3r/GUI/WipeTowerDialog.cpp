@@ -8,6 +8,7 @@
 #include "BitmapCache.hpp"
 #include "GUI.hpp"
 #include "I18N.hpp"
+#include "slic3r/GUI/format.hpp"
 #include "GUI_App.hpp"
 #include "MsgDialog.hpp"
 
@@ -109,11 +110,11 @@ RammingPanel::RammingPanel(wxWindow* parent, const std::string& parameters)
 #endif
  	sizer_chart->Add(m_chart, 0, wxALL, 5);
 
-    m_widget_time						= new ::SpinInputDouble(this,"", wxEmptyString, wxDefaultPosition, wxSize(ITEM_WIDTH(), -1), style, 0., 5., 3., 0.5);
+    m_widget_time						= new ::SpinInputDouble(this,"", wxEmptyString, wxDefaultPosition, wxSize(ITEM_WIDTH(), -1), style, 0., 5., 3., 0.25);
     m_widget_time->SetDigits(2);
     m_widget_volume							  = new ::SpinInput(this,"",wxEmptyString,wxDefaultPosition,wxSize(ITEM_WIDTH(), -1),style,0,10000,0);
-    m_widget_ramming_line_width_multiplicator = new ::SpinInput(this,"",wxEmptyString,wxDefaultPosition,wxSize(ITEM_WIDTH(), -1),style,10,200,100);
-    m_widget_ramming_step_multiplicator		  = new ::SpinInput(this,"",wxEmptyString,wxDefaultPosition,wxSize(ITEM_WIDTH(), -1),style,10,200,100);
+    m_widget_ramming_line_width_multiplicator = new ::SpinInput(this,"",wxEmptyString,wxDefaultPosition,wxSize(ITEM_WIDTH(), -1),style,10,300,100);
+    m_widget_ramming_step_multiplicator		  = new ::SpinInput(this,"",wxEmptyString,wxDefaultPosition,wxSize(ITEM_WIDTH(), -1),style,10,300,100);
 
 #ifdef _WIN32
     update_ui(m_widget_time->GetText());
@@ -133,6 +134,15 @@ RammingPanel::RammingPanel(wxWindow* parent, const std::string& parameters)
 	gsizer_param->Add(m_widget_ramming_line_width_multiplicator);
 	gsizer_param->Add(new wxStaticText(this, wxID_ANY, wxString(_(L("Ramming line spacing")) + " (%):")), 0, wxALIGN_CENTER_VERTICAL);
 	gsizer_param->Add(m_widget_ramming_step_multiplicator);
+    gsizer_param->AddSpacer(40);
+    gsizer_param->AddSpacer(40);
+
+    std::string ctrl_str = shortkey_ctrl_prefix();
+    if (! ctrl_str.empty() && ctrl_str.back() == '+')
+        ctrl_str.pop_back();
+    // TRN: The placeholder expands to Ctrl or Cmd (on macOS).
+    gsizer_param->Add(new wxStaticText(this, wxID_ANY, format_wxstr(_L("For constant flow rate, hold %1% while dragging."), ctrl_str)), 0, wxALIGN_CENTER_VERTICAL);
+
 
 	sizer_param->Add(gsizer_param, 0, wxTOP, scale(10));
 
