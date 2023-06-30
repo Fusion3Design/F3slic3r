@@ -236,6 +236,13 @@ public:
         float               unloading_speed = 0.f;
         float               unloading_speed_start = 0.f;
         float               delay = 0.f ;
+
+		int				    filament_skinnydip_move = 0;
+		float               filament_skinnydip_loading_speed = 0.f;
+		float               filament_skinnydip_unloading_speed = 0.f;
+		float               filament_skinnydip_distance = 0.f;
+		int 			    filament_skinnydip_number_of_dips = 0;
+		
         int                 cooling_moves = 0;
         float               cooling_initial_speed = 0.f;
         float               cooling_final_speed = 0.f;

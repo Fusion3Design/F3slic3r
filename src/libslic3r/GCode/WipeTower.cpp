@@ -613,6 +613,11 @@ void WipeTower::set_extruder(size_t idx, const PrintConfig& config)
         m_filpar[idx].cooling_moves           = config.filament_cooling_moves.get_at(idx);
         m_filpar[idx].cooling_initial_speed   = float(config.filament_cooling_initial_speed.get_at(idx));
         m_filpar[idx].cooling_final_speed     = float(config.filament_cooling_final_speed.get_at(idx));
+        m_filpar[idx].filament_skinnydip_move              = config.filament_skinnydip_move.get_at(idx);
+        m_filpar[idx].filament_skinnydip_loading_speed     = float(config.filament_skinnydip_loading_speed.get_at(idx));
+        m_filpar[idx].filament_skinnydip_unloading_speed   = float(config.filament_skinnydip_unloading_speed.get_at(idx));
+        m_filpar[idx].filament_skinnydip_distance          = float(config.filament_skinnydip_distance.get_at(idx));
+        m_filpar[idx].filament_skinnydip_number_of_dips    = config.filament_skinnydip_number_of_dips.get_at(idx);
     }
 
     m_filpar[idx].filament_area = float((M_PI/4.f) * pow(config.filament_diameter.get_at(idx), 2)); // all extruders are assumed to have the same filament diameter at this point
@@ -959,17 +964,32 @@ void WipeTower::toolchange_Unload(
 
     // Cooling:
     const int& number_of_moves = m_filpar[m_current_tool].cooling_moves;
-    if (m_semm && number_of_moves > 0) {
+    if (m_semm && (number_of_moves > 0 || m_filpar[m_current_tool].filament_skinnydip_number_of_dips > 0)) {
         const float& initial_speed = m_filpar[m_current_tool].cooling_initial_speed;
         const float& final_speed   = m_filpar[m_current_tool].cooling_final_speed;
 
         float speed_inc = (final_speed - initial_speed) / (2.f * number_of_moves - 1.f);
+        bool skinnydip_done = false;
 
         writer.suppress_preview()
               .travel(writer.x(), writer.y() + y_step);
         old_x = writer.x();
         turning_point = xr-old_x > old_x-xl ? xr : xl;
-        for (int i=0; i<number_of_moves; ++i) {
+        for (int i=0; i<=number_of_moves; ++i) { // the last one is for skinnydip
+
+            // Skinnydip:
+            if (! skinnydip_done && (m_filpar[m_current_tool].filament_skinnydip_move == i || i == number_of_moves)) {
+                for (int s=0; s<m_filpar[m_current_tool].filament_skinnydip_number_of_dips; ++s) {
+                    float dist = m_filpar[m_current_tool].filament_skinnydip_distance + m_cooling_tube_length / 2.f;
+                    writer.load_move_x_advanced(turning_point, dist, m_filpar[m_current_tool].filament_skinnydip_loading_speed);
+                    writer.load_move_x_advanced(old_x, -dist, m_filpar[m_current_tool].filament_skinnydip_unloading_speed);
+                }
+                skinnydip_done = true;
+            }
+            if (i == number_of_moves)
+                    break;
+
+
             float speed = initial_speed + speed_inc * 2*i;
             writer.load_move_x_advanced(turning_point, m_cooling_tube_length, speed);
             speed += speed_inc;

@@ -1093,6 +1093,41 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
+    def = this->add("filament_skinnydip_move", coInts);
+    def->label = L("ELIAS: Skinnydip is performed after N-th cooling move");
+    def->tooltip = L("Zero - before cooling. Larger than number of cooling moves - after cooling.");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionInts { 0 });
+
+    def = this->add("filament_skinnydip_number_of_dips", coInts);
+    def->label = L("ELIAS: Number of skinnydips");
+    def->tooltip = L("");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionInts { 0 });
+
+    def = this->add("filament_skinnydip_loading_speed", coFloats);
+    def->label = L("ELIAS: Skinnydip loading speed");
+    def->tooltip = L("");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
+    def = this->add("filament_skinnydip_unloading_speed", coFloats);
+    def->label = L("ELIAS: Skinnydip unloading speed");
+    def->tooltip = L("");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
+    def = this->add("filament_skinnydip_distance", coFloats);
+    def->label = L("ELIAS: Skinnydip distance measured from the center of the cooling tube");
+    def->tooltip = L("");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
     def = this->add("filament_cooling_moves", coInts);
     def->label = L("Number of cooling moves");
     def->tooltip = L("Filament is cooled by being moved back and forth in the "
