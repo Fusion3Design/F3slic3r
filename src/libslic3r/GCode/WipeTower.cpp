@@ -551,6 +551,7 @@ WipeTower::WipeTower(const PrintConfig& config, const PrintRegionConfig& default
     m_wipe_tower_brim_width(float(config.wipe_tower_brim_width)),
     m_wipe_tower_cone_angle(float(config.wipe_tower_cone_angle)),
     m_extra_spacing(float(config.wipe_tower_extra_spacing/100.)),
+    m_extra_flow(float(config.wipe_tower_extra_flow/100.)),
     m_y_shift(0.f),
     m_z_pos(0.f),
     m_bridging(float(config.wipe_tower_bridging)),
@@ -1119,6 +1120,9 @@ void WipeTower::toolchange_Wipe(
 		  .append("; CP TOOLCHANGE WIPE\n");
 	const float& xl = cleaning_box.ld.x();
 	const float& xr = cleaning_box.rd.x();
+
+    // MATHIEU TEST:
+    writer.set_extrusion_flow(m_extrusion_flow * m_extra_flow);
 
 	// Variables x_to_wipe and traversed_x are here to be able to make sure it always wipes at least
     //   the ordered volume, even if it means violating the box. This can later be removed and simply
