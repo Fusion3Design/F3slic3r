@@ -238,6 +238,7 @@ public:
         float               delay = 0.f ;
 
 		int				    filament_skinnydip_move = 0;
+		bool				filament_cold_ramming = false;
 		float               filament_skinnydip_loading_speed = 0.f;
 		float               filament_skinnydip_unloading_speed = 0.f;
 		float               filament_skinnydip_distance = 0.f;

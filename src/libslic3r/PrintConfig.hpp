@@ -733,6 +733,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloats,              filament_multitool_ramming_volume))
     ((ConfigOptionFloats,              filament_multitool_ramming_flow))
     ((ConfigOptionInts,                filament_skinnydip_move))
+    ((ConfigOptionBools,               filament_cold_ramming))
     ((ConfigOptionFloats,              filament_skinnydip_loading_speed))
     ((ConfigOptionFloats,              filament_skinnydip_unloading_speed))
     ((ConfigOptionFloats,              filament_skinnydip_distance))

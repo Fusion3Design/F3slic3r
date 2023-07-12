@@ -220,6 +220,7 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
             || opt_key == "filament_cooling_moves"
             || opt_key == "filament_skinnydip_number_of_dips"
             || opt_key == "filament_skinnydip_move"
+            || opt_key == "filament_cold_ramming"
             || opt_key == "filament_skinnydip_loading_speed"
             || opt_key == "filament_skinnydip_unloading_speed"
             || opt_key == "filament_skinnydip_distance"

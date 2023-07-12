@@ -1093,6 +1093,13 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
+    def = this->add("filament_cold_ramming", coBools);
+    def->label = L("ELIAS: Cold ramming");
+    def->tooltip = L("");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBools { false });
+
     def = this->add("filament_skinnydip_move", coInts);
     def->label = L("ELIAS: Skinnydip is performed after N-th cooling move");
     def->tooltip = L("Zero - before cooling. Larger than number of cooling moves - after cooling.");

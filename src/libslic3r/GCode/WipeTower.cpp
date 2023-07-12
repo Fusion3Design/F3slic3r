@@ -633,6 +633,7 @@ void WipeTower::set_extruder(size_t idx, const PrintConfig& config)
         m_filpar[idx].cooling_initial_speed   = float(config.filament_cooling_initial_speed.get_at(idx));
         m_filpar[idx].cooling_final_speed     = float(config.filament_cooling_final_speed.get_at(idx));
         m_filpar[idx].filament_skinnydip_move              = config.filament_skinnydip_move.get_at(idx);
+        m_filpar[idx].filament_cold_ramming                = config.filament_cold_ramming.get_at(idx);
         m_filpar[idx].filament_skinnydip_loading_speed     = float(config.filament_skinnydip_loading_speed.get_at(idx));
         m_filpar[idx].filament_skinnydip_unloading_speed   = float(config.filament_skinnydip_unloading_speed.get_at(idx));
         m_filpar[idx].filament_skinnydip_distance          = float(config.filament_skinnydip_distance.get_at(idx));
@@ -930,6 +931,11 @@ void WipeTower::toolchange_Unload(
     }
     
 
+    bool cold_ramming = m_filpar[m_current_tool].filament_cold_ramming;
+
+    if (cold_ramming)
+        writer.set_extruder_temp(0, false);
+
     // now the ramming itself:
     while (do_ramming && i < m_filpar[m_current_tool].ramming_speed.size())
     {
@@ -973,7 +979,7 @@ void WipeTower::toolchange_Unload(
     // be already set and there is no need to change anything. Also, the temperature could be changed
     // for wrong extruder.
     if (m_semm) {
-        if (new_temperature != 0 && (new_temperature != m_old_temperature || is_first_layer()) ) { 	// Set the extruder temperature, but don't wait.
+        if (new_temperature != 0 && (new_temperature != m_old_temperature || is_first_layer() || cold_ramming) ) { 	// Set the extruder temperature, but don't wait.
             // If the required temperature is the same as last time, don't emit the M104 again (if user adjusted the value, it would be reset)
             // However, always change temperatures on the first layer (this is to avoid issues with priming lines turned off).
             writer.set_extruder_temp(new_temperature, false);
