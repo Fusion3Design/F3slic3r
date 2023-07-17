@@ -10,6 +10,7 @@ Preset Update Summary:
 * Update /f3slic3r_resources/F3Slic3rBASE.ini with the **same** new version.
 * Run merge.bat.
 * Commit and push and then changes are live.
+* To test locally, copy the versioned.ini file into appdata/roaming/f3slic3r/vendor/ and rename to "F3Slic3r.ini"
 
 
 # PrusaSlicer
