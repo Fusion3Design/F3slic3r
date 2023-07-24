@@ -393,6 +393,7 @@ void PrintConfigDef::init_common_params()
     def = this->add("printhost_password", coString);
     def->label = L("Password");
 //    def->tooltip = L("");
+    def->gui_type = ConfigOptionDef::GUIType::password;
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
     def->set_default_value(new ConfigOptionString(""));

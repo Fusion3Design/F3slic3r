@@ -1947,7 +1947,7 @@ void PresetBundle::update_compatible(PresetSelectCompatibleType select_other_pri
     }
 }
 
-void PresetBundle::export_configbundle(const std::string &path, bool export_system_settings, bool export_physical_printers/* = false*/)
+void PresetBundle::export_configbundle(const std::string &path, bool export_system_settings, bool export_physical_printers/* = false*/, std::function<bool(const std::string&, const std::string&, std::string&)> secret_callback)
 {
     boost::nowide::ofstream c;
     c.open(path, std::ios::out | std::ios::trunc);
@@ -1974,8 +1974,14 @@ void PresetBundle::export_configbundle(const std::string &path, bool export_syst
     if (export_physical_printers) {
         for (const PhysicalPrinter& ph_printer : this->physical_printers) {
             c << std::endl << "[physical_printer:" << ph_printer.name << "]" << std::endl;
-            for (const std::string& opt_key : ph_printer.config.keys())
-                c << opt_key << " = " << ph_printer.config.opt_serialize(opt_key) << std::endl;
+            for (const std::string& opt_key : ph_printer.config.keys()) {
+                std::string opt_val = ph_printer.config.opt_serialize(opt_key);
+                if (opt_val == "stored") {
+                    secret_callback(ph_printer.name, opt_key, opt_val);
+                }
+
+                c << opt_key << " = " << opt_val << std::endl;
+            }
         }
     }
 

@@ -1990,6 +1990,8 @@ public:
         one_string,
         // Close parameter, string value could be one of the list values.
         select_close,
+        // Password, string vaule is hidden by asterisk.
+        password,
     };
     static bool is_gui_type_enum_open(const GUIType gui_type) 
         { return gui_type == ConfigOptionDef::GUIType::i_enum_open || gui_type == ConfigOptionDef::GUIType::f_enum_open || gui_type == ConfigOptionDef::GUIType::select_open; }

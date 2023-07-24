@@ -23,6 +23,9 @@
 //#include <wx/glcanvas.h>
 #include <wx/filename.h>
 #include <wx/debug.h>
+#if wxUSE_SECRETSTORE 
+#include <wx/secretstore.h>
+#endif
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -1789,9 +1792,54 @@ void MainFrame::export_configbundle(bool export_physical_printers /*= false*/)
         file = dlg.GetPath();
     if (!file.IsEmpty()) {
         // Export the config bundle.
+
+        bool passwords_to_plain = false;
+        bool passwords_dialog_shown = false;
+        // callback function thats going to be passed to preset bundle (so preset bundle doesnt have to include WX secret lib)
+        std::function<bool(const std::string&, const std::string&, std::string&)> load_password = [&](const std::string& printer_id, const std::string& opt, std::string& out_psswd)->bool{
+            out_psswd = std::string();
+#if wxUSE_SECRETSTORE
+            // First password prompts user with dialog
+            if (!passwords_dialog_shown) {
+                //wxString msg = GUI::format_wxstr(L"%1%\n%2%", _L("Some of the exported printers contains passwords, which are stored in the system password store."), _L("Do you wish to include the passwords to the exported file in the plain text form?"));
+                wxString msg = _L("Some of the exported printers contains passwords, which are stored in the system password store." 
+                                  " Do you wish to include the passwords in the plain text form to the exported file?");
+                MessageDialog dlg_psswd(this, msg, wxMessageBoxCaptionStr, wxYES_NO | wxYES_DEFAULT | wxICON_QUESTION);
+                if (dlg_psswd.ShowModal() == wxID_YES)
+                    passwords_to_plain = true;
+                passwords_dialog_shown = true;
+            }
+            if (!passwords_to_plain)
+                return false;
+            wxSecretStore store = wxSecretStore::GetDefault();
+            wxString errmsg;
+            if (!store.IsOk(&errmsg)) {
+                std::string msg = GUI::format("%1% (%2%).", _u8L("Failed to load credentials from the system secret store."), errmsg);
+                BOOST_LOG_TRIVIAL(error) << msg;
+                show_error(nullptr, msg);
+                // Do not try again. System store is not reachable.
+                passwords_to_plain = false;
+                return false;
+            }
+            const wxString service = GUI::format_wxstr(L"%1%/PhysicalPrinter/%2%/%3%", SLIC3R_APP_NAME, printer_id, opt);
+            wxString username;
+            wxSecretValue password;
+            if (!store.Load(service, username, password)) {
+                std::string msg = GUI::format(_u8L("Failed to load credentials from the system secret store for the printer %1%."), printer_id);
+                BOOST_LOG_TRIVIAL(error) << msg;
+                show_error(nullptr, msg);
+                return false;
+            }
+            out_psswd = into_u8(password.GetAsString());
+            return true;
+#else
+            return false;
+#endif // wxUSE_SECRETSTORE 
+        };
+
         wxGetApp().app_config->update_config_dir(get_dir_name(file));
         try {
-            wxGetApp().preset_bundle->export_configbundle(file.ToUTF8().data(), false, export_physical_printers);
+            wxGetApp().preset_bundle->export_configbundle(file.ToUTF8().data(), false, export_physical_printers, load_password);
         } catch (const std::exception &ex) {
 			show_error(this, ex.what());
         }
