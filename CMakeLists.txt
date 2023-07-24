@@ -465,10 +465,12 @@ find_package(EXPAT REQUIRED)
 
 add_library(libexpat INTERFACE)
 
-if (TARGET EXPAT::EXPAT )
+if (TARGET EXPAT::EXPAT ) # found by a newer Find script
     target_link_libraries(libexpat INTERFACE EXPAT::EXPAT)
-elseif(TARGET expat::expat)
+elseif(TARGET expat::expat) # found by a config script
     target_link_libraries(libexpat INTERFACE expat::expat)
+else() # found by an older Find script
+    target_link_libraries(libexpat INTERFACE ${EXPAT_LIBRARIES})
 endif ()
 
 find_package(PNG REQUIRED)
