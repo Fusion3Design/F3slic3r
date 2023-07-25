@@ -19,6 +19,10 @@ set(SLIC3R_GUI_SOURCES
     GUI/AboutDialog.hpp
     GUI/ArrangeSettingsDialogImgui.hpp
     GUI/ArrangeSettingsDialogImgui.cpp
+    GUI/Auth.cpp
+    GUI/Auth.hpp
+    GUI/AuthSession.cpp
+    GUI/AuthSession.hpp
     GUI/SysInfoDialog.cpp
     GUI/SysInfoDialog.hpp
     GUI/KBShortcutsDialog.cpp

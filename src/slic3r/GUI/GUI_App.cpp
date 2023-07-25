@@ -98,6 +98,7 @@
 #include "Downloader.hpp"
 #include "PhysicalPrinterDialog.hpp"
 #include "WifiConfigDialog.hpp"
+#include "Auth.hpp"
 
 #include "BitmapCache.hpp"
 #include "Notebook.hpp"
@@ -2494,6 +2495,12 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
         local_menu->Append(config_id_base + ConfigMenuTakeSnapshot, _L("Take Configuration &Snapshot"), _L("Capture a configuration snapshot"));
         local_menu->Append(config_id_base + ConfigMenuUpdateConf, _L("Check for Configuration Updates"), _L("Check for configuration updates"));
         local_menu->Append(config_id_base + ConfigMenuUpdateApp, _L("Check for Application Updates"), _L("Check for new version of application"));
+        local_menu->AppendSeparator();
+        wxMenuItem* updatable_item = local_menu->Append(config_id_base + ConfigMenuAuthLogin, _L("PrusaAuth Log in"), _L(""));
+        m_config_menu_updatable_items.emplace(ConfigMenuIDs::ConfigMenuAuthLogin, updatable_item);
+        updatable_item = local_menu->Append(config_id_base + ConfigMenuConnectDummy, _L("PrusaConnect Printers"), _L(""));
+        updatable_item->Enable(false);
+        m_config_menu_updatable_items.emplace(ConfigMenuIDs::ConfigMenuConnectDummy, updatable_item);
 #if defined(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION) 
         //if (DesktopIntegrationDialog::integration_possible())
         local_menu->Append(config_id_base + ConfigMenuDesktopIntegration, _L("Desktop Integration"), _L("Desktop Integration"));    
@@ -2541,6 +2548,19 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
 			break;
         case ConfigMenuUpdateApp:
             app_version_check(true);
+            break;
+        case ConfigMenuAuthLogin:
+        {
+            if (this->plater()->get_auth_communication()->is_logged())
+                this->plater()->get_auth_communication()->logout();
+            else
+                this->plater()->get_auth_communication()->login();
+        }
+            break;
+        case ConfigMenuConnectDummy:
+        {
+            this->plater()->get_auth_communication()->enqueue_connect_printers_action();
+        }
             break;
 #ifdef __linux__
         case ConfigMenuDesktopIntegration:
@@ -2657,7 +2677,11 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
 
     menu->Append(local_menu, _L("&Configuration"));
 }
-
+void GUI_App::update_config_menu()
+{
+    m_config_menu_updatable_items[ConfigMenuIDs::ConfigMenuAuthLogin]->SetItemLabel(this->plater()->get_auth_communication()->is_logged() ? _L("PrusaAuth Log out") : _L("PrusaAuth Log in"));
+    m_config_menu_updatable_items[ConfigMenuIDs::ConfigMenuConnectDummy]->Enable(this->plater()->get_auth_communication()->is_logged());
+}
 void GUI_App::open_preferences(const std::string& highlight_option /*= std::string()*/, const std::string& tab_name/*= std::string()*/)
 {
     mainframe->preferences_dialog->show(highlight_option, tab_name);
@@ -3428,6 +3452,21 @@ bool GUI_App::open_browser_with_warning_dialog(const wxString& url, wxWindow* pa
         launch = dialog.ShowModal() == wxID_YES;
     }
 
+    return  launch && wxLaunchDefaultBrowser(url, flags);
+}
+
+bool GUI_App::open_login_browser_with_dialog(const wxString& url, wxWindow* parent/* = nullptr*/, int flags/* = 0*/)
+{
+    bool launch = true;
+
+    // warning dialog containes a "Remember my choice" checkbox
+    std::string option_key = "suppress_hyperlinks";
+    RichMessageDialog dialog(parent, _L("Open Log in page in default browser?"), _L("PrusaSlicer: Open Log in page"), wxICON_QUESTION | wxYES_NO);
+    dialog.ShowCheckBox(_L("Remember me"), true);
+    auto answer = dialog.ShowModal();
+    launch = answer == wxID_YES;
+    plater()->get_auth_communication()->set_remember_session(dialog.IsCheckBoxChecked());
+           
     return  launch && wxLaunchDefaultBrowser(url, flags);
 }
 

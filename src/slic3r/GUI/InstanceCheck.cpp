@@ -378,6 +378,7 @@ namespace GUI {
 
 wxDEFINE_EVENT(EVT_LOAD_MODEL_OTHER_INSTANCE, LoadFromOtherInstanceEvent);
 wxDEFINE_EVENT(EVT_START_DOWNLOAD_OTHER_INSTANCE, StartDownloadOtherInstanceEvent);
+wxDEFINE_EVENT(EVT_LOGIN_OTHER_INSTANCE, LoginOtherInstanceEvent);
 wxDEFINE_EVENT(EVT_INSTANCE_GO_TO_FRONT, InstanceGoToFrontEvent);
 
 void OtherInstanceMessageHandler::init(wxEvtHandler* callback_evt_handler)
@@ -520,6 +521,9 @@ void OtherInstanceMessageHandler::handle_message(const std::string& message)
 	    else if (it->rfind("prusaslicer://open?file=", 0) == 0)
 #endif
 			downloads.emplace_back(*it);
+		else if (it->rfind("prusaslicer://login", 0) == 0) {
+			wxPostEvent(m_callback_evt_handler, LoginOtherInstanceEvent(GUI::EVT_LOGIN_OTHER_INSTANCE, std::string(*it)));
+		}
 	}
 	if (! paths.empty()) {
 		//wxEvtHandler* evt_handler = wxGetApp().plater(); //assert here?

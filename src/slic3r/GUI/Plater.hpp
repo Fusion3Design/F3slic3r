@@ -62,6 +62,7 @@ class Mouse3DController;
 class NotificationManager;
 struct Camera;
 class GLToolbar;
+class PrusaAuthCommunication;
 
 class Plater: public wxPanel
 {
@@ -347,8 +348,11 @@ public:
     void set_bed_shape(const Pointfs& shape, const double max_print_height, const std::string& custom_texture, const std::string& custom_model, bool force_as_custom = false) const;
     void set_default_bed_shape() const;
 
-    NotificationManager * get_notification_manager();
-    const NotificationManager * get_notification_manager() const;
+    NotificationManager* get_notification_manager();
+    const NotificationManager* get_notification_manager() const;
+
+    PrusaAuthCommunication* get_auth_communication();
+    const PrusaAuthCommunication* get_auth_communication() const;
 
     void init_notification_manager();
 

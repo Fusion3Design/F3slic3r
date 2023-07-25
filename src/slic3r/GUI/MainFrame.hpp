@@ -124,6 +124,7 @@ class MainFrame : public DPIFrame
         miSend,         // Send G-code          Send to print
         miMaterialTab,  // Filament Settings    Material Settings
         miPrinterTab,   // Different bitmap for Printer Settings
+        miLogin,
     };
 
     // vector of a MenuBar items changeable in respect to printer technology 

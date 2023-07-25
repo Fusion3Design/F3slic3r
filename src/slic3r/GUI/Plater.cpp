@@ -119,6 +119,8 @@
 #include "Gizmos/GLGizmoSVG.hpp" // Drop SVG file
 #include "Gizmos/GLGizmoCut.hpp"
 #include "FileArchiveDialog.hpp"
+#include "Auth.hpp"
+#include "DesktopIntegrationDialog.hpp"
 
 #ifdef __APPLE__
 #include "Gizmos/GLGizmosManager.hpp"
@@ -262,6 +264,7 @@ struct Plater::priv
     GLToolbar collapse_toolbar;
     Preview *preview;
     std::unique_ptr<NotificationManager> notification_manager;
+    std::unique_ptr<PrusaAuthCommunication> auth_communication;
 
     ProjectDirtyStateManager dirty_state;
 
@@ -608,6 +611,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         }))
     , sidebar(new Sidebar(q))
     , notification_manager(std::make_unique<NotificationManager>(q))
+    , auth_communication(std::make_unique<PrusaAuthCommunication>(q, wxGetApp().app_config))
     , m_worker{q, std::make_unique<NotificationProgressIndicator>(notification_manager.get()), "ui_worker"}
     , m_sla_import_dlg{new SLAImportDialog{q}}
     , delayed_scene_refresh(false)
@@ -853,11 +857,75 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             wxGetApp().start_download(evt.data[i]);
         }
        
+    }); 
+    this->q->Bind(EVT_LOGIN_OTHER_INSTANCE, [this](LoginOtherInstanceEvent& evt) {
+        BOOST_LOG_TRIVIAL(trace) << "Received login from other instance event.";
+        auth_communication->on_login_code_recieved(evt.data);
     });
 
     this->q->Bind(EVT_INSTANCE_GO_TO_FRONT, [this](InstanceGoToFrontEvent &) {
         bring_instance_forward();
     });
+
+    this->q->Bind(EVT_OPEN_PRUSAAUTH, [this](OpenPrusaAuthEvent& evt) {
+       BOOST_LOG_TRIVIAL(info)  << "open browser: " << evt.data;
+       // first register url to be sure to get the code back
+       auto downloader_worker = new DownloaderUtils::Worker(nullptr);
+       downloader_worker->perform_register(wxGetApp().app_config->get("url_downloader_dest"));
+#ifdef __linux__
+       if (downloader_worker->get_perform_registration_linux())
+           DesktopIntegrationDialog::perform_downloader_desktop_integration();
+#endif // __linux__
+       // than open url
+       wxGetApp().open_login_browser_with_dialog(evt.data);
+     });
+    
+    this->q->Bind(EVT_LOGGEDOUT_PRUSAAUTH, [this](PrusaAuthSuccessEvent& evt) {
+        auth_communication->set_username({}, wxGetApp().app_config);
+        std::string text = _u8L("Logged out.");
+        this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
+        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
+        wxGetApp().update_config_menu();
+    });
+
+    this->q->Bind(EVT_PA_ID_USER_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
+        std::string text;
+        try {
+            std::stringstream ss(evt.data);
+            boost::property_tree::ptree ptree;
+            boost::property_tree::read_json(ss, ptree);
+            std::string public_username;
+            const auto public_username_optional = ptree.get_optional<std::string>("public_username");
+
+            if (public_username_optional)
+                public_username = *public_username_optional;
+            text = format(_u8L("Logged as %1%."), public_username);
+        }
+        catch (const std::exception&) {
+            BOOST_LOG_TRIVIAL(error) << "UserIDUserAction Could not parse server response.";
+        }
+        assert(!text.empty());
+
+        auth_communication->set_username(evt.data, wxGetApp().app_config);
+        this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
+        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
+        wxGetApp().update_config_menu();
+    });
+    this->q->Bind(EVT_PRUSAAUTH_FAIL, [this](PrusaAuthFailEvent& evt) {
+        auth_communication->set_username({}, wxGetApp().app_config);
+        this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
+        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::WarningNotificationLevel, evt.data);
+    });
+    this->q->Bind(EVT_PRUSAAUTH_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
+        this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
+        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, evt.data);
+    });
+    this->q->Bind(EVT_PRUSACONNECT_PRINTERS_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
+        std::string out = GUI::format( "Printers in your PrusaConnect team:\n%1%", auth_communication->proccess_prusaconnect_printers_message(evt.data));
+        this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
+        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
+    });
+    
 	wxGetApp().other_instance_message_handler()->init(this->q);
 
     // collapse sidebar according to saved value
@@ -6578,6 +6646,16 @@ NotificationManager * Plater::get_notification_manager()
 const NotificationManager * Plater::get_notification_manager() const
 {
     return p->notification_manager.get();
+}
+
+PrusaAuthCommunication* Plater::get_auth_communication()
+{
+    return p->auth_communication.get();
+}
+
+const PrusaAuthCommunication* Plater::get_auth_communication() const
+{
+    return p->auth_communication.get();
 }
 
 void Plater::init_notification_manager()

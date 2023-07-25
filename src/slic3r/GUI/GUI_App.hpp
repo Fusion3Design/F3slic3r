@@ -98,6 +98,8 @@ enum ConfigMenuIDs {
     ConfigMenuTakeSnapshot,
     ConfigMenuUpdateConf,
     ConfigMenuUpdateApp,
+    ConfigMenuAuthLogin,
+    ConfigMenuConnectDummy,
     ConfigMenuDesktopIntegration,
     ConfigMenuPreferences,
     ConfigMenuModeSimple,
@@ -294,6 +296,7 @@ public:
     void            update_mode();
 
     void            add_config_menu(wxMenuBar *menu);
+    void            update_config_menu();
     bool            has_unsaved_preset_changes() const;
     bool            has_current_preset_changes() const;
     void            update_saved_preset_from_current_preset();
@@ -317,6 +320,7 @@ public:
     // Calls wxLaunchDefaultBrowser if user confirms in dialog.
     // Add "Rememeber my choice" checkbox to question dialog, when it is forced or a "suppress_hyperlinks" option has empty value
     bool            open_browser_with_warning_dialog(const wxString& url, wxWindow* parent = nullptr, bool force_remember_choice = true, int flags = 0);
+    bool            open_login_browser_with_dialog(const wxString& url, wxWindow* parent = nullptr, int flags = 0);
 #ifdef __APPLE__
     void            OSXStoreOpenFiles(const wxArrayString &files) override;
     // wxWidgets override to get an event on open files.
@@ -419,6 +423,10 @@ private:
     void            app_version_check(bool from_user);
 
     bool                    m_wifi_config_dialog_shown { false };
+    bool                    m_wifi_config_dialog_was_declined { false };
+    // change to vector of items when adding more items that require update
+    //wxMenuItem*    m_login_config_menu_item { nullptr };
+    std::map< ConfigMenuIDs, wxMenuItem*> m_config_menu_updatable_items;
 };
 
 DECLARE_APP(GUI_App)
