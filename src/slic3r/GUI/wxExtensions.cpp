@@ -906,6 +906,8 @@ int ScalableButton::GetBitmapHeight()
 
 void ScalableButton::sys_color_changed()
 {
+    if (m_current_icon_name.empty())
+        return;
     Slic3r::GUI::wxGetApp().UpdateDarkUI(this, m_has_border);
 
     wxBitmapBundle bmp = *get_bmp_bundle(m_current_icon_name, m_bmp_width, m_bmp_height);

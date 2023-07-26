@@ -103,7 +103,8 @@
 #include "WebViewDialog.hpp"
 
 #include "BitmapCache.hpp"
-#include "Notebook.hpp"
+//#include "Notebook.hpp"
+#include "TopBar.hpp"
 
 #ifdef __WXMSW__
 #include <dbt.h>
@@ -1519,16 +1520,16 @@ void GUI_App::init_ui_colours()
     m_mode_palette                  = get_mode_default_palette();
 
     bool is_dark_mode = dark_mode();
-#ifdef _WIN32
+//#ifdef _WIN32
     m_color_label_default           = is_dark_mode ? wxColour(250, 250, 250): wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
     m_color_highlight_label_default = is_dark_mode ? wxColour(230, 230, 230): wxSystemSettings::GetColour(/*wxSYS_COLOUR_HIGHLIGHTTEXT*/wxSYS_COLOUR_WINDOWTEXT);
     m_color_highlight_default       = is_dark_mode ? wxColour(78, 78, 78)   : wxSystemSettings::GetColour(wxSYS_COLOUR_3DLIGHT);
     m_color_hovered_btn_label       = is_dark_mode ? wxColour(253, 111, 40) : wxColour(252, 77, 1);
     m_color_default_btn_label       = is_dark_mode ? wxColour(255, 181, 100): wxColour(203, 61, 0);
     m_color_selected_btn_bg         = is_dark_mode ? wxColour(95, 73, 62)   : wxColour(228, 220, 216);
-#else
-    m_color_label_default = wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
-#endif
+//#else
+//    m_color_label_default = wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
+//#endif
     m_color_window_default          = is_dark_mode ? wxColour(43, 43, 43)   : wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW);
 }
 
@@ -1564,12 +1565,13 @@ void GUI_App::update_label_colours()
         tab->update_label_colours();
 }
 
-#ifdef _WIN32
+#if 0//def _WIN32
 static bool is_focused(HWND hWnd)
 {
     HWND hFocusedWnd = ::GetFocus();
     return hFocusedWnd && hWnd == hFocusedWnd;
 }
+#endif
 
 static bool is_default(wxWindow* win)
 {
@@ -1579,7 +1581,6 @@ static bool is_default(wxWindow* win)
         
     return win == tlw->GetDefaultItem();
 }
-#endif
 
 void GUI_App::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, bool just_font/* = false*/)
 {
@@ -1592,6 +1593,7 @@ void GUI_App::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, bool ju
             highlited = true;
         }
         // button marking
+        if (!dynamic_cast<TopBarItemsCtrl*>(window->GetParent())) // don't marking the button if it is from TopBar
         {
             auto mark_button = [this, btn, highlited](const bool mark) {
                 if (btn->GetLabel().IsEmpty())
@@ -1604,12 +1606,12 @@ void GUI_App::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, bool ju
 
             // hovering
             btn->Bind(wxEVT_ENTER_WINDOW, [mark_button](wxMouseEvent& event) { mark_button(true); event.Skip(); });
-            btn->Bind(wxEVT_LEAVE_WINDOW, [mark_button, btn](wxMouseEvent& event) { mark_button(is_focused(btn->GetHWND())); event.Skip(); });
+            btn->Bind(wxEVT_LEAVE_WINDOW, [mark_button, btn](wxMouseEvent& event) { mark_button(btn->HasFocus()); event.Skip(); });
             // focusing
             btn->Bind(wxEVT_SET_FOCUS,    [mark_button](wxFocusEvent& event) { mark_button(true); event.Skip(); });
             btn->Bind(wxEVT_KILL_FOCUS,   [mark_button](wxFocusEvent& event) { mark_button(false); event.Skip(); });
 
-            is_focused_button = is_focused(btn->GetHWND());
+            is_focused_button = btn->HasFocus();// is_focused(btn->GetHWND());
             is_default_button = is_default(btn);
             if (is_focused_button || is_default_button)
                 mark_button(is_focused_button);
@@ -2471,10 +2473,8 @@ void GUI_App::update_mode()
 {
     sidebar().update_mode();
 
-#ifdef _WIN32 //_MSW_DARK_MODE
     if (!wxGetApp().tabs_as_menu())
-        dynamic_cast<Notebook*>(mainframe->m_tabpanel)->UpdateMode();
-#endif
+        dynamic_cast<TopBar*>(mainframe->m_tabpanel)->UpdateMode();
 
     for (auto tab : tabs_list)
         tab->update_mode();
@@ -2483,7 +2483,8 @@ void GUI_App::update_mode()
     plater()->canvas3D()->update_gizmos_on_off_state();
 }
 
-void GUI_App::add_config_menu(wxMenuBar *menu)
+//void GUI_App::add_config_menu(wxMenuBar *menu)
+wxMenu* GUI_App::get_config_menu()
 {
     auto local_menu = new wxMenu();
     wxWindowID config_id_base = wxWindow::NewControlId(int(ConfigMenuCnt));
@@ -2518,6 +2519,7 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
         "\tCtrl+P",
 #endif
         _L("Application preferences"));
+    /*
     wxMenu* mode_menu = nullptr;
     if (is_editor()) {
         local_menu->AppendSeparator();
@@ -2532,6 +2534,7 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
 
         local_menu->AppendSubMenu(mode_menu, _L("Mode"), wxString::Format(_L("%s View Mode"), SLIC3R_APP_NAME));
     }
+    */
     local_menu->AppendSeparator();
     local_menu->Append(config_id_base + ConfigMenuLanguage, _L("&Language"));
     if (is_editor()) {
@@ -2677,6 +2680,10 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
         }
     });
     
+#if 1
+    return local_menu;
+#else
+
     using std::placeholders::_1;
 
     if (mode_menu != nullptr) {
@@ -2687,6 +2694,7 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
     }
 
     menu->Append(local_menu, _L("&Configuration"));
+#endif
 }
 void GUI_App::update_config_menu()
 {

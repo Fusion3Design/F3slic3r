@@ -478,7 +478,8 @@ class TabFilament : public Tab
     std::map<std::string, wxWindow*> m_overrides_options;
 public:
 	TabFilament(wxBookCtrlBase* parent) :
-		Tab(parent, _(L("Filament Settings")), Slic3r::Preset::TYPE_FILAMENT) {}
+//		Tab(parent, _(L("Filament Settings")), Slic3r::Preset::TYPE_FILAMENT) {}
+		Tab(parent, _L("Filaments"), Slic3r::Preset::TYPE_FILAMENT) {}
 	~TabFilament() {}
 
 	void		build() override;
@@ -536,7 +537,8 @@ public:
     PrinterTechnology               m_printer_technology = ptFFF;
 
     TabPrinter(wxBookCtrlBase* parent) :
-        Tab(parent, _L("Printer Settings"), Slic3r::Preset::TYPE_PRINTER) {}
+//        Tab(parent, _L("Printer Settings"), Slic3r::Preset::TYPE_PRINTER) {}
+        Tab(parent, _L("Printers"), Slic3r::Preset::TYPE_PRINTER) {}
 	~TabPrinter() {}
 
 	void		build() override;
@@ -574,7 +576,8 @@ class TabSLAMaterial : public Tab
 	std::map<std::string, wxWindow*> m_overrides_options;
 public:
     TabSLAMaterial(wxBookCtrlBase* parent) :
-		Tab(parent, _(L("Material Settings")), Slic3r::Preset::TYPE_SLA_MATERIAL) {}
+//		Tab(parent, _(L("Material Settings")), Slic3r::Preset::TYPE_SLA_MATERIAL) {}
+		Tab(parent, _L("Materials"), Slic3r::Preset::TYPE_SLA_MATERIAL) {}
     ~TabSLAMaterial() {}
 
 	void		build() override;

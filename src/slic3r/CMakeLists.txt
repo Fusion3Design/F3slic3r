@@ -252,6 +252,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/DoubleSlider.hpp
     GUI/Notebook.cpp
     GUI/Notebook.hpp
+    GUI/TopBar.cpp
+    GUI/TopBar.hpp
     GUI/ObjectDataViewModel.cpp
     GUI/ObjectDataViewModel.hpp
     GUI/InstanceCheck.cpp

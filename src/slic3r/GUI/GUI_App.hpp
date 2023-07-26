@@ -146,12 +146,13 @@ private:
     wxColour        m_color_label_sys;
     wxColour        m_color_label_default;
     wxColour        m_color_window_default;
-#ifdef _WIN32
+//#ifdef _WIN32
     wxColour        m_color_highlight_label_default;
     wxColour        m_color_hovered_btn_label;
     wxColour        m_color_default_btn_label;
     wxColour        m_color_highlight_default;
     wxColour        m_color_selected_btn_bg;
+#ifdef _WIN32
     bool            m_force_colors_update { false };
 #endif
     std::vector<std::string>     m_mode_palette;
@@ -251,7 +252,7 @@ public:
     std::vector<wxColour>   get_mode_palette();
     void                    set_mode_palette(const std::vector<wxColour> &palette);
 
-#ifdef _WIN32
+//#ifdef _WIN32
     const wxColour& get_label_highlight_clr()   { return m_color_highlight_label_default; }
     const wxColour& get_highlight_default_clr() { return m_color_highlight_default; }
     const wxColour& get_color_hovered_btn_label() { return m_color_hovered_btn_label; }
@@ -260,7 +261,7 @@ public:
 #ifdef _MSW_DARK_MODE
     void            force_menu_update();
 #endif //_MSW_DARK_MODE
-#endif
+//#endif
 
     const wxFont&   small_font()            { return m_small_font; }
     const wxFont&   bold_font()             { return m_bold_font; }
@@ -297,7 +298,8 @@ public:
     bool            save_mode(const /*ConfigOptionMode*/int mode) ;
     void            update_mode();
 
-    void            add_config_menu(wxMenuBar *menu);
+//    void            add_config_menu(wxMenuBar *menu);
+    wxMenu*         get_config_menu();
     void            update_config_menu();
     bool            has_unsaved_preset_changes() const;
     bool            has_current_preset_changes() const;

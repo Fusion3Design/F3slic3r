@@ -56,7 +56,8 @@
 #include "GUI_App.hpp"
 #include "UnsavedChangesDialog.hpp"
 #include "MsgDialog.hpp"
-#include "Notebook.hpp"
+//#include "Notebook.hpp"
+#include "TopBar.hpp"
 #include "GUI_Factories.hpp"
 #include "GUI_ObjectList.hpp"
 #include "GalleryDialog.hpp"
@@ -457,13 +458,15 @@ void MainFrame::update_layout()
     case ESettingsLayout::Old:
     {
         m_plater->Reparent(m_tabpanel);
-#ifdef _MSW_DARK_MODE
         m_plater->Layout();
+#ifdef _WIN32
         if (!wxGetApp().tabs_as_menu())
-            dynamic_cast<Notebook*>(m_tabpanel)->InsertPage(0, m_plater, _L("Plater"), std::string("plater"), true);
-        else
 #endif
+            dynamic_cast<TopBar*>(m_tabpanel)->InsertPage(0, m_plater, _L("Plater"), std::string("plater"), true);
+#ifdef _WIN32
+        else
         m_tabpanel->InsertPage(0, m_plater, _L("Plater"));
+#endif
         m_main_sizer->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 1);
         m_plater->Show();
         m_tabpanel->Show();
@@ -483,12 +486,14 @@ void MainFrame::update_layout()
         m_tabpanel->Hide();
         m_main_sizer->Add(m_tabpanel, 1, wxEXPAND);
         m_plater_page = new wxPanel(m_tabpanel);
-#ifdef _MSW_DARK_MODE
+#ifdef _WIN32
         if (!wxGetApp().tabs_as_menu())
-            dynamic_cast<Notebook*>(m_tabpanel)->InsertPage(0, m_plater_page, _L("Plater"), std::string("plater"), true);
-        else
 #endif
+            dynamic_cast<TopBar*>(m_tabpanel)->InsertPage(0, m_plater_page, _L("Plater"), std::string("plater"), true);
+#ifdef _WIN32
+        else
         m_tabpanel->InsertPage(0, m_plater_page, _L("Plater")); // empty panel just for Plater tab */
+#endif
         m_plater->Show();
         break;
     }
@@ -500,7 +505,7 @@ void MainFrame::update_layout()
         m_tabpanel->Show();
         m_plater->Show();
 
-#ifdef _MSW_DARK_MODE
+#ifdef _WIN32
         if (wxGetApp().tabs_as_menu())
             show_tabs_menu(false);
 #endif
@@ -697,22 +702,14 @@ void MainFrame::init_tabpanel()
 //        wxGetApp().UpdateDarkUI(m_tabpanel);
     }
     else
-        m_tabpanel = new Notebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME, true);
-#else
-    m_tabpanel = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME);
 #endif
-
-    wxGetApp().UpdateDarkUI(m_tabpanel);
+    m_tabpanel = new TopBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME, true);
 
     m_tabpanel->SetFont(Slic3r::GUI::wxGetApp().normal_font());
     m_tabpanel->Hide();
     m_settings_dialog.set_tabpanel(m_tabpanel);
 
-#ifdef __WXMSW__
     m_tabpanel->Bind(wxEVT_BOOKCTRL_PAGE_CHANGED, [this](wxBookCtrlEvent& e) {
-#else
-    m_tabpanel->Bind(wxEVT_NOTEBOOK_PAGE_CHANGED, [this](wxBookCtrlEvent& e) {
-#endif
         if (int old_selection = e.GetOldSelection();
             old_selection != wxNOT_FOUND && old_selection < static_cast<int>(m_tabpanel->GetPageCount())) {
             Tab* old_tab = dynamic_cast<Tab*>(m_tabpanel->GetPage(old_selection));
@@ -853,12 +850,14 @@ void MainFrame::add_created_tab(Tab* panel,  const std::string& bmp_name /*= ""*
     const auto printer_tech = wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology();
 
     if (panel->supports_printer_technology(printer_tech))
-#ifdef _MSW_DARK_MODE
+#ifdef _WIN32
         if (!wxGetApp().tabs_as_menu())
-            dynamic_cast<Notebook*>(m_tabpanel)->AddPage(panel, panel->title(), bmp_name);
-        else
 #endif
+            dynamic_cast<TopBar*>(m_tabpanel)->AddPage(panel, panel->title(), bmp_name);
+#ifdef _WIN32
+        else
         m_tabpanel->AddPage(panel, panel->title());
+#endif
 }
 
 bool MainFrame::is_active_and_shown_tab(Tab* tab)
@@ -1041,10 +1040,10 @@ void MainFrame::on_dpi_changed(const wxRect& suggested_rect)
     wxGetApp().update_fonts(this);
     this->SetFont(this->normal_font());
 
-#ifdef _MSW_DARK_MODE
+#ifdef _WIN32
     // update common mode sizer
     if (!wxGetApp().tabs_as_menu())
-        dynamic_cast<Notebook*>(m_tabpanel)->Rescale();
+        dynamic_cast<TopBar*>(m_tabpanel)->Rescale();
 #endif
 
     // update Plater
@@ -1089,12 +1088,9 @@ void MainFrame::on_sys_color_changed()
     wxGetApp().update_ui_colours_from_appconfig();
 #ifdef __WXMSW__
     wxGetApp().UpdateDarkUI(m_tabpanel);
-#ifdef _MSW_DARK_MODE
-    // update common mode sizer
     if (!wxGetApp().tabs_as_menu())
-        dynamic_cast<Notebook*>(m_tabpanel)->OnColorsChanged();
 #endif
-#endif
+         dynamic_cast<TopBar*>(m_tabpanel)->OnColorsChanged();
 
     // update Plater
     wxGetApp().plater()->sys_color_changed();
@@ -1112,13 +1108,9 @@ void MainFrame::on_sys_color_changed()
 
 void MainFrame::update_mode_markers()
 {
-#ifdef __WXMSW__
-#ifdef _MSW_DARK_MODE
     // update markers in common mode sizer
     if (!wxGetApp().tabs_as_menu())
-        dynamic_cast<Notebook*>(m_tabpanel)->UpdateModeMarkers();
-#endif
-#endif
+        dynamic_cast<TopBar*>(m_tabpanel)->UpdateModeMarkers();
 
     // update mode markers on side_bar
     wxGetApp().sidebar().update_mode_markers();
@@ -1547,6 +1539,28 @@ void MainFrame::init_menubar_as_editor()
     // Help menu
     auto helpMenu = generate_help_menu();
 
+#if 1
+    // append menus for Menu button from TopBar
+
+    TopBar* top_bar = dynamic_cast<TopBar*>(m_tabpanel);
+    top_bar->AppendMenuItem(fileMenu, _L("&File"));
+    if (editMenu) 
+        top_bar->AppendMenuItem(editMenu, _L("&Edit"));
+
+    top_bar->AppendMenuSeparaorItem();
+
+    top_bar->AppendMenuItem(windowMenu, _L("&Window"));
+    if (viewMenu) 
+        top_bar->AppendMenuItem(viewMenu, _L("&View"));
+    
+    top_bar->AppendMenuItem(wxGetApp().get_config_menu(), _L("&Configuration"));
+
+    top_bar->AppendMenuSeparaorItem();
+
+    top_bar->AppendMenuItem(helpMenu, _L("&Help"));
+
+#else
+
     // menubar
     // assign menubar to frame after appending items, otherwise special items
     // will not be handled correctly
@@ -1568,6 +1582,8 @@ void MainFrame::init_menubar_as_editor()
     }
 #endif
     SetMenuBar(m_menubar);
+
+#endif
 
 #ifdef _MSW_DARK_MODE
     if (wxGetApp().tabs_as_menu())
@@ -1662,7 +1678,7 @@ void MainFrame::init_menubar_as_gcodeviewer()
     m_menubar->Append(fileMenu, _L("&File"));
     if (viewMenu != nullptr) m_menubar->Append(viewMenu, _L("&View"));
     // Add additional menus from C++
-    wxGetApp().add_config_menu(m_menubar);
+//    wxGetApp().add_config_menu(m_menubar);
     m_menubar->Append(helpMenu, _L("&Help"));
     SetMenuBar(m_menubar);
 
@@ -2243,10 +2259,10 @@ void SettingsDialog::on_dpi_changed(const wxRect& suggested_rect)
     const int& em = em_unit();
     const wxSize& size = wxSize(85 * em, 50 * em);
 
-#ifdef _MSW_DARK_MODE
+#ifdef _WIN32
     // update common mode sizer
     if (!wxGetApp().tabs_as_menu())
-        dynamic_cast<Notebook*>(m_tabpanel)->Rescale();
+        dynamic_cast<TopBar*>(m_tabpanel)->Rescale();
 #endif
 
     // update Tabs
