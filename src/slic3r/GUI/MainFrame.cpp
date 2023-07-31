@@ -703,7 +703,7 @@ void MainFrame::init_tabpanel()
     }
     else
 #endif
-    m_tabpanel = new TopBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME, true);
+    m_tabpanel = new TopBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME);
 
     m_tabpanel->SetFont(Slic3r::GUI::wxGetApp().normal_font());
     m_tabpanel->Hide();
@@ -1539,7 +1539,7 @@ void MainFrame::init_menubar_as_editor()
     // Help menu
     auto helpMenu = generate_help_menu();
 
-#if 1
+#ifndef __APPLE__
     // append menus for Menu button from TopBar
 
     TopBar* top_bar = dynamic_cast<TopBar*>(m_tabpanel);
@@ -1571,27 +1571,13 @@ void MainFrame::init_menubar_as_editor()
     m_menubar->Append(windowMenu, _L("&Window"));
     if (viewMenu) m_menubar->Append(viewMenu, _L("&View"));
     // Add additional menus from C++
-    wxGetApp().add_config_menu(m_menubar);
+    m_menubar->Append(wxGetApp().get_config_menu(), _L("&Configuration"));
     m_menubar->Append(helpMenu, _L("&Help"));
 
-#ifdef _MSW_DARK_MODE
-    if (wxGetApp().tabs_as_menu()) {
-        // Add separator 
-        m_menubar->Append(new wxMenu(), "          ");
-        add_tabs_as_menu(m_menubar, this, this);
-    }
-#endif
     SetMenuBar(m_menubar);
 
-#endif
-
-#ifdef _MSW_DARK_MODE
-    if (wxGetApp().tabs_as_menu())
-        m_menubar->EnableTop(6, false);
-#endif
-
-#ifdef __APPLE__
     init_macos_application_menu(m_menubar, this);
+
 #endif // __APPLE__
 
     if (plater()->printer_technology() == ptSLA)

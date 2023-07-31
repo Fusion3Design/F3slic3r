@@ -26,7 +26,7 @@ class TopBarItemsCtrl : public wxControl
 
         ~Button() {}
 
-        void set_selected(bool selected) { m_is_selected = selected; }
+        void set_selected(bool selected);
     };
 
     class ButtonWithPopup : public Button
@@ -42,11 +42,11 @@ class TopBarItemsCtrl : public wxControl
         void SetLabel(const wxString& label) override;
     };
 
-    MenuWithSeparators m_menu;
-    MenuWithSeparators m_workspace_modes;
+    wxMenu m_main_menu;
+    wxMenu m_workspaces_menu;
 
 public:
-    TopBarItemsCtrl(wxWindow* parent, bool add_mode_buttons = false);
+    TopBarItemsCtrl(wxWindow* parent);
     ~TopBarItemsCtrl() {}
 
     void OnPaint(wxPaintEvent&);
@@ -63,9 +63,7 @@ public:
 
     void AppendMenuItem(wxMenu* menu, const wxString& title);
     void AppendMenuSeparaorItem();
-    void ShowMenu();
-    void AddModeItem();
-    void ShowModes();
+    void ApplyWorkspacesMenu();
 
 private:
     wxWindow*                       m_parent;
@@ -77,7 +75,6 @@ private:
     int                             m_selection {-1};
     int                             m_btn_margin;
     int                             m_line_margin;
-    ModeSizer*                      m_mode_sizer {nullptr};
 };
 
 class TopBar : public wxBookCtrlBase
@@ -87,24 +84,22 @@ public:
                  wxWindowID winid = wxID_ANY,
                  const wxPoint & pos = wxDefaultPosition,
                  const wxSize & size = wxDefaultSize,
-                 long style = 0,
-                 bool add_mode_buttons = false)
+                 long style = 0)
     {
         Init();
-        Create(parent, winid, pos, size, style, add_mode_buttons);
+        Create(parent, winid, pos, size, style);
     }
 
     bool Create(wxWindow * parent,
                 wxWindowID winid = wxID_ANY,
                 const wxPoint & pos = wxDefaultPosition,
                 const wxSize & size = wxDefaultSize,
-                long style = 0,
-                bool add_mode_buttons = false)
+                long style = 0)
     {
         if (!wxBookCtrlBase::Create(parent, winid, pos, size, style | wxBK_TOP))
             return false;
 
-        m_bookctrl = new TopBarItemsCtrl(this, add_mode_buttons);
+        m_bookctrl = new TopBarItemsCtrl(this);
 
         wxSizer* mainSizer = new wxBoxSizer(IsVertical() ? wxVERTICAL : wxHORIZONTAL);
 
