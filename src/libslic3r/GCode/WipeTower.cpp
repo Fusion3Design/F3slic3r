@@ -291,6 +291,25 @@ public:
         return extrude_explicit(end_point, y(), loading_dist, x_speed * 60.f, false, false);
     }
 
+    // Loads filament while also moving towards given point in x-axis. Unlike the previous function, this one respects
+    // both the loading_speed and x_speed. Can shorten the move.
+    WipeTowerWriter& load_move_x_advanced_there_and_back(float farthest_x, float e_dist, float e_speed, float x_speed)
+    {
+        float old_x = x();
+        float time = std::abs(e_dist / e_speed); // time that the whole move must take
+        float x_max_dist = std::abs(farthest_x - x());       // max x-distance that we can travel
+        float x_dist = x_speed * time;                       // totel x-distance to travel during the move
+        int n = int(x_dist / (2*x_max_dist) + 1.f);          // how many there and back moves should we do
+        float r = 2*n*x_max_dist / x_dist;                   // actual/required dist if the move is not shortened
+
+        float end_point = x() + (farthest_x > x() ? 1.f : -1.f) * x_max_dist / r;
+        for (int i=0; i<n; ++i) {
+            extrude_explicit(end_point, y(), e_dist/(2.f*n), x_speed * 60.f, false, false);
+            extrude_explicit(old_x, y(), e_dist/(2.f*n), x_speed * 60.f, false, false);
+        }
+        return *this;
+    }
+
 	// Elevate the extruder head above the current print_z position.
 	WipeTowerWriter& z_hop(float hop, float f = 0.f)
 	{ 
@@ -980,9 +999,19 @@ void WipeTower::toolchange_Unload(
             // Skinnydip:
             if (! skinnydip_done && (m_filpar[m_current_tool].filament_skinnydip_move == i || i == number_of_moves)) {
                 for (int s=0; s<m_filpar[m_current_tool].filament_skinnydip_number_of_dips; ++s) {
-                    float dist = m_filpar[m_current_tool].filament_skinnydip_distance + m_cooling_tube_length / 2.f;
-                    writer.load_move_x_advanced(turning_point, dist, m_filpar[m_current_tool].filament_skinnydip_loading_speed);
-                    writer.load_move_x_advanced(old_x, -dist, m_filpar[m_current_tool].filament_skinnydip_unloading_speed);
+                    float dist_e = m_filpar[m_current_tool].filament_skinnydip_distance + m_cooling_tube_length / 2.f;
+                    // Only last 5mm will be done with the fast x travel. The point is to spread possible blobs
+                    // along the whole wipe tower.
+                    if (dist_e > 5) {
+                        //writer.load_move_x_advanced_there_and_back(turning_point, dist_e-5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, 50);
+                        float cent = writer.x();
+                        writer.load_move_x_advanced(turning_point, 0.5*(dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
+                        writer.load_move_x_advanced(cent,          0.5*(dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
+                        writer.travel(cent, writer.y());
+                        writer.load_move_x_advanced_there_and_back(turning_point, 5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
+                    } else
+                        writer.load_move_x_advanced_there_and_back(turning_point, dist_e, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
+                    writer.load_move_x_advanced_there_and_back(turning_point, -dist_e, m_filpar[m_current_tool].filament_skinnydip_unloading_speed, 50);
                 }
                 skinnydip_done = true;
             }
