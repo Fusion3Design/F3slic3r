@@ -737,6 +737,8 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloats,              filament_skinnydip_loading_speed))
     ((ConfigOptionFloats,              filament_skinnydip_unloading_speed))
     ((ConfigOptionFloats,              filament_skinnydip_distance))
+    ((ConfigOptionFloats,              filament_skinnydip_extra_move))
+    ((ConfigOptionFloats,              filament_skinnydip_delay))
     ((ConfigOptionBool,                gcode_comments))
     ((ConfigOptionEnum<GCodeFlavor>,   gcode_flavor))
     ((ConfigOptionEnum<LabelObjectsStyle>,  gcode_label_objects))

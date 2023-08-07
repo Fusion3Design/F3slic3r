@@ -1135,6 +1135,22 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
+    def = this->add("filament_skinnydip_extra_move", coFloats);
+    def->label = L("ELIAS Skinnydip extension per dip");
+    def->tooltip = L("...");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
+    def = this->add("filament_skinnydip_delay", coFloats);
+    def->label = L("ELIAS Skinnydip delay");
+    def->tooltip = L("...");
+    def->sidetext = L("s");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
     def = this->add("filament_cooling_moves", coInts);
     def->label = L("Number of cooling moves");
     def->tooltip = L("Filament is cooled by being moved back and forth in the "

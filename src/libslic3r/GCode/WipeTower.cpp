@@ -638,6 +638,8 @@ void WipeTower::set_extruder(size_t idx, const PrintConfig& config)
         m_filpar[idx].filament_skinnydip_unloading_speed   = float(config.filament_skinnydip_unloading_speed.get_at(idx));
         m_filpar[idx].filament_skinnydip_distance          = float(config.filament_skinnydip_distance.get_at(idx));
         m_filpar[idx].filament_skinnydip_number_of_dips    = config.filament_skinnydip_number_of_dips.get_at(idx);
+        m_filpar[idx].filament_skinnydip_extra_move        = float(config.filament_skinnydip_extra_move.get_at(idx));
+        m_filpar[idx].filament_skinnydip_delay             = float(config.filament_skinnydip_delay.get_at(idx));
     }
 
     m_filpar[idx].filament_area = float((M_PI/4.f) * pow(config.filament_diameter.get_at(idx), 2)); // all extruders are assumed to have the same filament diameter at this point
@@ -1004,8 +1006,10 @@ void WipeTower::toolchange_Unload(
 
             // Skinnydip:
             if (! skinnydip_done && (m_filpar[m_current_tool].filament_skinnydip_move == i || i == number_of_moves)) {
+                float dist_e = m_filpar[m_current_tool].filament_skinnydip_distance + m_cooling_tube_length / 2.f;
+
                 for (int s=0; s<m_filpar[m_current_tool].filament_skinnydip_number_of_dips; ++s) {
-                    float dist_e = m_filpar[m_current_tool].filament_skinnydip_distance + m_cooling_tube_length / 2.f;
+                    
                     // Only last 5mm will be done with the fast x travel. The point is to spread possible blobs
                     // along the whole wipe tower.
                     if (dist_e > 5) {
@@ -1018,6 +1022,11 @@ void WipeTower::toolchange_Unload(
                     } else
                         writer.load_move_x_advanced_there_and_back(turning_point, dist_e, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
                     writer.load_move_x_advanced_there_and_back(turning_point, -dist_e, m_filpar[m_current_tool].filament_skinnydip_unloading_speed, 50);
+                
+                    writer.wait(m_filpar[m_current_tool].filament_skinnydip_delay);
+                    if (m_filpar[m_current_tool].filament_skinnydip_extra_move != 0.f)
+                        dist_e += m_filpar[m_current_tool].filament_skinnydip_extra_move;
+
                 }
                 skinnydip_done = true;
             }

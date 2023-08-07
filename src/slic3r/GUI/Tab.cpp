@@ -2274,6 +2274,8 @@ void TabFilament::build()
         optgroup->append_single_option_line("filament_skinnydip_loading_speed");
         optgroup->append_single_option_line("filament_skinnydip_unloading_speed");
         optgroup->append_single_option_line("filament_skinnydip_distance");
+        optgroup->append_single_option_line("filament_skinnydip_extra_move");
+        optgroup->append_single_option_line("filament_skinnydip_delay");
         optgroup->append_single_option_line("filament_cold_ramming");
 
         create_line_with_widget(optgroup.get(), "filament_ramming_parameters", "", [this](wxWindow* parent) {
