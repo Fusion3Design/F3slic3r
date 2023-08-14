@@ -1139,7 +1139,6 @@ void PrintConfigDef::init_fff_params()
     def->label = L("ELIAS Skinnydip extension per dip");
     def->tooltip = L("...");
     def->sidetext = L("mm");
-    def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
