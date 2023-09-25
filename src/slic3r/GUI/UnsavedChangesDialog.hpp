@@ -17,10 +17,7 @@ class ScalableButton;
 class wxStaticText;
 
 namespace Slic3r {
-namespace GUI{
-
-wxDECLARE_EVENT(EVT_DIFF_DIALOG_TRANSFER,       SimpleEvent);
-wxDECLARE_EVENT(EVT_DIFF_DIALOG_UPDATE_PRESETS, SimpleEvent);
+namespace GUI {
 
 // ----------------------------------------------------------------------------
 //                  ModelNode: a node inside DiffModel
@@ -412,8 +409,7 @@ public:
     void show(Preset::Type type = Preset::TYPE_INVALID);
     void update_presets(Preset::Type type = Preset::TYPE_INVALID, bool update_preset_bundles_from_app = true);
 
-    Preset::Type        view_type() const           { return m_view_type; }
-    PrinterTechnology   printer_technology() const  { return m_pr_technology; }
+    void process_options(std::function<void(Preset::Type)> process);
 
     std::string get_left_preset_name(Preset::Type type);
     std::string get_right_preset_name(Preset::Type type);

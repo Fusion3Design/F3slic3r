@@ -41,10 +41,6 @@ namespace Slic3r {
 
 namespace GUI {
 
-wxDEFINE_EVENT(EVT_DIFF_DIALOG_TRANSFER,        SimpleEvent);
-wxDEFINE_EVENT(EVT_DIFF_DIALOG_UPDATE_PRESETS,  SimpleEvent);
-
-
 // ----------------------------------------------------------------------------
 //                  ModelNode: a node inside DiffModel
 // ----------------------------------------------------------------------------
@@ -2062,12 +2058,33 @@ void DiffPresetDialog::button_event(Action act)
     }
     else {
         Hide();
+
         if (act == Action::Transfer)
-            wxPostEvent(this, SimpleEvent(EVT_DIFF_DIALOG_TRANSFER));
+            process_options([this](Preset::Type type) {
+                if (Tab* tab = wxGetApp().get_tab(type))
+                    tab->transfer_options(get_left_preset_name(type),
+                                          get_right_preset_name(type),
+                                          get_selected_options(type));
+            });
         else if (!presets_to_save.empty())
-            wxPostEvent(this, SimpleEvent(EVT_DIFF_DIALOG_UPDATE_PRESETS));
+            process_options([this](Preset::Type type) {
+                if (Tab* tab = wxGetApp().get_tab(type)) {
+                    tab->update_preset_choice();
+                    wxGetApp().sidebar().update_presets(type);
+                }
+            });
     }
 }
+
+void DiffPresetDialog::process_options(std::function<void(Preset::Type)> process)
+{
+    if (m_view_type == Preset::TYPE_INVALID) {
+        for (const Preset::Type& type : types_list())
+            process(type);
+    }
+    else
+        process(m_view_type);
+};
 
 std::string DiffPresetDialog::get_left_preset_name(Preset::Type type)
 {
