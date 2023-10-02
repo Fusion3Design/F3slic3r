@@ -46,6 +46,28 @@
 // suggest location
 #include "libslic3r/ClipperUtils.hpp" // Slic3r::intersection
 
+
+// Following two sets keeps characters that ImGui tried to render, but they were not in the atlas,
+// and ones that we already tried to add into the atlas.
+std::set<ImWchar> s_missing_chars;
+std::set<ImWchar> s_fixed_chars;
+
+// This is a free function that ImGui calls when it renders
+// a fallback glyph for c.
+void imgui_rendered_fallback_glyph(ImWchar c)
+{
+    if (ImGui::GetIO().Fonts->Fonts[0] == ImGui::GetFont()) {
+        // Only do this when we are using the default ImGui font. Otherwise this would conflict with
+        // EmbossStyleManager's font handling and we would load glyphs needlessly.
+        if (s_fixed_chars.find(c) == s_fixed_chars.end()) {
+            // Do not add this if we already tried to fix it. We don't want to
+            // rebuild the atlas in every frame when the glyph is not available at all.
+            s_missing_chars.emplace(c);
+        }
+    }
+}
+
+
 namespace Slic3r {
 namespace GUI {
 
@@ -371,6 +393,16 @@ void ImGuiWrapper::render()
     ImGui::Render();
     render_draw_data(ImGui::GetDrawData());
     m_new_frame_open = false;
+
+    if (! s_missing_chars.empty()) {
+        // If there were some characters that ImGui was unable to render, we will destroy current font.
+        // It will be rebuilt in the next call of new_frame including these. We also move all characters
+        // that we already added this way into the list of missing chars again, so all are added at once.
+        destroy_font();
+        for (ImWchar c : s_fixed_chars)
+            s_missing_chars.emplace(c);
+        s_fixed_chars.clear();
+    }
 }
 
 bool ImGuiWrapper::button(const std::string& label, const ImVec2 &size, bool enable)
@@ -1102,12 +1134,19 @@ void ImGuiWrapper::init_font(bool compress)
     builder.AddChar(ImWchar(0x2026)); // …
 
     if (m_font_cjk) {
-        // This is a temporary fix of https://github.com/prusa3d/PrusaSlicer/issues/8171. The translation
-        // contains characters not in the ImGui ranges for simplified Chinese. For now, just add them manually.
-        // In future, it might be worth to parse the dictionary and add all the necessary characters.
+        // https://github.com/prusa3d/PrusaSlicer/issues/8171: The translation
+        // contains characters not in the ImGui ranges for simplified Chinese. Add them manually.
+        // This should no longer be needed because the following block would add them automatically.
         builder.AddChar(ImWchar(0x5ED3));
         builder.AddChar(ImWchar(0x8F91));
     }
+
+    // Add the characters that that needed the fallback character.
+    for (ImWchar c : s_missing_chars) {
+        builder.AddChar(c);
+        s_fixed_chars.emplace(c);
+    }
+    s_missing_chars.clear();
 
 #ifdef __APPLE__
 	if (m_font_cjk)

@@ -3282,11 +3282,20 @@ void ImFont::AddRemapChar(ImWchar dst, ImWchar src, bool overwrite_dst)
 
 const ImFontGlyph* ImFont::FindGlyph(ImWchar c) const
 {
-    if (c >= (size_t)IndexLookup.Size)
+    // PrusaSlicer extension: call the following function whenever the fallback is needed.
+    // The goal is to not modify ImGui code too much.
+    void imgui_rendered_fallback_glyph(ImWchar c);
+
+
+    if (c >= (size_t)IndexLookup.Size) {
+        imgui_rendered_fallback_glyph(c);
         return FallbackGlyph;
+    }
     const ImWchar i = IndexLookup.Data[c];
-    if (i == (ImWchar)-1)
+    if (i == (ImWchar)-1) {
+       imgui_rendered_fallback_glyph(c);
         return FallbackGlyph;
+    }
     return &Glyphs.Data[i];
 }
 
