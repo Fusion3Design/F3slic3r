@@ -571,6 +571,8 @@ class TabSLAMaterial : public Tab
 	void		update_material_overrides_page();
 
 	std::map<std::string, wxWindow*> m_overrides_options;
+	ogStaticText*	m_z_correction_to_mm_description = nullptr;
+
 public:
     TabSLAMaterial(wxBookCtrlBase* parent) :
 		Tab(parent, _L("Materials"), Slic3r::Preset::TYPE_SLA_MATERIAL) {}
@@ -586,6 +588,7 @@ public:
 	void		sys_color_changed() override;
 	bool 		supports_printer_technology(const PrinterTechnology tech) const override { return tech == ptSLA; }
 	void		update_sla_prusa_specific_visibility() override;
+    void		update_description_lines() override;
 };
 
 class TabSLAPrint : public Tab

@@ -1174,6 +1174,8 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloat,                       material_correction_y))
     ((ConfigOptionFloat,                       material_correction_z))
     ((ConfigOptionEnum<SLAMaterialSpeed>,      material_print_speed))
+    ((ConfigOptionInt,                         zcorrection_layers))
+
     ((ConfigOptionFloatNullable,               material_ow_support_pillar_diameter))
     ((ConfigOptionFloatNullable,               material_ow_branchingsupport_pillar_diameter))
     ((ConfigOptionFloatNullable,               material_ow_support_head_front_diameter))
