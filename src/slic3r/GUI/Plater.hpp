@@ -31,7 +31,8 @@
 #include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "Jobs/Job.hpp"
 #include "Jobs/Worker.hpp"
-#include "Search.hpp"
+#include "GUI.hpp"
+#include "I18N.hpp"
 
 class wxButton;
 class ScalableButton;
@@ -99,11 +100,6 @@ public:
     void msw_rescale();
     void sys_color_changed();
     void update_mode_markers();
-    void search();
-    void jump_to_option(size_t selected);
-    void jump_to_option(const std::string& opt_key, Preset::Type type, const std::wstring& category);
-    // jump to option which is represented by composite key : "opt_key;tab_name"
-    void jump_to_option(const std::string& composite_key);
 
     ObjectManipulation*     obj_manipul();
     ObjectList*             obj_list();
@@ -130,7 +126,6 @@ public:
     void                    update_mode();
     bool                    is_collapsed();
     void                    collapse(bool collapse);
-    void                    check_and_update_searcher(bool respect_mode = false);
     void                    update_ui_from_settings();
 
 #ifdef _MSW_DARK_MODE
@@ -138,8 +133,6 @@ public:
 #endif
 
     std::vector<PlaterPresetComboBox*>&   combos_filament();
-    Search::OptionsSearcher&        get_searcher();
-    std::string&                    get_search_line();
 
 private:
     struct priv;
@@ -320,7 +313,6 @@ public:
     void redo_to(int selection);
     bool undo_redo_string_getter(const bool is_undo, int idx, const char** out_text);
     void undo_redo_topmost_string_getter(const bool is_undo, std::string& out_text);
-    bool search_string_getter(int idx, const char** label, const char** tooltip);
     // For the memory statistics. 
     const Slic3r::UndoRedo::Stack& undo_redo_stack_main() const;
     void clear_undo_redo_stack_main();
@@ -368,7 +360,7 @@ public:
 
     void copy_selection_to_clipboard();
     void paste_from_clipboard();
-    void search(bool plater_is_active);
+    void search();
     void mirror(Axis axis);
     void split_object();
     void split_volume();

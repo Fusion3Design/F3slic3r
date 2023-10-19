@@ -12,6 +12,7 @@
 #include "ConfigWizard.hpp"
 #include "OpenGLManager.hpp"
 #include "libslic3r/Preset.hpp"
+#include "Search.hpp"
 
 #include <wx/app.h>
 #include <wx/colour.h>
@@ -175,6 +176,8 @@ private:
     std::string m_instance_hash_string;
 	size_t m_instance_hash_int;
 
+    Search::OptionsSearcher m_searcher;
+
 public:
     bool            OnInit() override;
     bool            initialized() const { return m_initialized; }
@@ -187,6 +190,14 @@ public:
     bool is_gcode_viewer() const { return m_app_mode == EAppMode::GCodeViewer; }
     bool is_recreating_gui() const { return m_is_recreating_gui; }
     std::string logo_name() const { return is_editor() ? "PrusaSlicer" : "PrusaSlicer-gcodeviewer"; }
+
+    Search::OptionsSearcher& searcher() noexcept { return m_searcher; }
+    void                     check_and_update_searcher(ConfigOptionMode mode = comExpert);
+    void                     jump_to_option(size_t selected);
+    void                     jump_to_option(const std::string& opt_key, Preset::Type type, const std::wstring& category);
+    // jump to option which is represented by composite key : "opt_key;tab_name"
+    void                     jump_to_option(const std::string& composite_key);
+    void                     show_search_dialog();
 
     // To be called after the GUI is fully built up.
     // Process command line parameters cached in this->init_params,

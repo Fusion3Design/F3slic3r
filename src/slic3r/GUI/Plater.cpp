@@ -704,7 +704,6 @@ struct Sidebar::priv
 	ScalableButton* btn_export_gcode_removable; //exports to removable drives (appears only if removable drive is connected)
 
     bool                is_collapsed {false};
-    Search::OptionsSearcher     searcher;
 
     priv(Plater *plater) : plater(plater) {}
     ~priv();
@@ -1187,8 +1186,6 @@ void Sidebar::msw_rescale()
     p->btn_reslice     ->SetMinSize(wxSize(-1, scaled_height));
 
     p->scrolled->Layout();
-
-    p->searcher.dlg_msw_rescale();
 }
 
 void Sidebar::sys_color_changed()
@@ -1228,57 +1225,12 @@ void Sidebar::sys_color_changed()
 
     p->scrolled->Layout();
     p->scrolled->Refresh();
-
-    p->searcher.dlg_sys_color_changed();
 }
 
 void Sidebar::update_mode_markers()
 {
     if (p->mode_sizer)
         p->mode_sizer->update_mode_markers();
-}
-
-void Sidebar::search()
-{
-    p->searcher.search();
-}
-
-void Sidebar::jump_to_option(const std::string& composite_key)
-{
-    const auto        separator_pos = composite_key.find(";");
-    const std::string opt_key       = composite_key.substr(0, separator_pos);
-    const std::string tab_name      = composite_key.substr(separator_pos + 1, composite_key.length());
-
-    for (Tab* tab : wxGetApp().tabs_list) {
-        if (tab->name() == tab_name) {
-            check_and_update_searcher(true);
-
-            // Regularly searcher is sorted in respect to the options labels,
-            // so resort searcher before get an option
-            p->searcher.sort_options_by_key();
-            const Search::Option& opt = p->searcher.get_option(opt_key, tab->type());
-            tab->activate_option(opt_key, boost::nowide::narrow(opt.category));
-
-            // Revert sort of searcher back
-            p->searcher.sort_options_by_label();
-            break;
-        }
-    }
-}
-
-void Sidebar::jump_to_option(const std::string& opt_key, Preset::Type type, const std::wstring& category)
-{
-    //const Search::Option& opt = p->searcher.get_option(opt_key, type);
-    wxGetApp().get_tab(type)->activate_option(opt_key, category);
-}
-
-void Sidebar::jump_to_option(size_t selected)
-{
-    const Search::Option& opt = p->searcher.get_option(selected);
-    if (opt.type == Preset::TYPE_PREFERENCES)
-        wxGetApp().open_preferences(opt.opt_key(), boost::nowide::narrow(opt.group));
-    else
-        wxGetApp().get_tab(opt.type)->activate_option(opt.opt_key(), boost::nowide::narrow(opt.category));
 }
 
 ObjectManipulation* Sidebar::obj_manipul()
@@ -1568,20 +1520,6 @@ bool Sidebar::is_multifilament()
     return p->combos_filament.size() > 1;
 }
 
-void Sidebar::check_and_update_searcher(bool respect_mode /*= false*/)
-{
-    std::vector<Search::InputInfo> search_inputs{};
-
-    auto& tabs_list = wxGetApp().tabs_list;
-    auto print_tech = wxGetApp().preset_bundle->printers.get_selected_preset().printer_technology();
-    for (auto tab : tabs_list)
-        if (tab->supports_printer_technology(print_tech))
-            search_inputs.emplace_back(Search::InputInfo{ tab->get_config(), tab->type() });
-
-    p->searcher.check_and_update(wxGetApp().preset_bundle->printers.get_selected_preset().printer_technology(), 
-                                 respect_mode ? m_mode : comExpert, search_inputs);
-}
-
 void Sidebar::update_mode()
 {
     m_mode = wxGetApp().get_mode();
@@ -1638,18 +1576,6 @@ void Sidebar::update_ui_from_settings()
 std::vector<PlaterPresetComboBox*>& Sidebar::combos_filament()
 {
     return p->combos_filament;
-}
-
-Search::OptionsSearcher& Sidebar::get_searcher()
-{
-    return p->searcher;
-}
-
-std::string& Sidebar::get_search_line()
-{
-    // update searcher before show imGui search dialog on the plater, if printer technology or mode was changed
-    check_and_update_searcher(true);
-    return p->searcher.search_string();
 }
 
 // Plater::DropTarget
@@ -2171,8 +2097,6 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         sidebar->Bind(wxEVT_COMBOBOX, &priv::on_select_preset, this);
         sidebar->Bind(EVT_OBJ_LIST_OBJECT_SELECT, [this](wxEvent&) { priv::selection_changed(); });
         sidebar->Bind(EVT_SCHEDULE_BACKGROUND_PROCESS, [this](SimpleEvent&) { this->schedule_background_process(); });
-        // jump to found option from SearchDialog
-        q->Bind(wxCUSTOMEVT_JUMP_TO_OPTION, [this](wxCommandEvent& evt) { sidebar->jump_to_option(evt.GetInt()); });
     }
 
     wxGLCanvas* view3D_canvas = view3D->get_wxglcanvas();
@@ -6803,7 +6727,7 @@ void Plater::export_gcode(bool prefer_removable)
 
             wxString error_str;
             if (check_for_error(output_path, error_str)) {
-                ErrorDialog(this, error_str, [this](const std::string& key) -> void { sidebar().jump_to_option(key); }).ShowModal();
+                ErrorDialog(this, error_str, [](const std::string& key) -> void { wxGetApp().jump_to_option(key); }).ShowModal();
                 output_path.clear();
             } else {
                 alert_when_exporting_binary_gcode(wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_bool("gcode_binary"),
@@ -7361,7 +7285,7 @@ void Plater::send_gcode()
             const bool binary_output = wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_bool("gcode_binary");
             const wxString error_str = check_binary_vs_ascii_gcode_extension(printer_technology(), ext, binary_output);
             if (! error_str.IsEmpty()) {
-                ErrorDialog(this, error_str, t_kill_focus([](const std::string& key) -> void { wxGetApp().sidebar().jump_to_option(key); })).ShowModal();
+                ErrorDialog(this, error_str, t_kill_focus([](const std::string& key) -> void { wxGetApp().jump_to_option(key); })).ShowModal();
                 return;
             }
         }
@@ -7444,18 +7368,6 @@ void Plater::undo_redo_topmost_string_getter(const bool is_undo, std::string& ou
     }
 
     out_text = "";
-}
-
-bool Plater::search_string_getter(int idx, const char** label, const char** tooltip)
-{
-    const Search::OptionsSearcher& search_list = p->sidebar->get_searcher();
-    
-    if (0 <= idx && (size_t)idx < search_list.size()) {
-        search_list[idx].get_marked_label_and_tooltip(label, tooltip);
-        return true;
-    }
-
-    return false;
 }
 
 void Plater::on_extruders_change(size_t num_extruders)
@@ -8014,27 +7926,21 @@ void Plater::paste_from_clipboard()
         p->view3D->get_canvas3d()->get_selection().paste_from_clipboard();
 }
 
-void Plater::search(bool plater_is_active)
+void Plater::search()
 {
-    if (plater_is_active) {
-        if (is_preview_shown())
-            return;
-        // plater should be focused for correct navigation inside search window 
-        this->SetFocus();
+    if (is_preview_shown())
+        return;
+    // plater should be focused for correct navigation inside search window 
+    this->SetFocus();
 
-        wxKeyEvent evt;
+    wxKeyEvent evt;
 #ifdef __APPLE__
-        evt.m_keyCode = 'f';
+    evt.m_keyCode = 'f';
 #else /* __APPLE__ */
-        evt.m_keyCode = WXK_CONTROL_F;
+    evt.m_keyCode = WXK_CONTROL_F;
 #endif /* __APPLE__ */
-        evt.SetControlDown(true);
-        canvas3D()->on_char(evt);
-    }
-    else {
-        p->sidebar->check_and_update_searcher(true);
-        p->sidebar->get_searcher().show_dialog();
-    }
+    evt.SetControlDown(true);
+    canvas3D()->on_char(evt);
 }
 
 void Plater::msw_rescale()

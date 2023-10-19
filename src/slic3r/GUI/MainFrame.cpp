@@ -288,6 +288,11 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
 
         preferences_dialog = new PreferencesDialog(this);
     }
+
+    if (wxGetApp().is_editor()) {
+        // jump to found option from SearchDialog
+        Bind(wxCUSTOMEVT_JUMP_TO_OPTION, [this](wxCommandEvent& evt) { wxGetApp().jump_to_option(evt.GetInt()); });
+    }
 }
 
 #ifdef _MSW_DARK_MODE
@@ -1054,6 +1059,8 @@ void MainFrame::on_dpi_changed(const wxRect& suggested_rect)
     this->SetSize(sz);
 
     this->Maximize(is_maximized);
+
+    wxGetApp().searcher().dlg_msw_rescale();
 }
 
 void MainFrame::on_sys_color_changed()
@@ -1083,6 +1090,8 @@ void MainFrame::on_sys_color_changed()
     MenuFactory::sys_color_changed(m_menubar);
 
     this->Refresh();
+
+    wxGetApp().searcher().dlg_sys_color_changed();
 }
 
 void MainFrame::update_mode_markers()
@@ -1437,7 +1446,7 @@ void MainFrame::init_menubar_as_editor()
 
         editMenu->AppendSeparator();
         append_menu_item(editMenu, wxID_ANY, _L("Searc&h") + "\tCtrl+F",
-            _L("Search in settings"), [this](wxCommandEvent&) { m_plater->search(m_plater->IsShown()); },
+            _L("Search in settings"), [this](wxCommandEvent&) { m_plater->IsShown() ? m_plater->search() : wxGetApp().show_search_dialog(); },
             "search", nullptr, []() {return true; }, this);
     }
 
@@ -2138,7 +2147,7 @@ SettingsDialog::SettingsDialog(MainFrame* mainframe)
 #else /* __APPLE__ */
                 case WXK_CONTROL_F:
 #endif /* __APPLE__ */
-                case 'F': { m_main_frame->plater()->search(false); break; }
+                case 'F': { wxGetApp().show_search_dialog(); break; }
                 default:break;
                 }
             }

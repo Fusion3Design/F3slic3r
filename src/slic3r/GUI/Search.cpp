@@ -16,7 +16,7 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "GUI_App.hpp"
-#include "Plater.hpp"
+#include "Mainframe.hpp"
 #include "Tab.hpp"
 
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
@@ -352,24 +352,10 @@ void OptionsSearcher::append_preferences_option(const GUI::Line& opt_line)
 
 void OptionsSearcher::append_preferences_options(const std::vector<GUI::Line>& opt_lines)
 {
-    //Preset::Type type = Preset::TYPE_PREFERENCES;
     for (const GUI::Line& line : opt_lines) {
         if (line.is_separator())
             continue;
         append_preferences_option(line);
-        //wxString label = line.label;
-        //if (label.IsEmpty())
-        //    continue;
-
-        //std::string key = get_key(line.get_options().front().opt_id, type);        
-        //const GroupAndCategory& gc = groups_and_categories[key];
-        //if (gc.group.IsEmpty() || gc.category.IsEmpty())
-        //    continue;        
-        //
-        //preferences_options.emplace_back(Search::Option{ boost::nowide::widen(key), type,
-        //                            label.ToStdWstring(), _(label).ToStdWstring(),
-        //                            gc.group.ToStdWstring(), _(gc.group).ToStdWstring(),
-        //                            gc.category.ToStdWstring(), _(gc.category).ToStdWstring() });
     }
 }
 
@@ -617,7 +603,7 @@ void SearchDialog::ProcessSelection(wxDataViewItem selection)
     // So, post event to plater: 
     wxCommandEvent event(wxCUSTOMEVT_JUMP_TO_OPTION);
     event.SetInt(search_list_model->GetRow(selection));
-    wxPostEvent(GUI::wxGetApp().plater(), event);
+    wxPostEvent(GUI::wxGetApp().mainframe, event);
 }
 
 void SearchDialog::OnInputText(wxCommandEvent&)

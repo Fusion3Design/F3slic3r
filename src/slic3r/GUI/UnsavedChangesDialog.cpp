@@ -1254,8 +1254,8 @@ void UnsavedChangesDialog::update(Preset::Type type, PresetCollection* dependent
 void UnsavedChangesDialog::update_tree(Preset::Type type, PresetCollection* presets_, const std::string& new_selected_preset)
 {
     // update searcher befofre update of tree
-    wxGetApp().sidebar().check_and_update_searcher();
-    Search::OptionsSearcher& searcher = wxGetApp().sidebar().get_searcher();
+    wxGetApp().check_and_update_searcher();
+    Search::OptionsSearcher& searcher = wxGetApp().searcher();
     searcher.sort_options_by_key();
 
     // list of the presets with unsaved changes
@@ -1774,8 +1774,8 @@ void DiffPresetDialog::update_bottom_info(wxString bottom_info)
 void DiffPresetDialog::update_tree()
 {
     // update searcher before update of tree
-    wxGetApp().sidebar().check_and_update_searcher(); 
-    Search::OptionsSearcher& searcher = wxGetApp().sidebar().get_searcher();
+    wxGetApp().check_and_update_searcher();
+    Search::OptionsSearcher& searcher = wxGetApp().searcher();
     searcher.sort_options_by_key();
 
     m_tree->Clear();

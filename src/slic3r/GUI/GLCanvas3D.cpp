@@ -4765,7 +4765,12 @@ bool GLCanvas3D::_render_undo_redo_stack(const bool is_undo, float pos_x)
 // Getter for the const char*[] for the search list 
 static bool search_string_getter(int idx, const char** label, const char** tooltip)
 {
-    return wxGetApp().plater()->search_string_getter(idx, label, tooltip);
+    const Search::OptionsSearcher& search_list = wxGetApp().searcher();
+    if (0 <= idx && (size_t)idx < search_list.size()) {
+        search_list[idx].get_marked_label_and_tooltip(label, tooltip);
+        return true;
+    }
+    return false;
 }
 
 bool GLCanvas3D::_render_search_list(float pos_x)
@@ -4784,14 +4789,16 @@ bool GLCanvas3D::_render_search_list(float pos_x)
 	em *= m_retina_helper->get_scale_factor();
 #endif // ENABLE_RETINA_GL
 
-    Sidebar& sidebar = wxGetApp().sidebar();
+    // update searcher before show imGui search dialog on the plater, if printer technology or mode was changed
+    wxGetApp().check_and_update_searcher(wxGetApp().get_mode());
+    Search::OptionsSearcher& searcher = wxGetApp().searcher();
 
-    std::string& search_line = sidebar.get_search_line();
+    std::string& search_line = searcher.search_string();
     char *s = new char[255];
     strcpy(s, search_line.empty() ? _u8L("Enter a search term").c_str() : search_line.c_str());
 
     imgui->search_list(ImVec2(45 * em, 30 * em), &search_string_getter, s,
-        sidebar.get_searcher().view_params,
+        wxGetApp().searcher().view_params,
         selected, edited, m_mouse_wheel, wxGetApp().is_localized());
 
     search_line = s;
@@ -4800,7 +4807,7 @@ bool GLCanvas3D::_render_search_list(float pos_x)
         search_line.clear();
 
     if (edited)
-        sidebar.search();
+        searcher.search();
 
     if (selected >= 0) {
         // selected == 9999 means that Esc kye was pressed
@@ -4811,7 +4818,7 @@ bool GLCanvas3D::_render_search_list(float pos_x)
             sidebar.jump_to_option(selected);*/
         if (selected != 9999) {
             imgui->end(); // end imgui before the jump to option
-            sidebar.jump_to_option(selected);
+            wxGetApp().jump_to_option(selected);
             return true;
         }
         action_taken = true;

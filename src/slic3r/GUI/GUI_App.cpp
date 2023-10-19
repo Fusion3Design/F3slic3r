@@ -1094,6 +1094,61 @@ bool GUI_App::OnInit()
     }
 }
 
+void GUI_App::check_and_update_searcher(ConfigOptionMode mode /*= comExpert*/)
+{
+    std::vector<Search::InputInfo> search_inputs{};
+
+    auto print_tech = preset_bundle->printers.get_selected_preset().printer_technology();
+    for (auto tab : tabs_list)
+        if (tab->supports_printer_technology(print_tech))
+            search_inputs.emplace_back(Search::InputInfo{ tab->get_config(), tab->type() });
+
+    m_searcher.check_and_update(print_tech, mode, search_inputs);
+}
+
+void GUI_App::jump_to_option(const std::string& opt_key, Preset::Type type, const std::wstring& category)
+{
+    get_tab(type)->activate_option(opt_key, category);
+}
+
+void GUI_App::jump_to_option(size_t selected)
+{
+    const Search::Option& opt = m_searcher.get_option(selected);
+    if (opt.type == Preset::TYPE_PREFERENCES)
+        open_preferences(opt.opt_key(), boost::nowide::narrow(opt.group));
+    else
+        get_tab(opt.type)->activate_option(opt.opt_key(), boost::nowide::narrow(opt.category));
+}
+
+void GUI_App::jump_to_option(const std::string& composite_key)
+{
+    const auto        separator_pos = composite_key.find(";");
+    const std::string opt_key       = composite_key.substr(0, separator_pos);
+    const std::string tab_name      = composite_key.substr(separator_pos + 1, composite_key.length());
+
+    for (Tab* tab : tabs_list) {
+        if (tab->name() == tab_name) {
+            check_and_update_searcher();
+
+            // Regularly searcher is sorted in respect to the options labels,
+            // so resort searcher before get an option
+            m_searcher.sort_options_by_key();
+            const Search::Option& opt = m_searcher.get_option(opt_key, tab->type());
+            tab->activate_option(opt_key, boost::nowide::narrow(opt.category));
+
+            // Revert sort of searcher back
+            m_searcher.sort_options_by_label();
+            break;
+        }
+    }
+}
+
+void GUI_App::show_search_dialog()
+{
+    check_and_update_searcher(get_mode());
+    m_searcher.show_dialog();
+}
+
 static int get_app_font_pt_size(const AppConfig* app_config)
 {
     if (!app_config->has("font_pt_size"))
