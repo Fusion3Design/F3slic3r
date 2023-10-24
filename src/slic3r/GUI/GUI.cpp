@@ -481,4 +481,26 @@ bool create_process(const boost::filesystem::path& path, const std::wstring& cmd
 }
 #endif //_WIN32
 
+
+bool has_illegal_characters(const wxString& wxs_name)
+{
+	const std::string name = into_u8(wxs_name);
+	return has_illegal_characters(name);
+}
+
+bool has_illegal_characters(const std::string& name)
+{
+	for (size_t i = 0; i < std::strlen(illegal_characters); i++)
+		if (name.find_first_of(illegal_characters[i]) != std::string::npos)
+			return true;
+
+	return false;
+}
+
+void show_illegal_characters_warning(wxWindow* parent)
+{
+	show_error(parent, format_wxstr("%1%\n%2% %3%", _L("The provided name is not valid;"),
+									_L("the following characters are not allowed:"), illegal_characters));
+}
+
 } } // namespaces GUI / Slic3r

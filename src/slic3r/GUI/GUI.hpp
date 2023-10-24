@@ -29,6 +29,8 @@ class Print;
 
 namespace GUI {
 
+static constexpr char illegal_characters[] = "<>:/\\|?*\"";
+
 void disable_screensaver();
 void enable_screensaver();
 bool debugged();
@@ -101,6 +103,10 @@ void desktop_execute_get_result(wxString command, wxArrayString& output);
 // error_msg will contain error message if create_process return false
 bool create_process(const boost::filesystem::path& path, const std::wstring& cmd_opt, std::string& error_msg);
 #endif //_WIN32
+
+bool has_illegal_characters(const wxString& name);
+bool has_illegal_characters(const std::string& name);
+void show_illegal_characters_warning(wxWindow* parent);
 
 } // namespace GUI
 } // namespace Slic3r

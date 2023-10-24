@@ -150,29 +150,6 @@ wxDEFINE_EVENT(EVT_SLICING_COMPLETED,               wxCommandEvent);
 wxDEFINE_EVENT(EVT_PROCESS_COMPLETED,               SlicingProcessCompletedEvent);
 wxDEFINE_EVENT(EVT_EXPORT_BEGAN,                    wxCommandEvent);
 
-
-bool Plater::has_illegal_filename_characters(const wxString& wxs_name)
-{
-    std::string name = into_u8(wxs_name);
-    return has_illegal_filename_characters(name);
-}
-
-bool Plater::has_illegal_filename_characters(const std::string& name)
-{
-    const char* illegal_characters = "<>:/\\|?*\"";
-    for (size_t i = 0; i < std::strlen(illegal_characters); i++)
-        if (name.find_first_of(illegal_characters[i]) != std::string::npos)
-            return true;
-
-    return false;
-}
-
-void Plater::show_illegal_characters_warning(wxWindow* parent)
-{
-    show_error(parent, _L("The provided name is not valid;") + "\n" +
-        _L("the following characters are not allowed:") + " <>:/\\|?*\"");
-}
-
 // Plater::DropTarget
 
 class PlaterDropTarget : public wxFileDropTarget
@@ -5233,7 +5210,7 @@ void Plater::export_gcode(bool prefer_removable)
             auto check_for_error = [this](const boost::filesystem::path& path, wxString& err_out) -> bool {
                 const std::string filename = path.filename().string();
                 const std::string ext      = boost::algorithm::to_lower_copy(path.extension().string());
-                if (has_illegal_filename_characters(filename)) {
+                if (has_illegal_characters(filename)) {
                     err_out = _L("The provided file name is not valid.") + "\n" +
                               _L("The following characters are not allowed by a FAT file system:") + " <>:/\\|?*\"";
                     return true;

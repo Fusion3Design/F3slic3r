@@ -418,10 +418,6 @@ public:
     wxMenu* layer_menu();
     wxMenu* multi_selection_menu();
 
-    static bool has_illegal_filename_characters(const wxString& name);
-    static bool has_illegal_filename_characters(const std::string& name);
-    static void show_illegal_characters_warning(wxWindow* parent);
-
 private:
     void reslice_until_step_inner(int step, const ModelObject &object, bool postpone_error_messages);
 
