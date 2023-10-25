@@ -39,7 +39,7 @@ static uint8_t valueof(Slic3r::GCodeExtrusionRole role)
 
 static Vec3f toVec3f(const Eigen::Matrix<float, 3, 1, Eigen::DontAlign>& v)
 {
-  return { v.x(), v.y(), v.z() };
+    return { v.x(), v.y(), v.z() };
 }
 //################################################################################################################################
 
@@ -340,8 +340,8 @@ void Toolpaths::init()
     m_tool_marker.init(32, 2.0f, 4.0f, 1.0f, 8.0f);
 }
 
-void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const Slic3r::Print& print,
-    const std::vector<std::string>& str_tool_colors, const Settings& settings)
+void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors,
+    const Settings& settings)
 {
     m_tool_colors.clear();
     if (settings.view_type == EViewType::Tool && !gcode_result.extruder_colors.empty())
@@ -364,23 +364,56 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const Sli
 
     m_cog_marker.reset();
 
-    std::vector<Slic3r::GCodeProcessorResult::MoveVertex> extended_moves;
-    extended_moves.reserve(2 * gcode_result.moves.size());
-    // to be able to properly detect the start/end of a path we add some 'phantom' vertex
+    reset();
+
+    m_vertices.reserve(2 * gcode_result.moves.size());
     for (size_t i = 1; i < gcode_result.moves.size(); ++i) {
         const Slic3r::GCodeProcessorResult::MoveVertex& curr = gcode_result.moves[i];
         const Slic3r::GCodeProcessorResult::MoveVertex& prev = gcode_result.moves[i - 1];
         const EMoveType curr_type = static_cast<EMoveType>(valueof(curr.type));
         const EGCodeExtrusionRole curr_role = static_cast<EGCodeExtrusionRole>(valueof(curr.extrusion_role));
 
+        EGCodeExtrusionRole extrusion_role;
+        if (curr_type == EMoveType::Travel) {
+            // for travel moves set the extrusion role
+            // which will be used later to select the proper color
+            if (curr.delta_extruder == 0.0f)
+                extrusion_role = static_cast<EGCodeExtrusionRole>(0); // Move
+            else if (curr.delta_extruder > 0.0f)
+                extrusion_role = static_cast<EGCodeExtrusionRole>(1); // Extrude
+            else
+                extrusion_role = static_cast<EGCodeExtrusionRole>(2); // Retract
+        }
+        else
+            extrusion_role = static_cast<EGCodeExtrusionRole>(curr.extrusion_role);
+
+        float width;
+        float height;
+        switch (curr_type)
+        {
+        case EMoveType::Travel: { width = TRAVEL_RADIUS; height = TRAVEL_RADIUS; break; }
+        case EMoveType::Wipe:   { width = WIPE_RADIUS;   height = WIPE_RADIUS;   break; }
+        default:                { width = curr.width;    height = curr.height;   break; }
+        }
+
         if (type_to_option(curr_type) == EOptionType::COUNT) {
             if (prev.type != curr.type) {
-                Slic3r::GCodeProcessorResult::MoveVertex& m = extended_moves.emplace_back(curr);
-                m.position = prev.position;
+                // to be able to properly detect the start/end of a path we add a 'phantom' vertex equal to the current one with
+                // the exception of the position
+                const PathVertex vertex = { toVec3f(prev.position), height, width, curr.feedrate, curr.fan_speed,
+                    curr.temperature, curr.volumetric_rate(), extrusion_role, curr_type,
+                    static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id),
+                    static_cast<uint32_t>(curr.layer_id) };
+                m_vertices.emplace_back(vertex);
             }
         }
-        extended_moves.emplace_back(curr);
 
+        const PathVertex vertex = { toVec3f(curr.position), height, width, curr.feedrate, curr.fan_speed, curr.temperature,
+            curr.volumetric_rate(), extrusion_role, curr_type, static_cast<uint8_t>(curr.extruder_id),
+            static_cast<uint8_t>(curr.cp_color_id), static_cast<uint32_t>(curr.layer_id) };
+        m_vertices.emplace_back(vertex);
+
+        // updates calculation for center of gravity
         if (curr_type == EMoveType::Extrude &&
             curr_role != EGCodeExtrusionRole::Skirt &&
             curr_role != EGCodeExtrusionRole::SupportMaterial &&
@@ -392,31 +425,28 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const Sli
             m_cog_marker.update(0.5f * (curr_pos + prev_pos), curr.mm3_per_mm * length(curr_pos - prev_pos));
         }
     }
-    extended_moves.shrink_to_fit();
+    m_vertices.shrink_to_fit();
 
-    reset();
-
-    m_vertices.reserve(extended_moves.size());
-    m_valid_lines_bitset = BitSet<>(extended_moves.size());
+    m_valid_lines_bitset = BitSet<>(m_vertices.size());
     m_valid_lines_bitset.setAll();
 
     // buffers to send to gpu
     std::vector<Vec3f> positions;
     std::vector<Vec3f> heights_widths_angles;
-    positions.reserve(extended_moves.size());
-    heights_widths_angles.reserve(extended_moves.size());
-    for (size_t i = 0; i < extended_moves.size(); ++i) {
-        const auto& m = extended_moves[i];
-        const EMoveType move_type = static_cast<EMoveType>(valueof(m.type));
+    positions.reserve(m_vertices.size());
+    heights_widths_angles.reserve(m_vertices.size());
+    for (size_t i = 0; i < m_vertices.size(); ++i) {
+        const PathVertex& v = m_vertices[i];
+        const EMoveType move_type = v.type;
 
         const bool prev_line_valid = i > 0 && m_valid_lines_bitset[i - 1];
-        const Vec3f prev_line = prev_line_valid ? toVec3f(m.position - extended_moves[i - 1].position) : toVec3f(0.0f);
+        const Vec3f prev_line = prev_line_valid ? v.position - m_vertices[i - 1].position : toVec3f(0.0f);
 
-        const bool this_line_valid = i + 1 < extended_moves.size() &&
-                                     extended_moves[i + 1].position != m.position &&
-                                     extended_moves[i + 1].type == m.type &&
+        const bool this_line_valid = i + 1 < m_vertices.size() &&
+                                     m_vertices[i + 1].position != v.position &&
+                                     m_vertices[i + 1].type == move_type &&
                                      move_type != EMoveType::Seam;
-        const Vec3f this_line = this_line_valid ? toVec3f(extended_moves[i + 1].position - m.position) : toVec3f(0.0f);
+        const Vec3f this_line = this_line_valid ? m_vertices[i + 1].position - v.position : toVec3f(0.0f);
 
         if (this_line_valid) {
             // there is a valid path between point i and i+1.
@@ -426,41 +456,14 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const Sli
             m_valid_lines_bitset.reset(i);
         }
 
-        EGCodeExtrusionRole extrusion_role;
-        if (move_type == EMoveType::Travel) {
-            // for travel moves set the extrusion role
-            // which will be used later to select the proper color
-            if (m.delta_extruder == 0.0f)
-                extrusion_role = static_cast<EGCodeExtrusionRole>(0); // Move
-            else if (m.delta_extruder > 0.0f)
-                extrusion_role = static_cast<EGCodeExtrusionRole>(1); // Extrude
-            else
-                extrusion_role = static_cast<EGCodeExtrusionRole>(2); // Retract
-        }
-        else
-            extrusion_role = static_cast<EGCodeExtrusionRole>(m.extrusion_role);
-
-        float width;
-        float height;
-        switch (move_type)
-        {
-        case EMoveType::Travel: { width = TRAVEL_RADIUS; height = TRAVEL_RADIUS; break; }
-        case EMoveType::Wipe:   { width = WIPE_RADIUS;   height = WIPE_RADIUS;   break; }
-        default:                { width = m.width;       height = m.height;      break; }
-        }
-
-        Vec3f position = { m.position.x(), m.position.y(), m.position.z() };
-        m_vertices.emplace_back(position, height, width, m.feedrate, m.fan_speed, m.temperature, m.volumetric_rate(),
-            extrusion_role, move_type, static_cast<uint8_t>(m.extruder_id), static_cast<uint8_t>(m.cp_color_id),
-            static_cast<uint32_t>(m.layer_id));
-
+        Vec3f position = v.position;
         if (move_type == EMoveType::Extrude)
             // push down extrusion vertices by half height to render them at the right z
-            position[2] -= 0.5 * m.height;
+            position[2] -= 0.5 * v.height;
         positions.emplace_back(position);
 
         const float angle = atan2(prev_line[0] * this_line[1] - prev_line[1] * this_line[0], dot(prev_line, this_line));
-        heights_widths_angles.push_back({ height, width, angle });
+        heights_widths_angles.push_back(toVec3f(v.height, v.width, angle));
     }
 
     if (!positions.empty()) {
@@ -528,11 +531,11 @@ void Toolpaths::update_enabled_entities(const ViewRange& range, const Settings& 
                 continue;
         }
         else if (v.is_option()) {
-            if (!settings.options_visibility.at(type_to_option(v.get_type())))
-              continue;
+            if (!settings.options_visibility.at(type_to_option(v.type)))
+                  continue;
         }
         else if (v.is_extrusion()) {
-            if (!settings.extrusion_roles_visibility.at(v.get_role()))
+            if (!settings.extrusion_roles_visibility.at(v.role))
                 continue;
         }
         else
@@ -789,16 +792,16 @@ void Toolpaths::update_color_ranges(const Settings& settings)
     for (size_t i = 0; i < m_vertices.size(); i++) {
         const PathVertex& v = m_vertices[i];
         if (v.is_extrusion()) {
-            m_height_range.update(round_to_bin(v.get_height()));
+            m_height_range.update(round_to_bin(v.height));
             if (!v.is_custom_gcode() || settings.extrusion_roles_visibility.at(EGCodeExtrusionRole::Custom)) {
-                m_width_range.update(round_to_bin(v.get_width()));
-                m_volumetric_rate_range.update(round_to_bin(v.get_volumetric_rate()));
+                m_width_range.update(round_to_bin(v.width));
+                m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate));
             }
-            m_fan_speed_range.update(v.get_fan_speed());
-            m_temperature_range.update(v.get_temperature());
+            m_fan_speed_range.update(v.fan_speed);
+            m_temperature_range.update(v.temperature);
         }
         if ((v.is_travel() && settings.options_visibility.at(EOptionType::Travels)) || v.is_extrusion())
-            m_speed_range.update(v.get_feedrate());
+            m_speed_range.update(v.feedrate);
     }
 
     for (size_t i = 0; i < m_layers_times.size(); ++i) {
@@ -810,16 +813,16 @@ void Toolpaths::update_color_ranges(const Settings& settings)
 
 Color Toolpaths::select_color(const PathVertex& v, const Settings& settings) const
 {
-    if (v.get_type() == EMoveType::Noop)
+    if (v.type == EMoveType::Noop)
         return Dummy_Color;
 
     if (v.is_wipe())
         return Wipe_Color;
 
     if (v.is_option())
-        return Options_Colors.at(v.get_type());
+        return Options_Colors.at(v.type);
 
-    const unsigned int role = (unsigned int)v.get_role();
+    const size_t role = static_cast<size_t>(v.role);
     switch (settings.view_type)
     {
     case EViewType::FeatureType:
@@ -830,50 +833,50 @@ Color Toolpaths::select_color(const PathVertex& v, const Settings& settings) con
     case EViewType::Height:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_height_range.get_color_at(v.get_height());
+        return v.is_travel() ? Travels_Colors[role] : m_height_range.get_color_at(v.height);
     }
     case EViewType::Width:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_width_range.get_color_at(v.get_width());
+        return v.is_travel() ? Travels_Colors[role] : m_width_range.get_color_at(v.width);
     }
     case EViewType::Speed:
     {
-        return m_speed_range.get_color_at(v.get_feedrate());
+        return m_speed_range.get_color_at(v.feedrate);
     }
     case EViewType::FanSpeed:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_fan_speed_range.get_color_at(v.get_fan_speed());
+        return v.is_travel() ? Travels_Colors[role] : m_fan_speed_range.get_color_at(v.fan_speed);
     }
     case EViewType::Temperature:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_temperature_range.get_color_at(v.get_temperature());
+        return v.is_travel() ? Travels_Colors[role] : m_temperature_range.get_color_at(v.temperature);
     }
     case EViewType::VolumetricFlowRate:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_volumetric_rate_range.get_color_at(v.get_volumetric_rate());
+        return v.is_travel() ? Travels_Colors[role] : m_volumetric_rate_range.get_color_at(v.volumetric_rate);
     }
     case EViewType::LayerTimeLinear:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[0].get_color_at(m_layers_times[static_cast<size_t>(settings.time_mode)][v.get_layer_id()]);
+        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[0].get_color_at(m_layers_times[static_cast<size_t>(settings.time_mode)][v.layer_id]);
     }
     case EViewType::LayerTimeLogarithmic:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[1].get_color_at(m_layers_times[static_cast<size_t>(settings.time_mode)][v.get_layer_id()]);
+        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[1].get_color_at(m_layers_times[static_cast<size_t>(settings.time_mode)][v.layer_id]);
     }
     case EViewType::Tool:
     {
         assert(v.get_extruder_id() < m_tool_colors.size());
-        return m_tool_colors[v.get_extruder_id()];
+        return m_tool_colors[v.extruder_id];
     }
     case EViewType::ColorPrint:
     {
-        return m_tool_colors[v.get_color_id() % m_tool_colors.size()];
+        return m_tool_colors[v.color_id % m_tool_colors.size()];
     }
     }
 

@@ -64,7 +64,7 @@ void ToolMarker::init(uint16_t resolution, float tip_radius, float tip_height, f
     const float total_height = tip_height + stem_height;
 
     // tip vertices
-    add_vertex(toVec3f(0.0f, 0.0f, 0.0f), toVec3f(0.0f, 0.0f, -1.0f), vertices);
+    add_vertex(toVec3f(0.0f), toVec3f(0.0f, 0.0f, -1.0f), vertices);
     for (uint16_t i = 0; i < resolution; ++i) {
         add_vertex(toVec3f(tip_radius * sines[i], tip_radius * cosines[i], tip_height), toVec3f(sines[i], cosines[i], 0.0f), vertices);
     }

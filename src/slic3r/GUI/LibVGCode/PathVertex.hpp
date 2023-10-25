@@ -12,47 +12,30 @@
 
 #include "Types.hpp"
 
+#include <cstdint>
+
 namespace libvgcode {
 
-class PathVertex
+struct PathVertex
 {
-public:
-    PathVertex(const Vec3f& position, float height, float width, float feedrate, float fan_speed,
-        float temperature, float volumetric_rate, EGCodeExtrusionRole role, EMoveType type,
-        uint8_t extruder_id, uint8_t color_id, uint32_t layer_id);
-
-    const Vec3f& get_position() const;
-    float get_height() const;
-    float get_width() const;
-    float get_feedrate() const;
-    float get_fan_speed() const;
-    float get_temperature() const;
-    float get_volumetric_rate() const;
-    EMoveType get_type() const;
-    EGCodeExtrusionRole get_role() const;
-    uint8_t get_extruder_id() const;
-    uint8_t get_color_id() const;
-    uint32_t get_layer_id() const;
+    Vec3f position{ toVec3f(0.0f) };
+    float height{ 0.0f };
+    float width{ 0.0f };
+    float feedrate{ 0.0f };
+    float fan_speed{ 0.0f };
+    float temperature{ 0.0f };
+    float volumetric_rate{ 0.0f };
+    EGCodeExtrusionRole role{ EGCodeExtrusionRole::None };
+    EMoveType type{ EMoveType::Noop };
+    uint8_t extruder_id{ 0 };
+    uint8_t color_id{ 0 };
+    uint32_t layer_id{ 0 };
 
     bool is_extrusion() const;
     bool is_travel() const;
     bool is_option() const;
     bool is_wipe() const;
     bool is_custom_gcode() const;
-
-private:
-    Vec3f m_position{ toVec3f(0.0f) };
-    float m_height{ 0.0f };
-    float m_width{ 0.0f };
-    float m_feedrate{ 0.0f };
-    float m_fan_speed{ 0.0f };
-    float m_temperature{ 0.0f };
-    float m_volumetric_rate{ 0.0f };
-    uint8_t m_extruder_id{ 0 };
-    uint8_t m_color_id{ 0 };
-    uint32_t m_layer_id{ 0 };
-    EMoveType m_type{ EMoveType::Noop };
-    EGCodeExtrusionRole m_role{ EGCodeExtrusionRole::None };
 };
 
 } // namespace libvgcode

@@ -90,7 +90,7 @@ void Viewer::init()
     m_toolpaths.init();
 }
 
-void Viewer::load(const Slic3r::GCodeProcessorResult& gcode_result, const Slic3r::Print& print, const std::vector<std::string>& str_tool_colors)
+void Viewer::load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors)
 {
     if (m_settings.time_mode != ETimeMode::Normal) {
         const Slic3r::PrintEstimatedStatistics& stats = gcode_result.print_statistics;
@@ -105,7 +105,7 @@ void Viewer::load(const Slic3r::GCodeProcessorResult& gcode_result, const Slic3r
             m_settings.time_mode = ETimeMode::Normal;
     }
 
-    m_toolpaths.load(gcode_result, print, str_tool_colors, m_settings);
+    m_toolpaths.load(gcode_result, str_tool_colors, m_settings);
     m_view_range.set_global_range(0, m_toolpaths.get_vertices_count() - 1);
     m_settings.update_colors = true;
 }

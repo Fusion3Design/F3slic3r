@@ -35,7 +35,7 @@ public:
     Viewer& operator = (Viewer&& other) = delete;
 
     void init();
-    void load(const Slic3r::GCodeProcessorResult& gcode_result, const Slic3r::Print& print, const std::vector<std::string>& str_tool_colors);
+    void load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors);
     void render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Vec3f& camera_position);
 
     EViewType get_view_type() const;

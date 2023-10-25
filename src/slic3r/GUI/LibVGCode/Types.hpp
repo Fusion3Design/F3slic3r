@@ -10,7 +10,7 @@
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#define LIBVGCODE_USE_EIGEN 1
+#define LIBVGCODE_USE_EIGEN 0
 #if LIBVGCODE_USE_EIGEN
 #include <Eigen/Geometry>
 #else

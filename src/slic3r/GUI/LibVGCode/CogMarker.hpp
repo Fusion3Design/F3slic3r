@@ -52,7 +52,7 @@ private:
     // Values used to calculate the center of gravity
     //
     float m_total_mass{ 0.0f };
-    Vec3f m_total_position{ 0.0f, 0.0f, 0.0f };
+    Vec3f m_total_position{ toVec3f(0.0f) };
 
     uint16_t m_indices_count{ 0 };
     unsigned int m_vao_id{ 0 };

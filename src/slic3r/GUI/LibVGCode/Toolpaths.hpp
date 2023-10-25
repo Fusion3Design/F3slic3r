@@ -12,14 +12,11 @@
 
 #include "SegmentTemplate.hpp"
 #include "OptionTemplate.hpp"
+#include "CogMarker.hpp"
+#include "ToolMarker.hpp"
 #include "PathVertex.hpp"
 #include "Bitset.hpp"
 #include "ColorRange.hpp"
-#include "CogMarker.hpp"
-#include "ToolMarker.hpp"
-//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-#include "Shell.hpp"
-//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
 #include <vector>
 #include <array>
@@ -57,8 +54,8 @@ public:
     // from the gcode moves contained in the given gcode_result, according to the setting
     // contained in the given config.
     //
-    void load(const Slic3r::GCodeProcessorResult& gcode_result, const Slic3r::Print& print,
-        const std::vector<std::string>& str_tool_colors, const Settings& settings);
+    void load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors,
+        const Settings& settings);
 
     //
     // Update the visibility property of toolpaths
@@ -134,10 +131,6 @@ private:
     //
     ToolMarker m_tool_marker;
     float m_tool_marker_scale_factor{ 1.0f };
-
-//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-    std::vector<Shell> m_shells;
-//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
     //
     // cpu buffer to store vertices

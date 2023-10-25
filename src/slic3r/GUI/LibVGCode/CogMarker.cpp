@@ -152,7 +152,7 @@ void CogMarker::update(const Vec3f& position, float mass)
 
 void CogMarker::reset()
 {
-    m_total_position = toVec3f(0.0f, 0.0f, 0.0f);
+    m_total_position = toVec3f(0.0f);
     m_total_mass = 0.0f;
 }
 
