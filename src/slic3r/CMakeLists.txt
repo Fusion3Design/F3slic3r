@@ -92,6 +92,39 @@ set(SLIC3R_GUI_SOURCES
     GUI/Gizmos/GLGizmoMmuSegmentation.hpp
     GUI/Gizmos/GLGizmoMeasure.cpp
     GUI/Gizmos/GLGizmoMeasure.hpp
+#====================================================================================================================	
+    GUI/LibVGCode/Viewer.hpp
+    GUI/LibVGCode/Viewer.cpp
+    GUI/LibVGCode/Settings.hpp
+    GUI/LibVGCode/Settings.cpp
+    GUI/LibVGCode/SegmentTemplate.hpp
+    GUI/LibVGCode/SegmentTemplate.cpp
+    GUI/LibVGCode/OptionTemplate.hpp
+    GUI/LibVGCode/OptionTemplate.cpp
+    GUI/LibVGCode/Toolpaths.hpp
+    GUI/LibVGCode/Toolpaths.cpp
+    GUI/LibVGCode/PathVertex.hpp
+    GUI/LibVGCode/PathVertex.cpp
+    GUI/LibVGCode/Types.hpp
+    GUI/LibVGCode/Types.cpp
+    GUI/LibVGCode/Bitset.hpp
+    GUI/LibVGCode/Bitset.cpp
+    GUI/LibVGCode/ViewRange.hpp
+    GUI/LibVGCode/ViewRange.cpp
+    GUI/LibVGCode/ColorRange.hpp
+    GUI/LibVGCode/ColorRange.cpp
+    GUI/LibVGCode/Shaders.hpp
+    GUI/LibVGCode/OpenGLUtils.hpp
+    GUI/LibVGCode/OpenGLUtils.cpp
+    GUI/LibVGCode/CogMarker.hpp
+    GUI/LibVGCode/CogMarker.cpp
+    GUI/LibVGCode/ToolMarker.hpp
+    GUI/LibVGCode/ToolMarker.cpp
+    GUI/LibVGCode/Shell.hpp
+    GUI/LibVGCode/Shell.cpp
+    GUI/LibVGCode/Utils.hpp
+    GUI/LibVGCode/Utils.cpp
+#====================================================================================================================	
     GUI/GLSelectionRectangle.cpp
     GUI/GLSelectionRectangle.hpp
     GUI/GLModel.hpp
