@@ -63,7 +63,7 @@ void CogMarker::init(uint8_t resolution, float radius)
         const float xy = radius * std::cos(stack_angle);
         const float z = radius * std::sin(stack_angle);
         if (i == 0 || i == stack_count) {
-            const Vec3f pos = toVec3f(xy, 0.0f, z);
+            const Vec3f pos = { xy, 0.0f, z };
             const Vec3f norm = normalize(pos);
             add_vertex(pos, norm, vertices);
         }
@@ -71,7 +71,7 @@ void CogMarker::init(uint8_t resolution, float radius)
             for (uint16_t j = 0; j < sector_count; ++j) {
                 // from 0 to 2pi
                 const float sector_angle = sector_step * float(j);
-                const Vec3f pos = toVec3f(xy * std::cos(sector_angle), xy * std::sin(sector_angle), z);
+                const Vec3f pos = { xy * std::cos(sector_angle), xy * std::sin(sector_angle), z };
                 const Vec3f norm = normalize(pos);
                 add_vertex(pos, norm, vertices);
             }
@@ -145,14 +145,14 @@ void CogMarker::render()
 }
 
 void CogMarker::update(const Vec3f& position, float mass)
-{    
-    m_total_position = m_total_position + toVec3f(mass * position[0], mass * position[1], mass * position[2]);
+{
+    m_total_position = m_total_position + mass * position;
     m_total_mass += mass;
 }
 
 void CogMarker::reset()
 {
-    m_total_position = toVec3f(0.0f);
+    m_total_position = { 0.0f, 0.0f, 0.0f };
     m_total_mass = 0.0f;
 }
 
@@ -160,7 +160,7 @@ Vec3f CogMarker::get_position() const
 {
     assert(m_total_mass > 0.0f);
     const float inv_total_mass = 1.0f / m_total_mass;
-    return { m_total_position[0] * inv_total_mass, m_total_position[1] * inv_total_mass, m_total_position[2] * inv_total_mass };
+    return inv_total_mass * m_total_position;
 }
 
 } // namespace libvgcode

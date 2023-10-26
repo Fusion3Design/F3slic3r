@@ -64,9 +64,9 @@ void ToolMarker::init(uint16_t resolution, float tip_radius, float tip_height, f
     const float total_height = tip_height + stem_height;
 
     // tip vertices
-    add_vertex(toVec3f(0.0f), toVec3f(0.0f, 0.0f, -1.0f), vertices);
+    add_vertex({ 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, vertices);
     for (uint16_t i = 0; i < resolution; ++i) {
-        add_vertex(toVec3f(tip_radius * sines[i], tip_radius * cosines[i], tip_height), toVec3f(sines[i], cosines[i], 0.0f), vertices);
+        add_vertex({ tip_radius * sines[i], tip_radius * cosines[i], tip_height }, { sines[i], cosines[i], 0.0f }, vertices);
     }
 
     // tip triangles
@@ -77,12 +77,12 @@ void ToolMarker::init(uint16_t resolution, float tip_radius, float tip_height, f
 
     // tip cap outer perimeter vertices
     for (uint16_t i = 0; i < resolution; ++i) {
-        add_vertex(toVec3f(tip_radius * sines[i], tip_radius * cosines[i], tip_height), toVec3f(0.0f, 0.0f, 1.0f), vertices);
+        add_vertex({ tip_radius * sines[i], tip_radius * cosines[i], tip_height }, { 0.0f, 0.0f, 1.0f }, vertices);
     }
 
     // tip cap inner perimeter vertices
     for (uint16_t i = 0; i < resolution; ++i) {
-        add_vertex(toVec3f(stem_radius * sines[i], stem_radius * cosines[i], tip_height), toVec3f(0.0f, 0.0f, 1.0f), vertices);
+        add_vertex({ stem_radius * sines[i], stem_radius * cosines[i], tip_height }, { 0.0f, 0.0f, 1.0f }, vertices);
     }
 
     // tip cap triangles
@@ -95,12 +95,12 @@ void ToolMarker::init(uint16_t resolution, float tip_radius, float tip_height, f
 
     // stem bottom vertices
     for (uint16_t i = 0; i < resolution; ++i) {
-        add_vertex(toVec3f(stem_radius * sines[i], stem_radius * cosines[i], tip_height), toVec3f(sines[i], cosines[i], 0.0f), vertices);
+        add_vertex({ stem_radius * sines[i], stem_radius * cosines[i], tip_height }, { sines[i], cosines[i], 0.0f }, vertices);
     }
 
     // stem top vertices
     for (uint16_t i = 0; i < resolution; ++i) {
-        add_vertex(toVec3f(stem_radius * sines[i], stem_radius * cosines[i], total_height), toVec3f(sines[i], cosines[i], 0.0f), vertices);
+        add_vertex({ stem_radius * sines[i], stem_radius * cosines[i], total_height }, { sines[i], cosines[i], 0.0f }, vertices);
     }
 
     // stem triangles
@@ -112,9 +112,9 @@ void ToolMarker::init(uint16_t resolution, float tip_radius, float tip_height, f
     }
 
     // stem cap vertices
-    add_vertex(toVec3f(0.0f, 0.0f, total_height), toVec3f(0.0f, 0.0f, 1.0f), vertices);
+    add_vertex({ 0.0f, 0.0f, total_height }, { 0.0f, 0.0f, 1.0f }, vertices);
     for (uint16_t i = 0; i < resolution; ++i) {
-        add_vertex(toVec3f(stem_radius * sines[i], stem_radius * cosines[i], total_height), toVec3f(0.0f, 0.0f, 1.0f), vertices);
+        add_vertex({ stem_radius * sines[i], stem_radius * cosines[i], total_height }, { 0.0f, 0.0f, 1.0f }, vertices);
     }
 
     // stem cap triangles

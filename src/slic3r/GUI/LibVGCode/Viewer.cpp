@@ -110,7 +110,7 @@ void Viewer::load(const Slic3r::GCodeProcessorResult& gcode_result, const std::v
     m_settings.update_colors = true;
 }
 
-void Viewer::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Vec3f& camera_position)
+void Viewer::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
     if (m_settings.update_enabled_entities) {
         m_toolpaths.update_enabled_entities(m_view_range, m_settings);
@@ -122,7 +122,7 @@ void Viewer::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix
         m_settings.update_colors = false;
     }
 
-    m_toolpaths.render(view_matrix, projection_matrix, camera_position, m_settings);
+    m_toolpaths.render(view_matrix, projection_matrix, m_settings);
 
 //################################################################################################################################
     // Debug

@@ -18,7 +18,7 @@ namespace libvgcode {
 
 struct PathVertex
 {
-    Vec3f position{ toVec3f(0.0f) };
+    Vec3f position{ 0.0f, 0.0f, 0.0f };
     float height{ 0.0f };
     float width{ 0.0f };
     float feedrate{ 0.0f };

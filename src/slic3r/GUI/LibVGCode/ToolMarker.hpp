@@ -39,7 +39,7 @@ public:
     void set_alpha(float alpha);
 
 private:
-    Vec3f m_position{ toVec3f(0.0f) };
+    Vec3f m_position{ 0.0f, 0.0f, 0.0f };
     Color m_color{ 1.0f, 1.0f, 1.0f };
     float m_alpha{ 0.5f };
 

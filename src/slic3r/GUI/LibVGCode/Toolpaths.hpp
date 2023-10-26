@@ -69,8 +69,7 @@ public:
     //
     // Render the toolpaths
     //
-    void render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix,
-        const Vec3f& camera_position, const Settings& settings);
+    void render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Settings& settings);
 
     //
     // Properties getters

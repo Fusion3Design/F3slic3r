@@ -12,6 +12,7 @@
 #include "Settings.hpp"
 #include "Shaders.hpp"
 #include "OpenGLUtils.hpp"
+#include "Utils.hpp"
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
@@ -27,14 +28,14 @@ namespace libvgcode {
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
-static uint8_t valueof(Slic3r::EMoveType type)
+static EMoveType valueof(Slic3r::EMoveType type)
 {
-    return static_cast<uint8_t>(type);
+    return static_cast<EMoveType>(static_cast<uint8_t>(type));
 }
 
-static uint8_t valueof(Slic3r::GCodeExtrusionRole role)
+static EGCodeExtrusionRole valueof(Slic3r::GCodeExtrusionRole role)
 {
-    return static_cast<uint8_t>(role);
+    return static_cast<EGCodeExtrusionRole>(static_cast<uint8_t>(role));
 }
 
 static Vec3f toVec3f(const Eigen::Matrix<float, 3, 1, Eigen::DontAlign>& v)
@@ -164,6 +165,137 @@ bool decode_colors(const std::vector<std::string>& colors_in, std::vector<Color>
             return false;
     }
     return true;
+}
+
+static Mat4x4f inverse(const Mat4x4f& m)
+{
+    // ref: https://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
+
+    std::array<float, 16> inv;
+
+    inv[0] = m[5] * m[10] * m[15] -
+             m[5] * m[11] * m[14] -
+             m[9] * m[6] * m[15] +
+             m[9] * m[7] * m[14] +
+             m[13] * m[6] * m[11] -
+             m[13] * m[7] * m[10];
+
+    inv[4] = -m[4] * m[10] * m[15] +
+             m[4] * m[11] * m[14] +
+             m[8] * m[6] * m[15] -
+             m[8] * m[7] * m[14] -
+             m[12] * m[6] * m[11] +
+             m[12] * m[7] * m[10];
+
+    inv[8] = m[4] * m[9] * m[15] -
+             m[4] * m[11] * m[13] -
+             m[8] * m[5] * m[15] +
+             m[8] * m[7] * m[13] +
+             m[12] * m[5] * m[11] -
+             m[12] * m[7] * m[9];
+
+    inv[12] = -m[4] * m[9] * m[14] +
+               m[4] * m[10] * m[13] +
+               m[8] * m[5] * m[14] -
+               m[8] * m[6] * m[13] -
+               m[12] * m[5] * m[10] +
+               m[12] * m[6] * m[9];
+
+    inv[1] = -m[1] * m[10] * m[15] +
+             m[1] * m[11] * m[14] +
+             m[9] * m[2] * m[15] -
+             m[9] * m[3] * m[14] -
+             m[13] * m[2] * m[11] +
+             m[13] * m[3] * m[10];
+
+    inv[5] = m[0] * m[10] * m[15] -
+             m[0] * m[11] * m[14] -
+             m[8] * m[2] * m[15] +
+             m[8] * m[3] * m[14] +
+             m[12] * m[2] * m[11] -
+             m[12] * m[3] * m[10];
+
+    inv[9] = -m[0] * m[9] * m[15] +
+             m[0] * m[11] * m[13] +
+             m[8] * m[1] * m[15] -
+             m[8] * m[3] * m[13] -
+             m[12] * m[1] * m[11] +
+             m[12] * m[3] * m[9];
+
+    inv[13] = m[0] * m[9] * m[14] -
+             m[0] * m[10] * m[13] -
+             m[8] * m[1] * m[14] +
+             m[8] * m[2] * m[13] +
+             m[12] * m[1] * m[10] -
+             m[12] * m[2] * m[9];
+
+    inv[2] = m[1] * m[6] * m[15] -
+             m[1] * m[7] * m[14] -
+             m[5] * m[2] * m[15] +
+             m[5] * m[3] * m[14] +
+             m[13] * m[2] * m[7] -
+             m[13] * m[3] * m[6];
+
+    inv[6] = -m[0] * m[6] * m[15] +
+             m[0] * m[7] * m[14] +
+             m[4] * m[2] * m[15] -
+             m[4] * m[3] * m[14] -
+             m[12] * m[2] * m[7] +
+             m[12] * m[3] * m[6];
+
+    inv[10] = m[0] * m[5] * m[15] -
+              m[0] * m[7] * m[13] -
+              m[4] * m[1] * m[15] +
+              m[4] * m[3] * m[13] +
+              m[12] * m[1] * m[7] -
+              m[12] * m[3] * m[5];
+
+    inv[14] = -m[0] * m[5] * m[14] +
+              m[0] * m[6] * m[13] +
+              m[4] * m[1] * m[14] -
+              m[4] * m[2] * m[13] -
+              m[12] * m[1] * m[6] +
+              m[12] * m[2] * m[5];
+
+    inv[3] = -m[1] * m[6] * m[11] +
+             m[1] * m[7] * m[10] +
+             m[5] * m[2] * m[11] -
+             m[5] * m[3] * m[10] -
+             m[9] * m[2] * m[7] +
+             m[9] * m[3] * m[6];
+
+    inv[7] = m[0] * m[6] * m[11] -
+             m[0] * m[7] * m[10] -
+             m[4] * m[2] * m[11] +
+             m[4] * m[3] * m[10] +
+             m[8] * m[2] * m[7] -
+             m[8] * m[3] * m[6];
+
+    inv[11] = -m[0] * m[5] * m[11] +
+             m[0] * m[7] * m[9] +
+             m[4] * m[1] * m[11] -
+             m[4] * m[3] * m[9] -
+             m[8] * m[1] * m[7] +
+             m[8] * m[3] * m[5];
+
+    inv[15] = m[0] * m[5] * m[10] -
+              m[0] * m[6] * m[9] -
+              m[4] * m[1] * m[10] +
+              m[4] * m[2] * m[9] +
+              m[8] * m[1] * m[6] -
+              m[8] * m[2] * m[5];
+
+    float det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+    assert(det != 0.0f);
+
+    det = 1.0 / det;
+
+    std::array<float, 16> ret = {};
+    for (int i = 0; i < 16; ++i) {
+        ret[i] = inv[i] * det;
+    }
+
+    return ret;
 }
 
 std::string check_shader(GLuint handle)
@@ -370,8 +502,8 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std
     for (size_t i = 1; i < gcode_result.moves.size(); ++i) {
         const Slic3r::GCodeProcessorResult::MoveVertex& curr = gcode_result.moves[i];
         const Slic3r::GCodeProcessorResult::MoveVertex& prev = gcode_result.moves[i - 1];
-        const EMoveType curr_type = static_cast<EMoveType>(valueof(curr.type));
-        const EGCodeExtrusionRole curr_role = static_cast<EGCodeExtrusionRole>(valueof(curr.extrusion_role));
+        const EMoveType curr_type = valueof(curr.type);
+        const EGCodeExtrusionRole curr_role = valueof(curr.extrusion_role);
 
         EGCodeExtrusionRole extrusion_role;
         if (curr_type == EMoveType::Travel) {
@@ -430,6 +562,8 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std
     m_valid_lines_bitset = BitSet<>(m_vertices.size());
     m_valid_lines_bitset.setAll();
 
+    static constexpr const Vec3f ZERO = { 0.0f, 0.0f, 0.0f };
+
     // buffers to send to gpu
     std::vector<Vec3f> positions;
     std::vector<Vec3f> heights_widths_angles;
@@ -440,13 +574,13 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std
         const EMoveType move_type = v.type;
 
         const bool prev_line_valid = i > 0 && m_valid_lines_bitset[i - 1];
-        const Vec3f prev_line = prev_line_valid ? v.position - m_vertices[i - 1].position : toVec3f(0.0f);
+        const Vec3f prev_line = prev_line_valid ? v.position - m_vertices[i - 1].position : ZERO;
 
         const bool this_line_valid = i + 1 < m_vertices.size() &&
                                      m_vertices[i + 1].position != v.position &&
                                      m_vertices[i + 1].type == move_type &&
                                      move_type != EMoveType::Seam;
-        const Vec3f this_line = this_line_valid ? m_vertices[i + 1].position - v.position : toVec3f(0.0f);
+        const Vec3f this_line = this_line_valid ? m_vertices[i + 1].position - v.position : ZERO;
 
         if (this_line_valid) {
             // there is a valid path between point i and i+1.
@@ -463,7 +597,7 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std
         positions.emplace_back(position);
 
         const float angle = atan2(prev_line[0] * this_line[1] - prev_line[1] * this_line[0], dot(prev_line, this_line));
-        heights_widths_angles.push_back(toVec3f(v.height, v.width, angle));
+        heights_widths_angles.push_back({ v.height, v.width, angle });
     }
 
     if (!positions.empty()) {
@@ -601,8 +735,11 @@ void Toolpaths::update_colors(const Settings& settings)
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
 }
 
-void Toolpaths::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Vec3f& camera_position, const Settings& settings)
+void Toolpaths::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Settings& settings)
 {
+    const Mat4x4f inv_view_matrix = inverse(view_matrix);
+    const Vec3f camera_position = { inv_view_matrix[12], inv_view_matrix[13], inv_view_matrix[14] };
+
     render_segments(view_matrix, projection_matrix, camera_position);
     render_options(view_matrix, projection_matrix);
     if (settings.options_visibility.at(EOptionType::ToolMarker))
@@ -871,7 +1008,7 @@ Color Toolpaths::select_color(const PathVertex& v, const Settings& settings) con
     }
     case EViewType::Tool:
     {
-        assert(v.get_extruder_id() < m_tool_colors.size());
+        assert(static_cast<size_t>(v.extruder_id) < m_tool_colors.size());
         return m_tool_colors[v.extruder_id];
     }
     case EViewType::ColorPrint:

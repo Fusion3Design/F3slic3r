@@ -36,7 +36,7 @@ public:
 
     void init();
     void load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors);
-    void render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Vec3f& camera_position);
+    void render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
 
     EViewType get_view_type() const;
     void set_view_type(EViewType type);

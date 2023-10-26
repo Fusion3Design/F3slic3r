@@ -50,10 +50,10 @@ void OptionTemplate::init(uint8_t resolution)
     //
     std::vector<float> top_vertices;
     top_vertices.reserve(6 * m_vertices_count);
-    add_vertex(toVec3f(0.0f, 0.0f, 0.5f), toVec3f(0.0f, 0.0f, 1.0f), top_vertices);
+    add_vertex({ 0.0f, 0.0f, 0.5f }, { 0.0f, 0.0f, 1.0f }, top_vertices);
     for (uint8_t i = 0; i <= m_resolution; ++i) {
         const float ii = float(i) * step;
-        const Vec3f pos = toVec3f(0.5f * ::cos(ii), 0.5f * ::sin(ii), 0.0f);
+        const Vec3f pos = { 0.5f * ::cos(ii), 0.5f * ::sin(ii), 0.0f };
         const Vec3f norm = normalize(pos);
         add_vertex(pos, norm, top_vertices);
     }
@@ -63,10 +63,10 @@ void OptionTemplate::init(uint8_t resolution)
     //
     std::vector<float> bottom_vertices;
     bottom_vertices.reserve(6 * m_vertices_count);
-    add_vertex(toVec3f(0.0f, 0.0f, -0.5f), toVec3f(0.0f, 0.0f, -1.0f), bottom_vertices);
+    add_vertex({ 0.0f, 0.0f, -0.5f }, { 0.0f, 0.0f, -1.0f }, bottom_vertices);
     for (uint8_t i = 0; i <= m_resolution; ++i) {
         const float ii = -float(i) * step;
-        const Vec3f pos = toVec3f(0.5f * ::cos(ii), 0.5f * ::sin(ii), 0.0f);
+        const Vec3f pos = { 0.5f * ::cos(ii), 0.5f * ::sin(ii), 0.0f };
         const Vec3f norm = normalize(pos);
         add_vertex(pos, norm, bottom_vertices);
     }

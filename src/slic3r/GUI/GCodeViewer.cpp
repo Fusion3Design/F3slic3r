@@ -1175,15 +1175,13 @@ void GCodeViewer::render()
         std::memcpy(converted_view_matrix.data(), view_matrix.data(), 16 * sizeof(float));
         libvgcode::Mat4x4f converted_projetion_matrix;
         std::memcpy(converted_projetion_matrix.data(), projection_matrix.data(), 16 * sizeof(float));
-        libvgcode::Vec3f converted_camera_position;
-        std::memcpy(converted_camera_position.data(), camera_position.data(), 3 * sizeof(float));
         libvgcode::Vec3f converted_tool_marker_position;
         std::memcpy(converted_tool_marker_position.data(), m_sequential_view.current_position.data(), 3 * sizeof(float));
 
         m_gcode_viewer_2.set_cog_marker_scale_factor(m_cog_marker_fixed_screen_size ? 10.0f * m_cog_marker_size * camera.get_inv_zoom() : m_cog_marker_size);
         m_gcode_viewer_2.set_tool_marker_position(converted_tool_marker_position);
         m_gcode_viewer_2.set_tool_marker_scale_factor(m_tool_marker_fixed_screen_size ? 10.0f * m_tool_marker_size * camera.get_inv_zoom() : m_tool_marker_size);
-        m_gcode_viewer_2.render(converted_view_matrix, converted_projetion_matrix, converted_camera_position);
+        m_gcode_viewer_2.render(converted_view_matrix, converted_projetion_matrix);
     }
     else
 #endif // ENABLE_NEW_GCODE_VIEWER
