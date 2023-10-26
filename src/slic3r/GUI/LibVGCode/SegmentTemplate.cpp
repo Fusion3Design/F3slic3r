@@ -20,11 +20,11 @@
 
 namespace libvgcode {
 
-//     /1-------6\    
-//    / |       | \  
-//   2--0-------5--7
-//    \ |       | /  
-//      3-------4    
+//|     /1-------6\     |
+//|    / |       | \    |
+//|   2--0-------5--7   |
+//|    \ |       | /    |
+//|      3-------4      | 
 static constexpr const std::array<uint8_t, 24> VERTEX_DATA = {
     0, 1, 2, // front spike
     0, 2, 3, // front spike

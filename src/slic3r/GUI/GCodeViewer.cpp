@@ -1169,7 +1169,6 @@ void GCodeViewer::render()
         const Camera& camera = wxGetApp().plater()->get_camera();
         const Matrix4f view_matrix = camera.get_view_matrix().matrix().cast<float>();
         const Matrix4f projection_matrix = camera.get_projection_matrix().matrix().cast<float>();
-        const Vec3f camera_position = camera.get_position().cast<float>();
 
         libvgcode::Mat4x4f converted_view_matrix;
         std::memcpy(converted_view_matrix.data(), view_matrix.data(), 16 * sizeof(float));

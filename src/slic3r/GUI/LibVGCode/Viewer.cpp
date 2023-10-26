@@ -14,8 +14,6 @@
 #if ENABLE_NEW_GCODE_VIEWER
 
 #include "libslic3r/GCode/GCodeProcessor.hpp"
-#include "slic3r/GUI/GUI_App.hpp"
-#include "slic3r/GUI/ImGuiWrapper.hpp"
 //################################################################################################################################
 
 namespace libvgcode {
@@ -33,11 +31,6 @@ void Viewer::load(const Slic3r::GCodeProcessorResult& gcode_result, const std::v
 void Viewer::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
     m_toolpaths.render(view_matrix, projection_matrix);
-
-//################################################################################################################################
-    // Debug
-    render_debug_window();
-//################################################################################################################################
 }
 
 EViewType Viewer::get_view_type() const
@@ -154,112 +147,6 @@ void Viewer::set_tool_marker_alpha(float alpha)
 {
     m_toolpaths.set_tool_marker_alpha(alpha);
 }
-
-//################################################################################################################################
-// Debug
-void Viewer::render_debug_window()
-{
-    Slic3r::GUI::ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
-    imgui.begin(std::string("LibVGCode Viewer Debug"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-
-    if (ImGui::BeginTable("Data", 2)) {
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "# vertices");
-        ImGui::TableSetColumnIndex(1);
-        imgui.text(std::to_string(m_toolpaths.get_vertices_count()));
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled lines");
-        ImGui::TableSetColumnIndex(1);
-        const std::pair<uint32_t, uint32_t>& enabled_segments_range = m_toolpaths.get_enabled_segments_range();
-        imgui.text(std::to_string(m_toolpaths.get_enabled_segments_count()) + " [" + std::to_string(enabled_segments_range.first) + "-" + std::to_string(enabled_segments_range.second) + "]");
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled options");
-        ImGui::TableSetColumnIndex(1);
-        const std::pair<uint32_t, uint32_t>& enabled_options_range = m_toolpaths.get_enabled_options_range();
-        imgui.text(std::to_string(m_toolpaths.get_enabled_options_count()) + " [" + std::to_string(enabled_options_range.first) + "-" + std::to_string(enabled_options_range.second) + "]");
-
-        ImGui::Separator();
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "sequential range");
-        ImGui::TableSetColumnIndex(1);
-        const std::array<size_t, 2>& current_view_range = m_toolpaths.get_view_current_range();
-        imgui.text(std::to_string(current_view_range[0]) + " - " + std::to_string(current_view_range[1]));
-
-        auto add_range_property_row = [&imgui](const std::string& label, const std::array<float, 2>& range) {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, label);
-            ImGui::TableSetColumnIndex(1);
-            char buf[64];
-            ::sprintf(buf, "%.3f - %.3f", range[0], range[1]);
-            imgui.text(buf);
-        };
-
-        add_range_property_row("height range", m_toolpaths.get_height_range());
-        add_range_property_row("width range", m_toolpaths.get_width_range());
-        add_range_property_row("speed range", m_toolpaths.get_speed_range());
-        add_range_property_row("fan speed range", m_toolpaths.get_fan_speed_range());
-        add_range_property_row("temperature range", m_toolpaths.get_temperature_range());
-        add_range_property_row("volumetric rate range", m_toolpaths.get_volumetric_rate_range());
-        add_range_property_row("layer time linear range", m_toolpaths.get_layer_time_linear_range());
-        add_range_property_row("layer time logarithmic range", m_toolpaths.get_layer_time_logarithmic_range());
-
-        ImGui::EndTable();
-
-        ImGui::Separator();
-        
-        if (ImGui::BeginTable("Cog", 2)) {
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Cog marker scale factor");
-            ImGui::TableSetColumnIndex(1);
-            imgui.text(std::to_string(get_cog_marker_scale_factor()));
-
-            ImGui::EndTable();
-        }
-
-        ImGui::Separator();
-
-        if (ImGui::BeginTable("Tool", 2)) {
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker scale factor");
-            ImGui::TableSetColumnIndex(1);
-            imgui.text(std::to_string(get_tool_marker_scale_factor()));
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker color");
-            ImGui::TableSetColumnIndex(1);
-            Color color = get_tool_marker_color();
-            if (ImGui::ColorPicker3("##ToolColor", color.data()))
-                set_tool_marker_color(color);
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker alpha");
-            ImGui::TableSetColumnIndex(1);
-            float tool_alpha = get_tool_marker_alpha();
-            if (imgui.slider_float("##ToolAlpha", &tool_alpha, 0.25f, 0.75f))
-                set_tool_marker_alpha(tool_alpha);
-
-            ImGui::EndTable();
-        }
-    }
-
-    imgui.end();
-}
-//################################################################################################################################
 
 } // namespace libvgcode
 

@@ -115,23 +115,6 @@ public:
     void set_tool_marker_color(const Color& color);
     void set_tool_marker_alpha(float size);
 
-//################################################################################################################################
-    // Debug
-    size_t get_vertices_count() const;
-    size_t get_enabled_segments_count() const;
-    size_t get_enabled_options_count() const;
-    const std::pair<uint32_t, uint32_t>& get_enabled_segments_range() const;
-    const std::pair<uint32_t, uint32_t>& get_enabled_options_range() const;
-    const std::array<float, 2>& get_height_range() const;
-    const std::array<float, 2>& get_width_range() const;
-    const std::array<float, 2>& get_speed_range() const;
-    const std::array<float, 2>& get_fan_speed_range() const;
-    const std::array<float, 2>& get_temperature_range() const;
-    const std::array<float, 2>& get_volumetric_rate_range() const;
-    const std::array<float, 2>& get_layer_time_linear_range() const;
-    const std::array<float, 2>& get_layer_time_logarithmic_range() const;
-//################################################################################################################################
-
 private:
     Settings m_settings;
     ViewRange m_view_range;
@@ -269,6 +252,11 @@ private:
     void render_options(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
     void render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
     void render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
+
+//################################################################################################################################
+    // Debug
+    void render_debug_window();
+//################################################################################################################################
 };
 
 } // namespace libvgcode
