@@ -694,8 +694,18 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
     }
 }
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_NEW_GCODE_VIEWER
+void GCodeViewer::SequentialView::render(float legend_height, bool show_marker)
+{
+    if (show_marker)
+#else
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 void GCodeViewer::SequentialView::render(float legend_height)
 {
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     marker.render();
     float bottom = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size().get_height();
     if (wxGetApp().is_editor())
@@ -1190,22 +1200,20 @@ void GCodeViewer::render()
     float legend_height = 0.0f;
     if (!m_layers.empty()) {
         render_legend(legend_height);
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        if (m_sequential_view.current.last != m_sequential_view.endpoints.last) {
+            m_sequential_view.marker.set_world_position(m_sequential_view.current_position);
+            m_sequential_view.marker.set_world_offset(m_sequential_view.current_offset);
+            m_sequential_view.marker.set_z_offset(m_z_offset);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-        if (!m_use_gcode_viewer_2) {
+            m_sequential_view.render(legend_height, !m_use_gcode_viewer_2);
+#else
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            m_sequential_view.render(legend_height);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #endif // ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-            if (m_sequential_view.current.last != m_sequential_view.endpoints.last) {
-                m_sequential_view.marker.set_world_position(m_sequential_view.current_position);
-                m_sequential_view.marker.set_world_offset(m_sequential_view.current_offset);
-                m_sequential_view.marker.set_z_offset(m_z_offset);
-                m_sequential_view.render(legend_height);
-            }
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#if ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         }
-#endif // ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     }
 #if ENABLE_GCODE_VIEWER_STATISTICS
     render_statistics();
@@ -4808,53 +4816,53 @@ void GCodeViewer::render_legend(float& legend_height)
     ImGui::Spacing();
     toggle_button(Preview::OptionType::Travel, _u8L("Travel"), [&imgui](ImGuiWindow& window, const ImVec2& pos, float size) {
         imgui.draw_icon(window, pos, size, ImGui::LegendTravel);
-        });
+    });
     ImGui::SameLine();
     toggle_button(Preview::OptionType::Wipe, _u8L("Wipe"), [&imgui](ImGuiWindow& window, const ImVec2& pos, float size) {
         imgui.draw_icon(window, pos, size, ImGui::LegendWipe);
-        });
+    });
     ImGui::SameLine();
     toggle_button(Preview::OptionType::Retractions, _u8L("Retractions"), [&imgui](ImGuiWindow& window, const ImVec2& pos, float size) {
         imgui.draw_icon(window, pos, size, ImGui::LegendRetract);
-        });
+    });
     ImGui::SameLine();
     toggle_button(Preview::OptionType::Unretractions, _u8L("Deretractions"), [&imgui](ImGuiWindow& window, const ImVec2& pos, float size) {
         imgui.draw_icon(window, pos, size, ImGui::LegendDeretract);
-        });
+    });
     ImGui::SameLine();
     toggle_button(Preview::OptionType::Seams, _u8L("Seams"), [&imgui](ImGuiWindow& window, const ImVec2& pos, float size) {
         imgui.draw_icon(window, pos, size, ImGui::LegendSeams);
-        });
+    });
     ImGui::SameLine();
     toggle_button(Preview::OptionType::ToolChanges, _u8L("Tool changes"), [&imgui](ImGuiWindow& window, const ImVec2& pos, float size) {
         imgui.draw_icon(window, pos, size, ImGui::LegendToolChanges);
-        });
+    });
     ImGui::SameLine();
     toggle_button(Preview::OptionType::ColorChanges, _u8L("Color changes"), [&imgui](ImGuiWindow& window, const ImVec2& pos, float size) {
         imgui.draw_icon(window, pos, size, ImGui::LegendColorChanges);
-        });
+    });
     ImGui::SameLine();
     toggle_button(Preview::OptionType::PausePrints, _u8L("Print pauses"), [&imgui](ImGuiWindow& window, const ImVec2& pos, float size) {
         imgui.draw_icon(window, pos, size, ImGui::LegendPausePrints);
-        });
+    });
     ImGui::SameLine();
     toggle_button(Preview::OptionType::CustomGCodes, _u8L("Custom G-codes"), [&imgui](ImGuiWindow& window, const ImVec2& pos, float size) {
         imgui.draw_icon(window, pos, size, ImGui::LegendCustomGCodes);
-        });
+    });
     ImGui::SameLine();
     toggle_button(Preview::OptionType::CenterOfGravity, _u8L("Center of gravity"), [&imgui](ImGuiWindow& window, const ImVec2& pos, float size) {
         imgui.draw_icon(window, pos, size, ImGui::LegendCOG);
-        });
+    });
     ImGui::SameLine();
     if (!wxGetApp().is_gcode_viewer()) {
         toggle_button(Preview::OptionType::Shells, _u8L("Shells"), [&imgui](ImGuiWindow& window, const ImVec2& pos, float size) {
             imgui.draw_icon(window, pos, size, ImGui::LegendShells);
-            });
+        });
         ImGui::SameLine();
     }
     toggle_button(Preview::OptionType::ToolMarker, _u8L("Tool marker"), [&imgui](ImGuiWindow& window, const ImVec2& pos, float size) {
         imgui.draw_icon(window, pos, size, ImGui::LegendToolMarker);
-        });
+    });
 
     bool size_dirty = !ImGui::GetCurrentWindow()->ScrollbarY && ImGui::CalcWindowNextAutoFitSize(ImGui::GetCurrentWindow()).x != ImGui::GetWindowWidth();
     if (m_legend_resizer.dirty || size_dirty != m_legend_resizer.dirty) {
