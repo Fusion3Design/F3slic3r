@@ -3,7 +3,7 @@
 #include "libslic3r/Technologies.hpp"
 //################################################################################################################################
 
-///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak, Vojtěch Bubník @bubnikv
+///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak, Vojtěch Bubník @bubnikv, Oleksandra Iushchenko @YuSanka
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
@@ -23,6 +23,8 @@
 #include <map>
 #include <assert.h>
 #include <exception>
+#include <cstdio>
+#include <string>
 
 namespace libvgcode {
 
@@ -298,6 +300,69 @@ static Mat4x4f inverse(const Mat4x4f& m)
     return ret;
 }
 
+static std::string short_time(const std::string& time)
+{
+    // Parse the dhms time format.
+    int days = 0;
+    int hours = 0;
+    int minutes = 0;
+    int seconds = 0;
+    if (time.find('d') != std::string::npos)
+        sscanf(time.c_str(), "%dd %dh %dm %ds", &days, &hours, &minutes, &seconds);
+    else if (time.find('h') != std::string::npos)
+        sscanf(time.c_str(), "%dh %dm %ds", &hours, &minutes, &seconds);
+    else if (time.find('m') != std::string::npos)
+        sscanf(time.c_str(), "%dm %ds", &minutes, &seconds);
+    else if (time.find('s') != std::string::npos)
+        sscanf(time.c_str(), "%ds", &seconds);
+
+    // Round to full minutes.
+    if (days + hours + minutes > 0 && seconds >= 30) {
+        if (++minutes == 60) {
+            minutes = 0;
+            if (++hours == 24) {
+                hours = 0;
+                ++days;
+            }
+        }
+    }
+
+    // Format the dhm time
+    char buffer[64];
+    if (days > 0)
+        sprintf(buffer, "%dd%dh%dm", days, hours, minutes);
+    else if (hours > 0)
+        sprintf(buffer, "%dh%dm", hours, minutes);
+    else if (minutes > 0)
+        sprintf(buffer, "%dm", minutes);
+    else
+        sprintf(buffer, "%ds", seconds);
+    return buffer;
+}
+
+// Returns the given time is seconds in format DDd HHh MMm SSs
+static std::string get_time_dhms(float time_in_secs)
+{
+    int days = (int)(time_in_secs / 86400.0f);
+    time_in_secs -= (float)days * 86400.0f;
+    int hours = (int)(time_in_secs / 3600.0f);
+    time_in_secs -= (float)hours * 3600.0f;
+    int minutes = (int)(time_in_secs / 60.0f);
+    time_in_secs -= (float)minutes * 60.0f;
+
+    char buffer[64];
+    if (days > 0)
+        sprintf(buffer, "%dd %dh %dm %ds", days, hours, minutes, (int)time_in_secs);
+    else if (hours > 0)
+        sprintf(buffer, "%dh %dm %ds", hours, minutes, (int)time_in_secs);
+    else if (minutes > 0)
+        sprintf(buffer, "%dm %ds", minutes, (int)time_in_secs);
+    else
+        sprintf(buffer, "%ds", (int)std::round(time_in_secs));
+
+    return buffer;
+}
+
 std::string check_shader(GLuint handle)
 {
     std::string ret;
@@ -472,11 +537,23 @@ void Toolpaths::init()
     m_tool_marker.init(32, 2.0f, 4.0f, 1.0f, 8.0f);
 }
 
-void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors,
-    const Settings& settings)
+void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors)
 {
+    if (m_settings.time_mode != ETimeMode::Normal) {
+        const Slic3r::PrintEstimatedStatistics& stats = gcode_result.print_statistics;
+        bool force_normal_mode = static_cast<size_t>(m_settings.time_mode) >= stats.modes.size();
+        if (!force_normal_mode) {
+            const float normal_time = stats.modes[static_cast<uint8_t>(ETimeMode::Normal)].time;
+            const float mode_time = stats.modes[static_cast<uint8_t>(m_settings.time_mode)].time;
+            force_normal_mode = mode_time == 0.0f ||
+                                short_time(get_time_dhms(mode_time)) == short_time(get_time_dhms(normal_time)); // TO CHECK -> Is this necessary ?
+        }
+        if (force_normal_mode)
+            m_settings.time_mode = ETimeMode::Normal;
+    }
+
     m_tool_colors.clear();
-    if (settings.view_type == EViewType::Tool && !gcode_result.extruder_colors.empty())
+    if (m_settings.view_type == EViewType::Tool && !gcode_result.extruder_colors.empty())
         // update tool colors from config stored in the gcode
         decode_colors(gcode_result.extruder_colors, m_tool_colors);
     else
@@ -644,32 +721,35 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std
         if (i < gcode_result.print_statistics.modes.size())
             m_layers_times[i] = gcode_result.print_statistics.modes[i].layers_times;
     }
+
+    m_view_range.set_global_range(0, m_vertices.size() - 1);
+    m_settings.update_colors = true;
 }
 
-void Toolpaths::update_enabled_entities(const ViewRange& range, const Settings& settings)
+void Toolpaths::update_enabled_entities()
 {
     std::vector<uint32_t> enabled_segments;
     std::vector<uint32_t> enabled_options;
 
-    for (uint32_t i = range.get_current_min(); i < range.get_current_max(); i++) {
+    for (uint32_t i = m_view_range.get_current_min(); i < m_view_range.get_current_max(); i++) {
         const PathVertex& v = m_vertices[i];
 
         if (!m_valid_lines_bitset[i] && !v.is_option())
             continue;
         if (v.is_travel()) {
-            if (!settings.options_visibility.at(EOptionType::Travels))
+            if (!m_settings.options_visibility.at(EOptionType::Travels))
                 continue;
         }
         else if (v.is_wipe()) {
-            if (!settings.options_visibility.at(EOptionType::Wipes))
+            if (!m_settings.options_visibility.at(EOptionType::Wipes))
                 continue;
         }
         else if (v.is_option()) {
-            if (!settings.options_visibility.at(type_to_option(v.type)))
-                  continue;
+            if (!m_settings.options_visibility.at(type_to_option(v.type)))
+                continue;
         }
         else if (v.is_extrusion()) {
-            if (!settings.extrusion_roles_visibility.at(v.role))
+            if (!m_settings.extrusion_roles_visibility.at(v.role))
                 continue;
         }
         else
@@ -719,13 +799,13 @@ static float encode_color(const Color& color) {
     return float(i_color);
 }
 
-void Toolpaths::update_colors(const Settings& settings)
+void Toolpaths::update_colors()
 {
-    update_color_ranges(settings);
+    update_color_ranges();
 
     std::vector<float> colors(m_vertices.size());
     for (size_t i = 0; i < m_vertices.size(); i++) {
-        colors[i] = encode_color(select_color(m_vertices[i], settings));
+        colors[i] = encode_color(select_color(m_vertices[i]));
     }
 
     // update gpu buffer for colors
@@ -735,17 +815,119 @@ void Toolpaths::update_colors(const Settings& settings)
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
 }
 
-void Toolpaths::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Settings& settings)
+void Toolpaths::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
+    if (m_settings.update_enabled_entities) {
+        update_enabled_entities();
+        m_settings.update_enabled_entities = false;
+    }
+
+    if (m_settings.update_colors) {
+        update_colors();
+        m_settings.update_colors = false;
+    }
+
     const Mat4x4f inv_view_matrix = inverse(view_matrix);
     const Vec3f camera_position = { inv_view_matrix[12], inv_view_matrix[13], inv_view_matrix[14] };
 
     render_segments(view_matrix, projection_matrix, camera_position);
     render_options(view_matrix, projection_matrix);
-    if (settings.options_visibility.at(EOptionType::ToolMarker))
+    if (m_settings.options_visibility.at(EOptionType::ToolMarker))
         render_tool_marker(view_matrix, projection_matrix);
-    if (settings.options_visibility.at(EOptionType::CenterOfGravity))
+    if (m_settings.options_visibility.at(EOptionType::CenterOfGravity))
         render_cog_marker(view_matrix, projection_matrix);
+}
+
+EViewType Toolpaths::get_view_type() const
+{
+    return m_settings.view_type;
+}
+
+ETimeMode Toolpaths::get_time_mode() const
+{
+    return m_settings.time_mode;
+}
+
+bool Toolpaths::is_option_visible(EOptionType type) const
+{
+    try
+    {
+        return m_settings.options_visibility.at(type);
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+bool Toolpaths::is_extrusion_role_visible(EGCodeExtrusionRole role) const
+{
+    try
+    {
+        return m_settings.extrusion_roles_visibility.at(role);
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+void Toolpaths::set_view_type(EViewType type)
+{
+    m_settings.view_type = type;
+    m_settings.update_colors = true;
+}
+
+void Toolpaths::set_time_mode(ETimeMode mode)
+{
+    m_settings.time_mode = mode;
+    m_settings.update_colors = true;
+}
+
+void Toolpaths::toggle_option_visibility(EOptionType type)
+{
+    try
+    {
+        bool& value = m_settings.options_visibility.at(type);
+        value = !value;
+        m_settings.update_enabled_entities = true;
+        m_settings.update_colors = true;
+    }
+    catch (...)
+    {
+        // do nothing;
+    }
+}
+
+void Toolpaths::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
+{
+    try
+    {
+        bool& value = m_settings.extrusion_roles_visibility.at(role);
+        value = !value;
+        m_settings.update_enabled_entities = true;
+        m_settings.update_colors = true;
+    }
+    catch (...)
+    {
+        // do nothing;
+    }
+}
+
+const std::array<size_t, 2>& Toolpaths::get_view_current_range() const
+{
+    return m_view_range.get_current_range();
+}
+
+const std::array<size_t, 2>& Toolpaths::get_view_global_range() const
+{
+    return m_view_range.get_global_range();
+}
+
+void Toolpaths::set_view_current_range(size_t min, size_t max)
+{
+    m_view_range.set_current_range(min, max);
+    m_settings.update_enabled_entities = true;
 }
 
 const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& Toolpaths::get_layers_times() const
@@ -915,7 +1097,7 @@ void Toolpaths::reset()
     delete_buffers(m_positions_buf_id);
 }
 
-void Toolpaths::update_color_ranges(const Settings& settings)
+void Toolpaths::update_color_ranges()
 {
     m_width_range.reset();
     m_height_range.reset();
@@ -930,25 +1112,25 @@ void Toolpaths::update_color_ranges(const Settings& settings)
         const PathVertex& v = m_vertices[i];
         if (v.is_extrusion()) {
             m_height_range.update(round_to_bin(v.height));
-            if (!v.is_custom_gcode() || settings.extrusion_roles_visibility.at(EGCodeExtrusionRole::Custom)) {
+            if (!v.is_custom_gcode() || m_settings.extrusion_roles_visibility.at(EGCodeExtrusionRole::Custom)) {
                 m_width_range.update(round_to_bin(v.width));
                 m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate));
             }
             m_fan_speed_range.update(v.fan_speed);
             m_temperature_range.update(v.temperature);
         }
-        if ((v.is_travel() && settings.options_visibility.at(EOptionType::Travels)) || v.is_extrusion())
+        if ((v.is_travel() && m_settings.options_visibility.at(EOptionType::Travels)) || v.is_extrusion())
             m_speed_range.update(v.feedrate);
     }
 
     for (size_t i = 0; i < m_layers_times.size(); ++i) {
-        for (const float time : m_layers_times[static_cast<uint8_t>(settings.time_mode)]) {
+        for (const float time : m_layers_times[static_cast<uint8_t>(m_settings.time_mode)]) {
             m_layer_time_range[i].update(time);
         }
     }
 }
 
-Color Toolpaths::select_color(const PathVertex& v, const Settings& settings) const
+Color Toolpaths::select_color(const PathVertex& v) const
 {
     if (v.type == EMoveType::Noop)
         return Dummy_Color;
@@ -960,7 +1142,7 @@ Color Toolpaths::select_color(const PathVertex& v, const Settings& settings) con
         return Options_Colors.at(v.type);
 
     const size_t role = static_cast<size_t>(v.role);
-    switch (settings.view_type)
+    switch (m_settings.view_type)
     {
     case EViewType::FeatureType:
     {
@@ -999,12 +1181,12 @@ Color Toolpaths::select_color(const PathVertex& v, const Settings& settings) con
     case EViewType::LayerTimeLinear:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[0].get_color_at(m_layers_times[static_cast<size_t>(settings.time_mode)][v.layer_id]);
+        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[0].get_color_at(m_layers_times[static_cast<size_t>(m_settings.time_mode)][v.layer_id]);
     }
     case EViewType::LayerTimeLogarithmic:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[1].get_color_at(m_layers_times[static_cast<size_t>(settings.time_mode)][v.layer_id]);
+        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[1].get_color_at(m_layers_times[static_cast<size_t>(m_settings.time_mode)][v.layer_id]);
     }
     case EViewType::Tool:
     {

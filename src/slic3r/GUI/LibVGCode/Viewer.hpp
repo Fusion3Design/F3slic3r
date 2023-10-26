@@ -10,9 +10,7 @@
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#include "Settings.hpp"
 #include "Toolpaths.hpp"
-#include "ViewRange.hpp"
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
@@ -87,9 +85,7 @@ public:
     void set_tool_marker_alpha(float alpha);
 
 private:
-    Settings m_settings;
     Toolpaths m_toolpaths;
-    ViewRange m_view_range;
 
 //################################################################################################################################
     // Debug

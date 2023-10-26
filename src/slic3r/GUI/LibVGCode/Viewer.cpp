@@ -3,7 +3,7 @@
 #include "libslic3r/Technologies.hpp"
 //################################################################################################################################
 
-///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak, Oleksandra Iushchenko @YuSanka
+///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
@@ -18,72 +18,7 @@
 #include "slic3r/GUI/ImGuiWrapper.hpp"
 //################################################################################################################################
 
-#include <cstdio>
-
 namespace libvgcode {
-
-static std::string short_time(const std::string& time)
-{
-    // Parse the dhms time format.
-    int days = 0;
-    int hours = 0;
-    int minutes = 0;
-    int seconds = 0;
-    if (time.find('d') != std::string::npos)
-        sscanf(time.c_str(), "%dd %dh %dm %ds", &days, &hours, &minutes, &seconds);
-    else if (time.find('h') != std::string::npos)
-        sscanf(time.c_str(), "%dh %dm %ds", &hours, &minutes, &seconds);
-    else if (time.find('m') != std::string::npos)
-        sscanf(time.c_str(), "%dm %ds", &minutes, &seconds);
-    else if (time.find('s') != std::string::npos)
-        sscanf(time.c_str(), "%ds", &seconds);
-
-    // Round to full minutes.
-    if (days + hours + minutes > 0 && seconds >= 30) {
-        if (++minutes == 60) {
-            minutes = 0;
-            if (++hours == 24) {
-                hours = 0;
-                ++days;
-            }
-        }
-    }
-
-    // Format the dhm time
-    char buffer[64];
-    if (days > 0)
-        sprintf(buffer, "%dd%dh%dm", days, hours, minutes);
-    else if (hours > 0)
-        sprintf(buffer, "%dh%dm", hours, minutes);
-    else if (minutes > 0)
-        sprintf(buffer, "%dm", minutes);
-    else
-        sprintf(buffer, "%ds", seconds);
-    return buffer;
-}
-
-// Returns the given time is seconds in format DDd HHh MMm SSs
-inline std::string get_time_dhms(float time_in_secs)
-{
-    int days = (int)(time_in_secs / 86400.0f);
-    time_in_secs -= (float)days * 86400.0f;
-    int hours = (int)(time_in_secs / 3600.0f);
-    time_in_secs -= (float)hours * 3600.0f;
-    int minutes = (int)(time_in_secs / 60.0f);
-    time_in_secs -= (float)minutes * 60.0f;
-
-    char buffer[64];
-    if (days > 0)
-        sprintf(buffer, "%dd %dh %dm %ds", days, hours, minutes, (int)time_in_secs);
-    else if (hours > 0)
-        sprintf(buffer, "%dh %dm %ds", hours, minutes, (int)time_in_secs);
-    else if (minutes > 0)
-        sprintf(buffer, "%dm %ds", minutes, (int)time_in_secs);
-    else
-        sprintf(buffer, "%ds", (int)std::round(time_in_secs));
-
-    return buffer;
-}
 
 void Viewer::init()
 {
@@ -92,37 +27,12 @@ void Viewer::init()
 
 void Viewer::load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors)
 {
-    if (m_settings.time_mode != ETimeMode::Normal) {
-        const Slic3r::PrintEstimatedStatistics& stats = gcode_result.print_statistics;
-        bool force_normal_mode = static_cast<size_t>(m_settings.time_mode) >= stats.modes.size();
-        if (!force_normal_mode) {
-            const float normal_time = stats.modes[static_cast<uint8_t>(ETimeMode::Normal)].time;
-            const float mode_time = stats.modes[static_cast<uint8_t>(m_settings.time_mode)].time;
-            force_normal_mode = mode_time == 0.0f ||
-                short_time(get_time_dhms(mode_time)) == short_time(get_time_dhms(normal_time)); // TO CHECK -> Is this necessary ?
-        }
-        if (force_normal_mode)
-            m_settings.time_mode = ETimeMode::Normal;
-    }
-
-    m_toolpaths.load(gcode_result, str_tool_colors, m_settings);
-    m_view_range.set_global_range(0, m_toolpaths.get_vertices_count() - 1);
-    m_settings.update_colors = true;
+    m_toolpaths.load(gcode_result, str_tool_colors);
 }
 
 void Viewer::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
-    if (m_settings.update_enabled_entities) {
-        m_toolpaths.update_enabled_entities(m_view_range, m_settings);
-        m_settings.update_enabled_entities = false;
-    }
-
-    if (m_settings.update_colors) {
-        m_toolpaths.update_colors(m_settings);
-        m_settings.update_colors = false;
-    }
-
-    m_toolpaths.render(view_matrix, projection_matrix, m_settings);
+    m_toolpaths.render(view_matrix, projection_matrix);
 
 //################################################################################################################################
     // Debug
@@ -132,24 +42,22 @@ void Viewer::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix
 
 EViewType Viewer::get_view_type() const
 {
-    return m_settings.view_type;
+    return m_toolpaths.get_view_type();
 }
 
 void Viewer::set_view_type(EViewType type)
 {
-    m_settings.view_type = type;
-    m_settings.update_colors = true;
+    m_toolpaths.set_view_type(type);
 }
 
 ETimeMode Viewer::get_time_mode() const
 {
-    return m_settings.time_mode;
+    return m_toolpaths.get_time_mode();
 }
 
 void Viewer::set_time_mode(ETimeMode mode)
 {
-    m_settings.time_mode = mode;
-    m_settings.update_colors = true;
+    m_toolpaths.set_time_mode(mode);
 }
 
 const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& Viewer::get_layers_times() const
@@ -159,72 +67,37 @@ const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& Vie
 
 bool Viewer::is_option_visible(EOptionType type) const
 {
-    try
-    {
-        return m_settings.options_visibility.at(type);
-    }
-    catch (...)
-    {
-        return false;
-    }
+    return m_toolpaths.is_option_visible(type);
 }
 
 void Viewer::toggle_option_visibility(EOptionType type)
 {
-    try
-    {
-        bool& value = m_settings.options_visibility.at(type);
-        value = !value;
-        m_settings.update_enabled_entities = true;
-        m_settings.update_colors = true;
-    }
-    catch (...)
-    {
-        // do nothing;
-    }
+    m_toolpaths.toggle_option_visibility(type);
 }
 
 bool Viewer::is_extrusion_role_visible(EGCodeExtrusionRole role) const
 {
-    try
-    {
-        return m_settings.extrusion_roles_visibility.at(role);
-    }
-    catch (...)
-    {
-        return false;
-    }
+    return m_toolpaths.is_extrusion_role_visible(role);
 }
 
 void Viewer::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
 {
-    try
-    {
-        bool& value = m_settings.extrusion_roles_visibility.at(role);
-        value = !value;
-        m_settings.update_enabled_entities = true;
-        m_settings.update_colors = true;
-    }
-    catch (...)
-    {
-        // do nothing;
-    }
+    m_toolpaths.toggle_extrusion_role_visibility(role);
 }
 
 const std::array<size_t, 2>& Viewer::get_view_current_range() const
 {
-    return m_view_range.get_current_range();
+    return m_toolpaths.get_view_current_range();
 }
 
 const std::array<size_t, 2>& Viewer::get_view_global_range() const
 {
-    return m_view_range.get_global_range();
+    return m_toolpaths.get_view_global_range();
 }
 
 void Viewer::set_view_current_range(size_t min, size_t max)
 {
-    m_view_range.set_current_range(min, max);
-    m_settings.update_enabled_entities = true;
+    m_toolpaths.set_view_current_range(min, max);
 }
 
 Vec3f Viewer::get_cog_position() const
@@ -317,7 +190,8 @@ void Viewer::render_debug_window()
         ImGui::TableSetColumnIndex(0);
         imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "sequential range");
         ImGui::TableSetColumnIndex(1);
-        imgui.text(std::to_string(m_view_range.get_current_min()) + " - " + std::to_string(m_view_range.get_current_max()));
+        const std::array<size_t, 2>& current_view_range = m_toolpaths.get_view_current_range();
+        imgui.text(std::to_string(current_view_range[0]) + " - " + std::to_string(current_view_range[1]));
 
         auto add_range_property_row = [&imgui](const std::string& label, const std::array<float, 2>& range) {
             ImGui::TableNextRow();

@@ -10,6 +10,7 @@
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
+#include "Settings.hpp"
 #include "SegmentTemplate.hpp"
 #include "OptionTemplate.hpp"
 #include "CogMarker.hpp"
@@ -17,6 +18,7 @@
 #include "PathVertex.hpp"
 #include "Bitset.hpp"
 #include "ColorRange.hpp"
+#include "ViewRange.hpp"
 
 #include <vector>
 #include <array>
@@ -30,9 +32,6 @@ class Print;
 //################################################################################################################################
 
 namespace libvgcode {
-
-class ViewRange;
-struct Settings;
 
 class Toolpaths
 {
@@ -51,25 +50,50 @@ public:
 
     //
     // Setup all the variables used for visualization and coloring of the toolpaths
-    // from the gcode moves contained in the given gcode_result, according to the setting
-    // contained in the given config.
+    // from the gcode moves contained in the given gcode_result.
     //
-    void load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors,
-        const Settings& settings);
+    void load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors);
 
     //
     // Update the visibility property of toolpaths
     //
-    void update_enabled_entities(const ViewRange& range, const Settings& settings);
+    void update_enabled_entities();
     //
     // Update the color of toolpaths
     //
-    void update_colors(const Settings& settings);
+    void update_colors();
 
     //
     // Render the toolpaths
     //
-    void render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Settings& settings);
+    void render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
+
+    //
+    // Settings getters
+    //
+    EViewType get_view_type() const;
+    ETimeMode get_time_mode() const;
+    bool is_option_visible(EOptionType type) const;
+    bool is_extrusion_role_visible(EGCodeExtrusionRole role) const;
+
+    //
+    // Settings setters
+    //
+    void set_view_type(EViewType type);
+    void set_time_mode(ETimeMode mode);
+    void toggle_option_visibility(EOptionType type);
+    void toggle_extrusion_role_visibility(EGCodeExtrusionRole role);
+
+    //
+    // View range getters
+    //
+    const std::array<size_t, 2>& get_view_current_range() const;
+    const std::array<size_t, 2>& get_view_global_range() const;
+
+    //
+    // View range setters
+    //
+    void set_view_current_range(size_t min, size_t max);
 
     //
     // Properties getters
@@ -109,6 +133,9 @@ public:
 //################################################################################################################################
 
 private:
+    Settings m_settings;
+    ViewRange m_view_range;
+
     //
     // The OpenGL element used to represent all toolpath segments
     //
@@ -236,8 +263,8 @@ private:
     unsigned int m_enabled_options_tex_id{ 0 };
 
     void reset();
-    void update_color_ranges(const Settings& settings);
-    Color select_color(const PathVertex& v, const Settings& settings) const;
+    void update_color_ranges();
+    Color select_color(const PathVertex& v) const;
     void render_segments(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Vec3f& camera_position);
     void render_options(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
     void render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
