@@ -272,7 +272,7 @@ void PreferencesDialog::build()
 
 	// Add "General" tab
 	m_optgroup_general = create_options_tab(L("General"), tabs);
-	m_optgroup_general->m_on_change = [this](t_config_option_key opt_key, boost::any value) {
+	m_optgroup_general->on_change = [this](t_config_option_key opt_key, boost::any value) {
 		if (auto it = m_values.find(opt_key); it != m_values.end()) {
 			m_values.erase(it); // we shouldn't change value, if some of those parameters were selected, and then deselected
 			return;
@@ -456,7 +456,7 @@ void PreferencesDialog::build()
 
 	// Add "Camera" tab
 	m_optgroup_camera = create_options_tab(L("Camera"), tabs);
-	m_optgroup_camera->m_on_change = [this](t_config_option_key opt_key, boost::any value) {
+	m_optgroup_camera->on_change = [this](t_config_option_key opt_key, boost::any value) {
 		if (auto it = m_values.find(opt_key);it != m_values.end()) {
 			m_values.erase(it); // we shouldn't change value, if some of those parameters were selected, and then deselected
 			return;
@@ -483,7 +483,7 @@ void PreferencesDialog::build()
 
 	// Add "GUI" tab
 	m_optgroup_gui = create_options_tab(L("GUI"), tabs);
-	m_optgroup_gui->m_on_change = [this](t_config_option_key opt_key, boost::any value) {
+	m_optgroup_gui->on_change = [this](t_config_option_key opt_key, boost::any value) {
 		if (opt_key == "notify_release") {
 			int val_int = boost::any_cast<int>(value);
 			for (const auto& item : s_keys_map_NotifyReleaseMode) {
@@ -615,7 +615,7 @@ void PreferencesDialog::build()
 		create_settings_mode_color_widget();
 
 		m_optgroup_other = create_options_tab(_L("Other"), tabs);
-		m_optgroup_other->m_on_change = [this](t_config_option_key opt_key, boost::any value) {
+		m_optgroup_other->on_change = [this](t_config_option_key opt_key, boost::any value) {
 
 			if (auto it = m_values.find(opt_key); it != m_values.end() && opt_key != "url_downloader_dest") {
 				m_values.erase(it); // we shouldn't change value, if some of those parameters were selected, and then deselected
@@ -649,7 +649,7 @@ void PreferencesDialog::build()
 #if ENABLE_ENVIRONMENT_MAP
 		// Add "Render" tab
 		m_optgroup_render = create_options_tab(L("Render"), tabs);
-		m_optgroup_render->m_on_change = [this](t_config_option_key opt_key, boost::any value) {
+		m_optgroup_render->on_change = [this](t_config_option_key opt_key, boost::any value) {
 			if (auto it = m_values.find(opt_key); it != m_values.end()) {
 				m_values.erase(it); // we shouldn't change value, if some of those parameters were selected, and then deselected
 				return;
@@ -669,7 +669,7 @@ void PreferencesDialog::build()
 #ifdef _WIN32
 		// Add "Dark Mode" tab
 		m_optgroup_dark_mode = create_options_tab(_L("Dark mode"), tabs);
-		m_optgroup_dark_mode->m_on_change = [this](t_config_option_key opt_key, boost::any value) {
+		m_optgroup_dark_mode->on_change = [this](t_config_option_key opt_key, boost::any value) {
 			if (auto it = m_values.find(opt_key); it != m_values.end()) {
 				m_values.erase(it); // we shouldn't change value, if some of those parameters were selected, and then deselected
 				return;

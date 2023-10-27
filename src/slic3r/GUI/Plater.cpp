@@ -403,7 +403,7 @@ FreqChangedParams::FreqChangedParams(wxWindow* parent) :
     m_og->set_config(config);
     m_og->hide_labels();
 
-    m_og->m_on_change = [config, this](t_config_option_key opt_key, boost::any value) {
+    m_og->on_change = [config, this](t_config_option_key opt_key, boost::any value) {
         Tab* tab_print = wxGetApp().get_tab(Preset::TYPE_PRINT);
         if (!tab_print) return;
 
@@ -559,7 +559,7 @@ FreqChangedParams::FreqChangedParams(wxWindow* parent) :
     DynamicPrintConfig*	config_sla = &wxGetApp().preset_bundle->sla_prints.get_edited_preset().config;
     m_og_sla->set_config(config_sla);
 
-    m_og_sla->m_on_change = [config_sla](t_config_option_key opt_key, boost::any value) {
+    m_og_sla->on_change = [config_sla](t_config_option_key opt_key, boost::any value) {
         Tab* tab = wxGetApp().get_tab(Preset::TYPE_SLA_PRINT);
         if (!tab) return;
 

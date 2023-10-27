@@ -138,6 +138,128 @@ OptionsGroup::OptionsGroup(	wxWindow* _parent, const wxString& title,
 {
 }
 
+// opt_index = 0, by the reason of zero-index in ConfigOptionVector by default (in case only one element)
+void OptionsGroup::change_opt_value(DynamicPrintConfig& config, const t_config_option_key& opt_key, const boost::any& value, int opt_index /*= 0*/)
+{
+    try {
+
+        if (config.def()->get(opt_key)->type == coBools && config.def()->get(opt_key)->nullable) {
+            ConfigOptionBoolsNullable* vec_new = new ConfigOptionBoolsNullable{ boost::any_cast<unsigned char>(value) };
+            config.option<ConfigOptionBoolsNullable>(opt_key)->set_at(vec_new, opt_index, 0);
+            return;
+        }
+
+        const ConfigOptionDef* opt_def = config.def()->get(opt_key);
+        switch (opt_def->type) {
+        case coFloatOrPercent: {
+            std::string str = boost::any_cast<std::string>(value);
+            bool percent = false;
+            if (str.back() == '%') {
+                str.pop_back();
+                percent = true;
+            }
+            double val = std::stod(str); // locale-dependent (on purpose - the input is the actual content of the field)
+            config.set_key_value(opt_key, new ConfigOptionFloatOrPercent(val, percent));
+            break; }
+        case coPercent:
+            config.set_key_value(opt_key, new ConfigOptionPercent(boost::any_cast<double>(value)));
+            break;
+        case coFloat: {
+            double& val = config.opt_float(opt_key);
+            val = boost::any_cast<double>(value);
+            break;
+        }
+        case coFloatsOrPercents: {
+            std::string str = boost::any_cast<std::string>(value);
+            bool percent = false;
+            if (str.back() == '%') {
+                str.pop_back();
+                percent = true;
+            }
+            double val = std::stod(str); // locale-dependent (on purpose - the input is the actual content of the field)
+            ConfigOptionFloatsOrPercents* vec_new = new ConfigOptionFloatsOrPercents({ {val, percent} });
+            config.option<ConfigOptionFloatsOrPercents>(opt_key)->set_at(vec_new, opt_index, opt_index);
+            break;
+        }
+        case coPercents: {
+            ConfigOptionPercents* vec_new = new ConfigOptionPercents{ boost::any_cast<double>(value) };
+            config.option<ConfigOptionPercents>(opt_key)->set_at(vec_new, opt_index, opt_index);
+            break;
+        }
+        case coFloats: {
+            ConfigOptionFloats* vec_new = new ConfigOptionFloats{ boost::any_cast<double>(value) };
+            config.option<ConfigOptionFloats>(opt_key)->set_at(vec_new, opt_index, opt_index);
+            break;
+        }
+        case coString:
+            config.set_key_value(opt_key, new ConfigOptionString(boost::any_cast<std::string>(value)));
+            break;
+        case coStrings: {
+            if (opt_key == "compatible_prints" || opt_key == "compatible_printers" || opt_key == "gcode_substitutions") {
+                config.option<ConfigOptionStrings>(opt_key)->values =
+                    boost::any_cast<std::vector<std::string>>(value);
+            }
+            else if (config.def()->get(opt_key)->gui_flags.compare("serialized") == 0) {
+                std::string str = boost::any_cast<std::string>(value);
+                std::vector<std::string> values{};
+                if (!str.empty()) {
+                    if (str.back() == ';') str.pop_back();
+                    // Split a string to multiple strings by a semi - colon.This is the old way of storing multi - string values.
+                    // Currently used for the post_process config value only.
+                    boost::split(values, str, boost::is_any_of(";"));
+                    if (values.size() == 1 && values[0] == "")
+                        values.resize(0);
+                }
+                config.option<ConfigOptionStrings>(opt_key)->values = values;
+            }
+            else {
+                ConfigOptionStrings* vec_new = new ConfigOptionStrings{ boost::any_cast<std::string>(value) };
+                config.option<ConfigOptionStrings>(opt_key)->set_at(vec_new, opt_index, 0);
+            }
+        }
+                      break;
+        case coBool:
+            config.set_key_value(opt_key, new ConfigOptionBool(boost::any_cast<bool>(value)));
+            break;
+        case coBools: {
+            ConfigOptionBools* vec_new = new ConfigOptionBools{ boost::any_cast<unsigned char>(value) != 0 };
+            config.option<ConfigOptionBools>(opt_key)->set_at(vec_new, opt_index, 0);
+            break; }
+        case coInt:
+            config.set_key_value(opt_key, new ConfigOptionInt(boost::any_cast<int>(value)));
+            break;
+        case coInts: {
+            ConfigOptionInts* vec_new = new ConfigOptionInts{ boost::any_cast<int>(value) };
+            config.option<ConfigOptionInts>(opt_key)->set_at(vec_new, opt_index, 0);
+        }
+                   break;
+        case coEnum: {
+            auto* opt = opt_def->default_value.get()->clone();
+            opt->setInt(boost::any_cast<int>(value));
+            config.set_key_value(opt_key, opt);
+        }
+                   break;
+        case coPoints: {
+            if (opt_key == "bed_shape") {
+                config.option<ConfigOptionPoints>(opt_key)->values = boost::any_cast<std::vector<Vec2d>>(value);
+                break;
+            }
+            ConfigOptionPoints* vec_new = new ConfigOptionPoints{ boost::any_cast<Vec2d>(value) };
+            config.option<ConfigOptionPoints>(opt_key)->set_at(vec_new, opt_index, 0);
+        }
+                     break;
+        case coNone:
+            break;
+        default:
+            break;
+        }
+    }
+    catch (const std::exception& e)
+    {
+        wxLogError(format_wxstr("Internal error when changing value for %1%: %2%", opt_key, e.what()));
+    }
+}
+
 Option::Option(const ConfigOptionDef& _opt, t_config_option_key id) : opt(_opt), opt_id(id)
 {
     if (!opt.tooltip.empty()) {
@@ -571,8 +693,8 @@ void OptionsGroup::clear_fields_except_of(const std::vector<std::string> left_fi
 }
 
 void OptionsGroup::on_change_OG(const t_config_option_key& opt_id, const boost::any& value) {
-	if (m_on_change != nullptr)
-		m_on_change(opt_id, value);
+	if (on_change != nullptr)
+		on_change(opt_id, value);
 }
 
 Option ConfigOptionsGroup::get_option(const std::string& opt_key, int opt_index /*= -1*/)
@@ -614,18 +736,18 @@ void ConfigOptionsGroup::on_change_OG(const t_config_option_key& opt_id, const b
 
 void ConfigOptionsGroup::back_to_initial_value(const std::string& opt_key)
 {
-	if (m_get_initial_config == nullptr)
+	if (get_initial_config == nullptr)
 		return;
-	back_to_config_value(m_get_initial_config(), opt_key);
+	back_to_config_value(get_initial_config(), opt_key);
 }
 
 void ConfigOptionsGroup::back_to_sys_value(const std::string& opt_key)
 {
-	if (m_get_sys_config == nullptr)
+	if (get_sys_config == nullptr)
 		return;
 	if (!have_sys_config())
 		return;
-	back_to_config_value(m_get_sys_config(), opt_key);
+	back_to_config_value(get_sys_config(), opt_key);
 }
 
 void ConfigOptionsGroup::back_to_config_value(const DynamicPrintConfig& config, const std::string& opt_key)
@@ -663,8 +785,8 @@ void ConfigOptionsGroup::back_to_config_value(const DynamicPrintConfig& config, 
 
 void ConfigOptionsGroup::on_kill_focus(const std::string& opt_key)
 {
-    if (m_fill_empty_value)
-        m_fill_empty_value(opt_key);
+    if (fill_empty_value)
+        fill_empty_value(opt_key);
     else
 	    reload_config();
 }
@@ -1012,7 +1134,7 @@ std::pair<OG_CustomCtrl*, bool*> ConfigOptionsGroup::get_custom_ctrl_with_blinki
 void ConfigOptionsGroup::change_opt_value(const t_config_option_key& opt_key, const boost::any& value, int opt_index /*= 0*/)
 
 {
-	Slic3r::GUI::change_opt_value(const_cast<DynamicPrintConfig&>(*m_config), opt_key, value, opt_index);
+    OptionsGroup::change_opt_value(const_cast<DynamicPrintConfig&>(*m_config), opt_key, value, opt_index);
 	if (m_modelconfig)
 		m_modelconfig->touch();
 }
