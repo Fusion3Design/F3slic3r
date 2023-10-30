@@ -115,13 +115,12 @@ unsigned int ColorRange::get_count() const
     return m_count;
 }
 
-//################################################################################################################################
-// Debug
+#if ENABLE_NEW_GCODE_VIEWER_DEBUG
 const std::array<float, 2>& ColorRange::get_range() const
 {
     return m_range;
 }
-//################################################################################################################################
+#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 
 } // namespace libvgcode
 

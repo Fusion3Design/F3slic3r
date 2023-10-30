@@ -34,10 +34,9 @@ public:
     Color get_color_at(float value) const;
     unsigned int get_count() const;
 
-//################################################################################################################################
-    // Debug
+#if ENABLE_NEW_GCODE_VIEWER_DEBUG
     const std::array<float, 2>& get_range() const;
-//################################################################################################################################
+#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 
 private:
     EType m_type{ EType::Linear };

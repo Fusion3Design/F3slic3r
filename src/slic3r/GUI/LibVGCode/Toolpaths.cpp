@@ -779,13 +779,12 @@ void Toolpaths::update_enabled_entities()
     m_enabled_segments_count = enabled_segments.size();
     m_enabled_options_count = enabled_options.size();
 
-//################################################################################################################################
-    // Debug
+#if ENABLE_NEW_GCODE_VIEWER_DEBUG
     m_enabled_segments_range = (m_enabled_segments_count > 0) ?
         std::make_pair((uint32_t)enabled_segments.front(), (uint32_t)enabled_segments.back()) : std::make_pair((uint32_t)0, (uint32_t)0);
     m_enabled_options_range = (m_enabled_options_count > 0) ?
         std::make_pair((uint32_t)enabled_options.front(), (uint32_t)enabled_options.back()) : std::make_pair((uint32_t)0, (uint32_t)0);
-//################################################################################################################################
+#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 
     // update gpu buffer for enabled segments
     assert(m_enabled_segments_buf_id > 0);
@@ -859,10 +858,9 @@ void Toolpaths::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_mat
     if (m_settings.options_visibility.at(EOptionType::CenterOfGravity))
         render_cog_marker(view_matrix, projection_matrix);
 
-//################################################################################################################################
-    // Debug
+#if ENABLE_NEW_GCODE_VIEWER_DEBUG
     render_debug_window();
-//################################################################################################################################
+#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 }
 
 EViewType Toolpaths::get_view_type() const
@@ -1463,8 +1461,7 @@ void Toolpaths::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& pr
     glsafe(glUseProgram(curr_shader));
 }
 
-//################################################################################################################################
-// Debug
+#if ENABLE_NEW_GCODE_VIEWER_DEBUG
 void Toolpaths::render_debug_window()
 {
     Slic3r::GUI::ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
@@ -1627,7 +1624,7 @@ void Toolpaths::render_debug_window()
     }
     imgui.end();
 }
-//################################################################################################################################
+#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 
 } // namespace libvgcode
 

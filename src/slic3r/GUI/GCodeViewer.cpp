@@ -1221,7 +1221,7 @@ void GCodeViewer::render()
 #endif // ENABLE_GCODE_VIEWER_STATISTICS
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#if ENABLE_NEW_GCODE_VIEWER
+#if ENABLE_NEW_GCODE_VIEWER_DEBUG
     if (m_use_gcode_viewer_2) {
         ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
         imgui.begin(std::string("LibVGCode Viewer Controller"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
@@ -1252,7 +1252,7 @@ void GCodeViewer::render()
 
         imgui.end();
     }
-#endif // ENABLE_NEW_GCODE_VIEWER
+#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 }
 

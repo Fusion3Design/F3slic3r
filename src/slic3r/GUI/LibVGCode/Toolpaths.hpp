@@ -157,11 +157,10 @@ private:
     //
     std::vector<PathVertex> m_vertices;
     std::vector<uint32_t> m_vertices_map;
-//################################################################################################################################
-    // Debug
+#if ENABLE_NEW_GCODE_VIEWER_DEBUG
     std::pair<uint32_t, uint32_t> m_enabled_segments_range{ 0, 0 };
     std::pair<uint32_t, uint32_t> m_enabled_options_range{ 0, 0 };
-//################################################################################################################################
+#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 
     //
     // Member variables used for toolpaths visibiliity
@@ -266,10 +265,10 @@ private:
     void render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
     void render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
 
-//################################################################################################################################
+#if ENABLE_NEW_GCODE_VIEWER_DEBUG
     // Debug
     void render_debug_window();
-//################################################################################################################################
+#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 };
 
 } // namespace libvgcode
