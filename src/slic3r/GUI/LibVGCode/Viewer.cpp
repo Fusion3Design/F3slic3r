@@ -53,6 +53,31 @@ void Viewer::set_time_mode(ETimeMode mode)
     m_toolpaths.set_time_mode(mode);
 }
 
+const std::array<uint32_t, 2>& Viewer::get_layers_range() const
+{
+    return m_toolpaths.get_layers_range();
+}
+
+void Viewer::set_layers_range(const std::array<uint32_t, 2>& range)
+{
+    m_toolpaths.set_layers_range(range);
+}
+
+void Viewer::set_layers_range(uint32_t min, uint32_t max)
+{
+    m_toolpaths.set_layers_range(min, max);
+}
+
+bool Viewer::is_top_layer_only_view() const
+{
+    return m_toolpaths.is_top_layer_only_view();
+}
+
+void Viewer::set_top_layer_only_view(bool top_layer_only_view)
+{
+    m_toolpaths.set_top_layer_only_view(top_layer_only_view);
+}
+
 const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& Viewer::get_layers_times() const
 {
     return m_toolpaths.get_layers_times();
@@ -78,17 +103,17 @@ void Viewer::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
     m_toolpaths.toggle_extrusion_role_visibility(role);
 }
 
-const std::array<size_t, 2>& Viewer::get_view_current_range() const
+const std::array<uint32_t, 2>& Viewer::get_view_current_range() const
 {
     return m_toolpaths.get_view_current_range();
 }
 
-const std::array<size_t, 2>& Viewer::get_view_global_range() const
+const std::array<uint32_t, 2>& Viewer::get_view_global_range() const
 {
     return m_toolpaths.get_view_global_range();
 }
 
-void Viewer::set_view_current_range(size_t min, size_t max)
+void Viewer::set_view_current_range(uint32_t min, uint32_t max)
 {
     m_toolpaths.set_view_current_range(min, max);
 }

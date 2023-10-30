@@ -48,7 +48,7 @@ static Vec3f toVec3f(const Eigen::Matrix<float, 3, 1, Eigen::DontAlign>& v)
 }
 //################################################################################################################################
 
-static const Color Dummy_Color{ 0.0f, 0.0f, 0.0f };
+static const Color Dummy_Color{ 0.25f, 0.25f, 0.25f };
 static const Color Default_Tool_Color{ 1.0f, 0.502f, 0.0f };
 
 static const std::map<EMoveType, Color> Options_Colors{ {
@@ -577,12 +577,17 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std
 
     reset();
 
+    m_vertices_map.reserve(2 * gcode_result.moves.size());
     m_vertices.reserve(2 * gcode_result.moves.size());
+    uint32_t seams_count = 0;
     for (size_t i = 1; i < gcode_result.moves.size(); ++i) {
         const Slic3r::GCodeProcessorResult::MoveVertex& curr = gcode_result.moves[i];
         const Slic3r::GCodeProcessorResult::MoveVertex& prev = gcode_result.moves[i - 1];
         const EMoveType curr_type = valueof(curr.type);
         const EGCodeExtrusionRole curr_role = valueof(curr.extrusion_role);
+
+        if (curr_type == EMoveType::Seam)
+           ++seams_count;
 
         EGCodeExtrusionRole extrusion_role;
         if (curr_type == EMoveType::Travel) {
@@ -615,14 +620,18 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std
                     curr.temperature, curr.volumetric_rate(), extrusion_role, curr_type,
                     static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id),
                     static_cast<uint32_t>(curr.layer_id) };
+                m_vertices_map.emplace_back(static_cast<uint32_t>(i) - seams_count);
                 m_vertices.emplace_back(vertex);
+                m_layers.update(static_cast<uint32_t>(curr.layer_id), static_cast<uint32_t>(m_vertices.size()));
             }
         }
 
         const PathVertex vertex = { toVec3f(curr.position), height, width, curr.feedrate, curr.fan_speed, curr.temperature,
             curr.volumetric_rate(), extrusion_role, curr_type, static_cast<uint8_t>(curr.extruder_id),
             static_cast<uint8_t>(curr.cp_color_id), static_cast<uint32_t>(curr.layer_id) };
+        m_vertices_map.emplace_back(static_cast<uint32_t>(i) - seams_count);
         m_vertices.emplace_back(vertex);
+        m_layers.update(static_cast<uint32_t>(curr.layer_id), static_cast<uint32_t>(m_vertices.size()));
 
         // updates calculation for center of gravity
         if (curr_type == EMoveType::Extrude &&
@@ -636,7 +645,10 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std
             m_cog_marker.update(0.5f * (curr_pos + prev_pos), curr.mm3_per_mm * length(curr_pos - prev_pos));
         }
     }
+    m_vertices_map.shrink_to_fit();
     m_vertices.shrink_to_fit();
+
+    assert(m_vertices_map.size() == m_vertices.size());
 
     m_valid_lines_bitset = BitSet<>(m_vertices.size());
     m_valid_lines_bitset.setAll();
@@ -651,10 +663,8 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std
     for (size_t i = 0; i < m_vertices.size(); ++i) {
         const PathVertex& v = m_vertices[i];
         const EMoveType move_type = v.type;
-
         const bool prev_line_valid = i > 0 && m_valid_lines_bitset[i - 1];
         const Vec3f prev_line = prev_line_valid ? v.position - m_vertices[i - 1].position : ZERO;
-
         const bool this_line_valid = i + 1 < m_vertices.size() &&
                                      m_vertices[i + 1].position != v.position &&
                                      m_vertices[i + 1].type == move_type &&
@@ -724,7 +734,9 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std
             m_layers_times[i] = gcode_result.print_statistics.modes[i].layers_times;
     }
 
-    m_view_range.set_global_range(0, m_vertices.size() - 1);
+    if (!m_layers.empty())
+        set_layers_range(0, static_cast<uint32_t>(m_layers.size() - 1));
+    update_view_global_range();
     m_settings.update_colors = true;
 }
 
@@ -733,7 +745,8 @@ void Toolpaths::update_enabled_entities()
     std::vector<uint32_t> enabled_segments;
     std::vector<uint32_t> enabled_options;
 
-    for (uint32_t i = m_view_range.get_current_min(); i < m_view_range.get_current_max(); i++) {
+    const std::array<uint32_t, 2>& current_range = m_view_range.get_current_range();
+    for (uint32_t i = current_range[0]; i < current_range[1]; ++i) {
         const PathVertex& v = m_vertices[i];
 
         if (!m_valid_lines_bitset[i] && !v.is_option())
@@ -805,9 +818,11 @@ void Toolpaths::update_colors()
 {
     update_color_ranges();
 
+    const uint32_t top_layer_id = m_settings.top_layer_only_view ? m_layers_range.get()[1] : 0;
     std::vector<float> colors(m_vertices.size());
     for (size_t i = 0; i < m_vertices.size(); i++) {
-        colors[i] = encode_color(select_color(m_vertices[i]));
+      colors[i] = (m_vertices[i].layer_id < top_layer_id) ?
+          encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
     }
 
     // update gpu buffer for colors
@@ -819,6 +834,11 @@ void Toolpaths::update_colors()
 
 void Toolpaths::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
+    if (m_settings.update_view_global_range) {
+        update_view_global_range();
+        m_settings.update_view_global_range = false;
+    }
+
     if (m_settings.update_enabled_entities) {
         update_enabled_entities();
         m_settings.update_enabled_entities = false;
@@ -853,6 +873,16 @@ EViewType Toolpaths::get_view_type() const
 ETimeMode Toolpaths::get_time_mode() const
 {
     return m_settings.time_mode;
+}
+
+const std::array<uint32_t, 2>& Toolpaths::get_layers_range() const
+{
+    return m_layers_range.get();
+}
+
+bool Toolpaths::is_top_layer_only_view() const
+{
+    return m_settings.top_layer_only_view;
 }
 
 bool Toolpaths::is_option_visible(EOptionType type) const
@@ -891,12 +921,32 @@ void Toolpaths::set_time_mode(ETimeMode mode)
     m_settings.update_colors = true;
 }
 
+void Toolpaths::set_layers_range(const std::array<uint32_t, 2>& range)
+{
+    set_layers_range(range[0], range[1]);
+}
+
+void Toolpaths::set_layers_range(uint32_t min, uint32_t max)
+{
+    m_layers_range.set(min, max);
+    m_settings.update_view_global_range = true;
+    m_settings.update_enabled_entities = true;
+}
+
+void Toolpaths::set_top_layer_only_view(bool top_layer_only_view)
+{
+    m_settings.top_layer_only_view = top_layer_only_view;
+    m_settings.update_colors = true;
+}
+
 void Toolpaths::toggle_option_visibility(EOptionType type)
 {
     try
     {
         bool& value = m_settings.options_visibility.at(type);
         value = !value;
+        if (type == EOptionType::Travels)
+            m_settings.update_view_global_range = true;
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
     }
@@ -921,20 +971,51 @@ void Toolpaths::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
     }
 }
 
-const std::array<size_t, 2>& Toolpaths::get_view_current_range() const
+const std::array<uint32_t, 2>& Toolpaths::get_view_current_range() const
 {
     return m_view_range.get_current_range();
 }
 
-const std::array<size_t, 2>& Toolpaths::get_view_global_range() const
+const std::array<uint32_t, 2>& Toolpaths::get_view_global_range() const
 {
     return m_view_range.get_global_range();
 }
 
-void Toolpaths::set_view_current_range(size_t min, size_t max)
+void Toolpaths::set_view_current_range(uint32_t min, uint32_t max)
 {
-    m_view_range.set_current_range(min, max);
-    m_settings.update_enabled_entities = true;
+    uint32_t min_id = 0;
+    for (size_t i = 0; i < m_vertices_map.size(); ++i) {
+        if (m_vertices_map[i] < min)
+            min_id = static_cast<uint32_t>(i);
+        else
+            break;
+    }
+    ++min_id;
+
+    uint32_t max_id = min_id;
+    if (max > min) {
+        for (size_t i = static_cast<size_t>(min_id); i < m_vertices_map.size(); ++i) {
+            if (m_vertices_map[i] < max)
+                max_id = static_cast<uint32_t>(i);
+            else
+                break;
+        }
+        ++max_id;
+    }
+
+    if (max_id < m_vertices_map.size() - 1 &&
+        m_vertices[max_id + 1].type == m_vertices[max_id].type &&
+        m_vertices_map[max_id + 1] == m_vertices_map[max_id])
+        ++max_id;
+
+    Range new_range;
+    new_range.set(min_id, max_id);
+
+    if (m_old_current_range != new_range) {
+        m_view_range.set_current_range(new_range);
+        m_old_current_range = new_range;
+        m_settings.update_enabled_entities = true;
+    }
 }
 
 const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& Toolpaths::get_layers_times() const
@@ -955,6 +1036,11 @@ float Toolpaths::get_cog_marker_scale_factor() const
 const Vec3f& Toolpaths::get_tool_marker_position() const
 {
     return m_tool_marker.get_position();
+}
+
+float Toolpaths::get_tool_marker_offset_z() const
+{
+    return m_tool_marker.get_offset_z();
 }
 
 float Toolpaths::get_tool_marker_scale_factor() const
@@ -980,6 +1066,11 @@ void Toolpaths::set_cog_marker_scale_factor(float factor)
 void Toolpaths::set_tool_marker_position(const Vec3f& position)
 {
     m_tool_marker.set_position(position);
+}
+
+void Toolpaths::set_tool_marker_offset_z(float offset_z)
+{
+    m_tool_marker.set_offset_z(offset_z);
 }
 
 void Toolpaths::set_tool_marker_scale_factor(float factor)
@@ -1015,7 +1106,12 @@ static void delete_buffers(unsigned int& id)
 
 void Toolpaths::reset()
 {
+    m_layers.reset();
+    m_layers_range.reset();
+    m_view_range.reset();
+    m_old_current_range.reset();
     m_vertices.clear();
+    m_vertices_map.clear();
     m_valid_lines_bitset.clear();
 
     m_layers_times = std::array<std::vector<float>, (uint8_t)ETimeMode::COUNT>();
@@ -1034,6 +1130,53 @@ void Toolpaths::reset()
 
     delete_textures(m_positions_tex_id);
     delete_buffers(m_positions_buf_id);
+}
+
+void Toolpaths::update_view_global_range()
+{
+    const std::array<uint32_t, 2>& layers_range = m_layers_range.get();
+    const bool travels_visible = m_settings.options_visibility.at(EOptionType::Travels);
+
+    auto first_it = m_vertices.begin();
+    while (first_it != m_vertices.end() && (
+           first_it->layer_id < layers_range[0] ||
+           first_it->is_option() ||
+           (first_it->is_travel() && !travels_visible))) {
+        ++first_it;
+    }
+
+    if (first_it == m_vertices.end())
+        m_view_range.set_global_range(0, 0);
+    else {
+        if (travels_visible) {
+            // if the global range starts with a travel move, extend it to the travel start
+            while (first_it != m_vertices.begin() && first_it->is_travel()) {
+                --first_it;
+            }
+        }
+
+        auto last_it = first_it;
+        while (last_it != m_vertices.end() && last_it->layer_id <= layers_range[1]) {
+            ++last_it;
+        }
+
+        // remove trailing options, if any
+        auto rev_first_it = std::make_reverse_iterator(first_it);
+        auto rev_last_it = std::make_reverse_iterator(last_it);
+        while (rev_last_it != rev_first_it && rev_last_it->is_option()) {
+            ++rev_last_it;
+        }
+
+        last_it = rev_last_it.base();
+        if (travels_visible) {
+            // if the global range ends with a travel move, extend it to the travel end
+            while (last_it != m_vertices.end() && last_it->is_travel()) {
+                ++last_it;
+            }
+        }
+
+        m_view_range.set_global_range(std::distance(m_vertices.begin(), first_it), std::distance(m_vertices.begin(), last_it));
+    }
 }
 
 void Toolpaths::update_color_ranges()
@@ -1298,7 +1441,10 @@ void Toolpaths::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& pr
 
     glsafe(glUseProgram(m_tool_marker_shader_id));
 
-    glsafe(glUniform3fv(m_uni_tool_marker_world_origin, 1, m_tool_marker.get_position().data()));
+    const Vec3f& origin = m_tool_marker.get_position();
+    const Vec3f offset = { 0.0f, 0.0f, m_tool_marker.get_offset_z() };
+    const Vec3f position = origin + offset;
+    glsafe(glUniform3fv(m_uni_tool_marker_world_origin, 1, position.data()));
     glsafe(glUniform1f(m_uni_tool_marker_scale_factor, m_tool_marker_scale_factor));
     glsafe(glUniformMatrix4fv(m_uni_tool_marker_view_matrix, 1, GL_FALSE, view_matrix.data()));
     glsafe(glUniformMatrix4fv(m_uni_tool_marker_projection_matrix, 1, GL_FALSE, projection_matrix.data()));
@@ -1348,10 +1494,24 @@ void Toolpaths::render_debug_window()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "sequential range");
+        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "layers range");
         ImGui::TableSetColumnIndex(1);
-        const std::array<size_t, 2>& current_view_range = get_view_current_range();
+        const std::array<uint32_t, 2>& layers_range = get_layers_range();
+        imgui.text(std::to_string(layers_range[0]) + " - " + std::to_string(layers_range[1]));
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (current)");
+        ImGui::TableSetColumnIndex(1);
+        const std::array<uint32_t, 2>& current_view_range = get_view_current_range();
         imgui.text(std::to_string(current_view_range[0]) + " - " + std::to_string(current_view_range[1]));
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (global)");
+        ImGui::TableSetColumnIndex(1);
+        const std::array<uint32_t, 2>& global_view_range = get_view_global_range();
+        imgui.text(std::to_string(global_view_range[0]) + " - " + std::to_string(global_view_range[1]));
 
         auto add_range_property_row = [&imgui](const std::string& label, const std::array<float, 2>& range) {
             ImGui::TableNextRow();
@@ -1399,6 +1559,14 @@ void Toolpaths::render_debug_window()
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker z offset");
+            ImGui::TableSetColumnIndex(1);
+            float tool_z_offset = get_tool_marker_offset_z();
+            if (imgui.slider_float("##ToolZOffset", &tool_z_offset, 0.0f, 1.0f))
+                set_tool_marker_offset_z(tool_z_offset);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
             imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker color");
             ImGui::TableSetColumnIndex(1);
             Color color = get_tool_marker_color();
@@ -1417,6 +1585,46 @@ void Toolpaths::render_debug_window()
         }
     }
 
+    imgui.end();
+
+    auto to_string = [](EMoveType type) {
+        switch (type)
+        {
+        case EMoveType::Noop:        { return "Noop"; }
+        case EMoveType::Retract:     { return "Retract"; }
+        case EMoveType::Unretract:   { return "Unretract"; }
+        case EMoveType::Seam:        { return "Seam"; }
+        case EMoveType::ToolChange:  { return "ToolChange"; }
+        case EMoveType::ColorChange: { return "ColorChange"; }
+        case EMoveType::PausePrint:  { return "PausePrint"; }
+        case EMoveType::CustomGCode: { return "CustomGCode"; }
+        case EMoveType::Travel:      { return "Travel"; }
+        case EMoveType::Wipe:        { return "Wipe"; }
+        case EMoveType::Extrude:     { return "Extrude"; }
+        default:                     { return "Error"; }
+        }
+    };
+
+    imgui.begin(std::string("LibVGCode Viewer Vertices"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    if (ImGui::BeginTable("VertexData", 4)) {
+        uint32_t counter = 0;
+        for (size_t i = 0; i < m_vertices.size(); ++i) {
+            const PathVertex& v = m_vertices[i];
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(m_valid_lines_bitset[i] ? Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT : Slic3r::GUI::ImGuiWrapper::COL_GREY_LIGHT, std::to_string(++counter));
+            ImGui::TableSetColumnIndex(1);
+            imgui.text(to_string(v.type));
+
+            ImGui::TableSetColumnIndex(2);
+            imgui.text(std::to_string(m_vertices_map[i]));
+
+            ImGui::TableSetColumnIndex(3);
+            imgui.text(std::to_string(v.position[0]) + ", " + std::to_string(v.position[1]) + ", " + std::to_string(v.position[2]));
+        }
+
+        ImGui::EndTable();
+    }
     imgui.end();
 }
 //################################################################################################################################

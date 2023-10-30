@@ -2,8 +2,8 @@
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef VGCODE_VIEWRANGE_HPP
-#define VGCODE_VIEWRANGE_HPP
+#ifndef VGCODE_LAYERS_HPP
+#define VGCODE_LAYERS_HPP
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
@@ -12,26 +12,21 @@
 
 #include "Range.hpp"
 
+#include <vector>
+
 namespace libvgcode {
 
-class ViewRange
+class Layers
 {
 public:
-		const std::array<uint32_t, 2>& get_current_range() const;
-		void set_current_range(const Range& other);
-		void set_current_range(const std::array<uint32_t, 2>& range);
-		void set_current_range(uint32_t min, uint32_t max);
-
-		const std::array<uint32_t, 2>& get_global_range() const;
-		void set_global_range(const Range& other);
-		void set_global_range(const std::array<uint32_t, 2>& range);
-		void set_global_range(uint32_t min, uint32_t max);
-
+		void update(uint32_t layer_id, uint32_t vertex_id);
 		void reset();
 
+		bool empty() const;
+		size_t size() const;
+
 private:
-		Range m_current;
-		Range m_global;
+		std::vector<Range> m_ranges;
 };
 
 } // namespace libvgcode
@@ -41,4 +36,4 @@ private:
 #endif // ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#endif // VGCODE_VIEWRANGE_HPP
+#endif // VGCODE_LAYERS_HPP

@@ -32,6 +32,9 @@ public:
     const Vec3f& get_position() const;
     void set_position(const Vec3f& position);
 
+    float get_offset_z() const;
+    void set_offset_z(float offset_z);
+
     const Color& get_color() const;
     void set_color(const Color& color);
 
@@ -40,6 +43,7 @@ public:
 
 private:
     Vec3f m_position{ 0.0f, 0.0f, 0.0f };
+    float m_offset_z{ 0.5f };
     Color m_color{ 1.0f, 1.0f, 1.0f };
     float m_alpha{ 0.5f };
 

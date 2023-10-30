@@ -174,6 +174,16 @@ void ToolMarker::set_position(const Vec3f& position)
     m_position = position;
 }
 
+float ToolMarker::get_offset_z() const
+{
+    return m_offset_z;
+}
+
+void ToolMarker::set_offset_z(float offset_z)
+{
+    m_offset_z = std::max(offset_z, 0.0f);
+}
+
 const Color& ToolMarker::get_color() const
 {
     return m_color;

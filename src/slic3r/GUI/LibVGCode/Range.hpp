@@ -2,36 +2,35 @@
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef VGCODE_VIEWRANGE_HPP
-#define VGCODE_VIEWRANGE_HPP
+#ifndef VGCODE_RANGE_HPP
+#define VGCODE_RANGE_HPP
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#include "Range.hpp"
+#include <array>
+#include <cstdint>
 
 namespace libvgcode {
 
-class ViewRange
+class Range
 {
 public:
-		const std::array<uint32_t, 2>& get_current_range() const;
-		void set_current_range(const Range& other);
-		void set_current_range(const std::array<uint32_t, 2>& range);
-		void set_current_range(uint32_t min, uint32_t max);
-
-		const std::array<uint32_t, 2>& get_global_range() const;
-		void set_global_range(const Range& other);
-		void set_global_range(const std::array<uint32_t, 2>& range);
-		void set_global_range(uint32_t min, uint32_t max);
-
+		const std::array<uint32_t, 2>& get() const;
+		void set(const std::array<uint32_t, 2>& range);
+		void set(uint32_t min, uint32_t max);
+		// clamp the given range to stay inside this range
+		void clamp(Range& other);
 		void reset();
 
+		bool operator == (const Range& other) const;
+		bool operator != (const Range& other) const;
+
 private:
-		Range m_current;
-		Range m_global;
+		// [0] = min, [1] = max
+		std::array<uint32_t, 2> m_range{ 0, 0 };
 };
 
 } // namespace libvgcode
@@ -41,4 +40,4 @@ private:
 #endif // ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#endif // VGCODE_VIEWRANGE_HPP
+#endif // VGCODE_RANGE_HPP

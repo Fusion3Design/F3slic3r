@@ -7,63 +7,44 @@
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
-#include "ViewRange.hpp"
+#include "Layers.hpp"
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#include <algorithm>
+#include <assert.h>
 
 namespace libvgcode {
 
-const std::array<uint32_t, 2>& ViewRange::get_current_range() const
+void Layers::update(uint32_t layer_id, uint32_t vertex_id)
 {
-		return m_current.get();
+    if (m_ranges.empty() || layer_id == m_ranges.size()) {
+        // this code assumes that gcode paths are sent sequentially, one layer after the other
+        assert(layer_id == static_cast<uint32_t>(m_ranges.size()));
+        Range& range = m_ranges.emplace_back(Range());
+        range.set(vertex_id, vertex_id);
+    }
+    else {
+        Range& range = m_ranges.back();
+        range.set(range.get()[0], vertex_id);
+    }
 }
 
-void ViewRange::set_current_range(const Range& other)
+void Layers::reset()
 {
-		set_current_range(other.get());
+    m_ranges.clear();
 }
 
-void ViewRange::set_current_range(const std::array<uint32_t, 2>& range)
+bool Layers::empty() const
 {
-		set_current_range(range[0], range[1]);
+    return m_ranges.empty();
 }
 
-void ViewRange::set_current_range(uint32_t min, uint32_t max)
+size_t Layers::size() const
 {
-		m_current.set(min, max);
-		m_global.clamp(m_current);
-}
-
-const std::array<uint32_t, 2>& ViewRange::get_global_range() const
-{
-		return m_global.get();
-}
-
-void ViewRange::set_global_range(const Range& other)
-{
-		set_global_range(other.get());
-}
-
-void ViewRange::set_global_range(const std::array<uint32_t, 2>& range)
-{
-		set_global_range(range[0], range[1]);
-}
-
-void ViewRange::set_global_range(uint32_t min, uint32_t max)
-{
-		m_global.set(min, max);
-		m_global.clamp(m_current);
-}
-
-void ViewRange::reset()
-{
-		m_global.reset();
-		m_global.reset();
+    return m_ranges.size();
 }
 
 } // namespace libvgcode

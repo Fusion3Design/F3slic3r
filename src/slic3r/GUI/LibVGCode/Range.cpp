@@ -7,7 +7,7 @@
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
-#include "ViewRange.hpp"
+#include "Range.hpp"
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
@@ -18,52 +18,43 @@
 
 namespace libvgcode {
 
-const std::array<uint32_t, 2>& ViewRange::get_current_range() const
+const std::array<uint32_t, 2>& Range::get() const
 {
-		return m_current.get();
+		return m_range;
 }
 
-void ViewRange::set_current_range(const Range& other)
+void Range::set(const std::array<uint32_t, 2>& range)
 {
-		set_current_range(other.get());
+		set(range[0], range[1]);
 }
 
-void ViewRange::set_current_range(const std::array<uint32_t, 2>& range)
+void Range::set(uint32_t min, uint32_t max)
 {
-		set_current_range(range[0], range[1]);
+		if (max < min)
+				std::swap(min, max);
+		m_range[0] = min;
+		m_range[1] = max;
 }
 
-void ViewRange::set_current_range(uint32_t min, uint32_t max)
+void Range::clamp(Range& other)
 {
-		m_current.set(min, max);
-		m_global.clamp(m_current);
+		other.m_range[0] = std::clamp(other.m_range[0], m_range[0], m_range[1]);
+		other.m_range[1] = std::clamp(other.m_range[1], m_range[0], m_range[1]);
 }
 
-const std::array<uint32_t, 2>& ViewRange::get_global_range() const
+void Range::reset()
 {
-		return m_global.get();
+		m_range = { 0, 0 };
 }
 
-void ViewRange::set_global_range(const Range& other)
+bool Range::operator == (const Range& other) const
 {
-		set_global_range(other.get());
+		return m_range == other.m_range;
 }
 
-void ViewRange::set_global_range(const std::array<uint32_t, 2>& range)
+bool Range::operator != (const Range& other) const
 {
-		set_global_range(range[0], range[1]);
-}
-
-void ViewRange::set_global_range(uint32_t min, uint32_t max)
-{
-		m_global.set(min, max);
-		m_global.clamp(m_current);
-}
-
-void ViewRange::reset()
-{
-		m_global.reset();
-		m_global.reset();
+		return m_range != other.m_range;
 }
 
 } // namespace libvgcode

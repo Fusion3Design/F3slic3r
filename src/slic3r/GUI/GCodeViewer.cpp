@@ -907,6 +907,7 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
 {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
+    m_gcode_viewer_2.set_top_layer_only_view(get_app_config()->get_bool("seq_top_layer_only"));
     m_gcode_viewer_2.load(gcode_result, str_tool_colors);
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1264,7 +1265,7 @@ void GCodeViewer::update_sequential_view_current(unsigned int first, unsigned in
 {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    m_gcode_viewer_2.set_view_current_range((size_t)first, (size_t)last);
+    m_gcode_viewer_2.set_view_current_range(static_cast<uint32_t>(first), static_cast<uint32_t>(last));
     m_sequential_view.current.first = first;
     m_sequential_view.current.last = last;
     m_sequential_view.last_current = m_sequential_view.current;
@@ -1383,6 +1384,9 @@ void GCodeViewer::set_layers_z_range(const std::array<unsigned int, 2>& layers_z
     bool keep_sequential_current_first = layers_z_range[0] >= m_layers_z_range[0];
     bool keep_sequential_current_last = layers_z_range[1] <= m_layers_z_range[1];
     m_layers_z_range = layers_z_range;
+#if ENABLE_NEW_GCODE_VIEWER
+    m_gcode_viewer_2.set_layers_range(static_cast<uint32_t>(layers_z_range[0]), static_cast<uint32_t>(layers_z_range[1]));
+#endif // ENABLE_NEW_GCODE_VIEWER
     refresh_render_paths(keep_sequential_current_first, keep_sequential_current_last);
     wxGetApp().plater()->update_preview_moves_slider();
 }

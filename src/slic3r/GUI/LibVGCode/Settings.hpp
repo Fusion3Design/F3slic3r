@@ -18,10 +18,12 @@ namespace libvgcode {
 
 struct Settings
 {
-    bool update_enabled_entities{ true };
+		bool update_view_global_range{ true };
+		bool update_enabled_entities{ true };
 		bool update_colors{ true };
 		EViewType view_type{ EViewType::FeatureType };
 		ETimeMode time_mode{ ETimeMode::Normal };
+		bool top_layer_only_view{ false };
 
 		std::map<EOptionType, bool> options_visibility{ {
 				{ EOptionType::Travels,         false },

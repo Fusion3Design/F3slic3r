@@ -42,6 +42,13 @@ public:
     ETimeMode get_time_mode() const;
     void set_time_mode(ETimeMode mode);
 
+    const std::array<uint32_t, 2>& get_layers_range() const;
+    void set_layers_range(const std::array<uint32_t, 2>& range);
+    void set_layers_range(uint32_t min, uint32_t max);
+
+    bool is_top_layer_only_view() const;
+    void set_top_layer_only_view(bool top_layer_only_view);
+
     const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& get_layers_times() const;
 
     bool is_option_visible(EOptionType type) const;
@@ -50,13 +57,13 @@ public:
     bool is_extrusion_role_visible(EGCodeExtrusionRole role) const;
     void toggle_extrusion_role_visibility(EGCodeExtrusionRole role);
 
-    const std::array<size_t, 2>& get_view_current_range() const;
-    const std::array<size_t, 2>& get_view_global_range() const;
+    const std::array<uint32_t, 2>& get_view_current_range() const;
+    const std::array<uint32_t, 2>& get_view_global_range() const;
     //
     // min must be smaller than max
     // values are clamped to the view global range
     // 
-    void set_view_current_range(size_t min, size_t max);
+    void set_view_current_range(uint32_t min, uint32_t max);
 
     //
     // Returns the position of the center of gravity of the toolpaths.

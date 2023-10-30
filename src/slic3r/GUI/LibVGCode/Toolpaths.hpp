@@ -19,6 +19,7 @@
 #include "Bitset.hpp"
 #include "ColorRange.hpp"
 #include "ViewRange.hpp"
+#include "Layers.hpp"
 
 #include <vector>
 #include <array>
@@ -73,6 +74,8 @@ public:
     //
     EViewType get_view_type() const;
     ETimeMode get_time_mode() const;
+    const std::array<uint32_t, 2>& get_layers_range() const;
+    bool is_top_layer_only_view() const;
     bool is_option_visible(EOptionType type) const;
     bool is_extrusion_role_visible(EGCodeExtrusionRole role) const;
 
@@ -81,19 +84,22 @@ public:
     //
     void set_view_type(EViewType type);
     void set_time_mode(ETimeMode mode);
+    void set_layers_range(const std::array<uint32_t, 2>& range);
+    void set_layers_range(uint32_t min, uint32_t max);
+    void set_top_layer_only_view(bool top_layer_only_view);
     void toggle_option_visibility(EOptionType type);
     void toggle_extrusion_role_visibility(EGCodeExtrusionRole role);
 
     //
     // View range getters
     //
-    const std::array<size_t, 2>& get_view_current_range() const;
-    const std::array<size_t, 2>& get_view_global_range() const;
+    const std::array<uint32_t, 2>& get_view_current_range() const;
+    const std::array<uint32_t, 2>& get_view_global_range() const;
 
     //
     // View range setters
     //
-    void set_view_current_range(size_t min, size_t max);
+    void set_view_current_range(uint32_t min, uint32_t max);
 
     //
     // Properties getters
@@ -102,6 +108,7 @@ public:
     Vec3f get_cog_marker_position() const;
     float get_cog_marker_scale_factor() const;
     const Vec3f& get_tool_marker_position() const;
+    float get_tool_marker_offset_z() const;
     float get_tool_marker_scale_factor() const;
     const Color& get_tool_marker_color() const;
     float get_tool_marker_alpha() const;
@@ -111,13 +118,17 @@ public:
     //
     void set_cog_marker_scale_factor(float factor);
     void set_tool_marker_position(const Vec3f& position);
+    void set_tool_marker_offset_z(float offset_z);
     void set_tool_marker_scale_factor(float factor);
     void set_tool_marker_color(const Color& color);
     void set_tool_marker_alpha(float size);
 
 private:
     Settings m_settings;
+    Layers m_layers;
+    Range m_layers_range;
     ViewRange m_view_range;
+    Range m_old_current_range;
 
     //
     // The OpenGL element used to represent all toolpath segments
@@ -145,6 +156,7 @@ private:
     // cpu buffer to store vertices
     //
     std::vector<PathVertex> m_vertices;
+    std::vector<uint32_t> m_vertices_map;
 //################################################################################################################################
     // Debug
     std::pair<uint32_t, uint32_t> m_enabled_segments_range{ 0, 0 };
@@ -246,6 +258,7 @@ private:
     unsigned int m_enabled_options_tex_id{ 0 };
 
     void reset();
+    void update_view_global_range();
     void update_color_ranges();
     Color select_color(const PathVertex& v) const;
     void render_segments(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Vec3f& camera_position);
