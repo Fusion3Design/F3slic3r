@@ -2,8 +2,8 @@
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef VGCODE_TOOLPATHS_HPP
-#define VGCODE_TOOLPATHS_HPP
+#ifndef VGCODE_VIEWERIMPL_HPP
+#define VGCODE_VIEWERIMPL_HPP
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
@@ -34,15 +34,15 @@ class Print;
 
 namespace libvgcode {
 
-class Toolpaths
+class ViewerImpl
 {
 public:
-    Toolpaths() = default;
-    ~Toolpaths();
-    Toolpaths(const Toolpaths& other) = delete;
-    Toolpaths(Toolpaths&& other) = delete;
-    Toolpaths& operator = (const Toolpaths& other) = delete;
-    Toolpaths& operator = (Toolpaths&& other) = delete;
+    ViewerImpl() = default;
+    ~ViewerImpl();
+    ViewerImpl(const ViewerImpl& other) = delete;
+    ViewerImpl(ViewerImpl&& other) = delete;
+    ViewerImpl& operator = (const ViewerImpl& other) = delete;
+    ViewerImpl& operator = (ViewerImpl&& other) = delete;
 
     //
     // Initialize shader, uniform indices and segment geometry
@@ -278,4 +278,4 @@ private:
 #endif // ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#endif // VGCODE_TOOLPATHS_HPP
+#endif // VGCODE_VIEWERIMPL_HPP

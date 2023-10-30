@@ -10,7 +10,7 @@
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#include "Toolpaths.hpp"
+#include "ViewerImpl.hpp"
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
@@ -92,7 +92,7 @@ public:
     void set_tool_marker_alpha(float alpha);
 
 private:
-    Toolpaths m_toolpaths;
+    ViewerImpl m_impl;
 };
 
 } // namespace libvgcode

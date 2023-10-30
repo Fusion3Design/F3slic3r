@@ -926,8 +926,8 @@ private:
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    libvgcode::Viewer m_gcode_viewer_2;
-    bool m_use_gcode_viewer_2{ false };
+    libvgcode::Viewer m_new_viewer;
+    bool m_use_new_viewer{ false };
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -991,8 +991,8 @@ public:
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    void set_view_type(libvgcode::EViewType type) { m_gcode_viewer_2.set_view_type(type); }
-    libvgcode::EViewType get_view_type() const { return m_gcode_viewer_2.get_view_type(); }
+    void set_view_type(libvgcode::EViewType type) { m_new_viewer.set_view_type(type); }
+    libvgcode::EViewType get_view_type() const { return m_new_viewer.get_view_type(); }
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     EViewType get_view_type() const { return m_view_type; }
@@ -1040,10 +1040,10 @@ public:
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    bool use_gcode_viewer_2() const { return m_use_gcode_viewer_2; }
-    void toggle_use_gcode_viewer_2() { m_use_gcode_viewer_2 = !m_use_gcode_viewer_2; }
-    float get_cog_marker_scale_factor() const { return m_gcode_viewer_2.get_cog_marker_scale_factor(); }
-    void set_cog_marker_scale_factor(float factor) { return m_gcode_viewer_2.set_cog_marker_scale_factor(factor); }
+    bool use_gcode_viewer_2() const { return m_use_new_viewer; }
+    void toggle_use_gcode_viewer_2() { m_use_new_viewer = !m_use_new_viewer; }
+    float get_cog_marker_scale_factor() const { return m_new_viewer.get_cog_marker_scale_factor(); }
+    void set_cog_marker_scale_factor(float factor) { return m_new_viewer.set_cog_marker_scale_factor(factor); }
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -1059,7 +1059,7 @@ private:
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
     bool is_visible(GCodeExtrusionRole role) const {
-        return m_gcode_viewer_2.is_extrusion_role_visible((libvgcode::EGCodeExtrusionRole)role);
+        return m_new_viewer.is_extrusion_role_visible((libvgcode::EGCodeExtrusionRole)role);
     }
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

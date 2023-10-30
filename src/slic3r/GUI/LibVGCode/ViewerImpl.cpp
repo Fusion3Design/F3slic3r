@@ -7,7 +7,7 @@
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Toolpaths.hpp"
+#include "ViewerImpl.hpp"
 #include "ViewRange.hpp"
 #include "Settings.hpp"
 #include "Shaders.hpp"
@@ -451,7 +451,7 @@ static EOptionType type_to_option(EMoveType type) {
     }
 }
 
-Toolpaths::~Toolpaths()
+ViewerImpl::~ViewerImpl()
 {
     reset();
     if (m_options_shader_id != 0)
@@ -460,7 +460,7 @@ Toolpaths::~Toolpaths()
         glDeleteProgram(m_segments_shader_id);
 }
 
-void Toolpaths::init()
+void ViewerImpl::init()
 {
     if (m_segments_shader_id != 0)
         return;
@@ -539,7 +539,7 @@ void Toolpaths::init()
     m_tool_marker.init(32, 2.0f, 4.0f, 1.0f, 8.0f);
 }
 
-void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors)
+void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors)
 {
     if (m_settings.time_mode != ETimeMode::Normal) {
         const Slic3r::PrintEstimatedStatistics& stats = gcode_result.print_statistics;
@@ -740,7 +740,7 @@ void Toolpaths::load(const Slic3r::GCodeProcessorResult& gcode_result, const std
     m_settings.update_colors = true;
 }
 
-void Toolpaths::update_enabled_entities()
+void ViewerImpl::update_enabled_entities()
 {
     std::vector<uint32_t> enabled_segments;
     std::vector<uint32_t> enabled_options;
@@ -813,7 +813,7 @@ static float encode_color(const Color& color) {
     return float(i_color);
 }
 
-void Toolpaths::update_colors()
+void ViewerImpl::update_colors()
 {
     update_color_ranges();
 
@@ -831,7 +831,7 @@ void Toolpaths::update_colors()
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
 }
 
-void Toolpaths::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
+void ViewerImpl::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
     if (m_settings.update_view_global_range) {
         update_view_global_range();
@@ -863,27 +863,27 @@ void Toolpaths::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_mat
 #endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 }
 
-EViewType Toolpaths::get_view_type() const
+EViewType ViewerImpl::get_view_type() const
 {
     return m_settings.view_type;
 }
 
-ETimeMode Toolpaths::get_time_mode() const
+ETimeMode ViewerImpl::get_time_mode() const
 {
     return m_settings.time_mode;
 }
 
-const std::array<uint32_t, 2>& Toolpaths::get_layers_range() const
+const std::array<uint32_t, 2>& ViewerImpl::get_layers_range() const
 {
     return m_layers_range.get();
 }
 
-bool Toolpaths::is_top_layer_only_view() const
+bool ViewerImpl::is_top_layer_only_view() const
 {
     return m_settings.top_layer_only_view;
 }
 
-bool Toolpaths::is_option_visible(EOptionType type) const
+bool ViewerImpl::is_option_visible(EOptionType type) const
 {
     try
     {
@@ -895,7 +895,7 @@ bool Toolpaths::is_option_visible(EOptionType type) const
     }
 }
 
-bool Toolpaths::is_extrusion_role_visible(EGCodeExtrusionRole role) const
+bool ViewerImpl::is_extrusion_role_visible(EGCodeExtrusionRole role) const
 {
     try
     {
@@ -907,37 +907,37 @@ bool Toolpaths::is_extrusion_role_visible(EGCodeExtrusionRole role) const
     }
 }
 
-void Toolpaths::set_view_type(EViewType type)
+void ViewerImpl::set_view_type(EViewType type)
 {
     m_settings.view_type = type;
     m_settings.update_colors = true;
 }
 
-void Toolpaths::set_time_mode(ETimeMode mode)
+void ViewerImpl::set_time_mode(ETimeMode mode)
 {
     m_settings.time_mode = mode;
     m_settings.update_colors = true;
 }
 
-void Toolpaths::set_layers_range(const std::array<uint32_t, 2>& range)
+void ViewerImpl::set_layers_range(const std::array<uint32_t, 2>& range)
 {
     set_layers_range(range[0], range[1]);
 }
 
-void Toolpaths::set_layers_range(uint32_t min, uint32_t max)
+void ViewerImpl::set_layers_range(uint32_t min, uint32_t max)
 {
     m_layers_range.set(min, max);
     m_settings.update_view_global_range = true;
     m_settings.update_enabled_entities = true;
 }
 
-void Toolpaths::set_top_layer_only_view(bool top_layer_only_view)
+void ViewerImpl::set_top_layer_only_view(bool top_layer_only_view)
 {
     m_settings.top_layer_only_view = top_layer_only_view;
     m_settings.update_colors = true;
 }
 
-void Toolpaths::toggle_option_visibility(EOptionType type)
+void ViewerImpl::toggle_option_visibility(EOptionType type)
 {
     try
     {
@@ -954,7 +954,7 @@ void Toolpaths::toggle_option_visibility(EOptionType type)
     }
 }
 
-void Toolpaths::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
+void ViewerImpl::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
 {
     try
     {
@@ -969,17 +969,17 @@ void Toolpaths::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
     }
 }
 
-const std::array<uint32_t, 2>& Toolpaths::get_view_current_range() const
+const std::array<uint32_t, 2>& ViewerImpl::get_view_current_range() const
 {
     return m_view_range.get_current_range();
 }
 
-const std::array<uint32_t, 2>& Toolpaths::get_view_global_range() const
+const std::array<uint32_t, 2>& ViewerImpl::get_view_global_range() const
 {
     return m_view_range.get_global_range();
 }
 
-void Toolpaths::set_view_current_range(uint32_t min, uint32_t max)
+void ViewerImpl::set_view_current_range(uint32_t min, uint32_t max)
 {
     uint32_t min_id = 0;
     for (size_t i = 0; i < m_vertices_map.size(); ++i) {
@@ -1016,72 +1016,72 @@ void Toolpaths::set_view_current_range(uint32_t min, uint32_t max)
     }
 }
 
-const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& Toolpaths::get_layers_times() const
+const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& ViewerImpl::get_layers_times() const
 {
     return m_layers_times;
 }
 
-Vec3f Toolpaths::get_cog_marker_position() const
+Vec3f ViewerImpl::get_cog_marker_position() const
 {
     return m_cog_marker.get_position();
 }
 
-float Toolpaths::get_cog_marker_scale_factor() const
+float ViewerImpl::get_cog_marker_scale_factor() const
 {
     return m_cog_marker_scale_factor;
 }
 
-const Vec3f& Toolpaths::get_tool_marker_position() const
+const Vec3f& ViewerImpl::get_tool_marker_position() const
 {
     return m_tool_marker.get_position();
 }
 
-float Toolpaths::get_tool_marker_offset_z() const
+float ViewerImpl::get_tool_marker_offset_z() const
 {
     return m_tool_marker.get_offset_z();
 }
 
-float Toolpaths::get_tool_marker_scale_factor() const
+float ViewerImpl::get_tool_marker_scale_factor() const
 {
     return m_tool_marker_scale_factor;
 }
 
-const Color& Toolpaths::get_tool_marker_color() const
+const Color& ViewerImpl::get_tool_marker_color() const
 {
     return m_tool_marker.get_color();
 }
 
-float Toolpaths::get_tool_marker_alpha() const
+float ViewerImpl::get_tool_marker_alpha() const
 {
     return m_tool_marker.get_alpha();
 }
 
-void Toolpaths::set_cog_marker_scale_factor(float factor)
+void ViewerImpl::set_cog_marker_scale_factor(float factor)
 {
     m_cog_marker_scale_factor = std::max(factor, 0.001f);
 }
 
-void Toolpaths::set_tool_marker_position(const Vec3f& position)
+void ViewerImpl::set_tool_marker_position(const Vec3f& position)
 {
     m_tool_marker.set_position(position);
 }
 
-void Toolpaths::set_tool_marker_offset_z(float offset_z)
+void ViewerImpl::set_tool_marker_offset_z(float offset_z)
 {
     m_tool_marker.set_offset_z(offset_z);
 }
 
-void Toolpaths::set_tool_marker_scale_factor(float factor)
+void ViewerImpl::set_tool_marker_scale_factor(float factor)
 {
     m_tool_marker_scale_factor = std::max(factor, 0.001f);
 }
 
-void Toolpaths::set_tool_marker_color(const Color& color)
+void ViewerImpl::set_tool_marker_color(const Color& color)
 {
     m_tool_marker.set_color(color);
 }
 
-void Toolpaths::set_tool_marker_alpha(float alpha)
+void ViewerImpl::set_tool_marker_alpha(float alpha)
 {
     m_tool_marker.set_alpha(alpha);
 }
@@ -1102,7 +1102,7 @@ static void delete_buffers(unsigned int& id)
     }
 }
 
-void Toolpaths::reset()
+void ViewerImpl::reset()
 {
     m_layers.reset();
     m_layers_range.reset();
@@ -1130,7 +1130,7 @@ void Toolpaths::reset()
     delete_buffers(m_positions_buf_id);
 }
 
-void Toolpaths::update_view_global_range()
+void ViewerImpl::update_view_global_range()
 {
     const std::array<uint32_t, 2>& layers_range = m_layers_range.get();
     const bool travels_visible = m_settings.options_visibility.at(EOptionType::Travels);
@@ -1177,7 +1177,7 @@ void Toolpaths::update_view_global_range()
     }
 }
 
-void Toolpaths::update_color_ranges()
+void ViewerImpl::update_color_ranges()
 {
     m_width_range.reset();
     m_height_range.reset();
@@ -1210,7 +1210,7 @@ void Toolpaths::update_color_ranges()
     }
 }
 
-Color Toolpaths::select_color(const PathVertex& v) const
+Color ViewerImpl::select_color(const PathVertex& v) const
 {
     if (v.type == EMoveType::Noop)
         return Dummy_Color;
@@ -1283,7 +1283,7 @@ Color Toolpaths::select_color(const PathVertex& v) const
     return Dummy_Color;
 }
 
-void Toolpaths::render_segments(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Vec3f& camera_position)
+void ViewerImpl::render_segments(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Vec3f& camera_position)
 {
     if (m_segments_shader_id == 0)
         return;
@@ -1335,7 +1335,7 @@ void Toolpaths::render_segments(const Mat4x4f& view_matrix, const Mat4x4f& proje
     glsafe(glActiveTexture(curr_active_texture));
 }
 
-void Toolpaths::render_options(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
+void ViewerImpl::render_options(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
     if (m_options_shader_id == 0)
         return;
@@ -1386,7 +1386,7 @@ void Toolpaths::render_options(const Mat4x4f& view_matrix, const Mat4x4f& projec
     glsafe(glActiveTexture(curr_active_texture));
 }
 
-void Toolpaths::render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
+void ViewerImpl::render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
     if (m_cog_marker_shader_id == 0)
         return;
@@ -1417,7 +1417,7 @@ void Toolpaths::render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& pro
     glsafe(glUseProgram(curr_shader));
 }
 
-void Toolpaths::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
+void ViewerImpl::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
     if (m_tool_marker_shader_id == 0)
         return;
@@ -1462,7 +1462,7 @@ void Toolpaths::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& pr
 }
 
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG
-void Toolpaths::render_debug_window()
+void ViewerImpl::render_debug_window()
 {
     Slic3r::GUI::ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
     imgui.begin(std::string("LibVGCode Viewer Debug"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);

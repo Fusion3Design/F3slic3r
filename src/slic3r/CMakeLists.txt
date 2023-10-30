@@ -116,8 +116,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/LibVGCode/Shaders.hpp
     GUI/LibVGCode/ToolMarker.hpp
     GUI/LibVGCode/ToolMarker.cpp
-    GUI/LibVGCode/Toolpaths.hpp
-    GUI/LibVGCode/Toolpaths.cpp
+    GUI/LibVGCode/ViewerImpl.hpp
+    GUI/LibVGCode/ViewerImpl.cpp
     GUI/LibVGCode/Types.hpp
     GUI/LibVGCode/Types.cpp
     GUI/LibVGCode/Utils.hpp
