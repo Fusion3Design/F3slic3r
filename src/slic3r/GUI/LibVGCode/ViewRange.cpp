@@ -14,8 +14,6 @@
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#include <algorithm>
-
 namespace libvgcode {
 
 const std::array<uint32_t, 2>& ViewRange::get_current_range() const
@@ -36,6 +34,7 @@ void ViewRange::set_current_range(const std::array<uint32_t, 2>& range)
 void ViewRange::set_current_range(uint32_t min, uint32_t max)
 {
 		m_current.set(min, max);
+		// force the current range to stay inside the modified global range
 		m_global.clamp(m_current);
 }
 
@@ -56,14 +55,20 @@ void ViewRange::set_global_range(const std::array<uint32_t, 2>& range)
 
 void ViewRange::set_global_range(uint32_t min, uint32_t max)
 {
+		// is the global range being extended ?
+		const bool new_max = max > m_global.get()[1];
 		m_global.set(min, max);
+		// force the current range to stay inside the modified global range
 		m_global.clamp(m_current);
+		if (new_max)
+				// force the current range to fill the extended global range
+				m_current.set(m_current.get()[0], max);
 }
 
 void ViewRange::reset()
 {
 		m_global.reset();
-		m_global.reset();
+		m_current.reset();
 }
 
 } // namespace libvgcode

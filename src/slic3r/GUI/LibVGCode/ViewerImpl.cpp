@@ -745,8 +745,11 @@ void ViewerImpl::update_enabled_entities()
     std::vector<uint32_t> enabled_segments;
     std::vector<uint32_t> enabled_options;
 
-    const std::array<uint32_t, 2>& current_range = m_view_range.get_current_range();
-    for (uint32_t i = current_range[0]; i < current_range[1]; ++i) {
+    std::array<uint32_t, 2> range = m_view_range.get_current_range();
+    if (m_settings.top_layer_only_view)
+        range[0] = m_view_range.get_global_range()[0];
+
+    for (uint32_t i = range[0]; i < range[1]; ++i) {
         const PathVertex& v = m_vertices[i];
 
         if (!m_valid_lines_bitset[i] && !v.is_option())
@@ -820,8 +823,8 @@ void ViewerImpl::update_colors()
     const uint32_t top_layer_id = m_settings.top_layer_only_view ? m_layers_range.get()[1] : 0;
     std::vector<float> colors(m_vertices.size());
     for (size_t i = 0; i < m_vertices.size(); i++) {
-      colors[i] = (m_vertices[i].layer_id < top_layer_id) ?
-          encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
+        colors[i] = (m_vertices[i].layer_id < top_layer_id) ?
+            encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
     }
 
     // update gpu buffer for colors
@@ -929,6 +932,7 @@ void ViewerImpl::set_layers_range(uint32_t min, uint32_t max)
     m_layers_range.set(min, max);
     m_settings.update_view_global_range = true;
     m_settings.update_enabled_entities = true;
+    m_settings.update_colors = true;
 }
 
 void ViewerImpl::set_top_layer_only_view(bool top_layer_only_view)
@@ -1584,6 +1588,7 @@ void ViewerImpl::render_debug_window()
 
     imgui.end();
 
+/*
     auto to_string = [](EMoveType type) {
         switch (type)
         {
@@ -1623,6 +1628,7 @@ void ViewerImpl::render_debug_window()
         ImGui::EndTable();
     }
     imgui.end();
+*/
 }
 #endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 
