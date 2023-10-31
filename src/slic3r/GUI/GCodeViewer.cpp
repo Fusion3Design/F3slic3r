@@ -730,7 +730,7 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
 }
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#if ENABLE_NEW_GCODE_VIEWER
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 void GCodeViewer::SequentialView::render(float legend_height, bool show_marker)
 {
     if (show_marker)
@@ -739,7 +739,7 @@ void GCodeViewer::SequentialView::render(float legend_height, bool show_marker)
 void GCodeViewer::SequentialView::render(float legend_height)
 {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#endif // ENABLE_NEW_GCODE_VIEWER
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     marker.render();
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1225,14 +1225,14 @@ void GCodeViewer::render()
         std::memcpy(converted_view_matrix.data(), view_matrix.data(), 16 * sizeof(float));
         libvgcode::Mat4x4f converted_projetion_matrix;
         std::memcpy(converted_projetion_matrix.data(), projection_matrix.data(), 16 * sizeof(float));
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
         libvgcode::Vec3f converted_tool_marker_position;
         std::memcpy(converted_tool_marker_position.data(), m_sequential_view.current_position.data(), 3 * sizeof(float));
 
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
         m_new_viewer.set_cog_marker_scale_factor(m_cog_marker_fixed_screen_size ? 10.0f * m_cog_marker_size * camera.get_inv_zoom() : m_cog_marker_size);
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
         m_new_viewer.set_tool_marker_position(converted_tool_marker_position);
         m_new_viewer.set_tool_marker_scale_factor(m_tool_marker_fixed_screen_size ? 10.0f * m_tool_marker_size * camera.get_inv_zoom() : m_tool_marker_size);
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
         m_new_viewer.render(converted_view_matrix, converted_projetion_matrix);
     }
     else
@@ -1248,13 +1248,13 @@ void GCodeViewer::render()
             m_sequential_view.marker.set_world_offset(m_sequential_view.current_offset);
             m_sequential_view.marker.set_z_offset(m_z_offset);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#if ENABLE_NEW_GCODE_VIEWER
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
             m_sequential_view.render(legend_height, !m_use_new_viewer);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             m_sequential_view.render(legend_height);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#endif // ENABLE_NEW_GCODE_VIEWER
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         }
     }
@@ -1263,12 +1263,11 @@ void GCodeViewer::render()
 #endif // ENABLE_GCODE_VIEWER_STATISTICS
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#if ENABLE_NEW_GCODE_VIEWER_DEBUG
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     if (m_use_new_viewer) {
         ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
         imgui.begin(std::string("LibVGCode Viewer Controller"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
         imgui.checkbox("Cog marker fixed screen size", m_cog_marker_fixed_screen_size);
         if (ImGui::BeginTable("Cog", 2)) {
 
@@ -1280,7 +1279,6 @@ void GCodeViewer::render()
 
           ImGui::EndTable();
         }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
         imgui.checkbox("Tool marker fixed screen size", m_tool_marker_fixed_screen_size);
         if (ImGui::BeginTable("Tool", 2)) {
@@ -1296,7 +1294,7 @@ void GCodeViewer::render()
 
         imgui.end();
     }
-#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 }
 
@@ -4827,7 +4825,7 @@ void GCodeViewer::render_legend(float& legend_height)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
 #if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-          if (type != Preview::OptionType::CenterOfGravity)
+          if (type != Preview::OptionType::CenterOfGravity && type != Preview::OptionType::ToolMarker && type != Preview::OptionType::Shells)
 #endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
           m_new_viewer.toggle_option_visibility((libvgcode::EOptionType)type);
 #endif // ENABLE_NEW_GCODE_VIEWER

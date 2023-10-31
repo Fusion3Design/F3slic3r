@@ -252,7 +252,6 @@ static const char* Cog_Marker_Fragment_Shader =
 "  vec3 color = delta.x * delta.y * delta.z > 0.0 ? BLACK : WHITE;\n"
 "  out_color = intensity * vec4(color, 1.0);\n"
 "}\n";
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 static const char* Tool_Marker_Vertex_Shader =
 "#version 150\n"
@@ -294,6 +293,7 @@ static const char* Tool_Marker_Fragment_Shader =
 "void main() {\n"
 "  fragment_color = color;\n"
 "}\n";
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 } // namespace libvgcode
 

@@ -15,8 +15,8 @@
 #include "OptionTemplate.hpp"
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 #include "CogMarker.hpp"
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 #include "ToolMarker.hpp"
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 #include "PathVertex.hpp"
 #include "Bitset.hpp"
 #include "ColorRange.hpp"
@@ -110,24 +110,24 @@ public:
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     Vec3f get_cog_marker_position() const;
     float get_cog_marker_scale_factor() const;
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     const Vec3f& get_tool_marker_position() const;
     float get_tool_marker_offset_z() const;
     float get_tool_marker_scale_factor() const;
     const Color& get_tool_marker_color() const;
     float get_tool_marker_alpha() const;
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
     //
     // Properties setters
     //
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     void set_cog_marker_scale_factor(float factor);
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     void set_tool_marker_position(const Vec3f& position);
     void set_tool_marker_offset_z(float offset_z);
     void set_tool_marker_scale_factor(float factor);
     void set_tool_marker_color(const Color& color);
     void set_tool_marker_alpha(float size);
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 private:
     Settings m_settings;
@@ -152,13 +152,13 @@ private:
     //
     CogMarker m_cog_marker;
     float m_cog_marker_scale_factor{ 1.0f };
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
     //
     // The OpenGL element used to represent the tool nozzle
     //
     ToolMarker m_tool_marker;
     float m_tool_marker_scale_factor{ 1.0f };
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
     //
     // cpu buffer to store vertices
@@ -229,7 +229,6 @@ private:
     int m_uni_cog_marker_scale_factor{ -1 };
     int m_uni_cog_marker_view_matrix{ -1 };
     int m_uni_cog_marker_projection_matrix{ -1 };
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
     //
     // Cache for OpenGL uniforms id for tool marker shader 
@@ -239,6 +238,7 @@ private:
     int m_uni_tool_marker_view_matrix{ -1 };
     int m_uni_tool_marker_projection_matrix{ -1 };
     int m_uni_tool_marker_color_base{ -1 };
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
     //
     // gpu buffers to store positions
@@ -274,8 +274,8 @@ private:
     void render_options(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     void render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     void render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG
     // Debug

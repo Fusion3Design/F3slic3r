@@ -12,8 +12,6 @@
 
 #include "Types.hpp"
 
-#include <cstdint>
-
 namespace libvgcode {
 
 class CogMarker

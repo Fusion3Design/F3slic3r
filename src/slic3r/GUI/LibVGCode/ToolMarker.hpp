@@ -7,12 +7,10 @@
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 //################################################################################################################################
 
 #include "Types.hpp"
-
-#include <cstdint>
 
 namespace libvgcode {
 
@@ -57,7 +55,7 @@ private:
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 //################################################################################################################################
 
 #endif // VGCODE_TOOLMARKER_HPP

@@ -12,7 +12,6 @@
 
 #include "Types.hpp"
 
-#include <cstdint>
 #include <vector>
 
 namespace libvgcode {

@@ -133,7 +133,6 @@ void Viewer::set_cog_marker_scale_factor(float factor)
 {
     m_impl.set_cog_marker_scale_factor(factor);
 }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 const Vec3f& Viewer::get_tool_marker_position() const
 {
@@ -174,6 +173,7 @@ void Viewer::set_tool_marker_alpha(float alpha)
 {
     m_impl.set_tool_marker_alpha(alpha);
 }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 } // namespace libvgcode
 

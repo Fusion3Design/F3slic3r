@@ -29,7 +29,10 @@ public:
 		bool operator != (const Range& other) const;
 
 private:
-		// [0] = min, [1] = max
+		//
+		// [0] = min
+	  // [1] = max
+		//
 		std::array<uint32_t, 2> m_range{ 0, 0 };
 };
 

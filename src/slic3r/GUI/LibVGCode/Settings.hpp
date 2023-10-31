@@ -37,9 +37,9 @@ struct Settings
 				{ EOptionType::CustomGCodes,    false },
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 				{ EOptionType::CenterOfGravity, false },
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 				{ EOptionType::Shells,          false },
 				{ EOptionType::ToolMarker,      true }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 		} };
 
 		std::map<EGCodeExtrusionRole, bool> extrusion_roles_visibility{ {

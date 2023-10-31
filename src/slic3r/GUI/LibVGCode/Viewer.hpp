@@ -79,7 +79,6 @@ public:
 
     float get_cog_marker_scale_factor() const;
     void set_cog_marker_scale_factor(float factor);
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
     const Vec3f& get_tool_marker_position() const;
     void set_tool_marker_position(const Vec3f& position);
@@ -92,6 +91,7 @@ public:
 
     float get_tool_marker_alpha() const;
     void set_tool_marker_alpha(float alpha);
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 private:
     ViewerImpl m_impl;

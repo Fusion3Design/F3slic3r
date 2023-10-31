@@ -11,15 +11,28 @@
 //################################################################################################################################
 
 #include <array>
+#include <cstdint>
 
 namespace libvgcode {
 
 static constexpr float PI = 3.141592f;
 
-using Vec3f   = std::array<float, 3>;
-// 4 by 4 square matrix with column-major order
+using Vec3f = std::array<float, 3>;
+//
+// 4 by 4 square matrix with column-major order:
+// | a[0] a[4] a[8]  a[12] |
+// | a[1] a[5] a[9]  a[13] |
+// | a[2] a[6] a[10] a[14] |
+// | a[3] a[7] a[11] a[15] |
+//
 using Mat4x4f = std::array<float, 16>;
-using Color   = std::array<float, 3>;
+//
+// [0] = red
+// [1] = green
+// [2] = blue
+// values should belong to [0..1]
+//
+using Color = std::array<float, 3>;
 
 // Alias for GCodeViewer::EViewType defined into GCodeViewer.hpp
 enum class EViewType : uint8_t
@@ -90,9 +103,9 @@ enum class EOptionType : uint8_t
     CustomGCodes,
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     CenterOfGravity,
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     Shells,
     ToolMarker,
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     COUNT
 };
 

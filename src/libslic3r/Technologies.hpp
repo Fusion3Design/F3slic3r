@@ -61,7 +61,7 @@
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #define ENABLE_NEW_GCODE_VIEWER 1
-#define ENABLE_NEW_GCODE_VIEWER_DEBUG (1 && ENABLE_NEW_GCODE_VIEWER)
+#define ENABLE_NEW_GCODE_VIEWER_DEBUG (0 && ENABLE_NEW_GCODE_VIEWER)
 #define ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS (1 && ENABLE_NEW_GCODE_VIEWER)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 

@@ -520,7 +520,6 @@ void ViewerImpl::init()
            m_uni_cog_marker_projection_matrix != -1);
 
     m_cog_marker.init(32, 1.0f);
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
     // tool marker shader
     m_tool_marker_shader_id = init_shader("tool_marker", Tool_Marker_Vertex_Shader, Tool_Marker_Fragment_Shader);
@@ -539,6 +538,7 @@ void ViewerImpl::init()
            m_uni_tool_marker_color_base != -1);
 
     m_tool_marker.init(32, 2.0f, 4.0f, 1.0f, 8.0f);
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 }
 
 void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors)
@@ -862,9 +862,9 @@ void ViewerImpl::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_ma
 
     render_segments(view_matrix, projection_matrix, camera_position);
     render_options(view_matrix, projection_matrix);
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     if (m_settings.options_visibility.at(EOptionType::ToolMarker))
         render_tool_marker(view_matrix, projection_matrix);
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     if (m_settings.options_visibility.at(EOptionType::CenterOfGravity))
         render_cog_marker(view_matrix, projection_matrix);
 #endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
@@ -1043,7 +1043,6 @@ float ViewerImpl::get_cog_marker_scale_factor() const
 {
     return m_cog_marker_scale_factor;
 }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 const Vec3f& ViewerImpl::get_tool_marker_position() const
 {
@@ -1070,12 +1069,10 @@ float ViewerImpl::get_tool_marker_alpha() const
     return m_tool_marker.get_alpha();
 }
 
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 void ViewerImpl::set_cog_marker_scale_factor(float factor)
 {
     m_cog_marker_scale_factor = std::max(factor, 0.001f);
 }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 void ViewerImpl::set_tool_marker_position(const Vec3f& position)
 {
@@ -1101,6 +1098,7 @@ void ViewerImpl::set_tool_marker_alpha(float alpha)
 {
     m_tool_marker.set_alpha(alpha);
 }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 static void delete_textures(unsigned int& id)
 {
@@ -1433,7 +1431,6 @@ void ViewerImpl::render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& pr
 
     glsafe(glUseProgram(curr_shader));
 }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 void ViewerImpl::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
@@ -1479,6 +1476,7 @@ void ViewerImpl::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& p
 
     glsafe(glUseProgram(curr_shader));
 }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG
 void ViewerImpl::render_debug_window()
@@ -1563,7 +1561,6 @@ void ViewerImpl::render_debug_window()
 
             ImGui::EndTable();
         }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
         ImGui::Separator();
 
@@ -1601,6 +1598,7 @@ void ViewerImpl::render_debug_window()
 
             ImGui::EndTable();
         }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     }
 
     imgui.end();
