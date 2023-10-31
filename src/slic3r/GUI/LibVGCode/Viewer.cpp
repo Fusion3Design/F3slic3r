@@ -118,6 +118,7 @@ void Viewer::set_view_current_range(uint32_t min, uint32_t max)
     m_impl.set_view_current_range(min, max);
 }
 
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 Vec3f Viewer::get_cog_position() const
 {
     return m_impl.get_cog_marker_position();
@@ -132,6 +133,7 @@ void Viewer::set_cog_marker_scale_factor(float factor)
 {
     m_impl.set_cog_marker_scale_factor(factor);
 }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 const Vec3f& Viewer::get_tool_marker_position() const
 {

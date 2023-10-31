@@ -88,7 +88,9 @@ enum class EOptionType : uint8_t
     ColorChanges,
     PausePrints,
     CustomGCodes,
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     CenterOfGravity,
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     Shells,
     ToolMarker,
     COUNT

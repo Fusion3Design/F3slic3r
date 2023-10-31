@@ -13,7 +13,9 @@
 #include "Settings.hpp"
 #include "SegmentTemplate.hpp"
 #include "OptionTemplate.hpp"
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 #include "CogMarker.hpp"
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 #include "ToolMarker.hpp"
 #include "PathVertex.hpp"
 #include "Bitset.hpp"
@@ -105,8 +107,10 @@ public:
     // Properties getters
     //
     const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& get_layers_times() const;
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     Vec3f get_cog_marker_position() const;
     float get_cog_marker_scale_factor() const;
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     const Vec3f& get_tool_marker_position() const;
     float get_tool_marker_offset_z() const;
     float get_tool_marker_scale_factor() const;
@@ -116,7 +120,9 @@ public:
     //
     // Properties setters
     //
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     void set_cog_marker_scale_factor(float factor);
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     void set_tool_marker_position(const Vec3f& position);
     void set_tool_marker_offset_z(float offset_z);
     void set_tool_marker_scale_factor(float factor);
@@ -140,11 +146,13 @@ private:
     //
     OptionTemplate m_option_template;
 
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     //
     // The OpenGL element used to represent the center of gravity
     //
     CogMarker m_cog_marker;
     float m_cog_marker_scale_factor{ 1.0f };
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
     //
     // The OpenGL element used to represent the tool nozzle
@@ -213,6 +221,7 @@ private:
     int m_uni_options_colors_tex_id{ -1 };
     int m_uni_options_segment_index_tex_id{ -1 };
 
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     //
     // Cache for OpenGL uniforms id for cog marker shader 
     //
@@ -220,6 +229,7 @@ private:
     int m_uni_cog_marker_scale_factor{ -1 };
     int m_uni_cog_marker_view_matrix{ -1 };
     int m_uni_cog_marker_projection_matrix{ -1 };
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
     //
     // Cache for OpenGL uniforms id for tool marker shader 
@@ -262,7 +272,9 @@ private:
     Color select_color(const PathVertex& v) const;
     void render_segments(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Vec3f& camera_position);
     void render_options(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     void render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     void render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
 
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG

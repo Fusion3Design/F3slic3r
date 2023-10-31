@@ -35,7 +35,9 @@ struct Settings
 				{ EOptionType::ColorChanges,    false },
 				{ EOptionType::PausePrints,     false },
 				{ EOptionType::CustomGCodes,    false },
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 				{ EOptionType::CenterOfGravity, false },
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 				{ EOptionType::Shells,          false },
 				{ EOptionType::ToolMarker,      true }
 		} };

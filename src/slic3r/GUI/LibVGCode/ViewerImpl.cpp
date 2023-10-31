@@ -505,6 +505,7 @@ void ViewerImpl::init()
 
     m_option_template.init(16);
 
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     // cog marker shader
     m_cog_marker_shader_id = init_shader("cog_marker", Cog_Marker_Vertex_Shader, Cog_Marker_Fragment_Shader);
 
@@ -519,6 +520,7 @@ void ViewerImpl::init()
            m_uni_cog_marker_projection_matrix != -1);
 
     m_cog_marker.init(32, 1.0f);
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
     // tool marker shader
     m_tool_marker_shader_id = init_shader("tool_marker", Tool_Marker_Vertex_Shader, Tool_Marker_Fragment_Shader);
@@ -573,7 +575,9 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const st
 
     last_result_id = gcode_result.id;
 
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     m_cog_marker.reset();
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
     reset();
 
@@ -633,6 +637,7 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const st
         m_vertices.emplace_back(vertex);
         m_layers.update(static_cast<uint32_t>(curr.layer_id), static_cast<uint32_t>(m_vertices.size()));
 
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
         // updates calculation for center of gravity
         if (curr_type == EMoveType::Extrude &&
             curr_role != EGCodeExtrusionRole::Skirt &&
@@ -644,6 +649,7 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const st
             const Vec3f prev_pos = toVec3f(prev.position);
             m_cog_marker.update(0.5f * (curr_pos + prev_pos), curr.mm3_per_mm * length(curr_pos - prev_pos));
         }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     }
     m_vertices_map.shrink_to_fit();
     m_vertices.shrink_to_fit();
@@ -858,8 +864,10 @@ void ViewerImpl::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_ma
     render_options(view_matrix, projection_matrix);
     if (m_settings.options_visibility.at(EOptionType::ToolMarker))
         render_tool_marker(view_matrix, projection_matrix);
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     if (m_settings.options_visibility.at(EOptionType::CenterOfGravity))
         render_cog_marker(view_matrix, projection_matrix);
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG
     render_debug_window();
@@ -1025,6 +1033,7 @@ const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& Vie
     return m_layers_times;
 }
 
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 Vec3f ViewerImpl::get_cog_marker_position() const
 {
     return m_cog_marker.get_position();
@@ -1034,6 +1043,7 @@ float ViewerImpl::get_cog_marker_scale_factor() const
 {
     return m_cog_marker_scale_factor;
 }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 const Vec3f& ViewerImpl::get_tool_marker_position() const
 {
@@ -1060,10 +1070,12 @@ float ViewerImpl::get_tool_marker_alpha() const
     return m_tool_marker.get_alpha();
 }
 
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 void ViewerImpl::set_cog_marker_scale_factor(float factor)
 {
     m_cog_marker_scale_factor = std::max(factor, 0.001f);
 }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 void ViewerImpl::set_tool_marker_position(const Vec3f& position)
 {
@@ -1390,6 +1402,7 @@ void ViewerImpl::render_options(const Mat4x4f& view_matrix, const Mat4x4f& proje
     glsafe(glActiveTexture(curr_active_texture));
 }
 
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 void ViewerImpl::render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
     if (m_cog_marker_shader_id == 0)
@@ -1420,6 +1433,7 @@ void ViewerImpl::render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& pr
 
     glsafe(glUseProgram(curr_shader));
 }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
 void ViewerImpl::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
@@ -1429,8 +1443,8 @@ void ViewerImpl::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& p
     int curr_shader;
     glsafe(glGetIntegerv(GL_CURRENT_PROGRAM, &curr_shader));
     const bool curr_cull_face = glIsEnabled(GL_CULL_FACE);
-    int curr_depth_mask;
-    glsafe(glGetIntegerv(GL_DEPTH_WRITEMASK, &curr_depth_mask));
+    GLboolean curr_depth_mask;
+    glsafe(glGetBooleanv(GL_DEPTH_WRITEMASK, &curr_depth_mask));
     const bool curr_blend = glIsEnabled(GL_BLEND);
     glcheck();
     int curr_blend_func;
@@ -1458,8 +1472,9 @@ void ViewerImpl::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& p
     glsafe(glBlendFunc(GL_SRC_ALPHA, curr_blend_func));
     if (!curr_blend)
         glsafe(glDisable(GL_BLEND));
-    glsafe(glDepthMask(curr_depth_mask));
-    if (!curr_cull_face)
+    if (curr_depth_mask == GL_TRUE)
+        glsafe(glDepthMask(GL_TRUE));
+    if (curr_cull_face)
         glsafe(glEnable(GL_CULL_FACE));
 
     glsafe(glUseProgram(curr_shader));
@@ -1535,6 +1550,7 @@ void ViewerImpl::render_debug_window()
 
         ImGui::EndTable();
 
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
         ImGui::Separator();
 
         if (ImGui::BeginTable("Cog", 2)) {
@@ -1547,6 +1563,7 @@ void ViewerImpl::render_debug_window()
 
             ImGui::EndTable();
         }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
         ImGui::Separator();
 

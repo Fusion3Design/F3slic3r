@@ -65,6 +65,7 @@ public:
     // 
     void set_view_current_range(uint32_t min, uint32_t max);
 
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     //
     // Returns the position of the center of gravity of the toolpaths.
     // It does not take in account extrusions of type:
@@ -78,6 +79,7 @@ public:
 
     float get_cog_marker_scale_factor() const;
     void set_cog_marker_scale_factor(float factor);
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
     const Vec3f& get_tool_marker_position() const;
     void set_tool_marker_position(const Vec3f& position);

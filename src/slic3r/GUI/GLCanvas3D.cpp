@@ -1948,7 +1948,7 @@ void GLCanvas3D::render()
     _render_selection_center();
 #endif // ENABLE_RENDER_SELECTION_CENTER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#if ENABLE_NEW_GCODE_VIEWER
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     if (!m_main_toolbar.is_enabled()) {
         if (!m_gcode_viewer.use_gcode_viewer_2())
             _render_gcode_cog();
@@ -1958,7 +1958,7 @@ void GLCanvas3D::render()
     if (!m_main_toolbar.is_enabled())
         _render_gcode_cog();
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#endif // ENABLE_NEW_GCODE_VIEWER
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     // we need to set the mouse's scene position here because the depth buffer
