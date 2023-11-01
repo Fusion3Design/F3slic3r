@@ -750,10 +750,17 @@ void ViewerImpl::update_enabled_entities()
 {
     std::vector<uint32_t> enabled_segments;
     std::vector<uint32_t> enabled_options;
-
     std::array<uint32_t, 2> range = m_view_range.get_current_range();
+
+    // when top layer only visualization is enabled, we need to render
+    // all the toolpaths in the other layers as grayed, so extend the range
+    // to contain them
     if (m_settings.top_layer_only_view)
         range[0] = m_view_range.get_global_range()[0];
+
+    // to show the options at the current tool marker position we need to extend the range by one extra step
+    if (m_vertices[range[1]].is_option())
+        ++range[1];
 
     for (uint32_t i = range[0]; i < range[1]; ++i) {
         const PathVertex& v = m_vertices[i];
@@ -1013,9 +1020,14 @@ void ViewerImpl::set_view_current_range(uint32_t min, uint32_t max)
         ++max_id;
     }
 
-    if (max_id < m_vertices_map.size() - 1 &&
+    // adjust the max id to take in account the 'phantom' vertices added in load()
+    if (max_id < static_cast<uint32_t>(m_vertices_map.size() - 1) &&
         m_vertices[max_id + 1].type == m_vertices[max_id].type &&
         m_vertices_map[max_id + 1] == m_vertices_map[max_id])
+        ++max_id;
+
+    // we show the seams when the endpoint of a closed path is reached, so we need to increase the max id by one
+    if (max_id < static_cast<uint32_t>(m_vertices.size() - 1) && m_vertices[max_id + 1].type == EMoveType::Seam)
         ++max_id;
 
     Range new_range;
