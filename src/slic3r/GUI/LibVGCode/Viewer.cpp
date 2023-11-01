@@ -134,6 +134,16 @@ void Viewer::set_cog_marker_scale_factor(float factor)
     m_impl.set_cog_marker_scale_factor(factor);
 }
 
+bool Viewer::is_tool_marker_enabled() const
+{
+    return m_impl.is_tool_marker_enabled();
+}
+
+void Viewer::enable_tool_marker(bool value)
+{
+    m_impl.enable_tool_marker(value);
+}
+
 const Vec3f& Viewer::get_tool_marker_position() const
 {
     return m_impl.get_tool_marker_position();

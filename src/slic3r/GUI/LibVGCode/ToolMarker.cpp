@@ -164,6 +164,16 @@ void ToolMarker::render()
     glsafe(glBindVertexArray(curr_vertex_array));
 }
 
+bool ToolMarker::is_enabled() const
+{
+    return m_enabled;
+}
+
+void ToolMarker::enable(bool value)
+{
+    m_enabled = value;
+}
+
 const Vec3f& ToolMarker::get_position() const
 {
     return m_position;

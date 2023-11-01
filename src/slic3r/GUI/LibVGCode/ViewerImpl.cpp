@@ -1056,6 +1056,11 @@ float ViewerImpl::get_cog_marker_scale_factor() const
     return m_cog_marker_scale_factor;
 }
 
+bool ViewerImpl::is_tool_marker_enabled() const
+{
+    return m_tool_marker.is_enabled();
+}
+
 const Vec3f& ViewerImpl::get_tool_marker_position() const
 {
     return m_tool_marker.get_position();
@@ -1084,6 +1089,11 @@ float ViewerImpl::get_tool_marker_alpha() const
 void ViewerImpl::set_cog_marker_scale_factor(float factor)
 {
     m_cog_marker_scale_factor = std::max(factor, 0.001f);
+}
+
+void ViewerImpl::enable_tool_marker(bool value)
+{
+    m_tool_marker.enable(value);
 }
 
 void ViewerImpl::set_tool_marker_position(const Vec3f& position)
@@ -1447,6 +1457,9 @@ void ViewerImpl::render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& pr
 void ViewerImpl::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
 {
     if (m_tool_marker_shader_id == 0)
+        return;
+
+    if (!m_tool_marker.is_enabled())
         return;
 
     int curr_shader;

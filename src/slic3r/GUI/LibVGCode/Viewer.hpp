@@ -80,6 +80,9 @@ public:
     float get_cog_marker_scale_factor() const;
     void set_cog_marker_scale_factor(float factor);
 
+    bool is_tool_marker_enabled() const;
+    void enable_tool_marker(bool value);
+
     const Vec3f& get_tool_marker_position() const;
     void set_tool_marker_position(const Vec3f& position);
 

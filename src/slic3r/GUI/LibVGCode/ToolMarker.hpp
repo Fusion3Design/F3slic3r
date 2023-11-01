@@ -27,6 +27,9 @@ public:
     void init(uint16_t resolution, float tip_radius, float tip_height, float stem_radius, float stem_height);
     void render();
 
+    bool is_enabled() const;
+    void enable(bool value);
+
     const Vec3f& get_position() const;
     void set_position(const Vec3f& position);
 
@@ -40,6 +43,7 @@ public:
     void set_alpha(float alpha);
 
 private:
+    bool m_enabled{ false };
     Vec3f m_position{ 0.0f, 0.0f, 0.0f };
     float m_offset_z{ 0.5f };
     Color m_color{ 1.0f, 1.0f, 1.0f };

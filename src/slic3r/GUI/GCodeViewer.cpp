@@ -224,7 +224,7 @@ void GCodeViewer::COG::render()
     glsafe(::glDisable(GL_DEPTH_TEST));
 
     const Camera& camera = wxGetApp().plater()->get_camera();
-    Transform3d model_matrix = Geometry::translation_transform(cog());
+    Transform3d model_matrix = Geometry::translation_transform(cog()) * Geometry::scale_transform(m_scale_factor);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     if (fixed_screen_size) {
@@ -334,13 +334,6 @@ void GCodeViewer::SequentialView::Marker::init()
     m_model.set_color({ 1.0f, 1.0f, 1.0f, 0.5f });
 }
 
-void GCodeViewer::SequentialView::Marker::set_world_position(const Vec3f& position)
-{    
-    m_world_position = position;
-    m_world_transform = (Geometry::translation_transform((position + m_model_z_offset * Vec3f::UnitZ()).cast<double>()) *
-        Geometry::translation_transform(m_model.get_bounding_box().size().z() * Vec3d::UnitZ()) * Geometry::rotation_transform({ M_PI, 0.0, 0.0 })).cast<float>();
-}
-
 void GCodeViewer::SequentialView::Marker::render()
 {
     if (!m_visible)
@@ -357,7 +350,12 @@ void GCodeViewer::SequentialView::Marker::render()
     shader->set_uniform("emission_factor", 0.0f);
     const Camera& camera = wxGetApp().plater()->get_camera();
     const Transform3d& view_matrix = camera.get_view_matrix();
-    const Transform3d model_matrix = m_world_transform.cast<double>();
+    float scale_factor = m_scale_factor;
+    if (m_fixed_screen_size)
+        scale_factor *= 10.0f * camera.get_inv_zoom();
+    const Transform3d model_matrix = (Geometry::translation_transform((m_world_position + m_model_z_offset * Vec3f::UnitZ()).cast<double>()) *
+        Geometry::translation_transform(scale_factor * m_model.get_bounding_box().size().z() * Vec3d::UnitZ()) * Geometry::rotation_transform({ M_PI, 0.0, 0.0 })) *
+        Geometry::scale_transform(scale_factor);
     shader->set_uniform("view_model_matrix", view_matrix * model_matrix);
     shader->set_uniform("projection_matrix", camera.get_projection_matrix());
     const Matrix3d view_normal_matrix = view_matrix.matrix().block(0, 0, 3, 3) * model_matrix.matrix().block(0, 0, 3, 3).inverse().transpose();
@@ -1230,6 +1228,7 @@ void GCodeViewer::render()
         std::memcpy(converted_tool_marker_position.data(), m_sequential_view.current_position.data(), 3 * sizeof(float));
 
         m_new_viewer.set_cog_marker_scale_factor(m_cog_marker_fixed_screen_size ? 10.0f * m_cog_marker_size * camera.get_inv_zoom() : m_cog_marker_size);
+        m_new_viewer.enable_tool_marker(m_sequential_view.current.last != m_sequential_view.endpoints.last);
         m_new_viewer.set_tool_marker_position(converted_tool_marker_position);
         m_new_viewer.set_tool_marker_scale_factor(m_tool_marker_fixed_screen_size ? 10.0f * m_tool_marker_size * camera.get_inv_zoom() : m_tool_marker_size);
 #endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS

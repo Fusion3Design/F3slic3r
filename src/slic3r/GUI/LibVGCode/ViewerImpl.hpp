@@ -110,6 +110,7 @@ public:
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     Vec3f get_cog_marker_position() const;
     float get_cog_marker_scale_factor() const;
+    bool is_tool_marker_enabled() const;
     const Vec3f& get_tool_marker_position() const;
     float get_tool_marker_offset_z() const;
     float get_tool_marker_scale_factor() const;
@@ -122,6 +123,7 @@ public:
     //
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     void set_cog_marker_scale_factor(float factor);
+    void enable_tool_marker(bool value);
     void set_tool_marker_position(const Vec3f& position);
     void set_tool_marker_offset_z(float offset_z);
     void set_tool_marker_scale_factor(float factor);
