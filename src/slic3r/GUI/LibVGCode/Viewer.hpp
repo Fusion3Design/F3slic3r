@@ -65,6 +65,19 @@ public:
     // 
     void set_view_current_range(uint32_t min, uint32_t max);
 
+    //
+    // Return the count of vertices used to render the toolpaths
+    //
+    uint32_t get_vertices_count() const;
+    //
+    // Return the vertex pointed by the max value of the view current range
+    //
+    PathVertex get_current_vertex() const;
+    //
+    // Return the vertex at the given index
+    //
+    PathVertex get_vertex_at(uint32_t id) const;
+
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     //
     // Returns the position of the center of gravity of the toolpaths.

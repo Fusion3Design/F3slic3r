@@ -404,35 +404,152 @@ void GCodeViewer::SequentialView::Marker::render()
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-void GCodeViewer::SequentialView::Marker::render_position_window()
+static std::string to_string(libvgcode::EMoveType type)
+{
+    switch (type)
+    {
+    case libvgcode::EMoveType::Noop:        { return _u8L("Noop"); }
+    case libvgcode::EMoveType::Retract:     { return _u8L("Retract"); }
+    case libvgcode::EMoveType::Unretract:   { return _u8L("Unretract"); }
+    case libvgcode::EMoveType::Seam:        { return _u8L("Seam"); }
+    case libvgcode::EMoveType::ToolChange:  { return _u8L("Tool Change"); }
+    case libvgcode::EMoveType::ColorChange: { return _u8L("Color Change"); }
+    case libvgcode::EMoveType::PausePrint:  { return _u8L("Pause Print"); }
+    case libvgcode::EMoveType::CustomGCode: { return _u8L("Custom GCode"); }
+    case libvgcode::EMoveType::Travel:      { return _u8L("Travel"); }
+    case libvgcode::EMoveType::Wipe:        { return _u8L("Wipe"); }
+    case libvgcode::EMoveType::Extrude:     { return _u8L("Extrude"); }
+    default:                                { return _u8L("Unknown"); }
+    }
+}
+
+static std::string to_string(libvgcode::EGCodeExtrusionRole role)
+{
+    switch (role)
+    {
+    case libvgcode::EGCodeExtrusionRole::None:                     { return _u8L("Unknown"); }
+    case libvgcode::EGCodeExtrusionRole::Perimeter:                { return _u8L("Perimeter"); }
+    case libvgcode::EGCodeExtrusionRole::ExternalPerimeter:        { return _u8L("External perimeter"); }
+    case libvgcode::EGCodeExtrusionRole::OverhangPerimeter:        { return _u8L("Overhang perimeter"); }
+    case libvgcode::EGCodeExtrusionRole::InternalInfill:           { return _u8L("Internal infill"); }
+    case libvgcode::EGCodeExtrusionRole::SolidInfill:              { return _u8L("Solid infill"); }
+    case libvgcode::EGCodeExtrusionRole::TopSolidInfill:           { return _u8L("Top solid infill"); }
+    case libvgcode::EGCodeExtrusionRole::Ironing:                  { return _u8L("Ironing"); }
+    case libvgcode::EGCodeExtrusionRole::BridgeInfill:             { return _u8L("Bridge infill"); }
+    case libvgcode::EGCodeExtrusionRole::GapFill:                  { return _u8L("Gap fill"); }
+    case libvgcode::EGCodeExtrusionRole::Skirt:                    { return _u8L("Skirt/Brim"); }
+    case libvgcode::EGCodeExtrusionRole::SupportMaterial:          { return _u8L("Support material"); }
+    case libvgcode::EGCodeExtrusionRole::SupportMaterialInterface: { return _u8L("Support material interface"); }
+    case libvgcode::EGCodeExtrusionRole::WipeTower:                { return _u8L("Wipe tower"); }
+    case libvgcode::EGCodeExtrusionRole::Custom:                   { return _u8L("Custom"); }
+    default:                                                       { return _u8L("Unknown"); }
+    }
+}
+
+void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode::Viewer* viewer)
 {
     static float last_window_width = 0.0f;
     static size_t last_text_length = 0;
+    static bool properties_shown = false;
 
-    ImGuiWrapper& imgui = *wxGetApp().imgui();
-    const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
-    imgui.set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.5f, 1.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::SetNextWindowBgAlpha(0.25f);
-    imgui.begin(std::string("ToolPosition"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
-    imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Tool position") + ":");
-    ImGui::SameLine();
-    char buf[1024];
-    const Vec3f position = m_world_position + m_world_offset + m_z_offset * Vec3f::UnitZ();
-    sprintf(buf, "X: %.3f, Y: %.3f, Z: %.3f", position.x(), position.y(), position.z());
-    imgui.text(std::string(buf));
+    if (viewer != nullptr) {
+        ImGuiWrapper& imgui = *wxGetApp().imgui();
+        const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
+        imgui.set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.5f, 1.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::SetNextWindowBgAlpha(0.25f);
+        imgui.begin(std::string("ToolPosition"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+        ImGui::AlignTextToFramePadding();
+        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Position") + ":");
+        ImGui::SameLine();
+        libvgcode::PathVertex vertex = viewer->get_current_vertex();
+        if (vertex.type == libvgcode::EMoveType::Seam)
+            vertex = viewer->get_vertex_at(viewer->get_view_current_range()[1] - 1);
 
-    // force extra frame to automatically update window size
-    const float width = ImGui::GetWindowWidth();
-    const size_t length = strlen(buf);
-    if (width != last_window_width || length != last_text_length) {
-        last_window_width = width;
-        last_text_length = length;
-        imgui.set_requires_extra_frame();
+        char buf[1024];
+        sprintf(buf, "X: %.3f, Y: %.3f, Z: %.3f", vertex.position[0], vertex.position[1], vertex.position[2]);
+        imgui.text(std::string(buf));
+
+        ImGui::SameLine();
+        if (imgui.image_button(properties_shown ? ImGui::HorizontalHide : ImGui::HorizontalShow, properties_shown ? _L("Hide properties") : _L("Show properties"))) {
+            properties_shown = !properties_shown;
+            imgui.requires_extra_frame();
+        }
+
+        if (properties_shown) {
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Type") + ":");
+            ImGui::SameLine();
+            imgui.text(to_string(vertex.type));
+            if (vertex.is_extrusion()) {
+                ImGui::SameLine();
+                imgui.text("(" + to_string(vertex.role) + ")");
+            }
+            const bool imperial_units = wxGetApp().app_config->get_bool("use_inches");
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Width") + ":");
+            if (vertex.is_extrusion()) {
+                sprintf(buf, "%.3f", vertex.width);
+                ImGui::SameLine();
+                imgui.text(std::string(buf));
+                ImGui::SameLine();
+                imgui.text(imperial_units ? _u8L("in") : _u8L("mm"));
+            }
+            else {
+                ImGui::SameLine();
+                imgui.text(_u8L("N/A"));
+            }
+            ImGui::SameLine();
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Height") + ":");
+            if (vertex.is_extrusion()) {
+                sprintf(buf, "%.3f", vertex.height);
+                ImGui::SameLine();
+                imgui.text(std::string(buf));
+                ImGui::SameLine();
+                imgui.text(imperial_units ? _u8L("in") : _u8L("mm"));
+            }
+            else {
+                ImGui::SameLine();
+                imgui.text(_u8L("N/A"));
+            }
+        }
+
+        // force extra frame to automatically update window size
+        const float width = ImGui::GetWindowWidth();
+        const size_t length = strlen(buf);
+        if (width != last_window_width || length != last_text_length) {
+            last_window_width = width;
+            last_text_length = length;
+            imgui.set_requires_extra_frame();
+        }
+
+        imgui.end();
+        ImGui::PopStyleVar();
     }
+    else {
+        ImGuiWrapper& imgui = *wxGetApp().imgui();
+        const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
+        imgui.set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.5f, 1.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::SetNextWindowBgAlpha(0.25f);
+        imgui.begin(std::string("ToolPosition"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Tool position") + ":");
+        ImGui::SameLine();
+        char buf[1024];
+        const Vec3f position = m_world_position + m_world_offset + m_z_offset * Vec3f::UnitZ();
+        sprintf(buf, "X: %.3f, Y: %.3f, Z: %.3f", position.x(), position.y(), position.z());
+        imgui.text(std::string(buf));
 
-    imgui.end();
-    ImGui::PopStyleVar();
+        // force extra frame to automatically update window size
+        const float width = ImGui::GetWindowWidth();
+        const size_t length = strlen(buf);
+        if (width != last_window_width || length != last_text_length) {
+            last_window_width = width;
+            last_text_length = length;
+            imgui.set_requires_extra_frame();
+        }
+
+        imgui.end();
+        ImGui::PopStyleVar();
+    }
 }
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -729,9 +846,12 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-void GCodeViewer::SequentialView::render(float legend_height, bool show_marker)
+void GCodeViewer::SequentialView::render(float legend_height, const libvgcode::Viewer* viewer)
 {
-    if (show_marker)
+    if (viewer == nullptr)
+#elif ENABLE_NEW_GCODE_VIEWER
+void GCodeViewer::SequentialView::render(float legend_height, const libvgcode::Viewer* viewer)
+{
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 void GCodeViewer::SequentialView::render(float legend_height)
@@ -742,7 +862,7 @@ void GCodeViewer::SequentialView::render(float legend_height)
     marker.render();
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    marker.render_position_window();
+    marker.render_position_window(viewer);
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     float bottom = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size().get_height();
@@ -1248,7 +1368,9 @@ void GCodeViewer::render()
             m_sequential_view.marker.set_z_offset(m_z_offset);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-            m_sequential_view.render(legend_height, !m_use_new_viewer);
+            m_sequential_view.render(legend_height, m_use_new_viewer ? &m_new_viewer : nullptr);
+#elif ENABLE_NEW_GCODE_VIEWER
+            m_sequential_view.render(legend_height, m_use_new_viewer ? &m_new_viewer : nullptr);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             m_sequential_view.render(legend_height);

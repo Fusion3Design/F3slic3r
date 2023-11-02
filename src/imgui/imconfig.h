@@ -153,6 +153,10 @@ namespace ImGui
     const wchar_t PlugMarker               = 0x1C;
     const wchar_t DowelMarker              = 0x1D;
     const wchar_t SnapMarker               = 0x1E;
+#if ENABLE_NEW_GCODE_VIEWER
+    const wchar_t HorizontalHide            = 0xB0;
+    const wchar_t HorizontalShow            = 0xB1;
+#endif // ENABLE_NEW_GCODE_VIEWER
     // Do not forget use following letters only in wstring
     const wchar_t DocumentationButton      = 0x2600;
     const wchar_t DocumentationHoverButton = 0x2601;

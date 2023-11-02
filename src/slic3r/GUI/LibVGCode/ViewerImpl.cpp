@@ -1040,6 +1040,21 @@ void ViewerImpl::set_view_current_range(uint32_t min, uint32_t max)
     }
 }
 
+uint32_t ViewerImpl::get_vertices_count() const
+{
+    return static_cast<uint32_t>(m_vertices.size());
+}
+
+PathVertex ViewerImpl::get_current_vertex() const
+{
+    return m_vertices[m_view_range.get_current_range()[1]];
+}
+
+PathVertex ViewerImpl::get_vertex_at(uint32_t id) const
+{
+    return (id < static_cast<uint32_t>(m_vertices.size())) ? m_vertices[id] : PathVertex();
+}
+
 const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& ViewerImpl::get_layers_times() const
 {
     return m_layers_times;

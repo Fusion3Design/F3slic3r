@@ -118,6 +118,21 @@ void Viewer::set_view_current_range(uint32_t min, uint32_t max)
     m_impl.set_view_current_range(min, max);
 }
 
+uint32_t Viewer::get_vertices_count() const
+{
+    return m_impl.get_vertices_count();
+}
+
+PathVertex Viewer::get_current_vertex() const
+{
+    return m_impl.get_current_vertex();
+}
+
+PathVertex Viewer::get_vertex_at(uint32_t id) const
+{
+    return m_impl.get_vertex_at(id);
+}
+
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 Vec3f Viewer::get_cog_position() const
 {
