@@ -14,25 +14,10 @@
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#include <vector>
 #include <algorithm>
 #include <assert.h>
 
 namespace libvgcode {
-
-static const std::vector<Color> Ranges_Colors{ {
-    { 0.043f, 0.173f, 0.478f }, // bluish
-    { 0.075f, 0.349f, 0.522f },
-    { 0.110f, 0.533f, 0.569f },
-    { 0.016f, 0.839f, 0.059f },
-    { 0.667f, 0.949f, 0.000f },
-    { 0.988f, 0.975f, 0.012f },
-    { 0.961f, 0.808f, 0.039f },
-    { 0.890f, 0.533f, 0.125f },
-    { 0.820f, 0.408f, 0.188f },
-    { 0.761f, 0.322f, 0.235f },
-    { 0.581f, 0.149f, 0.087f }  // reddish
-} };
 
 ColorRange::ColorRange(EType type)
 : m_type(type)

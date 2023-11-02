@@ -48,45 +48,6 @@ static Vec3f toVec3f(const Eigen::Matrix<float, 3, 1, Eigen::DontAlign>& v)
 }
 //################################################################################################################################
 
-static const Color Dummy_Color{ 0.25f, 0.25f, 0.25f };
-static const Color Default_Tool_Color{ 1.0f, 0.502f, 0.0f };
-
-static const std::map<EMoveType, Color> Options_Colors{ {
-    { EMoveType::Retract,     { 0.803f, 0.135f, 0.839f } },
-    { EMoveType::Unretract,   { 0.287f, 0.679f, 0.810f } },
-    { EMoveType::Seam,        { 0.900f, 0.900f, 0.900f } },
-    { EMoveType::ToolChange,  { 0.758f, 0.744f, 0.389f } },
-    { EMoveType::ColorChange, { 0.856f, 0.582f, 0.546f } },
-    { EMoveType::PausePrint,  { 0.322f, 0.942f, 0.512f } },
-    { EMoveType::CustomGCode, { 0.886f, 0.825f, 0.262f } }
-} };
-
-static const std::vector<Color> Extrusion_Roles_Colors{ {
-    { 0.90f, 0.70f, 0.70f },   // None
-    { 1.00f, 0.90f, 0.30f },   // Perimeter
-    { 1.00f, 0.49f, 0.22f },   // ExternalPerimeter
-    { 0.12f, 0.12f, 1.00f },   // OverhangPerimeter
-    { 0.69f, 0.19f, 0.16f },   // InternalInfill
-    { 0.59f, 0.33f, 0.80f },   // SolidInfill
-    { 0.94f, 0.25f, 0.25f },   // TopSolidInfill
-    { 1.00f, 0.55f, 0.41f },   // Ironing
-    { 0.30f, 0.50f, 0.73f },   // BridgeInfill
-    { 1.00f, 1.00f, 1.00f },   // GapFill
-    { 0.00f, 0.53f, 0.43f },   // Skirt
-    { 0.00f, 1.00f, 0.00f },   // SupportMaterial
-    { 0.00f, 0.50f, 0.00f },   // SupportMaterialInterface
-    { 0.70f, 0.89f, 0.67f },   // WipeTower
-    { 0.37f, 0.82f, 0.58f },   // Custom
-} };
-
-static const std::vector<Color> Travels_Colors{ {
-    { 0.219f, 0.282f, 0.609f }, // Move
-    { 0.112f, 0.422f, 0.103f }, // Extrude
-    { 0.505f, 0.064f, 0.028f }  // Retract
-} };
-
-static const Color Wipe_Color{ 1.0f, 1.0f, 0.0f };
-
 static const float TRAVEL_RADIUS = 0.05f;
 static const float WIPE_RADIUS = 0.05f;
 
