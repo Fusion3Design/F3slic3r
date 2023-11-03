@@ -28,8 +28,6 @@ namespace Slic3r {
 
 namespace GUI {
 
-wxDECLARE_EVENT(EVT_SCHEDULE_BACKGROUND_PROCESS, SimpleEvent);
-
 class ConfigOptionsGroup;
 
 class FreqChangedParams

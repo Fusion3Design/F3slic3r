@@ -392,7 +392,7 @@ struct Plater::priv
     bool is_legend_shown() const { return (current_panel == preview) && preview->get_canvas3d()->is_legend_shown(); }
     void show_legend(bool show) { if (current_panel == preview) preview->get_canvas3d()->show_legend(show); }
 
-    bool is_sidebar_collapsed() const   { return sidebar->is_collapsed(); }
+    bool is_sidebar_collapsed() const   { return sidebar->is_collapsed; }
     void collapse_sidebar(bool collapse);
 
     bool is_view3D_layers_editing_enabled() const { return (current_panel == view3D) && view3D->get_canvas3d()->is_layers_editing_enabled(); }
@@ -503,7 +503,6 @@ struct Plater::priv
     void reload_all_from_disk();
     void set_current_panel(wxPanel* panel);
 
-    void on_select_preset(wxCommandEvent&);
     void on_slicing_update(SlicingStatusEvent&);
     void on_slicing_completed(wxCommandEvent&);
     void on_process_completed(SlicingProcessCompletedEvent&);
@@ -689,9 +688,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
 
     if (wxGetApp().is_editor()) {
         // Preset change event
-        sidebar->Bind(wxEVT_COMBOBOX, &priv::on_select_preset, this);
-        sidebar->Bind(EVT_OBJ_LIST_OBJECT_SELECT, [this](wxEvent&) { priv::selection_changed(); });
-        sidebar->Bind(EVT_SCHEDULE_BACKGROUND_PROCESS, [this](SimpleEvent&) { this->schedule_background_process(); });
+        this->q->Bind(EVT_OBJ_LIST_OBJECT_SELECT,       [this](wxEvent&)     { priv::selection_changed(); });
+        this->q->Bind(EVT_SCHEDULE_BACKGROUND_PROCESS,  [this](SimpleEvent&) { this->schedule_background_process(); });
     }
 
     wxGLCanvas* view3D_canvas = view3D->get_wxglcanvas();
@@ -986,6 +984,10 @@ void Plater::priv::update_ui_from_settings()
     preview->get_canvas3d()->update_ui_from_settings();
 
     sidebar->update_ui_from_settings();
+    // update Cut gizmo, if it's open
+    q->canvas3D()->update_gizmos_on_off_state();
+    q->set_current_canvas_as_dirty();
+    q->get_current_canvas3D()->request_extra_frame();
 }
 
 // Called after the print technology was changed.
@@ -1979,7 +1981,7 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
     {
         // Validation of the background data failed.
         const wxString invalid_str = _L("Invalid data");
-        for (auto btn : {ActionButtonType::abReslice, ActionButtonType::abSendGCode, ActionButtonType::abExport})
+        for (auto btn : {ActionButtonType::Reslice, ActionButtonType::SendGCode, ActionButtonType::Export})
             sidebar->set_btn_label(btn, invalid_str);
         process_completed_with_error = true;
     }
@@ -1993,13 +1995,13 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
             (return_state & UPDATE_BACKGROUND_PROCESS_REFRESH_SCENE) != 0 )
             notification_manager->set_slicing_progress_hidden();
 
-        sidebar->set_btn_label(ActionButtonType::abExport, _(label_btn_export));
-        sidebar->set_btn_label(ActionButtonType::abSendGCode, _(label_btn_send));
+        sidebar->set_btn_label(ActionButtonType::Export, _(label_btn_export));
+        sidebar->set_btn_label(ActionButtonType::SendGCode, _(label_btn_send));
         dirty_state.update_from_preview();
 
         const wxString slice_string = background_process.running() && wxGetApp().get_mode() == comSimple ?
                                       _L("Slicing") + dots : _L("Slice now");
-        sidebar->set_btn_label(ActionButtonType::abReslice, slice_string);
+        sidebar->set_btn_label(ActionButtonType::Reslice, slice_string);
 
         if (background_process.finished())
             show_action_buttons(false);
@@ -2628,74 +2630,6 @@ void Plater::priv::set_current_panel(wxPanel* panel)
     current_panel->SetFocusFromKbd();
 }
 
-void Plater::priv::on_select_preset(wxCommandEvent &evt)
-{
-    PlaterPresetComboBox* combo = static_cast<PlaterPresetComboBox*>(evt.GetEventObject());
-    Preset::Type preset_type    = combo->get_type();
-
-    // see https://github.com/prusa3d/PrusaSlicer/issues/3889
-    // Under OSX: in case of use of a same names written in different case (like "ENDER" and "Ender"),
-    // m_presets_choice->GetSelection() will return first item, because search in PopupListCtrl is case-insensitive.
-    // So, use GetSelection() from event parameter 
-    int selection = evt.GetSelection();
-
-    auto idx = combo->get_extruder_idx();
-
-    //! Because of The MSW and GTK version of wxBitmapComboBox derived from wxComboBox,
-    //! but the OSX version derived from wxOwnerDrawnCombo.
-    //! So, to get selected string we do
-    //!     combo->GetString(combo->GetSelection())
-    //! instead of
-    //!     combo->GetStringSelection().ToUTF8().data());
-
-    std::string preset_name = wxGetApp().preset_bundle->get_preset_name_by_alias(preset_type, 
-        Preset::remove_suffix_modified(into_u8(combo->GetString(selection))), idx);
-
-    std::string last_selected_ph_printer_name = combo->get_selected_ph_printer_name();
-
-    bool select_preset = !combo->selection_is_changed_according_to_physical_printers();
-    // TODO: ?
-    if (preset_type == Preset::TYPE_FILAMENT) {
-        wxGetApp().preset_bundle->set_filament_preset(idx, preset_name);
-
-        TabFilament* tab = dynamic_cast<TabFilament*>(wxGetApp().get_tab(Preset::TYPE_FILAMENT));
-        if (tab && combo->get_extruder_idx() == tab->get_active_extruder() && !tab->select_preset(preset_name)) {
-            // revert previously selection
-            const std::string& old_name = wxGetApp().preset_bundle->filaments.get_edited_preset().name;
-            wxGetApp().preset_bundle->set_filament_preset(idx, old_name);
-        }
-        else
-            // Synchronize config.ini with the current selections.
-            wxGetApp().preset_bundle->export_selections(*wxGetApp().app_config);
-        combo->update();
-    }
-    else if (select_preset) {
-        wxWindowUpdateLocker noUpdates(sidebar->presets_panel());
-        wxGetApp().get_tab(preset_type)->select_preset(preset_name, false, last_selected_ph_printer_name);
-    }
-
-    if (preset_type != Preset::TYPE_PRINTER || select_preset) {
-        // update plater with new config
-        q->on_config_change(wxGetApp().preset_bundle->full_config());
-    }
-    if (preset_type == Preset::TYPE_PRINTER) {
-    /* Settings list can be changed after printer preset changing, so
-     * update all settings items for all item had it.
-     * Furthermore, Layers editing is implemented only for FFF printers
-     * and for SLA presets they should be deleted
-     */
-        wxGetApp().obj_list()->update_object_list_by_printer_technology();
-    }
-
-#ifdef __WXMSW__
-    // From the Win 2004 preset combobox lose a focus after change the preset selection
-    // and that is why the up/down arrow doesn't work properly
-    // (see https://github.com/prusa3d/PrusaSlicer/issues/5531 ).
-    // So, set the focus to the combobox explicitly
-    combo->SetFocus();
-#endif
-}
-
 void Plater::priv::on_slicing_update(SlicingStatusEvent &evt)
 {
     if (evt.status.percent >= -1) {
@@ -2913,7 +2847,7 @@ void Plater::priv::on_process_completed(SlicingProcessCompletedEvent &evt)
         if (evt.invalidate_plater())
         {
             const wxString invalid_str = _L("Invalid data");
-            for (auto btn : { ActionButtonType::abReslice, ActionButtonType::abSendGCode, ActionButtonType::abExport })
+            for (auto btn : { ActionButtonType::Reslice, ActionButtonType::SendGCode, ActionButtonType::Export })
                 sidebar->set_btn_label(btn, invalid_str);
             process_completed_with_error = true;
         }
@@ -2943,7 +2877,7 @@ void Plater::priv::on_process_completed(SlicingProcessCompletedEvent &evt)
 	
     if (evt.cancelled()) {
         if (wxGetApp().get_mode() == comSimple)
-            sidebar->set_btn_label(ActionButtonType::abReslice, "Slice now");
+            sidebar->set_btn_label(ActionButtonType::Reslice, "Slice now");
         show_action_buttons(true);
     } else {
         if(wxGetApp().get_mode() == comSimple) {
@@ -3517,7 +3451,6 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
 			sidebar->show_export(true) |
 			sidebar->show_send(send_gcode_shown) |
 			sidebar->show_export_removable(removable_media_status.has_removable_drives))
-//			sidebar->show_eject(removable_media_status.has_eject))
             sidebar->Layout();
     }
     else
@@ -3529,7 +3462,6 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
             sidebar->show_export(!ready_to_slice) |
             sidebar->show_send(send_gcode_shown && !ready_to_slice) |
 			sidebar->show_export_removable(!ready_to_slice && removable_media_status.has_removable_drives))
-//            sidebar->show_eject(!ready_to_slice && removable_media_status.has_eject))
             sidebar->Layout();
     }
 }
@@ -5759,10 +5691,10 @@ void Plater::reslice()
     if (p->background_process.running())
     {
         if (wxGetApp().get_mode() == comSimple)
-            p->sidebar->set_btn_label(ActionButtonType::abReslice, _L("Slicing") + dots);
+            p->sidebar->set_btn_label(ActionButtonType::Reslice, _L("Slicing") + dots);
         else
         {
-            p->sidebar->set_btn_label(ActionButtonType::abReslice, _L("Slice now"));
+            p->sidebar->set_btn_label(ActionButtonType::Reslice, _L("Slice now"));
             p->show_action_buttons(false);
         }
     }
@@ -5953,36 +5885,6 @@ void Plater::undo_redo_topmost_string_getter(const bool is_undo, std::string& ou
     }
 
     out_text = "";
-}
-
-void Plater::on_extruders_change(size_t num_extruders)
-{
-    auto& choices = sidebar().combos_filament();
-
-    if (num_extruders == choices.size())
-        return;
-
-    dynamic_cast<TabFilament*>(wxGetApp().get_tab(Preset::TYPE_FILAMENT))->update_extruder_combobox();
-
-    wxWindowUpdateLocker noUpdates_scrolled_panel(&sidebar()/*.scrolled_panel()*/);
-
-    size_t i = choices.size();
-    while ( i < num_extruders )
-    {
-        PlaterPresetComboBox* choice/*{ nullptr }*/;
-        sidebar().init_filament_combo(&choice, i);
-        choices.push_back(choice);
-
-        // initialize selection
-        choice->update();
-        ++i;
-    }
-
-    // remove unused choices if any
-    sidebar().remove_unused_filament_combos(num_extruders);
-
-    sidebar().Layout();
-    sidebar().scrolled_panel()->Refresh();
 }
 
 bool Plater::update_filament_colors_in_full_config()

@@ -100,7 +100,6 @@ class MainFrame : public DPIFrame
     std::string     get_dir_name(const wxString &full_name) const;
 
     void on_presets_changed(SimpleEvent&);
-    void on_value_changed(wxCommandEvent&);
 
     bool can_start_new_project() const;
     bool can_export_model() const;

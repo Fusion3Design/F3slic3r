@@ -20,6 +20,7 @@
 #include <vector>
 
 #include <wx/panel.h>
+#include <wx/string.h>
 
 #include "libslic3r/Preset.hpp"
 #include "GUI.hpp"
@@ -27,15 +28,17 @@
 
 class wxButton;
 class wxScrolledWindow;
-class wxString;
+class ScalableButton;
+class ModeSizer;
 
 namespace Slic3r {
 
 namespace GUI {
 
-wxDECLARE_EVENT(EVT_SCHEDULE_BACKGROUND_PROCESS, SimpleEvent);
-
 class ConfigOptionsGroup;
+class FreqChangedParams;
+class ObjectInfo;
+class SlicedInfo;
 class ObjectManipulation;
 class ObjectSettings;
 class ObjectLayers;
@@ -44,14 +47,56 @@ class PlaterPresetComboBox;
 class Plater;
 
 enum class ActionButtonType : int {
-    abReslice,
-    abExport,
-    abSendGCode
+    Reslice,
+    Export,
+    SendGCode
 };
 
 class Sidebar : public wxPanel
 {
     ConfigOptionMode    m_mode{ConfigOptionMode::comSimple};
+
+    Plater*             m_plater            { nullptr };
+
+    wxScrolledWindow*   m_scrolled_panel    { nullptr };
+    wxPanel*            m_presets_panel     { nullptr }; // Used for MSW better layouts
+
+    ModeSizer*          m_mode_sizer        { nullptr };
+    wxFlexGridSizer*    m_presets_sizer     { nullptr };
+    wxBoxSizer*         m_filaments_sizer   { nullptr };
+
+    PlaterPresetComboBox*               m_combo_print       { nullptr };
+    PlaterPresetComboBox*               m_combo_sla_print   { nullptr };
+    PlaterPresetComboBox*               m_combo_sla_material{ nullptr };
+    PlaterPresetComboBox*               m_combo_printer     { nullptr };
+    std::vector<PlaterPresetComboBox*>  m_combos_filament;
+
+    ObjectList*     m_object_list               { nullptr };
+    ObjectInfo*     m_object_info               { nullptr };
+    SlicedInfo*     m_sliced_info               { nullptr };
+
+    wxButton*       m_btn_export_gcode          { nullptr };
+    wxButton*       m_btn_reslice               { nullptr };
+    ScalableButton* m_btn_send_gcode            { nullptr };
+    ScalableButton* m_btn_export_gcode_removable{ nullptr }; //exports to removable drives (appears only if removable drive is connected)
+
+    std::unique_ptr<FreqChangedParams>  m_frequently_changed_parameters;
+    std::unique_ptr<ObjectManipulation> m_object_manipulation;
+    std::unique_ptr<ObjectSettings>     m_object_settings;
+    std::unique_ptr<ObjectLayers>       m_object_layers;
+
+#ifdef _WIN32
+    wxString m_reslice_btn_tooltip;
+#endif
+
+    void init_filament_combo(PlaterPresetComboBox **combo, int extr_idx);
+    void remove_unused_filament_combos(const size_t current_extruder_count);
+    void update_all_preset_comboboxes();
+    void update_reslice_btn_tooltip();
+
+    void show_preset_comboboxes();
+    void on_select_preset(wxCommandEvent& evt);
+
 public:
     Sidebar(Plater *parent);
     Sidebar(Sidebar &&) = delete;
@@ -60,53 +105,43 @@ public:
     Sidebar &operator=(const Sidebar &) = delete;
     ~Sidebar();
 
-    void init_filament_combo(PlaterPresetComboBox **combo, const int extr_idx);
-    void remove_unused_filament_combos(const size_t current_extruder_count);
-    void update_all_preset_comboboxes();
-    void update_presets(Preset::Type preset_type);
-    void update_mode_sizer() const;
-    void change_top_border_for_mode_sizer(bool increase_border);
-    void update_reslice_btn_tooltip() const;
-    void msw_rescale();
-    void sys_color_changed();
-    void update_mode_markers();
-
     ObjectManipulation*     obj_manipul();
     ObjectList*             obj_list();
     ObjectSettings*         obj_settings();
     ObjectLayers*           obj_layers();
-    wxScrolledWindow*       scrolled_panel();
-    wxPanel*                presets_panel();
 
     ConfigOptionsGroup*     og_freq_chng_params(const bool is_fff);
     wxButton*               get_wiping_dialog_button();
-    void                    update_objects_list_extruder_column(size_t extruders_count);
-    void                    show_info_sizer();
-    void                    show_sliced_info_sizer(const bool show);
-    void                    update_sliced_info_sizer();
-    void                    enable_buttons(bool enable);
-    void                    set_btn_label(const ActionButtonType btn_type, const wxString& label) const;
-    bool                    show_reslice(bool show) const;
-	bool                    show_export(bool show) const;
-	bool                    show_send(bool show) const;
-    bool                    show_eject(bool show)const;
-	bool                    show_export_removable(bool show) const;
-	bool                    get_eject_shown() const;
-    bool                    is_multifilament();
-    void                    update_mode();
-    bool                    is_collapsed();
-    void                    collapse(bool collapse);
-    void                    update_ui_from_settings();
+
+    void show_info_sizer();
+    void show_sliced_info_sizer(const bool show);
+    void update_sliced_info_sizer();
+
+    void enable_buttons(bool enable);
+    void set_btn_label(const ActionButtonType btn_type, const wxString& label) const;
+    bool show_reslice(bool show) const;
+    bool show_export(bool show) const;
+    bool show_send(bool show) const;
+    bool show_export_removable(bool show) const;
+
+    void collapse(bool collapse);
+    void change_top_border_for_mode_sizer(bool increase_border);
+    void set_extruders_count(size_t extruders_count);
+
+    void update_mode();
+    void update_ui_from_settings();
+    void update_objects_list_extruder_column(size_t extruders_count);
+    void update_presets(Preset::Type preset_type);
+    void update_mode_markers();
+
+    void msw_rescale();
+    void sys_color_changed();
 
 #ifdef _MSW_DARK_MODE
-    void                    show_mode_sizer(bool show);
+    void show_mode_sizer(bool show);
 #endif
 
-    std::vector<PlaterPresetComboBox*>&   combos_filament();
-
-private:
-    struct priv;
-    std::unique_ptr<priv> p;
+    bool is_collapsed{ false };
 };
 
 } // namespace GUI

@@ -54,6 +54,8 @@ namespace UndoRedo {
 
 namespace GUI {
 
+wxDECLARE_EVENT(EVT_SCHEDULE_BACKGROUND_PROCESS, SimpleEvent);
+
 class MainFrame;
 class GLCanvas3D;
 class Mouse3DController;
@@ -242,7 +244,6 @@ public:
     void enter_gizmos_stack();
     void leave_gizmos_stack();
 
-    void on_extruders_change(size_t extruders_count);
     bool update_filament_colors_in_full_config();
     void on_config_change(const DynamicPrintConfig &config);
     void force_filament_colors_update();

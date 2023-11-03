@@ -691,7 +691,7 @@ void Tab::init_options_list()
 }
 
 template<class T>
-void add_correct_opts_to_options_list(const std::string &opt_key, std::map<std::string, int>& map, Tab *tab, const int& value)
+void add_correct_opts_to_options_list(const std::string &opt_key, std::map<std::string, int>& map, Tab *tab, int value)
 {
     T *opt_cur = static_cast<T*>(tab->m_config->option(opt_key));
     for (size_t i = 0; i < opt_cur->values.size(); i++)
@@ -1146,7 +1146,7 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         update_wiping_button_visibility();
 
     if (opt_key == "extruders_count")
-        wxGetApp().plater()->on_extruders_change(boost::any_cast<size_t>(value));
+        wxGetApp().sidebar().set_extruders_count(boost::any_cast<size_t>(value));
 
     if (m_postpone_update_ui) {
         // It means that not all values are rolled to the system/last saved values jet.

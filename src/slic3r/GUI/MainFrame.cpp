@@ -760,7 +760,7 @@ void MainFrame::init_tabpanel()
         // Show a correct number of filament fields.
         // nozzle_diameter is undefined when SLA printer is selected
         if (full_config.has("nozzle_diameter")) {
-            m_plater->on_extruders_change(full_config.option<ConfigOptionFloats>("nozzle_diameter")->values.size());
+            m_plater->sidebar().set_extruders_count(full_config.option<ConfigOptionFloats>("nozzle_diameter")->values.size());
         }
     }
 }
@@ -2024,24 +2024,6 @@ void MainFrame::on_presets_changed(SimpleEvent &event)
 
         m_plater->on_config_change(*tab->get_config());
         m_plater->sidebar().update_presets(preset_type);
-    }
-}
-
-// #ys_FIXME_to_delete
-void MainFrame::on_value_changed(wxCommandEvent& event)
-{
-    auto *tab = dynamic_cast<Tab*>(event.GetEventObject());
-    wxASSERT(tab != nullptr);
-    if (tab == nullptr)
-        return;
-
-    auto opt_key = event.GetString();
-    if (m_plater) {
-        m_plater->on_config_change(*tab->get_config()); // propagate config change events to the plater
-        if (opt_key == "extruders_count") {
-            auto value = event.GetInt();
-            m_plater->on_extruders_change(value);
-        }
     }
 }
 

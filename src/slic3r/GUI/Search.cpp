@@ -16,7 +16,7 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "GUI_App.hpp"
-#include "Mainframe.hpp"
+#include "MainFrame.hpp"
 #include "Tab.hpp"
 
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
