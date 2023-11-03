@@ -114,6 +114,10 @@ set(SLIC3R_GUI_SOURCES
     GUI/IconManager.hpp
     GUI/MainFrame.cpp
     GUI/MainFrame.hpp
+    GUI/FrequentlyChangedParameters.cpp
+    GUI/FrequentlyChangedParameters.hpp
+    GUI/Sidebar.cpp
+    GUI/Sidebar.hpp
     GUI/Plater.cpp
     GUI/Plater.hpp
     GUI/PresetComboBoxes.hpp
