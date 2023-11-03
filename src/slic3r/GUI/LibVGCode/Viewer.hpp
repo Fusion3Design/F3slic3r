@@ -77,6 +77,10 @@ public:
     // Return the vertex at the given index
     //
     PathVertex get_vertex_at(uint32_t id) const;
+    //
+    // Return the list of detected extrusion roles
+    //
+    const std::vector<EGCodeExtrusionRole>& get_extrusion_roles() const;
 
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     //

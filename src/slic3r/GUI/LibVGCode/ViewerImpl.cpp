@@ -8,8 +8,6 @@
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
 #include "ViewerImpl.hpp"
-#include "ViewRange.hpp"
-#include "Settings.hpp"
 #include "Shaders.hpp"
 #include "OpenGLUtils.hpp"
 #include "Utils.hpp"
@@ -27,6 +25,7 @@
 #include <exception>
 #include <cstdio>
 #include <string>
+#include <algorithm>
 
 namespace libvgcode {
 
@@ -611,9 +610,13 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const st
             m_cog_marker.update(0.5f * (curr_pos + prev_pos), curr.mm3_per_mm * length(curr_pos - prev_pos));
         }
 #endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+
+        m_extrusion_roles.emplace_back(curr_role);
     }
     m_vertices_map.shrink_to_fit();
     m_vertices.shrink_to_fit();
+    std::sort(m_extrusion_roles.begin(), m_extrusion_roles.end());
+    m_extrusion_roles.erase(std::unique(m_extrusion_roles.begin(), m_extrusion_roles.end()), m_extrusion_roles.end());
 
     assert(m_vertices_map.size() == m_vertices.size());
 
@@ -1016,6 +1019,11 @@ PathVertex ViewerImpl::get_vertex_at(uint32_t id) const
     return (id < static_cast<uint32_t>(m_vertices.size())) ? m_vertices[id] : PathVertex();
 }
 
+const std::vector<EGCodeExtrusionRole>& ViewerImpl::get_extrusion_roles() const
+{
+    return m_extrusion_roles;
+}
+
 const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& ViewerImpl::get_layers_times() const
 {
     return m_layers_times;
@@ -1120,6 +1128,7 @@ void ViewerImpl::reset()
     m_layers_range.reset();
     m_view_range.reset();
     m_old_current_range.reset();
+    m_extrusion_roles.clear();
     m_vertices.clear();
     m_vertices_map.clear();
     m_valid_lines_bitset.clear();

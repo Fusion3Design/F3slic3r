@@ -133,6 +133,11 @@ PathVertex Viewer::get_vertex_at(uint32_t id) const
     return m_impl.get_vertex_at(id);
 }
 
+const std::vector<EGCodeExtrusionRole>& Viewer::get_extrusion_roles() const
+{
+    return m_impl.get_extrusion_roles();
+}
+
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 Vec3f Viewer::get_cog_position() const
 {

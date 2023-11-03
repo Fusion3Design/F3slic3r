@@ -1947,19 +1947,24 @@ void GLCanvas3D::render()
 #if ENABLE_RENDER_SELECTION_CENTER
     _render_selection_center();
 #endif // ENABLE_RENDER_SELECTION_CENTER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-    if (!m_main_toolbar.is_enabled()) {
-        if (!m_gcode_viewer.use_gcode_viewer_2())
-            _render_gcode_cog();
-    }
-#else
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_NEW_GCODE_VIEWER
+#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     if (!m_main_toolbar.is_enabled())
         _render_gcode_cog();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#else
+    if (!m_main_toolbar.is_enabled()) {
+        if (!m_gcode_viewer.use_new_viewer())
+            _render_gcode_cog();
+    }
+#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#else
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    if (!m_main_toolbar.is_enabled())
+        _render_gcode_cog();
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     // we need to set the mouse's scene position here because the depth buffer
     // could be invalidated by the following gizmo render methods
@@ -2988,7 +2993,7 @@ void GLCanvas3D::on_char(wxKeyEvent& evt)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
         case WXK_F2: {
-            m_gcode_viewer.toggle_use_gcode_viewer_2();
+            m_gcode_viewer.toggle_use_new_viewer();
             m_dirty = true;
             request_extra_frame();
             break;
@@ -6137,7 +6142,7 @@ void GLCanvas3D::_render_gcode()
     const Size cnv_size = get_canvas_size();
     imgui.set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), 0.0f, ImGuiCond_Always, 0.5f, 0.0f);
     imgui.begin(std::string("LibVGCode Viewer Info"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-    if (m_gcode_viewer.use_gcode_viewer_2())
+    if (m_gcode_viewer.use_new_viewer())
         imgui.text("Press F2 to switch to old visualization");
     else
         imgui.text("Press F2 to switch to new visualization");

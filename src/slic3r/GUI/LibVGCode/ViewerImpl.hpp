@@ -23,9 +23,6 @@
 #include "ViewRange.hpp"
 #include "Layers.hpp"
 
-#include <vector>
-#include <array>
-
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
 namespace Slic3r {
@@ -109,6 +106,7 @@ public:
     uint32_t get_vertices_count() const;
     PathVertex get_current_vertex() const;
     PathVertex get_vertex_at(uint32_t id) const;
+    const std::vector<EGCodeExtrusionRole>& get_extrusion_roles() const;
     const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& get_layers_times() const;
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     Vec3f get_cog_marker_position() const;
@@ -140,6 +138,7 @@ private:
     Range m_layers_range;
     ViewRange m_view_range;
     Range m_old_current_range;
+    std::vector<EGCodeExtrusionRole> m_extrusion_roles;
 
     //
     // The OpenGL element used to represent all toolpath segments
