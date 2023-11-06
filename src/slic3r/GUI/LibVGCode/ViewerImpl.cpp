@@ -577,7 +577,7 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const st
         }
 
         if (type_to_option(curr_type) == EOptionType::COUNT) {
-            if (m_vertices.empty() || prev.type != curr.type) {
+            if (m_vertices.empty() || prev.type != curr.type || prev.extrusion_role != curr.extrusion_role) {
                 // to be able to properly detect the start/end of a path we add a 'phantom' vertex equal to the current one with
                 // the exception of the position
                 const PathVertex vertex = { toVec3f(prev.position), height, width, curr.feedrate, curr.fan_speed,
