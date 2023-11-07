@@ -393,7 +393,6 @@ struct Plater::priv
     void apply_free_camera_correction(bool apply = true);
     void update_ui_from_settings();
     void update_main_toolbar_tooltips();
-//   std::shared_ptr<ProgressStatusBar> statusbar();
     bool get_config_bool(const std::string &key) const;
 
     std::vector<size_t> load_files(const std::vector<fs::path>& input_files, bool load_model, bool load_config, bool used_inches = false);
@@ -974,12 +973,6 @@ void Plater::priv::update_main_toolbar_tooltips()
     view3D->get_canvas3d()->update_tooltip_for_settings_item_in_main_toolbar();
 }
 
-//std::shared_ptr<ProgressStatusBar> Plater::priv::statusbar()
-//{
-//      return nullptr;
-//    return main_frame->m_statusbar;
-//}
-
 bool Plater::priv::get_config_bool(const std::string &key) const
 {
     return wxGetApp().app_config->get_bool(key);
@@ -1312,7 +1305,6 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
     if (load_model && !in_temp) {
         wxGetApp().app_config->update_skein_dir(input_files[input_files.size() - 1].parent_path().make_preferred().string());
         // XXX: Plater.pm had @loaded_files, but didn't seem to fill them with the filenames...
-        // statusbar()->set_status_text(_L("Loaded"));
     }
 
     // automatic selection of added objects
@@ -1965,9 +1957,6 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
     else
     {
         // Background data is valid.
-//        if ((return_state & UPDATE_BACKGROUND_PROCESS_RESTART) != 0 ||
-//            (return_state & UPDATE_BACKGROUND_PROCESS_REFRESH_SCENE) != 0 )
-//            this->statusbar()->set_status_text(_L("Ready to slice"));
         if ((return_state & UPDATE_BACKGROUND_PROCESS_RESTART) != 0 ||
             (return_state & UPDATE_BACKGROUND_PROCESS_REFRESH_SCENE) != 0 )
             notification_manager->set_slicing_progress_hidden();
@@ -2008,10 +1997,6 @@ bool Plater::priv::restart_background_process(unsigned int state)
            (state & UPDATE_BACKGROUND_PROCESS_RESTART) != 0 ) ) {
         // The print is valid and it can be started.
         if (this->background_process.start()) {
-//            this->statusbar()->set_cancel_callback([this]() {
-//                this->statusbar()->set_status_text(_L("Cancelling"));
-//                this->background_process.stop();
-//            });
 			if (!show_warning_dialog)
 				on_slicing_began();
             return true;
@@ -2798,8 +2783,6 @@ void Plater::priv::on_process_completed(SlicingProcessCompletedEvent &evt)
     // At this point of time the thread should be either finished or canceled,
     // so the following call just confirms, that the produced data were consumed.
     this->background_process.stop();
-//    this->statusbar()->reset_cancel_callback();
-//    this->statusbar()->stop_busy();
     notification_manager->set_slicing_progress_export_possible();
 
     // Reset the "export G-code path" name, so that the automatic background processing will be enabled again.
@@ -2820,7 +2803,6 @@ void Plater::priv::on_process_completed(SlicingProcessCompletedEvent &evt)
             }
         } else
             notification_manager->push_slicing_error_notification(message.first);
-//        this->statusbar()->set_status_text(from_u8(message.first));
         if (evt.invalidate_plater())
         {
             const wxString invalid_str = _L("Invalid data");
@@ -2831,7 +2813,6 @@ void Plater::priv::on_process_completed(SlicingProcessCompletedEvent &evt)
         has_error = true;
     }
     if (evt.cancelled()) {
-//        this->statusbar()->set_status_text(_L("Cancelled"));
         this->notification_manager->set_slicing_progress_canceled(_u8L("Slicing Cancelled."));
     }
 
@@ -5408,28 +5389,6 @@ void Plater::export_stl_obj(bool extended, bool selection_only)
         Slic3r::store_stl(path_u8.c_str(), &mesh, true);
     else if (path.Lower().EndsWith(".obj"))
         Slic3r::store_obj(path_u8.c_str(), &mesh);
-//    p->statusbar()->set_status_text(format_wxstr(_L("STL file exported to %s"), path));
-}
-
-void Plater::export_amf()
-{
-    if (p->model.objects.empty()) { return; }
-
-    wxString path = p->get_export_file(FT_AMF);
-    if (path.empty()) { return; }
-    const std::string path_u8 = into_u8(path);
-
-    wxBusyCursor wait;
-    bool export_config = true;
-    DynamicPrintConfig cfg = wxGetApp().preset_bundle->full_config_secure();
-    bool full_pathnames = wxGetApp().app_config->get_bool("export_sources_full_pathnames");
-    if (Slic3r::store_amf(path_u8.c_str(), &p->model, export_config ? &cfg : nullptr, full_pathnames)) {
-        // Success
-//        p->statusbar()->set_status_text(format_wxstr(_L("AMF file exported to %s"), path));
-    } else {
-        // Failure
-//        p->statusbar()->set_status_text(format_wxstr(_L("Error exporting AMF file %s"), path));
-    }
 }
 
 namespace {
@@ -5579,13 +5538,11 @@ bool Plater::export_3mf(const boost::filesystem::path& output_path)
     }
     if (ret) {
         // Success
-//        p->statusbar()->set_status_text(format_wxstr(_L("3MF file exported to %s"), path));
         BOOST_LOG_TRIVIAL(info) << "3MF file exported to " << path;
         p->set_project_filename(path);
     }
     else {
         // Failure
-//        p->statusbar()->set_status_text(format_wxstr(_L("Error exporting 3MF file %s"), path));
         const wxString what = GUI::format_wxstr("%1%: %2%", _L("Unable to save file") , path_u8);
         show_error(this, what);
     }

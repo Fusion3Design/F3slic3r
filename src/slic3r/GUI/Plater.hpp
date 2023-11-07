@@ -203,7 +203,6 @@ public:
 
     void export_gcode(bool prefer_removable);
     void export_stl_obj(bool extended = false, bool selection_only = false);
-    void export_amf();
     bool export_3mf(const boost::filesystem::path& output_path = boost::filesystem::path());
     void reload_from_disk();
     void replace_with_stl();

@@ -33,8 +33,6 @@ class wxProgressDialog;
 
 namespace Slic3r {
 
-class ProgressStatusBar;
-
 namespace GUI
 {
 
@@ -217,7 +215,6 @@ public:
 //    wxProgressDialog*     m_progress_dialog { nullptr };
     PreferencesDialog*    preferences_dialog { nullptr };
     PrintHostQueueDialog* m_printhost_queue_dlg;
-//    std::shared_ptr<ProgressStatusBar>  m_statusbar;
     GalleryDialog*        m_gallery_dialog{ nullptr };
 
 #ifdef __APPLE__

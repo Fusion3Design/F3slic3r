@@ -34,7 +34,6 @@
 #include "libslic3r/PresetBundle.hpp"
 
 #include "Tab.hpp"
-#include "ProgressStatusBar.hpp"
 #include "3DScene.hpp"
 #include "PrintHostDialogs.hpp"
 #include "wxExtensions.hpp"
@@ -166,15 +165,6 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
 
     // Load the icon either from the exe, or from the ico file.
     SetIcon(main_frame_icon(wxGetApp().get_app_mode()));
-
-	// initialize status bar
-//    m_statusbar = std::make_shared<ProgressStatusBar>(this);
-//    m_statusbar->set_font(GUI::wxGetApp().normal_font());
-//    if (wxGetApp().is_editor())
-//        m_statusbar->embed(this);
-//    m_statusbar->set_status_text(_L("Version") + " " +
-//        SLIC3R_VERSION + " - " +
-//       _L("Remember to check for updates at https://github.com/prusa3d/PrusaSlicer/releases"));
 
     // initialize tabpanel and menubar
     init_tabpanel();
@@ -1338,10 +1328,6 @@ void MainFrame::init_menubar_as_editor()
         append_menu_item(export_menu, wxID_ANY, _L("Export Plate as STL/OBJ &Including Supports") + dots, _L("Export current plate as STL/OBJ including supports"),
             [this](wxCommandEvent&) { if (m_plater) m_plater->export_stl_obj(true); }, "export_plater", nullptr,
             [this](){return can_export_supports(); }, this);
-// Deprecating AMF export. Let's wait for user feedback.
-//        append_menu_item(export_menu, wxID_ANY, _L("Export Plate as &AMF") + dots, _L("Export current plate as AMF"),
-//            [this](wxCommandEvent&) { if (m_plater) m_plater->export_amf(); }, "export_plater", nullptr,
-//            [this](){return can_export_model(); }, this);
         export_menu->AppendSeparator();
         append_menu_item(export_menu, wxID_ANY, _L("Export &Toolpaths as OBJ") + dots, _L("Export toolpaths as OBJ"),
             [this](wxCommandEvent&) { if (m_plater) m_plater->export_toolpaths_to_obj(); }, "export_plater", nullptr,
