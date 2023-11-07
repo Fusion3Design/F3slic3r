@@ -611,12 +611,16 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const st
         }
 #endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
-        m_extrusion_roles.emplace_back(curr_role);
+        if (curr_type == EMoveType::Travel) {
+            for (size_t i = 0; i < static_cast<size_t>(ETimeMode::COUNT); ++i) {
+                m_travels_time[i] += curr.time[i];
+            }
+        }
+        else
+            m_extrusion_roles.add(curr_role, curr.time);
     }
     m_vertices_map.shrink_to_fit();
     m_vertices.shrink_to_fit();
-    std::sort(m_extrusion_roles.begin(), m_extrusion_roles.end());
-    m_extrusion_roles.erase(std::unique(m_extrusion_roles.begin(), m_extrusion_roles.end()), m_extrusion_roles.end());
 
     assert(m_vertices_map.size() == m_vertices.size());
 
@@ -1019,9 +1023,34 @@ PathVertex ViewerImpl::get_vertex_at(uint32_t id) const
     return (id < static_cast<uint32_t>(m_vertices.size())) ? m_vertices[id] : PathVertex();
 }
 
-const std::vector<EGCodeExtrusionRole>& ViewerImpl::get_extrusion_roles() const
+std::vector<EGCodeExtrusionRole> ViewerImpl::get_extrusion_roles() const
 {
-    return m_extrusion_roles;
+    return m_extrusion_roles.get_roles();
+}
+
+float ViewerImpl::get_extrusion_role_time(EGCodeExtrusionRole role) const
+{
+    return m_extrusion_roles.get_time(role, m_settings.time_mode);
+}
+
+uint32_t ViewerImpl::get_extrusion_roles_count() const
+{
+    return m_extrusion_roles.get_roles_count();
+}
+
+float ViewerImpl::get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const
+{
+    return m_extrusion_roles.get_time(role, mode);
+}
+
+float ViewerImpl::get_travels_time() const
+{
+    return get_travels_time(m_settings.time_mode);
+}
+
+float ViewerImpl::get_travels_time(ETimeMode mode) const
+{
+    return (mode < ETimeMode::COUNT) ? m_travels_time[static_cast<size_t>(mode)] : 0.0f;
 }
 
 const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& ViewerImpl::get_layers_times() const
@@ -1128,12 +1157,13 @@ void ViewerImpl::reset()
     m_layers_range.reset();
     m_view_range.reset();
     m_old_current_range.reset();
-    m_extrusion_roles.clear();
+    m_extrusion_roles.reset();
+    m_travels_time = { 0.0f, 0.0f };
     m_vertices.clear();
     m_vertices_map.clear();
     m_valid_lines_bitset.clear();
 
-    m_layers_times = std::array<std::vector<float>, (uint8_t)ETimeMode::COUNT>();
+    m_layers_times = std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>();
 
     delete_textures(m_enabled_options_tex_id);
     delete_buffers(m_enabled_options_buf_id);

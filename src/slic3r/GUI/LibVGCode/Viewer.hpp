@@ -78,9 +78,29 @@ public:
     //
     PathVertex get_vertex_at(uint32_t id) const;
     //
+    // Return the count of detected extrusion roles
+    //
+    uint32_t get_extrusion_roles_count() const;
+    //
     // Return the list of detected extrusion roles
     //
-    const std::vector<EGCodeExtrusionRole>& get_extrusion_roles() const;
+    std::vector<EGCodeExtrusionRole> get_extrusion_roles() const;
+    //
+    // Return the estimated time for the given role, using the current time mode
+    //
+    float get_extrusion_role_time(EGCodeExtrusionRole role) const;
+    //
+    // Return the estimated time for the given role and the given time mode
+    //
+    float get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const;
+    //
+    // Return the estimated time for the travel moves, using the current time mode
+    //
+    float get_travels_time() const;
+    //
+    // Return the estimated time for the travel moves and the given time mode
+    //
+    float get_travels_time(ETimeMode mode) const;
 
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     //

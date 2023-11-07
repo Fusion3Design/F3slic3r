@@ -133,9 +133,34 @@ PathVertex Viewer::get_vertex_at(uint32_t id) const
     return m_impl.get_vertex_at(id);
 }
 
-const std::vector<EGCodeExtrusionRole>& Viewer::get_extrusion_roles() const
+uint32_t Viewer::get_extrusion_roles_count() const
+{
+    return m_impl.get_extrusion_roles_count();
+}
+
+std::vector<EGCodeExtrusionRole> Viewer::get_extrusion_roles() const
 {
     return m_impl.get_extrusion_roles();
+}
+
+float Viewer::get_extrusion_role_time(EGCodeExtrusionRole role) const
+{
+    return m_impl.get_extrusion_role_time(role);
+}
+
+float Viewer::get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const
+{
+    return m_impl.get_extrusion_role_time(role, mode);
+}
+
+float Viewer::get_travels_time() const
+{
+    return m_impl.get_travels_time();
+}
+
+float Viewer::get_travels_time(ETimeMode mode) const
+{
+    return m_impl.get_travels_time(mode);
 }
 
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS

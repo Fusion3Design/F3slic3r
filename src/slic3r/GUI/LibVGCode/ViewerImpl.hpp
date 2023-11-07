@@ -22,6 +22,7 @@
 #include "ColorRange.hpp"
 #include "ViewRange.hpp"
 #include "Layers.hpp"
+#include "ExtrusionRoles.hpp"
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
@@ -106,7 +107,12 @@ public:
     uint32_t get_vertices_count() const;
     PathVertex get_current_vertex() const;
     PathVertex get_vertex_at(uint32_t id) const;
-    const std::vector<EGCodeExtrusionRole>& get_extrusion_roles() const;
+    uint32_t get_extrusion_roles_count() const;
+    std::vector<EGCodeExtrusionRole> get_extrusion_roles() const;
+    float get_extrusion_role_time(EGCodeExtrusionRole role) const;
+    float get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const;
+    float get_travels_time() const;
+    float get_travels_time(ETimeMode mode) const;
     const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& get_layers_times() const;
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     Vec3f get_cog_marker_position() const;
@@ -138,7 +144,8 @@ private:
     Range m_layers_range;
     ViewRange m_view_range;
     Range m_old_current_range;
-    std::vector<EGCodeExtrusionRole> m_extrusion_roles;
+    ExtrusionRoles m_extrusion_roles;
+    std::array<float, static_cast<size_t>(ETimeMode::COUNT)> m_travels_time{ 0.0f, 0.0f };
 
     //
     // The OpenGL element used to represent all toolpath segments

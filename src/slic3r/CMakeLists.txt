@@ -99,6 +99,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/LibVGCode/CogMarker.cpp
     GUI/LibVGCode/ColorRange.hpp
     GUI/LibVGCode/ColorRange.cpp
+    GUI/LibVGCode/ExtrusionRoles.hpp
+    GUI/LibVGCode/ExtrusionRoles.cpp
     GUI/LibVGCode/Layers.hpp
     GUI/LibVGCode/Layers.cpp
     GUI/LibVGCode/OpenGLUtils.hpp
@@ -116,14 +118,14 @@ set(SLIC3R_GUI_SOURCES
     GUI/LibVGCode/Shaders.hpp
     GUI/LibVGCode/ToolMarker.hpp
     GUI/LibVGCode/ToolMarker.cpp
-    GUI/LibVGCode/ViewerImpl.hpp
-    GUI/LibVGCode/ViewerImpl.cpp
     GUI/LibVGCode/Types.hpp
     GUI/LibVGCode/Types.cpp
     GUI/LibVGCode/Utils.hpp
     GUI/LibVGCode/Utils.cpp
     GUI/LibVGCode/Viewer.hpp
     GUI/LibVGCode/Viewer.cpp
+    GUI/LibVGCode/ViewerImpl.hpp
+    GUI/LibVGCode/ViewerImpl.cpp
     GUI/LibVGCode/ViewRange.hpp
     GUI/LibVGCode/ViewRange.cpp
 #====================================================================================================================	

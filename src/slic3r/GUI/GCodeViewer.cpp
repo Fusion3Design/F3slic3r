@@ -4360,10 +4360,21 @@ void GCodeViewer::render_legend(float& legend_height)
         return _u8L("from") + " " + std::string(buf1) + " " + _u8L("to") + " " + std::string(buf2) + " " + _u8L("mm");
     };
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_NEW_GCODE_VIEWER
+    auto role_time_and_percent = [this, time_mode](libvgcode::EGCodeExtrusionRole role) {
+        const float time = m_new_viewer.get_extrusion_role_time(role);
+        return std::make_pair(time, time / time_mode.time);
+    };
+#else
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     auto role_time_and_percent = [time_mode](GCodeExtrusionRole role) {
         auto it = std::find_if(time_mode.roles_times.begin(), time_mode.roles_times.end(), [role](const std::pair<GCodeExtrusionRole, float>& item) { return role == item.first; });
         return (it != time_mode.roles_times.end()) ? std::make_pair(it->second, it->second / time_mode.time) : std::make_pair(0.0f, 0.0f);
     };
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     auto used_filament_per_role = [this, imperial_units](GCodeExtrusionRole role) {
         auto it = m_print_statistics.used_filaments_per_role.find(role);
@@ -4392,7 +4403,7 @@ void GCodeViewer::render_legend(float& legend_height)
             assert(role < libvgcode::EGCodeExtrusionRole::COUNT);
             if (role < libvgcode::EGCodeExtrusionRole::COUNT) {
                 labels.push_back(_u8L(gcode_extrusion_role_to_string(convert(role))));
-                auto [time, percent] = role_time_and_percent(convert(role));
+                auto [time, percent] = role_time_and_percent(role);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if (m_view_type == EViewType::FeatureType) {
@@ -4604,10 +4615,10 @@ void GCodeViewer::render_legend(float& legend_height)
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         {
-            max_time_percent = std::max(max_time_percent, time_mode.travel_time / time_mode.time);
-
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
+            const float travels_time = m_new_viewer.get_travels_time();
+            max_time_percent = std::max(max_time_percent, travels_time / time_mode.time);
             const std::vector<libvgcode::EGCodeExtrusionRole>& roles = m_new_viewer.get_extrusion_roles();
             for (size_t i = 0; i < roles.size(); ++i) {
                 libvgcode::EGCodeExtrusionRole role = roles[i];
@@ -4615,6 +4626,7 @@ void GCodeViewer::render_legend(float& legend_height)
                     continue;
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+            max_time_percent = std::max(max_time_percent, time_mode.travel_time / time_mode.time);
             for (size_t i = 0; i < m_roles.size(); ++i) {
                 GCodeExtrusionRole role = m_roles[i];
                 if (role >= GCodeExtrusionRole::Count)
@@ -4655,8 +4667,8 @@ void GCodeViewer::render_legend(float& legend_height)
             if (m_buffers[buffer_id(EMoveType::Travel)].visible)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                append_item(EItemType::Line, convert(libvgcode::Travels_Colors[0]), _u8L("Travel"), true, short_time_ui(get_time_dhms(time_mode.travel_time)),
-                    time_mode.travel_time / time_mode.time, max_time_percent, offsets, 0.0f, 0.0f);
+                append_item(EItemType::Line, convert(libvgcode::Travels_Colors[0]), _u8L("Travel"), true, short_time_ui(get_time_dhms(travels_time)),
+                    travels_time / time_mode.time, max_time_percent, offsets, 0.0f, 0.0f);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                 append_item(EItemType::Line, Travel_Colors[0], _u8L("Travel"), true, short_time_ui(get_time_dhms(time_mode.travel_time)),
@@ -5068,7 +5080,7 @@ void GCodeViewer::render_legend(float& legend_height)
 #if ENABLE_NEW_GCODE_VIEWER
         auto can_show_mode_button = [this](libvgcode::ETimeMode mode) {
             bool show = false;
-            if (m_print_statistics.modes.size() > 1 && m_print_statistics.modes[static_cast<uint8_t>(mode)].roles_times.size() > 0) {
+            if (m_print_statistics.modes.size() > 1 && m_new_viewer.get_extrusion_roles_count() > 0) {
                 for (size_t i = 0; i < m_print_statistics.modes.size(); ++i) {
                     if (i != static_cast<size_t>(mode) &&
                         m_print_statistics.modes[i].time > 0.0f &&
