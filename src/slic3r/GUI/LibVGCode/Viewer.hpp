@@ -49,8 +49,6 @@ public:
     bool is_top_layer_only_view() const;
     void set_top_layer_only_view(bool top_layer_only_view);
 
-    const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& get_layers_times() const;
-
     bool is_option_visible(EOptionType type) const;
     void toggle_option_visibility(EOptionType type);
 
@@ -86,7 +84,7 @@ public:
     //
     std::vector<EGCodeExtrusionRole> get_extrusion_roles() const;
     //
-    // Return the estimated time for the given role, using the current time mode
+    // Return the estimated time for the given role and the current time mode
     //
     float get_extrusion_role_time(EGCodeExtrusionRole role) const;
     //
@@ -94,13 +92,21 @@ public:
     //
     float get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const;
     //
-    // Return the estimated time for the travel moves, using the current time mode
+    // Return the estimated time for the travel moves and the current time mode
     //
     float get_travels_time() const;
     //
     // Return the estimated time for the travel moves and the given time mode
     //
     float get_travels_time(ETimeMode mode) const;
+    //
+    // Return the list of layers time for the current time mode
+    //
+    std::vector<float> get_layers_times() const;
+    //
+    // Return the list of layers time for the given time mode
+    //
+    std::vector<float> get_layers_times(ETimeMode mode) const;
 
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     //

@@ -113,7 +113,8 @@ public:
     float get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const;
     float get_travels_time() const;
     float get_travels_time(ETimeMode mode) const;
-    const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& get_layers_times() const;
+    std::vector<float> get_layers_times() const;
+    std::vector<float> get_layers_times(ETimeMode mode) const;
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     Vec3f get_cog_marker_position() const;
     float get_cog_marker_scale_factor() const;
@@ -146,6 +147,7 @@ private:
     Range m_old_current_range;
     ExtrusionRoles m_extrusion_roles;
     std::array<float, static_cast<size_t>(ETimeMode::COUNT)> m_travels_time{ 0.0f, 0.0f };
+    std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)> m_layers_times;
 
     //
     // The OpenGL element used to represent all toolpath segments
@@ -200,7 +202,6 @@ private:
     std::array<ColorRange, static_cast<size_t>(ColorRange::EType::COUNT)> m_layer_time_range{
         ColorRange(ColorRange::EType::Linear), ColorRange(ColorRange::EType::Logarithmic)
     };
-    std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)> m_layers_times;
     std::vector<Color> m_tool_colors;
 
     //

@@ -618,6 +618,19 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const st
         }
         else
             m_extrusion_roles.add(curr_role, curr.time);
+
+        if (curr.layer_id >= m_layers_times[0].size()) {
+            const size_t curr_size = m_layers_times[0].size();
+            for (size_t i = 0; i < static_cast<size_t>(ETimeMode::COUNT); ++i) {
+                m_layers_times[i].resize(curr.layer_id + 1);
+                for (size_t j = curr_size; j < m_layers_times[i].size(); ++j) {
+                    m_layers_times[i][j] = 0.0f;
+                }
+            }
+        }
+        for (size_t i = 0; i < static_cast<size_t>(ETimeMode::COUNT); ++i) {
+            m_layers_times[i].back() += curr.time[i];
+        }
     }
     m_vertices_map.shrink_to_fit();
     m_vertices.shrink_to_fit();
@@ -701,11 +714,6 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const st
 
         glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
         glsafe(glBindTexture(GL_TEXTURE_BUFFER, old_bound_texture));
-    }
-
-    for (uint8_t i = 0; i < static_cast<uint8_t>(ETimeMode::COUNT); ++i) {
-        if (i < gcode_result.print_statistics.modes.size())
-            m_layers_times[i] = gcode_result.print_statistics.modes[i].layers_times;
     }
 
     if (!m_layers.empty())
@@ -1053,9 +1061,14 @@ float ViewerImpl::get_travels_time(ETimeMode mode) const
     return (mode < ETimeMode::COUNT) ? m_travels_time[static_cast<size_t>(mode)] : 0.0f;
 }
 
-const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& ViewerImpl::get_layers_times() const
+std::vector<float> ViewerImpl::get_layers_times() const
 {
-    return m_layers_times;
+    return get_layers_times(m_settings.time_mode);
+}
+
+std::vector<float> ViewerImpl::get_layers_times(ETimeMode mode) const
+{
+    return (mode < ETimeMode::COUNT) ? m_layers_times[static_cast<size_t>(mode)] : std::vector<float>();
 }
 
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS

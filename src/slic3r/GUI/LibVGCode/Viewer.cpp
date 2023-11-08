@@ -78,11 +78,6 @@ void Viewer::set_top_layer_only_view(bool top_layer_only_view)
     m_impl.set_top_layer_only_view(top_layer_only_view);
 }
 
-const std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>& Viewer::get_layers_times() const
-{
-    return m_impl.get_layers_times();
-}
-
 bool Viewer::is_option_visible(EOptionType type) const
 {
     return m_impl.is_option_visible(type);
@@ -161,6 +156,16 @@ float Viewer::get_travels_time() const
 float Viewer::get_travels_time(ETimeMode mode) const
 {
     return m_impl.get_travels_time(mode);
+}
+
+std::vector<float> Viewer::get_layers_times() const
+{
+    return m_impl.get_layers_times();
+}
+
+std::vector<float> Viewer::get_layers_times(ETimeMode mode) const
+{
+    return m_impl.get_layers_times(mode);
 }
 
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
