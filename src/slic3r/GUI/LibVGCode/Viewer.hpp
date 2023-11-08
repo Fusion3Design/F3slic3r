@@ -11,6 +11,8 @@
 //################################################################################################################################
 
 #include "ViewerImpl.hpp"
+#include "Types.hpp"
+#include "GCodeInputData.hpp"
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
@@ -33,7 +35,8 @@ public:
     Viewer& operator = (Viewer&& other) = delete;
 
     void init();
-    void load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors);
+    void reset();
+    void load(const Slic3r::GCodeProcessorResult& gcode_result, const GCodeInputData& gcode_data);
     void render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
 
     EViewType get_view_type() const;
@@ -107,6 +110,10 @@ public:
     // Return the list of layers time for the given time mode
     //
     std::vector<float> get_layers_times(ETimeMode mode) const;
+
+    size_t get_tool_colors_count() const;
+    const std::vector<Color>& get_tool_colors() const;
+    void set_tool_colors(const std::vector<Color>& colors);
 
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     //

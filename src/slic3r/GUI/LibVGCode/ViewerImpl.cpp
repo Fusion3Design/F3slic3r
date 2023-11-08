@@ -11,6 +11,7 @@
 #include "Shaders.hpp"
 #include "OpenGLUtils.hpp"
 #include "Utils.hpp"
+#include "GCodeInputData.hpp"
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
@@ -31,14 +32,50 @@ namespace libvgcode {
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
-static EMoveType valueof(Slic3r::EMoveType type)
+// mapping from Slic3r::EMoveType to EMoveType
+static EMoveType convert(Slic3r::EMoveType type)
 {
-    return static_cast<EMoveType>(static_cast<uint8_t>(type));
+    switch (type)
+    {
+    case Slic3r::EMoveType::Noop:         { return EMoveType::Noop; }
+    case Slic3r::EMoveType::Retract:      { return EMoveType::Retract; }
+    case Slic3r::EMoveType::Unretract:    { return EMoveType::Unretract; }
+    case Slic3r::EMoveType::Seam:         { return EMoveType::Seam; }
+    case Slic3r::EMoveType::Tool_change:  { return EMoveType::ToolChange; }
+    case Slic3r::EMoveType::Color_change: { return EMoveType::ColorChange; }
+    case Slic3r::EMoveType::Pause_Print:  { return EMoveType::PausePrint; }
+    case Slic3r::EMoveType::Custom_GCode: { return EMoveType::CustomGCode; }
+    case Slic3r::EMoveType::Travel:       { return EMoveType::Travel; }
+    case Slic3r::EMoveType::Wipe:         { return EMoveType::Wipe; }
+    case Slic3r::EMoveType::Extrude:      { return EMoveType::Extrude; }
+    case Slic3r::EMoveType::Count:        { return EMoveType::COUNT; }
+    default:                              { return EMoveType::COUNT; }
+    }
 }
 
-static EGCodeExtrusionRole valueof(Slic3r::GCodeExtrusionRole role)
+// mapping from Slic3r::GCodeExtrusionRole to EGCodeExtrusionRole
+static EGCodeExtrusionRole convert(Slic3r::GCodeExtrusionRole role)
 {
-    return static_cast<EGCodeExtrusionRole>(static_cast<uint8_t>(role));
+    switch (role)
+    {
+    case Slic3r::GCodeExtrusionRole::None:                     { return EGCodeExtrusionRole::None; }
+    case Slic3r::GCodeExtrusionRole::Perimeter:                { return EGCodeExtrusionRole::Perimeter; }
+    case Slic3r::GCodeExtrusionRole::ExternalPerimeter:        { return EGCodeExtrusionRole::ExternalPerimeter; }
+    case Slic3r::GCodeExtrusionRole::OverhangPerimeter:        { return EGCodeExtrusionRole::OverhangPerimeter; }
+    case Slic3r::GCodeExtrusionRole::InternalInfill:           { return EGCodeExtrusionRole::InternalInfill; }
+    case Slic3r::GCodeExtrusionRole::SolidInfill:              { return EGCodeExtrusionRole::SolidInfill; }
+    case Slic3r::GCodeExtrusionRole::TopSolidInfill:           { return EGCodeExtrusionRole::TopSolidInfill; }
+    case Slic3r::GCodeExtrusionRole::Ironing:                  { return EGCodeExtrusionRole::Ironing; }
+    case Slic3r::GCodeExtrusionRole::BridgeInfill:             { return EGCodeExtrusionRole::BridgeInfill; }
+    case Slic3r::GCodeExtrusionRole::GapFill:                  { return EGCodeExtrusionRole::GapFill; }
+    case Slic3r::GCodeExtrusionRole::Skirt:                    { return EGCodeExtrusionRole::Skirt; }
+    case Slic3r::GCodeExtrusionRole::SupportMaterial:          { return EGCodeExtrusionRole::SupportMaterial; }
+    case Slic3r::GCodeExtrusionRole::SupportMaterialInterface: { return EGCodeExtrusionRole::SupportMaterialInterface; }
+    case Slic3r::GCodeExtrusionRole::WipeTower:                { return EGCodeExtrusionRole::WipeTower; }
+    case Slic3r::GCodeExtrusionRole::Custom:                   { return EGCodeExtrusionRole::Custom; }
+    case Slic3r::GCodeExtrusionRole::Count:                    { return EGCodeExtrusionRole::COUNT; }
+    default:                                                   { return EGCodeExtrusionRole::COUNT; }
+    }
 }
 
 static Vec3f toVec3f(const Eigen::Matrix<float, 3, 1, Eigen::DontAlign>& v)
@@ -90,45 +127,6 @@ static float round_to_bin(const float value)
     double a = value * scale[i];
     assert(std::abs(a) < double(std::numeric_limits<int64_t>::max()));
     return fast_round_up<int64_t>(a) * invscale[i];
-}
-
-static int hex_digit_to_int(const char c) {
-    return (c >= '0' && c <= '9') ? int(c - '0') :
-           (c >= 'A' && c <= 'F') ? int(c - 'A') + 10 :
-           (c >= 'a' && c <= 'f') ? int(c - 'a') + 10 : -1;
-};
-
-bool decode_color(const std::string& color_in, Color& color_out)
-{
-    constexpr const float INV_255 = 1.0f / 255.0f;
-
-    color_out.fill(0.0f);
-    if (color_in.size() == 7 && color_in.front() == '#') {
-        const char* c = color_in.data() + 1;
-        for (unsigned int i = 0; i < 3; ++i) {
-            const int digit1 = hex_digit_to_int(*c++);
-            const int digit2 = hex_digit_to_int(*c++);
-            if (digit1 != -1 && digit2 != -1)
-                color_out[i] = float(digit1 * 16 + digit2) * INV_255;
-        }
-    }
-    else
-        return false;
-
-    assert(0.0f <= color_out[0] && color_out[0] <= 1.0f);
-    assert(0.0f <= color_out[1] && color_out[1] <= 1.0f);
-    assert(0.0f <= color_out[2] && color_out[2] <= 1.0f);
-    return true;
-}
-
-bool decode_colors(const std::vector<std::string>& colors_in, std::vector<Color>& colors_out)
-{
-    colors_out = std::vector<Color>(colors_in.size());
-    for (size_t i = 0; i < colors_in.size(); ++i) {
-        if (!decode_color(colors_in[i], colors_out[i]))
-            return false;
-    }
-    return true;
 }
 
 static Mat4x4f inverse(const Mat4x4f& m)
@@ -396,6 +394,22 @@ unsigned int init_shader(const std::string& shader_name, const char* vertex_shad
     return shader_id;
 }
 
+static void delete_textures(unsigned int& id)
+{
+    if (id != 0) {
+        glsafe(glDeleteTextures(1, &id));
+        id = 0;
+    }
+}
+
+static void delete_buffers(unsigned int& id)
+{
+    if (id != 0) {
+        glsafe(glDeleteBuffers(1, &id));
+        id = 0;
+    }
+}
+
 // mapping from EMoveType to EOptionType
 static EOptionType type_to_option(EMoveType type) {
     switch (type)
@@ -415,9 +429,9 @@ ViewerImpl::~ViewerImpl()
 {
     reset();
     if (m_options_shader_id != 0)
-        glDeleteProgram(m_options_shader_id);
+        glsafe(glDeleteProgram(m_options_shader_id));
     if (m_segments_shader_id != 0)
-        glDeleteProgram(m_segments_shader_id);
+        glsafe(glDeleteProgram(m_segments_shader_id));
 }
 
 void ViewerImpl::init()
@@ -501,14 +515,46 @@ void ViewerImpl::init()
 #endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 }
 
-void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors)
+void ViewerImpl::reset()
+{
+    m_layers.reset();
+    m_layers_range.reset();
+    m_view_range.reset();
+    m_old_current_range.reset();
+    m_extrusion_roles.reset();
+    m_travels_time = { 0.0f, 0.0f };
+    m_vertices.clear();
+    m_vertices_map.clear();
+    m_valid_lines_bitset.clear();
+    m_layers_times = std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>();
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+    m_cog_marker.reset();
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+
+    delete_textures(m_enabled_options_tex_id);
+    delete_buffers(m_enabled_options_buf_id);
+
+    delete_textures(m_enabled_segments_tex_id);
+    delete_buffers(m_enabled_segments_buf_id);
+
+    delete_textures(m_colors_tex_id);
+    delete_buffers(m_colors_buf_id);
+
+    delete_textures(m_heights_widths_angles_tex_id);
+    delete_buffers(m_heights_widths_angles_buf_id);
+
+    delete_textures(m_positions_tex_id);
+    delete_buffers(m_positions_buf_id);
+}
+
+void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const GCodeInputData& gcode_data)
 {
     if (m_settings.time_mode != ETimeMode::Normal) {
         const Slic3r::PrintEstimatedStatistics& stats = gcode_result.print_statistics;
         bool force_normal_mode = static_cast<size_t>(m_settings.time_mode) >= stats.modes.size();
         if (!force_normal_mode) {
-            const float normal_time = stats.modes[static_cast<uint8_t>(ETimeMode::Normal)].time;
-            const float mode_time = stats.modes[static_cast<uint8_t>(m_settings.time_mode)].time;
+            const float normal_time = stats.modes[static_cast<size_t>(ETimeMode::Normal)].time;
+            const float mode_time = stats.modes[static_cast<size_t>(m_settings.time_mode)].time;
             force_normal_mode = mode_time == 0.0f ||
                                 short_time(get_time_dhms(mode_time)) == short_time(get_time_dhms(normal_time)); // TO CHECK -> Is this necessary ?
         }
@@ -516,39 +562,14 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const st
             m_settings.time_mode = ETimeMode::Normal;
     }
 
-    m_tool_colors.clear();
-    if (m_settings.view_type == EViewType::Tool && !gcode_result.extruder_colors.empty())
-        // update tool colors from config stored in the gcode
-        decode_colors(gcode_result.extruder_colors, m_tool_colors);
-    else
-        // update tool colors
-        decode_colors(str_tool_colors, m_tool_colors);
-
-    // ensure there are enough colors defined
-    while (m_tool_colors.size() < std::max<size_t>(1, gcode_result.extruders_count)) {
-        m_tool_colors.push_back(Default_Tool_Color);
-    }
-
-    static unsigned int last_result_id = 0;
-    if (last_result_id == gcode_result.id)
-        return;
-
-    last_result_id = gcode_result.id;
-
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-    m_cog_marker.reset();
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-
-    reset();
-
     m_vertices_map.reserve(2 * gcode_result.moves.size());
     m_vertices.reserve(2 * gcode_result.moves.size());
     uint32_t seams_count = 0;
     for (size_t i = 1; i < gcode_result.moves.size(); ++i) {
         const Slic3r::GCodeProcessorResult::MoveVertex& curr = gcode_result.moves[i];
         const Slic3r::GCodeProcessorResult::MoveVertex& prev = gcode_result.moves[i - 1];
-        const EMoveType curr_type = valueof(curr.type);
-        const EGCodeExtrusionRole curr_role = valueof(curr.extrusion_role);
+        const EMoveType curr_type = convert(curr.type);
+        const EGCodeExtrusionRole curr_role = convert(curr.extrusion_role);
 
         if (curr_type == EMoveType::Seam)
            ++seams_count;
@@ -1016,9 +1037,9 @@ void ViewerImpl::set_view_current_range(uint32_t min, uint32_t max)
     }
 }
 
-uint32_t ViewerImpl::get_vertices_count() const
+size_t ViewerImpl::get_vertices_count() const
 {
-    return static_cast<uint32_t>(m_vertices.size());
+    return m_vertices.size();
 }
 
 PathVertex ViewerImpl::get_current_vertex() const
@@ -1026,9 +1047,9 @@ PathVertex ViewerImpl::get_current_vertex() const
     return m_vertices[m_view_range.get_current_range()[1]];
 }
 
-PathVertex ViewerImpl::get_vertex_at(uint32_t id) const
+PathVertex ViewerImpl::get_vertex_at(size_t id) const
 {
-    return (id < static_cast<uint32_t>(m_vertices.size())) ? m_vertices[id] : PathVertex();
+    return (id < m_vertices.size()) ? m_vertices[id] : PathVertex();
 }
 
 std::vector<EGCodeExtrusionRole> ViewerImpl::get_extrusion_roles() const
@@ -1041,7 +1062,7 @@ float ViewerImpl::get_extrusion_role_time(EGCodeExtrusionRole role) const
     return m_extrusion_roles.get_time(role, m_settings.time_mode);
 }
 
-uint32_t ViewerImpl::get_extrusion_roles_count() const
+size_t ViewerImpl::get_extrusion_roles_count() const
 {
     return m_extrusion_roles.get_roles_count();
 }
@@ -1069,6 +1090,16 @@ std::vector<float> ViewerImpl::get_layers_times() const
 std::vector<float> ViewerImpl::get_layers_times(ETimeMode mode) const
 {
     return (mode < ETimeMode::COUNT) ? m_layers_times[static_cast<size_t>(mode)] : std::vector<float>();
+}
+
+size_t ViewerImpl::get_tool_colors_count() const
+{
+    return m_tool_colors.size();
+}
+
+const std::vector<Color>& ViewerImpl::get_tool_colors() const
+{
+    return m_tool_colors;
 }
 
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
@@ -1111,7 +1142,15 @@ float ViewerImpl::get_tool_marker_alpha() const
 {
     return m_tool_marker.get_alpha();
 }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
+void ViewerImpl::set_tool_colors(const std::vector<Color>& colors)
+{
+    m_tool_colors = colors;
+    m_settings.update_colors = true;
+}
+
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 void ViewerImpl::set_cog_marker_scale_factor(float factor)
 {
     m_cog_marker_scale_factor = std::max(factor, 0.001f);
@@ -1147,52 +1186,6 @@ void ViewerImpl::set_tool_marker_alpha(float alpha)
     m_tool_marker.set_alpha(alpha);
 }
 #endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-
-static void delete_textures(unsigned int& id)
-{
-    if (id != 0) {
-        glsafe(glDeleteTextures(1, &id));
-        id = 0;
-    }
-}
-
-static void delete_buffers(unsigned int& id)
-{
-    if (id != 0) {
-        glsafe(glDeleteBuffers(1, &id));
-        id = 0;
-    }
-}
-
-void ViewerImpl::reset()
-{
-    m_layers.reset();
-    m_layers_range.reset();
-    m_view_range.reset();
-    m_old_current_range.reset();
-    m_extrusion_roles.reset();
-    m_travels_time = { 0.0f, 0.0f };
-    m_vertices.clear();
-    m_vertices_map.clear();
-    m_valid_lines_bitset.clear();
-
-    m_layers_times = std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>();
-
-    delete_textures(m_enabled_options_tex_id);
-    delete_buffers(m_enabled_options_buf_id);
-
-    delete_textures(m_enabled_segments_tex_id);
-    delete_buffers(m_enabled_segments_buf_id);
-
-    delete_textures(m_colors_tex_id);
-    delete_buffers(m_colors_buf_id);
-
-    delete_textures(m_heights_widths_angles_tex_id);
-    delete_buffers(m_heights_widths_angles_buf_id);
-
-    delete_textures(m_positions_tex_id);
-    delete_buffers(m_positions_buf_id);
-}
 
 void ViewerImpl::update_view_global_range()
 {

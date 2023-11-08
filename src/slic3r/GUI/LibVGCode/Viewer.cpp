@@ -23,9 +23,14 @@ void Viewer::init()
     m_impl.init();
 }
 
-void Viewer::load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors)
+void Viewer::reset()
 {
-    m_impl.load(gcode_result, str_tool_colors);
+    m_impl.reset();
+}
+
+void Viewer::load(const Slic3r::GCodeProcessorResult& gcode_result, const GCodeInputData& gcode_data)
+{
+    m_impl.load(gcode_result, gcode_data);
 }
 
 void Viewer::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
@@ -166,6 +171,21 @@ std::vector<float> Viewer::get_layers_times() const
 std::vector<float> Viewer::get_layers_times(ETimeMode mode) const
 {
     return m_impl.get_layers_times(mode);
+}
+
+size_t Viewer::get_tool_colors_count() const
+{
+    return m_impl.get_tool_colors_count();
+}
+
+const std::vector<Color>& Viewer::get_tool_colors() const
+{
+    return m_impl.get_tool_colors();
+}
+
+void Viewer::set_tool_colors(const std::vector<Color>& colors)
+{
+    m_impl.set_tool_colors(colors);
 }
 
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS

@@ -123,7 +123,6 @@ enum class ETimeMode : uint8_t
 //
 static const Color Dummy_Color{ 0.25f, 0.25f, 0.25f };
 static const Color Wipe_Color{ 1.0f, 1.0f, 0.0f };
-static const Color Default_Tool_Color{ 1.0f, 0.502f, 0.0f };
 
 //
 // Palette used to render moves by ranges

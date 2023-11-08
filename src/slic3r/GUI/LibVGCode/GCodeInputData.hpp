@@ -2,38 +2,21 @@
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef VGCODE_EXTRUSION_ROLES_HPP
-#define VGCODE_EXTRUSION_ROLES_HPP
+#ifndef VGCODE_GCODEINPUTDATA_HPP
+#define VGCODE_GCODEINPUTDATA_HPP
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#include "Types.hpp"
-
-#include <map>
+//#include "Types.hpp"
 
 namespace libvgcode {
 
-class ExtrusionRoles
+struct GCodeInputData
 {
-public:
-    struct Item
-    {
-        std::array<float, static_cast<size_t>(ETimeMode::COUNT)> times;
-    };
-
-    void add(EGCodeExtrusionRole role, const std::array<float, static_cast<size_t>(ETimeMode::COUNT)>& times);
-
-    size_t get_roles_count() const;
-    std::vector<EGCodeExtrusionRole> get_roles() const;
-    float get_time(EGCodeExtrusionRole role, ETimeMode mode) const;
-
-    void reset();
-
-private:
-    std::map<EGCodeExtrusionRole, Item> m_items;
+//    std::vector<Color> tool_colors;
 };
 
 } // namespace libvgcode
@@ -43,4 +26,4 @@ private:
 #endif // ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#endif // VGCODE_EXTRUSION_ROLES_HPP
+#endif // VGCODE_BITSET_HPP

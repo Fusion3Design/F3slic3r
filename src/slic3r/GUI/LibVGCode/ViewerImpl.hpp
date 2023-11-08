@@ -34,6 +34,8 @@ class Print;
 
 namespace libvgcode {
 
+struct GCodeInputData;
+
 class ViewerImpl
 {
 public:
@@ -50,10 +52,15 @@ public:
     void init();
 
     //
+    // Reset all caches and free gpu memory
+    //
+    void reset();
+
+    //
     // Setup all the variables used for visualization and coloring of the toolpaths
     // from the gcode moves contained in the given gcode_result.
     //
-    void load(const Slic3r::GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors);
+    void load(const Slic3r::GCodeProcessorResult& gcode_result, const GCodeInputData& gcode_data);
 
     //
     // Update the visibility property of toolpaths
@@ -104,10 +111,10 @@ public:
     //
     // Properties getters
     //
-    uint32_t get_vertices_count() const;
+    size_t get_vertices_count() const;
     PathVertex get_current_vertex() const;
-    PathVertex get_vertex_at(uint32_t id) const;
-    uint32_t get_extrusion_roles_count() const;
+    PathVertex get_vertex_at(size_t id) const;
+    size_t get_extrusion_roles_count() const;
     std::vector<EGCodeExtrusionRole> get_extrusion_roles() const;
     float get_extrusion_role_time(EGCodeExtrusionRole role) const;
     float get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const;
@@ -115,6 +122,8 @@ public:
     float get_travels_time(ETimeMode mode) const;
     std::vector<float> get_layers_times() const;
     std::vector<float> get_layers_times(ETimeMode mode) const;
+    size_t get_tool_colors_count() const;
+    const std::vector<Color>& get_tool_colors() const;
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     Vec3f get_cog_marker_position() const;
     float get_cog_marker_scale_factor() const;
@@ -129,6 +138,7 @@ public:
     //
     // Properties setters
     //
+    void set_tool_colors(const std::vector<Color>& colors);
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     void set_cog_marker_scale_factor(float factor);
     void enable_tool_marker(bool value);
@@ -278,7 +288,6 @@ private:
     unsigned int m_enabled_options_buf_id{ 0 };
     unsigned int m_enabled_options_tex_id{ 0 };
 
-    void reset();
     void update_view_global_range();
     void update_color_ranges();
     Color select_color(const PathVertex& v) const;

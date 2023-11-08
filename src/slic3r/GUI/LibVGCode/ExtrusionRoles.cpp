@@ -27,9 +27,9 @@ void ExtrusionRoles::add(EGCodeExtrusionRole role, const std::array<float, stati
     }
 }
 
-uint32_t ExtrusionRoles::get_roles_count() const
+size_t ExtrusionRoles::get_roles_count() const
 {
-    return static_cast<uint32_t>(m_items.size());
+    return m_items.size();
 }
 
 std::vector<EGCodeExtrusionRole> ExtrusionRoles::get_roles() const

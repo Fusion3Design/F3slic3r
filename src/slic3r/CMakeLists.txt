@@ -101,6 +101,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/LibVGCode/ColorRange.cpp
     GUI/LibVGCode/ExtrusionRoles.hpp
     GUI/LibVGCode/ExtrusionRoles.cpp
+    GUI/LibVGCode/GCodeInputData.hpp
+    GUI/LibVGCode/GCodeInputData.cpp	
     GUI/LibVGCode/Layers.hpp
     GUI/LibVGCode/Layers.cpp
     GUI/LibVGCode/OpenGLUtils.hpp
