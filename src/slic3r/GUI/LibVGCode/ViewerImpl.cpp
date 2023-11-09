@@ -607,7 +607,7 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const GC
                     static_cast<uint32_t>(curr.layer_id) };
                 m_vertices_map.emplace_back(static_cast<uint32_t>(i) - seams_count);
                 m_vertices.emplace_back(vertex);
-                m_layers.update(static_cast<uint32_t>(curr.layer_id), static_cast<uint32_t>(m_vertices.size()));
+                m_layers.update(vertex, static_cast<uint32_t>(m_vertices.size()));
             }
         }
 
@@ -616,7 +616,7 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const GC
             static_cast<uint8_t>(curr.cp_color_id), static_cast<uint32_t>(curr.layer_id) };
         m_vertices_map.emplace_back(static_cast<uint32_t>(i) - seams_count);
         m_vertices.emplace_back(vertex);
-        m_layers.update(static_cast<uint32_t>(curr.layer_id), static_cast<uint32_t>(m_vertices.size()));
+        m_layers.update(vertex, static_cast<uint32_t>(m_vertices.size()));
 
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
         // updates calculation for center of gravity
@@ -738,7 +738,7 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const GC
     }
 
     if (!m_layers.empty())
-        set_layers_range(0, static_cast<uint32_t>(m_layers.size() - 1));
+        set_layers_range(0, static_cast<uint32_t>(m_layers.get_layers_count() - 1));
     update_view_global_range();
     m_settings.update_colors = true;
 }
@@ -833,8 +833,7 @@ void ViewerImpl::update_colors()
     const uint32_t top_layer_id = m_settings.top_layer_only_view ? m_layers_range.get()[1] : 0;
     std::vector<float> colors(m_vertices.size());
     for (size_t i = 0; i < m_vertices.size(); i++) {
-        colors[i] = (m_vertices[i].layer_id < top_layer_id) ?
-            encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
+        colors[i] = (m_vertices[i].layer_id < top_layer_id) ? encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
     }
 
     // update gpu buffer for colors
@@ -1332,7 +1331,7 @@ Color ViewerImpl::select_color(const PathVertex& v) const
     }
     case EViewType::ColorPrint:
     {
-        return m_tool_colors[v.color_id % m_tool_colors.size()];
+        return m_layers.layer_contains_colorprint_options(v.layer_id) ? Dummy_Color : m_tool_colors[v.color_id % m_tool_colors.size()];
     }
     default: { break; }
     }

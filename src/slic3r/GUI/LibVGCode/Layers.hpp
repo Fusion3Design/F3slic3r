@@ -16,17 +16,29 @@
 
 namespace libvgcode {
 
+struct PathVertex;
+
 class Layers
 {
 public:
-		void update(uint32_t layer_id, uint32_t vertex_id);
+		void update(const PathVertex& vertex, uint32_t vertex_id);
 		void reset();
 
 		bool empty() const;
-		size_t size() const;
+		size_t get_layers_count() const;
+
+		bool layer_contains_colorprint_options(uint32_t layer_id) const;
 
 private:
-		std::vector<Range> m_ranges;
+		struct Item
+		{
+				Range range;
+				bool contains_colorprint_options{ false };
+
+				Item() = default;
+		};
+
+		std::vector<Item> m_items;
 };
 
 } // namespace libvgcode
