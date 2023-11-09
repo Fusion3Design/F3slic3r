@@ -5202,7 +5202,8 @@ void Plater::export_gcode(bool prefer_removable)
 
             wxString error_str;
             if (check_for_error(output_path, error_str)) {
-                ErrorDialog(this, error_str, [](const std::string& key) -> void { wxGetApp().jump_to_option(key); }).ShowModal();
+                const t_link_clicked on_link_clicked = [](const std::string& key) -> void { wxGetApp().jump_to_option(key); };
+                ErrorDialog(this, error_str, on_link_clicked).ShowModal();
                 output_path.clear();
             } else {
                 alert_when_exporting_binary_gcode(wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_bool("gcode_binary"),
