@@ -17,15 +17,15 @@ namespace libvgcode {
 class ViewRange
 {
 public:
-		const std::array<uint32_t, 2>& get_current_range() const;
-		void set_current_range(const Range& other);
-		void set_current_range(const std::array<uint32_t, 2>& range);
-		void set_current_range(uint32_t min, uint32_t max);
+		const std::array<uint32_t, 2>& get_current() const;
+		void set_current(const Range& other);
+		void set_current(const std::array<uint32_t, 2>& range);
+		void set_current(uint32_t min, uint32_t max);
 
-		const std::array<uint32_t, 2>& get_global_range() const;
-		void set_global_range(const Range& other);
-		void set_global_range(const std::array<uint32_t, 2>& range);
-		void set_global_range(uint32_t min, uint32_t max);
+		const std::array<uint32_t, 2>& get_global() const;
+		void set_global(const Range& other);
+		void set_global(const std::array<uint32_t, 2>& range);
+		void set_global(uint32_t min, uint32_t max);
 
 		void reset();
 

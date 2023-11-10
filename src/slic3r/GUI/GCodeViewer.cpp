@@ -1426,7 +1426,7 @@ void GCodeViewer::refresh(const GCodeProcessorResult& gcode_result, const std::v
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
     for (size_t i = 0; i < static_cast<size_t>(libvgcode::ETimeMode::COUNT); ++i) {
-        const std::vector<float> layers_times = m_new_viewer.get_layers_times(static_cast<libvgcode::ETimeMode>(i));
+        const std::vector<float> layers_times = get_layers_times(static_cast<libvgcode::ETimeMode>(i));
         for (size_t j = 0; j < layers_times.size(); ++j) {
             m_extrusions.ranges.layer_time[i].update_from(layers_times[j]);
         }
@@ -3088,7 +3088,7 @@ void GCodeViewer::refresh_render_paths(bool keep_sequential_current_first, bool 
         case libvgcode::EViewType::Temperature: { color = m_extrusions.ranges.temperature.get_color_at(path.temperature); break; }
         case libvgcode::EViewType::LayerTimeLinear:
         case libvgcode::EViewType::LayerTimeLogarithmic: {
-            const std::vector<float> layers_times = m_new_viewer.get_layers_times();
+            const std::vector<float> layers_times = get_layers_times();
             if (!layers_times.empty() && m_layers.size() == layers_times.size()) {
                 const Path::Sub_Path& sub_path = path.sub_paths.front();
                 double z = static_cast<double>(sub_path.first.position.z());
@@ -4584,7 +4584,7 @@ void GCodeViewer::render_legend(float& legend_height)
     std::vector<int> view_options_id;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    const std::vector<float> layers_times = m_new_viewer.get_layers_times();
+    const std::vector<float> layers_times = get_layers_times();
     if (!layers_times.empty() && m_layers.size() == layers_times.size()) {
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -5246,9 +5246,9 @@ void GCodeViewer::render_legend(float& legend_height)
         imgui.title(time_title + ":");
 
         if (ImGui::BeginTable("Times", 2)) {
-          //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-            const std::vector<float> layers_times = m_new_viewer.get_layers_times();
+            const std::vector<float> layers_times = get_layers_times();
             if (!layers_times.empty())
                 add_strings_row_to_table(_u8L("First layer") + ":", ImGuiWrapper::COL_ORANGE_LIGHT,
                     short_time_ui(get_time_dhms(layers_times.front())), ImGuiWrapper::to_ImVec4(ColorRGBA::WHITE()));

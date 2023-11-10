@@ -154,10 +154,8 @@ private:
     Layers m_layers;
     Range m_layers_range;
     ViewRange m_view_range;
-    Range m_old_current_range;
     ExtrusionRoles m_extrusion_roles;
     std::array<float, static_cast<size_t>(ETimeMode::COUNT)> m_travels_time{ 0.0f, 0.0f };
-    std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)> m_layers_times;
 
     //
     // The OpenGL element used to represent all toolpath segments

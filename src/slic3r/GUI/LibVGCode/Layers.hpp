@@ -10,9 +10,8 @@
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
+#include "Types.hpp"
 #include "Range.hpp"
-
-#include <vector>
 
 namespace libvgcode {
 
@@ -21,11 +20,14 @@ struct PathVertex;
 class Layers
 {
 public:
-		void update(const PathVertex& vertex, uint32_t vertex_id);
+		void update(const PathVertex& vertex, const std::array<float, static_cast<size_t>(ETimeMode::COUNT)>& times, uint32_t vertex_id);
 		void reset();
 
 		bool empty() const;
-		size_t get_layers_count() const;
+		size_t count() const;
+
+		float get_time(ETimeMode mode, uint32_t layer_id) const;
+		std::vector<float> get_times(ETimeMode mode) const;
 
 		bool layer_contains_colorprint_options(uint32_t layer_id) const;
 
@@ -33,9 +35,8 @@ private:
 		struct Item
 		{
 				Range range;
+				std::array<float, static_cast<size_t>(ETimeMode::COUNT)> times{ 0.0f, 0.0f };
 				bool contains_colorprint_options{ false };
-
-				Item() = default;
 		};
 
 		std::vector<Item> m_items;

@@ -520,13 +520,11 @@ void ViewerImpl::reset()
     m_layers.reset();
     m_layers_range.reset();
     m_view_range.reset();
-    m_old_current_range.reset();
     m_extrusion_roles.reset();
     m_travels_time = { 0.0f, 0.0f };
     m_vertices.clear();
     m_vertices_map.clear();
     m_valid_lines_bitset.clear();
-    m_layers_times = std::array<std::vector<float>, static_cast<size_t>(ETimeMode::COUNT)>();
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     m_cog_marker.reset();
 #endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
@@ -607,7 +605,7 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const GC
                     static_cast<uint32_t>(curr.layer_id) };
                 m_vertices_map.emplace_back(static_cast<uint32_t>(i) - seams_count);
                 m_vertices.emplace_back(vertex);
-                m_layers.update(vertex, static_cast<uint32_t>(m_vertices.size()));
+                m_layers.update(vertex, { 0.0f, 0.0f }, static_cast<uint32_t>(m_vertices.size()));
             }
         }
 
@@ -616,7 +614,7 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const GC
             static_cast<uint8_t>(curr.cp_color_id), static_cast<uint32_t>(curr.layer_id) };
         m_vertices_map.emplace_back(static_cast<uint32_t>(i) - seams_count);
         m_vertices.emplace_back(vertex);
-        m_layers.update(vertex, static_cast<uint32_t>(m_vertices.size()));
+        m_layers.update(vertex, curr.time, static_cast<uint32_t>(m_vertices.size()));
 
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
         // updates calculation for center of gravity
@@ -639,19 +637,6 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const GC
         }
         else
             m_extrusion_roles.add(curr_role, curr.time);
-
-        if (curr.layer_id >= m_layers_times[0].size()) {
-            const size_t curr_size = m_layers_times[0].size();
-            for (size_t i = 0; i < static_cast<size_t>(ETimeMode::COUNT); ++i) {
-                m_layers_times[i].resize(curr.layer_id + 1);
-                for (size_t j = curr_size; j < m_layers_times[i].size(); ++j) {
-                    m_layers_times[i][j] = 0.0f;
-                }
-            }
-        }
-        for (size_t i = 0; i < static_cast<size_t>(ETimeMode::COUNT); ++i) {
-            m_layers_times[i].back() += curr.time[i];
-        }
     }
     m_vertices_map.shrink_to_fit();
     m_vertices.shrink_to_fit();
@@ -738,7 +723,7 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const GC
     }
 
     if (!m_layers.empty())
-        set_layers_range(0, static_cast<uint32_t>(m_layers.get_layers_count() - 1));
+        set_layers_range(0, static_cast<uint32_t>(m_layers.count() - 1));
     update_view_global_range();
     m_settings.update_colors = true;
 }
@@ -747,13 +732,13 @@ void ViewerImpl::update_enabled_entities()
 {
     std::vector<uint32_t> enabled_segments;
     std::vector<uint32_t> enabled_options;
-    std::array<uint32_t, 2> range = m_view_range.get_current_range();
+    std::array<uint32_t, 2> range = m_view_range.get_current();
 
     // when top layer only visualization is enabled, we need to render
     // all the toolpaths in the other layers as grayed, so extend the range
     // to contain them
     if (m_settings.top_layer_only_view_range)
-        range[0] = m_view_range.get_global_range()[0];
+        range[0] = m_view_range.get_global()[0];
 
     // to show the options at the current tool marker position we need to extend the range by one extra step
     if (m_vertices[range[1]].is_option() && range[1] < static_cast<uint32_t>(m_vertices.size()) - 1)
@@ -831,7 +816,7 @@ void ViewerImpl::update_colors()
     update_color_ranges();
 
     const uint32_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers_range.get()[1] : 0;
-    const bool color_top_layer_only = m_view_range.get_global_range()[1] != m_view_range.get_current_range()[1];
+    const bool color_top_layer_only = m_view_range.get_global()[1] != m_view_range.get_current()[1];
     std::vector<float> colors(m_vertices.size());
     for (size_t i = 0; i < m_vertices.size(); i++) {
         colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id) ? encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
@@ -987,12 +972,12 @@ void ViewerImpl::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
 
 const std::array<uint32_t, 2>& ViewerImpl::get_view_current_range() const
 {
-    return m_view_range.get_current_range();
+    return m_view_range.get_current();
 }
 
 const std::array<uint32_t, 2>& ViewerImpl::get_view_global_range() const
 {
-    return m_view_range.get_global_range();
+    return m_view_range.get_global();
 }
 
 void ViewerImpl::set_view_current_range(uint32_t min, uint32_t max)
@@ -1030,15 +1015,14 @@ void ViewerImpl::set_view_current_range(uint32_t min, uint32_t max)
     Range new_range;
     new_range.set(min_id, max_id);
 
-    if (m_old_current_range != new_range) {
+    if (m_view_range.get_current() != new_range.get()) {
         if (m_settings.update_view_global_range) {
             // force update of global range, if required, to avoid clamping the current range with global old values
             // when calling set_current_range()
             update_view_global_range();
             m_settings.update_view_global_range = false;
         }
-        m_view_range.set_current_range(new_range);
-        m_old_current_range = new_range;
+        m_view_range.set_current(new_range);
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
     }
@@ -1051,7 +1035,7 @@ size_t ViewerImpl::get_vertices_count() const
 
 PathVertex ViewerImpl::get_current_vertex() const
 {
-    return m_vertices[m_view_range.get_current_range()[1]];
+    return m_vertices[m_view_range.get_current()[1]];
 }
 
 PathVertex ViewerImpl::get_vertex_at(size_t id) const
@@ -1096,7 +1080,7 @@ std::vector<float> ViewerImpl::get_layers_times() const
 
 std::vector<float> ViewerImpl::get_layers_times(ETimeMode mode) const
 {
-    return (mode < ETimeMode::COUNT) ? m_layers_times[static_cast<size_t>(mode)] : std::vector<float>();
+    return m_layers.get_times(mode);
 }
 
 size_t ViewerImpl::get_tool_colors_count() const
@@ -1226,7 +1210,7 @@ void ViewerImpl::update_view_global_range()
     }
 
     if (first_it == m_vertices.end())
-        m_view_range.set_global_range(0, 0);
+        m_view_range.set_global(0, 0);
     else {
         if (travels_visible) {
             // if the global range starts with a travel move, extend it to the travel start
@@ -1266,7 +1250,7 @@ void ViewerImpl::update_view_global_range()
             }
         }
 
-        m_view_range.set_global_range(std::distance(m_vertices.begin(), first_it), std::distance(m_vertices.begin(), last_it));
+        m_view_range.set_global(std::distance(m_vertices.begin(), first_it), std::distance(m_vertices.begin(), last_it));
     }
 }
 
@@ -1296,9 +1280,10 @@ void ViewerImpl::update_color_ranges()
             m_speed_range.update(v.feedrate);
     }
 
-    for (size_t i = 0; i < m_layers_times.size(); ++i) {
-        for (const float time : m_layers_times[static_cast<uint8_t>(m_settings.time_mode)]) {
-            m_layer_time_range[i].update(time);
+    const std::vector<float> times = m_layers.get_times(m_settings.time_mode);
+    for (size_t i = 0; i < m_layer_time_range.size(); ++i) {
+        for (float t : times) {
+            m_layer_time_range[i].update(t);
         }
     }
 }
@@ -1354,12 +1339,12 @@ Color ViewerImpl::select_color(const PathVertex& v) const
     case EViewType::LayerTimeLinear:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[0].get_color_at(m_layers_times[static_cast<size_t>(m_settings.time_mode)][v.layer_id]);
+        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[0].get_color_at(m_layers.get_time(m_settings.time_mode, v.layer_id));
     }
     case EViewType::LayerTimeLogarithmic:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[1].get_color_at(m_layers_times[static_cast<size_t>(m_settings.time_mode)][v.layer_id]);
+        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[1].get_color_at(m_layers.get_time(m_settings.time_mode, v.layer_id));
     }
     case EViewType::Tool:
     {

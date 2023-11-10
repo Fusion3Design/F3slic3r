@@ -16,44 +16,44 @@
 
 namespace libvgcode {
 
-const std::array<uint32_t, 2>& ViewRange::get_current_range() const
+const std::array<uint32_t, 2>& ViewRange::get_current() const
 {
 		return m_current.get();
 }
 
-void ViewRange::set_current_range(const Range& other)
+void ViewRange::set_current(const Range& other)
 {
-		set_current_range(other.get());
+		set_current(other.get());
 }
 
-void ViewRange::set_current_range(const std::array<uint32_t, 2>& range)
+void ViewRange::set_current(const std::array<uint32_t, 2>& range)
 {
-		set_current_range(range[0], range[1]);
+		set_current(range[0], range[1]);
 }
 
-void ViewRange::set_current_range(uint32_t min, uint32_t max)
+void ViewRange::set_current(uint32_t min, uint32_t max)
 {
 		m_current.set(min, max);
 		// force the current range to stay inside the modified global range
 		m_global.clamp(m_current);
 }
 
-const std::array<uint32_t, 2>& ViewRange::get_global_range() const
+const std::array<uint32_t, 2>& ViewRange::get_global() const
 {
 		return m_global.get();
 }
 
-void ViewRange::set_global_range(const Range& other)
+void ViewRange::set_global(const Range& other)
 {
-		set_global_range(other.get());
+		set_global(other.get());
 }
 
-void ViewRange::set_global_range(const std::array<uint32_t, 2>& range)
+void ViewRange::set_global(const std::array<uint32_t, 2>& range)
 {
-		set_global_range(range[0], range[1]);
+		set_global(range[0], range[1]);
 }
 
-void ViewRange::set_global_range(uint32_t min, uint32_t max)
+void ViewRange::set_global(uint32_t min, uint32_t max)
 {
 		// is the global range being extended ?
 		const bool new_max = max > m_global.get()[1];
