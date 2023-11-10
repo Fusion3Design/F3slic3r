@@ -742,6 +742,17 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
                 break;
             }
         }
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_NEW_GCODE_VIEWER
+        size_t last_block_id = first_block_id;
+        for (size_t i = last_block_id; i < cumulative_lines_counts.size(); ++i) {
+            if (*m_cache_range.max <= cumulative_lines_counts[i]) {
+                last_block_id = i;
+                break;
+            }
+        }
+#else
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         size_t last_block_id = 0;
         for (size_t i = 0; i < cumulative_lines_counts.size(); ++i) {
             if (*m_cache_range.max <= cumulative_lines_counts[i]) {
@@ -749,6 +760,9 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
                 break;
             }
         }
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         assert(last_block_id >= first_block_id);
 
         FilePtr file(boost::nowide::fopen(m_filename.c_str(), "rb"));
@@ -785,11 +799,23 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
                         }
 
                         const size_t ref_id = (i == 0) ? 0 : i - 1;
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_NEW_GCODE_VIEWER
                         const size_t first_line_id = (i == 0) ? *m_cache_range.min :
                             (*m_cache_range.min > cumulative_lines_counts[ref_id]) ? *m_cache_range.min - cumulative_lines_counts[ref_id] : 1;
                         const size_t last_line_id = (*m_cache_range.max <= cumulative_lines_counts[i]) ?
                             (i == 0) ? *m_cache_range.max : *m_cache_range.max - cumulative_lines_counts[ref_id] : m_lines_ends[i].size();
                         assert(last_line_id >= first_line_id);
+#else
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                        const size_t first_line_id = (i == 0) ? *m_cache_range.min :
+                            (*m_cache_range.min > cumulative_lines_counts[ref_id]) ? *m_cache_range.min - cumulative_lines_counts[ref_id] : 1;
+                        const size_t last_line_id = (*m_cache_range.max <= cumulative_lines_counts[i]) ?
+                            (i == 0) ? *m_cache_range.max : *m_cache_range.max - cumulative_lines_counts[ref_id] : m_lines_ends[i].size();
+                        assert(last_line_id >= first_line_id);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
                         for (size_t j = first_line_id; j <= last_line_id; ++j) {
                             const size_t begin = (j == 1) ? 0 : m_lines_ends[i][j - 2];
@@ -811,14 +837,19 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
                 }
             }
         }
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_NEW_GCODE_VIEWER
+        assert(m_lines_cache.size() == m_cache_range.size());
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     };
 
     static const ImVec4 LINE_NUMBER_COLOR = ImGuiWrapper::COL_ORANGE_LIGHT;
     static const ImVec4 SELECTION_RECT_COLOR = ImGuiWrapper::COL_ORANGE_DARK;
-    static const ImVec4 COMMAND_COLOR = { 0.8f, 0.8f, 0.0f, 1.0f };
+    static const ImVec4 COMMAND_COLOR    = { 0.8f, 0.8f, 0.0f, 1.0f };
     static const ImVec4 PARAMETERS_COLOR = { 1.0f, 1.0f, 1.0f, 1.0f };
-    static const ImVec4 COMMENT_COLOR = { 0.7f, 0.7f, 0.7f, 1.0f };
-    static const ImVec4 ELLIPSIS_COLOR = { 0.0f, 0.7f, 0.0f, 1.0f };
+    static const ImVec4 COMMENT_COLOR    = { 0.7f, 0.7f, 0.7f, 1.0f };
+    static const ImVec4 ELLIPSIS_COLOR   = { 0.0f, 0.7f, 0.0f, 1.0f };
 
     if (!m_visible || m_filename.empty() || m_lines_ends.empty() || curr_line_id == 0)
         return;
@@ -1178,7 +1209,7 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
 {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    m_new_viewer.set_top_layer_only_view(get_app_config()->get_bool("seq_top_layer_only"));
+    m_new_viewer.set_top_layer_only_view_range(get_app_config()->get_bool("seq_top_layer_only"));
 
     std::vector<ColorRGBA> tool_colors;
     if (m_new_viewer.get_view_type() == libvgcode::EViewType::Tool && !gcode_result.extruder_colors.empty())

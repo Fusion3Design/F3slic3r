@@ -23,7 +23,7 @@ struct Settings
 		bool update_colors{ true };
 		EViewType view_type{ EViewType::FeatureType };
 		ETimeMode time_mode{ ETimeMode::Normal };
-		bool top_layer_only_view{ false };
+		bool top_layer_only_view_range{ false };
 
 		std::map<EOptionType, bool> options_visibility{ {
 				{ EOptionType::Travels,         false },

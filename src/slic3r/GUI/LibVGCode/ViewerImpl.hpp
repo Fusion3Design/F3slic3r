@@ -82,7 +82,7 @@ public:
     EViewType get_view_type() const;
     ETimeMode get_time_mode() const;
     const std::array<uint32_t, 2>& get_layers_range() const;
-    bool is_top_layer_only_view() const;
+    bool is_top_layer_only_view_range() const;
     bool is_option_visible(EOptionType type) const;
     bool is_extrusion_role_visible(EGCodeExtrusionRole role) const;
 
@@ -93,7 +93,7 @@ public:
     void set_time_mode(ETimeMode mode);
     void set_layers_range(const std::array<uint32_t, 2>& range);
     void set_layers_range(uint32_t min, uint32_t max);
-    void set_top_layer_only_view(bool top_layer_only_view);
+    void set_top_layer_only_view_range(bool top_layer_only_view_range);
     void toggle_option_visibility(EOptionType type);
     void toggle_extrusion_role_visibility(EGCodeExtrusionRole role);
 

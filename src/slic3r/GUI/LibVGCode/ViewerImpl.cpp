@@ -752,11 +752,11 @@ void ViewerImpl::update_enabled_entities()
     // when top layer only visualization is enabled, we need to render
     // all the toolpaths in the other layers as grayed, so extend the range
     // to contain them
-    if (m_settings.top_layer_only_view)
+    if (m_settings.top_layer_only_view_range)
         range[0] = m_view_range.get_global_range()[0];
 
     // to show the options at the current tool marker position we need to extend the range by one extra step
-    if (m_vertices[range[1]].is_option())
+    if (m_vertices[range[1]].is_option() && range[1] < static_cast<uint32_t>(m_vertices.size()) - 1)
         ++range[1];
 
     for (uint32_t i = range[0]; i < range[1]; ++i) {
@@ -830,10 +830,11 @@ void ViewerImpl::update_colors()
 {
     update_color_ranges();
 
-    const uint32_t top_layer_id = m_settings.top_layer_only_view ? m_layers_range.get()[1] : 0;
+    const uint32_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers_range.get()[1] : 0;
+    const bool color_top_layer_only = m_view_range.get_global_range()[1] != m_view_range.get_current_range()[1];
     std::vector<float> colors(m_vertices.size());
     for (size_t i = 0; i < m_vertices.size(); i++) {
-        colors[i] = (m_vertices[i].layer_id < top_layer_id) ? encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
+        colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id) ? encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
     }
 
     // update gpu buffer for colors
@@ -892,9 +893,9 @@ const std::array<uint32_t, 2>& ViewerImpl::get_layers_range() const
     return m_layers_range.get();
 }
 
-bool ViewerImpl::is_top_layer_only_view() const
+bool ViewerImpl::is_top_layer_only_view_range() const
 {
-    return m_settings.top_layer_only_view;
+    return m_settings.top_layer_only_view_range;
 }
 
 bool ViewerImpl::is_option_visible(EOptionType type) const
@@ -946,9 +947,9 @@ void ViewerImpl::set_layers_range(uint32_t min, uint32_t max)
     m_settings.update_colors = true;
 }
 
-void ViewerImpl::set_top_layer_only_view(bool top_layer_only_view)
+void ViewerImpl::set_top_layer_only_view_range(bool top_layer_only_view_range)
 {
-    m_settings.top_layer_only_view = top_layer_only_view;
+    m_settings.top_layer_only_view_range = top_layer_only_view_range;
     m_settings.update_colors = true;
 }
 
@@ -1030,9 +1031,16 @@ void ViewerImpl::set_view_current_range(uint32_t min, uint32_t max)
     new_range.set(min_id, max_id);
 
     if (m_old_current_range != new_range) {
+        if (m_settings.update_view_global_range) {
+            // force update of global range, if required, to avoid clamping the current range with global old values
+            // when calling set_current_range()
+            update_view_global_range();
+            m_settings.update_view_global_range = false;
+        }
         m_view_range.set_current_range(new_range);
         m_old_current_range = new_range;
         m_settings.update_enabled_entities = true;
+        m_settings.update_colors = true;
     }
 }
 
@@ -1186,16 +1194,34 @@ void ViewerImpl::set_tool_marker_alpha(float alpha)
 }
 #endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 
+static bool is_visible(EMoveType type, const Settings& settings)
+{
+    try
+    {
+        return ((type == EMoveType::Travel      && !settings.options_visibility.at(EOptionType::Travels)) ||
+                (type == EMoveType::Wipe        && !settings.options_visibility.at(EOptionType::Wipes)) ||
+                (type == EMoveType::Retract     && !settings.options_visibility.at(EOptionType::Retractions)) ||
+                (type == EMoveType::Unretract   && !settings.options_visibility.at(EOptionType::Unretractions)) ||
+                (type == EMoveType::Seam        && !settings.options_visibility.at(EOptionType::Seams)) ||
+                (type == EMoveType::ToolChange  && !settings.options_visibility.at(EOptionType::ToolChanges)) ||
+                (type == EMoveType::ColorChange && !settings.options_visibility.at(EOptionType::ColorChanges)) ||
+                (type == EMoveType::PausePrint  && !settings.options_visibility.at(EOptionType::PausePrints)) ||
+                (type == EMoveType::CustomGCode && !settings.options_visibility.at(EOptionType::CustomGCodes))) ? false : true;
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
 void ViewerImpl::update_view_global_range()
 {
     const std::array<uint32_t, 2>& layers_range = m_layers_range.get();
     const bool travels_visible = m_settings.options_visibility.at(EOptionType::Travels);
 
     auto first_it = m_vertices.begin();
-    while (first_it != m_vertices.end() && (
-           first_it->layer_id < layers_range[0] ||
-           first_it->is_option() ||
-           (first_it->is_travel() && !travels_visible))) {
+    while (first_it != m_vertices.end() &&
+           (first_it->layer_id < layers_range[0] || !is_visible(first_it->type, m_settings))) {
         ++first_it;
     }
 
@@ -1213,18 +1239,29 @@ void ViewerImpl::update_view_global_range()
         while (last_it != m_vertices.end() && last_it->layer_id <= layers_range[1]) {
             ++last_it;
         }
+        if (last_it != first_it)
+            --last_it;
 
-        // remove trailing options, if any
+        // remove disabled trailing options, if any 
         auto rev_first_it = std::make_reverse_iterator(first_it);
+        if (rev_first_it != m_vertices.rbegin())
+            --rev_first_it;
         auto rev_last_it = std::make_reverse_iterator(last_it);
-        while (rev_last_it != rev_first_it && rev_last_it->is_option()) {
+        if (rev_last_it != m_vertices.rbegin())
+            --rev_last_it;
+
+        bool reduced = false;
+        while (rev_last_it != rev_first_it && !is_visible(rev_last_it->type, m_settings)) {
             ++rev_last_it;
+            reduced = true;
         }
 
-        last_it = rev_last_it.base();
+        if (reduced && rev_last_it != m_vertices.rend())
+            last_it = rev_last_it.base() - 1;
+
         if (travels_visible) {
             // if the global range ends with a travel move, extend it to the travel end
-            while (last_it != m_vertices.end() && last_it->is_travel()) {
+            while (last_it != m_vertices.end() && last_it + 1 != m_vertices.end() && last_it->is_travel()) {
                 ++last_it;
             }
         }

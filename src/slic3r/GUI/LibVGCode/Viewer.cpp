@@ -73,14 +73,14 @@ void Viewer::set_layers_range(uint32_t min, uint32_t max)
     m_impl.set_layers_range(min, max);
 }
 
-bool Viewer::is_top_layer_only_view() const
+bool Viewer::is_top_layer_only_view_range() const
 {
-    return m_impl.is_top_layer_only_view();
+    return m_impl.is_top_layer_only_view_range();
 }
 
-void Viewer::set_top_layer_only_view(bool top_layer_only_view)
+void Viewer::set_top_layer_only_view_range(bool top_layer_only_view_range)
 {
-    m_impl.set_top_layer_only_view(top_layer_only_view);
+    m_impl.set_top_layer_only_view_range(top_layer_only_view_range);
 }
 
 bool Viewer::is_option_visible(EOptionType type) const

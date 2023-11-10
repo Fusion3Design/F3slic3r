@@ -67,8 +67,8 @@ void ViewRange::set_global_range(uint32_t min, uint32_t max)
 
 void ViewRange::reset()
 {
-		m_global.reset();
 		m_current.reset();
+		m_global.reset();
 }
 
 } // namespace libvgcode

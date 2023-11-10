@@ -49,8 +49,8 @@ public:
     void set_layers_range(const std::array<uint32_t, 2>& range);
     void set_layers_range(uint32_t min, uint32_t max);
 
-    bool is_top_layer_only_view() const;
-    void set_top_layer_only_view(bool top_layer_only_view);
+    bool is_top_layer_only_view_range() const;
+    void set_top_layer_only_view_range(bool top_layer_only_view_range);
 
     bool is_option_visible(EOptionType type) const;
     void toggle_option_visibility(EOptionType type);
