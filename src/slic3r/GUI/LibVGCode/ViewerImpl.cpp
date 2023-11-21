@@ -30,63 +30,6 @@
 
 namespace libvgcode {
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-// mapping from Slic3r::EMoveType to EMoveType
-static EMoveType convert(Slic3r::EMoveType type)
-{
-    switch (type)
-    {
-    case Slic3r::EMoveType::Noop:         { return EMoveType::Noop; }
-    case Slic3r::EMoveType::Retract:      { return EMoveType::Retract; }
-    case Slic3r::EMoveType::Unretract:    { return EMoveType::Unretract; }
-    case Slic3r::EMoveType::Seam:         { return EMoveType::Seam; }
-    case Slic3r::EMoveType::Tool_change:  { return EMoveType::ToolChange; }
-    case Slic3r::EMoveType::Color_change: { return EMoveType::ColorChange; }
-    case Slic3r::EMoveType::Pause_Print:  { return EMoveType::PausePrint; }
-    case Slic3r::EMoveType::Custom_GCode: { return EMoveType::CustomGCode; }
-    case Slic3r::EMoveType::Travel:       { return EMoveType::Travel; }
-    case Slic3r::EMoveType::Wipe:         { return EMoveType::Wipe; }
-    case Slic3r::EMoveType::Extrude:      { return EMoveType::Extrude; }
-    case Slic3r::EMoveType::Count:        { return EMoveType::COUNT; }
-    default:                              { return EMoveType::COUNT; }
-    }
-}
-
-// mapping from Slic3r::GCodeExtrusionRole to EGCodeExtrusionRole
-static EGCodeExtrusionRole convert(Slic3r::GCodeExtrusionRole role)
-{
-    switch (role)
-    {
-    case Slic3r::GCodeExtrusionRole::None:                     { return EGCodeExtrusionRole::None; }
-    case Slic3r::GCodeExtrusionRole::Perimeter:                { return EGCodeExtrusionRole::Perimeter; }
-    case Slic3r::GCodeExtrusionRole::ExternalPerimeter:        { return EGCodeExtrusionRole::ExternalPerimeter; }
-    case Slic3r::GCodeExtrusionRole::OverhangPerimeter:        { return EGCodeExtrusionRole::OverhangPerimeter; }
-    case Slic3r::GCodeExtrusionRole::InternalInfill:           { return EGCodeExtrusionRole::InternalInfill; }
-    case Slic3r::GCodeExtrusionRole::SolidInfill:              { return EGCodeExtrusionRole::SolidInfill; }
-    case Slic3r::GCodeExtrusionRole::TopSolidInfill:           { return EGCodeExtrusionRole::TopSolidInfill; }
-    case Slic3r::GCodeExtrusionRole::Ironing:                  { return EGCodeExtrusionRole::Ironing; }
-    case Slic3r::GCodeExtrusionRole::BridgeInfill:             { return EGCodeExtrusionRole::BridgeInfill; }
-    case Slic3r::GCodeExtrusionRole::GapFill:                  { return EGCodeExtrusionRole::GapFill; }
-    case Slic3r::GCodeExtrusionRole::Skirt:                    { return EGCodeExtrusionRole::Skirt; }
-    case Slic3r::GCodeExtrusionRole::SupportMaterial:          { return EGCodeExtrusionRole::SupportMaterial; }
-    case Slic3r::GCodeExtrusionRole::SupportMaterialInterface: { return EGCodeExtrusionRole::SupportMaterialInterface; }
-    case Slic3r::GCodeExtrusionRole::WipeTower:                { return EGCodeExtrusionRole::WipeTower; }
-    case Slic3r::GCodeExtrusionRole::Custom:                   { return EGCodeExtrusionRole::Custom; }
-    case Slic3r::GCodeExtrusionRole::Count:                    { return EGCodeExtrusionRole::COUNT; }
-    default:                                                   { return EGCodeExtrusionRole::COUNT; }
-    }
-}
-
-static Vec3f toVec3f(const Eigen::Matrix<float, 3, 1, Eigen::DontAlign>& v)
-{
-    return { v.x(), v.y(), v.z() };
-}
-//################################################################################################################################
-
-static const float TRAVEL_RADIUS = 0.05f;
-static const float WIPE_RADIUS = 0.05f;
-
 template<class T, class O = T>
 using IntegerOnly = std::enable_if_t<std::is_integral<T>::value, O>;
 
@@ -410,21 +353,6 @@ static void delete_buffers(unsigned int& id)
     }
 }
 
-// mapping from EMoveType to EOptionType
-static EOptionType type_to_option(EMoveType type) {
-    switch (type)
-    {
-    case EMoveType::Retract:     { return EOptionType::Retractions; }
-    case EMoveType::Unretract:   { return EOptionType::Unretractions; }
-    case EMoveType::Seam:        { return EOptionType::Seams; }
-    case EMoveType::ToolChange:  { return EOptionType::ToolChanges; }
-    case EMoveType::ColorChange: { return EOptionType::ColorChanges; }
-    case EMoveType::PausePrint:  { return EOptionType::PausePrints; }
-    case EMoveType::CustomGCode: { return EOptionType::CustomGCodes; }
-    default:                     { return EOptionType::COUNT; }
-    }
-}
-
 ViewerImpl::~ViewerImpl()
 {
     reset();
@@ -523,7 +451,6 @@ void ViewerImpl::reset()
     m_extrusion_roles.reset();
     m_travels_time = { 0.0f, 0.0f };
     m_vertices.clear();
-    m_vertices_map.clear();
     m_valid_lines_bitset.clear();
 #if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
     m_cog_marker.reset();
@@ -545,7 +472,7 @@ void ViewerImpl::reset()
     delete_buffers(m_positions_buf_id);
 }
 
-void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const GCodeInputData& gcode_data)
+void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, GCodeInputData&& gcode_data)
 {
     if (m_settings.time_mode != ETimeMode::Normal) {
         const Slic3r::PrintEstimatedStatistics& stats = gcode_result.print_statistics;
@@ -560,89 +487,35 @@ void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, const GC
             m_settings.time_mode = ETimeMode::Normal;
     }
 
-    m_vertices_map.reserve(2 * gcode_result.moves.size());
-    m_vertices.reserve(2 * gcode_result.moves.size());
-    uint32_t seams_count = 0;
-    for (size_t i = 1; i < gcode_result.moves.size(); ++i) {
-        const Slic3r::GCodeProcessorResult::MoveVertex& curr = gcode_result.moves[i];
-        const Slic3r::GCodeProcessorResult::MoveVertex& prev = gcode_result.moves[i - 1];
-        const EMoveType curr_type = convert(curr.type);
-        const EGCodeExtrusionRole curr_role = convert(curr.extrusion_role);
+    m_vertices = std::move(gcode_data.vertices);
 
-        if (curr_type == EMoveType::Seam)
-           ++seams_count;
-
-        EGCodeExtrusionRole extrusion_role;
-        if (curr_type == EMoveType::Travel) {
-            // for travel moves set the extrusion role
-            // which will be used later to select the proper color
-            if (curr.delta_extruder == 0.0f)
-                extrusion_role = static_cast<EGCodeExtrusionRole>(0); // Move
-            else if (curr.delta_extruder > 0.0f)
-                extrusion_role = static_cast<EGCodeExtrusionRole>(1); // Extrude
-            else
-                extrusion_role = static_cast<EGCodeExtrusionRole>(2); // Retract
-        }
-        else
-            extrusion_role = static_cast<EGCodeExtrusionRole>(curr.extrusion_role);
-
-        float width;
-        float height;
-        switch (curr_type)
-        {
-        case EMoveType::Travel: { width = TRAVEL_RADIUS; height = TRAVEL_RADIUS; break; }
-        case EMoveType::Wipe:   { width = WIPE_RADIUS;   height = WIPE_RADIUS;   break; }
-        default:                { width = curr.width;    height = curr.height;   break; }
-        }
-
-        if (type_to_option(curr_type) == EOptionType::COUNT) {
-            if (m_vertices.empty() || prev.type != curr.type || prev.extrusion_role != curr.extrusion_role) {
-                // to be able to properly detect the start/end of a path we add a 'phantom' vertex equal to the current one with
-                // the exception of the position
-                const PathVertex vertex = { toVec3f(prev.position), height, width, curr.feedrate, curr.fan_speed,
-                    curr.temperature, curr.volumetric_rate(), extrusion_role, curr_type,
-                    static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id),
-                    static_cast<uint32_t>(curr.layer_id) };
-                m_vertices_map.emplace_back(static_cast<uint32_t>(i) - seams_count);
-                m_vertices.emplace_back(vertex);
-                m_layers.update(vertex, { 0.0f, 0.0f }, static_cast<uint32_t>(m_vertices.size()));
-            }
-        }
-
-        const PathVertex vertex = { toVec3f(curr.position), height, width, curr.feedrate, curr.fan_speed, curr.temperature,
-            curr.volumetric_rate(), extrusion_role, curr_type, static_cast<uint8_t>(curr.extruder_id),
-            static_cast<uint8_t>(curr.cp_color_id), static_cast<uint32_t>(curr.layer_id) };
-        m_vertices_map.emplace_back(static_cast<uint32_t>(i) - seams_count);
-        m_vertices.emplace_back(vertex);
-        m_layers.update(vertex, curr.time, static_cast<uint32_t>(m_vertices.size()));
-
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-        // updates calculation for center of gravity
-        if (curr_type == EMoveType::Extrude &&
-            curr_role != EGCodeExtrusionRole::Skirt &&
-            curr_role != EGCodeExtrusionRole::SupportMaterial &&
-            curr_role != EGCodeExtrusionRole::SupportMaterialInterface &&
-            curr_role != EGCodeExtrusionRole::WipeTower &&
-            curr_role != EGCodeExtrusionRole::Custom) {
-            const Vec3f curr_pos = toVec3f(curr.position);
-            const Vec3f prev_pos = toVec3f(prev.position);
-            m_cog_marker.update(0.5f * (curr_pos + prev_pos), curr.mm3_per_mm * length(curr_pos - prev_pos));
-        }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-
-        if (curr_type == EMoveType::Travel) {
+    for (size_t i = 0; i < m_vertices.size(); ++i) {
+        const PathVertex& v = m_vertices[i];
+        m_layers.update(v, static_cast<uint32_t>(i));
+        if (v.type == EMoveType::Travel) {
             for (size_t i = 0; i < static_cast<size_t>(ETimeMode::COUNT); ++i) {
-                m_travels_time[i] += curr.time[i];
+                m_travels_time[i] += v.times[i];
             }
         }
         else
-            m_extrusion_roles.add(curr_role, curr.time);
+            m_extrusion_roles.add(v.role, v.times);
+
+        if (i > 0) {
+#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+            // updates calculation for center of gravity
+            if (v.type == EMoveType::Extrude &&
+                v.role != EGCodeExtrusionRole::Skirt &&
+                v.role != EGCodeExtrusionRole::SupportMaterial &&
+                v.role != EGCodeExtrusionRole::SupportMaterialInterface &&
+                v.role != EGCodeExtrusionRole::WipeTower &&
+                v.role != EGCodeExtrusionRole::Custom) {
+                m_cog_marker.update(0.5f * (v.position + gcode_data.vertices[i - 1].position), v.weight);
+            }
+#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+        }
     }
-    m_vertices_map.shrink_to_fit();
-    m_vertices.shrink_to_fit();
 
-    assert(m_vertices_map.size() == m_vertices.size());
-
+    // reset segments visibility bitset
     m_valid_lines_bitset = BitSet<>(m_vertices.size());
     m_valid_lines_bitset.setAll();
 
@@ -983,8 +856,8 @@ const std::array<uint32_t, 2>& ViewerImpl::get_view_global_range() const
 void ViewerImpl::set_view_current_range(uint32_t min, uint32_t max)
 {
     uint32_t min_id = 0;
-    for (size_t i = 0; i < m_vertices_map.size(); ++i) {
-        if (m_vertices_map[i] < min)
+    for (size_t i = 0; i < m_vertices.size(); ++i) {
+        if (m_vertices[i].move_id < min)
             min_id = static_cast<uint32_t>(i);
         else
             break;
@@ -993,8 +866,8 @@ void ViewerImpl::set_view_current_range(uint32_t min, uint32_t max)
 
     uint32_t max_id = min_id;
     if (max > min) {
-        for (size_t i = static_cast<size_t>(min_id); i < m_vertices_map.size(); ++i) {
-            if (m_vertices_map[i] < max)
+        for (size_t i = static_cast<size_t>(min_id); i < m_vertices.size(); ++i) {
+            if (m_vertices[i].move_id < max)
                 max_id = static_cast<uint32_t>(i);
             else
                 break;
@@ -1002,10 +875,10 @@ void ViewerImpl::set_view_current_range(uint32_t min, uint32_t max)
         ++max_id;
     }
 
-    // adjust the max id to take in account the 'phantom' vertices added in load()
-    if (max_id < static_cast<uint32_t>(m_vertices_map.size() - 1) &&
+    // adjust the max id to take in account the 'phantom' vertices
+    if (max_id < static_cast<uint32_t>(m_vertices.size() - 1) &&
         m_vertices[max_id + 1].type == m_vertices[max_id].type &&
-        m_vertices_map[max_id + 1] == m_vertices_map[max_id])
+        m_vertices[max_id + 1].move_id == m_vertices[max_id].move_id)
         ++max_id;
 
     // we show the seams when the endpoint of a closed path is reached, so we need to increase the max id by one

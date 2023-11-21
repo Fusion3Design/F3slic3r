@@ -54,16 +54,25 @@ namespace GUI {
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
+// mapping from Slic3r::Vec3f to libvgcode::Vec3f
+static libvgcode::Vec3f convert(const Vec3f& v)
+{
+    return { v.x(), v.y(), v.z() };
+}
+
+// mapping from libvgcode::Color to Slic3r::ColorRGBA
 static ColorRGBA convert(const libvgcode::Color& c)
 {
     return { c[0], c[1], c[2], 1.0f };
 }
 
+// mapping from Slic3r::ColorRGBA to libvgcode::Color
 static libvgcode::Color convert(const ColorRGBA& c)
 {
     return { c.r(), c.g(), c.b() };
 }
 
+// mapping from libvgcode::EGCodeExtrusionRole to Slic3r::GCodeExtrusionRole
 static GCodeExtrusionRole convert(libvgcode::EGCodeExtrusionRole role)
 {
     switch (role)
@@ -89,6 +98,7 @@ static GCodeExtrusionRole convert(libvgcode::EGCodeExtrusionRole role)
     return GCodeExtrusionRole::None;
 }
 
+// mapping from Slic3r::GCodeExtrusionRole to libvgcode::EGCodeExtrusionRole
 static libvgcode::EGCodeExtrusionRole convert(GCodeExtrusionRole role)
 {
     switch (role)
@@ -112,6 +122,109 @@ static libvgcode::EGCodeExtrusionRole convert(GCodeExtrusionRole role)
     }
     assert(false);
     return libvgcode::EGCodeExtrusionRole::None;
+}
+
+// mapping from Slic3r::EMoveType to libvgcode::EMoveType
+static libvgcode::EMoveType convert(EMoveType type)
+{
+    switch (type)
+    {
+    case EMoveType::Noop:         { return libvgcode::EMoveType::Noop; }
+    case EMoveType::Retract:      { return libvgcode::EMoveType::Retract; }
+    case EMoveType::Unretract:    { return libvgcode::EMoveType::Unretract; }
+    case EMoveType::Seam:         { return libvgcode::EMoveType::Seam; }
+    case EMoveType::Tool_change:  { return libvgcode::EMoveType::ToolChange; }
+    case EMoveType::Color_change: { return libvgcode::EMoveType::ColorChange; }
+    case EMoveType::Pause_Print:  { return libvgcode::EMoveType::PausePrint; }
+    case EMoveType::Custom_GCode: { return libvgcode::EMoveType::CustomGCode; }
+    case EMoveType::Travel:       { return libvgcode::EMoveType::Travel; }
+    case EMoveType::Wipe:         { return libvgcode::EMoveType::Wipe; }
+    case EMoveType::Extrude:      { return libvgcode::EMoveType::Extrude; }
+    case EMoveType::Count:        { return libvgcode::EMoveType::COUNT; }
+    default:                      { return libvgcode::EMoveType::COUNT; }
+    }
+}
+
+// mapping from Slic3r::GCodeProcessorResult to libvgcode::GCodeInputData
+static libvgcode::GCodeInputData convert(const GCodeProcessorResult& result)
+{
+    const std::vector<GCodeProcessorResult::MoveVertex>& moves = result.moves;
+    libvgcode::GCodeInputData ret;
+    ret.vertices.reserve(2 * moves.size());
+    // Seam moves have no correspondence in the gcode,
+    // there are no gcode lines associated to them,
+    // but are added at the end of a loop, by the gcode processor, to be able to visualize them.
+    // To properly associate the other moves to the gcode lines, we need to keep track
+    // of them and modify the vertices' move_id accordingly.
+    uint32_t seams_count = 0;
+    for (size_t i = 1; i < moves.size(); ++i) {
+        const GCodeProcessorResult::MoveVertex& curr = moves[i];
+        const GCodeProcessorResult::MoveVertex& prev = moves[i - 1];
+        const libvgcode::EMoveType curr_type = convert(curr.type);
+        const libvgcode::EGCodeExtrusionRole curr_role = convert(curr.extrusion_role);
+
+        if (curr_type == libvgcode::EMoveType::Seam)
+            ++seams_count;
+
+        libvgcode::EGCodeExtrusionRole extrusion_role;
+        if (curr_type == libvgcode::EMoveType::Travel) {
+            // for travel moves set the extrusion role
+            // which will be used later to select the proper color
+            if (curr.delta_extruder == 0.0f)
+                extrusion_role = static_cast<libvgcode::EGCodeExtrusionRole>(0); // Move
+            else if (curr.delta_extruder > 0.0f)
+                extrusion_role = static_cast<libvgcode::EGCodeExtrusionRole>(1); // Extrude
+            else
+                extrusion_role = static_cast<libvgcode::EGCodeExtrusionRole>(2); // Retract
+        }
+        else
+            extrusion_role = convert(curr.extrusion_role);
+
+        float width;
+        float height;
+        switch (curr_type)
+        {
+        case libvgcode::EMoveType::Travel: { width = libvgcode::TRAVEL_RADIUS; height = libvgcode::TRAVEL_RADIUS; break; }
+        case libvgcode::EMoveType::Wipe:   { width = libvgcode::WIPE_RADIUS;   height = libvgcode::WIPE_RADIUS;   break; }
+        default:                           { width = curr.width;               height = curr.height;              break; }
+        }
+
+        if (type_to_option(curr_type) == libvgcode::EOptionType::COUNT) {
+            if (ret.vertices.empty() || prev.type != curr.type || prev.extrusion_role != curr.extrusion_role) {
+                // to allow libvgcode to properly detect the start/end of a path we need to add a 'phantom' vertex
+                // equal to the current one with the exception of the position, which should match the previous move position,
+                // and the times, which are set to zero
+#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+                const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, curr.fan_speed,
+                    curr.temperature, curr.volumetric_rate(), extrusion_role, curr_type,
+                    static_cast<uint32_t>(i) - seams_count, static_cast<uint32_t>(curr.layer_id),
+                    static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
+#else
+                const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, curr.fan_speed,
+                    curr.temperature, curr.volumetric_rate(), 0.0f,
+                    extrusion_role, curr_type,
+                    static_cast<uint32_t>(i) - seams_count, static_cast<uint32_t>(curr.layer_id),
+                    static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
+#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+                ret.vertices.emplace_back(vertex);
+            }
+        }
+
+#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+        const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.fan_speed, curr.temperature,
+            curr.volumetric_rate(), extrusion_role, curr_type, static_cast<uint32_t>(i) - seams_count, static_cast<uint32_t>(curr.layer_id),
+            static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };
+#else
+        const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.fan_speed, curr.temperature,
+            curr.volumetric_rate(), curr.mm3_per_mm * (curr.position - prev.position).norm(), extrusion_role, curr_type,
+            static_cast<uint32_t>(i) - seams_count, static_cast<uint32_t>(curr.layer_id),
+            static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };
+#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+        ret.vertices.emplace_back(vertex);
+    }
+    ret.vertices.shrink_to_fit();
+
+    return ret;
 }
 
 static libvgcode::Color lerp(const libvgcode::Color& c1, const libvgcode::Color& c2, float t)
@@ -1241,8 +1354,11 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
     // release gpu memory, if used
     reset();
 
-    libvgcode::GCodeInputData data;
-    m_new_viewer.load(gcode_result, data);
+    // convert data from PrusaSlicer format to libvgcode format
+    libvgcode::GCodeInputData data = convert(gcode_result);
+    
+    // send data to the viewer
+    m_new_viewer.load(gcode_result, std::move(data));
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     // avoid processing if called with the same gcode_result

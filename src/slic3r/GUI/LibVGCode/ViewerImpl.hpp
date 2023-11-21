@@ -60,7 +60,7 @@ public:
     // Setup all the variables used for visualization and coloring of the toolpaths
     // from the gcode moves contained in the given gcode_result.
     //
-    void load(const Slic3r::GCodeProcessorResult& gcode_result, const GCodeInputData& gcode_data);
+    void load(const Slic3r::GCodeProcessorResult& gcode_result, GCodeInputData&& gcode_data);
 
     //
     // Update the visibility property of toolpaths
@@ -185,7 +185,6 @@ private:
     // cpu buffer to store vertices
     //
     std::vector<PathVertex> m_vertices;
-    std::vector<uint32_t> m_vertices_map;
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG
     std::pair<uint32_t, uint32_t> m_enabled_segments_range{ 0, 0 };
     std::pair<uint32_t, uint32_t> m_enabled_options_range{ 0, 0 };

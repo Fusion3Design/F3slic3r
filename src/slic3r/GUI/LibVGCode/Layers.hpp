@@ -20,7 +20,7 @@ struct PathVertex;
 class Layers
 {
 public:
-		void update(const PathVertex& vertex, const std::array<float, static_cast<size_t>(ETimeMode::COUNT)>& times, uint32_t vertex_id);
+		void update(const PathVertex& vertex, uint32_t vertex_id);
 		void reset();
 
 		bool empty() const;

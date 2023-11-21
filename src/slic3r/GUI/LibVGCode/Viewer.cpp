@@ -28,9 +28,9 @@ void Viewer::reset()
     m_impl.reset();
 }
 
-void Viewer::load(const Slic3r::GCodeProcessorResult& gcode_result, const GCodeInputData& gcode_data)
+void Viewer::load(const Slic3r::GCodeProcessorResult& gcode_result, GCodeInputData&& gcode_data)
 {
-    m_impl.load(gcode_result, gcode_data);
+    m_impl.load(gcode_result, std::move(gcode_data));
 }
 
 void Viewer::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)

@@ -18,6 +18,9 @@ namespace libvgcode {
 
 static constexpr float PI = 3.141592f;
 
+static constexpr float TRAVEL_RADIUS = 0.05f;
+static constexpr float WIPE_RADIUS   = 0.05f;
+
 using Vec3f = std::array<float, 3>;
 //
 // 4 by 4 square matrix with column-major order:
@@ -183,6 +186,11 @@ static const std::map<EMoveType, Color> Options_Colors{ {
     { EMoveType::PausePrint,  { 0.322f, 0.942f, 0.512f } },
     { EMoveType::CustomGCode, { 0.886f, 0.825f, 0.262f } }
 } };
+
+//
+// Mapping from EMoveType to EOptionType
+//
+extern EOptionType type_to_option(EMoveType type);
 
 } // namespace libvgcode
 

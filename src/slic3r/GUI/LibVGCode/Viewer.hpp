@@ -36,7 +36,7 @@ public:
 
     void init();
     void reset();
-    void load(const Slic3r::GCodeProcessorResult& gcode_result, const GCodeInputData& gcode_data);
+    void load(const Slic3r::GCodeProcessorResult& gcode_result, GCodeInputData&& gcode_data);
     void render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
 
     EViewType get_view_type() const;

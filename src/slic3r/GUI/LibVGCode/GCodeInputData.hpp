@@ -10,13 +10,15 @@
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-//#include "Types.hpp"
+#include "PathVertex.hpp"
+
+#include <vector>
 
 namespace libvgcode {
 
 struct GCodeInputData
 {
-//    std::vector<Color> tool_colors;
+    std::vector<PathVertex> vertices;
 };
 
 } // namespace libvgcode
