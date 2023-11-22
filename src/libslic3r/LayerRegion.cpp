@@ -435,17 +435,13 @@ Surfaces expand_bridges_detect_orientations(
     return out;
 }
 
-// Extract bridging surfaces from "surfaces", expand them into "shells" using expansion_params.
-// Trim "shells" by the expanded bridges.
 Surfaces expand_merge_surfaces(
-    Surfaces                                   &surfaces,
-    SurfaceType                                 surface_type,
-    ExPolygons                                  &shells,
-    const Algorithm::RegionExpansionParameters  &expansion_params_into_solid_infill,
-    ExPolygons                                  &sparse,
-    const Algorithm::RegionExpansionParameters  &expansion_params_into_sparse_infill,
-    const float                                 closing_radius,
-    const double                                bridge_angle = -1.)
+    Surfaces &surfaces,
+    SurfaceType surface_type,
+    std::vector<ExpansionZone>& expansion_zones,
+    const float closing_radius,
+    const double bridge_angle
+)
 {
     using namespace Slic3r::Algorithm;
 
@@ -454,17 +450,17 @@ Surfaces expand_merge_surfaces(
     if (src.empty())
         return {};
 
-    std::vector<RegionExpansion> expansions = propagate_waves(src, shells, expansion_params_into_solid_infill);
-    bool                         expanded_into_shells = !expansions.empty();
-    bool                         expanded_into_sparse = false;
-    {
-        std::vector<RegionExpansion> expansions2 = propagate_waves(src, sparse, expansion_params_into_sparse_infill);
-        if (! expansions2.empty()) {
-            expanded_into_sparse = true;
-            for (RegionExpansion &expansion : expansions2)
-                expansion.boundary_id += uint32_t(shells.size());
-            append(expansions, std::move(expansions2));
-        }
+    unsigned processed_expolygons_count = 0;
+    std::vector<RegionExpansion> expansions;
+    for (ExpansionZone& expansion_zone : expansion_zones) {
+        std::vector<RegionExpansion> zone_expansions = propagate_waves(src, expansion_zone.expolygons, expansion_zone.parameters);
+        expansion_zone.expanded_into = !zone_expansions.empty();
+
+        for (RegionExpansion &expansion : zone_expansions)
+            expansion.boundary_id += processed_expolygons_count;
+
+        processed_expolygons_count += expansion_zone.expolygons.size();
+        append(expansions, std::move(zone_expansions));
     }
 
     std::vector<ExPolygon> expanded = merge_expansions_into_expolygons(std::move(src), std::move(expansions));
@@ -472,11 +468,10 @@ Surfaces expand_merge_surfaces(
     // without the following closing operation, those regions will stay unfilled and cause small holes in the expanded surface.
     // look for narrow_ensure_vertical_wall_thickness_region_radius filter.
     expanded = closing_ex(expanded, closing_radius);
-    // Trim the shells by the expanded expolygons.
-    if (expanded_into_shells)
-        shells = diff_ex(shells, expanded);
-    if (expanded_into_sparse)
-        sparse = diff_ex(sparse, expanded);
+    // Trim the zones by the expanded expolygons.
+    for (ExpansionZone& expansion_zone : expansion_zones)
+        if (expansion_zone.expanded_into)
+            expansion_zone.expolygons = diff_ex(expansion_zone.expolygons, expanded);
 
     Surface templ{ surface_type, {} };
     templ.bridge_angle = bridge_angle;
@@ -538,7 +533,7 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
         BOOST_LOG_TRIVIAL(trace) << "Processing external surface, detecting bridges. layer" << this->layer()->print_z;
         const double custom_angle = this->region().config().bridge_angle.value;
         bridges.surfaces = custom_angle > 0 ?
-            expand_merge_surfaces(m_fill_surfaces.surfaces, stBottomBridge, expansion_zones[0].expolygons, expansion_params_into_solid_infill, expansion_zones[1].expolygons, expansion_params_into_sparse_infill, closing_radius, Geometry::deg2rad(custom_angle)) :
+            expand_merge_surfaces(m_fill_surfaces.surfaces, stBottomBridge, expansion_zones, closing_radius, Geometry::deg2rad(custom_angle)) :
             expand_bridges_detect_orientations(m_fill_surfaces.surfaces, expansion_zones, closing_radius);
         BOOST_LOG_TRIVIAL(trace) << "Processing external surface, detecting bridges - done";
 #if 0
@@ -549,16 +544,18 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
 #endif
     }
 
-    Surfaces    bottoms = expand_merge_surfaces(m_fill_surfaces.surfaces, stBottom, expansion_zones[0].expolygons,
-        RegionExpansionParameters::build(expansion_bottom, expansion_step, max_nr_expansion_steps), 
-        expansion_zones[1].expolygons, expansion_params_into_sparse_infill, closing_radius);
-    Surfaces    tops    = expand_merge_surfaces(m_fill_surfaces.surfaces, stTop, expansion_zones[0].expolygons,
-        RegionExpansionParameters::build(expansion_top, expansion_step, max_nr_expansion_steps), 
-        expansion_zones[1].expolygons, expansion_params_into_sparse_infill, closing_radius);
+    expansion_zones.at(0).parameters = RegionExpansionParameters::build(expansion_bottom, expansion_step, max_nr_expansion_steps);
+    Surfaces bottoms = expand_merge_surfaces(m_fill_surfaces.surfaces, stBottom, expansion_zones, closing_radius);
+
+    expansion_zones.at(0).parameters = RegionExpansionParameters::build(expansion_top, expansion_step, max_nr_expansion_steps);
+    Surfaces tops = expand_merge_surfaces(m_fill_surfaces.surfaces, stTop, expansion_zones, closing_radius);
 
 //    m_fill_surfaces.remove_types({ stBottomBridge, stBottom, stTop, stInternal, stInternalSolid });
     m_fill_surfaces.clear();
-    reserve_more(m_fill_surfaces.surfaces, expansion_zones[0].expolygons.size() + expansion_zones[1].expolygons.size() + bridges.size() + bottoms.size() + tops.size());
+    unsigned zones_expolygons_count = 0;
+    for (const ExpansionZone& zone : expansion_zones)
+        zones_expolygons_count += zone.expolygons.size();
+    reserve_more(m_fill_surfaces.surfaces, zones_expolygons_count + bridges.size() + bottoms.size() + tops.size());
     {
         Surface solid_templ(stInternalSolid, {});
         solid_templ.thickness = layer_thickness;

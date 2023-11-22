@@ -173,6 +173,18 @@ Surfaces expand_bridges_detect_orientations(
     const float closing_radius
 );
 
+/**
+* Extract bridging surfaces from "surfaces", expand them into "shells" using expansion_params.
+* Trim "shells" by the expanded bridges.
+*/
+Surfaces expand_merge_surfaces(
+    Surfaces &surfaces,
+    SurfaceType surface_type,
+    std::vector<ExpansionZone>& expansion_zones,
+    const float closing_radius,
+    const double bridge_angle = -1
+);
+
 }
 
 #endif // slic3r_LayerRegion_hpp_
