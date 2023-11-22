@@ -6,7 +6,7 @@
 
 using namespace Slic3r;
 
-constexpr bool export_svgs = false;
+constexpr bool export_svgs = true;
 
 ExPolygon rectangle(const Point& origin, const int width, const int height) {
     return {
@@ -44,7 +44,6 @@ TEST_CASE("test the bridge expansion with the bridge angle detection", "[LayerRe
     const float scaled_spacing{scaled(0.3)};
 
     static constexpr const float    expansion_step          = scaled<float>(0.1);
-    // Don't take more than max_nr_steps for small expansion_step.
     static constexpr const size_t   max_nr_expansion_steps  = 5;
     const float closing_radius = 0.55f * 0.65f * 1.05f * scaled_spacing;
     const int shells_expansion_depth = scaled(0.6);
@@ -60,12 +59,21 @@ TEST_CASE("test the bridge expansion with the bridge angle detection", "[LayerRe
         max_nr_expansion_steps
     );
 
+    std::vector<ExpansionZone> expansion_zones{
+        ExpansionZone{
+            std::move(shells),
+            expansion_params_into_solid_infill,
+        },
+        ExpansionZone{
+            std::move(sparse),
+            expansion_params_into_sparse_infill,
+        }
+    };
+
     Surfaces result{expand_bridges_detect_orientations(
         surfaces,
-        shells,
-        expansion_params_into_solid_infill,
-        sparse,
-        expansion_params_into_sparse_infill, closing_radius
+        expansion_zones,
+        closing_radius
     )};
 
     if constexpr (export_svgs) {
@@ -75,8 +83,8 @@ TEST_CASE("test the bridge expansion with the bridge angle detection", "[LayerRe
         });
 
         svg.draw(surfaces, "blue");
-        svg.draw(shells, "green");
-        svg.draw(sparse, "red");
+        svg.draw(expansion_zones[0].expolygons, "green");
+        svg.draw(expansion_zones[1].expolygons, "red");
         svg.draw_outline(result, "black", "", scale_(0.01));
     }
 
@@ -91,8 +99,8 @@ TEST_CASE("test the bridge expansion with the bridge angle detection", "[LayerRe
     CHECK(result.at(1).expolygon.contour.lines().at(7).length() == sparse_expansion_depth);
     CHECK(result.at(1).expolygon.contour.lines().at(11).length() == sparse_expansion_depth);
 
-    CHECK(intersection_ex({result.at(0).expolygon}, sparse).size() == 0);
-    CHECK(intersection_ex({result.at(0).expolygon}, shells).size() == 0);
-    CHECK(intersection_ex({result.at(1).expolygon}, sparse).size() == 0);
-    CHECK(intersection_ex({result.at(1).expolygon}, shells).size() == 0);
+    CHECK(intersection_ex({result.at(0).expolygon}, expansion_zones[0].expolygons).size() == 0);
+    CHECK(intersection_ex({result.at(0).expolygon}, expansion_zones[1].expolygons).size() == 0);
+    CHECK(intersection_ex({result.at(1).expolygon}, expansion_zones[0].expolygons).size() == 0);
+    CHECK(intersection_ex({result.at(1).expolygon}, expansion_zones[1].expolygons).size() == 0);
 }
