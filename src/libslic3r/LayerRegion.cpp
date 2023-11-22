@@ -520,12 +520,14 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
     double     layer_thickness;
     ExPolygons shells = union_ex(fill_surfaces_extract_expolygons(m_fill_surfaces.surfaces, { stInternalSolid }, layer_thickness));
     ExPolygons sparse = union_ex(fill_surfaces_extract_expolygons(m_fill_surfaces.surfaces, { stInternal }, layer_thickness));
+    ExPolygons top_expolygons = union_ex(fill_surfaces_extract_expolygons(m_fill_surfaces.surfaces, { stTop }, layer_thickness));
     const auto expansion_params_into_sparse_infill = RegionExpansionParameters::build(expansion_min, expansion_step, max_nr_expansion_steps);
     const auto expansion_params_into_solid_infill  = RegionExpansionParameters::build(expansion_bottom_bridge, expansion_step, max_nr_expansion_steps);
 
     std::vector<ExpansionZone> expansion_zones{
         ExpansionZone{std::move(shells), expansion_params_into_solid_infill},
         ExpansionZone{std::move(sparse), expansion_params_into_sparse_infill},
+        ExpansionZone{std::move(top_expolygons), expansion_params_into_solid_infill},
     };
 
     SurfaceCollection bridges;
@@ -543,6 +545,15 @@ void LayerRegion::process_external_surfaces(const Layer *lower_layer, const Poly
         }
 #endif
     }
+
+    m_fill_surfaces.remove_types({ stTop });
+    {
+        Surface top_templ(stTop, {});
+        top_templ.thickness = layer_thickness;
+        m_fill_surfaces.append(std::move(expansion_zones.back().expolygons), top_templ);
+    }
+
+    expansion_zones.pop_back();
 
     expansion_zones.at(0).parameters = RegionExpansionParameters::build(expansion_bottom, expansion_step, max_nr_expansion_steps);
     Surfaces bottoms = expand_merge_surfaces(m_fill_surfaces.surfaces, stBottom, expansion_zones, closing_radius);
