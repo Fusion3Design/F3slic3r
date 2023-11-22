@@ -17,6 +17,9 @@ ExPolygon rectangle(const Point& origin, const int width, const int height) {
     };
 }
 
+TEST_CASE("test the surface expansion", "[LayerRegion]") {
+}
+
 TEST_CASE("test the bridge expansion with the bridge angle detection", "[LayerRegion]") {
     using namespace Slic3r::Algorithm;
     Surfaces surfaces{
