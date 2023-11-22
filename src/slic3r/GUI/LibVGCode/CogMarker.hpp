@@ -8,7 +8,7 @@
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #if ENABLE_NEW_GCODE_VIEWER
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 //################################################################################################################################
 
 #include "Types.hpp"
@@ -34,7 +34,7 @@ public:
     //
     // Update values used to calculate the center of gravity
     //
-    void update(const Vec3f& position, float mass);
+    void update(const Vec3& position, float mass);
 
     //
     // Reset values used to calculate the center of gravity
@@ -44,14 +44,14 @@ public:
     //
     // Return the calculated center of gravity
     //
-    Vec3f get_position() const;
+    Vec3 get_position() const;
 
 private:
     //
     // Values used to calculate the center of gravity
     //
     float m_total_mass{ 0.0f };
-    Vec3f m_total_position{ 0.0f, 0.0f, 0.0f };
+    Vec3 m_total_position{ 0.0f, 0.0f, 0.0f };
 
     uint16_t m_indices_count{ 0 };
     unsigned int m_vao_id{ 0 };
@@ -63,7 +63,7 @@ private:
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #endif // ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 

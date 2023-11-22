@@ -16,16 +16,16 @@
 
 namespace libvgcode {
 
-extern void add_vertex(const Vec3f& position, const Vec3f& normal, std::vector<float>& vertices);
+extern void add_vertex(const Vec3& position, const Vec3& normal, std::vector<float>& vertices);
 extern void add_triangle(uint16_t v1, uint16_t v2, uint16_t v3, std::vector<uint16_t>& indices);
-extern Vec3f normalize(const Vec3f& v);
-extern float dot(const Vec3f& v1, const Vec3f& v2);
-extern float length(const Vec3f& v);
-extern bool operator == (const Vec3f& v1, const Vec3f& v2);
-extern bool operator != (const Vec3f& v1, const Vec3f& v2);
-extern Vec3f operator + (const Vec3f& v1, const Vec3f& v2);
-extern Vec3f operator - (const Vec3f& v1, const Vec3f& v2);
-extern Vec3f operator * (float f, const Vec3f& v);
+extern Vec3 normalize(const Vec3& v);
+extern float dot(const Vec3& v1, const Vec3& v2);
+extern float length(const Vec3& v);
+extern bool operator == (const Vec3& v1, const Vec3& v2);
+extern bool operator != (const Vec3& v1, const Vec3& v2);
+extern Vec3 operator + (const Vec3& v1, const Vec3& v2);
+extern Vec3 operator - (const Vec3& v1, const Vec3& v2);
+extern Vec3 operator * (float f, const Vec3& v);
 
 } // namespace libvgcode
 

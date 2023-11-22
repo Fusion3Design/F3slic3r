@@ -8,7 +8,7 @@
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #if ENABLE_NEW_GCODE_VIEWER
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 //################################################################################################################################
 
 #include "Types.hpp"
@@ -31,8 +31,8 @@ public:
     bool is_enabled() const;
     void enable(bool value);
 
-    const Vec3f& get_position() const;
-    void set_position(const Vec3f& position);
+    const Vec3& get_position() const;
+    void set_position(const Vec3& position);
 
     float get_offset_z() const;
     void set_offset_z(float offset_z);
@@ -45,7 +45,7 @@ public:
 
 private:
     bool m_enabled{ false };
-    Vec3f m_position{ 0.0f, 0.0f, 0.0f };
+    Vec3 m_position{ 0.0f, 0.0f, 0.0f };
     float m_offset_z{ 0.5f };
     Color m_color{ 1.0f, 1.0f, 1.0f };
     float m_alpha{ 0.5f };
@@ -60,7 +60,7 @@ private:
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #endif // ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 

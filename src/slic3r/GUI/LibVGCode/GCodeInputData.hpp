@@ -24,7 +24,7 @@ struct GCodeInputData
     //
     // Total time for each time mode
     //
-    std::array<float, static_cast<size_t>(ETimeMode::COUNT)> times{ 0.0f, 0.0f };
+    std::array<float, Time_Modes_Count> times{ 0.0f, 0.0f };
 };
 
 } // namespace libvgcode

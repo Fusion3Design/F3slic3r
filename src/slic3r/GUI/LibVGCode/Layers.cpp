@@ -39,7 +39,7 @@ void Layers::update(const PathVertex& vertex, uint32_t vertex_id)
     else {
         Item& item = m_items.back();
         item.range.set(item.range.get()[0], vertex_id);
-        for (size_t i = 0; i < static_cast<size_t>(ETimeMode::COUNT); ++i) {
+        for (size_t i = 0; i < Time_Modes_Count; ++i) {
             item.times[i] += vertex.times[i];
         }
         item.contains_colorprint_options |= is_colorprint_option(vertex);

@@ -404,10 +404,10 @@ class GCodeViewer
         bool m_visible{ false };
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
         // whether or not to render the model with fixed screen size
         bool m_fixed_screen_size{ true };
-#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         // whether or not to render the model with fixed screen size
@@ -422,11 +422,11 @@ class GCodeViewer
     public:
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
         void render();
 #else
         void render(bool fixed_screen_size);
-#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         void render();
@@ -453,11 +453,11 @@ class GCodeViewer
     private:
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
         void init() {
 #else
         void init(bool fixed_screen_size) {
-#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         void init() {
@@ -469,11 +469,11 @@ class GCodeViewer
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
             const float radius = m_fixed_screen_size ? 10.0f : 1.0f;
 #else
             const float radius = fixed_screen_size ? 10.0f : 1.0f;
-#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             const float radius = m_fixed_screen_size ? 10.0f : 1.0f;
@@ -1006,11 +1006,11 @@ public:
     void render();
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     void render_cog() { m_cog.render(); }
 #else
     void render_cog() { m_cog.render(m_cog_marker_fixed_screen_size); }
-#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     void render_cog() { m_cog.render(); }
@@ -1110,10 +1110,10 @@ public:
 #if ENABLE_NEW_GCODE_VIEWER
     bool use_new_viewer() const { return m_use_new_viewer; }
     void toggle_use_new_viewer() { m_use_new_viewer = !m_use_new_viewer; }
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     float get_cog_marker_scale_factor() const { return m_new_viewer.get_cog_marker_scale_factor(); }
     void set_cog_marker_scale_factor(float factor) { return m_new_viewer.set_cog_marker_scale_factor(factor); }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -1128,9 +1128,7 @@ private:
 #endif // ENABLE_GCODE_VIEWER_STATISTICS
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    bool is_visible(libvgcode::EGCodeExtrusionRole role) const {
-        return m_new_viewer.is_extrusion_role_visible(role);
-    }
+    bool is_visible(libvgcode::EGCodeExtrusionRole role) const { return m_new_viewer.is_extrusion_role_visible(role); }
     bool is_visible(const Path& path) const;
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

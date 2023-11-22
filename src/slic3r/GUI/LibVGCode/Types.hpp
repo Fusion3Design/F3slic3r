@@ -18,27 +18,35 @@ namespace libvgcode {
 
 static constexpr float PI = 3.141592f;
 
-static constexpr float TRAVEL_RADIUS = 0.05f;
-static constexpr float WIPE_RADIUS   = 0.05f;
+static constexpr float Default_Travel_Radius = 0.05f;
+static constexpr float Default_Wipe_Radius   = 0.05f;
 
-using Vec3f = std::array<float, 3>;
 //
-// 4 by 4 square matrix with column-major order:
+// Vector in 3 dimensions
+// Used for positions, displacements and so on.
+//
+using Vec3 = std::array<float, 3>;
+
+//
+// 4x4 square matrix with elements in column-major order:
 // | a[0] a[4] a[8]  a[12] |
 // | a[1] a[5] a[9]  a[13] |
 // | a[2] a[6] a[10] a[14] |
 // | a[3] a[7] a[11] a[15] |
 //
-using Mat4x4f = std::array<float, 16>;
+using Mat4x4 = std::array<float, 16>;
+
 //
-// [0] = red
-// [1] = green
-// [2] = blue
-// values should belong to [0..1]
+// [0] -> red
+// [1] -> green
+// [2] -> blue
+// Values should belong to the range [0..1]
 //
 using Color = std::array<float, 3>;
 
-// Alias for GCodeViewer::EViewType defined into GCodeViewer.hpp
+//
+// View types
+//
 enum class EViewType : uint8_t
 {
     FeatureType,
@@ -55,7 +63,9 @@ enum class EViewType : uint8_t
     COUNT
 };
 
-// Alias for EMoveType defined into GCodeProcessor.hpp
+//
+// Move types
+//
 enum class EMoveType : uint8_t
 {
     Noop,
@@ -72,7 +82,9 @@ enum class EMoveType : uint8_t
     COUNT
 };
 
-// Alias for GCodeExtrusionRole defined into ExtrusionRole.hpp
+//
+// Extrusion roles
+//
 enum class EGCodeExtrusionRole : uint8_t
 {
 	  None,
@@ -93,7 +105,9 @@ enum class EGCodeExtrusionRole : uint8_t
     COUNT
 };
 
-// Alias for Preview::OptionType defined into GUI_Preview.hpp
+//
+// Option types
+//
 enum class EOptionType : uint8_t
 {
     Travels,
@@ -105,21 +119,25 @@ enum class EOptionType : uint8_t
     ColorChanges,
     PausePrints,
     CustomGCodes,
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     CenterOfGravity,
     Shells,
     ToolMarker,
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     COUNT
 };
 
-// Alias for PrintEstimatedStatistics::ETimeMode defined into GCodeProcessor.hpp
+//
+// Time modes
+//
 enum class ETimeMode : uint8_t
 {
     Normal,
     Stealth,
     COUNT
 };
+
+static constexpr size_t Time_Modes_Count = static_cast<size_t>(ETimeMode::COUNT);
 
 //
 // Predefined colors
@@ -129,6 +147,8 @@ static const Color Wipe_Color{ 1.0f, 1.0f, 0.0f };
 
 //
 // Palette used to render moves by ranges
+// EViewType: Height, Width, Speed, FanSpeed, Temperature, VolumetricFlowRate,
+//            LayerTimeLinear, LayerTimeLogarithmic
 //
 static const std::vector<Color> Ranges_Colors{ {
     { 0.043f, 0.173f, 0.478f }, // bluish
@@ -146,6 +166,7 @@ static const std::vector<Color> Ranges_Colors{ {
 
 //
 // Palette used to render extrusion moves by extrusion roles
+// EViewType: FeatureType
 //
 static const std::vector<Color> Extrusion_Roles_Colors{ {
     { 0.90f, 0.70f, 0.70f },   // None
@@ -167,6 +188,8 @@ static const std::vector<Color> Extrusion_Roles_Colors{ {
 
 //
 // Palette used to render travel moves
+// EViewType: FeatureType, Height, Width, FanSpeed, Temperature, VolumetricFlowRate,
+//            LayerTimeLinear, LayerTimeLogarithmic
 //
 static const std::vector<Color> Travels_Colors{ {
     { 0.219f, 0.282f, 0.609f }, // Move
@@ -175,7 +198,7 @@ static const std::vector<Color> Travels_Colors{ {
 } };
 
 //
-// Palette used to render option moves
+// Palette used to render options
 //
 static const std::map<EMoveType, Color> Options_Colors{ {
     { EMoveType::Retract,     { 0.803f, 0.135f, 0.839f } },
@@ -191,6 +214,13 @@ static const std::map<EMoveType, Color> Options_Colors{ {
 // Mapping from EMoveType to EOptionType
 //
 extern EOptionType type_to_option(EMoveType type);
+
+//
+// Returns the linear interpolation between the two given colors
+// at the given t.
+// t is clamped in the range [0..1]
+//
+extern Color lerp(const Color& c1, const Color& c2, float t);
 
 } // namespace libvgcode
 

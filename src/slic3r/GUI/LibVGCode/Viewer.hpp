@@ -29,7 +29,7 @@ public:
     void init();
     void reset();
     void load(GCodeInputData&& gcode_data);
-    void render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
+    void render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
 
     EViewType get_view_type() const;
     void set_view_type(EViewType type);
@@ -107,7 +107,7 @@ public:
     const std::vector<Color>& get_tool_colors() const;
     void set_tool_colors(const std::vector<Color>& colors);
 
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     //
     // Returns the position of the center of gravity of the toolpaths.
     // It does not take in account extrusions of type:
@@ -117,7 +117,7 @@ public:
     // WipeTower
     // Custom
     //
-    Vec3f get_cog_position() const;
+    Vec3 get_cog_position() const;
 
     float get_cog_marker_scale_factor() const;
     void set_cog_marker_scale_factor(float factor);
@@ -125,8 +125,8 @@ public:
     bool is_tool_marker_enabled() const;
     void enable_tool_marker(bool value);
 
-    const Vec3f& get_tool_marker_position() const;
-    void set_tool_marker_position(const Vec3f& position);
+    const Vec3& get_tool_marker_position() const;
+    void set_tool_marker_position(const Vec3& position);
 
     float get_tool_marker_scale_factor() const;
     void set_tool_marker_scale_factor(float factor);
@@ -136,7 +136,7 @@ public:
 
     float get_tool_marker_alpha() const;
     void set_tool_marker_alpha(float alpha);
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 private:
     ViewerImpl m_impl;

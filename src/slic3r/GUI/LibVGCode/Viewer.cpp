@@ -31,7 +31,7 @@ void Viewer::load(GCodeInputData&& gcode_data)
     m_impl.load(std::move(gcode_data));
 }
 
-void Viewer::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
+void Viewer::render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
 {
     m_impl.render(view_matrix, projection_matrix);
 }
@@ -186,8 +186,8 @@ void Viewer::set_tool_colors(const std::vector<Color>& colors)
     m_impl.set_tool_colors(colors);
 }
 
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-Vec3f Viewer::get_cog_position() const
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+Vec3 Viewer::get_cog_position() const
 {
     return m_impl.get_cog_marker_position();
 }
@@ -212,12 +212,12 @@ void Viewer::enable_tool_marker(bool value)
     m_impl.enable_tool_marker(value);
 }
 
-const Vec3f& Viewer::get_tool_marker_position() const
+const Vec3& Viewer::get_tool_marker_position() const
 {
     return m_impl.get_tool_marker_position();
 }
 
-void Viewer::set_tool_marker_position(const Vec3f& position)
+void Viewer::set_tool_marker_position(const Vec3& position)
 {
     m_impl.set_tool_marker_position(position);
 }
@@ -251,7 +251,7 @@ void Viewer::set_tool_marker_alpha(float alpha)
 {
     m_impl.set_tool_marker_alpha(alpha);
 }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 } // namespace libvgcode
 

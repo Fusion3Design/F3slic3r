@@ -16,7 +16,7 @@
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #if ENABLE_NEW_GCODE_VIEWER
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 //################################################################################################################################
 
 namespace libvgcode {
@@ -175,12 +175,12 @@ void ToolMarker::enable(bool value)
     m_enabled = value;
 }
 
-const Vec3f& ToolMarker::get_position() const
+const Vec3& ToolMarker::get_position() const
 {
     return m_position;
 }
 
-void ToolMarker::set_position(const Vec3f& position)
+void ToolMarker::set_position(const Vec3& position)
 {
     m_position = position;
 }
@@ -219,6 +219,6 @@ void ToolMarker::set_alpha(float alpha)
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #endif // ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################

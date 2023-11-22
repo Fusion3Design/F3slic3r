@@ -49,119 +49,136 @@
 #include <algorithm>
 #include <chrono>
 
-namespace Slic3r {
-namespace GUI {
-
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-// mapping from Slic3r::Vec3f to libvgcode::Vec3f
-static libvgcode::Vec3f convert(const Vec3f& v)
+namespace libvgcode {
+
+// mapping from Slic3r::Vec3f to libvgcode::Vec3
+static Vec3 convert(const Slic3r::Vec3f& v)
 {
     return { v.x(), v.y(), v.z() };
 }
 
+// mapping from Slic3r::Matrix4f to libvgcode::Mat4x4
+static Mat4x4 convert(const Slic3r::Matrix4f& m)
+{
+    Mat4x4 ret;
+    std::memcpy(ret.data(), m.data(), 16 * sizeof(float));
+    return ret;
+}
+
 // mapping from libvgcode::Color to Slic3r::ColorRGBA
-static ColorRGBA convert(const libvgcode::Color& c)
+static Slic3r::ColorRGBA convert(const Color& c)
 {
     return { c[0], c[1], c[2], 1.0f };
 }
 
 // mapping from Slic3r::ColorRGBA to libvgcode::Color
-static libvgcode::Color convert(const ColorRGBA& c)
+static Color convert(const Slic3r::ColorRGBA& c)
 {
     return { c.r(), c.g(), c.b() };
 }
 
 // mapping from libvgcode::EGCodeExtrusionRole to Slic3r::GCodeExtrusionRole
-static GCodeExtrusionRole convert(libvgcode::EGCodeExtrusionRole role)
+static Slic3r::GCodeExtrusionRole convert(EGCodeExtrusionRole role)
 {
     switch (role)
     {
-    case libvgcode::EGCodeExtrusionRole::None:                     { return GCodeExtrusionRole::None; }
-    case libvgcode::EGCodeExtrusionRole::Perimeter:                { return GCodeExtrusionRole::Perimeter; }
-    case libvgcode::EGCodeExtrusionRole::ExternalPerimeter:        { return GCodeExtrusionRole::ExternalPerimeter; }
-    case libvgcode::EGCodeExtrusionRole::OverhangPerimeter:        { return GCodeExtrusionRole::OverhangPerimeter; }
-    case libvgcode::EGCodeExtrusionRole::InternalInfill:           { return GCodeExtrusionRole::InternalInfill; }
-    case libvgcode::EGCodeExtrusionRole::SolidInfill:              { return GCodeExtrusionRole::SolidInfill; }
-    case libvgcode::EGCodeExtrusionRole::TopSolidInfill:           { return GCodeExtrusionRole::TopSolidInfill; }
-    case libvgcode::EGCodeExtrusionRole::Ironing:                  { return GCodeExtrusionRole::Ironing; }
-    case libvgcode::EGCodeExtrusionRole::BridgeInfill:             { return GCodeExtrusionRole::BridgeInfill; }
-    case libvgcode::EGCodeExtrusionRole::GapFill:                  { return GCodeExtrusionRole::GapFill; }
-    case libvgcode::EGCodeExtrusionRole::Skirt:                    { return GCodeExtrusionRole::Skirt; }
-    case libvgcode::EGCodeExtrusionRole::SupportMaterial:          { return GCodeExtrusionRole::SupportMaterial; }
-    case libvgcode::EGCodeExtrusionRole::SupportMaterialInterface: { return GCodeExtrusionRole::SupportMaterialInterface; }
-    case libvgcode::EGCodeExtrusionRole::WipeTower:                { return GCodeExtrusionRole::WipeTower; }
-    case libvgcode::EGCodeExtrusionRole::Custom:                   { return GCodeExtrusionRole::Custom; }
-    case libvgcode::EGCodeExtrusionRole::COUNT:                    { return GCodeExtrusionRole::Count; }
+    case EGCodeExtrusionRole::None:                     { return Slic3r::GCodeExtrusionRole::None; }
+    case EGCodeExtrusionRole::Perimeter:                { return Slic3r::GCodeExtrusionRole::Perimeter; }
+    case EGCodeExtrusionRole::ExternalPerimeter:        { return Slic3r::GCodeExtrusionRole::ExternalPerimeter; }
+    case EGCodeExtrusionRole::OverhangPerimeter:        { return Slic3r::GCodeExtrusionRole::OverhangPerimeter; }
+    case EGCodeExtrusionRole::InternalInfill:           { return Slic3r::GCodeExtrusionRole::InternalInfill; }
+    case EGCodeExtrusionRole::SolidInfill:              { return Slic3r::GCodeExtrusionRole::SolidInfill; }
+    case EGCodeExtrusionRole::TopSolidInfill:           { return Slic3r::GCodeExtrusionRole::TopSolidInfill; }
+    case EGCodeExtrusionRole::Ironing:                  { return Slic3r::GCodeExtrusionRole::Ironing; }
+    case EGCodeExtrusionRole::BridgeInfill:             { return Slic3r::GCodeExtrusionRole::BridgeInfill; }
+    case EGCodeExtrusionRole::GapFill:                  { return Slic3r::GCodeExtrusionRole::GapFill; }
+    case EGCodeExtrusionRole::Skirt:                    { return Slic3r::GCodeExtrusionRole::Skirt; }
+    case EGCodeExtrusionRole::SupportMaterial:          { return Slic3r::GCodeExtrusionRole::SupportMaterial; }
+    case EGCodeExtrusionRole::SupportMaterialInterface: { return Slic3r::GCodeExtrusionRole::SupportMaterialInterface; }
+    case EGCodeExtrusionRole::WipeTower:                { return Slic3r::GCodeExtrusionRole::WipeTower; }
+    case EGCodeExtrusionRole::Custom:                   { return Slic3r::GCodeExtrusionRole::Custom; }
     }
     assert(false);
-    return GCodeExtrusionRole::None;
+    return Slic3r::GCodeExtrusionRole::None;
 }
 
 // mapping from Slic3r::GCodeExtrusionRole to libvgcode::EGCodeExtrusionRole
-static libvgcode::EGCodeExtrusionRole convert(GCodeExtrusionRole role)
+static EGCodeExtrusionRole convert(Slic3r::GCodeExtrusionRole role)
 {
     switch (role)
     {
-    case GCodeExtrusionRole::None:                     { return libvgcode::EGCodeExtrusionRole::None; }
-    case GCodeExtrusionRole::Perimeter:                { return libvgcode::EGCodeExtrusionRole::Perimeter; }
-    case GCodeExtrusionRole::ExternalPerimeter:        { return libvgcode::EGCodeExtrusionRole::ExternalPerimeter; }
-    case GCodeExtrusionRole::OverhangPerimeter:        { return libvgcode::EGCodeExtrusionRole::OverhangPerimeter; }
-    case GCodeExtrusionRole::InternalInfill:           { return libvgcode::EGCodeExtrusionRole::InternalInfill; }
-    case GCodeExtrusionRole::SolidInfill:              { return libvgcode::EGCodeExtrusionRole::SolidInfill; }
-    case GCodeExtrusionRole::TopSolidInfill:           { return libvgcode::EGCodeExtrusionRole::TopSolidInfill; }
-    case GCodeExtrusionRole::Ironing:                  { return libvgcode::EGCodeExtrusionRole::Ironing; }
-    case GCodeExtrusionRole::BridgeInfill:             { return libvgcode::EGCodeExtrusionRole::BridgeInfill; }
-    case GCodeExtrusionRole::GapFill:                  { return libvgcode::EGCodeExtrusionRole::GapFill; }
-    case GCodeExtrusionRole::Skirt:                    { return libvgcode::EGCodeExtrusionRole::Skirt; }
-    case GCodeExtrusionRole::SupportMaterial:          { return libvgcode::EGCodeExtrusionRole::SupportMaterial; }
-    case GCodeExtrusionRole::SupportMaterialInterface: { return libvgcode::EGCodeExtrusionRole::SupportMaterialInterface; }
-    case GCodeExtrusionRole::WipeTower:                { return libvgcode::EGCodeExtrusionRole::WipeTower; }
-    case GCodeExtrusionRole::Custom:                   { return libvgcode::EGCodeExtrusionRole::Custom; }
-    case GCodeExtrusionRole::Count:                    { return libvgcode::EGCodeExtrusionRole::COUNT; }
+    case Slic3r::GCodeExtrusionRole::None:                     { return EGCodeExtrusionRole::None; }
+    case Slic3r::GCodeExtrusionRole::Perimeter:                { return EGCodeExtrusionRole::Perimeter; }
+    case Slic3r::GCodeExtrusionRole::ExternalPerimeter:        { return EGCodeExtrusionRole::ExternalPerimeter; }
+    case Slic3r::GCodeExtrusionRole::OverhangPerimeter:        { return EGCodeExtrusionRole::OverhangPerimeter; }
+    case Slic3r::GCodeExtrusionRole::InternalInfill:           { return EGCodeExtrusionRole::InternalInfill; }
+    case Slic3r::GCodeExtrusionRole::SolidInfill:              { return EGCodeExtrusionRole::SolidInfill; }
+    case Slic3r::GCodeExtrusionRole::TopSolidInfill:           { return EGCodeExtrusionRole::TopSolidInfill; }
+    case Slic3r::GCodeExtrusionRole::Ironing:                  { return EGCodeExtrusionRole::Ironing; }
+    case Slic3r::GCodeExtrusionRole::BridgeInfill:             { return EGCodeExtrusionRole::BridgeInfill; }
+    case Slic3r::GCodeExtrusionRole::GapFill:                  { return EGCodeExtrusionRole::GapFill; }
+    case Slic3r::GCodeExtrusionRole::Skirt:                    { return EGCodeExtrusionRole::Skirt; }
+    case Slic3r::GCodeExtrusionRole::SupportMaterial:          { return EGCodeExtrusionRole::SupportMaterial; }
+    case Slic3r::GCodeExtrusionRole::SupportMaterialInterface: { return EGCodeExtrusionRole::SupportMaterialInterface; }
+    case Slic3r::GCodeExtrusionRole::WipeTower:                { return EGCodeExtrusionRole::WipeTower; }
+    case Slic3r::GCodeExtrusionRole::Custom:                   { return EGCodeExtrusionRole::Custom; }
     }
     assert(false);
-    return libvgcode::EGCodeExtrusionRole::None;
+    return EGCodeExtrusionRole::None;
 }
 
 // mapping from Slic3r::EMoveType to libvgcode::EMoveType
-static libvgcode::EMoveType convert(EMoveType type)
+static EMoveType convert(Slic3r::EMoveType type)
 {
     switch (type)
     {
-    case EMoveType::Noop:         { return libvgcode::EMoveType::Noop; }
-    case EMoveType::Retract:      { return libvgcode::EMoveType::Retract; }
-    case EMoveType::Unretract:    { return libvgcode::EMoveType::Unretract; }
-    case EMoveType::Seam:         { return libvgcode::EMoveType::Seam; }
-    case EMoveType::Tool_change:  { return libvgcode::EMoveType::ToolChange; }
-    case EMoveType::Color_change: { return libvgcode::EMoveType::ColorChange; }
-    case EMoveType::Pause_Print:  { return libvgcode::EMoveType::PausePrint; }
-    case EMoveType::Custom_GCode: { return libvgcode::EMoveType::CustomGCode; }
-    case EMoveType::Travel:       { return libvgcode::EMoveType::Travel; }
-    case EMoveType::Wipe:         { return libvgcode::EMoveType::Wipe; }
-    case EMoveType::Extrude:      { return libvgcode::EMoveType::Extrude; }
-    case EMoveType::Count:        { return libvgcode::EMoveType::COUNT; }
-    default:                      { return libvgcode::EMoveType::COUNT; }
+    case Slic3r::EMoveType::Noop:         { return EMoveType::Noop; }
+    case Slic3r::EMoveType::Retract:      { return EMoveType::Retract; }
+    case Slic3r::EMoveType::Unretract:    { return EMoveType::Unretract; }
+    case Slic3r::EMoveType::Seam:         { return EMoveType::Seam; }
+    case Slic3r::EMoveType::Tool_change:  { return EMoveType::ToolChange; }
+    case Slic3r::EMoveType::Color_change: { return EMoveType::ColorChange; }
+    case Slic3r::EMoveType::Pause_Print:  { return EMoveType::PausePrint; }
+    case Slic3r::EMoveType::Custom_GCode: { return EMoveType::CustomGCode; }
+    case Slic3r::EMoveType::Travel:       { return EMoveType::Travel; }
+    case Slic3r::EMoveType::Wipe:         { return EMoveType::Wipe; }
+    case Slic3r::EMoveType::Extrude:      { return EMoveType::Extrude; }
     }
+    assert(false);
+    return EMoveType::COUNT;
 }
 
 // mapping from Slic3r::PrintEstimatedStatistics::ETimeMode to libvgcode::ETimeMode
-static libvgcode::ETimeMode convert(const PrintEstimatedStatistics::ETimeMode& mode)
+static ETimeMode convert(const Slic3r::PrintEstimatedStatistics::ETimeMode& mode)
 {
     switch (mode)
     {
-    case PrintEstimatedStatistics::ETimeMode::Normal:  { return libvgcode::ETimeMode::Normal; }
-    case PrintEstimatedStatistics::ETimeMode::Stealth: { return libvgcode::ETimeMode::Stealth; }
-    case PrintEstimatedStatistics::ETimeMode::Count:   { return libvgcode::ETimeMode::COUNT; }
-    default:                                           { return libvgcode::ETimeMode::COUNT; }
+    case Slic3r::PrintEstimatedStatistics::ETimeMode::Normal:  { return ETimeMode::Normal; }
+    case Slic3r::PrintEstimatedStatistics::ETimeMode::Stealth: { return ETimeMode::Stealth; }
     }
+    assert(false);
+    return ETimeMode::COUNT;
+}
+
+// mapping from libvgcode::ETimeMode to Slic3r::PrintEstimatedStatistics::ETimeMode
+static Slic3r::PrintEstimatedStatistics::ETimeMode convert(const ETimeMode& mode)
+{
+    switch (mode)
+    {
+    case ETimeMode::Normal:  { return Slic3r::PrintEstimatedStatistics::ETimeMode::Normal; }
+    case ETimeMode::Stealth: { return Slic3r::PrintEstimatedStatistics::ETimeMode::Stealth; }
+    }
+    assert(false);
+    return Slic3r::PrintEstimatedStatistics::ETimeMode::Count;
 }
 
 // mapping from Slic3r::GCodeProcessorResult to libvgcode::GCodeInputData
-static libvgcode::GCodeInputData convert(const GCodeProcessorResult& result)
+static GCodeInputData convert(const Slic3r::GCodeProcessorResult& result)
 {
-    const std::vector<GCodeProcessorResult::MoveVertex>& moves = result.moves;
-    libvgcode::GCodeInputData ret;
+    const std::vector<Slic3r::GCodeProcessorResult::MoveVertex>& moves = result.moves;
+    GCodeInputData ret;
     ret.vertices.reserve(2 * moves.size());
     // Seam moves have no correspondence in the gcode,
     // there are no gcode lines associated to them,
@@ -170,24 +187,24 @@ static libvgcode::GCodeInputData convert(const GCodeProcessorResult& result)
     // of them and modify the vertices' move_id accordingly.
     uint32_t seams_count = 0;
     for (size_t i = 1; i < moves.size(); ++i) {
-        const GCodeProcessorResult::MoveVertex& curr = moves[i];
-        const GCodeProcessorResult::MoveVertex& prev = moves[i - 1];
-        const libvgcode::EMoveType curr_type = convert(curr.type);
-        const libvgcode::EGCodeExtrusionRole curr_role = convert(curr.extrusion_role);
+        const Slic3r::GCodeProcessorResult::MoveVertex& curr = moves[i];
+        const Slic3r::GCodeProcessorResult::MoveVertex& prev = moves[i - 1];
+        const EMoveType curr_type = convert(curr.type);
+        const EGCodeExtrusionRole curr_role = convert(curr.extrusion_role);
 
-        if (curr_type == libvgcode::EMoveType::Seam)
-            ++seams_count;
+        if (curr_type == EMoveType::Seam)
+          ++seams_count;
 
-        libvgcode::EGCodeExtrusionRole extrusion_role;
-        if (curr_type == libvgcode::EMoveType::Travel) {
+        EGCodeExtrusionRole extrusion_role;
+        if (curr_type == EMoveType::Travel) {
             // for travel moves set the extrusion role
             // which will be used later to select the proper color
             if (curr.delta_extruder == 0.0f)
-                extrusion_role = static_cast<libvgcode::EGCodeExtrusionRole>(0); // Move
+                extrusion_role = static_cast<EGCodeExtrusionRole>(0); // Move
             else if (curr.delta_extruder > 0.0f)
-                extrusion_role = static_cast<libvgcode::EGCodeExtrusionRole>(1); // Extrude
+                extrusion_role = static_cast<EGCodeExtrusionRole>(1); // Extrude
             else
-                extrusion_role = static_cast<libvgcode::EGCodeExtrusionRole>(2); // Retract
+                extrusion_role = static_cast<EGCodeExtrusionRole>(2); // Retract
         }
         else
             extrusion_role = convert(curr.extrusion_role);
@@ -196,17 +213,32 @@ static libvgcode::GCodeInputData convert(const GCodeProcessorResult& result)
         float height;
         switch (curr_type)
         {
-        case libvgcode::EMoveType::Travel: { width = libvgcode::TRAVEL_RADIUS; height = libvgcode::TRAVEL_RADIUS; break; }
-        case libvgcode::EMoveType::Wipe:   { width = libvgcode::WIPE_RADIUS;   height = libvgcode::WIPE_RADIUS;   break; }
-        default:                           { width = curr.width;               height = curr.height;              break; }
+        case EMoveType::Travel:
+        {
+            width  = Default_Travel_Radius;
+            height = Default_Travel_Radius;
+            break;
+        }
+        case EMoveType::Wipe:
+        {
+            width  = Default_Wipe_Radius;
+            height = Default_Wipe_Radius;
+            break;
+        }
+        default:
+        {
+            width = curr.width;
+            height = curr.height;
+            break;
+        }
         }
 
         if (type_to_option(curr_type) == libvgcode::EOptionType::COUNT) {
             if (ret.vertices.empty() || prev.type != curr.type || prev.extrusion_role != curr.extrusion_role) {
-                // to allow libvgcode to properly detect the start/end of a path we need to add a 'phantom' vertex
-                // equal to the current one with the exception of the position, which should match the previous move position,
-                // and the times, which are set to zero
-#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+               // to allow libvgcode to properly detect the start/end of a path we need to add a 'phantom' vertex
+               // equal to the current one with the exception of the position, which should match the previous move position,
+               // and the times, which are set to zero
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
                 const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, curr.fan_speed,
                     curr.temperature, curr.volumetric_rate(), extrusion_role, curr_type,
                     static_cast<uint32_t>(i) - seams_count, static_cast<uint32_t>(curr.layer_id),
@@ -217,12 +249,12 @@ static libvgcode::GCodeInputData convert(const GCodeProcessorResult& result)
                     extrusion_role, curr_type,
                     static_cast<uint32_t>(i) - seams_count, static_cast<uint32_t>(curr.layer_id),
                     static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
-#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
                 ret.vertices.emplace_back(vertex);
             }
         }
 
-#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
         const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.fan_speed, curr.temperature,
             curr.volumetric_rate(), extrusion_role, curr_type, static_cast<uint32_t>(i) - seams_count, static_cast<uint32_t>(curr.layer_id),
             static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };
@@ -231,26 +263,24 @@ static libvgcode::GCodeInputData convert(const GCodeProcessorResult& result)
             curr.volumetric_rate(), curr.mm3_per_mm * (curr.position - prev.position).norm(), extrusion_role, curr_type,
             static_cast<uint32_t>(i) - seams_count, static_cast<uint32_t>(curr.layer_id),
             static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };
-#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
         ret.vertices.emplace_back(vertex);
     }
     ret.vertices.shrink_to_fit();
 
-    for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
-        ret.times[static_cast<size_t>(convert(static_cast<PrintEstimatedStatistics::ETimeMode>(i)))] = result.print_statistics.modes[i].time;
+    for (size_t i = 0; i < static_cast<size_t>(Slic3r::PrintEstimatedStatistics::ETimeMode::Count); ++i) {
+        ret.times[static_cast<size_t>(convert(static_cast<Slic3r::PrintEstimatedStatistics::ETimeMode>(i)))] = result.print_statistics.modes[i].time;
     }
 
     return ret;
 }
 
-static libvgcode::Color lerp(const libvgcode::Color& c1, const libvgcode::Color& c2, float t)
-{
-    t = std::clamp(t, 0.0f, 1.0f);
-    const float one_minus_t = 1.0f - t;
-    return { one_minus_t * c1[0] + t * c2[0], one_minus_t * c1[1] + t * c2[1], one_minus_t * c1[2] + t * c2[2] };
-}
+} // namespace libvgcode
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+namespace Slic3r {
+namespace GUI {
 
 static unsigned char buffer_id(EMoveType type) {
     return static_cast<unsigned char>(type) - static_cast<unsigned char>(EMoveType::Retract);
@@ -393,11 +423,11 @@ void GCodeViewer::TBuffer::add_path(const GCodeProcessorResult::MoveVertex& move
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 void GCodeViewer::COG::render()
 #else
 void GCodeViewer::COG::render(bool fixed_screen_size)
-#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 void GCodeViewer::COG::render()
@@ -410,12 +440,12 @@ void GCodeViewer::COG::render()
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     init();
 #else
     fixed_screen_size = true;
     init(fixed_screen_size);
-#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     init();
@@ -435,11 +465,11 @@ void GCodeViewer::COG::render()
     Transform3d model_matrix = Geometry::translation_transform(cog()) * Geometry::scale_transform(m_scale_factor);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     if (m_fixed_screen_size) {
 #else
     if (fixed_screen_size) {
-#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if (m_fixed_screen_size) {
@@ -538,7 +568,8 @@ ColorRGBA GCodeViewer::Extrusions::Range::get_color_at(float value, EType type) 
     // Interpolate between the low and high colors to find exactly which color the input value should get
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    return convert(lerp(libvgcode::Ranges_Colors[color_low_idx], libvgcode::Ranges_Colors[color_high_idx], global_t - static_cast<float>(color_low_idx)));
+    return libvgcode::convert(libvgcode::lerp(libvgcode::Ranges_Colors[color_low_idx], libvgcode::Ranges_Colors[color_high_idx],
+        global_t - static_cast<float>(color_low_idx)));
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     return lerp(Range_Colors[color_low_idx], Range_Colors[color_high_idx], global_t - static_cast<float>(color_low_idx));
@@ -1116,9 +1147,9 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
 #if ENABLE_NEW_GCODE_VIEWER
 void GCodeViewer::SequentialView::render(float legend_height, const libvgcode::Viewer* viewer)
 {
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     if (viewer == nullptr)
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 void GCodeViewer::SequentialView::render(float legend_height)
@@ -1357,7 +1388,7 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
     std::vector<libvgcode::Color> colors;
     colors.reserve(tool_colors.size());
     for (const ColorRGBA& color : tool_colors) {
-        colors.emplace_back(convert(color));
+        colors.emplace_back(libvgcode::convert(color));
     }
     m_new_viewer.set_tool_colors(colors);
 
@@ -1371,7 +1402,7 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
     reset();
 
     // convert data from PrusaSlicer format to libvgcode format
-    libvgcode::GCodeInputData data = convert(gcode_result);
+    libvgcode::GCodeInputData data = libvgcode::convert(gcode_result);
 
     // send data to the viewer
     m_new_viewer.load(std::move(data));
@@ -1525,11 +1556,11 @@ void GCodeViewer::refresh(const GCodeProcessorResult& gcode_result, const std::v
             m_extrusions.ranges.height.update_from(round_to_bin(curr.height));
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-            if (curr.extrusion_role != GCodeExtrusionRole::Custom || is_visible(convert(GCodeExtrusionRole::Custom)))
+            if (curr.extrusion_role != GCodeExtrusionRole::Custom || is_visible(libvgcode::convert(GCodeExtrusionRole::Custom)))
                 m_extrusions.ranges.width.update_from(round_to_bin(curr.width));
             m_extrusions.ranges.fan_speed.update_from(curr.fan_speed);
             m_extrusions.ranges.temperature.update_from(curr.temperature);
-            if (curr.extrusion_role != GCodeExtrusionRole::Custom || is_visible(convert(GCodeExtrusionRole::Custom)))
+            if (curr.extrusion_role != GCodeExtrusionRole::Custom || is_visible(libvgcode::convert(GCodeExtrusionRole::Custom)))
                 m_extrusions.ranges.volumetric_rate.update_from(round_to_bin(curr.volumetric_rate()));
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1676,22 +1707,15 @@ void GCodeViewer::render()
 #if ENABLE_NEW_GCODE_VIEWER
     if (m_use_new_viewer) {
         const Camera& camera = wxGetApp().plater()->get_camera();
-        const Matrix4f view_matrix = camera.get_view_matrix().matrix().cast<float>();
-        const Matrix4f projection_matrix = camera.get_projection_matrix().matrix().cast<float>();
-
-        libvgcode::Mat4x4f converted_view_matrix;
-        std::memcpy(converted_view_matrix.data(), view_matrix.data(), 16 * sizeof(float));
-        libvgcode::Mat4x4f converted_projetion_matrix;
-        std::memcpy(converted_projetion_matrix.data(), projection_matrix.data(), 16 * sizeof(float));
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-        libvgcode::Vec3f converted_tool_marker_position;
-        std::memcpy(converted_tool_marker_position.data(), m_sequential_view.current_position.data(), 3 * sizeof(float));
-
+        libvgcode::Mat4x4 converted_view_matrix = libvgcode::convert(static_cast<Matrix4f>(camera.get_view_matrix().matrix().cast<float>()));
+        libvgcode::Mat4x4 converted_projetion_matrix = libvgcode::convert(static_cast<Matrix4f>(camera.get_projection_matrix().matrix().cast<float>()));
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+        libvgcode::Vec3 converted_tool_marker_position = libvgcode::convert(m_sequential_view.current_position);
         m_new_viewer.set_cog_marker_scale_factor(m_cog_marker_fixed_screen_size ? 10.0f * m_cog_marker_size * camera.get_inv_zoom() : m_cog_marker_size);
         m_new_viewer.enable_tool_marker(m_sequential_view.current.last != m_sequential_view.endpoints.last);
         m_new_viewer.set_tool_marker_position(converted_tool_marker_position);
         m_new_viewer.set_tool_marker_scale_factor(m_tool_marker_fixed_screen_size ? 10.0f * m_tool_marker_size * camera.get_inv_zoom() : m_tool_marker_size);
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
         m_new_viewer.render(converted_view_matrix, converted_projetion_matrix);
     }
     else
@@ -1723,7 +1747,7 @@ void GCodeViewer::render()
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     if (m_use_new_viewer) {
         ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
         imgui.begin(std::string("LibVGCode Viewer Controller"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
@@ -1754,7 +1778,7 @@ void GCodeViewer::render()
 
         imgui.end();
     }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 }
@@ -3212,7 +3236,7 @@ void GCodeViewer::refresh_render_paths(bool keep_sequential_current_first, bool 
 #if ENABLE_NEW_GCODE_VIEWER
         switch (m_new_viewer.get_view_type())
         {
-        case libvgcode::EViewType::FeatureType: { color = convert(libvgcode::Extrusion_Roles_Colors[static_cast<unsigned int>(path.role)]); break; }
+        case libvgcode::EViewType::FeatureType: { color = libvgcode::convert(libvgcode::Extrusion_Roles_Colors[static_cast<unsigned int>(path.role)]); break; }
         case libvgcode::EViewType::Height:      { color = m_extrusions.ranges.height.get_color_at(path.height); break; }
         case libvgcode::EViewType::Width:       { color = m_extrusions.ranges.width.get_color_at(path.width); break; }
         case libvgcode::EViewType::Speed:       { color = m_extrusions.ranges.feedrate.get_color_at(path.feedrate); break; }
@@ -3241,10 +3265,10 @@ void GCodeViewer::refresh_render_paths(bool keep_sequential_current_first, bool 
             break;
         }
         case libvgcode::EViewType::VolumetricFlowRate: { color = m_extrusions.ranges.volumetric_rate.get_color_at(path.volumetric_rate); break; }
-        case libvgcode::EViewType::Tool: { color = convert(m_new_viewer.get_tool_colors()[path.extruder_id]); break; }
+        case libvgcode::EViewType::Tool: { color = libvgcode::convert(m_new_viewer.get_tool_colors()[path.extruder_id]); break; }
         case libvgcode::EViewType::ColorPrint: {
             color = (path.cp_color_id >= m_new_viewer.get_tool_colors_count()) ?
-                ColorRGBA::GRAY() : convert(m_new_viewer.get_tool_colors()[path.cp_color_id]);
+                ColorRGBA::GRAY() : libvgcode::convert(m_new_viewer.get_tool_colors()[path.cp_color_id]);
             break;
         }
         default: { color = ColorRGBA::WHITE(); break; }
@@ -3301,9 +3325,9 @@ void GCodeViewer::refresh_render_paths(bool keep_sequential_current_first, bool 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
     auto travel_color = [](const Path& path) {
-        return (path.delta_extruder < 0.0f) ? convert(libvgcode::Travels_Colors[2]) /* Retract */ :
-               ((path.delta_extruder > 0.0f) ? convert(libvgcode::Travels_Colors[1]) /* Extrude */ :
-               convert(libvgcode::Travels_Colors[0]) /* Move */);
+        return (path.delta_extruder < 0.0f) ? libvgcode::convert(libvgcode::Travels_Colors[2]) /* Retract */ :
+               ((path.delta_extruder > 0.0f) ? libvgcode::convert(libvgcode::Travels_Colors[1]) /* Extrude */ :
+               libvgcode::convert(libvgcode::Travels_Colors[0]) /* Move */);
     };
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -3550,7 +3574,7 @@ void GCodeViewer::refresh_render_paths(bool keep_sequential_current_first, bool 
             else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                color = convert(libvgcode::Dummy_Color);
+                color = libvgcode::convert(libvgcode::Dummy_Color);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                 color = Neutral_Color;
@@ -3570,7 +3594,7 @@ void GCodeViewer::refresh_render_paths(bool keep_sequential_current_first, bool 
                     extrusion_color(path) : travel_color(path);
             }
             else
-                color = convert(libvgcode::Dummy_Color);
+                color = libvgcode::convert(libvgcode::Dummy_Color);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             if (!top_layer_only || m_sequential_view.current.last == global_endpoints.last || is_travel_in_layers_range(path_id, m_layers_z_range[1], m_layers_z_range[1]))
@@ -3585,7 +3609,7 @@ void GCodeViewer::refresh_render_paths(bool keep_sequential_current_first, bool 
         }
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-        case EMoveType::Wipe: { color = convert(libvgcode::Wipe_Color); break; }
+        case EMoveType::Wipe: { color = libvgcode::convert(libvgcode::Wipe_Color); break; }
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         case EMoveType::Wipe: { color = Wipe_Color; break; }
@@ -3678,7 +3702,7 @@ void GCodeViewer::refresh_render_paths(bool keep_sequential_current_first, bool 
         if (has_second_range)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-            buffer.model.instances.render_ranges.ranges.push_back({ 0, 0, 0, convert(libvgcode::Dummy_Color) });
+            buffer.model.instances.render_ranges.ranges.push_back({ 0, 0, 0, libvgcode::convert(libvgcode::Dummy_Color) });
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             buffer.model.instances.render_ranges.ranges.push_back({ 0, 0, 0, Neutral_Color });
@@ -4387,7 +4411,7 @@ void GCodeViewer::render_legend(float& legend_height)
             ::sprintf(buf, "%.*f", decimals, value);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-            append_item(EItemType::Rect, convert(libvgcode::Ranges_Colors[i]), buf);
+            append_item(EItemType::Rect, libvgcode::convert(libvgcode::Ranges_Colors[i]), buf);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             append_item(EItemType::Rect, Range_Colors[i], buf);
@@ -4435,7 +4459,7 @@ void GCodeViewer::render_legend(float& legend_height)
                 str_value = "< 1s";
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-            append_item(EItemType::Rect, convert(libvgcode::Ranges_Colors[i]), str_value);
+            append_item(EItemType::Rect, libvgcode::convert(libvgcode::Ranges_Colors[i]), str_value);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             append_item(EItemType::Rect, Range_Colors[i], str_value);
@@ -4838,7 +4862,7 @@ void GCodeViewer::render_legend(float& legend_height)
                 const bool visible = is_visible(role);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                append_item(EItemType::Rect, convert(libvgcode::Extrusion_Roles_Colors[static_cast<unsigned int>(role)]), labels[i],
+                append_item(EItemType::Rect, libvgcode::convert(libvgcode::Extrusion_Roles_Colors[static_cast<unsigned int>(role)]), labels[i],
                     visible, times[i], percents[i], max_time_percent, offsets, used_filaments_m[i], used_filaments_g[i],
                     [this, role, visible]() {
                         m_new_viewer.toggle_extrusion_role_visibility((libvgcode::EGCodeExtrusionRole)role);
@@ -4868,7 +4892,7 @@ void GCodeViewer::render_legend(float& legend_height)
             if (m_buffers[buffer_id(EMoveType::Travel)].visible)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                append_item(EItemType::Line, convert(libvgcode::Travels_Colors[0]), _u8L("Travel"), true, short_time_ui(get_time_dhms(travels_time)),
+                append_item(EItemType::Line, libvgcode::convert(libvgcode::Travels_Colors[0]), _u8L("Travel"), true, short_time_ui(get_time_dhms(travels_time)),
                     travels_time / time_mode.time, max_time_percent, offsets, 0.0f, 0.0f);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -4894,7 +4918,7 @@ void GCodeViewer::render_legend(float& legend_height)
             // shows only extruders actually used
             for (unsigned char extruder_id : m_extruder_ids) {
                 if (used_filaments_m[extruder_id] > 0.0 && used_filaments_g[extruder_id] > 0.0)
-                    append_item(EItemType::Rect, convert(m_new_viewer.get_tool_colors()[extruder_id]), _u8L("Extruder") + " " + std::to_string(extruder_id + 1),
+                    append_item(EItemType::Rect, libvgcode::convert(m_new_viewer.get_tool_colors()[extruder_id]), _u8L("Extruder") + " " + std::to_string(extruder_id + 1),
                     true, "", 0.0f, 0.0f, offsets, used_filaments_m[extruder_id], used_filaments_g[extruder_id]);
             }
             break;
@@ -4941,7 +4965,7 @@ void GCodeViewer::render_legend(float& legend_height)
                 if (items_cnt == 0)  // There are no color changes, but there are some pause print or custom Gcode
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                    append_item(EItemType::Rect, convert(m_new_viewer.get_tool_colors().front()), _u8L("Default color"));
+                    append_item(EItemType::Rect, libvgcode::convert(m_new_viewer.get_tool_colors().front()), _u8L("Default color"));
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                     append_item(EItemType::Rect, m_tool_colors.front(), _u8L("Default color"));
@@ -4954,7 +4978,7 @@ void GCodeViewer::render_legend(float& legend_height)
                         if (i == 0) {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                            append_item(EItemType::Rect, convert(m_new_viewer.get_tool_colors().front()), upto_label(cp_values.front().second.first));
+                            append_item(EItemType::Rect, libvgcode::convert(m_new_viewer.get_tool_colors().front()), upto_label(cp_values.front().second.first));
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                             append_item(EItemType::Rect, m_tool_colors[0], upto_label(cp_values.front().second.first));
@@ -4980,7 +5004,7 @@ void GCodeViewer::render_legend(float& legend_height)
                         // There are no color changes, but there are some pause print or custom Gcode
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                        append_item(EItemType::Rect, convert(m_new_viewer.get_tool_colors()[i]), _u8L("Extruder") + " " +
+                        append_item(EItemType::Rect, libvgcode::convert(m_new_viewer.get_tool_colors()[i]), _u8L("Extruder") + " " +
                             std::to_string(i + 1) + " " + _u8L("default color"));
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -4996,7 +5020,7 @@ void GCodeViewer::render_legend(float& legend_height)
                                 label += " " + upto_label(cp_values.front().second.first);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                                append_item(EItemType::Rect, convert(m_new_viewer.get_tool_colors()[i]), label);
+                                append_item(EItemType::Rect, libvgcode::convert(m_new_viewer.get_tool_colors()[i]), label);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                                 append_item(EItemType::Rect, m_tool_colors[i], label);
@@ -5065,7 +5089,7 @@ void GCodeViewer::render_legend(float& legend_height)
             for (size_t i = 0; i < m_extruders_count; ++i) {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                last_color[i] = convert(m_new_viewer.get_tool_colors()[i]);
+                last_color[i] = libvgcode::convert(m_new_viewer.get_tool_colors()[i]);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                 last_color[i] = m_tool_colors[i];
@@ -5483,9 +5507,9 @@ void GCodeViewer::render_legend(float& legend_height)
         if (imgui.draw_radio_button(name, 1.5f * icon_size, active, draw_callback)) {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
           if (type != Preview::OptionType::CenterOfGravity && type != Preview::OptionType::ToolMarker && type != Preview::OptionType::Shells)
-#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
           m_new_viewer.toggle_option_visibility((libvgcode::EOptionType)type);
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -5692,7 +5716,7 @@ void GCodeViewer::render_statistics()
 #if ENABLE_NEW_GCODE_VIEWER
 bool GCodeViewer::is_visible(const Path& path) const
 {
-    return is_visible(convert(path.role));
+    return is_visible(libvgcode::convert(path.role));
 }
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -5724,14 +5748,14 @@ ColorRGBA GCodeViewer::option_color(EMoveType move_type) const
     {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    case EMoveType::Tool_change:  { return convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::ToolChange)); }
-    case EMoveType::Color_change: { return convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::ColorChange)); }
-    case EMoveType::Pause_Print:  { return convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::PausePrint)); }
-    case EMoveType::Custom_GCode: { return convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::CustomGCode)); }
-    case EMoveType::Retract:      { return convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::Retract)); }
-    case EMoveType::Unretract:    { return convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::Unretract)); }
-    case EMoveType::Seam:         { return convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::Seam)); }
-    default:                      { return convert(libvgcode::Dummy_Color); }
+    case EMoveType::Tool_change:  { return libvgcode::convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::ToolChange)); }
+    case EMoveType::Color_change: { return libvgcode::convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::ColorChange)); }
+    case EMoveType::Pause_Print:  { return libvgcode::convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::PausePrint)); }
+    case EMoveType::Custom_GCode: { return libvgcode::convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::CustomGCode)); }
+    case EMoveType::Retract:      { return libvgcode::convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::Retract)); }
+    case EMoveType::Unretract:    { return libvgcode::convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::Unretract)); }
+    case EMoveType::Seam:         { return libvgcode::convert(libvgcode::Options_Colors.at(libvgcode::EMoveType::Seam)); }
+    default:                      { return libvgcode::convert(libvgcode::Dummy_Color); }
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     case EMoveType::Tool_change:  { return Options_Colors[static_cast<unsigned int>(EOptionsColors::ToolChanges)]; }

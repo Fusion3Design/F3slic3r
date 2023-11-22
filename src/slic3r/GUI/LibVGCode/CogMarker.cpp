@@ -18,7 +18,7 @@
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #if ENABLE_NEW_GCODE_VIEWER
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 //################################################################################################################################
 
 namespace libvgcode {
@@ -64,16 +64,16 @@ void CogMarker::init(uint8_t resolution, float radius)
         const float xy = radius * std::cos(stack_angle);
         const float z = radius * std::sin(stack_angle);
         if (i == 0 || i == stack_count) {
-            const Vec3f pos = { xy, 0.0f, z };
-            const Vec3f norm = normalize(pos);
+            const Vec3 pos = { xy, 0.0f, z };
+            const Vec3 norm = normalize(pos);
             add_vertex(pos, norm, vertices);
         }
         else {
             for (uint16_t j = 0; j < sector_count; ++j) {
                 // from 0 to 2pi
                 const float sector_angle = sector_step * float(j);
-                const Vec3f pos = { xy * std::cos(sector_angle), xy * std::sin(sector_angle), z };
-                const Vec3f norm = normalize(pos);
+                const Vec3 pos = { xy * std::cos(sector_angle), xy * std::sin(sector_angle), z };
+                const Vec3 norm = normalize(pos);
                 add_vertex(pos, norm, vertices);
             }
         }
@@ -145,7 +145,7 @@ void CogMarker::render()
     glsafe(glBindVertexArray(curr_vertex_array));
 }
 
-void CogMarker::update(const Vec3f& position, float mass)
+void CogMarker::update(const Vec3& position, float mass)
 {
     m_total_position = m_total_position + mass * position;
     m_total_mass += mass;
@@ -157,7 +157,7 @@ void CogMarker::reset()
     m_total_mass = 0.0f;
 }
 
-Vec3f CogMarker::get_position() const
+Vec3 CogMarker::get_position() const
 {
     assert(m_total_mass > 0.0f);
     const float inv_total_mass = 1.0f / m_total_mass;
@@ -168,6 +168,6 @@ Vec3f CogMarker::get_position() const
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #endif // ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################

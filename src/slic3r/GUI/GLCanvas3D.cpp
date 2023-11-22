@@ -1949,7 +1949,7 @@ void GLCanvas3D::render()
 #endif // ENABLE_RENDER_SELECTION_CENTER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     if (!m_main_toolbar.is_enabled())
         _render_gcode_cog();
 #else
@@ -1957,7 +1957,7 @@ void GLCanvas3D::render()
         if (!m_gcode_viewer.use_new_viewer())
             _render_gcode_cog();
     }
-#endif // ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if (!m_main_toolbar.is_enabled())

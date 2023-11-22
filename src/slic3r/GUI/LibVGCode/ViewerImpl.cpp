@@ -71,11 +71,11 @@ static float round_to_bin(const float value)
     return fast_round_up<int64_t>(a) * invscale[i];
 }
 
-static Mat4x4f inverse(const Mat4x4f& m)
+static Mat4x4 inverse(const Mat4x4& m)
 {
     // ref: https://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
 
-    std::array<float, 16> inv;
+    Mat4x4 inv;
 
     inv[0] = m[5] * m[10] * m[15] -
              m[5] * m[11] * m[14] -
@@ -406,7 +406,7 @@ void ViewerImpl::init()
 
     m_option_template.init(16);
 
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     // cog marker shader
     m_cog_marker_shader_id = init_shader("cog_marker", Cog_Marker_Vertex_Shader, Cog_Marker_Fragment_Shader);
 
@@ -439,7 +439,7 @@ void ViewerImpl::init()
            m_uni_tool_marker_color_base != -1);
 
     m_tool_marker.init(32, 2.0f, 4.0f, 1.0f, 8.0f);
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 }
 
 void ViewerImpl::reset()
@@ -451,9 +451,9 @@ void ViewerImpl::reset()
     m_travels_time = { 0.0f, 0.0f };
     m_vertices.clear();
     m_valid_lines_bitset.clear();
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     m_cog_marker.reset();
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
     delete_textures(m_enabled_options_tex_id);
     delete_buffers(m_enabled_options_buf_id);
@@ -491,7 +491,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
         const PathVertex& v = m_vertices[i];
         m_layers.update(v, static_cast<uint32_t>(i));
         if (v.type == EMoveType::Travel) {
-            for (size_t i = 0; i < static_cast<size_t>(ETimeMode::COUNT); ++i) {
+            for (size_t i = 0; i < Time_Modes_Count; ++i) {
                 m_travels_time[i] += v.times[i];
             }
         }
@@ -499,7 +499,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
             m_extrusion_roles.add(v.role, v.times);
 
         if (i > 0) {
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
             // updates calculation for center of gravity
             if (v.type == EMoveType::Extrude &&
                 v.role != EGCodeExtrusionRole::Skirt &&
@@ -507,9 +507,9 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
                 v.role != EGCodeExtrusionRole::SupportMaterialInterface &&
                 v.role != EGCodeExtrusionRole::WipeTower &&
                 v.role != EGCodeExtrusionRole::Custom) {
-                m_cog_marker.update(0.5f * (v.position + gcode_data.vertices[i - 1].position), v.weight);
+                m_cog_marker.update(0.5f * (v.position + m_vertices[i - 1].position), v.weight);
             }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
         }
     }
 
@@ -517,23 +517,23 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     m_valid_lines_bitset = BitSet<>(m_vertices.size());
     m_valid_lines_bitset.setAll();
 
-    static constexpr const Vec3f ZERO = { 0.0f, 0.0f, 0.0f };
+    static constexpr const Vec3 ZERO = { 0.0f, 0.0f, 0.0f };
 
     // buffers to send to gpu
-    std::vector<Vec3f> positions;
-    std::vector<Vec3f> heights_widths_angles;
+    std::vector<Vec3> positions;
+    std::vector<Vec3> heights_widths_angles;
     positions.reserve(m_vertices.size());
     heights_widths_angles.reserve(m_vertices.size());
     for (size_t i = 0; i < m_vertices.size(); ++i) {
         const PathVertex& v = m_vertices[i];
         const EMoveType move_type = v.type;
         const bool prev_line_valid = i > 0 && m_valid_lines_bitset[i - 1];
-        const Vec3f prev_line = prev_line_valid ? v.position - m_vertices[i - 1].position : ZERO;
+        const Vec3 prev_line = prev_line_valid ? v.position - m_vertices[i - 1].position : ZERO;
         const bool this_line_valid = i + 1 < m_vertices.size() &&
                                      m_vertices[i + 1].position != v.position &&
                                      m_vertices[i + 1].type == move_type &&
                                      move_type != EMoveType::Seam;
-        const Vec3f this_line = this_line_valid ? m_vertices[i + 1].position - v.position : ZERO;
+        const Vec3 this_line = this_line_valid ? m_vertices[i + 1].position - v.position : ZERO;
 
         if (this_line_valid) {
             // there is a valid path between point i and i+1.
@@ -543,7 +543,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
             m_valid_lines_bitset.reset(i);
         }
 
-        Vec3f position = v.position;
+        Vec3 position = v.position;
         if (move_type == EMoveType::Extrude)
             // push down extrusion vertices by half height to render them at the right z
             position[2] -= 0.5 * v.height;
@@ -560,14 +560,14 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
         // create and fill positions buffer
         glsafe(glGenBuffers(1, &m_positions_buf_id));
         glsafe(glBindBuffer(GL_TEXTURE_BUFFER, m_positions_buf_id));
-        glsafe(glBufferData(GL_TEXTURE_BUFFER, positions.size() * sizeof(Vec3f), positions.data(), GL_STATIC_DRAW));
+        glsafe(glBufferData(GL_TEXTURE_BUFFER, positions.size() * sizeof(Vec3), positions.data(), GL_STATIC_DRAW));
         glsafe(glGenTextures(1, &m_positions_tex_id));
         glsafe(glBindTexture(GL_TEXTURE_BUFFER, m_positions_tex_id));
 
         // create and fill height, width and angles buffer
         glsafe(glGenBuffers(1, &m_heights_widths_angles_buf_id));
         glsafe(glBindBuffer(GL_TEXTURE_BUFFER, m_heights_widths_angles_buf_id));
-        glsafe(glBufferData(GL_TEXTURE_BUFFER, heights_widths_angles.size() * sizeof(Vec3f), heights_widths_angles.data(), GL_STATIC_DRAW));
+        glsafe(glBufferData(GL_TEXTURE_BUFFER, heights_widths_angles.size() * sizeof(Vec3), heights_widths_angles.data(), GL_STATIC_DRAW));
         glsafe(glGenTextures(1, &m_heights_widths_angles_tex_id));
         glsafe(glBindTexture(GL_TEXTURE_BUFFER, m_heights_widths_angles_tex_id));
 
@@ -700,7 +700,7 @@ void ViewerImpl::update_colors()
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
 }
 
-void ViewerImpl::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
+void ViewerImpl::render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
 {
     if (m_settings.update_view_global_range) {
         update_view_global_range();
@@ -717,17 +717,17 @@ void ViewerImpl::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_ma
         m_settings.update_colors = false;
     }
 
-    const Mat4x4f inv_view_matrix = inverse(view_matrix);
-    const Vec3f camera_position = { inv_view_matrix[12], inv_view_matrix[13], inv_view_matrix[14] };
+    const Mat4x4 inv_view_matrix = inverse(view_matrix);
+    const Vec3 camera_position = { inv_view_matrix[12], inv_view_matrix[13], inv_view_matrix[14] };
 
     render_segments(view_matrix, projection_matrix, camera_position);
     render_options(view_matrix, projection_matrix);
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     if (m_settings.options_visibility.at(EOptionType::ToolMarker))
         render_tool_marker(view_matrix, projection_matrix);
     if (m_settings.options_visibility.at(EOptionType::CenterOfGravity))
         render_cog_marker(view_matrix, projection_matrix);
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG
     render_debug_window();
@@ -739,55 +739,26 @@ EViewType ViewerImpl::get_view_type() const
     return m_settings.view_type;
 }
 
-ETimeMode ViewerImpl::get_time_mode() const
-{
-    return m_settings.time_mode;
-}
-
-const std::array<uint32_t, 2>& ViewerImpl::get_layers_range() const
-{
-    return m_layers_range.get();
-}
-
-bool ViewerImpl::is_top_layer_only_view_range() const
-{
-    return m_settings.top_layer_only_view_range;
-}
-
-bool ViewerImpl::is_option_visible(EOptionType type) const
-{
-    try
-    {
-        return m_settings.options_visibility.at(type);
-    }
-    catch (...)
-    {
-        return false;
-    }
-}
-
-bool ViewerImpl::is_extrusion_role_visible(EGCodeExtrusionRole role) const
-{
-    try
-    {
-        return m_settings.extrusion_roles_visibility.at(role);
-    }
-    catch (...)
-    {
-        return false;
-    }
-}
-
 void ViewerImpl::set_view_type(EViewType type)
 {
     m_settings.view_type = type;
     m_settings.update_colors = true;
 }
 
+ETimeMode ViewerImpl::get_time_mode() const
+{
+    return m_settings.time_mode;
+}
+
 void ViewerImpl::set_time_mode(ETimeMode mode)
 {
     m_settings.time_mode = mode;
     m_settings.update_colors = true;
+}
+
+const std::array<uint32_t, 2>& ViewerImpl::get_layers_range() const
+{
+    return m_layers_range.get();
 }
 
 void ViewerImpl::set_layers_range(const std::array<uint32_t, 2>& range)
@@ -803,16 +774,30 @@ void ViewerImpl::set_layers_range(uint32_t min, uint32_t max)
     m_settings.update_colors = true;
 }
 
+bool ViewerImpl::is_top_layer_only_view_range() const
+{
+    return m_settings.top_layer_only_view_range;
+}
+
 void ViewerImpl::set_top_layer_only_view_range(bool top_layer_only_view_range)
 {
     m_settings.top_layer_only_view_range = top_layer_only_view_range;
     m_settings.update_colors = true;
 }
 
+bool ViewerImpl::is_option_visible(EOptionType type) const
+{
+    try {
+        return m_settings.options_visibility.at(type);
+    }
+    catch (...) {
+        return false;
+    }
+}
+
 void ViewerImpl::toggle_option_visibility(EOptionType type)
 {
-    try
-    {
+    try {
         bool& value = m_settings.options_visibility.at(type);
         value = !value;
         if (type == EOptionType::Travels)
@@ -820,23 +805,30 @@ void ViewerImpl::toggle_option_visibility(EOptionType type)
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
     }
-    catch (...)
-    {
+    catch (...) {
         // do nothing;
+    }
+}
+
+bool ViewerImpl::is_extrusion_role_visible(EGCodeExtrusionRole role) const
+{
+    try {
+        return m_settings.extrusion_roles_visibility.at(role);
+    }
+    catch (...) {
+        return false;
     }
 }
 
 void ViewerImpl::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
 {
-    try
-    {
+    try {
         bool& value = m_settings.extrusion_roles_visibility.at(role);
         value = !value;
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
     }
-    catch (...)
-    {
+    catch (...) {
         // do nothing;
     }
 }
@@ -964,8 +956,14 @@ const std::vector<Color>& ViewerImpl::get_tool_colors() const
     return m_tool_colors;
 }
 
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-Vec3f ViewerImpl::get_cog_marker_position() const
+void ViewerImpl::set_tool_colors(const std::vector<Color>& colors)
+{
+    m_tool_colors = colors;
+    m_settings.update_colors = true;
+}
+
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+Vec3 ViewerImpl::get_cog_marker_position() const
 {
     return m_cog_marker.get_position();
 }
@@ -975,47 +973,14 @@ float ViewerImpl::get_cog_marker_scale_factor() const
     return m_cog_marker_scale_factor;
 }
 
-bool ViewerImpl::is_tool_marker_enabled() const
-{
-    return m_tool_marker.is_enabled();
-}
-
-const Vec3f& ViewerImpl::get_tool_marker_position() const
-{
-    return m_tool_marker.get_position();
-}
-
-float ViewerImpl::get_tool_marker_offset_z() const
-{
-    return m_tool_marker.get_offset_z();
-}
-
-float ViewerImpl::get_tool_marker_scale_factor() const
-{
-    return m_tool_marker_scale_factor;
-}
-
-const Color& ViewerImpl::get_tool_marker_color() const
-{
-    return m_tool_marker.get_color();
-}
-
-float ViewerImpl::get_tool_marker_alpha() const
-{
-    return m_tool_marker.get_alpha();
-}
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-
-void ViewerImpl::set_tool_colors(const std::vector<Color>& colors)
-{
-    m_tool_colors = colors;
-    m_settings.update_colors = true;
-}
-
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
 void ViewerImpl::set_cog_marker_scale_factor(float factor)
 {
     m_cog_marker_scale_factor = std::max(factor, 0.001f);
+}
+
+bool ViewerImpl::is_tool_marker_enabled() const
+{
+    return m_tool_marker.is_enabled();
 }
 
 void ViewerImpl::enable_tool_marker(bool value)
@@ -1023,9 +988,19 @@ void ViewerImpl::enable_tool_marker(bool value)
     m_tool_marker.enable(value);
 }
 
-void ViewerImpl::set_tool_marker_position(const Vec3f& position)
+const Vec3& ViewerImpl::get_tool_marker_position() const
+{
+    return m_tool_marker.get_position();
+}
+
+void ViewerImpl::set_tool_marker_position(const Vec3& position)
 {
     m_tool_marker.set_position(position);
+}
+
+float ViewerImpl::get_tool_marker_offset_z() const
+{
+    return m_tool_marker.get_offset_z();
 }
 
 void ViewerImpl::set_tool_marker_offset_z(float offset_z)
@@ -1033,9 +1008,19 @@ void ViewerImpl::set_tool_marker_offset_z(float offset_z)
     m_tool_marker.set_offset_z(offset_z);
 }
 
+float ViewerImpl::get_tool_marker_scale_factor() const
+{
+    return m_tool_marker_scale_factor;
+}
+
 void ViewerImpl::set_tool_marker_scale_factor(float factor)
 {
     m_tool_marker_scale_factor = std::max(factor, 0.001f);
+}
+
+const Color& ViewerImpl::get_tool_marker_color() const
+{
+    return m_tool_marker.get_color();
 }
 
 void ViewerImpl::set_tool_marker_color(const Color& color)
@@ -1043,16 +1028,20 @@ void ViewerImpl::set_tool_marker_color(const Color& color)
     m_tool_marker.set_color(color);
 }
 
+float ViewerImpl::get_tool_marker_alpha() const
+{
+    return m_tool_marker.get_alpha();
+}
+
 void ViewerImpl::set_tool_marker_alpha(float alpha)
 {
     m_tool_marker.set_alpha(alpha);
 }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 static bool is_visible(EMoveType type, const Settings& settings)
 {
-    try
-    {
+    try {
         return ((type == EMoveType::Travel      && !settings.options_visibility.at(EOptionType::Travels)) ||
                 (type == EMoveType::Wipe        && !settings.options_visibility.at(EOptionType::Wipes)) ||
                 (type == EMoveType::Retract     && !settings.options_visibility.at(EOptionType::Retractions)) ||
@@ -1063,8 +1052,7 @@ static bool is_visible(EMoveType type, const Settings& settings)
                 (type == EMoveType::PausePrint  && !settings.options_visibility.at(EOptionType::PausePrints)) ||
                 (type == EMoveType::CustomGCode && !settings.options_visibility.at(EOptionType::CustomGCodes))) ? false : true;
     }
-    catch (...)
-    {
+    catch (...) {
         return false;
     }
 }
@@ -1232,7 +1220,7 @@ Color ViewerImpl::select_color(const PathVertex& v) const
     return Dummy_Color;
 }
 
-void ViewerImpl::render_segments(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Vec3f& camera_position)
+void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position)
 {
     if (m_segments_shader_id == 0)
         return;
@@ -1284,7 +1272,7 @@ void ViewerImpl::render_segments(const Mat4x4f& view_matrix, const Mat4x4f& proj
     glsafe(glActiveTexture(curr_active_texture));
 }
 
-void ViewerImpl::render_options(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
+void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
 {
     if (m_options_shader_id == 0)
         return;
@@ -1335,8 +1323,8 @@ void ViewerImpl::render_options(const Mat4x4f& view_matrix, const Mat4x4f& proje
     glsafe(glActiveTexture(curr_active_texture));
 }
 
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-void ViewerImpl::render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+void ViewerImpl::render_cog_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
 {
     if (m_cog_marker_shader_id == 0)
         return;
@@ -1367,7 +1355,7 @@ void ViewerImpl::render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& pr
     glsafe(glUseProgram(curr_shader));
 }
 
-void ViewerImpl::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)
+void ViewerImpl::render_tool_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
 {
     if (m_tool_marker_shader_id == 0)
         return;
@@ -1392,9 +1380,9 @@ void ViewerImpl::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& p
 
     glsafe(glUseProgram(m_tool_marker_shader_id));
 
-    const Vec3f& origin = m_tool_marker.get_position();
-    const Vec3f offset = { 0.0f, 0.0f, m_tool_marker.get_offset_z() };
-    const Vec3f position = origin + offset;
+    const Vec3& origin = m_tool_marker.get_position();
+    const Vec3 offset = { 0.0f, 0.0f, m_tool_marker.get_offset_z() };
+    const Vec3 position = origin + offset;
     glsafe(glUniform3fv(m_uni_tool_marker_world_origin, 1, position.data()));
     glsafe(glUniform1f(m_uni_tool_marker_scale_factor, m_tool_marker_scale_factor));
     glsafe(glUniformMatrix4fv(m_uni_tool_marker_view_matrix, 1, GL_FALSE, view_matrix.data()));
@@ -1414,7 +1402,7 @@ void ViewerImpl::render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& p
 
     glsafe(glUseProgram(curr_shader));
 }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG
 void ViewerImpl::render_debug_window()
@@ -1486,7 +1474,7 @@ void ViewerImpl::render_debug_window()
 
         ImGui::EndTable();
 
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
         ImGui::Separator();
 
         if (ImGui::BeginTable("Cog", 2)) {
@@ -1536,52 +1524,10 @@ void ViewerImpl::render_debug_window()
 
             ImGui::EndTable();
         }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     }
 
     imgui.end();
-
-/*
-    auto to_string = [](EMoveType type) {
-        switch (type)
-        {
-        case EMoveType::Noop:        { return "Noop"; }
-        case EMoveType::Retract:     { return "Retract"; }
-        case EMoveType::Unretract:   { return "Unretract"; }
-        case EMoveType::Seam:        { return "Seam"; }
-        case EMoveType::ToolChange:  { return "ToolChange"; }
-        case EMoveType::ColorChange: { return "ColorChange"; }
-        case EMoveType::PausePrint:  { return "PausePrint"; }
-        case EMoveType::CustomGCode: { return "CustomGCode"; }
-        case EMoveType::Travel:      { return "Travel"; }
-        case EMoveType::Wipe:        { return "Wipe"; }
-        case EMoveType::Extrude:     { return "Extrude"; }
-        default:                     { return "Error"; }
-        }
-    };
-
-    imgui.begin(std::string("LibVGCode Viewer Vertices"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-    if (ImGui::BeginTable("VertexData", 4)) {
-        uint32_t counter = 0;
-        for (size_t i = 0; i < m_vertices.size(); ++i) {
-            const PathVertex& v = m_vertices[i];
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(m_valid_lines_bitset[i] ? Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT : Slic3r::GUI::ImGuiWrapper::COL_GREY_LIGHT, std::to_string(++counter));
-            ImGui::TableSetColumnIndex(1);
-            imgui.text(to_string(v.type));
-
-            ImGui::TableSetColumnIndex(2);
-            imgui.text(std::to_string(m_vertices_map[i]));
-
-            ImGui::TableSetColumnIndex(3);
-            imgui.text(std::to_string(v.position[0]) + ", " + std::to_string(v.position[1]) + ", " + std::to_string(v.position[2]));
-        }
-
-        ImGui::EndTable();
-    }
-    imgui.end();
-*/
 }
 #endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 

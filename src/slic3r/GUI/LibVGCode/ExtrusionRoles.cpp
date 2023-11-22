@@ -16,13 +16,13 @@
 
 namespace libvgcode {
 
-void ExtrusionRoles::add(EGCodeExtrusionRole role, const std::array<float, static_cast<size_t>(ETimeMode::COUNT)>& times)
+void ExtrusionRoles::add(EGCodeExtrusionRole role, const std::array<float, Time_Modes_Count>& times)
 {
     auto role_it = m_items.find(role);
     if (role_it == m_items.end())
         role_it = m_items.insert(std::make_pair(role, Item())).first;
 
-    for (size_t i = 0; i < static_cast<size_t>(ETimeMode::COUNT); ++i) {
+    for (size_t i = 0; i < Time_Modes_Count; ++i) {
         role_it->second.times[i] += times[i];
     }
 }

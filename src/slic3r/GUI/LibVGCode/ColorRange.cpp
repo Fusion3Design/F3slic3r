@@ -62,16 +62,6 @@ ColorRange::EType ColorRange::get_type() const
 
 Color ColorRange::get_color_at(float value) const
 {
-    // std::lerp is available with c++20
-    auto lerp = [](const Color& a, const Color& b, float t) {
-        t = std::clamp(t, 0.0f, 1.0f);
-        Color ret;
-        for (int i = 0; i < 3; ++i) {
-            ret[i] = (1.0f - t) * a[i] + t * b[i];
-        }
-        return ret;
-    };
-
     // Input value scaled to the colors range
     float global_t = 0.0f;
     value = std::clamp(value, m_range[0], m_range[1]);

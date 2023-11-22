@@ -35,11 +35,11 @@ struct Settings
 				{ EOptionType::ColorChanges,    false },
 				{ EOptionType::PausePrints,     false },
 				{ EOptionType::CustomGCodes,    false },
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 				{ EOptionType::CenterOfGravity, false },
 				{ EOptionType::Shells,          false },
 				{ EOptionType::ToolMarker,      true }
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 		} };
 
 		std::map<EGCodeExtrusionRole, bool> extrusion_roles_visibility{ {

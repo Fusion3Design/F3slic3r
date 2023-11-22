@@ -205,7 +205,7 @@ static const char* Options_Fragment_Shader =
 "  fragmentColor = vec4(color, 1.0);\n"
 "}\n";
 
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 static const char* Cog_Marker_Vertex_Shader =
 "#version 150\n"
 "const vec3  light_top_dir = vec3(-0.4574957, 0.4574957, 0.7624929);\n"
@@ -293,7 +293,7 @@ static const char* Tool_Marker_Fragment_Shader =
 "void main() {\n"
 "  fragment_color = color;\n"
 "}\n";
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 } // namespace libvgcode
 

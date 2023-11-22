@@ -13,10 +13,10 @@
 #include "Settings.hpp"
 #include "SegmentTemplate.hpp"
 #include "OptionTemplate.hpp"
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #include "CogMarker.hpp"
 #include "ToolMarker.hpp"
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #include "PathVertex.hpp"
 #include "Bitset.hpp"
 #include "ColorRange.hpp"
@@ -39,7 +39,7 @@ public:
     ViewerImpl& operator = (ViewerImpl&& other) = delete;
 
     //
-    // Initialize shader, uniform indices and segment geometry
+    // Initialize shaders, uniform indices and segment geometry
     //
     void init();
 
@@ -55,91 +55,87 @@ public:
     void load(GCodeInputData&& gcode_data);
 
     //
-    // Update the visibility property of toolpaths
+    // Update the visibility property of toolpaths in dependence
+    // of the current settings
     //
     void update_enabled_entities();
+
     //
-    // Update the color of toolpaths
+    // Update the color of toolpaths in dependence of the current
+    // view type and settings
     //
     void update_colors();
 
     //
     // Render the toolpaths
     //
-    void render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
+    void render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
 
-    //
-    // Settings getters
-    //
     EViewType get_view_type() const;
-    ETimeMode get_time_mode() const;
-    const std::array<uint32_t, 2>& get_layers_range() const;
-    bool is_top_layer_only_view_range() const;
-    bool is_option_visible(EOptionType type) const;
-    bool is_extrusion_role_visible(EGCodeExtrusionRole role) const;
-
-    //
-    // Settings setters
-    //
     void set_view_type(EViewType type);
+
+    ETimeMode get_time_mode() const;
     void set_time_mode(ETimeMode mode);
+
+    const std::array<uint32_t, 2>& get_layers_range() const;
     void set_layers_range(const std::array<uint32_t, 2>& range);
     void set_layers_range(uint32_t min, uint32_t max);
+
+    bool is_top_layer_only_view_range() const;
     void set_top_layer_only_view_range(bool top_layer_only_view_range);
+
+    bool is_option_visible(EOptionType type) const;
     void toggle_option_visibility(EOptionType type);
+
+    bool is_extrusion_role_visible(EGCodeExtrusionRole role) const;
     void toggle_extrusion_role_visibility(EGCodeExtrusionRole role);
 
-    //
-    // View range getters
-    //
     const std::array<uint32_t, 2>& get_view_current_range() const;
     const std::array<uint32_t, 2>& get_view_global_range() const;
-
-    //
-    // View range setters
-    //
     void set_view_current_range(uint32_t min, uint32_t max);
 
-    //
-    // Properties getters
-    //
     size_t get_vertices_count() const;
     PathVertex get_current_vertex() const;
     PathVertex get_vertex_at(size_t id) const;
+
     size_t get_extrusion_roles_count() const;
     std::vector<EGCodeExtrusionRole> get_extrusion_roles() const;
     float get_extrusion_role_time(EGCodeExtrusionRole role) const;
     float get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const;
+
     float get_travels_time() const;
     float get_travels_time(ETimeMode mode) const;
     std::vector<float> get_layers_times() const;
     std::vector<float> get_layers_times(ETimeMode mode) const;
+
     size_t get_tool_colors_count() const;
     const std::vector<Color>& get_tool_colors() const;
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-    Vec3f get_cog_marker_position() const;
-    float get_cog_marker_scale_factor() const;
-    bool is_tool_marker_enabled() const;
-    const Vec3f& get_tool_marker_position() const;
-    float get_tool_marker_offset_z() const;
-    float get_tool_marker_scale_factor() const;
-    const Color& get_tool_marker_color() const;
-    float get_tool_marker_alpha() const;
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-
-    //
-    // Properties setters
-    //
     void set_tool_colors(const std::vector<Color>& colors);
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+    Vec3 get_cog_marker_position() const;
+
+    float get_cog_marker_scale_factor() const;
     void set_cog_marker_scale_factor(float factor);
+
+    bool is_tool_marker_enabled() const;
     void enable_tool_marker(bool value);
-    void set_tool_marker_position(const Vec3f& position);
+
+    const Vec3& get_tool_marker_position() const;
+    void set_tool_marker_position(const Vec3& position);
+
+    float get_tool_marker_offset_z() const;
     void set_tool_marker_offset_z(float offset_z);
+
+    float get_tool_marker_scale_factor() const;
     void set_tool_marker_scale_factor(float factor);
-    void set_tool_marker_color(const Color& color);
+
+    const Color& get_tool_marker_color() const;
+    void set_tool_marker_color(const Color & color);
+
+    float get_tool_marker_alpha() const;
     void set_tool_marker_alpha(float size);
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 private:
     Settings m_settings;
@@ -147,7 +143,7 @@ private:
     Range m_layers_range;
     ViewRange m_view_range;
     ExtrusionRoles m_extrusion_roles;
-    std::array<float, static_cast<size_t>(ETimeMode::COUNT)> m_travels_time{ 0.0f, 0.0f };
+    std::array<float, Time_Modes_Count> m_travels_time{ 0.0f, 0.0f };
 
     //
     // The OpenGL element used to represent all toolpath segments
@@ -159,7 +155,7 @@ private:
     //
     OptionTemplate m_option_template;
 
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     //
     // The OpenGL element used to represent the center of gravity
     //
@@ -171,7 +167,7 @@ private:
     //
     ToolMarker m_tool_marker;
     float m_tool_marker_scale_factor{ 1.0f };
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
     //
     // cpu buffer to store vertices
@@ -232,7 +228,7 @@ private:
     int m_uni_options_colors_tex_id{ -1 };
     int m_uni_options_segment_index_tex_id{ -1 };
 
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     //
     // Cache for OpenGL uniforms id for cog marker shader 
     //
@@ -249,7 +245,7 @@ private:
     int m_uni_tool_marker_view_matrix{ -1 };
     int m_uni_tool_marker_projection_matrix{ -1 };
     int m_uni_tool_marker_color_base{ -1 };
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
     //
     // gpu buffers to store positions
@@ -280,12 +276,12 @@ private:
     void update_view_global_range();
     void update_color_ranges();
     Color select_color(const PathVertex& v) const;
-    void render_segments(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix, const Vec3f& camera_position);
-    void render_options(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
-#if !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
-    void render_cog_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
-    void render_tool_marker(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix);
-#endif // !ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS
+    void render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position);
+    void render_options(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+    void render_cog_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
+    void render_tool_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG
     // Debug
