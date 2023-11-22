@@ -16,7 +16,6 @@
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #if ENABLE_NEW_GCODE_VIEWER
-#include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "slic3r/GUI/GUI_App.hpp"
 #include "slic3r/GUI/ImGuiWrapper.hpp"
 //################################################################################################################################
@@ -472,16 +471,15 @@ void ViewerImpl::reset()
     delete_buffers(m_positions_buf_id);
 }
 
-void ViewerImpl::load(const Slic3r::GCodeProcessorResult& gcode_result, GCodeInputData&& gcode_data)
+void ViewerImpl::load(GCodeInputData&& gcode_data)
 {
     if (m_settings.time_mode != ETimeMode::Normal) {
-        const Slic3r::PrintEstimatedStatistics& stats = gcode_result.print_statistics;
-        bool force_normal_mode = static_cast<size_t>(m_settings.time_mode) >= stats.modes.size();
+        bool force_normal_mode = static_cast<size_t>(m_settings.time_mode) >= gcode_data.times.size();
         if (!force_normal_mode) {
-            const float normal_time = stats.modes[static_cast<size_t>(ETimeMode::Normal)].time;
-            const float mode_time = stats.modes[static_cast<size_t>(m_settings.time_mode)].time;
+            const float normal_time = gcode_data.times[static_cast<size_t>(ETimeMode::Normal)];
+            const float mode_time = gcode_data.times[static_cast<size_t>(m_settings.time_mode)];
             force_normal_mode = mode_time == 0.0f ||
-                                short_time(get_time_dhms(mode_time)) == short_time(get_time_dhms(normal_time)); // TO CHECK -> Is this necessary ?
+                short_time(get_time_dhms(mode_time)) == short_time(get_time_dhms(normal_time)); // TO CHECK -> Is this necessary ?
         }
         if (force_normal_mode)
             m_settings.time_mode = ETimeMode::Normal;

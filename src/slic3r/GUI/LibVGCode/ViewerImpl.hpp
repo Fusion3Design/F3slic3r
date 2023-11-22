@@ -24,14 +24,6 @@
 #include "Layers.hpp"
 #include "ExtrusionRoles.hpp"
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-namespace Slic3r {
-struct GCodeProcessorResult;
-class Print;
-} // namespace Slic3r
-//################################################################################################################################
-
 namespace libvgcode {
 
 struct GCodeInputData;
@@ -57,10 +49,10 @@ public:
     void reset();
 
     //
-    // Setup all the variables used for visualization and coloring of the toolpaths
-    // from the gcode moves contained in the given gcode_result.
+    // Setup all the variables used for visualization of the toolpaths
+    // from the given gcode data.
     //
-    void load(const Slic3r::GCodeProcessorResult& gcode_result, GCodeInputData&& gcode_data);
+    void load(GCodeInputData&& gcode_data);
 
     //
     // Update the visibility property of toolpaths

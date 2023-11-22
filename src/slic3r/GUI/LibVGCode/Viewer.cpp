@@ -12,8 +12,6 @@
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #if ENABLE_NEW_GCODE_VIEWER
-
-#include "libslic3r/GCode/GCodeProcessor.hpp"
 //################################################################################################################################
 
 namespace libvgcode {
@@ -28,9 +26,9 @@ void Viewer::reset()
     m_impl.reset();
 }
 
-void Viewer::load(const Slic3r::GCodeProcessorResult& gcode_result, GCodeInputData&& gcode_data)
+void Viewer::load(GCodeInputData&& gcode_data)
 {
-    m_impl.load(gcode_result, std::move(gcode_data));
+    m_impl.load(std::move(gcode_data));
 }
 
 void Viewer::render(const Mat4x4f& view_matrix, const Mat4x4f& projection_matrix)

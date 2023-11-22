@@ -12,13 +12,19 @@
 
 #include "PathVertex.hpp"
 
-#include <vector>
-
 namespace libvgcode {
 
 struct GCodeInputData
 {
+    //
+    // List of path vertices
+    //
     std::vector<PathVertex> vertices;
+
+    //
+    // Total time for each time mode
+    //
+    std::array<float, static_cast<size_t>(ETimeMode::COUNT)> times{ 0.0f, 0.0f };
 };
 
 } // namespace libvgcode

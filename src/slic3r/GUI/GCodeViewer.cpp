@@ -145,6 +145,18 @@ static libvgcode::EMoveType convert(EMoveType type)
     }
 }
 
+// mapping from Slic3r::PrintEstimatedStatistics::ETimeMode to libvgcode::ETimeMode
+static libvgcode::ETimeMode convert(const PrintEstimatedStatistics::ETimeMode& mode)
+{
+    switch (mode)
+    {
+    case PrintEstimatedStatistics::ETimeMode::Normal:  { return libvgcode::ETimeMode::Normal; }
+    case PrintEstimatedStatistics::ETimeMode::Stealth: { return libvgcode::ETimeMode::Stealth; }
+    case PrintEstimatedStatistics::ETimeMode::Count:   { return libvgcode::ETimeMode::COUNT; }
+    default:                                           { return libvgcode::ETimeMode::COUNT; }
+    }
+}
+
 // mapping from Slic3r::GCodeProcessorResult to libvgcode::GCodeInputData
 static libvgcode::GCodeInputData convert(const GCodeProcessorResult& result)
 {
@@ -223,6 +235,10 @@ static libvgcode::GCodeInputData convert(const GCodeProcessorResult& result)
         ret.vertices.emplace_back(vertex);
     }
     ret.vertices.shrink_to_fit();
+
+    for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
+        ret.times[static_cast<size_t>(convert(static_cast<PrintEstimatedStatistics::ETimeMode>(i)))] = result.print_statistics.modes[i].time;
+    }
 
     return ret;
 }
@@ -1356,9 +1372,9 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
 
     // convert data from PrusaSlicer format to libvgcode format
     libvgcode::GCodeInputData data = convert(gcode_result);
-    
+
     // send data to the viewer
-    m_new_viewer.load(gcode_result, std::move(data));
+    m_new_viewer.load(std::move(data));
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     // avoid processing if called with the same gcode_result
