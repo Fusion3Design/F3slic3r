@@ -786,8 +786,7 @@ void ViewerImpl::toggle_option_visibility(EOptionType type)
     try {
         bool& value = m_settings.options_visibility.at(type);
         value = !value;
-        if (type == EOptionType::Travels)
-            m_settings.update_view_global_range = true;
+        m_settings.update_view_global_range = true;
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
     }
@@ -811,6 +810,7 @@ void ViewerImpl::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
     try {
         bool& value = m_settings.extrusion_roles_visibility.at(role);
         value = !value;
+        m_settings.update_view_global_range = true;
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
     }
@@ -864,17 +864,14 @@ void ViewerImpl::set_view_current_range(uint32_t min, uint32_t max)
     Range new_range;
     new_range.set(min_id, max_id);
 
-    if (m_view_range.get_current() != new_range.get()) {
-        if (m_settings.update_view_global_range) {
-            // force update of global range, if required, to avoid clamping the current range with global old values
-            // when calling set_current_range()
-            update_view_global_range();
-            m_settings.update_view_global_range = false;
-        }
-        m_view_range.set_current(new_range);
-        m_settings.update_enabled_entities = true;
-        m_settings.update_colors = true;
-    }
+    // force update of global range, if required, to avoid clamping the current range with global old values
+    // when calling set_current_range()
+    update_view_global_range();
+    m_settings.update_view_global_range = false;
+
+    m_view_range.set_current(new_range);
+    m_settings.update_enabled_entities = true;
+    m_settings.update_colors = true;
 }
 
 size_t ViewerImpl::get_vertices_count() const
@@ -1085,18 +1082,19 @@ void ViewerImpl::set_tool_marker_alpha(float alpha)
 }
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
-static bool is_visible(EMoveType type, const Settings& settings)
+static bool is_visible(const PathVertex& v, const Settings& settings)
 {
     try {
-        return ((type == EMoveType::Travel      && !settings.options_visibility.at(EOptionType::Travels)) ||
-                (type == EMoveType::Wipe        && !settings.options_visibility.at(EOptionType::Wipes)) ||
-                (type == EMoveType::Retract     && !settings.options_visibility.at(EOptionType::Retractions)) ||
-                (type == EMoveType::Unretract   && !settings.options_visibility.at(EOptionType::Unretractions)) ||
-                (type == EMoveType::Seam        && !settings.options_visibility.at(EOptionType::Seams)) ||
-                (type == EMoveType::ToolChange  && !settings.options_visibility.at(EOptionType::ToolChanges)) ||
-                (type == EMoveType::ColorChange && !settings.options_visibility.at(EOptionType::ColorChanges)) ||
-                (type == EMoveType::PausePrint  && !settings.options_visibility.at(EOptionType::PausePrints)) ||
-                (type == EMoveType::CustomGCode && !settings.options_visibility.at(EOptionType::CustomGCodes))) ? false : true;
+      return ((v.type == EMoveType::Travel && !settings.options_visibility.at(EOptionType::Travels)) ||
+              (v.type == EMoveType::Wipe && !settings.options_visibility.at(EOptionType::Wipes)) ||
+              (v.type == EMoveType::Retract && !settings.options_visibility.at(EOptionType::Retractions)) ||
+              (v.type == EMoveType::Unretract && !settings.options_visibility.at(EOptionType::Unretractions)) ||
+              (v.type == EMoveType::Seam && !settings.options_visibility.at(EOptionType::Seams)) ||
+              (v.type == EMoveType::ToolChange && !settings.options_visibility.at(EOptionType::ToolChanges)) ||
+              (v.type == EMoveType::ColorChange && !settings.options_visibility.at(EOptionType::ColorChanges)) ||
+              (v.type == EMoveType::PausePrint && !settings.options_visibility.at(EOptionType::PausePrints)) ||
+              (v.type == EMoveType::CustomGCode && !settings.options_visibility.at(EOptionType::CustomGCodes)) ||
+              (v.type == EMoveType::Extrude && !settings.extrusion_roles_visibility.at(v.role))) ? false : true;
     }
     catch (...) {
         return false;
@@ -1110,7 +1108,7 @@ void ViewerImpl::update_view_global_range()
 
     auto first_it = m_vertices.begin();
     while (first_it != m_vertices.end() &&
-           (first_it->layer_id < layers_range[0] || !is_visible(first_it->type, m_settings))) {
+           (first_it->layer_id < layers_range[0] || !is_visible(*first_it, m_settings))) {
         ++first_it;
     }
 
@@ -1140,7 +1138,7 @@ void ViewerImpl::update_view_global_range()
             --rev_last_it;
 
         bool reduced = false;
-        while (rev_last_it != rev_first_it && !is_visible(rev_last_it->type, m_settings)) {
+        while (rev_last_it != rev_first_it && !is_visible(*rev_last_it, m_settings)) {
             ++rev_last_it;
             reduced = true;
         }
@@ -1150,7 +1148,8 @@ void ViewerImpl::update_view_global_range()
 
         if (travels_visible) {
             // if the global range ends with a travel move, extend it to the travel end
-            while (last_it != m_vertices.end() && last_it + 1 != m_vertices.end() && last_it->is_travel()) {
+            while (last_it != m_vertices.end() && last_it + 1 != m_vertices.end() &&
+                   last_it->is_travel() && (last_it + 1)->is_travel()) {
                 ++last_it;
             }
         }
