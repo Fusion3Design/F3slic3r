@@ -14,11 +14,10 @@
 
 namespace libvgcode {
 
-// Alias for GCodeViewer::Extrusion::Range
 class ColorRange
 {
 public:
-    enum class EType : unsigned char
+    enum class EType : uint8_t
     {
         Linear,
         Logarithmic,
@@ -32,19 +31,16 @@ public:
 
     EType get_type() const;
     Color get_color_at(float value) const;
-    unsigned int get_count() const;
 
-#if ENABLE_NEW_GCODE_VIEWER_DEBUG
     const std::array<float, 2>& get_range() const;
-#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 
 private:
     EType m_type{ EType::Linear };
     // [0] = min, [1] = max
     std::array<float, 2> m_range{ FLT_MAX, -FLT_MAX };
-    // updates counter
-    unsigned int m_count{ 0 };
 };
+
+static constexpr size_t Color_Range_Types_Count = static_cast<size_t>(ColorRange::EType::COUNT);
 
 } // namespace libvgcode
 

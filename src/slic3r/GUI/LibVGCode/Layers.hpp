@@ -29,6 +29,10 @@ public:
 		float get_time(ETimeMode mode, uint32_t layer_id) const;
 		std::vector<float> get_times(ETimeMode mode) const;
 
+		const std::array<uint32_t, 2>& get_view_range() const;
+		void set_view_range(const std::array<uint32_t, 2>& range);
+		void set_view_range(uint32_t min, uint32_t max);
+
 		bool layer_contains_colorprint_options(uint32_t layer_id) const;
 
 private:
@@ -40,6 +44,7 @@ private:
 		};
 
 		std::vector<Item> m_items;
+		Range m_view_range;
 };
 
 } // namespace libvgcode

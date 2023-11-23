@@ -268,10 +268,6 @@ static GCodeInputData convert(const Slic3r::GCodeProcessorResult& result)
     }
     ret.vertices.shrink_to_fit();
 
-    for (size_t i = 0; i < static_cast<size_t>(Slic3r::PrintEstimatedStatistics::ETimeMode::Count); ++i) {
-        ret.times[static_cast<size_t>(convert(static_cast<Slic3r::PrintEstimatedStatistics::ETimeMode>(i)))] = result.print_statistics.modes[i].time;
-    }
-
     return ret;
 }
 
@@ -1484,7 +1480,15 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
     m_print_statistics = gcode_result.print_statistics;
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#if !ENABLE_NEW_GCODE_VIEWER
+#if ENABLE_NEW_GCODE_VIEWER
+    PrintEstimatedStatistics::ETimeMode time_mode = convert(m_new_viewer.get_time_mode());
+    if (m_new_viewer.get_time_mode() != libvgcode::ETimeMode::Normal) {
+        const float time = m_print_statistics.modes[static_cast<size_t>(time_mode)].time;
+        if (time == 0.0f ||
+            short_time(get_time_dhms(time)) == short_time(get_time_dhms(m_print_statistics.modes[static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Normal)].time)))
+            m_new_viewer.set_time_mode(libvgcode::convert(PrintEstimatedStatistics::ETimeMode::Normal));
+    }
+#else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if (m_time_estimate_mode != PrintEstimatedStatistics::ETimeMode::Normal) {
         const float time = m_print_statistics.modes[static_cast<size_t>(m_time_estimate_mode)].time;
@@ -1493,7 +1497,7 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
             m_time_estimate_mode = PrintEstimatedStatistics::ETimeMode::Normal;
     }
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#endif // !ENABLE_NEW_GCODE_VIEWER
+#endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     m_conflict_result = gcode_result.conflict_result;
@@ -1705,19 +1709,8 @@ void GCodeViewer::render()
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    if (m_use_new_viewer) {
-        const Camera& camera = wxGetApp().plater()->get_camera();
-        libvgcode::Mat4x4 converted_view_matrix = libvgcode::convert(static_cast<Matrix4f>(camera.get_view_matrix().matrix().cast<float>()));
-        libvgcode::Mat4x4 converted_projetion_matrix = libvgcode::convert(static_cast<Matrix4f>(camera.get_projection_matrix().matrix().cast<float>()));
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-        libvgcode::Vec3 converted_tool_marker_position = libvgcode::convert(m_sequential_view.current_position);
-        m_new_viewer.set_cog_marker_scale_factor(m_cog_marker_fixed_screen_size ? 10.0f * m_cog_marker_size * camera.get_inv_zoom() : m_cog_marker_size);
-        m_new_viewer.enable_tool_marker(m_sequential_view.current.last != m_sequential_view.endpoints.last);
-        m_new_viewer.set_tool_marker_position(converted_tool_marker_position);
-        m_new_viewer.set_tool_marker_scale_factor(m_tool_marker_fixed_screen_size ? 10.0f * m_tool_marker_size * camera.get_inv_zoom() : m_tool_marker_size);
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-        m_new_viewer.render(converted_view_matrix, converted_projetion_matrix);
-    }
+    if (m_use_new_viewer)
+        render_new_toolpaths();
     else
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -3901,6 +3894,151 @@ void GCodeViewer::refresh_render_paths(bool keep_sequential_current_first, bool 
     statistics->refresh_paths_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count();
 #endif // ENABLE_GCODE_VIEWER_STATISTICS
 }
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_NEW_GCODE_VIEWER
+void GCodeViewer::render_new_toolpaths()
+{
+    const Camera& camera = wxGetApp().plater()->get_camera();
+    libvgcode::Mat4x4 converted_view_matrix = libvgcode::convert(static_cast<Matrix4f>(camera.get_view_matrix().matrix().cast<float>()));
+    libvgcode::Mat4x4 converted_projetion_matrix = libvgcode::convert(static_cast<Matrix4f>(camera.get_projection_matrix().matrix().cast<float>()));
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+    libvgcode::Vec3 converted_tool_marker_position = libvgcode::convert(m_sequential_view.current_position);
+    m_new_viewer.set_cog_marker_scale_factor(m_cog_marker_fixed_screen_size ? 10.0f * m_cog_marker_size * camera.get_inv_zoom() : m_cog_marker_size);
+    m_new_viewer.enable_tool_marker(m_sequential_view.current.last != m_sequential_view.endpoints.last);
+    m_new_viewer.set_tool_marker_position(converted_tool_marker_position);
+    m_new_viewer.set_tool_marker_scale_factor(m_tool_marker_fixed_screen_size ? 10.0f * m_tool_marker_size * camera.get_inv_zoom() : m_tool_marker_size);
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+    m_new_viewer.render(converted_view_matrix, converted_projetion_matrix);
+
+#if ENABLE_NEW_GCODE_VIEWER_DEBUG
+    Slic3r::GUI::ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
+    imgui.begin(std::string("LibVGCode Viewer Debug"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+
+    if (ImGui::BeginTable("Data", 2)) {
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "# vertices");
+        ImGui::TableSetColumnIndex(1);
+        imgui.text(std::to_string(m_new_viewer.get_vertices_count()));
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled lines");
+        ImGui::TableSetColumnIndex(1);
+        const std::array<uint32_t, 2>& enabled_segments_range = m_new_viewer.get_enabled_segments_range();
+        imgui.text(std::to_string(m_new_viewer.get_enabled_segments_count()) + " [" + std::to_string(enabled_segments_range[0]) +
+            "-" + std::to_string(enabled_segments_range[1]) + "]");
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled options");
+        ImGui::TableSetColumnIndex(1);
+        const std::array<uint32_t, 2>& enabled_options_range = m_new_viewer.get_enabled_options_range();
+        imgui.text(std::to_string(m_new_viewer.get_enabled_options_count()) + " [" + std::to_string(enabled_options_range[0]) +
+            "-" + std::to_string(enabled_options_range[1]) + "]");
+
+        ImGui::Separator();
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "layers range");
+        ImGui::TableSetColumnIndex(1);
+        const std::array<uint32_t, 2>& layers_range = m_new_viewer.get_layers_range();
+        imgui.text(std::to_string(layers_range[0]) + " - " + std::to_string(layers_range[1]));
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (current)");
+        ImGui::TableSetColumnIndex(1);
+        const std::array<uint32_t, 2>& current_view_range = m_new_viewer.get_view_current_range();
+        imgui.text(std::to_string(current_view_range[0]) + " - " + std::to_string(current_view_range[1]));
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (global)");
+        ImGui::TableSetColumnIndex(1);
+        const std::array<uint32_t, 2>& global_view_range = m_new_viewer.get_view_global_range();
+        imgui.text(std::to_string(global_view_range[0]) + " - " + std::to_string(global_view_range[1]));
+
+        auto add_range_property_row = [&imgui](const std::string& label, const std::array<float, 2>& range) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, label);
+            ImGui::TableSetColumnIndex(1);
+            char buf[64];
+            sprintf(buf, "%.3f - %.3f", range[0], range[1]);
+            imgui.text(buf);
+        };
+
+        add_range_property_row("height range", m_new_viewer.get_height_range());
+        add_range_property_row("width range", m_new_viewer.get_width_range());
+        add_range_property_row("speed range", m_new_viewer.get_speed_range());
+        add_range_property_row("fan speed range", m_new_viewer.get_fan_speed_range());
+        add_range_property_row("temperature range", m_new_viewer.get_temperature_range());
+        add_range_property_row("volumetric rate range", m_new_viewer.get_volumetric_rate_range());
+        add_range_property_row("layer time linear range", m_new_viewer.get_layer_time_range(libvgcode::ColorRange::EType::Linear));
+        add_range_property_row("layer time logarithmic range", m_new_viewer.get_layer_time_range(libvgcode::ColorRange::EType::Logarithmic));
+
+        ImGui::EndTable();
+
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+        ImGui::Separator();
+
+        if (ImGui::BeginTable("Cog", 2)) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Cog marker scale factor");
+            ImGui::TableSetColumnIndex(1);
+            imgui.text(std::to_string(get_cog_marker_scale_factor()));
+
+            ImGui::EndTable();
+        }
+
+        ImGui::Separator();
+
+        if (ImGui::BeginTable("Tool", 2)) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker scale factor");
+            ImGui::TableSetColumnIndex(1);
+            imgui.text(std::to_string(m_new_viewer.get_tool_marker_scale_factor()));
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker z offset");
+            ImGui::TableSetColumnIndex(1);
+            float tool_z_offset = m_new_viewer.get_tool_marker_offset_z();
+            if (imgui.slider_float("##ToolZOffset", &tool_z_offset, 0.0f, 1.0f))
+                m_new_viewer.set_tool_marker_offset_z(tool_z_offset);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker color");
+            ImGui::TableSetColumnIndex(1);
+            libvgcode::Color color = m_new_viewer.get_tool_marker_color();
+            if (ImGui::ColorPicker3("##ToolColor", color.data()))
+                m_new_viewer.set_tool_marker_color(color);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker alpha");
+            ImGui::TableSetColumnIndex(1);
+            float tool_alpha = m_new_viewer.get_tool_marker_alpha();
+            if (imgui.slider_float("##ToolAlpha", &tool_alpha, 0.25f, 0.75f))
+                m_new_viewer.set_tool_marker_alpha(tool_alpha);
+
+            ImGui::EndTable();
+        }
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+    }
+
+    imgui.end();
+#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
+}
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 void GCodeViewer::render_toolpaths()
 {

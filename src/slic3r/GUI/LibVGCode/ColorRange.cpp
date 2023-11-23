@@ -26,9 +26,6 @@ ColorRange::ColorRange(EType type)
 
 void ColorRange::update(float value)
 {
-    if (std::abs(value - m_range[0]) > 0.001 && std::abs(value - m_range[1]) > 0.001)
-        ++m_count;
-
     m_range[0] = std::min(m_range[0], value);
     m_range[1] = std::max(m_range[1], value);
 }
@@ -36,7 +33,6 @@ void ColorRange::update(float value)
 void ColorRange::reset()
 {
     m_range = { FLT_MAX, -FLT_MAX };
-    m_count = 0;
 }
 
 static float step_size(const std::array<float, 2>& range, ColorRange::EType type)
@@ -85,17 +81,10 @@ Color ColorRange::get_color_at(float value) const
     return lerp(Ranges_Colors[color_low_idx], Ranges_Colors[color_high_idx], global_t - static_cast<float>(color_low_idx));
 }
 
-unsigned int ColorRange::get_count() const
-{
-    return m_count;
-}
-
-#if ENABLE_NEW_GCODE_VIEWER_DEBUG
 const std::array<float, 2>& ColorRange::get_range() const
 {
     return m_range;
 }
-#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 
 } // namespace libvgcode
 

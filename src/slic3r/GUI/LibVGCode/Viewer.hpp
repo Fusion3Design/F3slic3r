@@ -62,42 +62,66 @@ public:
     // Return the count of vertices used to render the toolpaths
     //
     uint32_t get_vertices_count() const;
+
     //
     // Return the vertex pointed by the max value of the view current range
     //
     PathVertex get_current_vertex() const;
+
     //
     // Return the vertex at the given index
     //
     PathVertex get_vertex_at(uint32_t id) const;
+
+    //
+    // Return the count of path segments enabled for rendering
+    //
+    size_t get_enabled_segments_count() const;
+
+    const std::array<uint32_t, 2>& get_enabled_segments_range() const;
+
+    //
+    // Return the count of options enabled for rendering
+    //
+    size_t get_enabled_options_count() const;
+
+    const std::array<uint32_t, 2>& get_enabled_options_range() const;
+
     //
     // Return the count of detected extrusion roles
     //
     uint32_t get_extrusion_roles_count() const;
+
     //
     // Return the list of detected extrusion roles
     //
     std::vector<EGCodeExtrusionRole> get_extrusion_roles() const;
+
     //
     // Return the estimated time for the given role and the current time mode
     //
     float get_extrusion_role_time(EGCodeExtrusionRole role) const;
+
     //
     // Return the estimated time for the given role and the given time mode
     //
     float get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const;
+
     //
     // Return the estimated time for the travel moves and the current time mode
     //
     float get_travels_time() const;
+
     //
     // Return the estimated time for the travel moves and the given time mode
     //
     float get_travels_time(ETimeMode mode) const;
+
     //
     // Return the list of layers time for the current time mode
     //
     std::vector<float> get_layers_times() const;
+
     //
     // Return the list of layers time for the given time mode
     //
@@ -106,6 +130,14 @@ public:
     size_t get_tool_colors_count() const;
     const std::vector<Color>& get_tool_colors() const;
     void set_tool_colors(const std::vector<Color>& colors);
+
+    const std::array<float, 2>& get_height_range() const;
+    const std::array<float, 2>& get_width_range() const;
+    const std::array<float, 2>& get_speed_range() const;
+    const std::array<float, 2>& get_fan_speed_range() const;
+    const std::array<float, 2>& get_temperature_range() const;
+    const std::array<float, 2>& get_volumetric_rate_range() const;
+    std::array<float, 2> get_layer_time_range(ColorRange::EType type) const;
 
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     //
@@ -127,6 +159,9 @@ public:
 
     const Vec3& get_tool_marker_position() const;
     void set_tool_marker_position(const Vec3& position);
+
+    float get_tool_marker_offset_z() const;
+    void set_tool_marker_offset_z(float offset_z);
 
     float get_tool_marker_scale_factor() const;
     void set_tool_marker_scale_factor(float factor);

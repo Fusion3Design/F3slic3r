@@ -98,6 +98,12 @@ public:
     PathVertex get_current_vertex() const;
     PathVertex get_vertex_at(size_t id) const;
 
+    size_t get_enabled_segments_count() const;
+    const std::array<uint32_t, 2>& get_enabled_segments_range() const;
+
+    size_t get_enabled_options_count() const;
+    const std::array<uint32_t, 2>& get_enabled_options_range() const;
+
     size_t get_extrusion_roles_count() const;
     std::vector<EGCodeExtrusionRole> get_extrusion_roles() const;
     float get_extrusion_role_time(EGCodeExtrusionRole role) const;
@@ -111,6 +117,14 @@ public:
     size_t get_tool_colors_count() const;
     const std::vector<Color>& get_tool_colors() const;
     void set_tool_colors(const std::vector<Color>& colors);
+
+    const std::array<float, 2>& get_height_range() const;
+    const std::array<float, 2>& get_width_range() const;
+    const std::array<float, 2>& get_speed_range() const;
+    const std::array<float, 2>& get_fan_speed_range() const;
+    const std::array<float, 2>& get_temperature_range() const;
+    const std::array<float, 2>& get_volumetric_rate_range() const;
+    std::array<float, 2> get_layer_time_range(ColorRange::EType type) const;
 
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     Vec3 get_cog_marker_position() const;
@@ -140,7 +154,6 @@ public:
 private:
     Settings m_settings;
     Layers m_layers;
-    Range m_layers_range;
     ViewRange m_view_range;
     ExtrusionRoles m_extrusion_roles;
     std::array<float, Time_Modes_Count> m_travels_time{ 0.0f, 0.0f };
@@ -173,10 +186,8 @@ private:
     // cpu buffer to store vertices
     //
     std::vector<PathVertex> m_vertices;
-#if ENABLE_NEW_GCODE_VIEWER_DEBUG
-    std::pair<uint32_t, uint32_t> m_enabled_segments_range{ 0, 0 };
-    std::pair<uint32_t, uint32_t> m_enabled_options_range{ 0, 0 };
-#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
+    Range m_enabled_segments_range;
+    Range m_enabled_options_range;
 
     //
     // Member variables used for toolpaths visibiliity
@@ -194,7 +205,7 @@ private:
     ColorRange m_fan_speed_range;
     ColorRange m_temperature_range;
     ColorRange m_volumetric_rate_range;
-    std::array<ColorRange, static_cast<size_t>(ColorRange::EType::COUNT)> m_layer_time_range{
+    std::array<ColorRange, Color_Range_Types_Count> m_layer_time_range{
         ColorRange(ColorRange::EType::Linear), ColorRange(ColorRange::EType::Logarithmic)
     };
     std::vector<Color> m_tool_colors;
@@ -282,11 +293,6 @@ private:
     void render_cog_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
     void render_tool_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-
-#if ENABLE_NEW_GCODE_VIEWER_DEBUG
-    // Debug
-    void render_debug_window();
-#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 };
 
 } // namespace libvgcode

@@ -131,6 +131,26 @@ PathVertex Viewer::get_vertex_at(uint32_t id) const
     return m_impl.get_vertex_at(id);
 }
 
+size_t Viewer::get_enabled_segments_count() const
+{
+    return m_impl.get_enabled_segments_count();
+}
+
+const std::array<uint32_t, 2>& Viewer::get_enabled_segments_range() const
+{
+    return m_impl.get_enabled_segments_range();
+}
+
+size_t Viewer::get_enabled_options_count() const
+{
+    return m_impl.get_enabled_options_count();
+}
+
+const std::array<uint32_t, 2>& Viewer::get_enabled_options_range() const
+{
+    return m_impl.get_enabled_options_range();
+}
+
 uint32_t Viewer::get_extrusion_roles_count() const
 {
     return m_impl.get_extrusion_roles_count();
@@ -186,6 +206,41 @@ void Viewer::set_tool_colors(const std::vector<Color>& colors)
     m_impl.set_tool_colors(colors);
 }
 
+const std::array<float, 2>& Viewer::get_height_range() const
+{
+    return m_impl.get_height_range();
+}
+
+const std::array<float, 2>& Viewer::get_width_range() const
+{
+    return m_impl.get_width_range();
+}
+
+const std::array<float, 2>& Viewer::get_speed_range() const
+{
+    return m_impl.get_speed_range();
+}
+
+const std::array<float, 2>& Viewer::get_fan_speed_range() const
+{
+    return m_impl.get_fan_speed_range();
+}
+
+const std::array<float, 2>& Viewer::get_temperature_range() const
+{
+    return m_impl.get_temperature_range();
+}
+
+const std::array<float, 2>& Viewer::get_volumetric_rate_range() const
+{
+    return m_impl.get_volumetric_rate_range();
+}
+
+std::array<float, 2> Viewer::get_layer_time_range(ColorRange::EType type) const
+{
+    return m_impl.get_layer_time_range(type);
+}
+
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 Vec3 Viewer::get_cog_position() const
 {
@@ -220,6 +275,16 @@ const Vec3& Viewer::get_tool_marker_position() const
 void Viewer::set_tool_marker_position(const Vec3& position)
 {
     m_impl.set_tool_marker_position(position);
+}
+
+float Viewer::get_tool_marker_offset_z() const
+{
+    return m_impl.get_tool_marker_offset_z();
+}
+
+void Viewer::set_tool_marker_offset_z(float offset_z)
+{
+    m_impl.set_tool_marker_offset_z(offset_z);
 }
 
 float Viewer::get_tool_marker_scale_factor() const

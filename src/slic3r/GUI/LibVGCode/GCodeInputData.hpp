@@ -20,11 +20,6 @@ struct GCodeInputData
     // List of path vertices
     //
     std::vector<PathVertex> vertices;
-
-    //
-    // Total time for each time mode
-    //
-    std::array<float, Time_Modes_Count> times{ 0.0f, 0.0f };
 };
 
 } // namespace libvgcode

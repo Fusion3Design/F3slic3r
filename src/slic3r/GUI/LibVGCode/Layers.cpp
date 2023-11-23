@@ -49,6 +49,7 @@ void Layers::update(const PathVertex& vertex, uint32_t vertex_id)
 void Layers::reset()
 {
     m_items.clear();
+    m_view_range.reset();
 }
 
 bool Layers::empty() const
@@ -77,6 +78,21 @@ std::vector<float> Layers::get_times(ETimeMode mode) const
         }
     }
     return ret;
+}
+
+const std::array<uint32_t, 2>& Layers::get_view_range() const
+{
+    return m_view_range.get();
+}
+
+void Layers::set_view_range(const std::array<uint32_t, 2>& range)
+{
+    set_view_range(range[0], range[1]);
+}
+
+void Layers::set_view_range(uint32_t min, uint32_t max)
+{
+    m_view_range.set(min, max);
 }
 
 bool Layers::layer_contains_colorprint_options(uint32_t layer_id) const

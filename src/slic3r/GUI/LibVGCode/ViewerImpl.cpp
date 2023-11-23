@@ -16,8 +16,6 @@
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #if ENABLE_NEW_GCODE_VIEWER
-#include "slic3r/GUI/GUI_App.hpp"
-#include "slic3r/GUI/ImGuiWrapper.hpp"
 //################################################################################################################################
 
 #include <map>
@@ -445,7 +443,6 @@ void ViewerImpl::init()
 void ViewerImpl::reset()
 {
     m_layers.reset();
-    m_layers_range.reset();
     m_view_range.reset();
     m_extrusion_roles.reset();
     m_travels_time = { 0.0f, 0.0f };
@@ -473,18 +470,6 @@ void ViewerImpl::reset()
 
 void ViewerImpl::load(GCodeInputData&& gcode_data)
 {
-    if (m_settings.time_mode != ETimeMode::Normal) {
-        bool force_normal_mode = static_cast<size_t>(m_settings.time_mode) >= gcode_data.times.size();
-        if (!force_normal_mode) {
-            const float normal_time = gcode_data.times[static_cast<size_t>(ETimeMode::Normal)];
-            const float mode_time = gcode_data.times[static_cast<size_t>(m_settings.time_mode)];
-            force_normal_mode = mode_time == 0.0f ||
-                short_time(get_time_dhms(mode_time)) == short_time(get_time_dhms(normal_time)); // TO CHECK -> Is this necessary ?
-        }
-        if (force_normal_mode)
-            m_settings.time_mode = ETimeMode::Normal;
-    }
-
     m_vertices = std::move(gcode_data.vertices);
 
     for (size_t i = 0; i < m_vertices.size(); ++i) {
@@ -512,6 +497,9 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
         }
     }
+
+    if (!m_layers.empty())
+        m_layers.set_view_range(0, static_cast<uint32_t>(m_layers.count()) - 1);
 
     // reset segments visibility bitset
     m_valid_lines_bitset = BitSet<>(m_vertices.size());
@@ -648,12 +636,14 @@ void ViewerImpl::update_enabled_entities()
     m_enabled_segments_count = enabled_segments.size();
     m_enabled_options_count = enabled_options.size();
 
-#if ENABLE_NEW_GCODE_VIEWER_DEBUG
-    m_enabled_segments_range = (m_enabled_segments_count > 0) ?
-        std::make_pair((uint32_t)enabled_segments.front(), (uint32_t)enabled_segments.back()) : std::make_pair((uint32_t)0, (uint32_t)0);
-    m_enabled_options_range = (m_enabled_options_count > 0) ?
-        std::make_pair((uint32_t)enabled_options.front(), (uint32_t)enabled_options.back()) : std::make_pair((uint32_t)0, (uint32_t)0);
-#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
+    if (m_enabled_segments_count > 0)
+        m_enabled_segments_range.set(enabled_segments.front(), enabled_segments.back());
+    else
+        m_enabled_segments_range.reset();
+    if (m_enabled_options_count > 0)
+        m_enabled_options_range.set(enabled_options.front(), enabled_options.back());
+    else
+        m_enabled_options_range.reset();
 
     // update gpu buffer for enabled segments
     assert(m_enabled_segments_buf_id > 0);
@@ -686,7 +676,7 @@ void ViewerImpl::update_colors()
 {
     update_color_ranges();
 
-    const uint32_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers_range.get()[1] : 0;
+    const uint32_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers.get_view_range()[1] : 0;
     const bool color_top_layer_only = m_view_range.get_global()[1] != m_view_range.get_current()[1];
     std::vector<float> colors(m_vertices.size());
     for (size_t i = 0; i < m_vertices.size(); i++) {
@@ -728,10 +718,6 @@ void ViewerImpl::render(const Mat4x4& view_matrix, const Mat4x4& projection_matr
     if (m_settings.options_visibility.at(EOptionType::CenterOfGravity))
         render_cog_marker(view_matrix, projection_matrix);
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-
-#if ENABLE_NEW_GCODE_VIEWER_DEBUG
-    render_debug_window();
-#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 }
 
 EViewType ViewerImpl::get_view_type() const
@@ -758,7 +744,7 @@ void ViewerImpl::set_time_mode(ETimeMode mode)
 
 const std::array<uint32_t, 2>& ViewerImpl::get_layers_range() const
 {
-    return m_layers_range.get();
+    return m_layers.get_view_range();
 }
 
 void ViewerImpl::set_layers_range(const std::array<uint32_t, 2>& range)
@@ -768,7 +754,7 @@ void ViewerImpl::set_layers_range(const std::array<uint32_t, 2>& range)
 
 void ViewerImpl::set_layers_range(uint32_t min, uint32_t max)
 {
-    m_layers_range.set(min, max);
+    m_layers.set_view_range(min, max);
     m_settings.update_view_global_range = true;
     m_settings.update_enabled_entities = true;
     m_settings.update_colors = true;
@@ -906,6 +892,26 @@ PathVertex ViewerImpl::get_vertex_at(size_t id) const
     return (id < m_vertices.size()) ? m_vertices[id] : PathVertex();
 }
 
+size_t ViewerImpl::get_enabled_segments_count() const
+{
+    return m_enabled_segments_count;
+}
+
+const std::array<uint32_t, 2>& ViewerImpl::get_enabled_segments_range() const
+{
+    return m_enabled_segments_range.get();
+}
+
+size_t ViewerImpl::get_enabled_options_count() const
+{
+    return m_enabled_options_count;
+}
+
+const std::array<uint32_t, 2>& ViewerImpl::get_enabled_options_range() const
+{
+    return m_enabled_options_range.get();
+}
+
 std::vector<EGCodeExtrusionRole> ViewerImpl::get_extrusion_roles() const
 {
     return m_extrusion_roles.get_roles();
@@ -960,6 +966,46 @@ void ViewerImpl::set_tool_colors(const std::vector<Color>& colors)
 {
     m_tool_colors = colors;
     m_settings.update_colors = true;
+}
+
+const std::array<float, 2>& ViewerImpl::get_height_range() const
+{
+    return m_height_range.get_range();
+}
+
+const std::array<float, 2>& ViewerImpl::get_width_range() const
+{
+    return m_width_range.get_range();
+}
+
+const std::array<float, 2>& ViewerImpl::get_speed_range() const
+{
+    return m_speed_range.get_range();
+}
+
+const std::array<float, 2>& ViewerImpl::get_fan_speed_range() const
+{
+    return m_fan_speed_range.get_range();
+}
+
+const std::array<float, 2>& ViewerImpl::get_temperature_range() const
+{
+    return m_temperature_range.get_range();
+}
+
+const std::array<float, 2>& ViewerImpl::get_volumetric_rate_range() const
+{
+    return m_volumetric_rate_range.get_range();
+}
+
+std::array<float, 2> ViewerImpl::get_layer_time_range(ColorRange::EType type) const
+{
+    try {
+        return m_layer_time_range[static_cast<size_t>(type)].get_range();
+    }
+    catch (...) {
+        return { 0.0f, 0.0f };
+    }
 }
 
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
@@ -1059,7 +1105,7 @@ static bool is_visible(EMoveType type, const Settings& settings)
 
 void ViewerImpl::update_view_global_range()
 {
-    const std::array<uint32_t, 2>& layers_range = m_layers_range.get();
+    const std::array<uint32_t, 2>& layers_range = m_layers.get_view_range();
     const bool travels_visible = m_settings.options_visibility.at(EOptionType::Travels);
 
     auto first_it = m_vertices.begin();
@@ -1403,133 +1449,6 @@ void ViewerImpl::render_tool_marker(const Mat4x4& view_matrix, const Mat4x4& pro
     glsafe(glUseProgram(curr_shader));
 }
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-
-#if ENABLE_NEW_GCODE_VIEWER_DEBUG
-void ViewerImpl::render_debug_window()
-{
-    Slic3r::GUI::ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
-    imgui.begin(std::string("LibVGCode Viewer Debug"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-
-    if (ImGui::BeginTable("Data", 2)) {
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "# vertices");
-        ImGui::TableSetColumnIndex(1);
-        imgui.text(std::to_string(m_vertices.size()));
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled lines");
-        ImGui::TableSetColumnIndex(1);
-        imgui.text(std::to_string(m_enabled_segments_count) + " [" + std::to_string(m_enabled_segments_range.first) + "-" + std::to_string(m_enabled_segments_range.second) + "]");
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled options");
-        ImGui::TableSetColumnIndex(1);
-        imgui.text(std::to_string(m_enabled_options_count) + " [" + std::to_string(m_enabled_options_range.first) + "-" + std::to_string(m_enabled_options_range.second) + "]");
-
-        ImGui::Separator();
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "layers range");
-        ImGui::TableSetColumnIndex(1);
-        const std::array<uint32_t, 2>& layers_range = get_layers_range();
-        imgui.text(std::to_string(layers_range[0]) + " - " + std::to_string(layers_range[1]));
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (current)");
-        ImGui::TableSetColumnIndex(1);
-        const std::array<uint32_t, 2>& current_view_range = get_view_current_range();
-        imgui.text(std::to_string(current_view_range[0]) + " - " + std::to_string(current_view_range[1]));
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (global)");
-        ImGui::TableSetColumnIndex(1);
-        const std::array<uint32_t, 2>& global_view_range = get_view_global_range();
-        imgui.text(std::to_string(global_view_range[0]) + " - " + std::to_string(global_view_range[1]));
-
-        auto add_range_property_row = [&imgui](const std::string& label, const std::array<float, 2>& range) {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, label);
-            ImGui::TableSetColumnIndex(1);
-            char buf[64];
-            sprintf(buf, "%.3f - %.3f", range[0], range[1]);
-            imgui.text(buf);
-        };
-
-        add_range_property_row("height range", m_height_range.get_range());
-        add_range_property_row("width range", m_width_range.get_range());
-        add_range_property_row("speed range", m_speed_range.get_range());
-        add_range_property_row("fan speed range", m_fan_speed_range.get_range());
-        add_range_property_row("temperature range", m_temperature_range.get_range());
-        add_range_property_row("volumetric rate range", m_volumetric_rate_range.get_range());
-        add_range_property_row("layer time linear range", m_layer_time_range[0].get_range());
-        add_range_property_row("layer time logarithmic range", m_layer_time_range[1].get_range());
-
-        ImGui::EndTable();
-
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-        ImGui::Separator();
-
-        if (ImGui::BeginTable("Cog", 2)) {
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Cog marker scale factor");
-            ImGui::TableSetColumnIndex(1);
-            imgui.text(std::to_string(get_cog_marker_scale_factor()));
-
-            ImGui::EndTable();
-        }
-
-        ImGui::Separator();
-
-        if (ImGui::BeginTable("Tool", 2)) {
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker scale factor");
-            ImGui::TableSetColumnIndex(1);
-            imgui.text(std::to_string(get_tool_marker_scale_factor()));
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker z offset");
-            ImGui::TableSetColumnIndex(1);
-            float tool_z_offset = get_tool_marker_offset_z();
-            if (imgui.slider_float("##ToolZOffset", &tool_z_offset, 0.0f, 1.0f))
-                set_tool_marker_offset_z(tool_z_offset);
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker color");
-            ImGui::TableSetColumnIndex(1);
-            Color color = get_tool_marker_color();
-            if (ImGui::ColorPicker3("##ToolColor", color.data()))
-                set_tool_marker_color(color);
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker alpha");
-            ImGui::TableSetColumnIndex(1);
-            float tool_alpha = get_tool_marker_alpha();
-            if (imgui.slider_float("##ToolAlpha", &tool_alpha, 0.25f, 0.75f))
-                set_tool_marker_alpha(tool_alpha);
-
-            ImGui::EndTable();
-        }
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-    }
-
-    imgui.end();
-}
-#endif // ENABLE_NEW_GCODE_VIEWER_DEBUG
 
 } // namespace libvgcode
 
