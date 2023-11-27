@@ -34,12 +34,17 @@ EOptionType type_to_option(EMoveType type)
     }
 }
 
+static uint8_t lerp(uint8_t f1, uint8_t f2, float t)
+{
+    const float one_minus_t = 1.0f - t;
+    return static_cast<uint8_t>(one_minus_t * static_cast<float>(f1) + t * static_cast<float>(f2));
+}
+
+// It will be possible to replace this with std::lerp when using c++20
 Color lerp(const Color& c1, const Color& c2, float t)
 {
-    // It will be possible to replace this with std::lerp when using c++20
     t = std::clamp(t, 0.0f, 1.0f);
-    const float one_minus_t = 1.0f - t;
-    return { one_minus_t * c1[0] + t * c2[0], one_minus_t * c1[1] + t * c2[1], one_minus_t * c1[2] + t * c2[2] };
+    return { lerp(c1[0], c2[0], t), lerp(c1[1], c2[1], t), lerp(c1[2], c2[2], t) };
 }
 
 } // namespace libvgcode

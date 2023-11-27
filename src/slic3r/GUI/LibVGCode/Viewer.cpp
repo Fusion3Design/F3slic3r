@@ -101,19 +101,24 @@ void Viewer::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
     m_impl.toggle_extrusion_role_visibility(role);
 }
 
-const std::array<uint32_t, 2>& Viewer::get_view_current_range() const
+const std::array<uint32_t, 2>& Viewer::get_view_full_range() const
 {
-    return m_impl.get_view_current_range();
+    return m_impl.get_view_full_range();
 }
 
-const std::array<uint32_t, 2>& Viewer::get_view_global_range() const
+const std::array<uint32_t, 2>& Viewer::get_view_enabled_range() const
 {
-    return m_impl.get_view_global_range();
+    return m_impl.get_view_enabled_range();
 }
 
-void Viewer::set_view_current_range(uint32_t min, uint32_t max)
+const std::array<uint32_t, 2>& Viewer::get_view_visible_range() const
 {
-    m_impl.set_view_current_range(min, max);
+    return m_impl.get_view_visible_range();
+}
+
+void Viewer::set_view_visible_range(uint32_t min, uint32_t max)
+{
+    m_impl.set_view_visible_range(min, max);
 }
 
 uint32_t Viewer::get_vertices_count() const

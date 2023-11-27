@@ -23,6 +23,9 @@ static constexpr float Default_Wipe_Radius   = 0.05f;
 
 //
 // Vector in 3 dimensions
+// [0] -> x
+// [1] -> y
+// [2] -> z
 // Used for positions, displacements and so on.
 //
 using Vec3 = std::array<float, 3>;
@@ -37,12 +40,12 @@ using Vec3 = std::array<float, 3>;
 using Mat4x4 = std::array<float, 16>;
 
 //
+// RGB color
 // [0] -> red
 // [1] -> green
 // [2] -> blue
-// Values should belong to the range [0..1]
 //
-using Color = std::array<float, 3>;
+using Color = std::array<uint8_t, 3>;
 
 //
 // View types
@@ -142,8 +145,8 @@ static constexpr size_t Time_Modes_Count = static_cast<size_t>(ETimeMode::COUNT)
 //
 // Predefined colors
 //
-static const Color Dummy_Color{ 0.25f, 0.25f, 0.25f };
-static const Color Wipe_Color{ 1.0f, 1.0f, 0.0f };
+static const Color Dummy_Color{  64,  64,  64 };
+static const Color Wipe_Color { 255, 255, 255 };
 
 //
 // Palette used to render moves by ranges
@@ -151,17 +154,17 @@ static const Color Wipe_Color{ 1.0f, 1.0f, 0.0f };
 //            LayerTimeLinear, LayerTimeLogarithmic
 //
 static const std::vector<Color> Ranges_Colors{ {
-    { 0.043f, 0.173f, 0.478f }, // bluish
-    { 0.075f, 0.349f, 0.522f },
-    { 0.110f, 0.533f, 0.569f },
-    { 0.016f, 0.839f, 0.059f },
-    { 0.667f, 0.949f, 0.000f },
-    { 0.988f, 0.975f, 0.012f },
-    { 0.961f, 0.808f, 0.039f },
-    { 0.890f, 0.533f, 0.125f },
-    { 0.820f, 0.408f, 0.188f },
-    { 0.761f, 0.322f, 0.235f },
-    { 0.581f, 0.149f, 0.087f }  // reddish
+    {  11,  44, 122 }, // bluish
+    {  19,  89, 133 },
+    {  28, 136, 145 },
+    {   4, 214,  15 },
+    { 170, 242,   0 },
+    { 252, 249,   3 },
+    { 245, 206,  10 },
+    { 227, 136,  32 },
+    { 209, 104,  48 },
+    { 194,  82,  60 },
+    { 148,  38,  22 }  // reddish
 } };
 
 //
@@ -169,21 +172,21 @@ static const std::vector<Color> Ranges_Colors{ {
 // EViewType: FeatureType
 //
 static const std::vector<Color> Extrusion_Roles_Colors{ {
-    { 0.90f, 0.70f, 0.70f },   // None
-    { 1.00f, 0.90f, 0.30f },   // Perimeter
-    { 1.00f, 0.49f, 0.22f },   // ExternalPerimeter
-    { 0.12f, 0.12f, 1.00f },   // OverhangPerimeter
-    { 0.69f, 0.19f, 0.16f },   // InternalInfill
-    { 0.59f, 0.33f, 0.80f },   // SolidInfill
-    { 0.94f, 0.25f, 0.25f },   // TopSolidInfill
-    { 1.00f, 0.55f, 0.41f },   // Ironing
-    { 0.30f, 0.50f, 0.73f },   // BridgeInfill
-    { 1.00f, 1.00f, 1.00f },   // GapFill
-    { 0.00f, 0.53f, 0.43f },   // Skirt
-    { 0.00f, 1.00f, 0.00f },   // SupportMaterial
-    { 0.00f, 0.50f, 0.00f },   // SupportMaterialInterface
-    { 0.70f, 0.89f, 0.67f },   // WipeTower
-    { 0.37f, 0.82f, 0.58f },   // Custom
+    { 230, 179, 179 },   // None
+    { 255, 230,  77 },   // Perimeter
+    { 255, 125,  56 },   // ExternalPerimeter
+    {  31,  31, 255 },   // OverhangPerimeter
+    { 176,  48,  41 },   // InternalInfill
+    { 150,  84, 204 },   // SolidInfill
+    { 240,  64,  64 },   // TopSolidInfill
+    { 255, 140, 105 },   // Ironing
+    {  77, 128, 186 },   // BridgeInfill
+    { 255, 255, 255 },   // GapFill
+    {   0, 135, 110 },   // Skirt
+    {   0, 255,   0 },   // SupportMaterial
+    {   0, 128,   0 },   // SupportMaterialInterface
+    { 179, 227, 171 },   // WipeTower
+    {  94, 209, 148 }    // Custom
 } };
 
 //
@@ -192,22 +195,22 @@ static const std::vector<Color> Extrusion_Roles_Colors{ {
 //            LayerTimeLinear, LayerTimeLogarithmic
 //
 static const std::vector<Color> Travels_Colors{ {
-    { 0.219f, 0.282f, 0.609f }, // Move
-    { 0.112f, 0.422f, 0.103f }, // Extrude
-    { 0.505f, 0.064f, 0.028f }  // Retract
+    {  56,  72, 155 }, // Move
+    {  29, 108,  26 }, // Extrude
+    { 129,  16,   7 }  // Retract
 } };
 
 //
 // Palette used to render options
 //
 static const std::map<EMoveType, Color> Options_Colors{ {
-    { EMoveType::Retract,     { 0.803f, 0.135f, 0.839f } },
-    { EMoveType::Unretract,   { 0.287f, 0.679f, 0.810f } },
-    { EMoveType::Seam,        { 0.900f, 0.900f, 0.900f } },
-    { EMoveType::ToolChange,  { 0.758f, 0.744f, 0.389f } },
-    { EMoveType::ColorChange, { 0.856f, 0.582f, 0.546f } },
-    { EMoveType::PausePrint,  { 0.322f, 0.942f, 0.512f } },
-    { EMoveType::CustomGCode, { 0.886f, 0.825f, 0.262f } }
+    { EMoveType::Retract,     { 205,  34, 214 } },
+    { EMoveType::Unretract,   {  73, 173, 207 } },
+    { EMoveType::Seam,        { 230, 230, 230 } },
+    { EMoveType::ToolChange,  { 193, 190,  99 } },
+    { EMoveType::ColorChange, { 218, 148, 139 } },
+    { EMoveType::PausePrint,  {  82, 240, 131 } },
+    { EMoveType::CustomGCode, { 226, 210,  67 } }
 } };
 
 //

@@ -16,59 +16,92 @@
 
 namespace libvgcode {
 
-const std::array<uint32_t, 2>& ViewRange::get_current() const
+const std::array<uint32_t, 2>& ViewRange::get_full() const
 {
-		return m_current.get();
+		return m_full.get();
 }
 
-void ViewRange::set_current(const Range& other)
+void ViewRange::set_full(const Range& other)
 {
-		set_current(other.get());
+		set_full(other.get());
 }
 
-void ViewRange::set_current(const std::array<uint32_t, 2>& range)
+void ViewRange::set_full(const std::array<uint32_t, 2>& range)
 {
-		set_current(range[0], range[1]);
+		set_full(range[0], range[1]);
 }
 
-void ViewRange::set_current(uint32_t min, uint32_t max)
+void ViewRange::set_full(uint32_t min, uint32_t max)
 {
-		m_current.set(min, max);
-		// force the current range to stay inside the modified global range
-		m_global.clamp(m_current);
+		// is the full range being extended ?
+		const bool new_max = max > m_full.get_max();
+		m_full.set(min, max);
+		// force the enabled range to stay inside the modified full range
+		m_full.clamp(m_enabled);
+		// force the visible range to stay inside the modified enabled range
+		m_enabled.clamp(m_visible);
+		if (new_max) {
+				// force the enabled range to fill the extended full range
+				m_enabled.set_max(max);
+				// force the visible range to fill the extended enabled range
+				m_visible.set_max(max);
+		}
 }
 
-const std::array<uint32_t, 2>& ViewRange::get_global() const
+const std::array<uint32_t, 2>& ViewRange::get_enabled() const
 {
-		return m_global.get();
+		return m_enabled.get();
 }
 
-void ViewRange::set_global(const Range& other)
+void ViewRange::set_enabled(const Range& other)
 {
-		set_global(other.get());
+		set_enabled(other.get());
 }
 
-void ViewRange::set_global(const std::array<uint32_t, 2>& range)
+void ViewRange::set_enabled(const std::array<uint32_t, 2>& range)
 {
-		set_global(range[0], range[1]);
+		set_enabled(range[0], range[1]);
 }
 
-void ViewRange::set_global(uint32_t min, uint32_t max)
+void ViewRange::set_enabled(uint32_t min, uint32_t max)
 {
-		// is the global range being extended ?
-		const bool new_max = max > m_global.get()[1];
-		m_global.set(min, max);
-		// force the current range to stay inside the modified global range
-		m_global.clamp(m_current);
+		// is the enabled range being extended ?
+		const bool new_max = max > m_enabled.get_max();
+		m_enabled.set(min, max);
+		// force the visible range to stay inside the modified enabled range
+		m_enabled.clamp(m_visible);
 		if (new_max)
-				// force the current range to fill the extended global range
-				m_current.set(m_current.get()[0], max);
+				// force the visible range to fill the extended enabled range
+				m_visible.set_max(max);
+}
+
+const std::array<uint32_t, 2>& ViewRange::get_visible() const
+{
+		return m_visible.get();
+}
+
+void ViewRange::set_visible(const Range& other)
+{
+		set_visible(other.get());
+}
+
+void ViewRange::set_visible(const std::array<uint32_t, 2>& range)
+{
+		set_visible(range[0], range[1]);
+}
+
+void ViewRange::set_visible(uint32_t min, uint32_t max)
+{
+		m_visible.set(min, max);
+		// force the visible range to stay inside the enabled range
+		m_enabled.clamp(m_visible);
 }
 
 void ViewRange::reset()
 {
-		m_current.reset();
-		m_global.reset();
+		m_full.reset();
+		m_enabled.reset();
+		m_visible.reset();
 }
 
 } // namespace libvgcode

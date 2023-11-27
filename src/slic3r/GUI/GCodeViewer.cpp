@@ -59,6 +59,12 @@ static Vec3 convert(const Slic3r::Vec3f& v)
     return { v.x(), v.y(), v.z() };
 }
 
+// mapping from libvgcode::Vec3 to Slic3r::Vec3f
+static Slic3r::Vec3f convert(const Vec3& v)
+{
+    return { v[0], v[1], v[2] };
+}
+
 // mapping from Slic3r::Matrix4f to libvgcode::Mat4x4
 static Mat4x4 convert(const Slic3r::Matrix4f& m)
 {
@@ -70,13 +76,14 @@ static Mat4x4 convert(const Slic3r::Matrix4f& m)
 // mapping from libvgcode::Color to Slic3r::ColorRGBA
 static Slic3r::ColorRGBA convert(const Color& c)
 {
-    return { c[0], c[1], c[2], 1.0f };
+    static const float inv_255 = 1.0f / 255.0f;
+    return { c[0] * inv_255, c[1] * inv_255, c[2] * inv_255, 1.0f };
 }
 
 // mapping from Slic3r::ColorRGBA to libvgcode::Color
 static Color convert(const Slic3r::ColorRGBA& c)
 {
-    return { c.r(), c.g(), c.b() };
+    return { static_cast<uint8_t>(c.r() * 255.0f), static_cast<uint8_t>(c.g() * 255.0f), static_cast<uint8_t>(c.b() * 255.0f) };
 }
 
 // mapping from libvgcode::EGCodeExtrusionRole to Slic3r::GCodeExtrusionRole
@@ -180,20 +187,11 @@ static GCodeInputData convert(const Slic3r::GCodeProcessorResult& result)
     const std::vector<Slic3r::GCodeProcessorResult::MoveVertex>& moves = result.moves;
     GCodeInputData ret;
     ret.vertices.reserve(2 * moves.size());
-    // Seam moves have no correspondence in the gcode,
-    // there are no gcode lines associated to them,
-    // but are added at the end of a loop, by the gcode processor, to be able to visualize them.
-    // To properly associate the other moves to the gcode lines, we need to keep track
-    // of them and modify the vertices' move_id accordingly.
-    uint32_t seams_count = 0;
     for (size_t i = 1; i < moves.size(); ++i) {
         const Slic3r::GCodeProcessorResult::MoveVertex& curr = moves[i];
         const Slic3r::GCodeProcessorResult::MoveVertex& prev = moves[i - 1];
         const EMoveType curr_type = convert(curr.type);
         const EGCodeExtrusionRole curr_role = convert(curr.extrusion_role);
-
-        if (curr_type == EMoveType::Seam)
-          ++seams_count;
 
         EGCodeExtrusionRole extrusion_role;
         if (curr_type == EMoveType::Travel) {
@@ -239,29 +237,28 @@ static GCodeInputData convert(const Slic3r::GCodeProcessorResult& result)
                // equal to the current one with the exception of the position, which should match the previous move position,
                // and the times, which are set to zero
 #if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-                const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, curr.fan_speed,
-                    curr.temperature, curr.volumetric_rate(), extrusion_role, curr_type,
-                    static_cast<uint32_t>(i) - seams_count, static_cast<uint32_t>(curr.layer_id),
-                    static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
+              const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, curr.fan_speed,
+                  curr.temperature, curr.volumetric_rate(), extrusion_role, curr_type,
+                  static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
+                  static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
 #else
-                const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, curr.fan_speed,
-                    curr.temperature, curr.volumetric_rate(), 0.0f,
-                    extrusion_role, curr_type,
-                    static_cast<uint32_t>(i) - seams_count, static_cast<uint32_t>(curr.layer_id),
-                    static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
+              const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, curr.fan_speed,
+                  curr.temperature, curr.volumetric_rate(), 0.0f, extrusion_role, curr_type,
+                  static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
+                  static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
 #endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
                 ret.vertices.emplace_back(vertex);
             }
         }
 
 #if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-        const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.fan_speed, curr.temperature,
-            curr.volumetric_rate(), extrusion_role, curr_type, static_cast<uint32_t>(i) - seams_count, static_cast<uint32_t>(curr.layer_id),
-            static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };
+        const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.fan_speed,
+            curr.temperature, curr.volumetric_rate(), extrusion_role, curr_type,  static_cast<uint32_t>(curr.gcode_id),
+            static_cast<uint32_t>(curr.layer_id), static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };
 #else
-        const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.fan_speed, curr.temperature,
-            curr.volumetric_rate(), curr.mm3_per_mm * (curr.position - prev.position).norm(), extrusion_role, curr_type,
-            static_cast<uint32_t>(i) - seams_count, static_cast<uint32_t>(curr.layer_id),
+        const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.fan_speed,
+            curr.temperature, curr.volumetric_rate(), curr.mm3_per_mm * (curr.position - prev.position).norm(),
+            extrusion_role, curr_type, static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
             static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };
 #endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
         ret.vertices.emplace_back(vertex);
@@ -728,7 +725,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
         ImGui::SameLine();
         libvgcode::PathVertex vertex = viewer->get_current_vertex();
         if (vertex.type == libvgcode::EMoveType::Seam)
-            vertex = viewer->get_vertex_at(viewer->get_view_current_range()[1] - 1);
+            vertex = viewer->get_vertex_at(viewer->get_view_visible_range()[1] - 1);
 
         char buf[1024];
         sprintf(buf, "X: %.3f, Y: %.3f, Z: %.3f", vertex.position[0], vertex.position[1], vertex.position[2]);
@@ -1141,33 +1138,41 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-void GCodeViewer::SequentialView::render(float legend_height, const libvgcode::Viewer* viewer)
+void GCodeViewer::SequentialView::render(float legend_height, const libvgcode::Viewer* viewer, uint32_t gcode_id)
 {
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     if (viewer == nullptr)
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #else
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 void GCodeViewer::SequentialView::render(float legend_height)
 {
-  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
     marker.render();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 #if ENABLE_NEW_GCODE_VIEWER
     marker.render_position_window(viewer);
 #endif // ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
     float bottom = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size().get_height();
     if (wxGetApp().is_editor())
         bottom -= wxGetApp().plater()->get_view_toolbar().get_height();
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
+#if ENABLE_NEW_GCODE_VIEWER
+    gcode_window.render(legend_height, bottom, gcode_id);
+#else
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
     gcode_window.render(legend_height, bottom, static_cast<uint64_t>(gcode_ids[current.last]));
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 }
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 #if !ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 const std::array<ColorRGBA, static_cast<size_t>(GCodeExtrusionRole::Count)> GCodeViewer::Extrusion_Role_Colors{ {
     { 0.90f, 0.70f, 0.70f, 1.0f },   // GCodeExtrusionRole::None
     { 1.00f, 0.90f, 0.30f, 1.0f },   // GCodeExtrusionRole::Perimeter
@@ -1246,27 +1251,27 @@ const std::vector<ColorRGBA> GCodeViewer::Range_Colors{ {
 
 const ColorRGBA GCodeViewer::Wipe_Color    = ColorRGBA::YELLOW();
 const ColorRGBA GCodeViewer::Neutral_Color = ColorRGBA::DARK_GRAY();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 #endif // !ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 
 GCodeViewer::GCodeViewer()
 {
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 #if !ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
     m_extrusions.reset_role_visibility_flags();
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 #endif // !ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
     m_shells.volumes.set_use_raycasters(false);
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 #if !ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 //    m_sequential_view.skip_invisible_moves = true;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 #endif // !ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 }
 
 void GCodeViewer::init()
@@ -1719,13 +1724,22 @@ void GCodeViewer::render()
     float legend_height = 0.0f;
     if (!m_layers.empty()) {
         render_legend(legend_height);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
+#if ENABLE_NEW_GCODE_VIEWER
+        if (m_new_viewer.get_view_enabled_range()[1] != m_new_viewer.get_view_visible_range()[1]) {
+            m_sequential_view.marker.set_world_position(libvgcode::convert(m_new_viewer.get_current_vertex().position));
+#else
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
         if (m_sequential_view.current.last != m_sequential_view.endpoints.last) {
             m_sequential_view.marker.set_world_position(m_sequential_view.current_position);
             m_sequential_view.marker.set_world_offset(m_sequential_view.current_offset);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
             m_sequential_view.marker.set_z_offset(m_z_offset);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-            m_sequential_view.render(legend_height, m_use_new_viewer ? &m_new_viewer : nullptr);
+            m_sequential_view.render(legend_height, m_use_new_viewer ? &m_new_viewer : nullptr, m_new_viewer.get_current_vertex().gcode_id);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             m_sequential_view.render(legend_height);
@@ -1743,7 +1757,9 @@ void GCodeViewer::render()
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     if (m_use_new_viewer) {
         ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
-        imgui.begin(std::string("LibVGCode Viewer Controller"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+        const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
+        imgui.set_next_window_pos(static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 1.0f, 1.0f);
+        imgui.begin(std::string("LibVGCode Viewer Controller"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
 
         imgui.checkbox("Cog marker fixed screen size", m_cog_marker_fixed_screen_size);
         if (ImGui::BeginTable("Cog", 2)) {
@@ -1785,10 +1801,7 @@ void GCodeViewer::update_sequential_view_current(unsigned int first, unsigned in
 {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    m_new_viewer.set_view_current_range(static_cast<uint32_t>(first), static_cast<uint32_t>(last));
-    m_sequential_view.current.first = first;
-    m_sequential_view.current.last = last;
-    m_sequential_view.last_current = m_sequential_view.current;
+    m_new_viewer.set_view_visible_range(static_cast<uint32_t>(first), static_cast<uint32_t>(last));
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     auto is_visible = [this](unsigned int id) {
@@ -2426,22 +2439,28 @@ void GCodeViewer::load_toolpaths(const GCodeProcessorResult& gcode_result)
 
     m_cog.reset();
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
+#if !ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
     m_sequential_view.gcode_ids.clear();
     for (size_t i = 0; i < gcode_result.moves.size(); ++i) {
         const GCodeProcessorResult::MoveVertex& move = gcode_result.moves[i];
         if (move.type != EMoveType::Seam)
             m_sequential_view.gcode_ids.push_back(move.gcode_id);
     }
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
+#endif // !ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 #if ENABLE_NEW_GCODE_VIEWER
     bool account_for_volumetric_rate = m_new_viewer.get_view_type() == libvgcode::EViewType::VolumetricFlowRate;
 #else
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
     bool account_for_volumetric_rate = m_view_type == EViewType::VolumetricRate;
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 #endif // ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 
     std::vector<MultiVertexBuffer> vertices(m_buffers.size());
     std::vector<MultiIndexBuffer> indices(m_buffers.size());
@@ -3913,7 +3932,9 @@ void GCodeViewer::render_new_toolpaths()
 
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG
     Slic3r::GUI::ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
-    imgui.begin(std::string("LibVGCode Viewer Debug"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
+    imgui.set_next_window_pos(static_cast<float>(cnv_size.get_width()), 0.0f, ImGuiCond_Always, 1.0f, 0.0f);
+    imgui.begin(std::string("LibVGCode Viewer Debug"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
 
     if (ImGui::BeginTable("Data", 2)) {
 
@@ -3950,17 +3971,30 @@ void GCodeViewer::render_new_toolpaths()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (current)");
+        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (full)");
         ImGui::TableSetColumnIndex(1);
-        const std::array<uint32_t, 2>& current_view_range = m_new_viewer.get_view_current_range();
-        imgui.text(std::to_string(current_view_range[0]) + " - " + std::to_string(current_view_range[1]));
+        const std::array<uint32_t, 2>& full_view_range = m_new_viewer.get_view_full_range();
+        imgui.text(std::to_string(full_view_range[0]) + " - " + std::to_string(full_view_range[1]) + " | " +
+            std::to_string(m_new_viewer.get_vertex_at(full_view_range[0]).gcode_id) + " - " +
+            std::to_string(m_new_viewer.get_vertex_at(full_view_range[1]).gcode_id));
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (global)");
+        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (enabled)");
         ImGui::TableSetColumnIndex(1);
-        const std::array<uint32_t, 2>& global_view_range = m_new_viewer.get_view_global_range();
-        imgui.text(std::to_string(global_view_range[0]) + " - " + std::to_string(global_view_range[1]));
+        const std::array<uint32_t, 2>& enabled_view_range = m_new_viewer.get_view_enabled_range();
+        imgui.text(std::to_string(enabled_view_range[0]) + " - " + std::to_string(enabled_view_range[1]) + " | " +
+            std::to_string(m_new_viewer.get_vertex_at(enabled_view_range[0]).gcode_id) + " - " +
+            std::to_string(m_new_viewer.get_vertex_at(enabled_view_range[1]).gcode_id));
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (visible)");
+        ImGui::TableSetColumnIndex(1);
+        const std::array<uint32_t, 2>& visible_view_range = m_new_viewer.get_view_visible_range();
+        imgui.text(std::to_string(visible_view_range[0]) + " - " + std::to_string(visible_view_range[1]) + " | " +
+            std::to_string(m_new_viewer.get_vertex_at(visible_view_range[0]).gcode_id) + " - " +
+            std::to_string(m_new_viewer.get_vertex_at(visible_view_range[1]).gcode_id));
 
         auto add_range_property_row = [&imgui](const std::string& label, const std::array<float, 2>& range) {
             ImGui::TableNextRow();

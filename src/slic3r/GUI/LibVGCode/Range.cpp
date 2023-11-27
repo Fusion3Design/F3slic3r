@@ -23,6 +23,11 @@ const std::array<uint32_t, 2>& Range::get() const
 		return m_range;
 }
 
+void Range::set(const Range& other)
+{
+		m_range = other.m_range;
+}
+
 void Range::set(const std::array<uint32_t, 2>& range)
 {
 		set(range[0], range[1]);
@@ -34,6 +39,26 @@ void Range::set(uint32_t min, uint32_t max)
 				std::swap(min, max);
 		m_range[0] = min;
 		m_range[1] = max;
+}
+
+uint32_t Range::get_min() const
+{
+		return m_range[0];
+}
+
+void Range::set_min(uint32_t min)
+{
+		set(min, m_range[1]);
+}
+
+uint32_t Range::get_max() const
+{
+		return m_range[1];
+}
+
+void Range::set_max(uint32_t max)
+{
+		set(m_range[0], max);
 }
 
 void Range::clamp(Range& other)

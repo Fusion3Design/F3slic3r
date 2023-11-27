@@ -19,8 +19,16 @@ class Range
 {
 public:
 		const std::array<uint32_t, 2>& get() const;
+		void set(const Range& other);
 		void set(const std::array<uint32_t, 2>& range);
 		void set(uint32_t min, uint32_t max);
+
+		uint32_t get_min() const;
+		void set_min(uint32_t min);
+
+		uint32_t get_max() const;
+		void set_max(uint32_t max);
+
 		// clamp the given range to stay inside this range
 		void clamp(Range& other);
 		void reset();

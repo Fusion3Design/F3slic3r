@@ -583,7 +583,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
 
     if (!m_layers.empty())
         set_layers_range(0, static_cast<uint32_t>(m_layers.count() - 1));
-    update_view_global_range();
+
     m_settings.update_colors = true;
 }
 
@@ -591,13 +591,13 @@ void ViewerImpl::update_enabled_entities()
 {
     std::vector<uint32_t> enabled_segments;
     std::vector<uint32_t> enabled_options;
-    std::array<uint32_t, 2> range = m_view_range.get_current();
+    std::array<uint32_t, 2> range = m_view_range.get_visible();
 
     // when top layer only visualization is enabled, we need to render
     // all the toolpaths in the other layers as grayed, so extend the range
     // to contain them
     if (m_settings.top_layer_only_view_range)
-        range[0] = m_view_range.get_global()[0];
+        range[0] = m_view_range.get_full()[0];
 
     // to show the options at the current tool marker position we need to extend the range by one extra step
     if (m_vertices[range[1]].is_option() && range[1] < static_cast<uint32_t>(m_vertices.size()) - 1)
@@ -665,11 +665,11 @@ void ViewerImpl::update_enabled_entities()
 }
 
 static float encode_color(const Color& color) {
-    const int r = (int)(255.0f * color[0]);
-    const int g = (int)(255.0f * color[1]);
-    const int b = (int)(255.0f * color[2]);
+    const int r = static_cast<int>(color[0]);
+    const int g = static_cast<int>(color[1]);
+    const int b = static_cast<int>(color[2]);
     const int i_color = r << 16 | g << 8 | b;
-    return float(i_color);
+    return static_cast<float>(i_color);
 }
 
 void ViewerImpl::update_colors()
@@ -677,7 +677,7 @@ void ViewerImpl::update_colors()
     update_color_ranges();
 
     const uint32_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers.get_view_range()[1] : 0;
-    const bool color_top_layer_only = m_view_range.get_global()[1] != m_view_range.get_current()[1];
+    const bool color_top_layer_only = m_view_range.get_full()[1] != m_view_range.get_visible()[1];
     std::vector<float> colors(m_vertices.size());
     for (size_t i = 0; i < m_vertices.size(); i++) {
         colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id) ? encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
@@ -692,9 +692,9 @@ void ViewerImpl::update_colors()
 
 void ViewerImpl::render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
 {
-    if (m_settings.update_view_global_range) {
-        update_view_global_range();
-        m_settings.update_view_global_range = false;
+    if (m_settings.update_view_full_range) {
+        update_view_full_range();
+        m_settings.update_view_full_range = false;
     }
 
     if (m_settings.update_enabled_entities) {
@@ -755,7 +755,9 @@ void ViewerImpl::set_layers_range(const std::array<uint32_t, 2>& range)
 void ViewerImpl::set_layers_range(uint32_t min, uint32_t max)
 {
     m_layers.set_view_range(min, max);
-    m_settings.update_view_global_range = true;
+    // force immediate update of the full range
+    update_view_full_range();
+    m_settings.update_view_full_range = false;
     m_settings.update_enabled_entities = true;
     m_settings.update_colors = true;
 }
@@ -786,7 +788,7 @@ void ViewerImpl::toggle_option_visibility(EOptionType type)
     try {
         bool& value = m_settings.options_visibility.at(type);
         value = !value;
-        m_settings.update_view_global_range = true;
+        m_settings.update_view_full_range = true;
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
     }
@@ -810,7 +812,7 @@ void ViewerImpl::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
     try {
         bool& value = m_settings.extrusion_roles_visibility.at(role);
         value = !value;
-        m_settings.update_view_global_range = true;
+        m_settings.update_view_full_range = true;
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
     }
@@ -819,57 +821,29 @@ void ViewerImpl::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
     }
 }
 
-const std::array<uint32_t, 2>& ViewerImpl::get_view_current_range() const
+const std::array<uint32_t, 2>& ViewerImpl::get_view_full_range() const
 {
-    return m_view_range.get_current();
+    return m_view_range.get_full();
 }
 
-const std::array<uint32_t, 2>& ViewerImpl::get_view_global_range() const
+const std::array<uint32_t, 2>& ViewerImpl::get_view_enabled_range() const
 {
-    return m_view_range.get_global();
+    return m_view_range.get_enabled();
 }
 
-void ViewerImpl::set_view_current_range(uint32_t min, uint32_t max)
+const std::array<uint32_t, 2>& ViewerImpl::get_view_visible_range() const
 {
-    uint32_t min_id = 0;
-    for (size_t i = 0; i < m_vertices.size(); ++i) {
-        if (m_vertices[i].move_id < min)
-            min_id = static_cast<uint32_t>(i);
-        else
-            break;
-    }
-    ++min_id;
+    return m_view_range.get_visible();
+}
 
-    uint32_t max_id = min_id;
-    if (max > min) {
-        for (size_t i = static_cast<size_t>(min_id); i < m_vertices.size(); ++i) {
-            if (m_vertices[i].move_id < max)
-                max_id = static_cast<uint32_t>(i);
-            else
-                break;
-        }
-        ++max_id;
-    }
+void ViewerImpl::set_view_visible_range(uint32_t min, uint32_t max)
+{
+    // force update of the full range, to avoid clamping the visible range with full old values
+    // when calling m_view_range.set_visible()
+    update_view_full_range();
+    m_settings.update_view_full_range = false;
 
-    // adjust the max id to take in account the 'phantom' vertices
-    if (max_id < static_cast<uint32_t>(m_vertices.size() - 1) &&
-        m_vertices[max_id + 1].type == m_vertices[max_id].type &&
-        m_vertices[max_id + 1].move_id == m_vertices[max_id].move_id)
-        ++max_id;
-
-    // we show the seams when the endpoint of a closed path is reached, so we need to increase the max id by one
-    if (max_id < static_cast<uint32_t>(m_vertices.size() - 1) && m_vertices[max_id + 1].type == EMoveType::Seam)
-        ++max_id;
-
-    Range new_range;
-    new_range.set(min_id, max_id);
-
-    // force update of global range, if required, to avoid clamping the current range with global old values
-    // when calling set_current_range()
-    update_view_global_range();
-    m_settings.update_view_global_range = false;
-
-    m_view_range.set_current(new_range);
+    m_view_range.set_visible(min, max);
     m_settings.update_enabled_entities = true;
     m_settings.update_colors = true;
 }
@@ -881,7 +855,7 @@ size_t ViewerImpl::get_vertices_count() const
 
 PathVertex ViewerImpl::get_current_vertex() const
 {
-    return m_vertices[m_view_range.get_current()[1]];
+    return m_vertices[m_view_range.get_visible()[1]];
 }
 
 PathVertex ViewerImpl::get_vertex_at(size_t id) const
@@ -1101,7 +1075,7 @@ static bool is_visible(const PathVertex& v, const Settings& settings)
     }
 }
 
-void ViewerImpl::update_view_global_range()
+void ViewerImpl::update_view_full_range()
 {
     const std::array<uint32_t, 2>& layers_range = m_layers.get_view_range();
     const bool travels_visible = m_settings.options_visibility.at(EOptionType::Travels);
@@ -1113,7 +1087,7 @@ void ViewerImpl::update_view_global_range()
     }
 
     if (first_it == m_vertices.end())
-        m_view_range.set_global(0, 0);
+        m_view_range.set_full(Range());
     else {
         if (travels_visible) {
             // if the global range starts with a travel move, extend it to the travel start
@@ -1154,7 +1128,22 @@ void ViewerImpl::update_view_global_range()
             }
         }
 
-        m_view_range.set_global(std::distance(m_vertices.begin(), first_it), std::distance(m_vertices.begin(), last_it));
+        m_view_range.set_full(std::distance(m_vertices.begin(), first_it), std::distance(m_vertices.begin(), last_it));
+
+        if (m_settings.top_layer_only_view_range) {
+            const std::array<uint32_t, 2>& full_range = m_view_range.get_full();
+            auto top_first_it = m_vertices.begin() + full_range[0];
+            bool shortened = false;
+            while (top_first_it != m_vertices.end() && (top_first_it->layer_id < layers_range[1] || !is_visible(*top_first_it, m_settings))) {
+                ++top_first_it;
+                shortened = true;
+            }
+            if (shortened)
+                --top_first_it;
+            m_view_range.set_enabled(std::distance(m_vertices.begin(), top_first_it), full_range[1]);
+        }
+        else
+            m_view_range.set_enabled(m_view_range.get_full());
     }
 }
 

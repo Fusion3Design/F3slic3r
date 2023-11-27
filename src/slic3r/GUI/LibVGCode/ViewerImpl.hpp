@@ -90,9 +90,10 @@ public:
     bool is_extrusion_role_visible(EGCodeExtrusionRole role) const;
     void toggle_extrusion_role_visibility(EGCodeExtrusionRole role);
 
-    const std::array<uint32_t, 2>& get_view_current_range() const;
-    const std::array<uint32_t, 2>& get_view_global_range() const;
-    void set_view_current_range(uint32_t min, uint32_t max);
+    const std::array<uint32_t, 2>& get_view_full_range() const;
+    const std::array<uint32_t, 2>& get_view_enabled_range() const;
+    const std::array<uint32_t, 2>& get_view_visible_range() const;
+    void set_view_visible_range(uint32_t min, uint32_t max);
 
     size_t get_vertices_count() const;
     PathVertex get_current_vertex() const;
@@ -284,7 +285,7 @@ private:
     unsigned int m_enabled_options_buf_id{ 0 };
     unsigned int m_enabled_options_tex_id{ 0 };
 
-    void update_view_global_range();
+    void update_view_full_range();
     void update_color_ranges();
     Color select_color(const PathVertex& v) const;
     void render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position);

@@ -713,6 +713,40 @@ void Preview::update_layers_slider_from_canvas(wxKeyEvent& event)
 
 void Preview::update_moves_slider()
 {
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
+#if ENABLE_NEW_GCODE_VIEWER
+    const std::array<uint32_t, 2>& range = m_canvas->get_gcode_view_enabled_range();
+    uint32_t last_gcode_id = m_canvas->get_gcode_vertex_at(static_cast<size_t>(range[0])).gcode_id;
+
+    const size_t range_size = static_cast<size_t>(range[1] - range[0] + 1);
+    std::vector<double> values;
+    values.reserve(range_size);
+    std::vector<double> alternate_values;
+    alternate_values.reserve(range_size);
+
+    for (uint32_t i = range[0]; i <= range[1]; ++i) {
+        const uint32_t gcode_id = m_canvas->get_gcode_vertex_at(static_cast<size_t>(i)).gcode_id;
+        if (i > range[0]) {
+            // skip consecutive moves with same gcode id (resulting from processing G2 and G3 lines)
+            if (last_gcode_id == gcode_id) {
+                values.back() = static_cast<double>(i + 1);
+                alternate_values.back() = static_cast<double>(gcode_id);
+                continue;
+            }
+            else
+                last_gcode_id = gcode_id;
+        }
+
+        values.emplace_back(static_cast<double>(i + 1));
+        alternate_values.emplace_back(static_cast<double>(gcode_id));
+    }
+
+    m_moves_slider->SetSliderValues(values);
+    m_moves_slider->SetSliderAlternateValues(alternate_values);
+    m_moves_slider->SetMaxValue(int(values.size()) - 1);
+    m_moves_slider->SetSelectionSpan(values.front() - 1 - range[0], values.back() - 1 - range[0]);
+#else
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
     const GCodeViewer::SequentialView& view = m_canvas->get_gcode_sequential_view();
     // this should not be needed, but it is here to try to prevent rambling crashes on Mac Asan
     if (view.endpoints.last < view.endpoints.first)
@@ -746,6 +780,9 @@ void Preview::update_moves_slider()
     m_moves_slider->SetSliderAlternateValues(alternate_values);
     m_moves_slider->SetMaxValue(int(values.size()) - 1);
     m_moves_slider->SetSelectionSpan(values.front() - 1 - view.endpoints.first, values.back() - 1 - view.endpoints.first);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 }
 
 void Preview::enable_moves_slider(bool enable)

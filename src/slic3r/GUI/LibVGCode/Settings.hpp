@@ -18,7 +18,7 @@ namespace libvgcode {
 
 struct Settings
 {
-		bool update_view_global_range{ true };
+		bool update_view_full_range{ true };
 		bool update_enabled_entities{ true };
 		bool update_colors{ true };
 		EViewType view_type{ EViewType::FeatureType };

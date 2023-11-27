@@ -17,21 +17,43 @@ namespace libvgcode {
 class ViewRange
 {
 public:
-		const std::array<uint32_t, 2>& get_current() const;
-		void set_current(const Range& other);
-		void set_current(const std::array<uint32_t, 2>& range);
-		void set_current(uint32_t min, uint32_t max);
+		const std::array<uint32_t, 2>& get_full() const;
+		void set_full(const Range& other);
+		void set_full(const std::array<uint32_t, 2>& range);
+		void set_full(uint32_t min, uint32_t max);
 
-		const std::array<uint32_t, 2>& get_global() const;
-		void set_global(const Range& other);
-		void set_global(const std::array<uint32_t, 2>& range);
-		void set_global(uint32_t min, uint32_t max);
+		const std::array<uint32_t, 2>& get_enabled() const;
+		void set_enabled(const Range& other);
+		void set_enabled(const std::array<uint32_t, 2>& range);
+		void set_enabled(uint32_t min, uint32_t max);
+
+		const std::array<uint32_t, 2>& get_visible() const;
+		void set_visible(const Range& other);
+		void set_visible(const std::array<uint32_t, 2>& range);
+		void set_visible(uint32_t min, uint32_t max);
 
 		void reset();
 
 private:
-		Range m_current;
-		Range m_global;
+		//
+		// Full range
+		// The range of moves that could potentially be visible.
+		// It is usually equal to the enabled range, unless Settings::top_layer_only_view_range is set to true.
+		//
+		Range m_full;
+
+		//
+		// Enabled range
+		// The range of moves that are enabled for visualization.
+		// It is usually equal to the full range, unless Settings::top_layer_only_view_range is set to true.
+		//
+		Range m_enabled;
+
+		//
+		// Visible range
+		// The range of moves that are currently rendered.
+		//
+		Range m_visible;
 };
 
 } // namespace libvgcode

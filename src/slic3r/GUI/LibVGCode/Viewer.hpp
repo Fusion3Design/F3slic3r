@@ -50,13 +50,15 @@ public:
     bool is_extrusion_role_visible(EGCodeExtrusionRole role) const;
     void toggle_extrusion_role_visibility(EGCodeExtrusionRole role);
 
-    const std::array<uint32_t, 2>& get_view_current_range() const;
-    const std::array<uint32_t, 2>& get_view_global_range() const;
+    const std::array<uint32_t, 2>& get_view_full_range() const;
+    const std::array<uint32_t, 2>& get_view_enabled_range() const;
+    const std::array<uint32_t, 2>& get_view_visible_range() const;
+
     //
     // min must be smaller than max
-    // values are clamped to the view global range
+    // values are clamped to the current view global range
     // 
-    void set_view_current_range(uint32_t min, uint32_t max);
+    void set_view_visible_range(uint32_t min, uint32_t max);
 
     //
     // Return the count of vertices used to render the toolpaths

@@ -28,7 +28,7 @@ struct PathVertex
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     EGCodeExtrusionRole role{ EGCodeExtrusionRole::None };
     EMoveType type{ EMoveType::Noop };
-    uint32_t move_id{ 0 };
+    uint32_t gcode_id{ 0 };
     uint32_t layer_id{ 0 };
     uint8_t extruder_id{ 0 };
     uint8_t color_id{ 0 };
