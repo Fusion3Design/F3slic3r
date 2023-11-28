@@ -7,7 +7,7 @@
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
-#include "GCodeInputData.hpp"
+#include "../include/GCodeInputData.hpp"
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!

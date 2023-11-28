@@ -4012,8 +4012,8 @@ void GCodeViewer::render_new_toolpaths()
         add_range_property_row("fan speed range", m_new_viewer.get_fan_speed_range());
         add_range_property_row("temperature range", m_new_viewer.get_temperature_range());
         add_range_property_row("volumetric rate range", m_new_viewer.get_volumetric_rate_range());
-        add_range_property_row("layer time linear range", m_new_viewer.get_layer_time_range(libvgcode::ColorRange::EType::Linear));
-        add_range_property_row("layer time logarithmic range", m_new_viewer.get_layer_time_range(libvgcode::ColorRange::EType::Logarithmic));
+        add_range_property_row("layer time linear range", m_new_viewer.get_layer_time_range(libvgcode::EColorRangeType::Linear));
+        add_range_property_row("layer time logarithmic range", m_new_viewer.get_layer_time_range(libvgcode::EColorRangeType::Logarithmic));
 
         ImGui::EndTable();
 
@@ -4051,9 +4051,13 @@ void GCodeViewer::render_new_toolpaths()
             ImGui::TableSetColumnIndex(0);
             imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker color");
             ImGui::TableSetColumnIndex(1);
-            libvgcode::Color color = m_new_viewer.get_tool_marker_color();
-            if (ImGui::ColorPicker3("##ToolColor", color.data()))
-                m_new_viewer.set_tool_marker_color(color);
+            const libvgcode::Color& color = m_new_viewer.get_tool_marker_color();
+            std::array<float, 3> c = { static_cast<float>(color[0]) / 255.0f, static_cast<float>(color[1]) / 255.0f, static_cast<float>(color[2]) / 255.0f };
+            if (ImGui::ColorPicker3("##ToolColor", c.data())) {
+                m_new_viewer.set_tool_marker_color({ static_cast<uint8_t>(c[0] * 255.0f), 
+                                                     static_cast<uint8_t>(c[1] * 255.0f),
+                                                     static_cast<uint8_t>(c[2] * 255.0f) });
+            }
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);

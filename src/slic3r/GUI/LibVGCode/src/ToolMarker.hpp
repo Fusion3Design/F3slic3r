@@ -2,8 +2,8 @@
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef VGCODE_COGMARKER_HPP
-#define VGCODE_COGMARKER_HPP
+#ifndef VGCODE_TOOLMARKER_HPP
+#define VGCODE_TOOLMARKER_HPP
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
@@ -11,47 +11,44 @@
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 //################################################################################################################################
 
-#include "Types.hpp"
+#include "..\include\Types.hpp"
 
 namespace libvgcode {
 
-class CogMarker
+class ToolMarker
 {
 public:
-    CogMarker() = default;
-    ~CogMarker();
-    CogMarker(const CogMarker& other) = delete;
-    CogMarker(CogMarker&& other) = delete;
-    CogMarker& operator = (const CogMarker& other) = delete;
-    CogMarker& operator = (CogMarker&& other) = delete;
+    ToolMarker() = default;
+    ~ToolMarker();
+    ToolMarker(const ToolMarker& other) = delete;
+    ToolMarker(ToolMarker&& other) = delete;
+    ToolMarker& operator = (const ToolMarker& other) = delete;
+    ToolMarker& operator = (ToolMarker&& other) = delete;
 
-    //
-    // Initialize geometry on gpu
-    //
-    void init(uint8_t resolution, float radius);
+    void init(uint16_t resolution, float tip_radius, float tip_height, float stem_radius, float stem_height);
     void render();
 
-    //
-    // Update values used to calculate the center of gravity
-    //
-    void update(const Vec3& position, float mass);
+    bool is_enabled() const;
+    void enable(bool value);
 
-    //
-    // Reset values used to calculate the center of gravity
-    //
-    void reset();
+    const Vec3& get_position() const;
+    void set_position(const Vec3& position);
 
-    //
-    // Return the calculated center of gravity
-    //
-    Vec3 get_position() const;
+    float get_offset_z() const;
+    void set_offset_z(float offset_z);
+
+    const Color& get_color() const;
+    void set_color(const Color& color);
+
+    float get_alpha() const;
+    void set_alpha(float alpha);
 
 private:
-    //
-    // Values used to calculate the center of gravity
-    //
-    float m_total_mass{ 0.0f };
-    Vec3 m_total_position{ 0.0f, 0.0f, 0.0f };
+    bool m_enabled{ false };
+    Vec3 m_position{ 0.0f, 0.0f, 0.0f };
+    float m_offset_z{ 0.5f };
+    Color m_color{ 255, 255, 255 };
+    float m_alpha{ 0.5f };
 
     uint16_t m_indices_count{ 0 };
     unsigned int m_vao_id{ 0 };
@@ -67,4 +64,4 @@ private:
 #endif // ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#endif // VGCODE_COGMARKER_HPP
+#endif // VGCODE_TOOLMARKER_HPP

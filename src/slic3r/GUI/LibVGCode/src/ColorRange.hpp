@@ -1,31 +1,41 @@
-///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966
+///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef VGCODE_UTILS_HPP
-#define VGCODE_UTILS_HPP
+#ifndef VGCODE_COLORRANGE_HPP
+#define VGCODE_COLORRANGE_HPP
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#include "Types.hpp"
-
-#include <vector>
+#include "../include/Types.hpp"
 
 namespace libvgcode {
 
-extern void add_vertex(const Vec3& position, const Vec3& normal, std::vector<float>& vertices);
-extern void add_triangle(uint16_t v1, uint16_t v2, uint16_t v3, std::vector<uint16_t>& indices);
-extern Vec3 normalize(const Vec3& v);
-extern float dot(const Vec3& v1, const Vec3& v2);
-extern float length(const Vec3& v);
-extern bool operator == (const Vec3& v1, const Vec3& v2);
-extern bool operator != (const Vec3& v1, const Vec3& v2);
-extern Vec3 operator + (const Vec3& v1, const Vec3& v2);
-extern Vec3 operator - (const Vec3& v1, const Vec3& v2);
-extern Vec3 operator * (float f, const Vec3& v);
+class ColorRange
+{
+public:
+    explicit ColorRange(EColorRangeType type = EColorRangeType::Linear);
+
+    void update(float value);
+    void reset();
+
+    EColorRangeType get_type() const;
+    Color get_color_at(float value) const;
+
+    const std::array<float, 2>& get_range() const;
+
+private:
+    EColorRangeType m_type{ EColorRangeType::Linear };
+
+    //
+    // [0] = min
+    // [1] = max
+    //
+    std::array<float, 2> m_range{ FLT_MAX, -FLT_MAX };
+};
 
 } // namespace libvgcode
 
@@ -34,4 +44,4 @@ extern Vec3 operator * (float f, const Vec3& v);
 #endif // ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#endif // VGCODE_UTILS_HPP
+#endif // VGCODE_COLORRANGE_HPP

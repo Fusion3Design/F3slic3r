@@ -8,10 +8,10 @@
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
 #include "ViewerImpl.hpp"
+#include "../include/GCodeInputData.hpp"
 #include "Shaders.hpp"
 #include "OpenGLUtils.hpp"
 #include "Utils.hpp"
-#include "GCodeInputData.hpp"
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!
@@ -969,7 +969,7 @@ const std::array<float, 2>& ViewerImpl::get_volumetric_rate_range() const
     return m_volumetric_rate_range.get_range();
 }
 
-std::array<float, 2> ViewerImpl::get_layer_time_range(ColorRange::EType type) const
+std::array<float, 2> ViewerImpl::get_layer_time_range(EColorRangeType type) const
 {
     try {
         return m_layer_time_range[static_cast<size_t>(type)].get_range();

@@ -92,44 +92,44 @@ set(SLIC3R_GUI_SOURCES
     GUI/Gizmos/GLGizmoMmuSegmentation.hpp
     GUI/Gizmos/GLGizmoMeasure.cpp
     GUI/Gizmos/GLGizmoMeasure.hpp
-#====================================================================================================================	
-    GUI/LibVGCode/Bitset.hpp
-    GUI/LibVGCode/Bitset.cpp
-    GUI/LibVGCode/CogMarker.hpp
-    GUI/LibVGCode/CogMarker.cpp
-    GUI/LibVGCode/ColorRange.hpp
-    GUI/LibVGCode/ColorRange.cpp
-    GUI/LibVGCode/ExtrusionRoles.hpp
-    GUI/LibVGCode/ExtrusionRoles.cpp
-    GUI/LibVGCode/GCodeInputData.hpp
-    GUI/LibVGCode/GCodeInputData.cpp	
-    GUI/LibVGCode/Layers.hpp
-    GUI/LibVGCode/Layers.cpp
-    GUI/LibVGCode/OpenGLUtils.hpp
-    GUI/LibVGCode/OpenGLUtils.cpp
-    GUI/LibVGCode/OptionTemplate.hpp
-    GUI/LibVGCode/OptionTemplate.cpp
-    GUI/LibVGCode/PathVertex.hpp
-    GUI/LibVGCode/PathVertex.cpp
-    GUI/LibVGCode/Range.hpp
-    GUI/LibVGCode/Range.cpp
-    GUI/LibVGCode/SegmentTemplate.hpp
-    GUI/LibVGCode/SegmentTemplate.cpp
-    GUI/LibVGCode/Settings.hpp
-    GUI/LibVGCode/Settings.cpp
-    GUI/LibVGCode/Shaders.hpp
-    GUI/LibVGCode/ToolMarker.hpp
-    GUI/LibVGCode/ToolMarker.cpp
-    GUI/LibVGCode/Types.hpp
-    GUI/LibVGCode/Types.cpp
-    GUI/LibVGCode/Utils.hpp
-    GUI/LibVGCode/Utils.cpp
-    GUI/LibVGCode/Viewer.hpp
-    GUI/LibVGCode/Viewer.cpp
-    GUI/LibVGCode/ViewerImpl.hpp
-    GUI/LibVGCode/ViewerImpl.cpp
-    GUI/LibVGCode/ViewRange.hpp
-    GUI/LibVGCode/ViewRange.cpp
+#====================================================================================================================
+    GUI/LibVGCode/include/GCodeInputData.hpp
+    GUI/LibVGCode/include/PathVertex.hpp
+    GUI/LibVGCode/include/Types.hpp
+    GUI/LibVGCode/include/Viewer.hpp
+    GUI/LibVGCode/src/Bitset.hpp
+    GUI/LibVGCode/src/Bitset.cpp
+    GUI/LibVGCode/src/CogMarker.hpp
+    GUI/LibVGCode/src/CogMarker.cpp
+    GUI/LibVGCode/src/ColorRange.hpp
+    GUI/LibVGCode/src/ColorRange.cpp
+    GUI/LibVGCode/src/ExtrusionRoles.hpp
+    GUI/LibVGCode/src/ExtrusionRoles.cpp
+    GUI/LibVGCode/src/GCodeInputData.cpp	
+    GUI/LibVGCode/src/Layers.hpp
+    GUI/LibVGCode/src/Layers.cpp
+    GUI/LibVGCode/src/OpenGLUtils.hpp
+    GUI/LibVGCode/src/OpenGLUtils.cpp
+    GUI/LibVGCode/src/OptionTemplate.hpp
+    GUI/LibVGCode/src/OptionTemplate.cpp
+    GUI/LibVGCode/src/PathVertex.cpp
+    GUI/LibVGCode/src/Range.hpp
+    GUI/LibVGCode/src/Range.cpp
+    GUI/LibVGCode/src/SegmentTemplate.hpp
+    GUI/LibVGCode/src/SegmentTemplate.cpp
+    GUI/LibVGCode/src/Settings.hpp
+    GUI/LibVGCode/src/Settings.cpp
+    GUI/LibVGCode/src/Shaders.hpp
+    GUI/LibVGCode/src/ToolMarker.hpp
+    GUI/LibVGCode/src/ToolMarker.cpp
+    GUI/LibVGCode/src/Types.cpp
+    GUI/LibVGCode/src/Utils.hpp
+    GUI/LibVGCode/src/Utils.cpp
+    GUI/LibVGCode/src/Viewer.cpp
+    GUI/LibVGCode/src/ViewerImpl.hpp
+    GUI/LibVGCode/src/ViewerImpl.cpp
+    GUI/LibVGCode/src/ViewRange.hpp
+    GUI/LibVGCode/src/ViewRange.cpp
 #====================================================================================================================	
     GUI/GLSelectionRectangle.cpp
     GUI/GLSelectionRectangle.hpp

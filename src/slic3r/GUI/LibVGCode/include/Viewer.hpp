@@ -10,17 +10,19 @@
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#include "ViewerImpl.hpp"
 #include "Types.hpp"
-#include "GCodeInputData.hpp"
 
 namespace libvgcode {
+
+class ViewerImpl;
+struct GCodeInputData;
+struct PathVertex;
 
 class Viewer
 {
 public:
-    Viewer() = default;
-    ~Viewer() = default;
+    Viewer();
+    ~Viewer();
     Viewer(const Viewer& other) = delete;
     Viewer(Viewer&& other) = delete;
     Viewer& operator = (const Viewer& other) = delete;
@@ -139,7 +141,7 @@ public:
     const std::array<float, 2>& get_fan_speed_range() const;
     const std::array<float, 2>& get_temperature_range() const;
     const std::array<float, 2>& get_volumetric_rate_range() const;
-    std::array<float, 2> get_layer_time_range(ColorRange::EType type) const;
+    std::array<float, 2> get_layer_time_range(EColorRangeType type) const;
 
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     //
@@ -176,7 +178,7 @@ public:
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 private:
-    ViewerImpl m_impl;
+    ViewerImpl* m_impl{ nullptr };
 };
 
 } // namespace libvgcode

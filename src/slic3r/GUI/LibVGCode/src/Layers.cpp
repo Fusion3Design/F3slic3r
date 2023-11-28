@@ -9,7 +9,7 @@
 ///|/
 #include "Layers.hpp"
 
-#include "PathVertex.hpp"
+#include "../include/PathVertex.hpp"
 
 //################################################################################################################################
 // PrusaSlicer development only -> !!!TO BE REMOVED!!!

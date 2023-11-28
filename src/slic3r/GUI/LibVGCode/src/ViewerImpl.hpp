@@ -17,7 +17,7 @@
 #include "CogMarker.hpp"
 #include "ToolMarker.hpp"
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-#include "PathVertex.hpp"
+#include "../include/PathVertex.hpp"
 #include "Bitset.hpp"
 #include "ColorRange.hpp"
 #include "ViewRange.hpp"
@@ -125,7 +125,7 @@ public:
     const std::array<float, 2>& get_fan_speed_range() const;
     const std::array<float, 2>& get_temperature_range() const;
     const std::array<float, 2>& get_volumetric_rate_range() const;
-    std::array<float, 2> get_layer_time_range(ColorRange::EType type) const;
+    std::array<float, 2> get_layer_time_range(EColorRangeType type) const;
 
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     Vec3 get_cog_marker_position() const;
@@ -207,7 +207,7 @@ private:
     ColorRange m_temperature_range;
     ColorRange m_volumetric_rate_range;
     std::array<ColorRange, Color_Range_Types_Count> m_layer_time_range{
-        ColorRange(ColorRange::EType::Linear), ColorRange(ColorRange::EType::Logarithmic)
+        ColorRange(EColorRangeType::Linear), ColorRange(EColorRangeType::Logarithmic)
     };
     std::vector<Color> m_tool_colors;
 

@@ -143,6 +143,18 @@ enum class ETimeMode : uint8_t
 static constexpr size_t Time_Modes_Count = static_cast<size_t>(ETimeMode::COUNT);
 
 //
+// Color range type
+//
+enum class EColorRangeType : uint8_t
+{
+    Linear,
+    Logarithmic,
+    COUNT
+};
+
+static constexpr size_t Color_Range_Types_Count = static_cast<size_t>(EColorRangeType::COUNT);
+
+//
 // Predefined colors
 //
 static const Color Dummy_Color{  64,  64,  64 };

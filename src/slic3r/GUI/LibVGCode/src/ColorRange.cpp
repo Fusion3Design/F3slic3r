@@ -19,7 +19,7 @@
 
 namespace libvgcode {
 
-ColorRange::ColorRange(EType type)
+ColorRange::ColorRange(EColorRangeType type)
 : m_type(type)
 {
 }
@@ -35,23 +35,23 @@ void ColorRange::reset()
     m_range = { FLT_MAX, -FLT_MAX };
 }
 
-static float step_size(const std::array<float, 2>& range, ColorRange::EType type)
+static float step_size(const std::array<float, 2>& range, EColorRangeType type)
 {
     switch (type)
     {
     default:
-    case ColorRange::EType::Linear:
+    case EColorRangeType::Linear:
     {
-        return (range[1] - range[0]) / ((float)Ranges_Colors.size() - 1.0f);
+        return (range[1] - range[0]) / (static_cast<float>(Ranges_Colors.size()) - 1.0f);
     }
-    case ColorRange::EType::Logarithmic:
+    case EColorRangeType::Logarithmic:
     {
-        return (range[0] != 0.0f) ? std::log(range[1] / range[0]) / ((float)Ranges_Colors.size() - 1.0f) : 0.0f;
+        return (range[0] != 0.0f) ? std::log(range[1] / range[0]) / (static_cast<float>(Ranges_Colors.size()) - 1.0f) : 0.0f;
     }
     }
 }
 
-ColorRange::EType ColorRange::get_type() const
+EColorRangeType ColorRange::get_type() const
 {
     return m_type;
 }
@@ -63,7 +63,7 @@ Color ColorRange::get_color_at(float value) const
     value = std::clamp(value, m_range[0], m_range[1]);
     const float step = step_size(m_range, m_type);
     if (step > 0.0f) {
-        if (m_type == EType::Logarithmic) {
+        if (m_type == EColorRangeType::Logarithmic) {
             if (m_range[0] != 0.0f)
                 global_t = log(value / m_range[0]) / step;
         }
