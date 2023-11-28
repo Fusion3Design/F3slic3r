@@ -11,7 +11,7 @@
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 //################################################################################################################################
 
-#include "..\include\Types.hpp"
+#include "../include/Types.hpp"
 
 namespace libvgcode {
 
