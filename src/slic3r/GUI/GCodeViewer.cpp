@@ -63,9 +63,6 @@ static unsigned char buffer_id(EMoveType type) {
 static EMoveType buffer_type(unsigned char id) {
     return static_cast<EMoveType>(static_cast<unsigned char>(EMoveType::Retract) + id);
 }
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#endif // !ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 // Round to a bin with minimum two digits resolution.
 // Equivalent to conversion to string with sprintf(buf, "%.2g", value) and conversion back to float, but faster.
@@ -87,9 +84,6 @@ static float round_to_bin(const float value)
     return fast_round_up<int64_t>(a) * invscale[i];
 }
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#if !ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 void GCodeViewer::VBuffer::reset()
 {
     // release gpu memory
@@ -4301,7 +4295,6 @@ void GCodeViewer::render_legend(float& legend_height)
             append_range_item(0, values.front(), decimals);
         }
         else {
-            const float step_size = range.get_step_size();
             for (int i = static_cast<int>(libvgcode::Ranges_Colors.size()) - 1; i >= 0; --i) {
                 append_range_item(i, values[i], decimals);
             }
@@ -4364,7 +4357,6 @@ void GCodeViewer::render_legend(float& legend_height)
             append_range_item(0, values.front());
         }
         else {
-            const float step_size = range.get_step_size();
             for (int i = static_cast<int>(libvgcode::Ranges_Colors.size()) - 1; i >= 0; --i) {
                 append_range_item(i, values[i]);
             }
@@ -4770,7 +4762,7 @@ void GCodeViewer::render_legend(float& legend_height)
 #if ENABLE_NEW_GCODE_VIEWER
                 append_item(EItemType::Rect, libvgcode::convert(libvgcode::Extrusion_Roles_Colors[static_cast<size_t>(role)]), labels[i],
                     visible, times[i], percents[i], max_time_percent, offsets, used_filaments_m[i], used_filaments_g[i],
-                    [this, role, visible]() {
+                    [this, role]() {
                         m_new_viewer.toggle_extrusion_role_visibility((libvgcode::EGCodeExtrusionRole)role);
                         wxGetApp().plater()->update_preview_moves_slider();
                         wxGetApp().plater()->get_current_canvas3D()->set_as_dirty();
@@ -5388,7 +5380,7 @@ void GCodeViewer::render_legend(float& legend_height)
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-        auto show_mode_button = [this, &imgui, can_show_mode_button, new_view_type](const wxString& label, libvgcode::ETimeMode mode) {
+        auto show_mode_button = [this, &imgui, can_show_mode_button](const wxString& label, libvgcode::ETimeMode mode) {
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         auto show_mode_button = [this, &imgui, can_show_mode_button](const wxString& label, PrintEstimatedStatistics::ETimeMode mode) {
@@ -5445,7 +5437,7 @@ void GCodeViewer::render_legend(float& legend_height)
     // toolbar section
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    auto toggle_button = [this, &imgui, icon_size, new_view_type](Preview::OptionType type, const std::string& name,
+    auto toggle_button = [this, &imgui, icon_size](Preview::OptionType type, const std::string& name,
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     auto toggle_button = [this, &imgui, icon_size](Preview::OptionType type, const std::string& name,

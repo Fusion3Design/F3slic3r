@@ -71,9 +71,8 @@ static Slic3r::GCodeExtrusionRole convert(EGCodeExtrusionRole role)
     case EGCodeExtrusionRole::SupportMaterialInterface: { return Slic3r::GCodeExtrusionRole::SupportMaterialInterface; }
     case EGCodeExtrusionRole::WipeTower:                { return Slic3r::GCodeExtrusionRole::WipeTower; }
     case EGCodeExtrusionRole::Custom:                   { return Slic3r::GCodeExtrusionRole::Custom; }
+    default:                                            { return Slic3r::GCodeExtrusionRole::None; }
     }
-    assert(false);
-    return Slic3r::GCodeExtrusionRole::None;
 }
 
 // mapping from Slic3r::GCodeExtrusionRole to libvgcode::EGCodeExtrusionRole
@@ -96,9 +95,8 @@ static EGCodeExtrusionRole convert(Slic3r::GCodeExtrusionRole role)
     case Slic3r::GCodeExtrusionRole::SupportMaterialInterface: { return EGCodeExtrusionRole::SupportMaterialInterface; }
     case Slic3r::GCodeExtrusionRole::WipeTower:                { return EGCodeExtrusionRole::WipeTower; }
     case Slic3r::GCodeExtrusionRole::Custom:                   { return EGCodeExtrusionRole::Custom; }
+    default:                                                   { return EGCodeExtrusionRole::None; }
     }
-    assert(false);
-    return EGCodeExtrusionRole::None;
 }
 
 // mapping from Slic3r::EMoveType to libvgcode::EMoveType
@@ -117,9 +115,8 @@ static EMoveType convert(Slic3r::EMoveType type)
     case Slic3r::EMoveType::Travel:       { return EMoveType::Travel; }
     case Slic3r::EMoveType::Wipe:         { return EMoveType::Wipe; }
     case Slic3r::EMoveType::Extrude:      { return EMoveType::Extrude; }
+    default:                              { return EMoveType::COUNT; }
     }
-    assert(false);
-    return EMoveType::COUNT;
 }
 
 // mapping from Slic3r::GUI::Preview::OptionType to libvgcode::EOptionType
@@ -143,9 +140,8 @@ static EOptionType convert(const Slic3r::GUI::Preview::OptionType& type)
     case Slic3r::GUI::Preview::OptionType::CenterOfGravity: { return EOptionType::CenterOfGravity; }
     case Slic3r::GUI::Preview::OptionType::ToolMarker:      { return EOptionType::ToolMarker; }
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+    default:                                                { return EOptionType::COUNT; }
     }
-    assert(false);
-    return EOptionType::COUNT;
 }
 
 // mapping from Slic3r::PrintEstimatedStatistics::ETimeMode to libvgcode::ETimeMode
@@ -155,9 +151,8 @@ static ETimeMode convert(const Slic3r::PrintEstimatedStatistics::ETimeMode& mode
     {
     case Slic3r::PrintEstimatedStatistics::ETimeMode::Normal:  { return ETimeMode::Normal; }
     case Slic3r::PrintEstimatedStatistics::ETimeMode::Stealth: { return ETimeMode::Stealth; }
+    default:                                                   { return ETimeMode::COUNT; }
     }
-    assert(false);
-    return ETimeMode::COUNT;
 }
 
 // mapping from libvgcode::ETimeMode to Slic3r::PrintEstimatedStatistics::ETimeMode
@@ -167,9 +162,8 @@ static Slic3r::PrintEstimatedStatistics::ETimeMode convert(const ETimeMode& mode
     {
     case ETimeMode::Normal:  { return Slic3r::PrintEstimatedStatistics::ETimeMode::Normal; }
     case ETimeMode::Stealth: { return Slic3r::PrintEstimatedStatistics::ETimeMode::Stealth; }
+    default:                 { return Slic3r::PrintEstimatedStatistics::ETimeMode::Count; }
     }
-    assert(false);
-    return Slic3r::PrintEstimatedStatistics::ETimeMode::Count;
 }
 
 // mapping from Slic3r::GCodeProcessorResult to libvgcode::GCodeInputData
@@ -182,7 +176,6 @@ static GCodeInputData convert(const Slic3r::GCodeProcessorResult& result)
         const Slic3r::GCodeProcessorResult::MoveVertex& curr = moves[i];
         const Slic3r::GCodeProcessorResult::MoveVertex& prev = moves[i - 1];
         const EMoveType curr_type = convert(curr.type);
-        const EGCodeExtrusionRole curr_role = convert(curr.extrusion_role);
 
         EGCodeExtrusionRole extrusion_role;
         if (curr_type == EMoveType::Travel) {
