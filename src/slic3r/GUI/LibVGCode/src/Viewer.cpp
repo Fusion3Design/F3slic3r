@@ -67,19 +67,19 @@ void Viewer::set_time_mode(ETimeMode mode)
     m_impl->set_time_mode(mode);
 }
 
-const std::array<uint32_t, 2>& Viewer::get_layers_range() const
+const std::array<uint32_t, 2>& Viewer::get_layers_view_range() const
 {
-    return m_impl->get_layers_range();
+    return m_impl->get_layers_view_range();
 }
 
-void Viewer::set_layers_range(const std::array<uint32_t, 2>& range)
+void Viewer::set_layers_view_range(const std::array<uint32_t, 2>& range)
 {
-    m_impl->set_layers_range(range);
+    m_impl->set_layers_view_range(range);
 }
 
-void Viewer::set_layers_range(uint32_t min, uint32_t max)
+void Viewer::set_layers_view_range(uint32_t min, uint32_t max)
 {
-    m_impl->set_layers_range(min, max);
+    m_impl->set_layers_view_range(min, max);
 }
 
 bool Viewer::is_top_layer_only_view_range() const
@@ -90,6 +90,46 @@ bool Viewer::is_top_layer_only_view_range() const
 void Viewer::set_top_layer_only_view_range(bool top_layer_only_view_range)
 {
     m_impl->set_top_layer_only_view_range(top_layer_only_view_range);
+}
+
+size_t Viewer::get_layers_count() const
+{
+    return m_impl->get_layers_count();
+}
+
+float Viewer::get_layer_z(size_t layer_id) const
+{
+    return m_impl->get_layer_z(layer_id);
+}
+
+std::vector<float> Viewer::get_layers_zs() const
+{
+    return m_impl->get_layers_zs();
+}
+
+size_t Viewer::get_layer_id_at(float z) const
+{
+    return m_impl->get_layer_id_at(z);
+}
+
+size_t Viewer::get_extruders_count() const
+{
+    return m_impl->get_extruders_count();
+}
+
+size_t Viewer::get_used_extruders_count() const
+{
+    return m_impl->get_used_extruders_count();
+}
+
+const std::vector<uint8_t>& Viewer::get_used_extruders_ids() const
+{
+    return m_impl->get_used_extruders_ids();
+}
+
+AABox Viewer::get_bounding_box(EBBoxType type) const
+{
+    return m_impl->get_bounding_box(type);
 }
 
 bool Viewer::is_option_visible(EOptionType type) const
@@ -222,37 +262,37 @@ void Viewer::set_tool_colors(const std::vector<Color>& colors)
     m_impl->set_tool_colors(colors);
 }
 
-const std::array<float, 2>& Viewer::get_height_range() const
+const ColorRange& Viewer::get_height_range() const
 {
     return m_impl->get_height_range();
 }
 
-const std::array<float, 2>& Viewer::get_width_range() const
+const ColorRange& Viewer::get_width_range() const
 {
     return m_impl->get_width_range();
 }
 
-const std::array<float, 2>& Viewer::get_speed_range() const
+const ColorRange& Viewer::get_speed_range() const
 {
     return m_impl->get_speed_range();
 }
 
-const std::array<float, 2>& Viewer::get_fan_speed_range() const
+const ColorRange& Viewer::get_fan_speed_range() const
 {
     return m_impl->get_fan_speed_range();
 }
 
-const std::array<float, 2>& Viewer::get_temperature_range() const
+const ColorRange& Viewer::get_temperature_range() const
 {
     return m_impl->get_temperature_range();
 }
 
-const std::array<float, 2>& Viewer::get_volumetric_rate_range() const
+const ColorRange& Viewer::get_volumetric_rate_range() const
 {
     return m_impl->get_volumetric_rate_range();
 }
 
-std::array<float, 2> Viewer::get_layer_time_range(EColorRangeType type) const
+const ColorRange& Viewer::get_layer_time_range(EColorRangeType type) const
 {
     return m_impl->get_layer_time_range(type);
 }

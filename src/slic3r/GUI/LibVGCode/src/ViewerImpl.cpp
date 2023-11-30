@@ -200,69 +200,6 @@ static Mat4x4 inverse(const Mat4x4& m)
     return ret;
 }
 
-static std::string short_time(const std::string& time)
-{
-    // Parse the dhms time format.
-    int days = 0;
-    int hours = 0;
-    int minutes = 0;
-    int seconds = 0;
-    if (time.find('d') != std::string::npos)
-        sscanf(time.c_str(), "%dd %dh %dm %ds", &days, &hours, &minutes, &seconds);
-    else if (time.find('h') != std::string::npos)
-        sscanf(time.c_str(), "%dh %dm %ds", &hours, &minutes, &seconds);
-    else if (time.find('m') != std::string::npos)
-        sscanf(time.c_str(), "%dm %ds", &minutes, &seconds);
-    else if (time.find('s') != std::string::npos)
-        sscanf(time.c_str(), "%ds", &seconds);
-
-    // Round to full minutes.
-    if (days + hours + minutes > 0 && seconds >= 30) {
-        if (++minutes == 60) {
-            minutes = 0;
-            if (++hours == 24) {
-                hours = 0;
-                ++days;
-            }
-        }
-    }
-
-    // Format the dhm time
-    char buffer[64];
-    if (days > 0)
-        sprintf(buffer, "%dd%dh%dm", days, hours, minutes);
-    else if (hours > 0)
-        sprintf(buffer, "%dh%dm", hours, minutes);
-    else if (minutes > 0)
-        sprintf(buffer, "%dm", minutes);
-    else
-        sprintf(buffer, "%ds", seconds);
-    return buffer;
-}
-
-// Returns the given time is seconds in format DDd HHh MMm SSs
-static std::string get_time_dhms(float time_in_secs)
-{
-    int days = (int)(time_in_secs / 86400.0f);
-    time_in_secs -= (float)days * 86400.0f;
-    int hours = (int)(time_in_secs / 3600.0f);
-    time_in_secs -= (float)hours * 3600.0f;
-    int minutes = (int)(time_in_secs / 60.0f);
-    time_in_secs -= (float)minutes * 60.0f;
-
-    char buffer[64];
-    if (days > 0)
-        sprintf(buffer, "%dd %dh %dm %ds", days, hours, minutes, (int)time_in_secs);
-    else if (hours > 0)
-        sprintf(buffer, "%dh %dm %ds", hours, minutes, (int)time_in_secs);
-    else if (minutes > 0)
-        sprintf(buffer, "%dm %ds", minutes, (int)time_in_secs);
-    else
-        sprintf(buffer, "%ds", (int)std::round(time_in_secs));
-
-    return buffer;
-}
-
 std::string check_shader(GLuint handle)
 {
     std::string ret;
@@ -446,6 +383,8 @@ void ViewerImpl::reset()
     m_view_range.reset();
     m_extrusion_roles.reset();
     m_travels_time = { 0.0f, 0.0f };
+    m_extruders_count = 0;
+    m_used_extruders_ids.clear();
     m_vertices.clear();
     m_valid_lines_bitset.clear();
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
@@ -470,14 +409,17 @@ void ViewerImpl::reset()
 
 void ViewerImpl::load(GCodeInputData&& gcode_data)
 {
+    m_loading = true;
+
     m_vertices = std::move(gcode_data.vertices);
+    m_extruders_count = gcode_data.extruders_count;
 
     for (size_t i = 0; i < m_vertices.size(); ++i) {
         const PathVertex& v = m_vertices[i];
         m_layers.update(v, static_cast<uint32_t>(i));
         if (v.type == EMoveType::Travel) {
-            for (size_t i = 0; i < Time_Modes_Count; ++i) {
-                m_travels_time[i] += v.times[i];
+            for (size_t j = 0; j < Time_Modes_Count; ++j) {
+                m_travels_time[j] += v.times[j];
             }
         }
         else
@@ -500,6 +442,9 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
 
     if (!m_layers.empty())
         m_layers.set_view_range(0, static_cast<uint32_t>(m_layers.count()) - 1);
+
+    std::sort(m_used_extruders_ids.begin(), m_used_extruders_ids.end());
+    m_used_extruders_ids.erase(std::unique(m_used_extruders_ids.begin(), m_used_extruders_ids.end()), m_used_extruders_ids.end());
 
     // reset segments visibility bitset
     m_valid_lines_bitset = BitSet<>(m_vertices.size());
@@ -582,9 +527,12 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     }
 
     if (!m_layers.empty())
-        set_layers_range(0, static_cast<uint32_t>(m_layers.count() - 1));
+        set_layers_view_range(0, static_cast<uint32_t>(m_layers.count() - 1));
 
-    m_settings.update_colors = true;
+    update_enabled_entities();
+    update_colors();
+
+    m_loading = false;
 }
 
 void ViewerImpl::update_enabled_entities()
@@ -662,6 +610,8 @@ void ViewerImpl::update_enabled_entities()
         glsafe(glBufferData(GL_TEXTURE_BUFFER, 0, nullptr, GL_STATIC_DRAW));
 
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
+
+    m_settings.update_enabled_entities = false;
 }
 
 static float encode_color(const Color& color) {
@@ -688,30 +638,30 @@ void ViewerImpl::update_colors()
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, m_colors_buf_id));
     glsafe(glBufferData(GL_TEXTURE_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW));
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
+
+    m_settings.update_colors = false;
 }
 
 void ViewerImpl::render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
 {
-    if (m_settings.update_view_full_range) {
+    // ensure that the render does take place while loading the data
+    if (m_loading)
+        return;
+
+    if (m_settings.update_view_full_range)
         update_view_full_range();
-        m_settings.update_view_full_range = false;
-    }
 
-    if (m_settings.update_enabled_entities) {
+    if (m_settings.update_enabled_entities)
         update_enabled_entities();
-        m_settings.update_enabled_entities = false;
-    }
 
-    if (m_settings.update_colors) {
+    if (m_settings.update_colors)
         update_colors();
-        m_settings.update_colors = false;
-    }
 
     const Mat4x4 inv_view_matrix = inverse(view_matrix);
     const Vec3 camera_position = { inv_view_matrix[12], inv_view_matrix[13], inv_view_matrix[14] };
-
     render_segments(view_matrix, projection_matrix, camera_position);
     render_options(view_matrix, projection_matrix);
+
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     if (m_settings.options_visibility.at(EOptionType::ToolMarker))
         render_tool_marker(view_matrix, projection_matrix);
@@ -742,22 +692,21 @@ void ViewerImpl::set_time_mode(ETimeMode mode)
     m_settings.update_colors = true;
 }
 
-const std::array<uint32_t, 2>& ViewerImpl::get_layers_range() const
+const std::array<uint32_t, 2>& ViewerImpl::get_layers_view_range() const
 {
     return m_layers.get_view_range();
 }
 
-void ViewerImpl::set_layers_range(const std::array<uint32_t, 2>& range)
+void ViewerImpl::set_layers_view_range(const std::array<uint32_t, 2>& range)
 {
-    set_layers_range(range[0], range[1]);
+    set_layers_view_range(range[0], range[1]);
 }
 
-void ViewerImpl::set_layers_range(uint32_t min, uint32_t max)
+void ViewerImpl::set_layers_view_range(uint32_t min, uint32_t max)
 {
     m_layers.set_view_range(min, max);
     // force immediate update of the full range
     update_view_full_range();
-    m_settings.update_view_full_range = false;
     m_settings.update_enabled_entities = true;
     m_settings.update_colors = true;
 }
@@ -771,6 +720,60 @@ void ViewerImpl::set_top_layer_only_view_range(bool top_layer_only_view_range)
 {
     m_settings.top_layer_only_view_range = top_layer_only_view_range;
     m_settings.update_colors = true;
+}
+
+size_t ViewerImpl::get_layers_count() const
+{
+    return m_layers.count();
+}
+
+float ViewerImpl::get_layer_z(size_t layer_id) const
+{
+    return m_layers.get_layer_z(layer_id);
+}
+
+std::vector<float> ViewerImpl::get_layers_zs() const
+{
+    return m_layers.get_zs();
+}
+
+size_t ViewerImpl::get_layer_id_at(float z) const
+{
+    return m_layers.get_layer_id_at(z);
+}
+
+size_t ViewerImpl::get_extruders_count() const
+{
+    return m_extruders_count;
+}
+
+size_t ViewerImpl::get_used_extruders_count() const
+{
+    return m_used_extruders_ids.size();
+}
+
+const std::vector<uint8_t>& ViewerImpl::get_used_extruders_ids() const
+{
+    return m_used_extruders_ids;
+}
+
+AABox ViewerImpl::get_bounding_box(EBBoxType type) const
+{
+    assert(type < EBBoxType::COUNT);
+    Vec3 min = { FLT_MAX, FLT_MAX, FLT_MAX };
+    Vec3 max = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+    for (const PathVertex& v : m_vertices) {
+        if (type != EBBoxType::Full && (v.type != EMoveType::Extrude || v.width == 0.0f || v.height == 0.0f))
+            continue;
+        else if (type == EBBoxType::ExtrusionNoCustom && v.role == EGCodeExtrusionRole::Custom)
+            continue;
+
+        for (int j = 0; j < 3; ++j) {
+            min[j] = std::min(min[j], v.position[j]);
+            max[j] = std::max(max[j], v.position[j]);
+        }
+    }
+    return { min, max };
 }
 
 bool ViewerImpl::is_option_visible(EOptionType type) const
@@ -841,8 +844,6 @@ void ViewerImpl::set_view_visible_range(uint32_t min, uint32_t max)
     // force update of the full range, to avoid clamping the visible range with full old values
     // when calling m_view_range.set_visible()
     update_view_full_range();
-    m_settings.update_view_full_range = false;
-
     m_view_range.set_visible(min, max);
     m_settings.update_enabled_entities = true;
     m_settings.update_colors = true;
@@ -939,43 +940,43 @@ void ViewerImpl::set_tool_colors(const std::vector<Color>& colors)
     m_settings.update_colors = true;
 }
 
-const std::array<float, 2>& ViewerImpl::get_height_range() const
+const ColorRange& ViewerImpl::get_height_range() const
 {
-    return m_height_range.get_range();
+    return m_height_range;
 }
 
-const std::array<float, 2>& ViewerImpl::get_width_range() const
+const ColorRange& ViewerImpl::get_width_range() const
 {
-    return m_width_range.get_range();
+    return m_width_range;
 }
 
-const std::array<float, 2>& ViewerImpl::get_speed_range() const
+const ColorRange& ViewerImpl::get_speed_range() const
 {
-    return m_speed_range.get_range();
+    return m_speed_range;
 }
 
-const std::array<float, 2>& ViewerImpl::get_fan_speed_range() const
+const ColorRange& ViewerImpl::get_fan_speed_range() const
 {
-    return m_fan_speed_range.get_range();
+    return m_fan_speed_range;
 }
 
-const std::array<float, 2>& ViewerImpl::get_temperature_range() const
+const ColorRange& ViewerImpl::get_temperature_range() const
 {
-    return m_temperature_range.get_range();
+    return m_temperature_range;
 }
 
-const std::array<float, 2>& ViewerImpl::get_volumetric_rate_range() const
+const ColorRange& ViewerImpl::get_volumetric_rate_range() const
 {
-    return m_volumetric_rate_range.get_range();
+    return m_volumetric_rate_range;
 }
 
-std::array<float, 2> ViewerImpl::get_layer_time_range(EColorRangeType type) const
+const ColorRange& ViewerImpl::get_layer_time_range(EColorRangeType type) const
 {
     try {
-        return m_layer_time_range[static_cast<size_t>(type)].get_range();
+        return m_layer_time_range[static_cast<size_t>(type)];
     }
     catch (...) {
-        return { 0.0f, 0.0f };
+        return ColorRange::Dummy_Color_Range;
     }
 }
 
@@ -1059,16 +1060,16 @@ void ViewerImpl::set_tool_marker_alpha(float alpha)
 static bool is_visible(const PathVertex& v, const Settings& settings)
 {
     try {
-      return ((v.type == EMoveType::Travel && !settings.options_visibility.at(EOptionType::Travels)) ||
-              (v.type == EMoveType::Wipe && !settings.options_visibility.at(EOptionType::Wipes)) ||
-              (v.type == EMoveType::Retract && !settings.options_visibility.at(EOptionType::Retractions)) ||
-              (v.type == EMoveType::Unretract && !settings.options_visibility.at(EOptionType::Unretractions)) ||
-              (v.type == EMoveType::Seam && !settings.options_visibility.at(EOptionType::Seams)) ||
-              (v.type == EMoveType::ToolChange && !settings.options_visibility.at(EOptionType::ToolChanges)) ||
-              (v.type == EMoveType::ColorChange && !settings.options_visibility.at(EOptionType::ColorChanges)) ||
-              (v.type == EMoveType::PausePrint && !settings.options_visibility.at(EOptionType::PausePrints)) ||
-              (v.type == EMoveType::CustomGCode && !settings.options_visibility.at(EOptionType::CustomGCodes)) ||
-              (v.type == EMoveType::Extrude && !settings.extrusion_roles_visibility.at(v.role))) ? false : true;
+        return ((v.type == EMoveType::Travel      && !settings.options_visibility.at(EOptionType::Travels)) ||
+                (v.type == EMoveType::Wipe        && !settings.options_visibility.at(EOptionType::Wipes)) ||
+                (v.type == EMoveType::Retract     && !settings.options_visibility.at(EOptionType::Retractions)) ||
+                (v.type == EMoveType::Unretract   && !settings.options_visibility.at(EOptionType::Unretractions)) ||
+                (v.type == EMoveType::Seam        && !settings.options_visibility.at(EOptionType::Seams)) ||
+                (v.type == EMoveType::ToolChange  && !settings.options_visibility.at(EOptionType::ToolChanges)) ||
+                (v.type == EMoveType::ColorChange && !settings.options_visibility.at(EOptionType::ColorChanges)) ||
+                (v.type == EMoveType::PausePrint  && !settings.options_visibility.at(EOptionType::PausePrints)) ||
+                (v.type == EMoveType::CustomGCode && !settings.options_visibility.at(EOptionType::CustomGCodes)) ||
+                (v.type == EMoveType::Extrude     && !settings.extrusion_roles_visibility.at(v.role))) ? false : true;
     }
     catch (...) {
         return false;
@@ -1145,6 +1146,8 @@ void ViewerImpl::update_view_full_range()
         else
             m_view_range.set_enabled(m_view_range.get_full());
     }
+
+    m_settings.update_view_full_range = false;
 }
 
 void ViewerImpl::update_color_ranges()
@@ -1232,12 +1235,14 @@ Color ViewerImpl::select_color(const PathVertex& v) const
     case EViewType::LayerTimeLinear:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[0].get_color_at(m_layers.get_time(m_settings.time_mode, v.layer_id));
+        return v.is_travel() ? Travels_Colors[role] :
+            m_layer_time_range[0].get_color_at(m_layers.get_layer_time(m_settings.time_mode, static_cast<size_t>(v.layer_id)));
     }
     case EViewType::LayerTimeLogarithmic:
     {
         assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_layer_time_range[1].get_color_at(m_layers.get_time(m_settings.time_mode, v.layer_id));
+        return v.is_travel() ? Travels_Colors[role] :
+            m_layer_time_range[1].get_color_at(m_layers.get_layer_time(m_settings.time_mode, static_cast<size_t>(v.layer_id)));
     }
     case EViewType::Tool:
     {
@@ -1246,7 +1251,8 @@ Color ViewerImpl::select_color(const PathVertex& v) const
     }
     case EViewType::ColorPrint:
     {
-        return m_layers.layer_contains_colorprint_options(v.layer_id) ? Dummy_Color : m_tool_colors[v.color_id % m_tool_colors.size()];
+        return m_layers.layer_contains_colorprint_options(static_cast<size_t>(v.layer_id)) ? Dummy_Color :
+            m_tool_colors[static_cast<size_t>(v.color_id) % m_tool_colors.size()];
     }
     default: { break; }
     }

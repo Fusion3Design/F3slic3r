@@ -17,6 +17,11 @@ namespace libvgcode {
 struct GCodeInputData
 {
     //
+    // Count of extruders
+    //
+    uint8_t extruders_count{ 0 };
+
+    //
     // List of path vertices
     //
     std::vector<PathVertex> vertices;

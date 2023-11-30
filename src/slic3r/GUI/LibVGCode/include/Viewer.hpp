@@ -17,6 +17,7 @@ namespace libvgcode {
 class ViewerImpl;
 struct GCodeInputData;
 struct PathVertex;
+class ColorRange;
 
 class Viewer
 {
@@ -39,12 +40,24 @@ public:
     ETimeMode get_time_mode() const;
     void set_time_mode(ETimeMode mode);
 
-    const std::array<uint32_t, 2>& get_layers_range() const;
-    void set_layers_range(const std::array<uint32_t, 2>& range);
-    void set_layers_range(uint32_t min, uint32_t max);
+    const std::array<uint32_t, 2>& get_layers_view_range() const;
+    void set_layers_view_range(const std::array<uint32_t, 2>& range);
+    void set_layers_view_range(uint32_t min, uint32_t max);
 
     bool is_top_layer_only_view_range() const;
     void set_top_layer_only_view_range(bool top_layer_only_view_range);
+
+    size_t get_layers_count() const;
+    float get_layer_z(size_t layer_id) const;
+    std::vector<float> get_layers_zs() const;
+
+    size_t get_layer_id_at(float z) const;
+
+    size_t get_extruders_count() const;
+    size_t get_used_extruders_count() const;
+    const std::vector<uint8_t>& get_used_extruders_ids() const;
+
+    AABox get_bounding_box(EBBoxType type) const;
 
     bool is_option_visible(EOptionType type) const;
     void toggle_option_visibility(EOptionType type);
@@ -135,13 +148,13 @@ public:
     const std::vector<Color>& get_tool_colors() const;
     void set_tool_colors(const std::vector<Color>& colors);
 
-    const std::array<float, 2>& get_height_range() const;
-    const std::array<float, 2>& get_width_range() const;
-    const std::array<float, 2>& get_speed_range() const;
-    const std::array<float, 2>& get_fan_speed_range() const;
-    const std::array<float, 2>& get_temperature_range() const;
-    const std::array<float, 2>& get_volumetric_rate_range() const;
-    std::array<float, 2> get_layer_time_range(EColorRangeType type) const;
+    const ColorRange& get_height_range() const;
+    const ColorRange& get_width_range() const;
+    const ColorRange& get_speed_range() const;
+    const ColorRange& get_fan_speed_range() const;
+    const ColorRange& get_temperature_range() const;
+    const ColorRange& get_volumetric_rate_range() const;
+    const ColorRange& get_layer_time_range(EColorRangeType type) const;
 
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     //

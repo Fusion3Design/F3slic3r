@@ -48,6 +48,13 @@ using Mat4x4 = std::array<float, 16>;
 using Color = std::array<uint8_t, 3>;
 
 //
+// Axis aligned box in 3 dimensions
+// [0] -> { min_x, min_y, min_z }
+// [1] -> { max_x, max_y, max_z }
+//
+using AABox = std::array<Vec3, 2>;
+
+//
 // View types
 //
 enum class EViewType : uint8_t
@@ -108,6 +115,8 @@ enum class EGCodeExtrusionRole : uint8_t
     COUNT
 };
 
+static constexpr size_t GCode_Extrusion_Roles_Count = static_cast<size_t>(EGCodeExtrusionRole::COUNT);
+
 //
 // Option types
 //
@@ -124,7 +133,6 @@ enum class EOptionType : uint8_t
     CustomGCodes,
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     CenterOfGravity,
-    Shells,
     ToolMarker,
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     COUNT
@@ -143,7 +151,7 @@ enum class ETimeMode : uint8_t
 static constexpr size_t Time_Modes_Count = static_cast<size_t>(ETimeMode::COUNT);
 
 //
-// Color range type
+// Color range types
 //
 enum class EColorRangeType : uint8_t
 {
@@ -153,6 +161,17 @@ enum class EColorRangeType : uint8_t
 };
 
 static constexpr size_t Color_Range_Types_Count = static_cast<size_t>(EColorRangeType::COUNT);
+
+//
+// Bounding box types
+//
+enum class EBBoxType : uint8_t
+{
+    Full,
+    Extrusion,
+    ExtrusionNoCustom,
+    COUNT
+};
 
 //
 // Predefined colors

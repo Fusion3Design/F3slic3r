@@ -93,6 +93,9 @@ set(SLIC3R_GUI_SOURCES
     GUI/Gizmos/GLGizmoMeasure.cpp
     GUI/Gizmos/GLGizmoMeasure.hpp
 #====================================================================================================================
+    GUI/LibVGCode/LibVGCodeWrapper.hpp
+    GUI/LibVGCode/LibVGCodeWrapper.cpp
+    GUI/LibVGCode/include/ColorRange.hpp
     GUI/LibVGCode/include/GCodeInputData.hpp
     GUI/LibVGCode/include/PathVertex.hpp
     GUI/LibVGCode/include/Types.hpp
@@ -101,7 +104,6 @@ set(SLIC3R_GUI_SOURCES
     GUI/LibVGCode/src/Bitset.cpp
     GUI/LibVGCode/src/CogMarker.hpp
     GUI/LibVGCode/src/CogMarker.cpp
-    GUI/LibVGCode/src/ColorRange.hpp
     GUI/LibVGCode/src/ColorRange.cpp
     GUI/LibVGCode/src/ExtrusionRoles.hpp
     GUI/LibVGCode/src/ExtrusionRoles.cpp

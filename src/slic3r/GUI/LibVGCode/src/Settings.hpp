@@ -37,7 +37,6 @@ struct Settings
 				{ EOptionType::CustomGCodes,    false },
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 				{ EOptionType::CenterOfGravity, false },
-				{ EOptionType::Shells,          false },
 				{ EOptionType::ToolMarker,      true }
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 		} };

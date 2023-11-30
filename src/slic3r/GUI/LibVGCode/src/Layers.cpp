@@ -27,18 +27,21 @@ static bool is_colorprint_option(const PathVertex& v)
 
 void Layers::update(const PathVertex& vertex, uint32_t vertex_id)
 {
-
     if (m_items.empty() || vertex.layer_id == m_items.size()) {
         // this code assumes that gcode paths are sent sequentially, one layer after the other
         assert(vertex.layer_id == static_cast<uint32_t>(m_items.size()));
         Item& item = m_items.emplace_back(Item());
+        if (vertex.type == EMoveType::Extrude && vertex.role != EGCodeExtrusionRole::Custom)
+            item.z = vertex.position[2];
         item.range.set(vertex_id, vertex_id);
         item.times = vertex.times;
         item.contains_colorprint_options |= is_colorprint_option(vertex);
     }
     else {
         Item& item = m_items.back();
-        item.range.set(item.range.get()[0], vertex_id);
+        if (vertex.type == EMoveType::Extrude && vertex.role != EGCodeExtrusionRole::Custom && item.z != vertex.position[2])
+            item.z = vertex.position[2];
+        item.range.set_max(vertex_id);
         for (size_t i = 0; i < Time_Modes_Count; ++i) {
             item.times[i] += vertex.times[i];
         }
@@ -62,22 +65,42 @@ size_t Layers::count() const
     return m_items.size();
 }
 
-float Layers::get_time(ETimeMode mode, uint32_t layer_id) const
-{
-    return (mode < ETimeMode::COUNT&& layer_id < static_cast<uint32_t>(m_items.size())) ?
-        m_items[layer_id].times[static_cast<size_t>(mode)] : 0.0f;
-}
-
 std::vector<float> Layers::get_times(ETimeMode mode) const
 {
     std::vector<float> ret;
     if (mode < ETimeMode::COUNT) {
-        const size_t mode_id = static_cast<size_t>(mode);
         for (const Item& item : m_items) {
-            ret.emplace_back(item.times[mode_id]);
+            ret.emplace_back(item.times[static_cast<size_t>(mode)]);
         }
     }
     return ret;
+}
+
+std::vector<float> Layers::get_zs() const
+{
+    std::vector<float> ret;
+    ret.reserve(m_items.size());
+    for (const Item& item : m_items) {
+        ret.emplace_back(item.z);
+    }
+    return ret;
+}
+
+float Layers::get_layer_time(ETimeMode mode, size_t layer_id) const
+{
+    return (mode < ETimeMode::COUNT&& layer_id < m_items.size()) ?
+        m_items[layer_id].times[static_cast<size_t>(mode)] : 0.0f;
+}
+
+float Layers::get_layer_z(size_t layer_id) const
+{
+  return (layer_id < m_items.size()) ? m_items[layer_id].z : 0.0f;
+}
+
+size_t Layers::get_layer_id_at(float z) const
+{
+    auto iter = std::upper_bound(m_items.begin(), m_items.end(), z, [](float z, const Item& item) { return item.z < z; });
+    return std::distance(m_items.begin(), iter);
 }
 
 const std::array<uint32_t, 2>& Layers::get_view_range() const
@@ -95,9 +118,9 @@ void Layers::set_view_range(uint32_t min, uint32_t max)
     m_view_range.set(min, max);
 }
 
-bool Layers::layer_contains_colorprint_options(uint32_t layer_id) const
+bool Layers::layer_contains_colorprint_options(size_t layer_id) const
 {
-    return (layer_id < static_cast<uint32_t>(m_items.size())) ? m_items[layer_id].contains_colorprint_options : false;
+    return (layer_id < m_items.size()) ? m_items[layer_id].contains_colorprint_options : false;
 }
 
 } // namespace libvgcode

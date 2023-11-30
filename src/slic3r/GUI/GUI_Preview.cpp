@@ -491,8 +491,7 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
     bool   was_empty = m_layers_slider->GetMaxValue() == 0;
 
     bool force_sliders_full_range = was_empty;
-    if (!keep_z_range)
-    {
+    if (!keep_z_range) {
         bool span_changed = layers_z.empty() || std::abs(layers_z.back() - m_layers_slider->GetMaxValueD()) > DoubleSlider::epsilon()/*1e-6*/;
         force_sliders_full_range |= span_changed;
     }
