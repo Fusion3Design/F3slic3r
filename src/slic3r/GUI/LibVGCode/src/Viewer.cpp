@@ -112,11 +112,6 @@ size_t Viewer::get_layer_id_at(float z) const
     return m_impl->get_layer_id_at(z);
 }
 
-size_t Viewer::get_extruders_count() const
-{
-    return m_impl->get_extruders_count();
-}
-
 size_t Viewer::get_used_extruders_count() const
 {
     return m_impl->get_used_extruders_count();

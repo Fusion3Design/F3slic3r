@@ -17,12 +17,13 @@ namespace libvgcode {
 struct GCodeInputData
 {
     //
-    // Count of extruders
+    // Whether or not the gcode was generated with spiral vase mode enabled.
+    // Required to properly detect fictitious layer changes when spiral vase mode is enabled.
     //
-    uint8_t extruders_count{ 0 };
+    bool spiral_vase_mode{ false };
 
     //
-    // List of path vertices
+    // List of path vertices (gcode moves)
     //
     std::vector<PathVertex> vertices;
 };

@@ -24,6 +24,7 @@ struct Settings
 		EViewType view_type{ EViewType::FeatureType };
 		ETimeMode time_mode{ ETimeMode::Normal };
 		bool top_layer_only_view_range{ false };
+		bool spiral_vase_mode{ false };
 
 		std::map<EOptionType, bool> options_visibility{ {
 				{ EOptionType::Travels,         false },

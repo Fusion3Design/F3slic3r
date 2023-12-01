@@ -1130,7 +1130,7 @@ void GCodeViewer::init()
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-void GCodeViewer::load(const GCodeProcessorResult & gcode_result, const Print & print, const std::vector<std::string>&str_tool_colors)
+void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& print, const std::vector<std::string>&str_tool_colors)
 {
     m_new_viewer.set_top_layer_only_view_range(get_app_config()->get_bool("seq_top_layer_only"));
 
@@ -1194,6 +1194,8 @@ void GCodeViewer::load(const GCodeProcessorResult & gcode_result, const Print & 
 
     if (wxGetApp().is_editor())
         m_contained_in_bed = wxGetApp().plater()->build_volume().all_paths_inside(gcode_result, m_paths_bounding_box);
+
+    m_extruders_count = gcode_result.extruders_count;
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 void GCodeViewer::load(const GCodeProcessorResult & gcode_result, const Print & print)
@@ -1437,7 +1439,6 @@ void GCodeViewer::reset()
 #if !ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     m_tool_colors = std::vector<ColorRGBA>();
-    m_extruders_count = 0;
     m_extruder_ids = std::vector<unsigned char>();
     m_extrusions.reset_ranges();
     m_layers.reset();
@@ -1449,6 +1450,7 @@ void GCodeViewer::reset()
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #endif // !ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    m_extruders_count = 0;
     m_print_statistics.reset();
     m_custom_gcode_per_print_z = std::vector<CustomGCode::Item>();
     m_sequential_view.gcode_window.reset();

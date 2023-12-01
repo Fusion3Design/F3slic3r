@@ -383,7 +383,6 @@ void ViewerImpl::reset()
     m_view_range.reset();
     m_extrusion_roles.reset();
     m_travels_time = { 0.0f, 0.0f };
-    m_extruders_count = 0;
     m_used_extruders_ids.clear();
     m_vertices.clear();
     m_valid_lines_bitset.clear();
@@ -412,7 +411,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     m_loading = true;
 
     m_vertices = std::move(gcode_data.vertices);
-    m_extruders_count = gcode_data.extruders_count;
+    m_settings.spiral_vase_mode = gcode_data.spiral_vase_mode;
 
     for (size_t i = 0; i < m_vertices.size(); ++i) {
         const PathVertex& v = m_vertices[i];
@@ -551,6 +550,13 @@ void ViewerImpl::update_enabled_entities()
     if (m_vertices[range[1]].is_option() && range[1] < static_cast<uint32_t>(m_vertices.size()) - 1)
         ++range[1];
 
+    if (m_settings.spiral_vase_mode) {
+        // when spiral vase mode is enabled and only one layer is shown, extend the range by one step
+        const std::array<uint32_t, 2>& layers_range = m_layers.get_view_range();
+        if (layers_range[0] > 0 && layers_range[0] == layers_range[1])
+            --range[0];
+    }
+
     for (uint32_t i = range[0]; i < range[1]; ++i) {
         const PathVertex& v = m_vertices[i];
 
@@ -630,7 +636,8 @@ void ViewerImpl::update_colors()
     const bool color_top_layer_only = m_view_range.get_full()[1] != m_view_range.get_visible()[1];
     std::vector<float> colors(m_vertices.size());
     for (size_t i = 0; i < m_vertices.size(); i++) {
-        colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id) ? encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
+        colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id && i != m_view_range.get_enabled()[0]) ?
+            encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
     }
 
     // update gpu buffer for colors
@@ -740,11 +747,6 @@ std::vector<float> ViewerImpl::get_layers_zs() const
 size_t ViewerImpl::get_layer_id_at(float z) const
 {
     return m_layers.get_layer_id_at(z);
-}
-
-size_t ViewerImpl::get_extruders_count() const
-{
-    return m_extruders_count;
 }
 
 size_t ViewerImpl::get_used_extruders_count() const
@@ -1140,6 +1142,10 @@ void ViewerImpl::update_view_full_range()
                 shortened = true;
             }
             if (shortened)
+                --top_first_it;
+
+            // when spiral vase mode is enabled and only one layer is shown, extend the range by one step
+            if (m_settings.spiral_vase_mode && layers_range[0] > 0 && layers_range[0] == layers_range[1])
                 --top_first_it;
             m_view_range.set_enabled(std::distance(m_vertices.begin(), top_first_it), full_range[1]);
         }

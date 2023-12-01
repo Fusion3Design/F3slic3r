@@ -53,7 +53,6 @@ public:
 
     size_t get_layer_id_at(float z) const;
 
-    size_t get_extruders_count() const;
     size_t get_used_extruders_count() const;
     const std::vector<uint8_t>& get_used_extruders_ids() const;
 

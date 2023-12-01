@@ -90,7 +90,6 @@ public:
 
     size_t get_layer_id_at(float z) const;
 
-    size_t get_extruders_count() const;
     size_t get_used_extruders_count() const;
     const std::vector<uint8_t>& get_used_extruders_ids() const;
 
@@ -170,7 +169,6 @@ private:
     ViewRange m_view_range;
     ExtrusionRoles m_extrusion_roles;
     std::array<float, Time_Modes_Count> m_travels_time{ 0.0f, 0.0f };
-    size_t m_extruders_count{ 0 };
     std::vector<uint8_t> m_used_extruders_ids;
 
     bool m_loading{ false };
