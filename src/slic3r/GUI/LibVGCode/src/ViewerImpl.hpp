@@ -171,6 +171,7 @@ private:
     std::array<float, Time_Modes_Count> m_travels_time{ 0.0f, 0.0f };
     std::vector<uint8_t> m_used_extruders_ids;
 
+    bool m_initialized{ false };
     bool m_loading{ false };
 
     //

@@ -31,6 +31,8 @@ inline void glAssertRecentCall() { }
 #define glcheck()
 #endif // HAS_GLSAFE
 
+extern bool check_opengl_version();
+
 } // namespace libvgcode
 
 //################################################################################################################################

@@ -298,8 +298,13 @@ ViewerImpl::~ViewerImpl()
 
 void ViewerImpl::init()
 {
-    if (m_segments_shader_id != 0)
+    if (m_initialized)
         return;
+
+    const bool is_valid_opengl_version = check_opengl_version();
+    assert(is_valid_opengl_version);
+    if (!is_valid_opengl_version)
+        throw std::runtime_error("LibVGCode requires an active OpenGL context based on OpenGL 3.2 or higher:\n");
 
     // segments shader
     m_segments_shader_id = init_shader("segments", Segments_Vertex_Shader, Segments_Fragment_Shader);
@@ -375,6 +380,8 @@ void ViewerImpl::init()
 
     m_tool_marker.init(32, 2.0f, 4.0f, 1.0f, 8.0f);
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+
+    m_initialized = true;
 }
 
 void ViewerImpl::reset()

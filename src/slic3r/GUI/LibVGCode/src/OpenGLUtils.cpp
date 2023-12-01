@@ -16,8 +16,10 @@
 
 #include <iostream>
 #include <assert.h>
+#include <cctype>
 
 namespace libvgcode {
+
 #ifdef HAS_GLSAFE
 void glAssertRecentCallImpl(const char* file_name, unsigned int line, const char* function_name)
 {
@@ -39,6 +41,21 @@ void glAssertRecentCallImpl(const char* file_name, unsigned int line, const char
     assert(false);
 }
 #endif // HAS_GLSAFE
+
+bool check_opengl_version()
+{
+    bool ret = false;
+    const GLubyte* version = glGetString(GL_VERSION);
+    if (version != nullptr) {
+        const std::string version_str(reinterpret_cast<const char*>(version));
+        if (version_str.length() > 4 && isdigit(version_str[0]) && isdigit(version_str[2])) {
+            const int major = version_str[0] - '0';
+            const int minor = version_str[2] - '0';
+            ret = major > 3 || (major == 3 && minor >= 2);
+        }
+    }
+    return ret;
+}
 
 } // namespace libvgcode
 
