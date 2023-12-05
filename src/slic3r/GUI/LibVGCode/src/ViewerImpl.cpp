@@ -643,7 +643,8 @@ void ViewerImpl::update_colors()
     const bool color_top_layer_only = m_view_range.get_full()[1] != m_view_range.get_visible()[1];
     std::vector<float> colors(m_vertices.size());
     for (size_t i = 0; i < m_vertices.size(); i++) {
-        colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id && i != m_view_range.get_enabled()[0]) ?
+        colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id &&
+                     (!m_settings.spiral_vase_mode || i != m_view_range.get_enabled()[0])) ?
             encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
     }
 
