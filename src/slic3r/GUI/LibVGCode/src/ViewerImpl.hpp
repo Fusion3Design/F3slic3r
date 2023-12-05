@@ -138,6 +138,11 @@ public:
     const ColorRange& get_volumetric_rate_range() const;
     const ColorRange& get_layer_time_range(EColorRangeType type) const;
 
+    float get_travels_radius() const;
+    void set_travels_radius(float radius);
+    float get_wipes_radius() const;
+    void set_wipes_radius(float radius);
+
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     Vec3 get_cog_marker_position() const;
 
@@ -170,6 +175,8 @@ private:
     ExtrusionRoles m_extrusion_roles;
     std::array<float, Time_Modes_Count> m_travels_time{ 0.0f, 0.0f };
     std::vector<uint8_t> m_used_extruders_ids;
+    float m_travels_radius{ Default_Travels_Radius };
+    float m_wipes_radius{ Default_Wipes_Radius };
 
     bool m_initialized{ false };
     bool m_loading{ false };
@@ -302,6 +309,7 @@ private:
 
     void update_view_full_range();
     void update_color_ranges();
+    void update_heights_widths();
     Color select_color(const PathVertex& v) const;
     void render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position);
     void render_options(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);

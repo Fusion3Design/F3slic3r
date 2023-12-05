@@ -52,7 +52,8 @@ extern ETimeMode convert(const Slic3r::PrintEstimatedStatistics::ETimeMode& mode
 extern Slic3r::PrintEstimatedStatistics::ETimeMode convert(const ETimeMode& mode);
 
 // mapping from Slic3r::GCodeProcessorResult to libvgcode::GCodeInputData
-extern GCodeInputData convert(const Slic3r::GCodeProcessorResult& result);
+extern GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels_radius = Default_Travels_Radius,
+    float wipes_radius = Default_Wipes_Radius);
 
 } // namespace libvgcode
 

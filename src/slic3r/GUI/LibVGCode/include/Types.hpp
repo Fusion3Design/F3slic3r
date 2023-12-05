@@ -18,8 +18,8 @@ namespace libvgcode {
 
 static constexpr float PI = 3.141592f;
 
-static constexpr float Default_Travel_Radius = 0.05f;
-static constexpr float Default_Wipe_Radius   = 0.05f;
+static constexpr float Default_Travels_Radius = 0.1f;
+static constexpr float Default_Wipes_Radius   = 0.1f;
 
 //
 // Vector in 3 dimensions
@@ -177,7 +177,7 @@ enum class EBBoxType : uint8_t
 // Predefined colors
 //
 static const Color Dummy_Color{  64,  64,  64 };
-static const Color Wipe_Color { 255, 255, 255 };
+static const Color Wipe_Color { 255, 255,   0 };
 
 //
 // Palette used to render moves by ranges

@@ -155,6 +155,11 @@ public:
     const ColorRange& get_volumetric_rate_range() const;
     const ColorRange& get_layer_time_range(EColorRangeType type) const;
 
+    float get_travels_radius() const;
+    void set_travels_radius(float radius);
+    float get_wipes_radius() const;
+    void set_wipes_radius(float radius);
+
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     //
     // Returns the position of the center of gravity of the toolpaths.

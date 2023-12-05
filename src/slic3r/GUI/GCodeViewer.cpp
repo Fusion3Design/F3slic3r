@@ -535,6 +535,10 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                 ImGui::SameLine();
                 imgui.text(_u8L("N/A"));
             }
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Layer") + ":");
+            sprintf(buf, "%d", vertex.layer_id + 1);
+            ImGui::SameLine();
+            imgui.text(std::string(buf));
         }
 
         // force extra frame to automatically update window size
@@ -1165,7 +1169,7 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print& pr
     reset();
 
     // convert data from PrusaSlicer format to libvgcode format
-    libvgcode::GCodeInputData data = libvgcode::convert(gcode_result);
+    libvgcode::GCodeInputData data = libvgcode::convert(gcode_result, m_new_viewer.get_travels_radius(), m_new_viewer.get_wipes_radius());
 
     // send data to the viewer
     m_new_viewer.load(std::move(data));
@@ -3627,7 +3631,7 @@ void GCodeViewer::render_new_toolpaths()
     m_new_viewer.render(converted_view_matrix, converted_projetion_matrix);
 
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG
-    Slic3r::GUI::ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
+    ImGuiWrapper& imgui = *wxGetApp().imgui();
     const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
     imgui.set_next_window_pos(static_cast<float>(cnv_size.get_width()), 0.0f, ImGuiCond_Always, 1.0f, 0.0f);
     imgui.begin(std::string("LibVGCode Viewer Debug"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
@@ -3636,13 +3640,13 @@ void GCodeViewer::render_new_toolpaths()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "# vertices");
+        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "# vertices");
         ImGui::TableSetColumnIndex(1);
         imgui.text(std::to_string(m_new_viewer.get_vertices_count()));
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled lines");
+        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled lines");
         ImGui::TableSetColumnIndex(1);
         const std::array<uint32_t, 2>& enabled_segments_range = m_new_viewer.get_enabled_segments_range();
         imgui.text(std::to_string(m_new_viewer.get_enabled_segments_count()) + " [" + std::to_string(enabled_segments_range[0]) +
@@ -3650,7 +3654,7 @@ void GCodeViewer::render_new_toolpaths()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled options");
+        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled options");
         ImGui::TableSetColumnIndex(1);
         const std::array<uint32_t, 2>& enabled_options_range = m_new_viewer.get_enabled_options_range();
         imgui.text(std::to_string(m_new_viewer.get_enabled_options_count()) + " [" + std::to_string(enabled_options_range[0]) +
@@ -3660,14 +3664,14 @@ void GCodeViewer::render_new_toolpaths()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "layers range");
+        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "layers range");
         ImGui::TableSetColumnIndex(1);
         const std::array<uint32_t, 2>& layers_range = m_new_viewer.get_layers_view_range();
         imgui.text(std::to_string(layers_range[0]) + " - " + std::to_string(layers_range[1]));
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (full)");
+        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "view range (full)");
         ImGui::TableSetColumnIndex(1);
         const std::array<uint32_t, 2>& full_view_range = m_new_viewer.get_view_full_range();
         imgui.text(std::to_string(full_view_range[0]) + " - " + std::to_string(full_view_range[1]) + " | " +
@@ -3676,7 +3680,7 @@ void GCodeViewer::render_new_toolpaths()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (enabled)");
+        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "view range (enabled)");
         ImGui::TableSetColumnIndex(1);
         const std::array<uint32_t, 2>& enabled_view_range = m_new_viewer.get_view_enabled_range();
         imgui.text(std::to_string(enabled_view_range[0]) + " - " + std::to_string(enabled_view_range[1]) + " | " +
@@ -3685,7 +3689,7 @@ void GCodeViewer::render_new_toolpaths()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "view range (visible)");
+        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "view range (visible)");
         ImGui::TableSetColumnIndex(1);
         const std::array<uint32_t, 2>& visible_view_range = m_new_viewer.get_view_visible_range();
         imgui.text(std::to_string(visible_view_range[0]) + " - " + std::to_string(visible_view_range[1]) + " | " +
@@ -3695,7 +3699,7 @@ void GCodeViewer::render_new_toolpaths()
         auto add_range_property_row = [&imgui](const std::string& label, const std::array<float, 2>& range) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, label);
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, label);
             ImGui::TableSetColumnIndex(1);
             char buf[128];
             sprintf(buf, "%.3f - %.3f", range[0], range[1]);
@@ -3719,7 +3723,7 @@ void GCodeViewer::render_new_toolpaths()
         if (ImGui::BeginTable("Cog", 2)) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Cog marker scale factor");
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Cog marker scale factor");
             ImGui::TableSetColumnIndex(1);
             imgui.text(std::to_string(get_cog_marker_scale_factor()));
 
@@ -3731,13 +3735,13 @@ void GCodeViewer::render_new_toolpaths()
         if (ImGui::BeginTable("Tool", 2)) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker scale factor");
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker scale factor");
             ImGui::TableSetColumnIndex(1);
             imgui.text(std::to_string(m_new_viewer.get_tool_marker_scale_factor()));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker z offset");
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker z offset");
             ImGui::TableSetColumnIndex(1);
             float tool_z_offset = m_new_viewer.get_tool_marker_offset_z();
             if (imgui.slider_float("##ToolZOffset", &tool_z_offset, 0.0f, 1.0f))
@@ -3745,7 +3749,7 @@ void GCodeViewer::render_new_toolpaths()
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker color");
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker color");
             ImGui::TableSetColumnIndex(1);
             const libvgcode::Color& color = m_new_viewer.get_tool_marker_color();
             std::array<float, 3> c = { static_cast<float>(color[0]) / 255.0f, static_cast<float>(color[1]) / 255.0f, static_cast<float>(color[2]) / 255.0f };
@@ -3757,7 +3761,7 @@ void GCodeViewer::render_new_toolpaths()
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker alpha");
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker alpha");
             ImGui::TableSetColumnIndex(1);
             float tool_alpha = m_new_viewer.get_tool_marker_alpha();
             if (imgui.slider_float("##ToolAlpha", &tool_alpha, 0.25f, 0.75f))
@@ -3766,6 +3770,30 @@ void GCodeViewer::render_new_toolpaths()
             ImGui::EndTable();
         }
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+    }
+
+    ImGui::Separator();
+    if (ImGui::BeginTable("Radii", 2)) {
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Travels radius");
+        ImGui::TableSetColumnIndex(1);
+        float travels_radius = m_new_viewer.get_travels_radius();
+        ImGui::SetNextItemWidth(200.0f);
+        if (imgui.slider_float("##TravelRadius", &travels_radius, 0.05f, 0.5f))
+            m_new_viewer.set_travels_radius(travels_radius);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Wipes radius");
+        ImGui::TableSetColumnIndex(1);
+        float wipes_radius = m_new_viewer.get_wipes_radius();
+        ImGui::SetNextItemWidth(200.0f);
+        if (imgui.slider_float("##WipesRadius", &wipes_radius, 0.05f, 0.5f))
+            m_new_viewer.set_wipes_radius(wipes_radius);
+
+        ImGui::EndTable();
     }
 
     imgui.end();

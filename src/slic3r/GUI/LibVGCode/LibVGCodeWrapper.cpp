@@ -148,7 +148,7 @@ Slic3r::PrintEstimatedStatistics::ETimeMode convert(const ETimeMode& mode)
     }
 }
 
-GCodeInputData convert(const Slic3r::GCodeProcessorResult& result)
+GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels_radius, float wipes_radius)
 {
     const std::vector<Slic3r::GCodeProcessorResult::MoveVertex>& moves = result.moves;
     GCodeInputData ret;
@@ -178,19 +178,19 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result)
         {
         case EMoveType::Travel:
         {
-            width = Default_Travel_Radius;
-            height = Default_Travel_Radius;
+            width  = travels_radius;
+            height = travels_radius;
             break;
         }
         case EMoveType::Wipe:
         {
-            width = Default_Wipe_Radius;
-            height = Default_Wipe_Radius;
+            width  = wipes_radius;
+            height = wipes_radius;
             break;
         }
         default:
         {
-            width = curr.width;
+            width  = curr.width;
             height = curr.height;
             break;
         }

@@ -989,6 +989,28 @@ const ColorRange& ViewerImpl::get_layer_time_range(EColorRangeType type) const
     }
 }
 
+float ViewerImpl::get_travels_radius() const
+{
+    return m_travels_radius;
+}
+
+void ViewerImpl::set_travels_radius(float radius)
+{
+    m_travels_radius = std::clamp(radius, 0.05f, 0.5f);
+    update_heights_widths();
+}
+
+float ViewerImpl::get_wipes_radius() const
+{
+    return m_wipes_radius;
+}
+
+void ViewerImpl::set_wipes_radius(float radius)
+{
+    m_wipes_radius = std::clamp(radius, 0.05f, 0.5f);
+    update_heights_widths();
+}
+
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 Vec3 ViewerImpl::get_cog_marker_position() const
 {
@@ -1089,6 +1111,7 @@ void ViewerImpl::update_view_full_range()
 {
     const std::array<uint32_t, 2>& layers_range = m_layers.get_view_range();
     const bool travels_visible = m_settings.options_visibility.at(EOptionType::Travels);
+    const bool wipes_visible   = m_settings.options_visibility.at(EOptionType::Wipes);
 
     auto first_it = m_vertices.begin();
     while (first_it != m_vertices.end() &&
@@ -1099,9 +1122,11 @@ void ViewerImpl::update_view_full_range()
     if (first_it == m_vertices.end())
         m_view_range.set_full(Range());
     else {
-        if (travels_visible) {
-            // if the global range starts with a travel move, extend it to the travel start
-            while (first_it != m_vertices.begin() && first_it->is_travel()) {
+        if (travels_visible || wipes_visible) {
+            // if the global range starts with a travel/wipe move, extend it to the travel/wipe start
+            while (first_it != m_vertices.begin() &&
+                   ((travels_visible && first_it->is_travel()) ||
+                    (wipes_visible && first_it->is_wipe()))) {
                 --first_it;
             }
         }
@@ -1130,11 +1155,12 @@ void ViewerImpl::update_view_full_range()
         if (reduced && rev_last_it != m_vertices.rend())
             last_it = rev_last_it.base() - 1;
 
-        if (travels_visible) {
-            // if the global range ends with a travel move, extend it to the travel end
+        if (travels_visible || wipes_visible) {
+            // if the global range ends with a travel/wipe move, extend it to the travel/wipe end
             while (last_it != m_vertices.end() && last_it + 1 != m_vertices.end() &&
-                   last_it->is_travel() && (last_it + 1)->is_travel()) {
-                ++last_it;
+                   ((travels_visible && last_it->is_travel() && (last_it + 1)->is_travel()) ||
+                    (wipes_visible && last_it->is_wipe() && (last_it + 1)->is_wipe()))) {
+                  ++last_it;
             }
         }
 
@@ -1195,6 +1221,31 @@ void ViewerImpl::update_color_ranges()
             m_layer_time_range[i].update(t);
         }
     }
+}
+
+void ViewerImpl::update_heights_widths()
+{
+    if (m_heights_widths_angles_buf_id == 0)
+        return;
+
+    glsafe(glBindBuffer(GL_TEXTURE_BUFFER, m_heights_widths_angles_buf_id));
+    Vec3* buffer = static_cast<Vec3*>(glMapBuffer(GL_TEXTURE_BUFFER, GL_WRITE_ONLY));
+    glcheck();
+
+    for (size_t i = 0; i < m_vertices.size(); ++i) {
+        const PathVertex& v = m_vertices[i];
+        if (v.is_travel()) {
+            buffer[i][0] = m_travels_radius;
+            buffer[i][1] = m_travels_radius;
+        }
+        else if (v.is_wipe()) {
+            buffer[i][0] = m_wipes_radius;
+            buffer[i][1] = m_wipes_radius;
+        }
+    }
+
+    glsafe(glUnmapBuffer(GL_TEXTURE_BUFFER));
+    glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
 }
 
 Color ViewerImpl::select_color(const PathVertex& v) const

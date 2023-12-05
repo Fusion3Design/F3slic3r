@@ -292,6 +292,26 @@ const ColorRange& Viewer::get_layer_time_range(EColorRangeType type) const
     return m_impl->get_layer_time_range(type);
 }
 
+float Viewer::get_travels_radius() const
+{
+    return m_impl->get_travels_radius();
+}
+
+void Viewer::set_travels_radius(float radius)
+{
+    m_impl->set_travels_radius(radius);
+}
+
+float Viewer::get_wipes_radius() const
+{
+    return m_impl->get_wipes_radius();
+}
+
+void Viewer::set_wipes_radius(float radius)
+{
+    m_impl->set_wipes_radius(radius);
+}
+
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 Vec3 Viewer::get_cog_position() const
 {
