@@ -67,8 +67,51 @@ class BoostThreadWorker : public Worker, private Job::Ctl
         void deliver(BoostThreadWorker &runner);
     };
 
-    using JobQueue     = ThreadSafeQueueSPSC<JobEntry>;
-    using MessageQueue = ThreadSafeQueueSPSC<WorkerMessage>;
+    template<class El>
+    class RawQueue: public std::deque<El> {
+        std::atomic<bool> *m_running_ptr = nullptr;
+
+    public:
+        using std::deque<El>::deque;
+        explicit RawQueue(std::atomic<bool> &rflag): m_running_ptr{&rflag} {}
+
+        void set_running() { m_running_ptr->store(true); }
+        void set_stopped() { m_running_ptr->store(false); }
+    };
+
+    template<class El>
+    class RawJobQueue: public RawQueue<El> {
+    public:
+        using RawQueue<El>::RawQueue;
+        void pop_front()
+        {
+            RawQueue<El>::pop_front();
+            this->set_running();
+        }
+    };
+
+    template<class El>
+    class RawMsgQueue: public RawQueue<El> {
+    public:
+        using RawQueue<El>::RawQueue;
+        void push_back(El &&entry)
+        {
+            this->emplace_back(std::move(entry));
+        }
+
+        template<class...EArgs>
+        auto & emplace_back(EArgs&&...args)
+        {
+            auto &el = RawQueue<El>::emplace_back(std::forward<EArgs>(args)...);
+            if (el.get_type() == WorkerMessage::Finalize)
+                this->set_stopped();
+
+            return el;
+        }
+    };
+
+    using JobQueue     = ThreadSafeQueueSPSC<JobEntry, RawJobQueue>;
+    using MessageQueue = ThreadSafeQueueSPSC<WorkerMessage, RawMsgQueue>;
 
     boost::thread                      m_thread;
     std::atomic<bool>                  m_running{false}, m_canceled{false};
