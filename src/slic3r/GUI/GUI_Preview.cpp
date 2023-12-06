@@ -710,7 +710,15 @@ void Preview::update_layers_slider_from_canvas(wxKeyEvent& event)
         event.Skip();
 }
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
+#if ENABLE_NEW_GCODE_VIEWER
+void Preview::update_moves_slider(std::optional<int> visible_range_min, std::optional<int> visible_range_max)
+#else
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 void Preview::update_moves_slider()
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 #if ENABLE_NEW_GCODE_VIEWER
@@ -722,6 +730,10 @@ void Preview::update_moves_slider()
     values.reserve(range_size);
     std::vector<double> alternate_values;
     alternate_values.reserve(range_size);
+
+    std::optional<uint32_t> visible_range_min_id;
+    std::optional<uint32_t> visible_range_max_id;
+    uint32_t counter = 0;
 
     for (uint32_t i = range[0]; i <= range[1]; ++i) {
         const uint32_t gcode_id = m_canvas->get_gcode_vertex_at(static_cast<size_t>(i)).gcode_id;
@@ -738,12 +750,20 @@ void Preview::update_moves_slider()
 
         values.emplace_back(static_cast<double>(i + 1));
         alternate_values.emplace_back(static_cast<double>(gcode_id));
+        if (visible_range_min.has_value() && i + 1 == visible_range_min)
+            visible_range_min_id = counter;
+        else if (visible_range_max.has_value() && i + 1 == visible_range_max)
+            visible_range_max_id = counter;
+        ++counter;
     }
+
+    const int span_min_id = visible_range_min_id.has_value() ? static_cast<int>(*visible_range_min_id) : 0;
+    const int span_max_id = visible_range_max_id.has_value() ? static_cast<int>(*visible_range_max_id) : static_cast<int>(values.size()) - 1;
 
     m_moves_slider->SetSliderValues(values);
     m_moves_slider->SetSliderAlternateValues(alternate_values);
-    m_moves_slider->SetMaxValue(int(values.size()) - 1);
-    m_moves_slider->SetSelectionSpan(values.front() - 1 - range[0], values.back() - 1 - range[0]);
+    m_moves_slider->SetMaxValue(static_cast<int>(values.size()) - 1);
+    m_moves_slider->SetSelectionSpan(span_min_id, span_max_id);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
     const GCodeViewer::SequentialView& view = m_canvas->get_gcode_sequential_view();

@@ -4811,8 +4811,16 @@ void GCodeViewer::render_legend(float& legend_height)
                 append_item(EItemType::Rect, libvgcode::convert(libvgcode::Extrusion_Roles_Colors[static_cast<size_t>(role)]), labels[i],
                     visible, times[i], percents[i], max_time_percent, offsets, used_filaments_m[i], used_filaments_g[i],
                     [this, role]() {
+                        const std::array<uint32_t, 2> view_visible_range = m_new_viewer.get_view_visible_range();
+                        const std::array<uint32_t, 2> view_enabled_range = m_new_viewer.get_view_enabled_range();
                         m_new_viewer.toggle_extrusion_role_visibility((libvgcode::EGCodeExtrusionRole)role);
-                        wxGetApp().plater()->update_preview_moves_slider();
+                        std::optional<int> view_visible_range_min;
+                        std::optional<int> view_visible_range_max;
+                        if (view_visible_range != view_enabled_range) {
+                            view_visible_range_min = static_cast<int>(view_visible_range[0]);
+                            view_visible_range_max = static_cast<int>(view_visible_range[1]);
+                        }
+                        wxGetApp().plater()->update_preview_moves_slider(view_visible_range_min, view_visible_range_max);
                         wxGetApp().plater()->get_current_canvas3D()->set_as_dirty();
                     }
                 );
@@ -5527,20 +5535,38 @@ void GCodeViewer::render_legend(float& legend_height)
         if (imgui.draw_radio_button(name, 1.5f * icon_size, active, draw_callback)) {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
+          const std::array<uint32_t, 2> view_visible_range = m_new_viewer.get_view_visible_range();
+          const std::array<uint32_t, 2> view_enabled_range = m_new_viewer.get_view_enabled_range();
+          bool keep_visible_range = false;
 #if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
             switch (type)
             {
             case Preview::OptionType::CenterOfGravity: { m_cog.set_visible(!active); break; }
             case Preview::OptionType::ToolMarker:      { m_sequential_view.marker.set_visible(!active); break; }
             case Preview::OptionType::Shells:          { m_shells.visible = !active; break; }
-            default:                                   { m_new_viewer.toggle_option_visibility(libvgcode::convert(type)); break; }
+            default:                                   {
+                m_new_viewer.toggle_option_visibility(libvgcode::convert(type));
+                if (view_visible_range != view_enabled_range)
+                    keep_visible_range = true;
+                break;
+            }
             }
 #else
             if (type == Preview::OptionType::Shells)
                 m_shells.visible = !active;
-            else
+            else {
                 m_new_viewer.toggle_option_visibility(libvgcode::convert(type));
+                if (view_visible_range != view_enabled_range)
+                    keep_visible_range = true;
+            }
 #endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+            std::optional<int> view_visible_range_min;
+            std::optional<int> view_visible_range_max;
+            if (keep_visible_range) {
+                view_visible_range_min = static_cast<int>(view_visible_range[0]);
+                view_visible_range_max = static_cast<int>(view_visible_range[1]);
+            }
+            wxGetApp().plater()->update_preview_moves_slider(view_visible_range_min, view_visible_range_max);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             unsigned int new_flags = set_flag(flags, flag, !active);
@@ -5554,10 +5580,10 @@ void GCodeViewer::render_legend(float& legend_height)
                 bool keep_last = m_sequential_view.current.last != m_sequential_view.global.last;
                 wxGetApp().plater()->get_current_canvas3D()->refresh_gcode_preview_render_paths(keep_first, keep_last);
             }
+            wxGetApp().plater()->update_preview_moves_slider();
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-            wxGetApp().plater()->update_preview_moves_slider();
         }
 
         if (ImGui::IsItemHovered()) {

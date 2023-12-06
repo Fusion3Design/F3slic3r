@@ -40,12 +40,9 @@ void ViewRange::set_full(uint32_t min, uint32_t max)
 		m_full.clamp(m_enabled);
 		// force the visible range to stay inside the modified enabled range
 		m_enabled.clamp(m_visible);
-		if (new_max) {
+		if (new_max)
 				// force the enabled range to fill the extended full range
 				m_enabled.set_max(max);
-				// force the visible range to fill the extended enabled range
-				m_visible.set_max(max);
-		}
 }
 
 const std::array<uint32_t, 2>& ViewRange::get_enabled() const

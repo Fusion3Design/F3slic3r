@@ -397,6 +397,9 @@ void ViewerImpl::reset()
     m_cog_marker.reset();
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
+    m_enabled_segments_count = 0;
+    m_enabled_options_count = 0;
+
     delete_textures(m_enabled_options_tex_id);
     delete_buffers(m_enabled_options_buf_id);
 
@@ -642,7 +645,7 @@ void ViewerImpl::update_colors()
     const uint32_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers.get_view_range()[1] : 0;
     const bool color_top_layer_only = m_view_range.get_full()[1] != m_view_range.get_visible()[1];
     std::vector<float> colors(m_vertices.size());
-    for (size_t i = 0; i < m_vertices.size(); i++) {
+    for (size_t i = 0; i < m_vertices.size(); ++i) {
         colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id &&
                      (!m_settings.spiral_vase_mode || i != m_view_range.get_enabled()[0])) ?
             encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
@@ -801,7 +804,7 @@ void ViewerImpl::toggle_option_visibility(EOptionType type)
     try {
         bool& value = m_settings.options_visibility.at(type);
         value = !value;
-        m_settings.update_view_full_range = true;
+        update_view_full_range();
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
     }
@@ -855,7 +858,7 @@ void ViewerImpl::set_view_visible_range(uint32_t min, uint32_t max)
     // when calling m_view_range.set_visible()
     update_view_full_range();
     m_view_range.set_visible(min, max);
-    m_settings.update_enabled_entities = true;
+    update_enabled_entities();
     m_settings.update_colors = true;
 }
 
@@ -1165,7 +1168,10 @@ void ViewerImpl::update_view_full_range()
             }
         }
 
-        m_view_range.set_full(std::distance(m_vertices.begin(), first_it), std::distance(m_vertices.begin(), last_it));
+        if (first_it != last_it)
+            m_view_range.set_full(std::distance(m_vertices.begin(), first_it), std::distance(m_vertices.begin(), last_it));
+        else
+            m_view_range.set_full(Range());
 
         if (m_settings.top_layer_only_view_range) {
             const std::array<uint32_t, 2>& full_range = m_view_range.get_full();
