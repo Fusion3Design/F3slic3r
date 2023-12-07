@@ -69,7 +69,7 @@ class BoostThreadWorker : public Worker, private Job::Ctl
 
     template<class El>
     class RawQueue: public std::deque<El> {
-        std::atomic<bool> *m_running_ptr = nullptr;
+        std::atomic<bool> *m_running_ptr;
 
     public:
         using std::deque<El>::deque;

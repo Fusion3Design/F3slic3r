@@ -21,6 +21,10 @@ struct BlockingWait
     unsigned timeout_ms = 0;
 };
 
+template<class T, class... Args>
+using NonSpecialMembersOnly = std::enable_if_t<
+    (sizeof...(Args) >= 1) && !(... || std::is_convertible_v<Args, T>)>;
+
 // A thread safe queue for one producer and one consumer.
 template<class T,
          template<class, class...> class Container = std::deque,
@@ -32,10 +36,11 @@ class ThreadSafeQueueSPSC
     std::condition_variable m_cond_var;
 
 public:
-    template<class...Qargs>
+    template<class...Qargs, class = NonSpecialMembersOnly<ThreadSafeQueueSPSC, Qargs...>>
     ThreadSafeQueueSPSC(Qargs &&...qargs)
         : m_queue{Container<T, ContainerArgs...>{std::forward<Qargs>(qargs)...}} {}
 
+    ThreadSafeQueueSPSC() = default;
     ThreadSafeQueueSPSC(const ThreadSafeQueueSPSC&) = default;
     ThreadSafeQueueSPSC(ThreadSafeQueueSPSC&&) = default;
     ThreadSafeQueueSPSC& operator=(const ThreadSafeQueueSPSC&) = default;
