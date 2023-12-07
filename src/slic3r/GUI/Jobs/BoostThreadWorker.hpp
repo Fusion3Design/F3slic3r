@@ -67,6 +67,11 @@ class BoostThreadWorker : public Worker, private Job::Ctl
         void deliver(BoostThreadWorker &runner);
     };
 
+    // The m_running state flag needs special attention. Previously, it was set simply in the run()
+    // method whenever a new job was taken from the input queue and unset after the finalize message
+    // was pushed into the output queue. This was not correct. It must not be possible to consume
+    // the finalize message before the flag gets unset, these two operations must be done atomically
+    // So the underlying queues are here extended to support handling of this m_running flag.
     template<class El>
     class RawQueue: public std::deque<El> {
         std::atomic<bool> *m_running_ptr;
@@ -79,6 +84,7 @@ class BoostThreadWorker : public Worker, private Job::Ctl
         void set_stopped() { m_running_ptr->store(false); }
     };
 
+    // The running flag is set if a job is popped from the queue
     template<class El>
     class RawJobQueue: public RawQueue<El> {
     public:
@@ -90,6 +96,7 @@ class BoostThreadWorker : public Worker, private Job::Ctl
         }
     };
 
+    // The running flag is unset when the finalize message is pushed into the queue
     template<class El>
     class RawMsgQueue: public RawQueue<El> {
     public:

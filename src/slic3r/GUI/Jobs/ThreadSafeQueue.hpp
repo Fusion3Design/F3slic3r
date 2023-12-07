@@ -21,10 +21,6 @@ struct BlockingWait
     unsigned timeout_ms = 0;
 };
 
-template<class T, class... Args>
-using NonSpecialMembersOnly = std::enable_if_t<
-    (sizeof...(Args) >= 1) && !(... || std::is_convertible_v<Args, T>)>;
-
 // A thread safe queue for one producer and one consumer.
 template<class T,
          template<class, class...> class Container = std::deque,
@@ -36,15 +32,16 @@ class ThreadSafeQueueSPSC
     std::condition_variable m_cond_var;
 
 public:
-    template<class...Qargs, class = NonSpecialMembersOnly<ThreadSafeQueueSPSC, Qargs...>>
+
+    // Forward arguments to the underlying queue
+    template<class...Qargs>
     ThreadSafeQueueSPSC(Qargs &&...qargs)
         : m_queue{Container<T, ContainerArgs...>{std::forward<Qargs>(qargs)...}} {}
 
-    ThreadSafeQueueSPSC() = default;
-    ThreadSafeQueueSPSC(const ThreadSafeQueueSPSC&) = default;
-    ThreadSafeQueueSPSC(ThreadSafeQueueSPSC&&) = default;
-    ThreadSafeQueueSPSC& operator=(const ThreadSafeQueueSPSC&) = default;
-    ThreadSafeQueueSPSC& operator=(ThreadSafeQueueSPSC &&) = default;
+    ThreadSafeQueueSPSC(const ThreadSafeQueueSPSC&) = delete;
+    ThreadSafeQueueSPSC(ThreadSafeQueueSPSC&&) = delete;
+    ThreadSafeQueueSPSC& operator=(const ThreadSafeQueueSPSC&) = delete;
+    ThreadSafeQueueSPSC& operator=(ThreadSafeQueueSPSC &&) = delete;
 
     // Consume one element, block if the queue is empty.
     template<class Fn>
