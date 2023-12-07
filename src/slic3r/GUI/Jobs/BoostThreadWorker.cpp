@@ -81,9 +81,12 @@ std::future<void> BoostThreadWorker::call_on_main_thread(std::function<void ()> 
 }
 
 BoostThreadWorker::BoostThreadWorker(std::shared_ptr<ProgressIndicator> pri,
-                                     boost::thread::attributes &attribs,
-                                     const char *               name)
-    : m_progress(std::move(pri)), m_input_queue{m_running}, m_output_queue{m_running}, m_name{name}
+                                     boost::thread::attributes         &attribs,
+                                     const char                        *name)
+    : m_progress(std::move(pri))
+    , m_input_queue{m_running}
+    , m_output_queue{m_running}
+    , m_name{name}
 {
     if (m_progress)
         m_progress->set_cancel_callback([this](){ cancel(); });
