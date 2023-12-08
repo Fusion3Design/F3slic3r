@@ -891,11 +891,17 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     });
 
     this->q->Bind(EVT_PA_ID_USER_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
-        std::string username = user_account->on_user_id_success(evt.data, wxGetApp().app_config);
-        std::string text = format(_u8L("Logged as %1%."), username);
-        this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
-        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
-        wxGetApp().update_config_menu();
+        std::string username;
+        bool succ = user_account->on_user_id_success(evt.data, wxGetApp().app_config, username);
+        if (succ) {
+            std::string text = format(_u8L("Logged as %1%."), username);
+            this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
+            this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
+            wxGetApp().update_config_menu();
+        } else {
+            // TODO
+        }
+        
     });
     this->q->Bind(EVT_PRUSAAUTH_FAIL, [this](PrusaAuthFailEvent& evt) {
         BOOST_LOG_TRIVIAL(error) << "Network error message: " << evt.data;
@@ -908,13 +914,18 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, evt.data);
     });
     this->q->Bind(EVT_PRUSACONNECT_PRINTERS_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
-        BOOST_LOG_TRIVIAL(error) << "PrusaConnect printers message: " << evt.data;
-        std::string text = user_account->on_connect_printers_success(evt.data, wxGetApp().app_config);
-        std::string out = GUI::format( "Printers in your PrusaConnect team:\n%1%", text);
-        this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
-        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
-
-        sidebar->update_printer_presets_combobox();
+        std::string text;
+        bool printers_changed = false;
+        bool succ = user_account->on_connect_printers_success(evt.data, wxGetApp().app_config, printers_changed, text);
+        if (succ) {
+            std::string out = GUI::format("Printers in your PrusaConnect team %1%:\n%2%", (printers_changed ? "changed" : "didn't changed"), text);
+            this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
+            this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
+            if (printers_changed)
+                sidebar->update_printer_presets_combobox();
+        } else {
+            // TODO
+        }
     });
     
 	wxGetApp().other_instance_message_handler()->init(this->q);

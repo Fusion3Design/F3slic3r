@@ -42,15 +42,18 @@ public:
 #endif
     void enqueue_connect_printers_action();
 
-    void on_login_code_recieved(const std::string& url_message);
-    std::string on_user_id_success(const std::string data, AppConfig* app_config);
-    void on_communication_fail(const std::string data, AppConfig* app_config);
-    void on_logout(AppConfig* app_config);
-    std::string on_connect_printers_success(const std::string data, AppConfig* app_config);
+    // Functions called from UI where events emmited from AuthSession are binded
+    // Returns bool if data were correctly proccessed
+    bool on_login_code_recieved(const std::string& url_message);
+    bool on_user_id_success(const std::string data, AppConfig* app_config, std::string& out_username);
+    bool on_communication_fail(const std::string data, AppConfig* app_config);
+    bool on_logout(AppConfig* app_config);
+    bool on_connect_printers_success(const std::string data, AppConfig* app_config, bool& out_printers_changed, std::string& out_message);
 
     std::string get_username() const { return m_username; }
     std::string get_access_token();
     const ConnectPrinterStateMap& get_printer_state_map() const { return m_printer_map; }
+    const std::map<std::string, std::string> get_user_data() const { return m_user_data; }
 
     // standalone utility methods
     std::string get_model_from_json(const std::string& message) const;
@@ -60,8 +63,9 @@ private:
 
     std::unique_ptr<Slic3r::GUI::PrusaAuthCommunication> m_auth_communication;
     
-    std::string             m_username;
-    ConnectPrinterStateMap  m_printer_map;
+    ConnectPrinterStateMap              m_printer_map;
+    std::map<std::string, std::string>  m_user_data;
+    std::string                         m_username;
 
     const std::map<std::string, std::string> printer_type_and_name_table = {
         {"1.3.0", "MK3"         },

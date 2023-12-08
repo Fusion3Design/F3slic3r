@@ -61,39 +61,50 @@ void UserAccount::enqueue_connect_printers_action()
     m_auth_communication->enqueue_connect_printers_action();
 }
 
-void UserAccount::on_login_code_recieved(const std::string& url_message)
+bool UserAccount::on_login_code_recieved(const std::string& url_message)
 {
     m_auth_communication->on_login_code_recieved(url_message);
+    return true;
 }
 
-std::string UserAccount::on_user_id_success(const std::string data, AppConfig* app_config)
+bool UserAccount::on_user_id_success(const std::string data, AppConfig* app_config, std::string& out_username)
 {
-    std::string public_username;
+    boost::property_tree::ptree ptree;
     try {
         std::stringstream ss(data);
-        boost::property_tree::ptree ptree;
         boost::property_tree::read_json(ss, ptree);
-        const auto public_username_optional = ptree.get_optional<std::string>("public_username");
-        if (public_username_optional)
-            public_username = *public_username_optional;
     }
     catch (const std::exception&) {
         BOOST_LOG_TRIVIAL(error) << "UserIDUserAction Could not parse server response.";
+        return false;
     }
-    assert(!public_username.empty());
+    m_user_data.clear();
+    for (const auto& section : ptree) {
+        const auto opt = ptree.get_optional<std::string>(section.first);
+        if (opt) {
+            BOOST_LOG_TRIVIAL(debug) << static_cast<std::string>(section.first) << *opt;
+            m_user_data[section.first] = *opt;
+        }
+       
+    }
+    assert(m_user_data.find("public_username") != m_user_data.end());
+    std::string public_username = m_user_data["public_username"];
     set_username(public_username, app_config);
-    return public_username;
+    out_username = public_username;
+    return true;
 }
 
-void UserAccount::on_communication_fail(const std::string data, AppConfig* app_config)
+bool UserAccount::on_communication_fail(const std::string data, AppConfig* app_config)
 {
     // TODO: should we just declare disconnect on every fail?
     //set_username({}, app_config);
+    return true;
 }
 
-void UserAccount::on_logout( AppConfig* app_config)
+bool UserAccount::on_logout( AppConfig* app_config)
 {
     set_username({}, app_config);
+    return true;
 }
 
 namespace {
@@ -112,9 +123,9 @@ namespace {
     }
 }
 
-std::string UserAccount::on_connect_printers_success(const std::string data, AppConfig* app_config)
+bool UserAccount::on_connect_printers_success(const std::string data, AppConfig* app_config, bool& out_printers_changed, std::string& out_message)
 {
-   
+    BOOST_LOG_TRIVIAL(debug) << "PrusaConnect printers message: " << data;
     pt::ptree ptree;
     try {
         std::stringstream ss(data);
@@ -122,11 +133,13 @@ std::string UserAccount::on_connect_printers_success(const std::string data, App
     }
     catch (const std::exception& e) {
         BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
-        return {};
+        return false;
     }
     // fill m_printer_map with data from ptree
      // tree string is in format {"printers": [{..}, {..}]}
-    m_printer_map.clear();
+
+    ConnectPrinterStateMap new_printer_map;
+
     assert(ptree.front().first == "printers");
     for (const auto& printer_tree : ptree.front().second) {
         std::string name;
@@ -152,26 +165,48 @@ std::string UserAccount::on_connect_printers_success(const std::string data, App
             assert(true); // On this assert, printer_state_table and ConnectPrinterState needs to be updated
             continue;
         }
-        if (auto counter = m_printer_map.find(name); counter != m_printer_map.end()) {
-            m_printer_map[name][static_cast<size_t>(state)]++;
+        if (auto counter = new_printer_map.find(name); counter != new_printer_map.end()) {
+            new_printer_map[name][static_cast<size_t>(state)]++;
         }  else {
-            m_printer_map[name].reserve(static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT));
+            new_printer_map[name].reserve(static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT));
             for (size_t i = 0; i < static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT); i++) {
-                m_printer_map[name].push_back(i == static_cast<size_t>(state) ? 1 : 0);
+                new_printer_map[name].push_back(i == static_cast<size_t>(state) ? 1 : 0);
             }
         }
     }
+
+    // compare new and old printer map and update old map into new
+    out_printers_changed = true;
+    for (const auto& it : new_printer_map) {
+        if (m_printer_map.find(it.first) == m_printer_map.end()) {
+            // printer is not in old map, add it by copying data from new map
+            out_printers_changed = false;
+            m_printer_map[it.first].reserve(static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT));
+            for (size_t i = 0; i < static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT); i++) {
+                m_printer_map[it.first].push_back(new_printer_map[it.first][i]);
+            }
+        } else {
+            // printer is in old map, check state by state
+            for (size_t i = 0; i < static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT); i++) {
+                if (m_printer_map[it.first][i] != new_printer_map[it.first][i])  {
+                    out_printers_changed = false;
+                    m_printer_map[it.first][i] = new_printer_map[it.first][i];
+                }
+            }
+        }
+    }
+
     std::string out;
     for (const auto& it : m_printer_map)
     {
-        out += GUI::format("%1%: O%2% I%3% P%4% F%5% \n"
+        out_message += GUI::format("%1%: O%2% I%3% P%4% F%5% \n"
             , it.first
             , std::to_string(it.second[static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_OFFLINE)])
             , std::to_string(it.second[static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_IDLE)])
             , std::to_string(it.second[static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_PRINTING)])
             , std::to_string(it.second[static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_FINISHED)]));
     }
-    return out;
+    return true;
 }
 
 std::string UserAccount::get_model_from_json(const std::string& message) const
