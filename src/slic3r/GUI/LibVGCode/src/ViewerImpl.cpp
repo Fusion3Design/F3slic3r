@@ -418,10 +418,15 @@ void ViewerImpl::reset()
 
 void ViewerImpl::load(GCodeInputData&& gcode_data)
 {
+    if (gcode_data.vertices.empty())
+        return;
+
     m_loading = true;
 
     m_vertices = std::move(gcode_data.vertices);
     m_settings.spiral_vase_mode = gcode_data.spiral_vase_mode;
+
+    m_used_extruders_ids.reserve(m_vertices.size());
 
     for (size_t i = 0; i < m_vertices.size(); ++i) {
         const PathVertex& v = m_vertices[i];
@@ -433,6 +438,9 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
         }
         else
             m_extrusion_roles.add(v.role, v.times);
+
+        if (v.type == EMoveType::Extrude)
+            m_used_extruders_ids.emplace_back(v.extruder_id);
 
         if (i > 0) {
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
@@ -454,6 +462,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
 
     std::sort(m_used_extruders_ids.begin(), m_used_extruders_ids.end());
     m_used_extruders_ids.erase(std::unique(m_used_extruders_ids.begin(), m_used_extruders_ids.end()), m_used_extruders_ids.end());
+    m_used_extruders_ids.shrink_to_fit();
 
     // reset segments visibility bitset
     m_valid_lines_bitset = BitSet<>(m_vertices.size());
@@ -535,9 +544,8 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
         glsafe(glBindTexture(GL_TEXTURE_BUFFER, old_bound_texture));
     }
 
-    if (!m_layers.empty())
-        set_layers_view_range(0, static_cast<uint32_t>(m_layers.count() - 1));
-
+    update_view_full_range();
+    m_view_range.set_visible(m_view_range.get_enabled());
     update_enabled_entities();
     update_colors();
 
@@ -725,6 +733,7 @@ void ViewerImpl::set_layers_view_range(uint32_t min, uint32_t max)
     m_layers.set_view_range(min, max);
     // force immediate update of the full range
     update_view_full_range();
+    m_view_range.set_visible(m_view_range.get_enabled());
     m_settings.update_enabled_entities = true;
     m_settings.update_colors = true;
 }
@@ -828,7 +837,7 @@ void ViewerImpl::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
     try {
         bool& value = m_settings.extrusion_roles_visibility.at(role);
         value = !value;
-        m_settings.update_view_full_range = true;
+        update_view_full_range();
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
     }
@@ -1122,6 +1131,10 @@ void ViewerImpl::update_view_full_range()
            (first_it->layer_id < layers_range[0] || !is_visible(*first_it, m_settings))) {
         ++first_it;
     }
+
+    // If the first vertex is an extrusion, add an extra step to properly detect the first segment
+    if (first_it != m_vertices.begin() && first_it->type == EMoveType::Extrude)
+        --first_it;
 
     if (first_it == m_vertices.end())
         m_view_range.set_full(Range());

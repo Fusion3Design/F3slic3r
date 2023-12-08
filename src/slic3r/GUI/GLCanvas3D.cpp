@@ -1763,10 +1763,16 @@ void GLCanvas3D::enable_layers_editing(bool enable)
     set_as_dirty();
 }
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if !ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 void GLCanvas3D::enable_legend_texture(bool enable)
 {
     m_gcode_viewer.enable_legend(enable);
 }
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // !ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 void GLCanvas3D::enable_picking(bool enable)
 {
@@ -2695,7 +2701,8 @@ void GLCanvas3D::load_gcode_preview(const GCodeProcessorResult& gcode_result, co
 {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    m_gcode_viewer.load(gcode_result, *this->fff_print(), str_tool_colors);
+    m_gcode_viewer.enable_legend(true);
+    m_gcode_viewer.load_as_gcode(gcode_result, *this->fff_print(), str_tool_colors);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     m_gcode_viewer.load(gcode_result, *this->fff_print());
@@ -2758,10 +2765,28 @@ void GLCanvas3D::load_preview(const std::vector<std::string>& str_tool_colors, c
     this->reset_volumes();
 
     const BuildVolume &build_volume = m_bed.build_volume();
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if !ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     _load_print_toolpaths(build_volume);
     _load_wipe_tower_toolpaths(build_volume, str_tool_colors);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // !ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     for (const PrintObject* object : print->objects())
         _load_print_object_toolpaths(*object, build_volume, str_tool_colors, color_print_values);
+
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_NEW_GCODE_VIEWER
+    libvgcode::GCodeInputData data = libvgcode::convert(*print, str_tool_colors);
+   
+    // send data to the viewer
+    m_gcode_viewer.enable_legend(false);
+    m_gcode_viewer.load_as_preview(std::move(data), str_tool_colors);
+
+    // TODO check build_volume <<<<<<<<<<<<<<
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
     m_gcode_viewer.set_force_shells_visible(false);
     _set_warning_notification_if_needed(EWarning::ToolpathOutside);
@@ -6733,6 +6758,9 @@ void GLCanvas3D::_stop_timer()
     m_timer.Stop();
 }
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if !ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 void GLCanvas3D::_load_print_toolpaths(const BuildVolume &build_volume)
 {
     const Print *print = this->fff_print();
@@ -6798,6 +6826,9 @@ void GLCanvas3D::_load_print_toolpaths(const BuildVolume &build_volume)
         volume->is_outside = !contains(build_volume, volume->model);
     }
 }
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // !ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 void GLCanvas3D::_load_print_object_toolpaths(const PrintObject& print_object, const BuildVolume& build_volume, const std::vector<std::string>& str_tool_colors, const std::vector<CustomGCode::Item>& color_print_values)
 {
@@ -7113,6 +7144,9 @@ void GLCanvas3D::_load_print_object_toolpaths(const PrintObject& print_object, c
     BOOST_LOG_TRIVIAL(debug) << "Loading print object toolpaths in parallel - end" << m_volumes.log_memory_info() << log_memory_info();
 }
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if !ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 void GLCanvas3D::_load_wipe_tower_toolpaths(const BuildVolume& build_volume, const std::vector<std::string>& str_tool_colors)
 {
     const Print *print = this->fff_print();
@@ -7171,20 +7205,20 @@ void GLCanvas3D::_load_wipe_tower_toolpaths(const BuildVolume& build_volume, con
     tbb::spin_mutex new_volume_mutex;
     auto            new_volume = [this, &new_volume_mutex](const ColorRGBA& color) {
         auto *volume = new GLVolume(color);
-		volume->is_extrusion_path = true;
-        // to prevent sending data to gpu (in the main thread) while
-        // editing the model geometry
-        volume->model.disable_render();
-        tbb::spin_mutex::scoped_lock lock;
-        lock.acquire(new_volume_mutex);
-        m_volumes.volumes.emplace_back(volume);
-        lock.release();
-        return volume;
+		    volume->is_extrusion_path = true;
+            // to prevent sending data to gpu (in the main thread) while
+            // editing the model geometry
+            volume->model.disable_render();
+            tbb::spin_mutex::scoped_lock lock;
+            lock.acquire(new_volume_mutex);
+            m_volumes.volumes.emplace_back(volume);
+            lock.release();
+            return volume;
     };
+
     const size_t   volumes_cnt_initial = m_volumes.volumes.size();
     std::vector<GLVolumeCollection> volumes_per_thread(n_items);
-    tbb::parallel_for(
-        tbb::blocked_range<size_t>(0, n_items, grain_size),
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, n_items, grain_size),
         [&ctxt, &new_volume](const tbb::blocked_range<size_t>& range) {
         // Bounding box of this slab of a wipe tower.
         GLVolumePtrs vols;
@@ -7270,27 +7304,31 @@ void GLCanvas3D::_load_wipe_tower_toolpaths(const BuildVolume& build_volume, con
             if (!geometries[i].is_empty())
                 vols[i]->model.init_from(std::move(geometries[i]));
         }
-        });
+    });
 
     BOOST_LOG_TRIVIAL(debug) << "Loading wipe tower toolpaths in parallel - finalizing results" << m_volumes.log_memory_info() << log_memory_info();
     // Remove empty volumes from the newly added volumes.
     {
-        for (auto ptr_it = m_volumes.volumes.begin() + volumes_cnt_initial; ptr_it != m_volumes.volumes.end(); ++ptr_it)
+        for (auto ptr_it = m_volumes.volumes.begin() + volumes_cnt_initial; ptr_it != m_volumes.volumes.end(); ++ptr_it) {
             if ((*ptr_it)->empty()) {
-                delete *ptr_it;
+                delete* ptr_it;
                 *ptr_it = nullptr;
             }
+        }
         m_volumes.volumes.erase(std::remove(m_volumes.volumes.begin() + volumes_cnt_initial, m_volumes.volumes.end(), nullptr), m_volumes.volumes.end());
     }
     for (size_t i = volumes_cnt_initial; i < m_volumes.volumes.size(); ++i) {
         GLVolume* v = m_volumes.volumes[i];
         v->is_outside = !contains(build_volume, v->model);
-        // We are done editinig the model, now it can be sent to gpu
+        // We are done editing the model, now it can be sent to gpu
         v->model.enable_render();
     }
 
     BOOST_LOG_TRIVIAL(debug) << "Loading wipe tower toolpaths in parallel - end" << m_volumes.log_memory_info() << log_memory_info();
 }
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // !ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 // While it looks like we can call 
 // this->reload_scene(true, true)

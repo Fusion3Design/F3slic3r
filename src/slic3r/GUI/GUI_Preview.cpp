@@ -215,7 +215,15 @@ bool Preview::init(wxWindow* parent, Bed3D& bed, Model* model)
     m_canvas->set_config(m_config);
     m_canvas->set_model(model);
     m_canvas->set_process(m_process);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_NEW_GCODE_VIEWER
+    m_canvas->show_legend(true);
+#else
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     m_canvas->enable_legend_texture(true);
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     m_canvas->enable_dynamic_background(true);
 
     m_layers_slider_sizer = create_layers_slider_sizer();
@@ -722,6 +730,9 @@ void Preview::update_moves_slider()
 {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  
 #if ENABLE_NEW_GCODE_VIEWER
+    if (m_gcode_result->moves.empty())
+        return;
+
     const std::array<uint32_t, 2>& range = m_canvas->get_gcode_view_enabled_range();
     uint32_t last_gcode_id = m_canvas->get_gcode_vertex_at(static_cast<size_t>(range[0])).gcode_id;
 
@@ -853,7 +864,7 @@ void Preview::load_print_as_fff(bool keep_z_range)
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    const libvgcode::EViewType gcode_view_type = m_canvas->get_gcode_view_preview_type();
+    const libvgcode::EViewType gcode_view_type = m_canvas->get_gcode_view_type();
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     GCodeViewer::EViewType gcode_view_type = m_canvas->get_gcode_view_preview_type();
@@ -951,7 +962,7 @@ void Preview::load_print_as_fff(bool keep_z_range)
             if (choice != gcode_view_type) {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                m_canvas->set_gcode_view_preview_type(choice);
+                m_canvas->set_gcode_view_type(choice);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                 m_canvas->set_gcode_view_preview_type(choice);
@@ -968,7 +979,8 @@ void Preview::load_print_as_fff(bool keep_z_range)
             // all layers filtered out
             hide_layers_slider();
             m_canvas_widget->Refresh();
-        } else
+        }
+        else
             update_layers_slider(zs, keep_z_range);
     }
 }
