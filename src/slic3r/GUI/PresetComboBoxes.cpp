@@ -20,6 +20,7 @@
 #include <wx/menu.h>
 #include <wx/odcombo.h>
 #include <wx/listbook.h>
+#include <wx/generic/stattextg.h>
 
 #ifdef _WIN32
 #include <wx/msw/dcclient.h>
@@ -44,6 +45,7 @@
 #include "BitmapCache.hpp"
 #include "PhysicalPrinterDialog.hpp"
 #include "MsgDialog.hpp"
+#include "UserAccount.hpp"
 
 #include "Widgets/ComboBox.hpp"
 
@@ -618,6 +620,12 @@ bool PresetComboBox::selection_is_changed_according_to_physical_printers()
 // ***  PlaterPresetComboBox  ***
 // ---------------------------------
 
+static bool is_active_connect()
+{
+    auto user_account = wxGetApp().plater()->get_user_account();
+    return user_account && user_account->is_logged();
+}
+
 PlaterPresetComboBox::PlaterPresetComboBox(wxWindow *parent, Preset::Type preset_type) :
     PresetComboBox(parent, preset_type, wxSize(15 * wxGetApp().em_unit(), -1))
 {
@@ -657,6 +665,9 @@ PlaterPresetComboBox::PlaterPresetComboBox(wxWindow *parent, Preset::Type preset
         else
             switch_to_tab();
     });
+
+    if (m_type == Preset::TYPE_PRINTER)
+        connect_info = new wxGenericStaticText(parent, wxID_ANY, "Info about <b>Connect</b> for printer preset");
 }
 
 PlaterPresetComboBox::~PlaterPresetComboBox()
@@ -832,6 +843,83 @@ wxString PlaterPresetComboBox::get_preset_name(const Preset& preset)
     return from_u8(name + suffix(preset));
 }
 
+
+struct PrinterStatesCount
+{
+    size_t offline_cnt   { 0 };
+    size_t busy_cnt      { 0 };
+    size_t available_cnt { 0 };
+    size_t total         { 0 };
+};
+
+static PrinterStatesCount get_printe_states_count(const std::vector<size_t>& states)
+{
+    PrinterStatesCount states_cnt;
+
+    for (size_t i = 0; i < states.size(); i++) {
+        if (states[i] == 0)
+            continue;
+
+        ConnectPrinterState state = static_cast<ConnectPrinterState>(i);
+
+        if (state == ConnectPrinterState::CONNECT_PRINTER_OFFLINE)
+            states_cnt.offline_cnt += states[i];
+        else if (state == ConnectPrinterState::CONNECT_PRINTER_PAUSED ||
+            state == ConnectPrinterState::CONNECT_PRINTER_STOPED ||
+            state == ConnectPrinterState::CONNECT_PRINTER_PRINTING)
+            states_cnt.busy_cnt += states[i];
+        else
+            states_cnt.available_cnt += states[i];
+    }
+    states_cnt.total = states_cnt.offline_cnt + states_cnt.busy_cnt + states_cnt.available_cnt;
+
+    return states_cnt;
+}
+
+static std::string get_connect_state_suffix_for_printer(const Preset& printer_preset)
+{
+    // process real data from Connect
+    if (auto printer_state_map = wxGetApp().plater()->get_user_account()->get_printer_state_map();
+        !printer_state_map.empty()) {
+
+        for (const auto& [printer_model_id, states] : printer_state_map) {
+            if (printer_model_id == printer_preset.config.opt_string("printer_model")) {
+
+                PrinterStatesCount states_cnt = get_printe_states_count(states);
+
+                if (states_cnt.available_cnt > 0)
+                    return "_available";
+                if (states_cnt.busy_cnt > 0)
+                    return "_busy";
+                return "_offline";
+            }
+        }
+    }
+
+    return "";
+}
+
+static wxString get_connect_info_line(const Preset& printer_preset)
+{
+    if (auto printer_state_map = wxGetApp().plater()->get_user_account()->get_printer_state_map();
+        !printer_state_map.empty()) {
+
+        for (const auto& [printer_model_id, states] : printer_state_map) {
+            if (printer_model_id == printer_preset.config.opt_string("printer_model")) {
+
+                PrinterStatesCount states_cnt = get_printe_states_count(states);
+
+                return format_wxstr(_L("Available: %1%, Offline: %2%, Busy: %3%. Total: %4% printers"),
+                                    format("<b><span color=\"green\">%1%</span></b>" , states_cnt.available_cnt), 
+                                    format("<b><span color=\"red\">%1%</span></b>"   , states_cnt.offline_cnt),
+                                    format("<b><span color=\"yellow\">%1%</span></b>", states_cnt.busy_cnt),
+                                    format("<b>%1%</b>", states_cnt.total));
+            }
+        }
+    }
+    return " "; // to correct update of strinh height don't use empty string
+}
+
 // Only the compatible presets are shown.
 // If an incompatible preset is selected, it is shown as well.
 void PlaterPresetComboBox::update()
@@ -903,6 +991,12 @@ void PlaterPresetComboBox::update()
 
         std::string bitmap_key, filament_rgb, extruder_rgb, material_rgb;
         std::string bitmap_type_name = bitmap_key = m_type == Preset::TYPE_PRINTER && preset.printer_technology() == ptSLA ? "sla_printer" : m_main_bitmap_name;
+
+        if (m_type == Preset::TYPE_PRINTER) {
+            bitmap_type_name = bitmap_key += get_connect_state_suffix_for_printer(preset);
+            if (is_selected)
+                connect_info->SetLabelMarkup(get_connect_info_line(preset));
+        }
 
         bool single_bar = false;
         if (m_type == Preset::TYPE_FILAMENT)
@@ -1032,6 +1126,8 @@ void PlaterPresetComboBox::update()
                 validate_selection(data.selected);
             }
         }
+
+        connect_info->Show(is_active_connect());
     }
 
     if (m_type == Preset::TYPE_PRINTER || m_type == Preset::TYPE_FILAMENT || m_type == Preset::TYPE_SLA_MATERIAL) {

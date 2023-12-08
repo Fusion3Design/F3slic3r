@@ -12,9 +12,12 @@ namespace GUI{
 
 enum class ConnectPrinterState {
     CONNECT_PRINTER_OFFLINE,
-    CONNECT_PRINTER_IDLE,
     CONNECT_PRINTER_PRINTING,
+    CONNECT_PRINTER_PAUSED,//?
+    CONNECT_PRINTER_STOPED,//?
+    CONNECT_PRINTER_IDLE,
     CONNECT_PRINTER_FINISHED,
+    CONNECT_PRINTER_READY, //?
     CONNECT_PRINTER_STATE_COUNT
 };
 
@@ -61,17 +64,33 @@ private:
     ConnectPrinterStateMap  m_printer_map;
 
     const std::map<std::string, std::string> printer_type_and_name_table = {
-        {"1.3.0", "Original Prusa i3 MK3"},
-        {"1.3.1", "Original Prusa i3 MK3S & MK3S+"},
-        {"1.4.0", "Original Prusa MK4"},
-        {"2.1.0", "Original Prusa MINI & MINI+"},
+        {"1.3.0", "MK3"         },
+        {"1.3.1", "MK3S"        },
+        {"1.4.0", "MK4"         },
+        {"2.1.0", "MINI"        },
+        // ysFIXME : needs to add Connect ids for next printers
+        {"0.0.0", "MK4IS"       },
+        {"0.0.0", "MK3SMMU2S"   },
+        {"0.0.0", "MK3MMU2"     },
+        {"0.0.0", "XL"          },
+        {"0.0.0", "MK2.5S"      },
+        {"0.0.0", "MK2.5"       },
+        {"0.0.0", "MK2.5SMMU2S" },
+        {"0.0.0", "MK2.5MMU2"   },
+        {"0.0.0", "MK2S"        },
+        {"0.0.0", "MK2SMM"      },
+        {"0.0.0", "SL1"         },
+        {"0.0.0", "SL1S"        },
     };
 
     const std::map<std::string, ConnectPrinterState> printer_state_table = {
         {"OFFLINE"  , ConnectPrinterState::CONNECT_PRINTER_OFFLINE},
-        {"IDLE"     , ConnectPrinterState::CONNECT_PRINTER_IDLE},
         {"PRINTING" , ConnectPrinterState::CONNECT_PRINTER_PRINTING},
+        {"PAUSED"   , ConnectPrinterState::CONNECT_PRINTER_PAUSED},
+        {"STOPED"   , ConnectPrinterState::CONNECT_PRINTER_STOPED},
+        {"IDLE"     , ConnectPrinterState::CONNECT_PRINTER_IDLE},
         {"FINISHED" , ConnectPrinterState::CONNECT_PRINTER_FINISHED},
+        {"READY"    , ConnectPrinterState::CONNECT_PRINTER_READY},
     };
 };
 }} // namespace slic3r::GUI

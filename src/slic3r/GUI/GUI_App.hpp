@@ -413,7 +413,8 @@ public:
     void            request_user_logout() {}
     int             request_user_unbind(std::string dev_id) { return 0; }
     void            handle_web_request(std::string cmd);
-    void            select_printer_with_load(Preset* prst, const std::string& preset_name, const std::string& printer_name, const std::string& nozzle_name, const std::string& nozzle );
+    // return true if preset vas invisible and we have to installed it to make it selectable
+    bool            select_printer_from_connect(const Preset* printer_preset);
     void            handle_script_message(std::string msg) {}
     void            request_model_download(std::string import_json) {}
     void            download_project(std::string project_id) {}

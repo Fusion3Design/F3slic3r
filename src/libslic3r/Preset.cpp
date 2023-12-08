@@ -1211,6 +1211,12 @@ Preset* PresetCollection::find_preset(const std::string &name, bool first_visibl
         first_visible_if_not_found ? &this->first_visible() : nullptr;
 }
 
+size_t PresetCollection::get_preset_idx_by_name(const std::string name) const
+{
+    auto it = this->find_preset_internal(name);
+    return it != m_presets.end() ? it - m_presets.begin() : size_t(-1);
+}
+
 // Return index of the first visible preset. Certainly at least the '- default -' preset shall be visible.
 size_t PresetCollection::first_visible_idx() const
 {

@@ -913,6 +913,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         std::string out = GUI::format( "Printers in your PrusaConnect team:\n%1%", text);
         this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
         this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
+
+        sidebar->update_printer_presets_combobox();
     });
     
 	wxGetApp().other_instance_message_handler()->init(this->q);

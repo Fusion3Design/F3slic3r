@@ -133,6 +133,7 @@ public:
     void update_objects_list_extruder_column(size_t extruders_count);
     void update_presets(Preset::Type preset_type);
     void update_mode_markers();
+    void update_printer_presets_combobox();
 
     void msw_rescale();
     void sys_color_changed();

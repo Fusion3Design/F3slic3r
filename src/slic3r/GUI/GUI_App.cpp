@@ -3676,71 +3676,45 @@ void GUI_App::open_wifi_config_dialog(bool forced, const wxString& drive_path/* 
     m_wifi_config_dialog_shown = false;
 }
 
-void GUI_App::select_printer_with_load(Preset* prst, const std::string& preset_name, const std::string& model_name, const std::string& nozzle_name, const std::string& nozzle)
+bool GUI_App::select_printer_from_connect(const Preset* preset)
 {
-    assert(prst);
-    if (prst->is_visible)
-        bool suc = get_tab(Preset::Type::TYPE_PRINTER)->select_preset(preset_name);
-    else {
-        AppConfig appconfig_new(AppConfig::EAppMode::Editor);
-        appconfig_new.set_vendors(*app_config);
-        prst->vendor->models;
-        if (auto it = std::find_if(prst->vendor->models.begin(), prst->vendor->models.end(), [model_name](const VendorProfile::PrinterModel& a) {
-            if (a.name == model_name)
-                return true;
-            else
-                return false;
-            }); it != prst->vendor->models.end())
-        {
-            appconfig_new.set_variant("PrusaResearch", it->id, nozzle, true);
-            app_config->set_vendors(appconfig_new);
+    assert(preset);
 
-            preset_bundle->load_presets(*app_config, ForwardCompatibilitySubstitutionRule::EnableSilentDisableSystem,
-                { it->id, nozzle, "", "" });
-            load_current_presets();
-        }
+    bool is_installed{ false };
+
+    if (!preset->is_visible) {
+        size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(preset->name);
+        assert(preset_id != size_t(-1));
+        preset_bundle->printers.select_preset(preset_id);
+        is_installed = true;
     }
+            
+    get_tab(Preset::Type::TYPE_PRINTER)->select_preset(preset->name);
+    return is_installed;
 }
 
 void GUI_App::handle_web_request(std::string cmd) 
 {
     BOOST_LOG_TRIVIAL(error) << "Handling web request: " << cmd;
     // return to plater
-    //this->mainframe->select_tab(size_t(0));
+    this->mainframe->select_tab(size_t(0));
     // parse message
     std::string model_name = plater()->get_user_account()->get_model_from_json(cmd);
     std::string nozzle = plater()->get_user_account()->get_nozzle_from_json(cmd);
-    std::string nozzle_name = nozzle.empty() ? "" : (nozzle +" nozzle");
     assert(!model_name.empty());
-    assert(!nozzle_name.empty());
-    if (model_name.empty() && nozzle_name.empty())
+    if (model_name.empty())
         return;
+
     // select printer
-    std::string preset_name = nozzle.empty() ? model_name : format("%1% %2%",model_name, nozzle_name);
-    Preset* prst = preset_bundle->printers.find_preset(preset_name, false);
-    if (!prst) {
-        model_name = std::string(*preset_bundle->printers.get_preset_name_renamed(model_name));
-        preset_name = nozzle.empty() ? model_name : format("%1% %2%", model_name, nozzle_name);
-        prst = preset_bundle->printers.find_preset(preset_name, false);
-    }
-    if (!prst) {
-        preset_name = model_name;
-        prst = preset_bundle->printers.find_preset(preset_name, false);
-    }
-    if (prst) {
-        select_printer_with_load(prst, preset_name, model_name, nozzle_name, nozzle);
-        // notification
-        std::string out = GUI::format("Select Printer:\n%1%", preset_name);
-        this->plater()->get_notification_manager()->close_notification_of_type(NotificationType::PrusaAuthUserID);
-        this->plater()->get_notification_manager()->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
-    } else {
-        // notification
-        std::string out = GUI::format("Printer not found:\n%1%", preset_name);
-        this->plater()->get_notification_manager()->close_notification_of_type(NotificationType::PrusaAuthUserID);
-        this->plater()->get_notification_manager()->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
-    }
-   
-    
+    const Preset* preset = preset_bundle->printers.find_system_preset_by_model_and_variant(model_name, nozzle);
+    bool is_installed = preset && select_printer_from_connect(preset);
+    // notification
+    std::string out = preset ? 
+                      (is_installed ? GUI::format(_L("Installed and Select Printer:\n%1%"), preset->name) : 
+                                      GUI::format(_L("Select Printer:\n%1%"), preset->name) ):
+                      GUI::format(_L("Printer not found:\n%1%"), model_name);
+    this->plater()->get_notification_manager()->close_notification_of_type(NotificationType::PrusaAuthUserID);
+    this->plater()->get_notification_manager()->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);    
 }
 
 } // GUI

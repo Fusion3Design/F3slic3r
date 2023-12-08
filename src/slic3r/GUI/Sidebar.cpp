@@ -32,6 +32,7 @@
 #include <wx/statbox.h>
 #include <wx/statbmp.h>
 #include <wx/wupdlock.h>
+#include "wx/generic/stattextg.h"
 #ifdef _WIN32
 #include <wx/richtooltip.h>
 #include <wx/custombgwin.h>
@@ -381,6 +382,9 @@ Sidebar::Sidebar(Plater *parent)
                 wxBOTTOM, 1);
                 (void)margin_5; // supress unused capture warning
 #endif // __WXGTK3__
+            if ((*combo)->connect_info)
+                sizer_presets->Add((*combo)->connect_info, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT | wxBOTTOM,
+                    int(0.3 * wxGetApp().em_unit()));
         } else {
             sizer_filaments->Add(combo_and_btn_sizer, 0, wxEXPAND |
 #ifdef __WXGTK3__
@@ -601,6 +605,12 @@ void Sidebar::update_all_preset_comboboxes()
         for (PlaterPresetComboBox* cb : m_combos_filament)
             cb->update();
     }
+}
+
+void Sidebar::update_printer_presets_combobox()
+{
+    m_combo_printer->update();
+    Layout();
 }
 
 void Sidebar::update_presets(Preset::Type preset_type)
