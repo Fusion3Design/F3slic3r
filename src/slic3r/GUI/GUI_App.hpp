@@ -99,8 +99,6 @@ enum ConfigMenuIDs {
     ConfigMenuUpdateConf,
     ConfigMenuUpdateApp,
     ConfigMenuMediaDialog,
-    ConfigMenuAuthLogin,
-    ConfigMenuConnectDummy,
     ConfigMenuConnectDialog,
     ConfigMenuDesktopIntegration,
     ConfigMenuPreferences,
@@ -299,7 +297,6 @@ public:
     void            update_mode();
 
     wxMenu*         get_config_menu();
-    void            update_config_menu();
     bool            has_unsaved_preset_changes() const;
     bool            has_current_preset_changes() const;
     void            update_saved_preset_from_current_preset();

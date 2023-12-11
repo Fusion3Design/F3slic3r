@@ -2,6 +2,7 @@
 
 #include "GUI_App.hpp"
 #include "Plater.hpp"
+#include "UserAccount.hpp"
 //#include "wxExtensions.hpp"
 #include "format.hpp"
 #include "I18N.hpp"
@@ -27,6 +28,10 @@ TopBarItemsCtrl::Button::Button(wxWindow* parent, const wxString& label, const s
     wxSize size = GetTextExtent(label) + wxSize(6 * btn_margin, int(1.5 * btn_margin));
     if (icon_name.empty())
         this->SetMinSize(size);
+    if (label.IsEmpty()) {
+        const int btn_side = px_cnt + btn_margin;
+        this->SetMinSize(wxSize(btn_side, btn_side));
+    }
     else
         this->SetMinSize(wxSize(-1, size.y));
 }
@@ -62,6 +67,11 @@ TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const wxStri
     this->SetLabel(label);
 }
 
+TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const std::string& icon_name, int icon_width/* = 20*/, int icon_height/* = 20*/)
+    :TopBarItemsCtrl::Button(parent, "", icon_name, icon_width)
+{
+}
+
 void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
 {
     wxString full_label = "  " + label + "  " + down_arrow;
@@ -95,6 +105,42 @@ void TopBarItemsCtrl::ApplyWorkspacesMenu()
         if (mode < Slic3r::ConfigOptionMode::comExpert)
             m_workspaces_menu.AppendSeparator();
     }
+}
+
+void TopBarItemsCtrl::CreateAuthMenu()
+{
+    m_user_menu_item = append_menu_item(&m_auth_menu, wxID_ANY, "", "",
+        [this](wxCommandEvent& e) { 
+            m_auth_btn->set_selected(true);
+            wxGetApp().plater()->PopupMenu(&m_auth_menu, m_auth_btn->GetPosition());
+        }, get_bmp_bundle("user", 16), nullptr, []() { return true; }, this);
+
+    m_auth_menu.AppendSeparator();
+
+    m_connect_dummy_menu_item = append_menu_item(&m_auth_menu, wxID_ANY, _L("PrusaConnect Printers"), "",
+        [this](wxCommandEvent&) { wxGetApp().plater()->get_user_account()->enqueue_connect_printers_action(); }, 
+        "", nullptr, []() { return wxGetApp().plater()->get_user_account()->is_logged(); }, this->GetParent());
+
+    m_login_menu_item = append_menu_item(&m_auth_menu, wxID_ANY, "", "",
+        [this](wxCommandEvent&) {
+            auto user_account = wxGetApp().plater()->get_user_account();
+            if (user_account->is_logged())
+                user_account->do_logout();
+            else
+                user_account->do_login();
+        }, get_bmp_bundle("login", 16), nullptr, []() { return true; }, this);
+}
+
+void TopBarItemsCtrl::UpdateAuthMenu()
+{
+    auto user_account = wxGetApp().plater()->get_user_account();
+    if (m_login_menu_item) {
+        m_login_menu_item->SetItemLabel(user_account->is_logged() ? _L("PrusaAuth Log out") : _L("PrusaAuth Log in"));
+        m_login_menu_item->SetBitmap(user_account->is_logged() ? *get_bmp_bundle("logout", 16) : *get_bmp_bundle("login", 16));
+    }
+
+    if (m_user_menu_item)
+        m_user_menu_item->SetItemLabel(user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymus"));
 }
 
 TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
@@ -134,7 +180,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
 
     m_workspace_btn = new ButtonWithPopup(this, _L("Workspace"), "mode_simple");
     m_sizer->AddStretchSpacer(20);
-    m_sizer->Add(m_workspace_btn, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT, 2 * m_btn_margin);
+    m_sizer->Add(m_workspace_btn, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT);
     
     m_workspace_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
         m_workspace_btn->set_selected(true);
@@ -142,6 +188,20 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
         wxGetApp().plater()->PopupMenu(&m_workspaces_menu, pos);
     });
     m_workspaces_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_workspace_btn->set_selected(false); });
+
+    // create Auth menu
+    CreateAuthMenu();
+
+    m_auth_btn = new ButtonWithPopup(this, "user", 35);
+    m_sizer->Add(m_auth_btn, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT | wxLEFT, m_btn_margin);
+    
+    m_auth_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
+        UpdateAuthMenu();
+        m_auth_btn->set_selected(true);
+        wxPoint pos = m_auth_btn->GetPosition();
+        wxGetApp().plater()->PopupMenu(&m_auth_menu, pos);
+    });    
+    m_auth_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_auth_btn->set_selected(false); });
 
     this->Bind(wxEVT_PAINT, &TopBarItemsCtrl::OnPaint, this);
 }

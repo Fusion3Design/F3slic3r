@@ -887,7 +887,6 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         std::string text = _u8L("Logged out.");
         this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
         this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
-        wxGetApp().update_config_menu();
     });
 
     this->q->Bind(EVT_PA_ID_USER_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
@@ -897,7 +896,6 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             std::string text = format(_u8L("Logged as %1%."), username);
             this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
             this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
-            wxGetApp().update_config_menu();
         } else {
             // TODO
         }

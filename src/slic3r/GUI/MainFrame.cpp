@@ -836,10 +836,10 @@ void MainFrame::create_preset_tabs()
     add_created_tab(new TabPrinter(m_tabpanel), wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF ? "printer" : "sla_printer");
     
     m_webview = new WebViewPanel(m_tabpanel);
-    m_tabpanel->AddPage(m_webview, "PrusaConnect");
+    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_webview, "PrusaConnect", "");
     /*
     m_media = new MediaMainPanel(this);
-    m_tabpanel->AddPage(m_media, "Media");
+    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_media, "Media");
     */
 }
 

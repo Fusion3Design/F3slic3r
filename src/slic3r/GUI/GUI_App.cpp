@@ -2498,11 +2498,6 @@ wxMenu* GUI_App::get_config_menu()
         local_menu->Append(config_id_base + ConfigMenuUpdateConf, _L("Check for Configuration Updates"), _L("Check for configuration updates"));
         local_menu->Append(config_id_base + ConfigMenuUpdateApp, _L("Check for Application Updates"), _L("Check for new version of application"));
         local_menu->AppendSeparator();
-        wxMenuItem* updatable_item = local_menu->Append(config_id_base + ConfigMenuAuthLogin, _L("PrusaAuth Log in"), _L(""));
-        m_config_menu_updatable_items.emplace(ConfigMenuIDs::ConfigMenuAuthLogin, updatable_item);
-        updatable_item = local_menu->Append(config_id_base + ConfigMenuConnectDummy, _L("PrusaConnect Printers"), _L(""));
-        updatable_item->Enable(false);
-        m_config_menu_updatable_items.emplace(ConfigMenuIDs::ConfigMenuConnectDummy, updatable_item);
         local_menu->Append(config_id_base + ConfigMenuConnectDialog, _L("Connect Dialog"), _L("Connect Dialog"));
         local_menu->Append(config_id_base + ConfigMenuMediaDialog, _L("Media Dialog"), _L("Media Dialog"));
 #if defined(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION) 
@@ -2539,19 +2534,6 @@ wxMenu* GUI_App::get_config_menu()
 			break;
         case ConfigMenuUpdateApp:
             app_version_check(true);
-            break;
-        case ConfigMenuAuthLogin:
-        {
-            if (this->plater()->get_user_account()->is_logged())
-                this->plater()->get_user_account()->do_logout();
-            else
-                this->plater()->get_user_account()->do_login();
-        }
-            break;
-        case ConfigMenuConnectDummy:
-        {
-            this->plater()->get_user_account()->enqueue_connect_printers_action();
-        }
             break;
 #ifdef __linux__
         case ConfigMenuDesktopIntegration:
@@ -2666,11 +2648,7 @@ wxMenu* GUI_App::get_config_menu()
     
     return local_menu;
 }
-void GUI_App::update_config_menu()
-{
-    m_config_menu_updatable_items[ConfigMenuIDs::ConfigMenuAuthLogin]->SetItemLabel(this->plater()->get_user_account()->is_logged() ? _L("PrusaAuth Log out") : _L("PrusaAuth Log in"));
-    m_config_menu_updatable_items[ConfigMenuIDs::ConfigMenuConnectDummy]->Enable(this->plater()->get_user_account()->is_logged());
-}
+
 void GUI_App::open_preferences(const std::string& highlight_option /*= std::string()*/, const std::string& tab_name/*= std::string()*/)
 {
     mainframe->preferences_dialog->show(highlight_option, tab_name);

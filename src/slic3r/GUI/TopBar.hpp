@@ -36,14 +36,23 @@ class TopBarItemsCtrl : public wxControl
         ButtonWithPopup(wxWindow*           parent,
                         const wxString&     label,
                         const std::string&  icon_name = "");
+        ButtonWithPopup(wxWindow*           parent,
+                        const std::string&  icon_name,
+                        int                 icon_width = 20,
+                        int                 icon_height = 20);
 
         ~ButtonWithPopup() {}
 
         void SetLabel(const wxString& label) override;
     };
 
-    wxMenu m_main_menu;
-    wxMenu m_workspaces_menu;
+    wxMenu          m_main_menu;
+    wxMenu          m_workspaces_menu;
+    wxMenu          m_auth_menu;
+
+    wxMenuItem*     m_user_menu_item{ nullptr };
+    wxMenuItem*     m_login_menu_item{ nullptr };
+    wxMenuItem*     m_connect_dummy_menu_item{ nullptr };
 
 public:
     TopBarItemsCtrl(wxWindow* parent);
@@ -64,6 +73,8 @@ public:
     void AppendMenuItem(wxMenu* menu, const wxString& title);
     void AppendMenuSeparaorItem();
     void ApplyWorkspacesMenu();
+    void CreateAuthMenu();
+    void UpdateAuthMenu();
 
 private:
     wxWindow*                       m_parent;
@@ -71,6 +82,7 @@ private:
     wxBoxSizer*                     m_sizer;
     ButtonWithPopup*                m_menu_btn {nullptr};
     ButtonWithPopup*                m_workspace_btn {nullptr};
+    ButtonWithPopup*                m_auth_btn {nullptr};
     std::vector<Button*>            m_pageButtons;
     int                             m_selection {-1};
     int                             m_btn_margin;
