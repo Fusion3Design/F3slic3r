@@ -857,10 +857,10 @@ public:
     unsigned int get_toolpath_role_visibility_flags() const { return m_gcode_viewer.get_toolpath_role_visibility_flags(); }
     void set_toolpath_role_visibility_flags(unsigned int flags);
     void set_toolpath_view_type(GCodeViewer::EViewType type);
+    std::vector<double> get_volumes_print_zs(bool active_only) const;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    std::vector<double> get_volumes_print_zs(bool active_only) const;
     void set_volumes_z_range(const std::array<double, 2>& range);
     void set_toolpaths_z_range(const std::array<unsigned int, 2>& range);
     std::vector<CustomGCode::Item>& get_custom_gcode_per_print_z() { return m_gcode_viewer.get_custom_gcode_per_print_z(); }
@@ -1139,17 +1139,11 @@ private:
     // Create 3D thick extrusion lines for a skirt and brim.
     // Adds a new Slic3r::GUI::3DScene::Volume to volumes, updates collision with the build_volume.
     void _load_print_toolpaths(const BuildVolume &build_volume);
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#endif // !ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     // Create 3D thick extrusion lines for object forming extrusions.
     // Adds a new Slic3r::GUI::3DScene::Volume to $self->volumes,
     // one for perimeters, one for infill and one for supports, updates collision with the build_volume.
     void _load_print_object_toolpaths(const PrintObject& print_object, const BuildVolume &build_volume,
         const std::vector<std::string>& str_tool_colors, const std::vector<CustomGCode::Item>& color_print_values);
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#if !ENABLE_NEW_GCODE_VIEWER
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     // Create 3D thick extrusion lines for wipe tower extrusions, updates collision with the build_volume.
     void _load_wipe_tower_toolpaths(const BuildVolume &build_volume, const std::vector<std::string>& str_tool_colors);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

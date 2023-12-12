@@ -343,7 +343,7 @@ bool BuildVolume::all_paths_inside(const GCodeProcessorResult& paths, const Boun
         const Vec2f c = unscaled<float>(m_circle.center);
         const float r = unscaled<double>(m_circle.radius) + epsilon;
         const float r2 = sqr(r);
-        return m_max_print_height == 0.0 ? 
+        return m_max_print_height == 0.0 ?
             std::all_of(paths.moves.begin(), paths.moves.end(), [move_valid, c, r2](const GCodeProcessorResult::MoveVertex &move)
                 { return ! move_valid(move) || (to_2d(move.position) - c).squaredNorm() <= r2; }) :
             std::all_of(paths.moves.begin(), paths.moves.end(), [move_valid, c, r2, z = m_max_print_height + epsilon](const GCodeProcessorResult::MoveVertex& move)
@@ -374,6 +374,9 @@ inline bool all_inside_vertices_normals_interleaved(const std::vector<float> &pa
     return true;
 }
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if !ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 bool BuildVolume::all_paths_inside_vertices_and_normals_interleaved(const std::vector<float>& paths, const Eigen::AlignedBox<float, 3>& paths_bbox, bool ignore_bottom) const
 {
     assert(paths.size() % 6 == 0);
@@ -407,6 +410,9 @@ bool BuildVolume::all_paths_inside_vertices_and_normals_interleaved(const std::v
         return true;
     }
 }
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#endif // !ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 std::string_view BuildVolume::type_name(Type type)
 {

@@ -60,7 +60,8 @@ extern GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float 
     float wipes_radius = Default_Wipes_Radius);
 
 // mapping from Slic3r::Print to libvgcode::GCodeInputData
-extern GCodeInputData convert(const Slic3r::Print& print, const std::vector<std::string>& str_tool_colors);
+extern GCodeInputData convert(const Slic3r::Print& print, const std::vector<std::string>& str_tool_colors,
+    const std::vector<Slic3r::CustomGCode::Item>& color_print_values, size_t extruders_count);
 
 } // namespace libvgcode
 

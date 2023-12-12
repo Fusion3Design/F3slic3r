@@ -1346,6 +1346,10 @@ void GCodeViewer::load_as_preview(libvgcode::GCodeInputData&& data, const std::v
         m_new_viewer.set_tool_colors(colors);
     }
     m_new_viewer.load(std::move(data));
+
+    const libvgcode::AABox bbox = m_new_viewer.get_bounding_box(libvgcode::EBBoxType::Extrusion);
+    const BoundingBoxf3 paths_bounding_box(libvgcode::convert(bbox[0]).cast<double>(), libvgcode::convert(bbox[1]).cast<double>());
+    m_contained_in_bed = wxGetApp().plater()->build_volume().all_paths_inside(GCodeProcessorResult(), paths_bounding_box);
 }
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

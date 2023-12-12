@@ -18,7 +18,7 @@ namespace libvgcode {
 // Helper class to interpolate between colors defined in Ranges_Colors palette.
 // Interpolation can be done linearly or logarithmically.
 // Usage:
-// 1) Define an instance of ColorRange of the desired type
+// 1) Define an instance of ColorRange of the desired interpolation type
 //    ColorRange range(EColorRangeType::Linear);
 // 2) Pass to the instance all the values needed to setup the range:
 //    for (size_t i = 0; i < my_data.size(); ++i) {

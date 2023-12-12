@@ -236,8 +236,8 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels
     return ret;
 }
 
-static void thick_lines_to_geometry(const Slic3r::Lines& lines, const std::vector<float>& widths, const std::vector<float>& heights,
-    float top_z, size_t layer_id, size_t extruder_id, size_t color_id, EGCodeExtrusionRole extrusion_role, bool closed, GCodeInputData& data)
+static void convert_lines_to_vertices(const Slic3r::Lines& lines, const std::vector<float>& widths, const std::vector<float>& heights,
+    float top_z, size_t layer_id, size_t extruder_id, size_t color_id, EGCodeExtrusionRole extrusion_role, bool closed, std::vector<PathVertex>& vertices)
 {
     if (lines.empty())
         return;
@@ -254,30 +254,22 @@ static void thick_lines_to_geometry(const Slic3r::Lines& lines, const std::vecto
             libvgcode::PathVertex vertex = { convert(Slic3r::Vec3f(a.x(), a.y(), top_z)), heights[i], widths[i], 0.0f, 0.0f,
                 0.0f, 0.0f, extrusion_role, EMoveType::Noop, 0, static_cast<uint32_t>(layer_id),
                 static_cast<uint8_t>(extruder_id), static_cast<uint8_t>(color_id), { 0.0f, 0.0f } };
-            data.vertices.emplace_back(vertex);
+            vertices.emplace_back(vertex);
             // add the starting vertex of the segment
             vertex.type = EMoveType::Extrude;
-            data.vertices.emplace_back(vertex);
-            data.vertices.emplace_back(vertex);
+            vertices.emplace_back(vertex);
         }
         // add the ending vertex of the segment
         const Slic3r::Vec2f b = unscale(line.b).cast<float>();
         const libvgcode::PathVertex vertex = { convert(Slic3r::Vec3f(b.x(), b.y(), top_z)), heights[i], widths[i], 0.0f, 0.0f,
             0.0f, 0.0f, extrusion_role, EMoveType::Extrude, 0, static_cast<uint32_t>(layer_id),
             static_cast<uint8_t>(extruder_id), static_cast<uint8_t>(color_id), { 0.0f, 0.0f } };
-        data.vertices.emplace_back(vertex);
+        vertices.emplace_back(vertex);
     }
 }
 
-//static void thick_lines_to_verts(const Slic3r::Lines& lines, const std::vector<double>& widths, const std::vector<double>& heights, bool closed,
-//    double top_z, GCodeInputData& data)
-//{
-//    thick_lines_to_geometry(lines, widths, heights, closed, top_z, data);
-//}
-
-
-static void convert(const Slic3r::ExtrusionPath& extrusion_path, float print_z, size_t layer_id, size_t extruder_id, size_t color_id,
-    EGCodeExtrusionRole extrusion_role, const Slic3r::Point& shift, GCodeInputData& data)
+static void convert_to_vertices(const Slic3r::ExtrusionPath& extrusion_path, float print_z, size_t layer_id, size_t extruder_id, size_t color_id,
+    EGCodeExtrusionRole extrusion_role, const Slic3r::Point& shift, std::vector<PathVertex>& vertices)
 {
     Slic3r::Polyline polyline = extrusion_path.polyline;
     polyline.remove_duplicate_points();
@@ -285,11 +277,11 @@ static void convert(const Slic3r::ExtrusionPath& extrusion_path, float print_z, 
     const Slic3r::Lines lines = polyline.lines();
     std::vector<float> widths(lines.size(), extrusion_path.width());
     std::vector<float> heights(lines.size(), extrusion_path.height());
-    thick_lines_to_geometry(lines, widths, heights, print_z, layer_id, extruder_id, color_id, extrusion_role, false, data);
+    convert_lines_to_vertices(lines, widths, heights, print_z, layer_id, extruder_id, color_id, extrusion_role, false, vertices);
 }
 
-static void convert(const Slic3r::ExtrusionMultiPath& extrusion_multi_path, float print_z, size_t layer_id, size_t extruder_id,
-    size_t color_id, EGCodeExtrusionRole extrusion_role, const Slic3r::Point& shift, GCodeInputData& data)
+static void convert_to_vertices(const Slic3r::ExtrusionMultiPath& extrusion_multi_path, float print_z, size_t layer_id, size_t extruder_id,
+    size_t color_id, EGCodeExtrusionRole extrusion_role, const Slic3r::Point& shift, std::vector<PathVertex>& vertices)
 {
     Slic3r::Lines lines;
     std::vector<float> widths;
@@ -303,11 +295,11 @@ static void convert(const Slic3r::ExtrusionMultiPath& extrusion_multi_path, floa
         widths.insert(widths.end(), lines_this.size(), extrusion_path.width());
         heights.insert(heights.end(), lines_this.size(), extrusion_path.height());
     }
-    thick_lines_to_geometry(lines, widths, heights, print_z, layer_id, extruder_id, color_id, extrusion_role, false, data);
+    convert_lines_to_vertices(lines, widths, heights, print_z, layer_id, extruder_id, color_id, extrusion_role, false, vertices);
 }
 
-static void convert(const Slic3r::ExtrusionLoop& extrusion_loop, float print_z, size_t layer_id, size_t extruder_id, size_t color_id,
-    EGCodeExtrusionRole extrusion_role, const Slic3r::Point& shift, GCodeInputData& data)
+static void convert_to_vertices(const Slic3r::ExtrusionLoop& extrusion_loop, float print_z, size_t layer_id, size_t extruder_id, size_t color_id,
+    EGCodeExtrusionRole extrusion_role, const Slic3r::Point& shift, std::vector<PathVertex>& vertices)
 {
     Slic3r::Lines lines;
     std::vector<float> widths;
@@ -321,31 +313,31 @@ static void convert(const Slic3r::ExtrusionLoop& extrusion_loop, float print_z, 
         widths.insert(widths.end(), lines_this.size(), extrusion_path.width());
         heights.insert(heights.end(), lines_this.size(), extrusion_path.height());
     }
-    thick_lines_to_geometry(lines, widths, heights, print_z, layer_id, extruder_id, color_id, extrusion_role, true, data);
+    convert_lines_to_vertices(lines, widths, heights, print_z, layer_id, extruder_id, color_id, extrusion_role, true, vertices);
 }
 
 // forward declaration
-static void convert(const Slic3r::ExtrusionEntityCollection& extrusion_entity_collection, float print_z, size_t layer_id,
-    EGCodeExtrusionRole extrusion_role, const Slic3r::Point& shift, GCodeInputData& data);
+static void convert_to_vertices(const Slic3r::ExtrusionEntityCollection& extrusion_entity_collection, float print_z, size_t layer_id,
+    size_t extruder_id, size_t color_id, EGCodeExtrusionRole extrusion_role, const Slic3r::Point& shift, std::vector<PathVertex>& vertices);
 
-static void convert(const Slic3r::ExtrusionEntity& extrusion_entity, float print_z, size_t layer_id, size_t extruder_id, size_t color_id,
-    EGCodeExtrusionRole extrusion_role, const Slic3r::Point& shift, GCodeInputData& data)
+static void convert_to_vertices(const Slic3r::ExtrusionEntity& extrusion_entity, float print_z, size_t layer_id, size_t extruder_id, size_t color_id,
+    EGCodeExtrusionRole extrusion_role, const Slic3r::Point& shift, std::vector<PathVertex>& vertices)
 {
     auto* extrusion_path = dynamic_cast<const Slic3r::ExtrusionPath*>(&extrusion_entity);
     if (extrusion_path != nullptr)
-        convert(*extrusion_path, print_z, layer_id, extruder_id, color_id, extrusion_role, shift, data);
+        convert_to_vertices(*extrusion_path, print_z, layer_id, extruder_id, color_id, extrusion_role, shift, vertices);
     else {
         auto* extrusion_loop = dynamic_cast<const Slic3r::ExtrusionLoop*>(&extrusion_entity);
         if (extrusion_loop != nullptr)
-            convert(*extrusion_loop, print_z, layer_id, extruder_id, color_id, extrusion_role, shift, data);
+            convert_to_vertices(*extrusion_loop, print_z, layer_id, extruder_id, color_id, extrusion_role, shift, vertices);
         else {
             auto* extrusion_multi_path = dynamic_cast<const Slic3r::ExtrusionMultiPath*>(&extrusion_entity);
             if (extrusion_multi_path != nullptr)
-                convert(*extrusion_multi_path, print_z, layer_id, extruder_id, color_id, extrusion_role, shift, data);
+                convert_to_vertices(*extrusion_multi_path, print_z, layer_id, extruder_id, color_id, extrusion_role, shift, vertices);
             else {
                 auto* extrusion_entity_collection = dynamic_cast<const Slic3r::ExtrusionEntityCollection*>(&extrusion_entity);
                 if (extrusion_entity_collection != nullptr)
-                   convert(*extrusion_entity_collection, print_z, layer_id, extruder_id, color_id, extrusion_role, shift, data);
+                    convert_to_vertices(*extrusion_entity_collection, print_z, layer_id, extruder_id, color_id, extrusion_role, shift, vertices);
                 else
                     throw Slic3r::RuntimeError("Found unexpected extrusion_entity type");
             }
@@ -353,16 +345,16 @@ static void convert(const Slic3r::ExtrusionEntity& extrusion_entity, float print
     }
 }
 
-static void convert(const Slic3r::ExtrusionEntityCollection& extrusion_entity_collection, float print_z, size_t layer_id,
-    size_t extruder_id, size_t color_id, EGCodeExtrusionRole extrusion_role, const Slic3r::Point& shift, GCodeInputData& data)
+static void convert_to_vertices(const Slic3r::ExtrusionEntityCollection& extrusion_entity_collection, float print_z, size_t layer_id,
+    size_t extruder_id, size_t color_id, EGCodeExtrusionRole extrusion_role, const Slic3r::Point& shift, std::vector<PathVertex>& vertices)
 {
     for (const Slic3r::ExtrusionEntity* extrusion_entity : extrusion_entity_collection.entities) {
         if (extrusion_entity != nullptr)
-            convert(*extrusion_entity, print_z, layer_id, extruder_id, color_id, extrusion_role, shift, data);
+            convert_to_vertices(*extrusion_entity, print_z, layer_id, extruder_id, color_id, extrusion_role, shift, vertices);
     }
 }
 
-static void convert_brim_skirt(const Slic3r::Print& print, GCodeInputData& data)
+static void convert_brim_skirt_to_vertices(const Slic3r::Print& print, std::vector<PathVertex>& vertices)
 {
 //    auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -395,8 +387,8 @@ static void convert_brim_skirt(const Slic3r::Print& print, GCodeInputData& data)
 
     for (size_t i = 0; i < skirt_height; ++i) {
         if (i == 0)
-            convert(print.brim(), print_zs[i], i, 0, 0, EGCodeExtrusionRole::Skirt, Slic3r::Point(0, 0), data);
-        convert(print.skirt(), print_zs[i], i, 0, 0, EGCodeExtrusionRole::Skirt, Slic3r::Point(0, 0), data);
+            convert_to_vertices(print.brim(), print_zs[i], i, 0, 0, EGCodeExtrusionRole::Skirt, Slic3r::Point(0, 0), vertices);
+        convert_to_vertices(print.skirt(), print_zs[i], i, 0, 0, EGCodeExtrusionRole::Skirt, Slic3r::Point(0, 0), vertices);
     }
 
 //    auto end_time = std::chrono::high_resolution_clock::now();
@@ -444,16 +436,16 @@ private:
     size_t m_layers_count{ 0 };
 };
 
-static void convert_wipe_tower(const Slic3r::Print& print, const std::vector<std::string>& str_tool_colors, GCodeInputData& data)
+static void convert_wipe_tower_to_vertices(const Slic3r::Print& print, const std::vector<std::string>& str_tool_colors, std::vector<PathVertex>& vertices)
 {
 //    auto start_time = std::chrono::high_resolution_clock::now();
 
-    WipeTowerHelper wipe_tower(print);
-    const float angle = wipe_tower.get_angle();
-    const Slic3r::Vec2f& position = wipe_tower.get_position();
+    WipeTowerHelper wipe_tower_helper(print);
+    const float angle = wipe_tower_helper.get_angle();
+    const Slic3r::Vec2f& position = wipe_tower_helper.get_position();
 
-    for (size_t item = 0; item < wipe_tower.get_layers_count(); ++item) {
-        const std::vector<Slic3r::WipeTower::ToolChangeResult>& layer = wipe_tower.tool_change(item);
+    for (size_t item = 0; item < wipe_tower_helper.get_layers_count(); ++item) {
+        const std::vector<Slic3r::WipeTower::ToolChangeResult>& layer = wipe_tower_helper.tool_change(item);
         for (const Slic3r::WipeTower::ToolChangeResult& extrusions : layer) {
             for (size_t i = 1; i < extrusions.extrusions.size(); /*no increment*/) {
                 const Slic3r::WipeTower::Extrusion& e = extrusions.extrusions[i];
@@ -493,8 +485,8 @@ static void convert_wipe_tower(const Slic3r::Print& print, const std::vector<std
                     e_prev = ee;
                 }
 
-                thick_lines_to_geometry(lines, widths, heights, extrusions.print_z, item, static_cast<size_t>(e.tool), 0,
-                                        EGCodeExtrusionRole::WipeTower, lines.front().a == lines.back().b, data);
+                convert_lines_to_vertices(lines, widths, heights, extrusions.print_z, item, static_cast<size_t>(e.tool), 0,
+                                        EGCodeExtrusionRole::WipeTower, lines.front().a == lines.back().b, vertices);
             }
         }
     }
@@ -503,28 +495,240 @@ static void convert_wipe_tower(const Slic3r::Print& print, const std::vector<std
 //    std::cout << "convert_wipe_tower: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms\n";
 }
 
-static void convert_object(const Slic3r::PrintObject& object, GCodeInputData& data)
+class ObjectHelper
+{
+public:
+    ObjectHelper(const std::vector<Slic3r::CustomGCode::Item>& color_print_values, size_t tool_colors_count, size_t extruders_count)
+    : m_color_print_values(color_print_values)
+    , m_tool_colors_count(tool_colors_count)
+    , m_extruders_count(extruders_count)
+    {
+    }
+
+    uint8_t color_id(size_t layer_id, size_t extruder_id) const
+    {
+        return !m_color_print_values.empty() ? color_print_color_id(layer_id, extruder_id) :
+               (m_tool_colors_count > 0) ? std::min<uint8_t>(m_tool_colors_count - 1, std::max<uint8_t>(extruder_id - 1, 0)) : 0;
+    }
+
+private:
+    const std::vector<Slic3r::CustomGCode::Item>& m_color_print_values;
+    size_t m_tool_colors_count;
+    size_t m_extruders_count;
+
+    uint8_t color_print_color_id(double print_z, size_t extruder_id) const
+    {
+        auto it = std::find_if(m_color_print_values.begin(), m_color_print_values.end(),
+            [print_z](const Slic3r::CustomGCode::Item& code) {
+                return std::fabs(code.print_z - print_z) < EPSILON;
+            });
+        if (it != m_color_print_values.end()) {
+            Slic3r::CustomGCode::Type type = it->type;
+            // pause print or custom Gcode
+            if (type == Slic3r::CustomGCode::PausePrint ||
+                (type != Slic3r::CustomGCode::ColorChange && type != Slic3r::CustomGCode::ToolChange))
+                return static_cast<uint8_t>(m_tool_colors_count - 1); // last color item is a gray color for pause print or custom G-code
+
+            switch (it->type) {
+            // change color for current extruder
+            case Slic3r::CustomGCode::ColorChange: { return color_change_color_id(it, extruder_id); }
+            // change tool (extruder) 
+            case Slic3r::CustomGCode::ToolChange:  { return tool_change_color_id(it, extruder_id); }
+            }
+        }
+
+        const Slic3r::CustomGCode::Item value{ print_z + EPSILON, Slic3r::CustomGCode::Custom, 0, "" };
+        it = std::lower_bound(m_color_print_values.begin(), m_color_print_values.end(), value);
+        while (it != m_color_print_values.begin()) {
+            --it;
+            switch (it->type) {
+            // change color for current extruder
+            case Slic3r::CustomGCode::ColorChange: { return color_change_color_id(it, extruder_id); }
+            // change tool (extruder) 
+            case Slic3r::CustomGCode::ToolChange:  { return tool_change_color_id(it, extruder_id); }
+            }
+        }
+
+        return std::min<uint8_t>(m_extruders_count - 1, std::max<uint8_t>(extruder_id - 1, 0));
+    }
+
+    uint8_t color_change_color_id(std::vector<Slic3r::CustomGCode::Item>::const_iterator it, size_t extruder_id) const
+    {
+        if (m_extruders_count == 1)
+            return m600_color_id(it);
+
+        auto it_n = it;
+        bool is_tool_change = false;
+        while (it_n != m_color_print_values.begin()) {
+            --it_n;
+            if (it_n->type == Slic3r::CustomGCode::ToolChange) {
+                is_tool_change = true;
+                if (it_n->extruder == it->extruder || (it_n->extruder == 0 && it->extruder == extruder_id))
+                    return m600_color_id(it);
+                break;
+            }
+        }
+        if (!is_tool_change && it->extruder == extruder_id)
+            return m600_color_id(it);
+
+        assert(false);
+        return 0;
+    }
+
+    uint8_t tool_change_color_id(std::vector<Slic3r::CustomGCode::Item>::const_iterator it, size_t extruder_id) const
+    {
+        const int current_extruder = it->extruder == 0 ? static_cast<int>(extruder_id) : it->extruder;
+        if (m_tool_colors_count == m_extruders_count + 1) // there is no one "M600"
+            return std::min<uint8_t>(m_extruders_count - 1, std::max<uint8_t>(current_extruder - 1, 0));
+
+        auto it_n = it;
+        while (it_n != m_color_print_values.begin()) {
+            --it_n;
+            if (it_n->type == Slic3r::CustomGCode::ColorChange && it_n->extruder == current_extruder)
+                return m600_color_id(it_n);
+        }
+
+        return std::min<uint8_t>(m_extruders_count - 1, std::max<uint8_t>(current_extruder - 1, 0));
+    }
+
+    uint8_t m600_color_id(std::vector<Slic3r::CustomGCode::Item>::const_iterator it) const
+    {
+        uint8_t shift = 0;
+        while (it != m_color_print_values.begin()) {
+            --it;
+            if (it->type == Slic3r::CustomGCode::ColorChange)
+                ++shift;
+        }
+        return m_extruders_count + shift;
+    }
+};
+
+struct ObjectData
+{
+    std::vector<PathVertex> vertices;
+    std::vector<float> layers_zs;
+};
+
+static void convert_object_to_vertices(const Slic3r::PrintObject& object, const std::vector<std::string>& str_tool_colors,
+    const std::vector<Slic3r::CustomGCode::Item>& color_print_values, size_t extruders_count, ObjectData& data)
+{
+    const bool has_perimeters = object.is_step_done(Slic3r::posPerimeters);
+    const bool has_infill = object.is_step_done(Slic3r::posInfill);
+    const bool has_support = object.is_step_done(Slic3r::posSupportMaterial);
+
+    // order layers by print_z
+    std::vector<const Slic3r::Layer*> layers;
+    if (has_perimeters || has_infill) {
+        layers.reserve(layers.size() + object.layers().size());
+        std::copy(object.layers().begin(), object.layers().end(), std::back_inserter(layers));
+    }
+    if (has_support) {
+        layers.reserve(layers.size() + object.support_layers().size());
+        std::copy(object.support_layers().begin(), object.support_layers().end(), std::back_inserter(layers));
+    }
+    std::sort(layers.begin(), layers.end(), [](const Slic3r::Layer* l1, const Slic3r::Layer* l2) { return l1->print_z < l2->print_z; });
+
+    ObjectHelper object_helper(color_print_values, str_tool_colors.size(), extruders_count);
+
+    data.layers_zs.reserve(layers.size());
+    for (const Slic3r::Layer* layer : layers) {
+        data.layers_zs.emplace_back(static_cast<float>(layer->print_z));
+    }
+
+    for (size_t i = 0; i < layers.size(); ++i) {
+        const Slic3r::Layer* layer = layers[i];
+        for (const Slic3r::PrintInstance& instance : object.instances()) {
+            const Slic3r::Point& copy = instance.shift;
+            for (const Slic3r::LayerRegion* layerm : layer->regions()) {
+                if (layerm->slices().empty())
+                    continue;
+                const Slic3r::PrintRegionConfig& cfg = layerm->region().config();
+                if (has_perimeters) {
+                    const size_t extruder_id = static_cast<size_t>(cfg.perimeter_extruder.value);
+                    convert_to_vertices(layerm->perimeters(), static_cast<float>(layer->print_z), i, extruder_id, object_helper.color_id(layer->print_z, extruder_id),
+                        EGCodeExtrusionRole::ExternalPerimeter, copy, data.vertices);
+                }
+                if (has_infill) {
+                    for (const Slic3r::ExtrusionEntity* ee : layerm->fills()) {
+                        // fill represents infill extrusions of a single island.
+                        const auto& fill = *dynamic_cast<const Slic3r::ExtrusionEntityCollection*>(ee);
+                        if (!fill.entities.empty()) {
+                            const bool is_solid_infill = fill.entities.front()->role().is_solid_infill();
+                            const size_t extruder_id = is_solid_infill ?
+                                static_cast<size_t>(cfg.solid_infill_extruder.value) : static_cast<size_t>(cfg.infill_extruder.value);
+                            convert_to_vertices(fill, static_cast<float>(layer->print_z), i, extruder_id, object_helper.color_id(layer->print_z, extruder_id),
+                                                is_solid_infill ? EGCodeExtrusionRole::SolidInfill : EGCodeExtrusionRole::InternalInfill,
+                                                copy, data.vertices);
+                        }
+                    }
+                }
+            }
+            if (has_support) {
+                const Slic3r::SupportLayer* support_layer = dynamic_cast<const Slic3r::SupportLayer*>(layer);
+                if (support_layer == nullptr)
+                    continue;
+                const Slic3r::PrintObjectConfig& cfg = support_layer->object()->config();
+                for (const Slic3r::ExtrusionEntity* extrusion_entity : support_layer->support_fills.entities) {
+                    const bool is_support_material = extrusion_entity->role() == Slic3r::ExtrusionRole::SupportMaterial;
+                    const size_t extruder_id = is_support_material ?
+                        static_cast<size_t>(cfg.support_material_extruder.value) : static_cast<size_t>(cfg.support_material_interface_extruder.value);
+                    convert_to_vertices(*extrusion_entity, static_cast<float>(layer->print_z), i,
+                                        extruder_id, object_helper.color_id(layer->print_z, extruder_id),
+                                        is_support_material ? EGCodeExtrusionRole::SupportMaterial : EGCodeExtrusionRole::SupportMaterialInterface,
+                                        copy, data.vertices);
+                }
+            }
+        }
+    }
+}
+
+static void convert_objects_to_vertices(const Slic3r::SpanOfConstPtrs<Slic3r::PrintObject>& objects, const std::vector<std::string>& str_tool_colors,
+    const std::vector<Slic3r::CustomGCode::Item>& color_print_values, size_t extruders_count, std::vector<PathVertex>& vertices)
 {
 //    auto start_time = std::chrono::high_resolution_clock::now();
 
+    // extract vertices and layers zs object by object
+    std::vector<ObjectData> objects_data(objects.size());
+    for (size_t i = 0; i < objects.size(); ++i) {
+        convert_object_to_vertices(*objects[i], str_tool_colors, color_print_values, extruders_count, objects_data[i]);
+    }
+
+    // collect layers zs
+    std::vector<float> layers;
+    for (const ObjectData& data : objects_data) {
+        layers.reserve(layers.size() + data.layers_zs.size());
+        std::copy(data.layers_zs.begin(), data.layers_zs.end(), std::back_inserter(layers));
+    }
+    std::sort(layers.begin(), layers.end(), [](float z1, float z2) { return z1 < z2; });
+    layers.erase(std::unique(layers.begin(), layers.end(), [](float z1, float z2) { return z1 == z2; }), layers.end());
+
+    // collect extracted vertices layer by layer
+    float min_z = 0.0f;
+    for (float z : layers) {
+        for (ObjectData& data : objects_data) {
+            std::copy_if(data.vertices.begin(), data.vertices.end(), std::back_inserter(vertices),
+                [min_z, z](const PathVertex& v) { return min_z < v.position[2] && v.position[2] <= z; });
+        }
+        min_z = z;
+    }
+
 //    auto end_time = std::chrono::high_resolution_clock::now();
-//    std::cout << "convert_object: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms\n";
+//    std::cout << "convert_objects: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms\n";
 }
 
 // mapping from Slic3r::Print to libvgcode::GCodeInputData
-GCodeInputData convert(const Slic3r::Print& print, const std::vector<std::string>& str_tool_colors)
+GCodeInputData convert(const Slic3r::Print& print, const std::vector<std::string>& str_tool_colors,
+    const std::vector<Slic3r::CustomGCode::Item>& color_print_values, size_t extruders_count)
 {
     GCodeInputData ret;
 
     if (print.is_step_done(Slic3r::psSkirtBrim) && (print.has_skirt() || print.has_brim()))
-        convert_brim_skirt(print, ret);
+        convert_brim_skirt_to_vertices(print, ret.vertices);
 
     if (!print.wipe_tower_data().tool_changes.empty() && print.is_step_done(Slic3r::psWipeTower))
-        convert_wipe_tower(print, str_tool_colors, ret);
+        convert_wipe_tower_to_vertices(print, str_tool_colors, ret.vertices);
 
-    for (const Slic3r::PrintObject* object : print.objects()) {
-        convert_object(*object, ret);
-    }
+    convert_objects_to_vertices(print.objects(), str_tool_colors, color_print_values, extruders_count, ret.vertices);
 
     return ret;
 }
