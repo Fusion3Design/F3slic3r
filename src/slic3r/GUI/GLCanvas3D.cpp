@@ -2703,6 +2703,7 @@ void GLCanvas3D::load_gcode_preview(const GCodeProcessorResult& gcode_result, co
 #if ENABLE_NEW_GCODE_VIEWER
     m_gcode_viewer.enable_legend(true);
     m_gcode_viewer.load_as_gcode(gcode_result, *this->fff_print(), str_tool_colors);
+    m_gcode_layers_times_cache = m_gcode_viewer.get_layers_times();
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     m_gcode_viewer.load(gcode_result, *this->fff_print());

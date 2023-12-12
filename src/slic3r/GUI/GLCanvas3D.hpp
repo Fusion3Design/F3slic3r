@@ -597,6 +597,13 @@ private:
     ArrangeSettingsDb_AppCfg   m_arrange_settings_db;
     ArrangeSettingsDialogImgui m_arrange_settings_dialog;
 
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_NEW_GCODE_VIEWER
+    // used to show layers times on the layers slider when pre-gcode view is active
+    std::vector<float> m_gcode_layers_times_cache;
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 public:
 
     struct ContoursList
@@ -846,6 +853,9 @@ public:
     std::vector<double> get_gcode_layers_zs() const;
     std::vector<float> get_gcode_layers_times() const { return m_gcode_viewer.get_layers_times(); }
     std::vector<float> get_gcode_layers_times(libvgcode::ETimeMode mode) const { return m_gcode_viewer.get_layers_times(mode); }
+
+    const std::vector<float>& get_gcode_layers_times_cache() const { return m_gcode_layers_times_cache; }
+    void reset_gcode_layers_times_cache() { m_gcode_layers_times_cache.clear(); }
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     bool is_gcode_legend_enabled() const { return m_gcode_viewer.is_legend_enabled(); }

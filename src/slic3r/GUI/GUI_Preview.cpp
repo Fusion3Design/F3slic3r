@@ -551,7 +551,7 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
         auto print_mode_stat = m_gcode_result->print_statistics.modes.front();
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-        m_layers_slider->SetLayersTimes(m_canvas->get_gcode_layers_times(), print_mode_stat.time);
+        m_layers_slider->SetLayersTimes(m_canvas->get_gcode_layers_times_cache(), print_mode_stat.time);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         m_layers_slider->SetLayersTimes(print_mode_stat.layers_times, print_mode_stat.time);
@@ -854,6 +854,11 @@ void Preview::load_print_as_fff(bool keep_z_range)
     }
 
     if (wxGetApp().is_editor() && !has_layers) {
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#if ENABLE_NEW_GCODE_VIEWER
+        m_canvas->reset_gcode_layers_times_cache();
+#endif // ENABLE_NEW_GCODE_VIEWER
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         hide_layers_slider();
         m_left_sizer->Hide(m_bottom_toolbar_panel);
         m_left_sizer->Layout();
