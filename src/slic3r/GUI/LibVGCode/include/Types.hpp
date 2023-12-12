@@ -73,6 +73,8 @@ enum class EViewType : uint8_t
     COUNT
 };
 
+static constexpr size_t View_Types_Count = static_cast<size_t>(EViewType::COUNT);
+
 //
 // Move types
 //
@@ -91,6 +93,21 @@ enum class EMoveType : uint8_t
     Extrude,
     COUNT
 };
+
+static constexpr size_t Move_Types_Count = static_cast<size_t>(EMoveType::COUNT);
+
+//
+// Travel move types
+//
+enum class ETravelMoveType : uint8_t
+{
+    Move,
+    Extrude,
+    Retract,
+    COUNT
+};
+
+static constexpr size_t Travel_Move_Types_Count = static_cast<size_t>(ETravelMoveType::COUNT);
 
 //
 // Extrusion roles
@@ -138,6 +155,8 @@ enum class EOptionType : uint8_t
     COUNT
 };
 
+static constexpr size_t Option_Types_Count = static_cast<size_t>(EOptionType::COUNT);
+
 //
 // Time modes
 //
@@ -173,6 +192,8 @@ enum class EBBoxType : uint8_t
     COUNT
 };
 
+static constexpr size_t BBox_Types_Count = static_cast<size_t>(EBBoxType::COUNT);
+
 //
 // Predefined colors
 //
@@ -196,17 +217,6 @@ static const std::vector<Color> Ranges_Colors{ {
     { 209, 104,  48 },
     { 194,  82,  60 },
     { 148,  38,  22 }  // reddish
-} };
-
-//
-// Palette used to render travel moves
-// EViewType: FeatureType, Height, Width, FanSpeed, Temperature, VolumetricFlowRate,
-//            LayerTimeLinear, LayerTimeLogarithmic
-//
-static const std::vector<Color> Travels_Colors{ {
-    {  56,  72, 155 }, // Move
-    {  29, 108,  26 }, // Extrude
-    { 129,  16,   7 }  // Retract
 } };
 
 //

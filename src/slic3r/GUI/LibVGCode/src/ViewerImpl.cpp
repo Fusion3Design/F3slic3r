@@ -998,6 +998,24 @@ void ViewerImpl::reset_default_options_colors()
     m_options_colors = Default_Options_Colors;
 }
 
+const Color& ViewerImpl::get_travel_move_color(ETravelMoveType type) const
+{
+    auto it = m_travel_moves_colors.find(type);
+    return (it != m_travel_moves_colors.end()) ? m_travel_moves_colors.at(type) : Dummy_Color;
+}
+
+void ViewerImpl::set_travel_move_color(ETravelMoveType type, const Color& color)
+{
+    auto it = m_travel_moves_colors.find(type);
+    if (it != m_travel_moves_colors.end())
+        m_travel_moves_colors[type] = color;
+}
+
+void ViewerImpl::reset_default_travel_moves_colors()
+{
+    m_travel_moves_colors = Default_Travel_Moves_Colors;
+}
+
 const ColorRange& ViewerImpl::get_height_range() const
 {
     return m_height_range;
@@ -1315,23 +1333,19 @@ Color ViewerImpl::select_color(const PathVertex& v) const
     if (v.is_option())
         return get_option_color(type_to_option(v.type));
 
-    const size_t role = static_cast<size_t>(v.role);
     switch (m_settings.view_type)
     {
     case EViewType::FeatureType:
     {
-        assert((v.is_travel() && role < Travels_Colors.size()) || v.is_extrusion());
-        return v.is_travel() ? Travels_Colors[role] : get_extrusion_role_color(v.role);
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : get_extrusion_role_color(v.role);
     }
     case EViewType::Height:
     {
-        assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_height_range.get_color_at(v.height);
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_height_range.get_color_at(v.height);
     }
     case EViewType::Width:
     {
-        assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_width_range.get_color_at(v.width);
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_width_range.get_color_at(v.width);
     }
     case EViewType::Speed:
     {
@@ -1339,29 +1353,24 @@ Color ViewerImpl::select_color(const PathVertex& v) const
     }
     case EViewType::FanSpeed:
     {
-        assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_fan_speed_range.get_color_at(v.fan_speed);
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_fan_speed_range.get_color_at(v.fan_speed);
     }
     case EViewType::Temperature:
     {
-        assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_temperature_range.get_color_at(v.temperature);
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_temperature_range.get_color_at(v.temperature);
     }
     case EViewType::VolumetricFlowRate:
     {
-        assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] : m_volumetric_rate_range.get_color_at(v.volumetric_rate);
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_volumetric_rate_range.get_color_at(v.volumetric_rate);
     }
     case EViewType::LayerTimeLinear:
     {
-        assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] :
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) :
             m_layer_time_range[0].get_color_at(m_layers.get_layer_time(m_settings.time_mode, static_cast<size_t>(v.layer_id)));
     }
     case EViewType::LayerTimeLogarithmic:
     {
-        assert(!v.is_travel() || role < Travels_Colors.size());
-        return v.is_travel() ? Travels_Colors[role] :
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) :
             m_layer_time_range[1].get_color_at(m_layers.get_layer_time(m_settings.time_mode, static_cast<size_t>(v.layer_id)));
     }
     case EViewType::Tool:

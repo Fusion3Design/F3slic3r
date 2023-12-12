@@ -52,6 +52,7 @@ static const std::map<EGCodeExtrusionRole, Color> Default_Extrusion_Roles_Colors
 
 //
 // Palette used to render options
+// EViewType: FeatureType
 //
 static const std::map<EOptionType, Color> Default_Options_Colors{ {
     { EOptionType::Retractions,   { 205,  34, 214 } },
@@ -61,6 +62,17 @@ static const std::map<EOptionType, Color> Default_Options_Colors{ {
     { EOptionType::ColorChanges,  { 218, 148, 139 } },
     { EOptionType::PausePrints,   {  82, 240, 131 } },
     { EOptionType::CustomGCodes,  { 226, 210,  67 } }
+} };
+
+//
+// Palette used to render travel moves
+// EViewType: FeatureType, Height, Width, FanSpeed, Temperature, VolumetricFlowRate,
+//            LayerTimeLinear, LayerTimeLogarithmic
+//
+static const std::map<ETravelMoveType, Color> Default_Travel_Moves_Colors{ {
+    { ETravelMoveType::Move,     {  56,  72, 155 } },
+    { ETravelMoveType::Extrude,  {  29, 108,  26 } }, 
+    { ETravelMoveType::Retract,  { 129,  16,   7 } }
 } };
 
 class ViewerImpl
@@ -173,6 +185,10 @@ public:
     void set_option_color(EOptionType type, const Color& color);
     void reset_default_options_colors();
 
+    const Color& get_travel_move_color(ETravelMoveType type) const;
+    void set_travel_move_color(ETravelMoveType type, const Color& color);
+    void reset_default_travel_moves_colors();
+
     const ColorRange& get_height_range() const;
     const ColorRange& get_width_range() const;
     const ColorRange& get_speed_range() const;
@@ -226,6 +242,7 @@ private:
 
     std::map<EGCodeExtrusionRole, Color> m_extrusion_roles_colors{ Default_Extrusion_Roles_Colors };
     std::map<EOptionType, Color> m_options_colors{ Default_Options_Colors };
+    std::map<ETravelMoveType, Color> m_travel_moves_colors{ Default_Travel_Moves_Colors };
 
     //
     // The OpenGL element used to represent all toolpath segments

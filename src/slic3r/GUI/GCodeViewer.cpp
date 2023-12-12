@@ -4885,8 +4885,8 @@ void GCodeViewer::render_legend(float& legend_height)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
             if (m_new_viewer.is_option_visible(libvgcode::EOptionType::Travels))
-                append_item(EItemType::Line, libvgcode::convert(libvgcode::Travels_Colors[0]), _u8L("Travel"), true, short_time_ui(get_time_dhms(travels_time)),
-                    travels_time / time_mode.time, max_time_percent, offsets, 0.0f, 0.0f);
+              append_item(EItemType::Line, libvgcode::convert(m_new_viewer.get_travel_move_color(libvgcode::ETravelMoveType::Move)), _u8L("Travel"), true, short_time_ui(get_time_dhms(travels_time)),
+                  travels_time / time_mode.time, max_time_percent, offsets, 0.0f, 0.0f);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             if (m_buffers[buffer_id(EMoveType::Travel)].visible)

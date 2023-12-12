@@ -24,8 +24,6 @@
 #define DISABLE_INSTANCES_SYNCH 0
 // Use wxDataViewRender instead of wxDataViewCustomRenderer
 #define ENABLE_NONCUSTOM_DATA_VIEW_RENDERING 0
-// Enable G-Code viewer statistics imgui dialog
-#define ENABLE_GCODE_VIEWER_STATISTICS 0
 // Enable G-Code viewer comparison between toolpaths height and width detected from gcode and calculated at gcode generation 
 #define ENABLE_GCODE_VIEWER_DATA_CHECKING 0
 // Enable project dirty state manager debug window
@@ -62,7 +60,9 @@
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #define ENABLE_NEW_GCODE_VIEWER 1
 #define ENABLE_NEW_GCODE_VIEWER_DEBUG (0 && ENABLE_NEW_GCODE_VIEWER)
-#define ENABLE_NEW_GCODE_NO_COG_AND_TOOL_MARKERS (1 && ENABLE_NEW_GCODE_VIEWER)
+#define ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS (1 && ENABLE_NEW_GCODE_VIEWER)
+// Enable G-Code viewer statistics imgui dialog
+#define ENABLE_GCODE_VIEWER_STATISTICS (1 && !ENABLE_NEW_GCODE_VIEWER)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 #endif // _prusaslicer_technologies_h_

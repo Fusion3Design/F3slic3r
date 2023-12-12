@@ -155,6 +155,10 @@ public:
     void set_option_color(EOptionType type, const Color& color);
     void reset_default_options_colors();
 
+    const Color& get_travel_move_color(ETravelMoveType type) const;
+    void set_travel_move_color(ETravelMoveType type, const Color& color);
+    void reset_default_travel_moves_colors();
+
     const ColorRange& get_height_range() const;
     const ColorRange& get_width_range() const;
     const ColorRange& get_speed_range() const;

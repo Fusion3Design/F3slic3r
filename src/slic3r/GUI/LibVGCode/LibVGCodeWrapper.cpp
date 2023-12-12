@@ -164,11 +164,11 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels
             // for travel moves set the extrusion role
             // which will be used later to select the proper color
             if (curr.delta_extruder == 0.0f)
-                extrusion_role = static_cast<EGCodeExtrusionRole>(0); // Move
+                extrusion_role = static_cast<EGCodeExtrusionRole>(ETravelMoveType::Move);
             else if (curr.delta_extruder > 0.0f)
-                extrusion_role = static_cast<EGCodeExtrusionRole>(1); // Extrude
+                extrusion_role = static_cast<EGCodeExtrusionRole>(ETravelMoveType::Extrude);
             else
-                extrusion_role = static_cast<EGCodeExtrusionRole>(2); // Retract
+                extrusion_role = static_cast<EGCodeExtrusionRole>(ETravelMoveType::Retract);
         }
         else
             extrusion_role = convert(curr.extrusion_role);
@@ -251,9 +251,15 @@ static void convert_lines_to_vertices(const Slic3r::Lines& lines, const std::vec
         if (ii == 0) {
             // add a dummy vertex at the start, to separate the current line from the others
             const Slic3r::Vec2f a = unscale(line.a).cast<float>();
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
             libvgcode::PathVertex vertex = { convert(Slic3r::Vec3f(a.x(), a.y(), top_z)), heights[i], widths[i], 0.0f, 0.0f,
                 0.0f, 0.0f, extrusion_role, EMoveType::Noop, 0, static_cast<uint32_t>(layer_id),
                 static_cast<uint8_t>(extruder_id), static_cast<uint8_t>(color_id), { 0.0f, 0.0f } };
+#else
+            libvgcode::PathVertex vertex = { convert(Slic3r::Vec3f(a.x(), a.y(), top_z)), heights[i], widths[i], 0.0f, 0.0f,
+                0.0f, 0.0f, 0.0f, extrusion_role, EMoveType::Noop, 0, static_cast<uint32_t>(layer_id),
+                static_cast<uint8_t>(extruder_id), static_cast<uint8_t>(color_id), { 0.0f, 0.0f } };
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
             vertices.emplace_back(vertex);
             // add the starting vertex of the segment
             vertex.type = EMoveType::Extrude;
@@ -261,9 +267,15 @@ static void convert_lines_to_vertices(const Slic3r::Lines& lines, const std::vec
         }
         // add the ending vertex of the segment
         const Slic3r::Vec2f b = unscale(line.b).cast<float>();
+#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
         const libvgcode::PathVertex vertex = { convert(Slic3r::Vec3f(b.x(), b.y(), top_z)), heights[i], widths[i], 0.0f, 0.0f,
             0.0f, 0.0f, extrusion_role, EMoveType::Extrude, 0, static_cast<uint32_t>(layer_id),
             static_cast<uint8_t>(extruder_id), static_cast<uint8_t>(color_id), { 0.0f, 0.0f } };
+#else
+        const libvgcode::PathVertex vertex = { convert(Slic3r::Vec3f(b.x(), b.y(), top_z)), heights[i], widths[i], 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, extrusion_role, EMoveType::Extrude, 0, static_cast<uint32_t>(layer_id),
+            static_cast<uint8_t>(extruder_id), static_cast<uint8_t>(color_id), { 0.0f, 0.0f } };
+#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
         vertices.emplace_back(vertex);
     }
 }
@@ -534,6 +546,7 @@ private:
             case Slic3r::CustomGCode::ColorChange: { return color_change_color_id(it, extruder_id); }
             // change tool (extruder) 
             case Slic3r::CustomGCode::ToolChange:  { return tool_change_color_id(it, extruder_id); }
+            default:                               { break; }
             }
         }
 
@@ -546,6 +559,7 @@ private:
             case Slic3r::CustomGCode::ColorChange: { return color_change_color_id(it, extruder_id); }
             // change tool (extruder) 
             case Slic3r::CustomGCode::ToolChange:  { return tool_change_color_id(it, extruder_id); }
+            default:                               { break; }
             }
         }
 
@@ -563,12 +577,12 @@ private:
             --it_n;
             if (it_n->type == Slic3r::CustomGCode::ToolChange) {
                 is_tool_change = true;
-                if (it_n->extruder == it->extruder || (it_n->extruder == 0 && it->extruder == extruder_id))
+                if (it_n->extruder == it->extruder || (it_n->extruder == 0 && it->extruder == static_cast<int>(extruder_id)))
                     return m600_color_id(it);
                 break;
             }
         }
-        if (!is_tool_change && it->extruder == extruder_id)
+        if (!is_tool_change && it->extruder == static_cast<int>(extruder_id))
             return m600_color_id(it);
 
         assert(false);

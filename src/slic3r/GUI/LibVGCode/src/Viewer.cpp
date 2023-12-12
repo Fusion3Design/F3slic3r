@@ -287,6 +287,21 @@ void Viewer::reset_default_options_colors()
     m_impl->reset_default_options_colors();
 }
 
+const Color& Viewer::get_travel_move_color(ETravelMoveType type) const
+{
+    return m_impl->get_travel_move_color(type);
+}
+
+void Viewer::set_travel_move_color(ETravelMoveType type, const Color& color)
+{
+    m_impl->set_travel_move_color(type, color);
+}
+
+void Viewer::reset_default_travel_moves_colors()
+{
+    m_impl->reset_default_travel_moves_colors();
+}
+
 const ColorRange& Viewer::get_height_range() const
 {
     return m_impl->get_height_range();
