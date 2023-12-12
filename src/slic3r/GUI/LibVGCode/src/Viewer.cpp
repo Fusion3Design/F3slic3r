@@ -272,6 +272,21 @@ void Viewer::reset_default_extrusion_roles_colors()
     m_impl->reset_default_extrusion_roles_colors();
 }
 
+const Color& Viewer::get_option_color(EOptionType type) const
+{
+    return m_impl->get_option_color(type);
+}
+
+void Viewer::set_option_color(EOptionType type, const Color& color)
+{
+    m_impl->set_option_color(type, color);
+}
+
+void Viewer::reset_default_options_colors()
+{
+    m_impl->reset_default_options_colors();
+}
+
 const ColorRange& Viewer::get_height_range() const
 {
     return m_impl->get_height_range();

@@ -210,19 +210,6 @@ static const std::vector<Color> Travels_Colors{ {
 } };
 
 //
-// Palette used to render options
-//
-static const std::map<EMoveType, Color> Options_Colors{ {
-    { EMoveType::Retract,     { 205,  34, 214 } },
-    { EMoveType::Unretract,   {  73, 173, 207 } },
-    { EMoveType::Seam,        { 230, 230, 230 } },
-    { EMoveType::ToolChange,  { 193, 190,  99 } },
-    { EMoveType::ColorChange, { 218, 148, 139 } },
-    { EMoveType::PausePrint,  {  82, 240, 131 } },
-    { EMoveType::CustomGCode, { 226, 210,  67 } }
-} };
-
-//
 // Mapping from EMoveType to EOptionType
 //
 extern EOptionType type_to_option(EMoveType type);

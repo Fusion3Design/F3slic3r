@@ -151,6 +151,10 @@ public:
     void set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color);
     void reset_default_extrusion_roles_colors();
 
+    const Color& get_option_color(EOptionType type) const;
+    void set_option_color(EOptionType type, const Color& color);
+    void reset_default_options_colors();
+
     const ColorRange& get_height_range() const;
     const ColorRange& get_width_range() const;
     const ColorRange& get_speed_range() const;

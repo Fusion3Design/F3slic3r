@@ -50,6 +50,19 @@ static const std::map<EGCodeExtrusionRole, Color> Default_Extrusion_Roles_Colors
     { EGCodeExtrusionRole::Custom,                     {  94, 209, 148 } }
 } };
 
+//
+// Palette used to render options
+//
+static const std::map<EOptionType, Color> Default_Options_Colors{ {
+    { EOptionType::Retractions,   { 205,  34, 214 } },
+    { EOptionType::Unretractions, {  73, 173, 207 } },
+    { EOptionType::Seams,         { 230, 230, 230 } },
+    { EOptionType::ToolChanges,   { 193, 190,  99 } },
+    { EOptionType::ColorChanges,  { 218, 148, 139 } },
+    { EOptionType::PausePrints,   {  82, 240, 131 } },
+    { EOptionType::CustomGCodes,  { 226, 210,  67 } }
+} };
+
 class ViewerImpl
 {
 public:
@@ -156,6 +169,10 @@ public:
     void set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color);
     void reset_default_extrusion_roles_colors();
 
+    const Color& get_option_color(EOptionType type) const;
+    void set_option_color(EOptionType type, const Color& color);
+    void reset_default_options_colors();
+
     const ColorRange& get_height_range() const;
     const ColorRange& get_width_range() const;
     const ColorRange& get_speed_range() const;
@@ -208,6 +225,7 @@ private:
     bool m_loading{ false };
 
     std::map<EGCodeExtrusionRole, Color> m_extrusion_roles_colors{ Default_Extrusion_Roles_Colors };
+    std::map<EOptionType, Color> m_options_colors{ Default_Options_Colors };
 
     //
     // The OpenGL element used to represent all toolpath segments

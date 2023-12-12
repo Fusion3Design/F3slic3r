@@ -964,14 +964,8 @@ void ViewerImpl::set_tool_colors(const std::vector<Color>& colors)
 
 const Color& ViewerImpl::get_extrusion_role_color(EGCodeExtrusionRole role) const
 {
-    try
-    {
-        return m_extrusion_roles_colors.at(role);
-    }
-    catch (...)
-    {
-        return Dummy_Color;
-    }
+    auto it = m_extrusion_roles_colors.find(role);
+    return (it != m_extrusion_roles_colors.end()) ? m_extrusion_roles_colors.at(role) : Dummy_Color;
 }
 
 void ViewerImpl::set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color)
@@ -984,6 +978,24 @@ void ViewerImpl::set_extrusion_role_color(EGCodeExtrusionRole role, const Color&
 void ViewerImpl::reset_default_extrusion_roles_colors()
 {
     m_extrusion_roles_colors = Default_Extrusion_Roles_Colors;
+}
+
+const Color& ViewerImpl::get_option_color(EOptionType type) const
+{
+    auto it = m_options_colors.find(type);
+    return (it != m_options_colors.end()) ?  m_options_colors.at(type) : Dummy_Color;
+}
+
+void ViewerImpl::set_option_color(EOptionType type, const Color& color)
+{
+    auto it = m_options_colors.find(type);
+    if (it != m_options_colors.end())
+        m_options_colors[type] = color;
+}
+
+void ViewerImpl::reset_default_options_colors()
+{
+    m_options_colors = Default_Options_Colors;
 }
 
 const ColorRange& ViewerImpl::get_height_range() const
@@ -1301,7 +1313,7 @@ Color ViewerImpl::select_color(const PathVertex& v) const
         return Wipe_Color;
 
     if (v.is_option())
-        return Options_Colors.at(v.type);
+        return get_option_color(type_to_option(v.type));
 
     const size_t role = static_cast<size_t>(v.role);
     switch (m_settings.view_type)
