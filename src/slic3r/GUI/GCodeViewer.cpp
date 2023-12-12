@@ -1172,6 +1172,7 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
     libvgcode::GCodeInputData data = libvgcode::convert(gcode_result, m_new_viewer.get_travels_radius(), m_new_viewer.get_wipes_radius());
 
     // send data to the viewer
+    m_new_viewer.reset_default_extrusion_roles_colors();
     m_new_viewer.load(std::move(data));
 
 #if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
@@ -1345,6 +1346,14 @@ void GCodeViewer::load_as_preview(libvgcode::GCodeInputData&& data, const std::v
         }
         m_new_viewer.set_tool_colors(colors);
     }
+
+    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::Skirt,                    { 127, 255, 127 });
+    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::ExternalPerimeter,        { 255, 255, 0 });
+    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::SupportMaterial,          { 127, 255, 127 });
+    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::SupportMaterialInterface, { 127, 255, 127 });
+    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::InternalInfill,           { 255, 127, 127 });
+    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::SolidInfill,              { 255, 127, 127 });
+    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::WipeTower,                { 127, 255, 127 });
     m_new_viewer.load(std::move(data));
 
     const libvgcode::AABox bbox = m_new_viewer.get_bounding_box(libvgcode::EBBoxType::Extrusion);
@@ -4842,7 +4851,7 @@ void GCodeViewer::render_legend(float& legend_height)
                 const bool visible = is_visible(role);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                append_item(EItemType::Rect, libvgcode::convert(libvgcode::Extrusion_Roles_Colors[static_cast<size_t>(role)]), labels[i],
+                append_item(EItemType::Rect, libvgcode::convert(m_new_viewer.get_extrusion_role_color(role)), labels[i],
                     visible, times[i], percents[i], max_time_percent, offsets, used_filaments_m[i], used_filaments_g[i],
                     [this, role]() {
                         const std::array<uint32_t, 2> view_visible_range = m_new_viewer.get_view_visible_range();

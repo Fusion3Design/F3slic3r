@@ -28,6 +28,28 @@ namespace libvgcode {
 
 struct GCodeInputData;
 
+//
+// Palette used to render extrusion moves by extrusion roles
+// EViewType: FeatureType
+//
+static const std::map<EGCodeExtrusionRole, Color> Default_Extrusion_Roles_Colors{ {
+    { EGCodeExtrusionRole::None,                       { 230, 179, 179 } },
+    { EGCodeExtrusionRole::Perimeter,                  { 255, 230,  77 } },
+    { EGCodeExtrusionRole::ExternalPerimeter,          { 255, 125,  56 } },
+    { EGCodeExtrusionRole::OverhangPerimeter,          {  31,  31, 255 } },
+    { EGCodeExtrusionRole::InternalInfill,             { 176,  48,  41 } },
+    { EGCodeExtrusionRole::SolidInfill,                { 150,  84, 204 } },
+    { EGCodeExtrusionRole::TopSolidInfill,             { 240,  64,  64 } },
+    { EGCodeExtrusionRole::Ironing,                    { 255, 140, 105 } },
+    { EGCodeExtrusionRole::BridgeInfill,               {  77, 128, 186 } },
+    { EGCodeExtrusionRole::GapFill,                    { 255, 255, 255 } },
+    { EGCodeExtrusionRole::Skirt,                      {   0, 135, 110 } },
+    { EGCodeExtrusionRole::SupportMaterial,            {   0, 255,   0 } },
+    { EGCodeExtrusionRole::SupportMaterialInterface,   {   0, 128,   0 } },
+    { EGCodeExtrusionRole::WipeTower,                  { 179, 227, 171 } },
+    { EGCodeExtrusionRole::Custom,                     {  94, 209, 148 } }
+} };
+
 class ViewerImpl
 {
 public:
@@ -130,6 +152,10 @@ public:
     const std::vector<Color>& get_tool_colors() const;
     void set_tool_colors(const std::vector<Color>& colors);
 
+    const Color& get_extrusion_role_color(EGCodeExtrusionRole role) const;
+    void set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color);
+    void reset_default_extrusion_roles_colors();
+
     const ColorRange& get_height_range() const;
     const ColorRange& get_width_range() const;
     const ColorRange& get_speed_range() const;
@@ -180,6 +206,8 @@ private:
 
     bool m_initialized{ false };
     bool m_loading{ false };
+
+    std::map<EGCodeExtrusionRole, Color> m_extrusion_roles_colors{ Default_Extrusion_Roles_Colors };
 
     //
     // The OpenGL element used to represent all toolpath segments

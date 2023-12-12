@@ -257,6 +257,21 @@ void Viewer::set_tool_colors(const std::vector<Color>& colors)
     m_impl->set_tool_colors(colors);
 }
 
+const Color& Viewer::get_extrusion_role_color(EGCodeExtrusionRole role) const
+{
+    return m_impl->get_extrusion_role_color(role);
+}
+
+void Viewer::set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color)
+{
+    m_impl->set_extrusion_role_color(role, color);
+}
+
+void Viewer::reset_default_extrusion_roles_colors()
+{
+    m_impl->reset_default_extrusion_roles_colors();
+}
+
 const ColorRange& Viewer::get_height_range() const
 {
     return m_impl->get_height_range();

@@ -199,28 +199,6 @@ static const std::vector<Color> Ranges_Colors{ {
 } };
 
 //
-// Palette used to render extrusion moves by extrusion roles
-// EViewType: FeatureType
-//
-static const std::vector<Color> Extrusion_Roles_Colors{ {
-    { 230, 179, 179 },   // None
-    { 255, 230,  77 },   // Perimeter
-    { 255, 125,  56 },   // ExternalPerimeter
-    {  31,  31, 255 },   // OverhangPerimeter
-    { 176,  48,  41 },   // InternalInfill
-    { 150,  84, 204 },   // SolidInfill
-    { 240,  64,  64 },   // TopSolidInfill
-    { 255, 140, 105 },   // Ironing
-    {  77, 128, 186 },   // BridgeInfill
-    { 255, 255, 255 },   // GapFill
-    {   0, 135, 110 },   // Skirt
-    {   0, 255,   0 },   // SupportMaterial
-    {   0, 128,   0 },   // SupportMaterialInterface
-    { 179, 227, 171 },   // WipeTower
-    {  94, 209, 148 }    // Custom
-} };
-
-//
 // Palette used to render travel moves
 // EViewType: FeatureType, Height, Width, FanSpeed, Temperature, VolumetricFlowRate,
 //            LayerTimeLinear, LayerTimeLogarithmic

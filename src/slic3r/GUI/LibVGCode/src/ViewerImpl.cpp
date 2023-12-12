@@ -962,6 +962,30 @@ void ViewerImpl::set_tool_colors(const std::vector<Color>& colors)
     m_settings.update_colors = true;
 }
 
+const Color& ViewerImpl::get_extrusion_role_color(EGCodeExtrusionRole role) const
+{
+    try
+    {
+        return m_extrusion_roles_colors.at(role);
+    }
+    catch (...)
+    {
+        return Dummy_Color;
+    }
+}
+
+void ViewerImpl::set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color)
+{
+    auto it = m_extrusion_roles_colors.find(role);
+    if (it != m_extrusion_roles_colors.end())
+        m_extrusion_roles_colors[role] = color;
+}
+
+void ViewerImpl::reset_default_extrusion_roles_colors()
+{
+    m_extrusion_roles_colors = Default_Extrusion_Roles_Colors;
+}
+
 const ColorRange& ViewerImpl::get_height_range() const
 {
     return m_height_range;
@@ -1284,8 +1308,8 @@ Color ViewerImpl::select_color(const PathVertex& v) const
     {
     case EViewType::FeatureType:
     {
-        assert((v.is_travel() && role < Travels_Colors.size()) || (v.is_extrusion() && role < Extrusion_Roles_Colors.size()));
-        return v.is_travel() ? Travels_Colors[role] : Extrusion_Roles_Colors[role];
+        assert((v.is_travel() && role < Travels_Colors.size()) || v.is_extrusion());
+        return v.is_travel() ? Travels_Colors[role] : get_extrusion_role_color(v.role);
     }
     case EViewType::Height:
     {

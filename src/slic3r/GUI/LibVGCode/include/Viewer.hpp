@@ -147,6 +147,10 @@ public:
     const std::vector<Color>& get_tool_colors() const;
     void set_tool_colors(const std::vector<Color>& colors);
 
+    const Color& get_extrusion_role_color(EGCodeExtrusionRole role) const;
+    void set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color);
+    void reset_default_extrusion_roles_colors();
+
     const ColorRange& get_height_range() const;
     const ColorRange& get_width_range() const;
     const ColorRange& get_speed_range() const;
