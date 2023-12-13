@@ -28,53 +28,6 @@ namespace libvgcode {
 
 struct GCodeInputData;
 
-//
-// Palette used to render extrusion moves by extrusion roles
-// EViewType: FeatureType
-//
-static const std::map<EGCodeExtrusionRole, Color> Default_Extrusion_Roles_Colors{ {
-    { EGCodeExtrusionRole::None,                       { 230, 179, 179 } },
-    { EGCodeExtrusionRole::Perimeter,                  { 255, 230,  77 } },
-    { EGCodeExtrusionRole::ExternalPerimeter,          { 255, 125,  56 } },
-    { EGCodeExtrusionRole::OverhangPerimeter,          {  31,  31, 255 } },
-    { EGCodeExtrusionRole::InternalInfill,             { 176,  48,  41 } },
-    { EGCodeExtrusionRole::SolidInfill,                { 150,  84, 204 } },
-    { EGCodeExtrusionRole::TopSolidInfill,             { 240,  64,  64 } },
-    { EGCodeExtrusionRole::Ironing,                    { 255, 140, 105 } },
-    { EGCodeExtrusionRole::BridgeInfill,               {  77, 128, 186 } },
-    { EGCodeExtrusionRole::GapFill,                    { 255, 255, 255 } },
-    { EGCodeExtrusionRole::Skirt,                      {   0, 135, 110 } },
-    { EGCodeExtrusionRole::SupportMaterial,            {   0, 255,   0 } },
-    { EGCodeExtrusionRole::SupportMaterialInterface,   {   0, 128,   0 } },
-    { EGCodeExtrusionRole::WipeTower,                  { 179, 227, 171 } },
-    { EGCodeExtrusionRole::Custom,                     {  94, 209, 148 } }
-} };
-
-//
-// Palette used to render options
-// EViewType: FeatureType
-//
-static const std::map<EOptionType, Color> Default_Options_Colors{ {
-    { EOptionType::Retractions,   { 205,  34, 214 } },
-    { EOptionType::Unretractions, {  73, 173, 207 } },
-    { EOptionType::Seams,         { 230, 230, 230 } },
-    { EOptionType::ToolChanges,   { 193, 190,  99 } },
-    { EOptionType::ColorChanges,  { 218, 148, 139 } },
-    { EOptionType::PausePrints,   {  82, 240, 131 } },
-    { EOptionType::CustomGCodes,  { 226, 210,  67 } }
-} };
-
-//
-// Palette used to render travel moves
-// EViewType: FeatureType, Height, Width, FanSpeed, Temperature, VolumetricFlowRate,
-//            LayerTimeLinear, LayerTimeLogarithmic
-//
-static const std::map<ETravelMoveType, Color> Default_Travel_Moves_Colors{ {
-    { ETravelMoveType::Move,     {  56,  72, 155 } },
-    { ETravelMoveType::Extrude,  {  29, 108,  26 } }, 
-    { ETravelMoveType::Retract,  { 129,  16,   7 } }
-} };
-
 class ViewerImpl
 {
 public:
@@ -221,7 +174,7 @@ public:
     void set_tool_marker_scale_factor(float factor);
 
     const Color& get_tool_marker_color() const;
-    void set_tool_marker_color(const Color & color);
+    void set_tool_marker_color(const Color& color);
 
     float get_tool_marker_alpha() const;
     void set_tool_marker_alpha(float size);
@@ -301,8 +254,10 @@ private:
     //
     unsigned int m_segments_shader_id{ 0 };
     unsigned int m_options_shader_id{ 0 };
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     unsigned int m_cog_marker_shader_id{ 0 };
     unsigned int m_tool_marker_shader_id{ 0 };
+#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
     //
     // Cache for OpenGL uniforms id for segments shader 
@@ -373,13 +328,30 @@ private:
     void update_view_full_range();
     void update_color_ranges();
     void update_heights_widths();
-    Color select_color(const PathVertex& v) const;
+    Color select_color(const PathVertex& vertex) const;
     void render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position);
     void render_options(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
     void render_cog_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
     void render_tool_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+
+    //
+    // Palette used to render extrusion moves by extrusion roles
+    // EViewType: FeatureType
+    //
+    static const std::map<EGCodeExtrusionRole, Color> Default_Extrusion_Roles_Colors;
+    //
+    // Palette used to render options
+    // EViewType: FeatureType
+    //
+    static const std::map<EOptionType, Color> Default_Options_Colors;
+    //
+    // Palette used to render travel moves
+    // EViewType: FeatureType, Height, Width, FanSpeed, Temperature, VolumetricFlowRate,
+    //            LayerTimeLinear, LayerTimeLogarithmic
+    //
+    static const std::map<ETravelMoveType, Color> Default_Travel_Moves_Colors;
 };
 
 } // namespace libvgcode

@@ -1121,7 +1121,7 @@ void GCodeViewer::init()
 #if ENABLE_NEW_GCODE_VIEWER
     try
     {
-        m_new_viewer.init();
+        m_viewer.init();
     }
     catch (const std::exception& e)
     {
@@ -1136,10 +1136,10 @@ void GCodeViewer::init()
 #if ENABLE_NEW_GCODE_VIEWER
 void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const Print& print, const std::vector<std::string>& str_tool_colors)
 {
-    m_new_viewer.set_top_layer_only_view_range(get_app_config()->get_bool("seq_top_layer_only"));
+    m_viewer.set_top_layer_only_view_range(get_app_config()->get_bool("seq_top_layer_only"));
 
     std::vector<ColorRGBA> tool_colors;
-    if (m_new_viewer.get_view_type() == libvgcode::EViewType::Tool && !gcode_result.extruder_colors.empty())
+    if (m_viewer.get_view_type() == libvgcode::EViewType::Tool && !gcode_result.extruder_colors.empty())
         // update tool colors from config stored in the gcode
         decode_colors(gcode_result.extruder_colors, tool_colors);
     else
@@ -1157,7 +1157,7 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
     for (const ColorRGBA& color : tool_colors) {
         colors.emplace_back(libvgcode::convert(color));
     }
-    m_new_viewer.set_tool_colors(colors);
+    m_viewer.set_tool_colors(colors);
 
     // avoid processing if called with the same gcode_result
     if (m_last_result_id == gcode_result.id)
@@ -1169,17 +1169,17 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
     reset();
 
     // convert data from PrusaSlicer format to libvgcode format
-    libvgcode::GCodeInputData data = libvgcode::convert(gcode_result, m_new_viewer.get_travels_radius(), m_new_viewer.get_wipes_radius());
+    libvgcode::GCodeInputData data = libvgcode::convert(gcode_result, m_viewer.get_travels_radius(), m_viewer.get_wipes_radius());
 
     // send data to the viewer
-    m_new_viewer.reset_default_extrusion_roles_colors();
-    m_new_viewer.load(std::move(data));
+    m_viewer.reset_default_extrusion_roles_colors();
+    m_viewer.load(std::move(data));
 
 #if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-    const uint32_t vertices_count = m_new_viewer.get_vertices_count();
+    const uint32_t vertices_count = m_viewer.get_vertices_count();
     m_cog.reset();
     for (uint32_t i = 1; i < vertices_count; ++i) {
-        const libvgcode::PathVertex& curr = m_new_viewer.get_vertex_at(i);
+        const libvgcode::PathVertex& curr = m_viewer.get_vertex_at(i);
         if (curr.type == libvgcode::EMoveType::Extrude &&
             curr.role != libvgcode::EGCodeExtrusionRole::Skirt &&
             curr.role != libvgcode::EGCodeExtrusionRole::SupportMaterial &&
@@ -1187,13 +1187,13 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
             curr.role != libvgcode::EGCodeExtrusionRole::WipeTower &&
             curr.role != libvgcode::EGCodeExtrusionRole::Custom) {
             const Vec3d curr_pos = libvgcode::convert(curr.position).cast<double>();
-            const Vec3d prev_pos = libvgcode::convert(m_new_viewer.get_vertex_at(i - 1).position).cast<double>();
+            const Vec3d prev_pos = libvgcode::convert(m_viewer.get_vertex_at(i - 1).position).cast<double>();
             m_cog.add_segment(curr_pos, prev_pos, curr.volumetric_rate / curr.feedrate * (curr_pos - prev_pos).norm());
         }
     }
 #endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
-    const libvgcode::AABox bbox = m_new_viewer.get_bounding_box(wxGetApp().is_gcode_viewer() ? libvgcode::EBBoxType::Full : libvgcode::EBBoxType::ExtrusionNoCustom);
+    const libvgcode::AABox bbox = m_viewer.get_bounding_box(wxGetApp().is_gcode_viewer() ? libvgcode::EBBoxType::Full : libvgcode::EBBoxType::ExtrusionNoCustom);
     m_paths_bounding_box.min = libvgcode::convert(bbox[0]).cast<double>();
     m_paths_bounding_box.max = libvgcode::convert(bbox[1]).cast<double>();
 
@@ -1238,7 +1238,7 @@ void GCodeViewer::load(const GCodeProcessorResult & gcode_result, const Print & 
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    if (m_new_viewer.get_layers_count() == 0)
+    if (m_viewer.get_layers_count() == 0)
         return;
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1298,12 +1298,12 @@ void GCodeViewer::load(const GCodeProcessorResult & gcode_result, const Print & 
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    PrintEstimatedStatistics::ETimeMode time_mode = convert(m_new_viewer.get_time_mode());
-    if (m_new_viewer.get_time_mode() != libvgcode::ETimeMode::Normal) {
+    PrintEstimatedStatistics::ETimeMode time_mode = convert(m_viewer.get_time_mode());
+    if (m_viewer.get_time_mode() != libvgcode::ETimeMode::Normal) {
         const float time = m_print_statistics.modes[static_cast<size_t>(time_mode)].time;
         if (time == 0.0f ||
             short_time(get_time_dhms(time)) == short_time(get_time_dhms(m_print_statistics.modes[static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Normal)].time)))
-            m_new_viewer.set_time_mode(libvgcode::convert(PrintEstimatedStatistics::ETimeMode::Normal));
+            m_viewer.set_time_mode(libvgcode::convert(PrintEstimatedStatistics::ETimeMode::Normal));
     }
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1321,7 +1321,7 @@ void GCodeViewer::load(const GCodeProcessorResult & gcode_result, const Print & 
     if (m_conflict_result.has_value())
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-        m_conflict_result->layer = m_new_viewer.get_layer_id_at(static_cast<float>(m_conflict_result->_height));
+        m_conflict_result->layer = m_viewer.get_layer_id_at(static_cast<float>(m_conflict_result->_height));
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         m_conflict_result->layer = m_layers.get_l_at(m_conflict_result->_height);
@@ -1334,7 +1334,7 @@ void GCodeViewer::load(const GCodeProcessorResult & gcode_result, const Print & 
 #if ENABLE_NEW_GCODE_VIEWER
 void GCodeViewer::load_as_preview(libvgcode::GCodeInputData&& data, const std::vector<std::string>& str_tool_colors)
 {
-    m_new_viewer.reset();
+    m_viewer.reset();
 
     if (!str_tool_colors.empty()) {
         std::vector<ColorRGBA> tool_colors;
@@ -1344,19 +1344,19 @@ void GCodeViewer::load_as_preview(libvgcode::GCodeInputData&& data, const std::v
         for (const ColorRGBA& color : tool_colors) {
             colors.emplace_back(libvgcode::convert(color));
         }
-        m_new_viewer.set_tool_colors(colors);
+        m_viewer.set_tool_colors(colors);
     }
 
-    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::Skirt,                    { 127, 255, 127 });
-    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::ExternalPerimeter,        { 255, 255, 0 });
-    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::SupportMaterial,          { 127, 255, 127 });
-    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::SupportMaterialInterface, { 127, 255, 127 });
-    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::InternalInfill,           { 255, 127, 127 });
-    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::SolidInfill,              { 255, 127, 127 });
-    m_new_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::WipeTower,                { 127, 255, 127 });
-    m_new_viewer.load(std::move(data));
+    m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::Skirt,                    { 127, 255, 127 });
+    m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::ExternalPerimeter,        { 255, 255, 0 });
+    m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::SupportMaterial,          { 127, 255, 127 });
+    m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::SupportMaterialInterface, { 127, 255, 127 });
+    m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::InternalInfill,           { 255, 127, 127 });
+    m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::SolidInfill,              { 255, 127, 127 });
+    m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::WipeTower,                { 127, 255, 127 });
+    m_viewer.load(std::move(data));
 
-    const libvgcode::AABox bbox = m_new_viewer.get_bounding_box(libvgcode::EBBoxType::Extrusion);
+    const libvgcode::AABox bbox = m_viewer.get_bounding_box(libvgcode::EBBoxType::Extrusion);
     const BoundingBoxf3 paths_bounding_box(libvgcode::convert(bbox[0]).cast<double>(), libvgcode::convert(bbox[1]).cast<double>());
     m_contained_in_bed = wxGetApp().plater()->build_volume().all_paths_inside(GCodeProcessorResult(), paths_bounding_box);
 }
@@ -1452,7 +1452,7 @@ void GCodeViewer::reset()
 {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    m_new_viewer.reset();
+    m_viewer.reset();
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     m_moves_count = 0;
@@ -1519,7 +1519,7 @@ void GCodeViewer::render()
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    if (m_new_viewer.get_extrusion_roles().empty())
+    if (m_viewer.get_extrusion_roles().empty())
         return;
 
     render_new_toolpaths();
@@ -1536,12 +1536,12 @@ void GCodeViewer::render()
     float legend_height = 0.0f;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    if (m_new_viewer.get_layers_count() > 0) {
+    if (m_viewer.get_layers_count() > 0) {
         render_legend(legend_height);
-        if (m_new_viewer.get_view_enabled_range()[1] != m_new_viewer.get_view_visible_range()[1]) {
-            m_sequential_view.marker.set_world_position(libvgcode::convert(m_new_viewer.get_current_vertex().position));
+        if (m_viewer.get_view_enabled_range()[1] != m_viewer.get_view_visible_range()[1]) {
+            m_sequential_view.marker.set_world_position(libvgcode::convert(m_viewer.get_current_vertex().position));
             m_sequential_view.marker.set_z_offset(m_z_offset);
-            m_sequential_view.render(legend_height, &m_new_viewer, m_new_viewer.get_current_vertex().gcode_id);
+            m_sequential_view.render(legend_height, &m_viewer, m_viewer.get_current_vertex().gcode_id);
         }
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1570,36 +1570,38 @@ void GCodeViewer::render()
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-    ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
-    const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
-    imgui.set_next_window_pos(static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 1.0f, 1.0f);
-    imgui.begin(std::string("LibVGCode Viewer Controller"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
+    if (is_legend_shown()) {
+        ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
+        const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
+        imgui.set_next_window_pos(static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 1.0f, 1.0f);
+        imgui.begin(std::string("LibVGCode Viewer Controller"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
 
-    imgui.checkbox("Cog marker fixed screen size", m_cog_marker_fixed_screen_size);
-    if (ImGui::BeginTable("Cog", 2)) {
+        imgui.checkbox("Cog marker fixed screen size", m_cog_marker_fixed_screen_size);
+        if (ImGui::BeginTable("Cog", 2)) {
 
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Cog marker size");
-        ImGui::TableSetColumnIndex(1);
-        imgui.slider_float("##CogSize", &m_cog_marker_size, 1.0f, 5.0f);
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Cog marker size");
+            ImGui::TableSetColumnIndex(1);
+            imgui.slider_float("##CogSize", &m_cog_marker_size, 1.0f, 5.0f);
 
-        ImGui::EndTable();
+            ImGui::EndTable();
+        }
+
+        imgui.checkbox("Tool marker fixed screen size", m_tool_marker_fixed_screen_size);
+        if (ImGui::BeginTable("Tool", 2)) {
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker size");
+            ImGui::TableSetColumnIndex(1);
+            imgui.slider_float("##ToolSize", &m_tool_marker_size, 1.0f, 5.0f);
+
+            ImGui::EndTable();
+        }
+
+        imgui.end();
     }
-
-    imgui.checkbox("Tool marker fixed screen size", m_tool_marker_fixed_screen_size);
-    if (ImGui::BeginTable("Tool", 2)) {
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker size");
-        ImGui::TableSetColumnIndex(1);
-        imgui.slider_float("##ToolSize", &m_tool_marker_size, 1.0f, 5.0f);
-
-        ImGui::EndTable();
-    }
-
-    imgui.end();
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #endif // ENABLE_NEW_GCODE_VIEWER
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1623,8 +1625,8 @@ void GCodeViewer::update_sequential_view_current(unsigned int first, unsigned in
 {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    m_new_viewer.set_view_visible_range(static_cast<uint32_t>(first), static_cast<uint32_t>(last));
-    const std::array<uint32_t, 2>& enabled_range = m_new_viewer.get_view_enabled_range();
+    m_viewer.set_view_visible_range(static_cast<uint32_t>(first), static_cast<uint32_t>(last));
+    const std::array<uint32_t, 2>& enabled_range = m_viewer.get_view_enabled_range();
     wxGetApp().plater()->enable_preview_moves_slider(enabled_range[1] > enabled_range[0]);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1740,7 +1742,7 @@ void GCodeViewer::set_layers_z_range(const std::array<unsigned int, 2>& layers_z
 {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    m_new_viewer.set_layers_view_range(static_cast<uint32_t>(layers_z_range[0]), static_cast<uint32_t>(layers_z_range[1]));
+    m_viewer.set_layers_view_range(static_cast<uint32_t>(layers_z_range[0]), static_cast<uint32_t>(layers_z_range[1]));
     wxGetApp().plater()->update_preview_moves_slider();
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -3655,12 +3657,12 @@ void GCodeViewer::render_new_toolpaths()
     libvgcode::Mat4x4 converted_view_matrix = libvgcode::convert(static_cast<Matrix4f>(camera.get_view_matrix().matrix().cast<float>()));
     libvgcode::Mat4x4 converted_projetion_matrix = libvgcode::convert(static_cast<Matrix4f>(camera.get_projection_matrix().matrix().cast<float>()));
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-    m_new_viewer.set_cog_marker_scale_factor(m_cog_marker_fixed_screen_size ? 10.0f * m_cog_marker_size * camera.get_inv_zoom() : m_cog_marker_size);
-    m_new_viewer.enable_tool_marker(m_new_viewer.get_view_enabled_range()[1] != m_new_viewer.get_view_visible_range()[1]);
-    m_new_viewer.set_tool_marker_position(m_new_viewer.get_current_vertex().position);
-    m_new_viewer.set_tool_marker_scale_factor(m_tool_marker_fixed_screen_size ? 10.0f * m_tool_marker_size * camera.get_inv_zoom() : m_tool_marker_size);
+    m_viewer.set_cog_marker_scale_factor(m_cog_marker_fixed_screen_size ? 10.0f * m_cog_marker_size * camera.get_inv_zoom() : m_cog_marker_size);
+    m_viewer.enable_tool_marker(m_viewer.get_view_enabled_range()[1] != m_viewer.get_view_visible_range()[1]);
+    m_viewer.set_tool_marker_position(m_viewer.get_current_vertex().position);
+    m_viewer.set_tool_marker_scale_factor(m_tool_marker_fixed_screen_size ? 10.0f * m_tool_marker_size * camera.get_inv_zoom() : m_tool_marker_size);
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-    m_new_viewer.render(converted_view_matrix, converted_projetion_matrix);
+    m_viewer.render(converted_view_matrix, converted_projetion_matrix);
 
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG
     if (is_legend_shown()) {
@@ -3675,22 +3677,22 @@ void GCodeViewer::render_new_toolpaths()
             ImGui::TableSetColumnIndex(0);
             imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "# vertices");
             ImGui::TableSetColumnIndex(1);
-            imgui.text(std::to_string(m_new_viewer.get_vertices_count()));
+            imgui.text(std::to_string(m_viewer.get_vertices_count()));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled lines");
             ImGui::TableSetColumnIndex(1);
-            const std::array<uint32_t, 2>& enabled_segments_range = m_new_viewer.get_enabled_segments_range();
-            imgui.text(std::to_string(m_new_viewer.get_enabled_segments_count()) + " [" + std::to_string(enabled_segments_range[0]) +
+            const std::array<uint32_t, 2>& enabled_segments_range = m_viewer.get_enabled_segments_range();
+            imgui.text(std::to_string(m_viewer.get_enabled_segments_count()) + " [" + std::to_string(enabled_segments_range[0]) +
                 "-" + std::to_string(enabled_segments_range[1]) + "]");
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled options");
             ImGui::TableSetColumnIndex(1);
-            const std::array<uint32_t, 2>& enabled_options_range = m_new_viewer.get_enabled_options_range();
-            imgui.text(std::to_string(m_new_viewer.get_enabled_options_count()) + " [" + std::to_string(enabled_options_range[0]) +
+            const std::array<uint32_t, 2>& enabled_options_range = m_viewer.get_enabled_options_range();
+            imgui.text(std::to_string(m_viewer.get_enabled_options_count()) + " [" + std::to_string(enabled_options_range[0]) +
                 "-" + std::to_string(enabled_options_range[1]) + "]");
 
             ImGui::Separator();
@@ -3699,35 +3701,35 @@ void GCodeViewer::render_new_toolpaths()
             ImGui::TableSetColumnIndex(0);
             imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "layers range");
             ImGui::TableSetColumnIndex(1);
-            const std::array<uint32_t, 2>& layers_range = m_new_viewer.get_layers_view_range();
+            const std::array<uint32_t, 2>& layers_range = m_viewer.get_layers_view_range();
             imgui.text(std::to_string(layers_range[0]) + " - " + std::to_string(layers_range[1]));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "view range (full)");
             ImGui::TableSetColumnIndex(1);
-            const std::array<uint32_t, 2>& full_view_range = m_new_viewer.get_view_full_range();
+            const std::array<uint32_t, 2>& full_view_range = m_viewer.get_view_full_range();
             imgui.text(std::to_string(full_view_range[0]) + " - " + std::to_string(full_view_range[1]) + " | " +
-                std::to_string(m_new_viewer.get_vertex_at(full_view_range[0]).gcode_id) + " - " +
-                std::to_string(m_new_viewer.get_vertex_at(full_view_range[1]).gcode_id));
+                std::to_string(m_viewer.get_vertex_at(full_view_range[0]).gcode_id) + " - " +
+                std::to_string(m_viewer.get_vertex_at(full_view_range[1]).gcode_id));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "view range (enabled)");
             ImGui::TableSetColumnIndex(1);
-            const std::array<uint32_t, 2>& enabled_view_range = m_new_viewer.get_view_enabled_range();
+            const std::array<uint32_t, 2>& enabled_view_range = m_viewer.get_view_enabled_range();
             imgui.text(std::to_string(enabled_view_range[0]) + " - " + std::to_string(enabled_view_range[1]) + " | " +
-                std::to_string(m_new_viewer.get_vertex_at(enabled_view_range[0]).gcode_id) + " - " +
-                std::to_string(m_new_viewer.get_vertex_at(enabled_view_range[1]).gcode_id));
+                std::to_string(m_viewer.get_vertex_at(enabled_view_range[0]).gcode_id) + " - " +
+                std::to_string(m_viewer.get_vertex_at(enabled_view_range[1]).gcode_id));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "view range (visible)");
             ImGui::TableSetColumnIndex(1);
-            const std::array<uint32_t, 2>& visible_view_range = m_new_viewer.get_view_visible_range();
+            const std::array<uint32_t, 2>& visible_view_range = m_viewer.get_view_visible_range();
             imgui.text(std::to_string(visible_view_range[0]) + " - " + std::to_string(visible_view_range[1]) + " | " +
-                std::to_string(m_new_viewer.get_vertex_at(visible_view_range[0]).gcode_id) + " - " +
-                std::to_string(m_new_viewer.get_vertex_at(visible_view_range[1]).gcode_id));
+                std::to_string(m_viewer.get_vertex_at(visible_view_range[0]).gcode_id) + " - " +
+                std::to_string(m_viewer.get_vertex_at(visible_view_range[1]).gcode_id));
 
             auto add_range_property_row = [&imgui](const std::string& label, const std::array<float, 2>& range) {
                 ImGui::TableNextRow();
@@ -3739,14 +3741,14 @@ void GCodeViewer::render_new_toolpaths()
                 imgui.text(buf);
             };
 
-            add_range_property_row("height range", m_new_viewer.get_height_range().get_range());
-            add_range_property_row("width range", m_new_viewer.get_width_range().get_range());
-            add_range_property_row("speed range", m_new_viewer.get_speed_range().get_range());
-            add_range_property_row("fan speed range", m_new_viewer.get_fan_speed_range().get_range());
-            add_range_property_row("temperature range", m_new_viewer.get_temperature_range().get_range());
-            add_range_property_row("volumetric rate range", m_new_viewer.get_volumetric_rate_range().get_range());
-            add_range_property_row("layer time linear range", m_new_viewer.get_layer_time_range(libvgcode::EColorRangeType::Linear).get_range());
-            add_range_property_row("layer time logarithmic range", m_new_viewer.get_layer_time_range(libvgcode::EColorRangeType::Logarithmic).get_range());
+            add_range_property_row("height range", m_viewer.get_height_range().get_range());
+            add_range_property_row("width range", m_viewer.get_width_range().get_range());
+            add_range_property_row("speed range", m_viewer.get_speed_range().get_range());
+            add_range_property_row("fan speed range", m_viewer.get_fan_speed_range().get_range());
+            add_range_property_row("temperature range", m_viewer.get_temperature_range().get_range());
+            add_range_property_row("volumetric rate range", m_viewer.get_volumetric_rate_range().get_range());
+            add_range_property_row("layer time linear range", m_viewer.get_layer_time_range(libvgcode::EColorRangeType::Linear).get_range());
+            add_range_property_row("layer time logarithmic range", m_viewer.get_layer_time_range(libvgcode::EColorRangeType::Logarithmic).get_range());
 
             ImGui::EndTable();
 
@@ -3770,35 +3772,35 @@ void GCodeViewer::render_new_toolpaths()
                 ImGui::TableSetColumnIndex(0);
                 imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker scale factor");
                 ImGui::TableSetColumnIndex(1);
-                imgui.text(std::to_string(m_new_viewer.get_tool_marker_scale_factor()));
+                imgui.text(std::to_string(m_viewer.get_tool_marker_scale_factor()));
 
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
                 imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker z offset");
                 ImGui::TableSetColumnIndex(1);
-                float tool_z_offset = m_new_viewer.get_tool_marker_offset_z();
+                float tool_z_offset = m_viewer.get_tool_marker_offset_z();
                 if (imgui.slider_float("##ToolZOffset", &tool_z_offset, 0.0f, 1.0f))
-                    m_new_viewer.set_tool_marker_offset_z(tool_z_offset);
+                    m_viewer.set_tool_marker_offset_z(tool_z_offset);
 
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
                 imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker color");
                 ImGui::TableSetColumnIndex(1);
-                const libvgcode::Color& color = m_new_viewer.get_tool_marker_color();
+                const libvgcode::Color& color = m_viewer.get_tool_marker_color();
                 std::array<float, 3> c = { static_cast<float>(color[0]) / 255.0f, static_cast<float>(color[1]) / 255.0f, static_cast<float>(color[2]) / 255.0f };
                 if (ImGui::ColorPicker3("##ToolColor", c.data())) {
-                    m_new_viewer.set_tool_marker_color({ static_cast<uint8_t>(c[0] * 255.0f),
-                                                         static_cast<uint8_t>(c[1] * 255.0f),
-                                                         static_cast<uint8_t>(c[2] * 255.0f) });
+                    m_viewer.set_tool_marker_color({ static_cast<uint8_t>(c[0] * 255.0f),
+                                                     static_cast<uint8_t>(c[1] * 255.0f),
+                                                     static_cast<uint8_t>(c[2] * 255.0f) });
                 }
 
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
                 imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker alpha");
                 ImGui::TableSetColumnIndex(1);
-                float tool_alpha = m_new_viewer.get_tool_marker_alpha();
+                float tool_alpha = m_viewer.get_tool_marker_alpha();
                 if (imgui.slider_float("##ToolAlpha", &tool_alpha, 0.25f, 0.75f))
-                    m_new_viewer.set_tool_marker_alpha(tool_alpha);
+                    m_viewer.set_tool_marker_alpha(tool_alpha);
 
                 ImGui::EndTable();
             }
@@ -3812,19 +3814,19 @@ void GCodeViewer::render_new_toolpaths()
             ImGui::TableSetColumnIndex(0);
             imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Travels radius");
             ImGui::TableSetColumnIndex(1);
-            float travels_radius = m_new_viewer.get_travels_radius();
+            float travels_radius = m_viewer.get_travels_radius();
             ImGui::SetNextItemWidth(200.0f);
             if (imgui.slider_float("##TravelRadius", &travels_radius, 0.05f, 0.5f))
-                m_new_viewer.set_travels_radius(travels_radius);
+                m_viewer.set_travels_radius(travels_radius);
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Wipes radius");
             ImGui::TableSetColumnIndex(1);
-            float wipes_radius = m_new_viewer.get_wipes_radius();
+            float wipes_radius = m_viewer.get_wipes_radius();
             ImGui::SetNextItemWidth(200.0f);
             if (imgui.slider_float("##WipesRadius", &wipes_radius, 0.05f, 0.5f))
-                m_new_viewer.set_wipes_radius(wipes_radius);
+                m_viewer.set_wipes_radius(wipes_radius);
 
             ImGui::EndTable();
         }
@@ -4221,8 +4223,8 @@ void GCodeViewer::render_legend(float& legend_height)
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-    const PrintEstimatedStatistics::Mode& time_mode = m_print_statistics.modes[static_cast<size_t>(m_new_viewer.get_time_mode())];
-    const libvgcode::EViewType curr_view_type = m_new_viewer.get_view_type();
+    const PrintEstimatedStatistics::Mode& time_mode = m_print_statistics.modes[static_cast<size_t>(m_viewer.get_time_mode())];
+    const libvgcode::EViewType curr_view_type = m_viewer.get_view_type();
     const int curr_view_type_i = static_cast<int>(curr_view_type);
     bool show_estimated_time = time_mode.time > 0.0f && (curr_view_type == libvgcode::EViewType::FeatureType ||
         curr_view_type == libvgcode::EViewType::LayerTimeLinear || curr_view_type == libvgcode::EViewType::LayerTimeLogarithmic ||
@@ -4521,7 +4523,7 @@ void GCodeViewer::render_legend(float& legend_height)
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-            const std::vector<float> zs = m_new_viewer.get_layers_zs();
+            const std::vector<float> zs = m_viewer.get_layers_zs();
             auto lower_b = std::lower_bound(zs.begin(), zs.end(),
                 static_cast<float>(item.print_z - Slic3r::DoubleSlider::epsilon()));
 #else
@@ -4571,7 +4573,7 @@ void GCodeViewer::render_legend(float& legend_height)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
     auto role_time_and_percent = [this, time_mode](libvgcode::EGCodeExtrusionRole role) {
-        const float time = m_new_viewer.get_extrusion_role_time(role);
+        const float time = m_viewer.get_extrusion_role_time(role);
         return std::make_pair(time, time / time_mode.time);
     };
 #else
@@ -4606,7 +4608,7 @@ void GCodeViewer::render_legend(float& legend_height)
 #if ENABLE_NEW_GCODE_VIEWER
     if (curr_view_type == libvgcode::EViewType::FeatureType) {
         // calculate offsets to align time/percentage data
-        const std::vector<libvgcode::EGCodeExtrusionRole>& roles = m_new_viewer.get_extrusion_roles();
+        const std::vector<libvgcode::EGCodeExtrusionRole>& roles = m_viewer.get_extrusion_roles();
         for (libvgcode::EGCodeExtrusionRole role : roles) {
             assert(static_cast<size_t>(role) < libvgcode::GCode_Extrusion_Roles_Count);
             if (static_cast<size_t>(role) < libvgcode::GCode_Extrusion_Roles_Count) {
@@ -4678,7 +4680,7 @@ void GCodeViewer::render_legend(float& legend_height)
         const size_t extruders_count = get_extruders_count();
         used_filaments_m = std::vector<double>(extruders_count, 0.0);
         used_filaments_g = std::vector<double>(extruders_count, 0.0);
-        const std::vector<uint8_t>& used_extruders_ids = m_new_viewer.get_used_extruders_ids();
+        const std::vector<uint8_t>& used_extruders_ids = m_viewer.get_used_extruders_ids();
         for (uint8_t extruder_id : used_extruders_ids) {
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -4730,7 +4732,7 @@ void GCodeViewer::render_legend(float& legend_height)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
     const std::vector<float> layers_times = get_layers_times();
-    if (!layers_times.empty() && layers_times.size() == m_new_viewer.get_layers_count()) {
+    if (!layers_times.empty() && layers_times.size() == m_viewer.get_layers_count()) {
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if (!m_layers_times.empty() && m_layers.size() == m_layers_times.front().size()) {
@@ -4778,13 +4780,13 @@ void GCodeViewer::render_legend(float& legend_height)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
     if (curr_view_type_i != new_view_type_i) {
-        m_new_viewer.set_view_type(static_cast<libvgcode::EViewType>(new_view_type_i));
+        m_viewer.set_view_type(static_cast<libvgcode::EViewType>(new_view_type_i));
         wxGetApp().plater()->set_keep_current_preview_type(true);
         wxGetApp().plater()->refresh_print();
         view_type_changed = true;
     }
 
-    const libvgcode::EViewType new_view_type = m_new_viewer.get_view_type();
+    const libvgcode::EViewType new_view_type = m_viewer.get_view_type();
 
     // extrusion paths section -> title
     if (new_view_type == libvgcode::EViewType::FeatureType)
@@ -4831,22 +4833,22 @@ void GCodeViewer::render_legend(float& legend_height)
         {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-            const float travels_time = m_new_viewer.get_travels_time();
+            const float travels_time = m_viewer.get_travels_time();
             max_time_percent = std::max(max_time_percent, travels_time / time_mode.time);
-            const std::vector<libvgcode::EGCodeExtrusionRole>& roles = m_new_viewer.get_extrusion_roles();
+            const std::vector<libvgcode::EGCodeExtrusionRole>& roles = m_viewer.get_extrusion_roles();
             for (size_t i = 0; i < roles.size(); ++i) {
                 libvgcode::EGCodeExtrusionRole role = roles[i];
                 if (static_cast<size_t>(role) >= libvgcode::GCode_Extrusion_Roles_Count)
                     continue;
 
-                const bool visible = m_new_viewer.is_extrusion_role_visible(role);
+                const bool visible = m_viewer.is_extrusion_role_visible(role);
 
-                append_item(EItemType::Rect, libvgcode::convert(m_new_viewer.get_extrusion_role_color(role)), labels[i],
+                append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_extrusion_role_color(role)), labels[i],
                     visible, times[i], percents[i], max_time_percent, offsets, used_filaments_m[i], used_filaments_g[i],
                     [this, role]() {
-                        const std::array<uint32_t, 2> view_visible_range = m_new_viewer.get_view_visible_range();
-                        const std::array<uint32_t, 2> view_enabled_range = m_new_viewer.get_view_enabled_range();
-                        m_new_viewer.toggle_extrusion_role_visibility((libvgcode::EGCodeExtrusionRole)role);
+                        const std::array<uint32_t, 2> view_visible_range = m_viewer.get_view_visible_range();
+                        const std::array<uint32_t, 2> view_enabled_range = m_viewer.get_view_enabled_range();
+                        m_viewer.toggle_extrusion_role_visibility((libvgcode::EGCodeExtrusionRole)role);
                         std::optional<int> view_visible_range_min;
                         std::optional<int> view_visible_range_max;
                         if (view_visible_range != view_enabled_range) {
@@ -4884,9 +4886,9 @@ void GCodeViewer::render_legend(float& legend_height)
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-            if (m_new_viewer.is_option_visible(libvgcode::EOptionType::Travels))
-              append_item(EItemType::Line, libvgcode::convert(m_new_viewer.get_travel_move_color(libvgcode::ETravelMoveType::Move)), _u8L("Travel"), true, short_time_ui(get_time_dhms(travels_time)),
-                  travels_time / time_mode.time, max_time_percent, offsets, 0.0f, 0.0f);
+            if (m_viewer.is_option_visible(libvgcode::EOptionType::Travels))
+                append_item(EItemType::Line, libvgcode::convert(m_viewer.get_travel_move_color(libvgcode::ETravelMoveType::Move)), _u8L("Travel"), true, short_time_ui(get_time_dhms(travels_time)),
+                    travels_time / time_mode.time, max_time_percent, offsets, 0.0f, 0.0f);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             if (m_buffers[buffer_id(EMoveType::Travel)].visible)
@@ -4900,20 +4902,20 @@ void GCodeViewer::render_legend(float& legend_height)
         }
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-        case libvgcode::EViewType::Height:               { append_range(m_new_viewer.get_height_range(), 3); break; }
-        case libvgcode::EViewType::Width:                { append_range(m_new_viewer.get_width_range(), 3); break; }
-        case libvgcode::EViewType::Speed:                { append_range(m_new_viewer.get_speed_range(), 1); break; }
-        case libvgcode::EViewType::FanSpeed:             { append_range(m_new_viewer.get_fan_speed_range(), 0); break; }
-        case libvgcode::EViewType::Temperature:          { append_range(m_new_viewer.get_temperature_range(), 0); break; }
-        case libvgcode::EViewType::VolumetricFlowRate:   { append_range(m_new_viewer.get_volumetric_rate_range(), 3); break; }
-        case libvgcode::EViewType::LayerTimeLinear:      { append_time_range(m_new_viewer.get_layer_time_range(libvgcode::EColorRangeType::Linear)); break; }
-        case libvgcode::EViewType::LayerTimeLogarithmic: { append_time_range(m_new_viewer.get_layer_time_range(libvgcode::EColorRangeType::Logarithmic)); break; }
+        case libvgcode::EViewType::Height:               { append_range(m_viewer.get_height_range(), 3); break; }
+        case libvgcode::EViewType::Width:                { append_range(m_viewer.get_width_range(), 3); break; }
+        case libvgcode::EViewType::Speed:                { append_range(m_viewer.get_speed_range(), 1); break; }
+        case libvgcode::EViewType::FanSpeed:             { append_range(m_viewer.get_fan_speed_range(), 0); break; }
+        case libvgcode::EViewType::Temperature:          { append_range(m_viewer.get_temperature_range(), 0); break; }
+        case libvgcode::EViewType::VolumetricFlowRate:   { append_range(m_viewer.get_volumetric_rate_range(), 3); break; }
+        case libvgcode::EViewType::LayerTimeLinear:      { append_time_range(m_viewer.get_layer_time_range(libvgcode::EColorRangeType::Linear)); break; }
+        case libvgcode::EViewType::LayerTimeLogarithmic: { append_time_range(m_viewer.get_layer_time_range(libvgcode::EColorRangeType::Logarithmic)); break; }
         case libvgcode::EViewType::Tool: {
             // shows only extruders actually used
-            const std::vector<uint8_t>& used_extruders_ids = m_new_viewer.get_used_extruders_ids();
+            const std::vector<uint8_t>& used_extruders_ids = m_viewer.get_used_extruders_ids();
             for (uint8_t extruder_id : used_extruders_ids) {
                 if (used_filaments_m[extruder_id] > 0.0 && used_filaments_g[extruder_id] > 0.0)
-                    append_item(EItemType::Rect, libvgcode::convert(m_new_viewer.get_tool_colors()[extruder_id]), _u8L("Extruder") + " " + std::to_string(extruder_id + 1),
+                    append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_tool_colors()[extruder_id]), _u8L("Extruder") + " " + std::to_string(extruder_id + 1),
                     true, "", 0.0f, 0.0f, offsets, used_filaments_m[extruder_id], used_filaments_g[extruder_id]);
             }
             break;
@@ -4947,7 +4949,7 @@ void GCodeViewer::render_legend(float& legend_height)
             size_t total_items = 1;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-            const std::vector<uint8_t>& used_extruders_ids = m_new_viewer.get_used_extruders_ids();
+            const std::vector<uint8_t>& used_extruders_ids = m_viewer.get_used_extruders_ids();
             for (uint8_t extruder_id : used_extruders_ids) {
                 total_items += color_print_ranges(extruder_id, custom_gcode_per_print_z).size();
             }
@@ -4979,7 +4981,7 @@ void GCodeViewer::render_legend(float& legend_height)
                 if (items_cnt == 0)  // There are no color changes, but there are some pause print or custom Gcode
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                    append_item(EItemType::Rect, libvgcode::convert(m_new_viewer.get_tool_colors().front()), _u8L("Default color"));
+                    append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_tool_colors().front()), _u8L("Default color"));
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                     append_item(EItemType::Rect, m_tool_colors.front(), _u8L("Default color"));
@@ -4992,7 +4994,7 @@ void GCodeViewer::render_legend(float& legend_height)
                         if (i == 0) {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                            append_item(EItemType::Rect, libvgcode::convert(m_new_viewer.get_tool_colors().front()), upto_label(cp_values.front().second.first));
+                            append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_tool_colors().front()), upto_label(cp_values.front().second.first));
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                             append_item(EItemType::Rect, m_tool_colors[0], upto_label(cp_values.front().second.first));
@@ -5013,7 +5015,7 @@ void GCodeViewer::render_legend(float& legend_height)
                 // shows only extruders actually used
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                const std::vector<uint8_t>& used_extruders_ids = m_new_viewer.get_used_extruders_ids();
+                const std::vector<uint8_t>& used_extruders_ids = m_viewer.get_used_extruders_ids();
                 for (uint8_t extruder_id : used_extruders_ids) {
                     const std::vector<std::pair<ColorRGBA, std::pair<double, double>>> cp_values = color_print_ranges(extruder_id, custom_gcode_per_print_z);
 #else
@@ -5028,7 +5030,7 @@ void GCodeViewer::render_legend(float& legend_height)
                         // There are no color changes, but there are some pause print or custom Gcode
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                        append_item(EItemType::Rect, libvgcode::convert(m_new_viewer.get_tool_colors()[extruder_id]), _u8L("Extruder") + " " +
+                        append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_tool_colors()[extruder_id]), _u8L("Extruder") + " " +
                             std::to_string(extruder_id + 1) + " " + _u8L("default color"));
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -5052,7 +5054,7 @@ void GCodeViewer::render_legend(float& legend_height)
                                 label += " " + upto_label(cp_values.front().second.first);
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                                append_item(EItemType::Rect, libvgcode::convert(m_new_viewer.get_tool_colors()[extruder_id]), label);
+                                append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_tool_colors()[extruder_id]), label);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                                 append_item(EItemType::Rect, m_tool_colors[i], label);
@@ -5122,7 +5124,7 @@ void GCodeViewer::render_legend(float& legend_height)
             const size_t extruders_count = get_extruders_count();
             std::vector<ColorRGBA> last_color(extruders_count);
             for (size_t i = 0; i < extruders_count; ++i) {
-                last_color[i] = libvgcode::convert(m_new_viewer.get_tool_colors()[i]);
+                last_color[i] = libvgcode::convert(m_viewer.get_tool_colors()[i]);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             std::vector<ColorRGBA> last_color(m_extruders_count);
@@ -5329,11 +5331,11 @@ void GCodeViewer::render_legend(float& legend_height)
             if (!m_settings_ids.filament.empty()) {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                const std::vector<uint8_t>& used_extruders_ids = m_new_viewer.get_used_extruders_ids();
+                const std::vector<uint8_t>& used_extruders_ids = m_viewer.get_used_extruders_ids();
                 for (uint8_t extruder_id : used_extruders_ids) {
                     if (extruder_id < static_cast<unsigned char>(m_settings_ids.filament.size()) && !m_settings_ids.filament[extruder_id].empty()) {
                         std::string txt = _u8L("Filament");
-                        txt += (m_new_viewer.get_used_extruders_count() == 1) ? ":" : " " + std::to_string(extruder_id + 1);
+                        txt += (m_viewer.get_used_extruders_count() == 1) ? ":" : " " + std::to_string(extruder_id + 1);
                         add_strings_row_to_table(txt, ImGuiWrapper::COL_ORANGE_LIGHT,
                             trim_text_if_needed(m_settings_ids.filament[extruder_id]), ImGuiWrapper::to_ImVec4(ColorRGBA::WHITE()));
                     }
@@ -5359,10 +5361,10 @@ void GCodeViewer::render_legend(float& legend_height)
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
     if (new_view_type == libvgcode::EViewType::Width || new_view_type == libvgcode::EViewType::VolumetricFlowRate) {
-        const std::vector<libvgcode::EGCodeExtrusionRole>& roles = m_new_viewer.get_extrusion_roles();
+        const std::vector<libvgcode::EGCodeExtrusionRole>& roles = m_viewer.get_extrusion_roles();
         const auto custom_it = std::find(roles.begin(), roles.end(), libvgcode::EGCodeExtrusionRole::Custom);
         if (custom_it != roles.end()) {
-            const bool custom_visible = m_new_viewer.is_extrusion_role_visible((libvgcode::EGCodeExtrusionRole)GCodeExtrusionRole::Custom);
+            const bool custom_visible = m_viewer.is_extrusion_role_visible((libvgcode::EGCodeExtrusionRole)GCodeExtrusionRole::Custom);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if (m_view_type == EViewType::Width || m_view_type == EViewType::VolumetricRate) {
@@ -5377,7 +5379,7 @@ void GCodeViewer::render_legend(float& legend_height)
             if (imgui.button(btn_text, ImVec2(-1.0f, 0.0f), true)) {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                m_new_viewer.toggle_extrusion_role_visibility((libvgcode::EGCodeExtrusionRole)GCodeExtrusionRole::Custom);
+                m_viewer.toggle_extrusion_role_visibility((libvgcode::EGCodeExtrusionRole)GCodeExtrusionRole::Custom);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                 m_extrusions.role_visibility_flags = custom_visible ? m_extrusions.role_visibility_flags & ~(1 << int(GCodeExtrusionRole::Custom)) :
@@ -5430,7 +5432,7 @@ void GCodeViewer::render_legend(float& legend_height)
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-        const libvgcode::ETimeMode time_mode_id = m_new_viewer.get_time_mode();
+        const libvgcode::ETimeMode time_mode_id = m_viewer.get_time_mode();
         if (can_show_mode_button(time_mode_id)) {
             switch (time_mode_id)
             {
@@ -5488,7 +5490,7 @@ void GCodeViewer::render_legend(float& legend_height)
                 if (imgui.button(label)) {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-                    m_new_viewer.set_time_mode(mode);
+                    m_viewer.set_time_mode(mode);
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                     m_time_estimate_mode = mode;
@@ -5551,10 +5553,10 @@ void GCodeViewer::render_legend(float& legend_height)
         case Preview::OptionType::CenterOfGravity: { active = m_cog.is_visible(); break; }
         case Preview::OptionType::ToolMarker:      { active = m_sequential_view.marker.is_visible(); break; }
         case Preview::OptionType::Shells:          { active = m_shells.visible; break; }
-        default:                                   { active = m_new_viewer.is_option_visible(libvgcode::convert(type)); break; }
+        default:                                   { active = m_viewer.is_option_visible(libvgcode::convert(type)); break; }
         }
 #else
-        active = (type == Preview::OptionType::Shells) ? m_shells.visible : m_new_viewer.is_option_visible(libvgcode::convert(type));
+        active = (type == Preview::OptionType::Shells) ? m_shells.visible : m_viewer.is_option_visible(libvgcode::convert(type));
 #endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -5576,8 +5578,8 @@ void GCodeViewer::render_legend(float& legend_height)
         if (imgui.draw_radio_button(name, 1.5f * icon_size, active, draw_callback)) {
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
-          const std::array<uint32_t, 2> view_visible_range = m_new_viewer.get_view_visible_range();
-          const std::array<uint32_t, 2> view_enabled_range = m_new_viewer.get_view_enabled_range();
+          const std::array<uint32_t, 2> view_visible_range = m_viewer.get_view_visible_range();
+          const std::array<uint32_t, 2> view_enabled_range = m_viewer.get_view_enabled_range();
           bool keep_visible_range = false;
 #if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
             switch (type)
@@ -5586,7 +5588,7 @@ void GCodeViewer::render_legend(float& legend_height)
             case Preview::OptionType::ToolMarker:      { m_sequential_view.marker.set_visible(!active); break; }
             case Preview::OptionType::Shells:          { m_shells.visible = !active; break; }
             default:                                   {
-                m_new_viewer.toggle_option_visibility(libvgcode::convert(type));
+                m_viewer.toggle_option_visibility(libvgcode::convert(type));
                 if (view_visible_range != view_enabled_range)
                     keep_visible_range = true;
                 break;
@@ -5596,7 +5598,7 @@ void GCodeViewer::render_legend(float& legend_height)
             if (type == Preview::OptionType::Shells)
                 m_shells.visible = !active;
             else {
-                m_new_viewer.toggle_option_visibility(libvgcode::convert(type));
+                m_viewer.toggle_option_visibility(libvgcode::convert(type));
                 if (view_visible_range != view_enabled_range)
                     keep_visible_range = true;
             }

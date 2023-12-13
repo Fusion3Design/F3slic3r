@@ -287,6 +287,53 @@ static void delete_buffers(unsigned int& id)
     }
 }
 
+//
+// Palette used to render extrusion moves by extrusion roles
+// EViewType: FeatureType
+//
+const std::map<EGCodeExtrusionRole, Color> ViewerImpl::Default_Extrusion_Roles_Colors{ {
+    { EGCodeExtrusionRole::None,                       { 230, 179, 179 } },
+    { EGCodeExtrusionRole::Perimeter,                  { 255, 230,  77 } },
+    { EGCodeExtrusionRole::ExternalPerimeter,          { 255, 125,  56 } },
+    { EGCodeExtrusionRole::OverhangPerimeter,          {  31,  31, 255 } },
+    { EGCodeExtrusionRole::InternalInfill,             { 176,  48,  41 } },
+    { EGCodeExtrusionRole::SolidInfill,                { 150,  84, 204 } },
+    { EGCodeExtrusionRole::TopSolidInfill,             { 240,  64,  64 } },
+    { EGCodeExtrusionRole::Ironing,                    { 255, 140, 105 } },
+    { EGCodeExtrusionRole::BridgeInfill,               {  77, 128, 186 } },
+    { EGCodeExtrusionRole::GapFill,                    { 255, 255, 255 } },
+    { EGCodeExtrusionRole::Skirt,                      {   0, 135, 110 } },
+    { EGCodeExtrusionRole::SupportMaterial,            {   0, 255,   0 } },
+    { EGCodeExtrusionRole::SupportMaterialInterface,   {   0, 128,   0 } },
+    { EGCodeExtrusionRole::WipeTower,                  { 179, 227, 171 } },
+    { EGCodeExtrusionRole::Custom,                     {  94, 209, 148 } }
+} };
+
+//
+// Palette used to render options
+// EViewType: FeatureType
+//
+const std::map<EOptionType, Color> ViewerImpl::Default_Options_Colors{ {
+    { EOptionType::Retractions,   { 205,  34, 214 } },
+    { EOptionType::Unretractions, {  73, 173, 207 } },
+    { EOptionType::Seams,         { 230, 230, 230 } },
+    { EOptionType::ToolChanges,   { 193, 190,  99 } },
+    { EOptionType::ColorChanges,  { 218, 148, 139 } },
+    { EOptionType::PausePrints,   {  82, 240, 131 } },
+    { EOptionType::CustomGCodes,  { 226, 210,  67 } }
+} };
+
+//
+// Palette used to render travel moves
+// EViewType: FeatureType, Height, Width, FanSpeed, Temperature, VolumetricFlowRate,
+//            LayerTimeLinear, LayerTimeLogarithmic
+//
+const std::map<ETravelMoveType, Color> ViewerImpl::Default_Travel_Moves_Colors{ {
+    { ETravelMoveType::Move,     {  56,  72, 155 } },
+    { ETravelMoveType::Extrude,  {  29, 108,  26 } },
+    { ETravelMoveType::Retract,  { 129,  16,   7 } }
+} };
+
 ViewerImpl::~ViewerImpl()
 {
     reset();
