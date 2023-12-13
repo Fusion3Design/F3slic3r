@@ -89,112 +89,6 @@ struct LayerResult {
     static LayerResult make_nop_layer_result() { return {"", std::numeric_limits<coord_t>::max(), false, false, true}; }
 };
 
-namespace GCode::Impl {
-struct DistancedPoint {
-    Point point;
-    double distance_from_start;
-};
-
-/**
- * @brief Takes a path described as a list of points and adds points to it.
- *
- * @param xy_path A list of points describing a path in xy.
- * @param sorted_distances A sorted list of distances along the path.
- * @return Sliced path.
- *
- * The algorithm travels along the path segments and adds points to
- * the segments in such a way that the points have specified distances
- * from the xy_path start. **Any distances over the xy_path end will
- * be simply ignored.**
- *
- * Example usage - simplified for clarity:
- * @code
- * std::vector<double> distances{0.5, 1.5};
- * std::vector<Points> xy_path{{0, 0}, {1, 0}};
- * // produces
- * {{0, 0}, {0, 0.5}, {1, 0}}
- * // notice that 1.5 is omitted
- * @endcode
- */
-std::vector<DistancedPoint> slice_xy_path(tcb::span<const Point> xy_path, tcb::span<const double> sorted_distances);
-
-/**
- * @brief Take xy_path and genrate a travel acording to elevation.
- *
- * @param xy_path A list of points describing a path in xy.
- * @param ensure_points_at_distances See slice_xy_path sorted_distances.
- * @param elevation  A function taking current distance in mm as input and returning elevation in mm as output.
- *
- * **Be aweare** that the elevation function operates in mm, while xy_path and returned travel are in
- * scaled coordinates.
- */
-Points3 generate_elevated_travel(
-    const tcb::span<const Point> xy_path,
-    const std::vector<double>& ensure_points_at_distances,
-    const double initial_elevation,
-    const std::function<double(double)>& elevation
-);
-
-/**
- * @brief Takes a list o polygons and builds a AABBTree over all unscaled lines.
- *
- * @param polygons A list of polygons.
- * @return AABB Tree over all lines of the polygons.
- *
- * Unscales the lines in the process!
- */
-AABBTreeLines::LinesDistancer<Linef> get_expolygons_distancer(const ExPolygons& polygons);
-
-/**
- * @brief Given a AABB tree over lines find intersection with xy_path closest to the xy_path start.
- *
- * @param xy_path A path in 2D.
- * @param distancer AABB Tree over lines.
- * @return Distance to the first intersection if there is one.
- *
- * **Ignores intersection with xy_path starting point.**
- */
-std::optional<double> get_first_crossed_line_distance(
-    tcb::span<const Line> xy_path,
-    const AABBTreeLines::LinesDistancer<Linef>& distancer
-);
-
-
-/**
- * Generates a regular polygon - all angles are the same (e.g. typical hexagon).
- *
- * @param centroid Central point.
- * @param start_point The polygon point are ordered. This is the first point.
- * @param points_count Amount of nodes of the polygon (e.g. 6 for haxagon).
- *
- * Distance between centroid and start point sets the scale of the polygon.
- */
-Polygon generate_regular_polygon(
-    const Point& centroid,
-    const Point& start_point,
-    const unsigned points_count
-);
-
-class Bed {
-  private:
-    Polygon inner_offset;
-    static Polygon get_inner_offset(const std::vector<Vec2d>& shape, const double padding);
-
-  public:
-    /**
-     * Bed shape with inner padding.
-     */
-    Bed(const std::vector<Vec2d>& shape, const double padding);
-
-    Vec2d centroid;
-
-    /**
-     * Returns true if the point is within the bed shape including inner padding.
-     */
-    bool contains_within_padding(const Vec2d& point) const;
-};
-}
-
 class GCodeGenerator {
 
 public:        
@@ -366,7 +260,11 @@ private:
         const coordf_t print_z,
         const std::string& comment
     );
-    std::string     change_layer(coordf_t previous_layer_z, coordf_t print_z);
+    std::string change_layer(
+        coordf_t previous_layer_z,
+        coordf_t print_z,
+        const bool spiral_vase_enabled
+    );
     std::string     extrude_entity(const ExtrusionEntityReference &entity, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed = -1.);
     std::string     extrude_loop(const ExtrusionLoop &loop, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed = -1.);
     std::string     extrude_skirt(const ExtrusionLoop &loop_src, const ExtrusionFlow &extrusion_flow_override,

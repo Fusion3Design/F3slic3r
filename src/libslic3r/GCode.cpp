@@ -34,6 +34,8 @@
 #include "GCode/Thumbnails.hpp"
 #include "GCode/WipeTower.hpp"
 #include "GCode/WipeTowerIntegration.hpp"
+#include "GCode/Travels.hpp"
+#include "GCode/LayerChanges.hpp"
 #include "Point.hpp"
 #include "Polygon.hpp"
 #include "PrintConfig.hpp"
@@ -776,8 +778,10 @@ namespace DoExport {
                 print_statistics.total_used_filament += used_filament;
                 print_statistics.total_extruded_volume += extruded_volume;
                 print_statistics.total_wipe_tower_filament += has_wipe_tower ? used_filament - extruder.used_filament() : 0.;
+                print_statistics.total_wipe_tower_filament_weight += has_wipe_tower ? (extruded_volume - extruder.extruded_volume()) * extruder.filament_density() * 0.001 : 0.;
                 print_statistics.total_wipe_tower_cost += has_wipe_tower ? (extruded_volume - extruder.extruded_volume())* extruder.filament_density() * 0.001 * extruder.filament_cost() * 0.001 : 0.;
             }
+
             if (!export_binary_data) {
                 filament_stats_string_out += out_filament_used_mm.first;
                 filament_stats_string_out += "\n" + out_filament_used_cm3.first;
@@ -866,7 +870,7 @@ static inline GCode::SmoothPathCache smooth_path_interpolate_global(const Print&
 
 void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, ThumbnailsGeneratorCallback thumbnail_cb)
 {
-    const bool export_to_binary_gcode = print.full_print_config().option<ConfigOptionBool>("gcode_binary")->value;
+    const bool export_to_binary_gcode = print.full_print_config().option<ConfigOptionBool>("binary_gcode")->value;
     // if exporting gcode in binary format: 
     // we generate here the data to be passed to the post-processor, who is responsible to export them to file 
     // 1) generate the thumbnails
@@ -895,67 +899,18 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
         // config data
         encode_full_config(print, binary_data.slicer_metadata.raw_data);
 
-        // printer data
-        binary_data.printer_metadata.raw_data.emplace_back("printer_model", print.config().printer_model.value); // duplicated into config data
-        std::string filament_types_str;
-        for (size_t i = 0; i < print.config().filament_type.values.size(); ++i) {
-            filament_types_str += print.config().filament_type.values[i];
-            if (i < print.config().filament_type.values.size() - 1)
-                filament_types_str += ";";
-        }
-        binary_data.printer_metadata.raw_data.emplace_back("filament_type", filament_types_str); // duplicated into config data
-        char buf[1024];
-        std::string nozzle_diameters_str;
-        for (size_t i = 0; i < print.config().nozzle_diameter.values.size(); ++i) {
-            sprintf(buf, i < print.config().nozzle_diameter.values.size() - 1 ? "%.2g," : "%.2g", print.config().nozzle_diameter.values[i]);
-            nozzle_diameters_str += buf;
-        }
-        binary_data.printer_metadata.raw_data.emplace_back("nozzle_diameter", nozzle_diameters_str); // duplicated into config data
-        std::string bed_temperatures_str;
-        for (size_t i = 0; i < print.config().bed_temperature.values.size(); ++i) {
-            sprintf(buf, i < print.config().bed_temperature.values.size() - 1 ? "%d," : "%d", print.config().bed_temperature.values[i]);
-            bed_temperatures_str += buf;
-        }
-        binary_data.printer_metadata.raw_data.emplace_back("bed_temperature", bed_temperatures_str); // duplicated into config data
-
-        const DynamicPrintConfig& cfg = print.full_print_config();
-        if (auto opt = cfg.option("brim_width"); opt != nullptr) {
-            sprintf(buf, "%.2g", dynamic_cast<const ConfigOptionFloat*>(opt)->value);
-            binary_data.printer_metadata.raw_data.emplace_back("brim_width", buf); // duplicated into config data
-        }
-        if (auto opt = cfg.option("fill_density"); opt != nullptr) {
-            sprintf(buf, "%.2g%%", dynamic_cast<const ConfigOptionPercent*>(opt)->value);
-            binary_data.printer_metadata.raw_data.emplace_back("fill_density", buf); // duplicated into config data
-        }
-        if (auto opt = cfg.option("layer_height"); opt != nullptr) {
-            sprintf(buf, "%.2g", dynamic_cast<const ConfigOptionFloat*>(opt)->value);
-            binary_data.printer_metadata.raw_data.emplace_back("layer_height", buf); // duplicated into config data
-        }
-        if (auto opt = cfg.option("temperature"); opt != nullptr) {
-            auto values = dynamic_cast<const ConfigOptionInts*>(opt)->values;
-            std::string temperatures_str;
-            for (size_t i = 0; i < values.size(); ++i) {
-                sprintf(buf, i < values.size() - 1 ? "%d," : "%d", values[i]);
-                temperatures_str += buf;
-            }
-            binary_data.printer_metadata.raw_data.emplace_back("temperature", temperatures_str); // duplicated into config data
-        }
-        if (auto opt = cfg.option("ironing"); opt != nullptr)
-            binary_data.printer_metadata.raw_data.emplace_back("ironing", dynamic_cast<const ConfigOptionBool*>(opt)->value ? "1" : "0"); // duplicated into config data
-        if (auto opt = cfg.option("support_material"); opt != nullptr)
-            binary_data.printer_metadata.raw_data.emplace_back("support_material", dynamic_cast<const ConfigOptionBool*>(opt)->value ? "1" : "0"); // duplicated into config data
-        if (auto opt = cfg.option("extruder_colour"); opt != nullptr) {
-            auto values = dynamic_cast<const ConfigOptionStrings*>(opt)->values;
-            std::string extruder_colours_str;
-            if (values.size() == 1 && values.front().empty())
-                extruder_colours_str = "\"\"";
-            else {
-                for (size_t i = 0; i < values.size(); ++i) {
-                    sprintf(buf, i < values.size() - 1 ? "%s;" : "%s", values[i].c_str());
-                    extruder_colours_str += buf;
-                }
-            }
-            binary_data.printer_metadata.raw_data.emplace_back("extruder_colour", extruder_colours_str); // duplicated into config data
+        // printer data - this section contains duplicates from the slicer metadata
+        // that we just created. Find and copy the entries that we want to duplicate.
+        const auto& slicer_metadata = binary_data.slicer_metadata.raw_data;
+        const std::vector<std::string> keys_to_duplicate = { "printer_model", "filament_type", "nozzle_diameter", "bed_temperature",
+                      "brim_width", "fill_density", "layer_height", "temperature", "ironing", "support_material", "extruder_colour" };
+        assert(std::is_sorted(slicer_metadata.begin(), slicer_metadata.end(),
+                              [](const auto& a, const auto& b) { return a.first < b.first; }));
+        for (const std::string& key : keys_to_duplicate) {
+            auto it = std::lower_bound(slicer_metadata.begin(), slicer_metadata.end(), std::make_pair(key, 0),
+                [](const auto& a, const auto& b) { return a.first < b.first; });
+            if (it != slicer_metadata.end() && it->first == key)
+                binary_data.printer_metadata.raw_data.emplace_back(*it);
         }
     }
     
@@ -1414,6 +1369,7 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
         file.write("\n");
         file.write_format(PrintStatistics::TotalFilamentUsedGValueMask.c_str(), print.m_print_statistics.total_weight);
         file.write_format(PrintStatistics::TotalFilamentCostValueMask.c_str(), print.m_print_statistics.total_cost);
+        file.write_format(PrintStatistics::TotalFilamentUsedWipeTowerValueMask.c_str(), print.m_print_statistics.total_wipe_tower_filament_weight);
         if (print.m_print_statistics.total_toolchanges > 0)
             file.write_format("; total toolchanges = %i\n", print.m_print_statistics.total_toolchanges);
         file.write_format(";%s\n", GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Estimated_Printing_Time_Placeholder).c_str());
@@ -2105,6 +2061,26 @@ bool GCodeGenerator::line_distancer_is_required(const std::vector<unsigned int>&
     return false;
 }
 
+namespace GCode::Impl {
+AABBTreeLines::LinesDistancer<Linef> get_previous_layer_distancer(
+    const GCodeGenerator::ObjectsLayerToPrint& objects_to_print,
+    const ExPolygons& slices
+) {
+    std::vector<Linef> lines;
+    for (const GCodeGenerator::ObjectLayerToPrint &object_to_print : objects_to_print) {
+        for (const PrintInstance& instance: object_to_print.object()->instances()) {
+            for (const ExPolygon& polygon : slices) {
+                for (const Line& line : polygon.lines()) {
+                    lines.emplace_back(unscaled(Point{line.a + instance.shift}), unscaled(Point{line.b + instance.shift}));
+                }
+            }
+
+        }
+    }
+    return AABBTreeLines::LinesDistancer{std::move(lines)};
+}
+}
+
 // In sequential mode, process_layer is called once per each object and its copy,
 // therefore layers will contain a single entry and single_object_instance_idx will point to the copy of the object.
 // In non-sequential mode, process_layer is called per each print_z height with all object and support layers accumulated.
@@ -2203,10 +2179,10 @@ LayerResult GCodeGenerator::process_layer(
             print.config().before_layer_gcode.value, m_writer.extruder()->id(), &config)
             + "\n";
     }
-    gcode += this->change_layer(previous_layer_z, print_z);  // this will increase m_layer_index
+    gcode += this->change_layer(previous_layer_z, print_z, result.spiral_vase_enable);  // this will increase m_layer_index
     m_layer = &layer;
     if (this->line_distancer_is_required(layer_tools.extruders) && this->m_layer != nullptr && this->m_layer->lower_layer != nullptr) {
-        this->m_previous_layer_distancer = GCode::Impl::get_expolygons_distancer(m_layer->lower_layer->lslices);
+        this->m_previous_layer_distancer = GCode::Impl::get_previous_layer_distancer(layers, layer.lower_layer->lslices);
     }
     m_object_layer_over_raft = false;
     if (! print.config().layer_gcode.value.empty()) {
@@ -2628,54 +2604,6 @@ std::string GCodeGenerator::preamble()
     return gcode;
 }
 
-namespace GCode::Impl {
-Polygon generate_regular_polygon(
-    const Point& centroid,
-    const Point& start_point,
-    const unsigned points_count
-) {
-    Points points;
-    points.reserve(points_count);
-    const double part_angle{2*M_PI / points_count};
-    for (unsigned i = 0; i < points_count; ++i) {
-        const double current_angle{i * part_angle};
-        points.emplace_back(scaled(std::cos(current_angle)), scaled(std::sin(current_angle)));
-    }
-
-    Polygon regular_polygon{points};
-    const Vec2d current_vector{unscaled(regular_polygon.points.front())};
-    const Vec2d expected_vector{unscaled(start_point) - unscaled(centroid)};
-
-    const double current_scale = current_vector.norm();
-    const double expected_scale = expected_vector.norm();
-    regular_polygon.scale(expected_scale / current_scale);
-
-    regular_polygon.rotate(angle(current_vector, expected_vector));
-
-    regular_polygon.translate(centroid);
-
-    return regular_polygon;
-}
-
-Bed::Bed(const std::vector<Vec2d>& shape, const double padding):
-    inner_offset(get_inner_offset(shape, padding)),
-    centroid(unscaled(inner_offset.centroid()))
-{}
-
-bool Bed::contains_within_padding(const Vec2d& point) const {
-    return inner_offset.contains(scaled(point));
-}
-
-Polygon Bed::get_inner_offset(const std::vector<Vec2d>& shape, const double padding) {
-    Points shape_scaled;
-    shape_scaled.reserve(shape.size());
-    using std::begin, std::end, std::back_inserter, std::transform;
-    transform(begin(shape), end(shape), back_inserter(shape_scaled), [](const Vec2d& point){
-        return scaled(point);
-    });
-    return shrink({Polygon{shape_scaled}}, scaled(padding)).front();
-}
-}
 
 std::optional<std::string> GCodeGenerator::get_helical_layer_change_gcode(
     const coordf_t previous_layer_z,
@@ -2692,23 +2620,20 @@ std::optional<std::string> GCodeGenerator::get_helical_layer_change_gcode(
 
     const Point n_gon_start_point{this->last_pos()};
 
-    static GCode::Impl::Bed bed{
+    GCode::Impl::LayerChanges::Bed bed{
         this->m_config.bed_shape.values,
-        circle_radius
+        circle_radius * 2
     };
     if (!bed.contains_within_padding(this->point_to_gcode(n_gon_start_point))) {
         return std::nullopt;
     }
 
-    const Point n_gon_centeroid{
-        n_gon_start_point
-        + scaled(Vec2d{
-            (bed.centroid - unscaled(n_gon_start_point)).normalized()
-            * circle_radius
-        })
-    };
+    const Vec2crd n_gon_vector{scaled(Vec2d{
+        (bed.centroid - this->point_to_gcode(n_gon_start_point)).normalized() * circle_radius
+    })};
+    const Point n_gon_centeroid{n_gon_start_point + n_gon_vector};
 
-    const Polygon n_gon{GCode::Impl::generate_regular_polygon(
+    const Polygon n_gon{GCode::Impl::LayerChanges::generate_regular_polygon(
         n_gon_centeroid,
         n_gon_start_point,
         n_gon_points_count
@@ -2717,7 +2642,7 @@ std::optional<std::string> GCodeGenerator::get_helical_layer_change_gcode(
     const double n_gon_circumference = unscaled(n_gon.length());
 
     const double z_change{print_z - previous_layer_z};
-    Points3 helix{GCode::Impl::generate_elevated_travel(
+    Points3 helix{GCode::Impl::Travels::generate_elevated_travel(
         n_gon.points,
         {},
         previous_layer_z,
@@ -2732,8 +2657,11 @@ std::optional<std::string> GCodeGenerator::get_helical_layer_change_gcode(
 }
 
 // called by GCodeGenerator::process_layer()
-std::string GCodeGenerator::change_layer(coordf_t previous_layer_z, coordf_t print_z)
-{
+std::string GCodeGenerator::change_layer(
+    coordf_t previous_layer_z,
+    coordf_t print_z,
+    const bool spiral_vase_enabled
+) {
     std::string gcode;
     if (m_layer_count > 0)
         // Increment a progress bar indicator.
@@ -2744,15 +2672,17 @@ std::string GCodeGenerator::change_layer(coordf_t previous_layer_z, coordf_t pri
 
     const std::string comment{"move to next layer (" + std::to_string(m_layer_index) + ")"};
 
-    bool helical_layer_change{
-        (!this->m_spiral_vase || !this->m_spiral_vase->is_enabled())
+    bool do_helical_layer_change{
+        !spiral_vase_enabled
         && print_z > previous_layer_z
+        && EXTRUDER_CONFIG(retract_layer_change)
+        && EXTRUDER_CONFIG(retract_length) > 0
         && EXTRUDER_CONFIG(travel_ramping_lift)
         && EXTRUDER_CONFIG(travel_slope) > 0 && EXTRUDER_CONFIG(travel_slope) < 90
     };
 
     const std::optional<std::string> helix_gcode{
-        helical_layer_change ?
+        do_helical_layer_change ?
         this->get_helical_layer_change_gcode(
             m_config.z_offset.value + previous_layer_z,
             m_config.z_offset.value + print_z,
@@ -3274,219 +3204,6 @@ std::string GCodeGenerator::_extrude(
     return gcode;
 }
 
-Points3 generate_flat_travel(tcb::span<const Point> xy_path, const float elevation) {
-    Points3 result;
-    result.reserve(xy_path.size() - 1);
-    for (const Point& point : xy_path.subspan(1)) {
-        result.emplace_back(point.x(), point.y(), scaled(elevation));
-    }
-    return result;
-}
-
-Vec2d place_at_segment(const Vec2d& current_point, const Vec2d& previous_point, const double distance) {
-    Vec2d direction = (current_point - previous_point).normalized();
-    return previous_point + direction * distance;
-}
-
-namespace GCode::Impl {
-std::vector<DistancedPoint> slice_xy_path(tcb::span<const Point> xy_path, tcb::span<const double> sorted_distances) {
-    assert(xy_path.size() >= 2);
-    std::vector<DistancedPoint> result;
-    result.reserve(xy_path.size() + sorted_distances.size());
-    double total_distance{0};
-    result.emplace_back(DistancedPoint{xy_path.front(), 0});
-    Point previous_point = result.front().point;
-    std::size_t offset{0};
-    for (const Point& point : xy_path.subspan(1)) {
-        Vec2d unscaled_point{unscaled(point)};
-        Vec2d unscaled_previous_point{unscaled(previous_point)};
-        const double current_segment_length = (unscaled_point - unscaled_previous_point).norm();
-        for (const double distance_to_add : sorted_distances.subspan(offset)) {
-            if (distance_to_add <= total_distance + current_segment_length) {
-                Point to_place = scaled(place_at_segment(
-                    unscaled_point,
-                    unscaled_previous_point,
-                    distance_to_add - total_distance
-                ));
-                if (to_place != previous_point && to_place != point) {
-                    result.emplace_back(DistancedPoint{to_place, distance_to_add});
-                }
-                ++offset;
-            } else {
-                break;
-            }
-        }
-        total_distance += current_segment_length;
-        result.emplace_back(DistancedPoint{point, total_distance});
-        previous_point = point;
-    }
-    return result;
-}
-
-struct ElevatedTravelParams {
-    double lift_height{};
-    double slope_end{};
-};
-
-struct ElevatedTravelFormula {
-    double operator()(double distance_from_start) const {
-        if (distance_from_start < this->params.slope_end) {
-            const double lift_percent = distance_from_start / this->params.slope_end;
-            return lift_percent * this->params.lift_height;
-        } else {
-            return this->params.lift_height;
-        }
-    }
-
-    ElevatedTravelParams params{};
-};
-
-Points3 generate_elevated_travel(
-    const tcb::span<const Point> xy_path,
-    const std::vector<double>& ensure_points_at_distances,
-    const double initial_elevation,
-    const std::function<double(double)>& elevation
-) {
-    Points3 result{};
-
-    std::vector<DistancedPoint> extended_xy_path = slice_xy_path(xy_path, ensure_points_at_distances);
-    result.reserve(extended_xy_path.size());
-
-    for (const DistancedPoint& point : extended_xy_path) {
-        result.emplace_back(point.point.x(), point.point.y(), scaled(initial_elevation + elevation(point.distance_from_start)));
-    }
-
-    return result;
-}
-
-AABBTreeLines::LinesDistancer<Linef> get_expolygons_distancer(const ExPolygons& polygons) {
-    std::vector<Linef> lines;
-    for (const ExPolygon& polygon : polygons) {
-        for (const Line& line : polygon.lines()) {
-            lines.emplace_back(unscaled(line.a), unscaled(line.b));
-        }
-    }
-
-    return AABBTreeLines::LinesDistancer{std::move(lines)};
-}
-
-std::optional<double> get_first_crossed_line_distance(
-    tcb::span<const Line> xy_path,
-    const AABBTreeLines::LinesDistancer<Linef>& distancer
-) {
-    assert(!xy_path.empty());
-    if (xy_path.empty()) {
-        return {};
-    }
-
-    double traversed_distance = 0;
-    for (const Line& line : xy_path) {
-        const Linef unscaled_line = {unscaled(line.a), unscaled(line.b)};
-        auto intersections = distancer.intersections_with_line<true>(unscaled_line);
-        if (!intersections.empty()) {
-            const Vec2d intersection = intersections.front().first;
-            const double distance = traversed_distance + (unscaled_line.a - intersection).norm();
-            if (distance > EPSILON) {
-                return distance;
-            } else if (intersections.size() >= 2) { // Edge case
-                const Vec2d second_intersection = intersections[1].first;
-                return traversed_distance + (unscaled_line.a - second_intersection).norm();
-            }
-        }
-        traversed_distance += (unscaled_line.a - unscaled_line.b).norm();
-    }
-
-    return {};
-}
-
-std::optional<double> get_obstacle_adjusted_slope_end(
-    const Lines& xy_path,
-    const std::optional<AABBTreeLines::LinesDistancer<Linef>>& previous_layer_distancer
-) {
-    if (!previous_layer_distancer) {
-        return std::nullopt;
-    }
-    std::optional<double> first_obstacle_distance = get_first_crossed_line_distance(
-        xy_path, *previous_layer_distancer
-    );
-    if (!first_obstacle_distance) {
-        return std::nullopt;
-    }
-    return *first_obstacle_distance;
-}
-
-ElevatedTravelParams get_elevated_traval_params(
-    const Lines& xy_path,
-    const FullPrintConfig& config,
-    const unsigned extruder_id,
-    const std::optional<AABBTreeLines::LinesDistancer<Linef>>& previous_layer_distancer
-) {
-    ElevatedTravelParams elevation_params{};
-    if (!config.travel_ramping_lift.get_at(extruder_id)) {
-        elevation_params.slope_end = 0;
-        elevation_params.lift_height = config.retract_lift.get_at(extruder_id);
-        return elevation_params;
-    }
-    elevation_params.lift_height = config.travel_max_lift.get_at(extruder_id);
-
-    const double slope_deg = config.travel_slope.get_at(extruder_id);
-
-    if (slope_deg >= 90 || slope_deg <= 0) {
-        elevation_params.slope_end = 0;
-    } else {
-        const double slope_rad = slope_deg * (M_PI / 180); // rad
-        elevation_params.slope_end = elevation_params.lift_height / std::tan(slope_rad);
-    }
-
-    std::optional<double> obstacle_adjusted_slope_end{get_obstacle_adjusted_slope_end(
-        xy_path,
-        previous_layer_distancer
-    )};
-
-    if (obstacle_adjusted_slope_end && obstacle_adjusted_slope_end < elevation_params.slope_end) {
-        elevation_params.slope_end = *obstacle_adjusted_slope_end;
-    }
-
-    return elevation_params;
-}
-
-Points3 generate_travel_to_extrusion(
-    const Polyline& xy_path,
-    const FullPrintConfig& config,
-    const unsigned extruder_id,
-    const double initial_elevation,
-    const std::optional<AABBTreeLines::LinesDistancer<Linef>>& previous_layer_distancer
-) {
-    const double upper_limit = config.retract_lift_below.get_at(extruder_id);
-    const double lower_limit = config.retract_lift_above.get_at(extruder_id);
-    if (
-        (lower_limit > 0 && initial_elevation < lower_limit)
-        || (upper_limit > 0 && initial_elevation > upper_limit)
-    ) {
-        return generate_flat_travel(xy_path.points, initial_elevation);
-    }
-
-    ElevatedTravelParams elevation_params{get_elevated_traval_params(
-        xy_path.lines(),
-        config,
-        extruder_id,
-        previous_layer_distancer
-    )};
-
-    const std::vector<double> ensure_points_at_distances{elevation_params.slope_end};
-
-    Points3 result{generate_elevated_travel(
-        xy_path.points,
-        ensure_points_at_distances,
-        initial_elevation,
-        ElevatedTravelFormula{elevation_params}
-    )};
-
-    result.emplace_back(xy_path.back().x(), xy_path.back().y(), scaled(initial_elevation));
-    return result;
-}
-}
-
 std::string GCodeGenerator::generate_travel_gcode(
     const Points3& travel,
     const std::string& comment
@@ -3602,8 +3319,6 @@ std::string GCodeGenerator::travel_to(const Point &point, ExtrusionRole role, st
 
     const Point start_point = this->last_pos();
 
-    using namespace GCode::Impl;
-
     // check whether a straight travel move would need retraction
 
     bool could_be_wipe_disabled {false};
@@ -3641,13 +3356,14 @@ std::string GCodeGenerator::travel_to(const Point &point, ExtrusionRole role, st
     const double initial_elevation = this->m_last_layer_z + this->m_config.z_offset.value;
     const Points3 travel = (
         can_be_flat ?
-        generate_flat_travel(xy_path.points, initial_elevation) :
-        GCode::Impl::generate_travel_to_extrusion(
+        GCode::Impl::Travels::generate_flat_travel(xy_path.points, initial_elevation) :
+        GCode::Impl::Travels::generate_travel_to_extrusion(
             xy_path,
             this->m_config,
             extruder_id,
             initial_elevation,
-            this->m_previous_layer_distancer
+            this->m_previous_layer_distancer,
+            scaled(m_origin)
         )
     );
 
