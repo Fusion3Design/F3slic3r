@@ -94,7 +94,7 @@ float Layers::get_layer_time(ETimeMode mode, size_t layer_id) const
 
 float Layers::get_layer_z(size_t layer_id) const
 {
-  return (layer_id < m_items.size()) ? m_items[layer_id].z : 0.0f;
+    return (layer_id < m_items.size()) ? m_items[layer_id].z : 0.0f;
 }
 
 size_t Layers::get_layer_id_at(float z) const
@@ -103,17 +103,17 @@ size_t Layers::get_layer_id_at(float z) const
     return std::distance(m_items.begin(), iter);
 }
 
-const std::array<uint32_t, 2>& Layers::get_view_range() const
+const Interval& Layers::get_view_range() const
 {
     return m_view_range.get();
 }
 
-void Layers::set_view_range(const std::array<uint32_t, 2>& range)
+void Layers::set_view_range(const Interval& range)
 {
     set_view_range(range[0], range[1]);
 }
 
-void Layers::set_view_range(uint32_t min, uint32_t max)
+void Layers::set_view_range(Interval::value_type min, Interval::value_type max)
 {
     m_view_range.set(min, max);
 }

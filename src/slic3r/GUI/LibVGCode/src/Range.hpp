@@ -10,38 +10,33 @@
 #if ENABLE_NEW_GCODE_VIEWER
 //################################################################################################################################
 
-#include <array>
-#include <cstdint>
+#include "../include/Types.hpp"
 
 namespace libvgcode {
 
 class Range
 {
 public:
-		const std::array<uint32_t, 2>& get() const;
-		void set(const Range& other);
-		void set(const std::array<uint32_t, 2>& range);
-		void set(uint32_t min, uint32_t max);
-
-		uint32_t get_min() const;
-		void set_min(uint32_t min);
-
-		uint32_t get_max() const;
-		void set_max(uint32_t max);
-
-		// clamp the given range to stay inside this range
-		void clamp(Range& other);
-		void reset();
-
-		bool operator == (const Range& other) const;
-		bool operator != (const Range& other) const;
+    const Interval& get() const;
+    void set(const Range& other);
+    void set(const Interval& range);
+    void set(Interval::value_type min, Interval::value_type max);
+    
+    Interval::value_type get_min() const;
+    void set_min(Interval::value_type min);
+    
+    Interval::value_type get_max() const;
+    void set_max(Interval::value_type max);
+    
+    // clamp the given range to stay inside this range
+    void clamp(Range& other);
+    void reset();
+    
+    bool operator == (const Range& other) const;
+    bool operator != (const Range& other) const;
 
 private:
-		//
-		// [0] = min
-	  // [1] = max
-		//
-		std::array<uint32_t, 2> m_range{ 0, 0 };
+    Interval m_range{ 0, 0 };
 };
 
 } // namespace libvgcode

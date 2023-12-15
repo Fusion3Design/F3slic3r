@@ -40,9 +40,9 @@ public:
     ETimeMode get_time_mode() const;
     void set_time_mode(ETimeMode mode);
 
-    const std::array<uint32_t, 2>& get_layers_view_range() const;
-    void set_layers_view_range(const std::array<uint32_t, 2>& range);
-    void set_layers_view_range(uint32_t min, uint32_t max);
+    const Interval& get_layers_view_range() const;
+    void set_layers_view_range(const Interval& range);
+    void set_layers_view_range(Interval::value_type min, Interval::value_type max);
 
     bool is_top_layer_only_view_range() const;
     void set_top_layer_only_view_range(bool top_layer_only_view_range);
@@ -64,9 +64,9 @@ public:
     bool is_extrusion_role_visible(EGCodeExtrusionRole role) const;
     void toggle_extrusion_role_visibility(EGCodeExtrusionRole role);
 
-    const std::array<uint32_t, 2>& get_view_full_range() const;
-    const std::array<uint32_t, 2>& get_view_enabled_range() const;
-    const std::array<uint32_t, 2>& get_view_visible_range() const;
+    const Interval& get_view_full_range() const;
+    const Interval& get_view_enabled_range() const;
+    const Interval& get_view_visible_range() const;
 
     //
     // min must be smaller than max
@@ -77,17 +77,17 @@ public:
     //
     // Return the count of vertices used to render the toolpaths
     //
-    uint32_t get_vertices_count() const;
+    size_t get_vertices_count() const;
 
     //
     // Return the vertex pointed by the max value of the view current range
     //
-    PathVertex get_current_vertex() const;
+    const PathVertex& get_current_vertex() const;
 
     //
     // Return the vertex at the given index
     //
-    PathVertex get_vertex_at(uint32_t id) const;
+    const PathVertex& get_vertex_at(size_t id) const;
 
     Color get_vertex_color(const PathVertex& vertex) const;
 
@@ -96,14 +96,14 @@ public:
     //
     size_t get_enabled_segments_count() const;
 
-    const std::array<uint32_t, 2>& get_enabled_segments_range() const;
+    const Interval& get_enabled_segments_range() const;
 
     //
     // Return the count of options enabled for rendering
     //
     size_t get_enabled_options_count() const;
 
-    const std::array<uint32_t, 2>& get_enabled_options_range() const;
+    const Interval& get_enabled_options_range() const;
 
     //
     // Return the count of detected extrusion roles

@@ -18,68 +18,68 @@
 
 namespace libvgcode {
 
-const std::array<uint32_t, 2>& Range::get() const
+const Interval& Range::get() const
 {
-		return m_range;
+    return m_range;
 }
 
 void Range::set(const Range& other)
 {
-		m_range = other.m_range;
+    m_range = other.m_range;
 }
 
-void Range::set(const std::array<uint32_t, 2>& range)
+void Range::set(const Interval& range)
 {
-		set(range[0], range[1]);
+    set(range[0], range[1]);
 }
 
-void Range::set(uint32_t min, uint32_t max)
+void Range::set(Interval::value_type min, Interval::value_type max)
 {
-		if (max < min)
-				std::swap(min, max);
-		m_range[0] = min;
-		m_range[1] = max;
+    if (max < min)
+        std::swap(min, max);
+    m_range[0] = min;
+    m_range[1] = max;
 }
 
-uint32_t Range::get_min() const
+Interval::value_type Range::get_min() const
 {
-		return m_range[0];
+    return m_range[0];
 }
 
-void Range::set_min(uint32_t min)
+void Range::set_min(Interval::value_type min)
 {
-		set(min, m_range[1]);
+    set(min, m_range[1]);
 }
 
-uint32_t Range::get_max() const
+Interval::value_type Range::get_max() const
 {
-		return m_range[1];
+    return m_range[1];
 }
 
-void Range::set_max(uint32_t max)
+void Range::set_max(Interval::value_type max)
 {
-		set(m_range[0], max);
+    set(m_range[0], max);
 }
 
 void Range::clamp(Range& other)
 {
-		other.m_range[0] = std::clamp(other.m_range[0], m_range[0], m_range[1]);
-		other.m_range[1] = std::clamp(other.m_range[1], m_range[0], m_range[1]);
+    other.m_range[0] = std::clamp(other.m_range[0], m_range[0], m_range[1]);
+    other.m_range[1] = std::clamp(other.m_range[1], m_range[0], m_range[1]);
 }
 
 void Range::reset()
 {
-		m_range = { 0, 0 };
+    m_range = { 0, 0 };
 }
 
 bool Range::operator == (const Range& other) const
 {
-		return m_range == other.m_range;
+    return m_range == other.m_range;
 }
 
 bool Range::operator != (const Range& other) const
 {
-		return m_range != other.m_range;
+    return m_range != other.m_range;
 }
 
 } // namespace libvgcode

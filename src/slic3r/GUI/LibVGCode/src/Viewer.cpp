@@ -67,17 +67,17 @@ void Viewer::set_time_mode(ETimeMode mode)
     m_impl->set_time_mode(mode);
 }
 
-const std::array<uint32_t, 2>& Viewer::get_layers_view_range() const
+const Interval& Viewer::get_layers_view_range() const
 {
     return m_impl->get_layers_view_range();
 }
 
-void Viewer::set_layers_view_range(const std::array<uint32_t, 2>& range)
+void Viewer::set_layers_view_range(const Interval& range)
 {
     m_impl->set_layers_view_range(range);
 }
 
-void Viewer::set_layers_view_range(uint32_t min, uint32_t max)
+void Viewer::set_layers_view_range(Interval::value_type min, Interval::value_type max)
 {
     m_impl->set_layers_view_range(min, max);
 }
@@ -147,17 +147,17 @@ void Viewer::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
     m_impl->toggle_extrusion_role_visibility(role);
 }
 
-const std::array<uint32_t, 2>& Viewer::get_view_full_range() const
+const Interval& Viewer::get_view_full_range() const
 {
     return m_impl->get_view_full_range();
 }
 
-const std::array<uint32_t, 2>& Viewer::get_view_enabled_range() const
+const Interval& Viewer::get_view_enabled_range() const
 {
     return m_impl->get_view_enabled_range();
 }
 
-const std::array<uint32_t, 2>& Viewer::get_view_visible_range() const
+const Interval& Viewer::get_view_visible_range() const
 {
     return m_impl->get_view_visible_range();
 }
@@ -167,17 +167,17 @@ void Viewer::set_view_visible_range(uint32_t min, uint32_t max)
     m_impl->set_view_visible_range(min, max);
 }
 
-uint32_t Viewer::get_vertices_count() const
+size_t Viewer::get_vertices_count() const
 {
     return m_impl->get_vertices_count();
 }
 
-PathVertex Viewer::get_current_vertex() const
+const PathVertex& Viewer::get_current_vertex() const
 {
     return m_impl->get_current_vertex();
 }
 
-PathVertex Viewer::get_vertex_at(uint32_t id) const
+const PathVertex& Viewer::get_vertex_at(size_t id) const
 {
     return m_impl->get_vertex_at(id);
 }
@@ -192,7 +192,7 @@ size_t Viewer::get_enabled_segments_count() const
     return m_impl->get_enabled_segments_count();
 }
 
-const std::array<uint32_t, 2>& Viewer::get_enabled_segments_range() const
+const Interval& Viewer::get_enabled_segments_range() const
 {
     return m_impl->get_enabled_segments_range();
 }
@@ -202,7 +202,7 @@ size_t Viewer::get_enabled_options_count() const
     return m_impl->get_enabled_options_count();
 }
 
-const std::array<uint32_t, 2>& Viewer::get_enabled_options_range() const
+const Interval& Viewer::get_enabled_options_range() const
 {
     return m_impl->get_enabled_options_range();
 }

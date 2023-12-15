@@ -22,7 +22,7 @@ struct PathVertex
     //
     // Segment end position
     //
-    Vec3 position{ 0.0f, 0.0f, 0.0f };
+    Vec3 position{ FLT_MAX, FLT_MAX, FLT_MAX };
     //
     // Segment height
     //
@@ -101,6 +101,8 @@ struct PathVertex
     //
     bool is_custom_gcode() const;
 };
+
+static const PathVertex Dummy_Path_Vertex = PathVertex();
 
 } // namespace libvgcode
 

@@ -744,10 +744,10 @@ public:
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #if ENABLE_NEW_GCODE_VIEWER
     void update_gcode_sequential_view_current(unsigned int first, unsigned int last) { m_gcode_viewer.update_sequential_view_current(first, last); }
-    const std::array<uint32_t, 2>& get_gcode_view_full_range() const { return m_gcode_viewer.get_gcode_view_full_range(); }
-    const std::array<uint32_t, 2>& get_gcode_view_enabled_range() const { return m_gcode_viewer.get_gcode_view_enabled_range(); }
-    const std::array<uint32_t, 2>& get_gcode_view_visible_range() const { return m_gcode_viewer.get_gcode_view_visible_range(); }
-    libvgcode::PathVertex get_gcode_vertex_at(size_t id) const { return m_gcode_viewer.get_gcode_vertex_at(id); }
+    const libvgcode::Interval& get_gcode_view_full_range() const { return m_gcode_viewer.get_gcode_view_full_range(); }
+    const libvgcode::Interval& get_gcode_view_enabled_range() const { return m_gcode_viewer.get_gcode_view_enabled_range(); }
+    const libvgcode::Interval& get_gcode_view_visible_range() const { return m_gcode_viewer.get_gcode_view_visible_range(); }
+    const libvgcode::PathVertex& get_gcode_vertex_at(size_t id) const { return m_gcode_viewer.get_gcode_vertex_at(id); }
 #else
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     void update_gcode_sequential_view_current(unsigned int first, unsigned int last) { m_gcode_viewer.update_sequential_view_current(first, last); }

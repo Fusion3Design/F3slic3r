@@ -603,7 +603,7 @@ void ViewerImpl::update_enabled_entities()
 {
     std::vector<uint32_t> enabled_segments;
     std::vector<uint32_t> enabled_options;
-    std::array<uint32_t, 2> range = m_view_range.get_visible();
+    Interval range = m_view_range.get_visible();
 
     // when top layer only visualization is enabled, we need to render
     // all the toolpaths in the other layers as grayed, so extend the range
@@ -617,7 +617,7 @@ void ViewerImpl::update_enabled_entities()
 
     if (m_settings.spiral_vase_mode) {
         // when spiral vase mode is enabled and only one layer is shown, extend the range by one step
-        const std::array<uint32_t, 2>& layers_range = m_layers.get_view_range();
+        const Interval& layers_range = m_layers.get_view_range();
         if (layers_range[0] > 0 && layers_range[0] == layers_range[1])
             --range[0];
     }
@@ -765,17 +765,17 @@ void ViewerImpl::set_time_mode(ETimeMode mode)
     m_settings.update_colors = true;
 }
 
-const std::array<uint32_t, 2>& ViewerImpl::get_layers_view_range() const
+const Interval& ViewerImpl::get_layers_view_range() const
 {
     return m_layers.get_view_range();
 }
 
-void ViewerImpl::set_layers_view_range(const std::array<uint32_t, 2>& range)
+void ViewerImpl::set_layers_view_range(const Interval& range)
 {
     set_layers_view_range(range[0], range[1]);
 }
 
-void ViewerImpl::set_layers_view_range(uint32_t min, uint32_t max)
+void ViewerImpl::set_layers_view_range(Interval::value_type min, Interval::value_type max)
 {
     m_layers.set_view_range(min, max);
     // force immediate update of the full range
@@ -847,63 +847,49 @@ AABox ViewerImpl::get_bounding_box(EBBoxType type) const
 
 bool ViewerImpl::is_option_visible(EOptionType type) const
 {
-    try {
-        return m_settings.options_visibility.at(type);
-    }
-    catch (...) {
-        return false;
-    }
+    const auto it = m_settings.options_visibility.find(type);
+    return (it == m_settings.options_visibility.end()) ? false : it->second;
 }
 
 void ViewerImpl::toggle_option_visibility(EOptionType type)
 {
-    try {
-        bool& value = m_settings.options_visibility.at(type);
-        value = !value;
+    auto it = m_settings.options_visibility.find(type);
+    if (it != m_settings.options_visibility.end()) {
+        it->second = !it->second;
         update_view_full_range();
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
-    }
-    catch (...) {
-        // do nothing;
     }
 }
 
 bool ViewerImpl::is_extrusion_role_visible(EGCodeExtrusionRole role) const
 {
-    try {
-        return m_settings.extrusion_roles_visibility.at(role);
-    }
-    catch (...) {
-        return false;
-    }
+    const auto it = m_settings.extrusion_roles_visibility.find(role);
+    return (it == m_settings.extrusion_roles_visibility.end()) ? false : it->second;
 }
 
 void ViewerImpl::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
 {
-    try {
-        bool& value = m_settings.extrusion_roles_visibility.at(role);
-        value = !value;
+    auto it = m_settings.extrusion_roles_visibility.find(role);
+    if (it != m_settings.extrusion_roles_visibility.end()) {
+        it->second = !it->second;
         update_view_full_range();
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
     }
-    catch (...) {
-        // do nothing;
-    }
 }
 
-const std::array<uint32_t, 2>& ViewerImpl::get_view_full_range() const
+const Interval& ViewerImpl::get_view_full_range() const
 {
     return m_view_range.get_full();
 }
 
-const std::array<uint32_t, 2>& ViewerImpl::get_view_enabled_range() const
+const Interval& ViewerImpl::get_view_enabled_range() const
 {
     return m_view_range.get_enabled();
 }
 
-const std::array<uint32_t, 2>& ViewerImpl::get_view_visible_range() const
+const Interval& ViewerImpl::get_view_visible_range() const
 {
     return m_view_range.get_visible();
 }
@@ -923,14 +909,14 @@ size_t ViewerImpl::get_vertices_count() const
     return m_vertices.size();
 }
 
-PathVertex ViewerImpl::get_current_vertex() const
+const PathVertex& ViewerImpl::get_current_vertex() const
 {
-    return m_vertices[m_view_range.get_visible()[1]];
+    return get_vertex_at(m_view_range.get_visible()[1]);
 }
 
-PathVertex ViewerImpl::get_vertex_at(size_t id) const
+const PathVertex& ViewerImpl::get_vertex_at(size_t id) const
 {
-    return (id < m_vertices.size()) ? m_vertices[id] : PathVertex();
+    return (id < m_vertices.size()) ? m_vertices[id] : Dummy_Path_Vertex;
 }
 
 Color ViewerImpl::get_vertex_color(const PathVertex& v) const
@@ -942,7 +928,7 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
         return Wipe_Color;
 
     if (v.is_option())
-       return get_option_color(type_to_option(v.type));
+        return get_option_color(type_to_option(v.type));
 
     switch (m_settings.view_type)
     {
@@ -1005,7 +991,7 @@ size_t ViewerImpl::get_enabled_segments_count() const
     return m_enabled_segments_count;
 }
 
-const std::array<uint32_t, 2>& ViewerImpl::get_enabled_segments_range() const
+const Interval& ViewerImpl::get_enabled_segments_range() const
 {
     return m_enabled_segments_range.get();
 }
@@ -1015,7 +1001,7 @@ size_t ViewerImpl::get_enabled_options_count() const
     return m_enabled_options_count;
 }
 
-const std::array<uint32_t, 2>& ViewerImpl::get_enabled_options_range() const
+const Interval& ViewerImpl::get_enabled_options_range() const
 {
     return m_enabled_options_range.get();
 }
@@ -1078,15 +1064,15 @@ void ViewerImpl::set_tool_colors(const std::vector<Color>& colors)
 
 const Color& ViewerImpl::get_extrusion_role_color(EGCodeExtrusionRole role) const
 {
-    auto it = m_extrusion_roles_colors.find(role);
-    return (it != m_extrusion_roles_colors.end()) ? m_extrusion_roles_colors.at(role) : Dummy_Color;
+    const auto it = m_extrusion_roles_colors.find(role);
+    return (it == m_extrusion_roles_colors.end()) ? Dummy_Color : it->second;
 }
 
 void ViewerImpl::set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color)
 {
     auto it = m_extrusion_roles_colors.find(role);
     if (it != m_extrusion_roles_colors.end())
-        m_extrusion_roles_colors[role] = color;
+        it->second = color;
 }
 
 void ViewerImpl::reset_default_extrusion_roles_colors()
@@ -1096,15 +1082,15 @@ void ViewerImpl::reset_default_extrusion_roles_colors()
 
 const Color& ViewerImpl::get_option_color(EOptionType type) const
 {
-    auto it = m_options_colors.find(type);
-    return (it != m_options_colors.end()) ?  m_options_colors.at(type) : Dummy_Color;
+    const auto it = m_options_colors.find(type);
+    return (it == m_options_colors.end()) ? Dummy_Color : it->second;
 }
 
 void ViewerImpl::set_option_color(EOptionType type, const Color& color)
 {
     auto it = m_options_colors.find(type);
     if (it != m_options_colors.end())
-        m_options_colors[type] = color;
+        it->second = color;
 }
 
 void ViewerImpl::reset_default_options_colors()
@@ -1114,15 +1100,15 @@ void ViewerImpl::reset_default_options_colors()
 
 const Color& ViewerImpl::get_travel_move_color(ETravelMoveType type) const
 {
-    auto it = m_travel_moves_colors.find(type);
-    return (it != m_travel_moves_colors.end()) ? m_travel_moves_colors.at(type) : Dummy_Color;
+    const auto it = m_travel_moves_colors.find(type);
+    return (it == m_travel_moves_colors.end()) ? Dummy_Color : it->second;
 }
 
 void ViewerImpl::set_travel_move_color(ETravelMoveType type, const Color& color)
 {
     auto it = m_travel_moves_colors.find(type);
     if (it != m_travel_moves_colors.end())
-        m_travel_moves_colors[type] = color;
+        it->second = color;
 }
 
 void ViewerImpl::reset_default_travel_moves_colors()
@@ -1162,12 +1148,8 @@ const ColorRange& ViewerImpl::get_volumetric_rate_range() const
 
 const ColorRange& ViewerImpl::get_layer_time_range(EColorRangeType type) const
 {
-    try {
-        return m_layer_time_range[static_cast<size_t>(type)];
-    }
-    catch (...) {
-        return ColorRange::Dummy_Color_Range;
-    }
+    return (static_cast<size_t>(type) < m_layer_time_range.size()) ?
+        m_layer_time_range[static_cast<size_t>(type)] : ColorRange::Dummy_Color_Range;
 }
 
 float ViewerImpl::get_travels_radius() const
@@ -1290,7 +1272,7 @@ static bool is_visible(const PathVertex& v, const Settings& settings)
 
 void ViewerImpl::update_view_full_range()
 {
-    const std::array<uint32_t, 2>& layers_range = m_layers.get_view_range();
+    const Interval& layers_range = m_layers.get_view_range();
     const bool travels_visible = m_settings.options_visibility.at(EOptionType::Travels);
     const bool wipes_visible   = m_settings.options_visibility.at(EOptionType::Wipes);
 
@@ -1355,7 +1337,7 @@ void ViewerImpl::update_view_full_range()
             m_view_range.set_full(Range());
 
         if (m_settings.top_layer_only_view_range) {
-            const std::array<uint32_t, 2>& full_range = m_view_range.get_full();
+            const Interval& full_range = m_view_range.get_full();
             auto top_first_it = m_vertices.begin() + full_range[0];
             bool shortened = false;
             while (top_first_it != m_vertices.end() && (top_first_it->layer_id < layers_range[1] || !is_visible(*top_first_it, m_settings))) {

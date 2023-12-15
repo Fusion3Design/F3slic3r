@@ -55,6 +55,13 @@ using Color = std::array<uint8_t, 3>;
 using AABox = std::array<Vec3, 2>;
 
 //
+// One dimensional natural numbers interval
+// [0] -> min
+// [1] -> max
+//
+using Interval = std::array<size_t, 2>;
+
+//
 // View types
 //
 enum class EViewType : uint8_t

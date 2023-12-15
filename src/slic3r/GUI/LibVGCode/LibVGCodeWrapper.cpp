@@ -713,8 +713,7 @@ static void convert_objects_to_vertices(const Slic3r::SpanOfConstPtrs<Slic3r::Pr
         layers.reserve(layers.size() + data.layers_zs.size());
         std::copy(data.layers_zs.begin(), data.layers_zs.end(), std::back_inserter(layers));
     }
-    std::sort(layers.begin(), layers.end(), [](float z1, float z2) { return z1 < z2; });
-    layers.erase(std::unique(layers.begin(), layers.end(), [](float z1, float z2) { return z1 == z2; }), layers.end());
+    Slic3r::sort_remove_duplicates(layers);
 
     // collect extracted vertices layer by layer
     float min_z = 0.0f;

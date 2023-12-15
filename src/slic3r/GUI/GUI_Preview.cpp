@@ -733,10 +733,10 @@ void Preview::update_moves_slider()
     if (m_gcode_result->moves.empty())
         return;
 
-    const std::array<uint32_t, 2>& range = m_canvas->get_gcode_view_enabled_range();
-    uint32_t last_gcode_id = m_canvas->get_gcode_vertex_at(static_cast<size_t>(range[0])).gcode_id;
+    const libvgcode::Interval& range = m_canvas->get_gcode_view_enabled_range();
+    uint32_t last_gcode_id = m_canvas->get_gcode_vertex_at(range[0]).gcode_id;
 
-    const size_t range_size = static_cast<size_t>(range[1] - range[0] + 1);
+    const size_t range_size = range[1] - range[0] + 1;
     std::vector<double> values;
     values.reserve(range_size);
     std::vector<double> alternate_values;
@@ -746,8 +746,8 @@ void Preview::update_moves_slider()
     std::optional<uint32_t> visible_range_max_id;
     uint32_t counter = 0;
 
-    for (uint32_t i = range[0]; i <= range[1]; ++i) {
-        const uint32_t gcode_id = m_canvas->get_gcode_vertex_at(static_cast<size_t>(i)).gcode_id;
+    for (size_t i = range[0]; i <= range[1]; ++i) {
+        const uint32_t gcode_id = m_canvas->get_gcode_vertex_at(i).gcode_id;
         if (i > range[0]) {
             // skip consecutive moves with same gcode id (resulting from processing G2 and G3 lines)
             if (last_gcode_id == gcode_id) {

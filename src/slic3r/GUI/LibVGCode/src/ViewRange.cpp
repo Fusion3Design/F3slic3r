@@ -16,89 +16,89 @@
 
 namespace libvgcode {
 
-const std::array<uint32_t, 2>& ViewRange::get_full() const
+const Interval& ViewRange::get_full() const
 {
-		return m_full.get();
+    return m_full.get();
 }
 
 void ViewRange::set_full(const Range& other)
 {
-		set_full(other.get());
+    set_full(other.get());
 }
 
-void ViewRange::set_full(const std::array<uint32_t, 2>& range)
+void ViewRange::set_full(const Interval& range)
 {
-		set_full(range[0], range[1]);
+    set_full(range[0], range[1]);
 }
 
-void ViewRange::set_full(uint32_t min, uint32_t max)
+void ViewRange::set_full(Interval::value_type min, Interval::value_type max)
 {
-		// is the full range being extended ?
-		const bool new_max = max > m_full.get_max();
-		m_full.set(min, max);
-		// force the enabled range to stay inside the modified full range
-		m_full.clamp(m_enabled);
-		// force the visible range to stay inside the modified enabled range
-		m_enabled.clamp(m_visible);
-		if (new_max)
-				// force the enabled range to fill the extended full range
-				m_enabled.set_max(max);
+    // is the full range being extended ?
+    const bool new_max = max > m_full.get_max();
+    m_full.set(min, max);
+    // force the enabled range to stay inside the modified full range
+    m_full.clamp(m_enabled);
+    // force the visible range to stay inside the modified enabled range
+    m_enabled.clamp(m_visible);
+    if (new_max)
+        // force the enabled range to fill the extended full range
+        m_enabled.set_max(max);
 }
 
-const std::array<uint32_t, 2>& ViewRange::get_enabled() const
+const Interval& ViewRange::get_enabled() const
 {
-		return m_enabled.get();
+    return m_enabled.get();
 }
 
 void ViewRange::set_enabled(const Range& other)
 {
-		set_enabled(other.get());
+    set_enabled(other.get());
 }
 
-void ViewRange::set_enabled(const std::array<uint32_t, 2>& range)
+void ViewRange::set_enabled(const Interval& range)
 {
-		set_enabled(range[0], range[1]);
+    set_enabled(range[0], range[1]);
 }
 
-void ViewRange::set_enabled(uint32_t min, uint32_t max)
+void ViewRange::set_enabled(Interval::value_type min, Interval::value_type max)
 {
-		// is the enabled range being extended ?
-		const bool new_max = max > m_enabled.get_max();
-		m_enabled.set(min, max);
-		// force the visible range to stay inside the modified enabled range
-		m_enabled.clamp(m_visible);
-		if (new_max)
-				// force the visible range to fill the extended enabled range
-				m_visible.set_max(max);
+    // is the enabled range being extended ?
+    const bool new_max = max > m_enabled.get_max();
+    m_enabled.set(min, max);
+    // force the visible range to stay inside the modified enabled range
+    m_enabled.clamp(m_visible);
+    if (new_max)
+        // force the visible range to fill the extended enabled range
+        m_visible.set_max(max);
 }
 
-const std::array<uint32_t, 2>& ViewRange::get_visible() const
+const Interval& ViewRange::get_visible() const
 {
-		return m_visible.get();
+    return m_visible.get();
 }
 
 void ViewRange::set_visible(const Range& other)
 {
-		set_visible(other.get());
+    set_visible(other.get());
 }
 
-void ViewRange::set_visible(const std::array<uint32_t, 2>& range)
+void ViewRange::set_visible(const Interval& range)
 {
-		set_visible(range[0], range[1]);
+    set_visible(range[0], range[1]);
 }
 
-void ViewRange::set_visible(uint32_t min, uint32_t max)
+void ViewRange::set_visible(Interval::value_type min, Interval::value_type max)
 {
-		m_visible.set(min, max);
-		// force the visible range to stay inside the enabled range
-		m_enabled.clamp(m_visible);
+    m_visible.set(min, max);
+    // force the visible range to stay inside the enabled range
+    m_enabled.clamp(m_visible);
 }
 
 void ViewRange::reset()
 {
-		m_full.reset();
-		m_enabled.reset();
-		m_visible.reset();
+    m_full.reset();
+    m_enabled.reset();
+    m_visible.reset();
 }
 
 } // namespace libvgcode
