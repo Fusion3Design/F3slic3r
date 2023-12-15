@@ -26,6 +26,11 @@ void                sys_color_changed_menu(wxMenu* menu);
 inline void         sys_color_changed_menu(wxMenu* /* menu */) {}
 #endif // no __linux__
 
+#ifndef __APPLE__
+// Caching wxAcceleratorEntries to use them during mainframe creation
+std::vector<wxAcceleratorEntry*>& accelerator_entries_cache();
+#endif // no __APPLE__
+
 wxMenuItem* append_menu_item(wxMenu* menu, int id, const wxString& string, const wxString& description,
     std::function<void(wxCommandEvent& event)> cb, wxBitmapBundle* icon, wxEvtHandler* event_handler = nullptr,
     std::function<bool()> const cb_condition = []() { return true;}, wxWindow* parent = nullptr, int insert_pos = wxNOT_FOUND);

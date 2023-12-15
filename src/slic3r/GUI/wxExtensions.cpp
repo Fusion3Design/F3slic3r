@@ -9,6 +9,7 @@
 #include <cmath>
 
 #include <wx/sizer.h>
+#include <wx/accel.h>
 
 #include <boost/algorithm/string/replace.hpp>
 
@@ -51,6 +52,14 @@ void sys_color_changed_menu(wxMenu* menu)
 }
 #endif /* no __linux__ */
 
+#ifndef __APPLE__
+std::vector<wxAcceleratorEntry*>& accelerator_entries_cache()
+{
+    static std::vector<wxAcceleratorEntry*> entries;
+    return entries;
+}
+#endif
+
 void enable_menu_item(wxUpdateUIEvent& evt, std::function<bool()> const cb_condition, wxMenuItem* item, wxWindow* win)
 {
     const bool enable = cb_condition();
@@ -78,7 +87,19 @@ wxMenuItem* append_menu_item(wxMenu* menu, int id, const wxString& string, const
         event_handler->Bind(wxEVT_MENU, cb, id);
     else
 #endif // __WXMSW__
+#ifndef __APPLE__
+    if (parent)
+        parent->Bind(wxEVT_MENU, cb, id);
+    else
+#endif // n__APPLE__
         menu->Bind(wxEVT_MENU, cb, id);
+
+#ifndef __APPLE__
+    if (wxAcceleratorEntry* entry = wxAcceleratorEntry::Create(string)) {
+        entry->SetMenuItem(item);
+        accelerator_entries_cache().push_back(entry);
+    }
+#endif
 
     if (parent) {
         parent->Bind(wxEVT_UPDATE_UI, [cb_condition, item, parent](wxUpdateUIEvent& evt) {
