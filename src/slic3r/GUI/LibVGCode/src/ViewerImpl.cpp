@@ -703,7 +703,7 @@ void ViewerImpl::update_colors()
     for (size_t i = 0; i < m_vertices.size(); ++i) {
         colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id &&
                      (!m_settings.spiral_vase_mode || i != m_view_range.get_enabled()[0])) ?
-            encode_color(Dummy_Color) : encode_color(select_color(m_vertices[i]));
+            encode_color(Dummy_Color) : encode_color(get_vertex_color(m_vertices[i]));
     }
 
     // update gpu buffer for colors
@@ -931,6 +931,73 @@ PathVertex ViewerImpl::get_current_vertex() const
 PathVertex ViewerImpl::get_vertex_at(size_t id) const
 {
     return (id < m_vertices.size()) ? m_vertices[id] : PathVertex();
+}
+
+Color ViewerImpl::get_vertex_color(const PathVertex& v) const
+{
+    if (v.type == EMoveType::Noop)
+        return Dummy_Color;
+
+    if (v.is_wipe())
+        return Wipe_Color;
+
+    if (v.is_option())
+       return get_option_color(type_to_option(v.type));
+
+    switch (m_settings.view_type)
+    {
+    case EViewType::FeatureType:
+    {
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : get_extrusion_role_color(v.role);
+    }
+    case EViewType::Height:
+    {
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_height_range.get_color_at(v.height);
+    }
+    case EViewType::Width:
+    {
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_width_range.get_color_at(v.width);
+    }
+    case EViewType::Speed:
+    {
+        return m_speed_range.get_color_at(v.feedrate);
+    }
+    case EViewType::FanSpeed:
+    {
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_fan_speed_range.get_color_at(v.fan_speed);
+    }
+    case EViewType::Temperature:
+    {
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_temperature_range.get_color_at(v.temperature);
+    }
+    case EViewType::VolumetricFlowRate:
+    {
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_volumetric_rate_range.get_color_at(v.volumetric_rate);
+    }
+    case EViewType::LayerTimeLinear:
+    {
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) :
+            m_layer_time_range[0].get_color_at(m_layers.get_layer_time(m_settings.time_mode, static_cast<size_t>(v.layer_id)));
+    }
+    case EViewType::LayerTimeLogarithmic:
+    {
+        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) :
+            m_layer_time_range[1].get_color_at(m_layers.get_layer_time(m_settings.time_mode, static_cast<size_t>(v.layer_id)));
+    }
+    case EViewType::Tool:
+    {
+        assert(static_cast<size_t>(v.extruder_id) < m_tool_colors.size());
+        return m_tool_colors[v.extruder_id];
+    }
+    case EViewType::ColorPrint:
+    {
+        return m_layers.layer_contains_colorprint_options(static_cast<size_t>(v.layer_id)) ? Dummy_Color :
+            m_tool_colors[static_cast<size_t>(v.color_id) % m_tool_colors.size()];
+    }
+    default: { break; }
+    }
+
+    return Dummy_Color;
 }
 
 size_t ViewerImpl::get_enabled_segments_count() const
@@ -1367,73 +1434,6 @@ void ViewerImpl::update_heights_widths()
 
     glsafe(glUnmapBuffer(GL_TEXTURE_BUFFER));
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
-}
-
-Color ViewerImpl::select_color(const PathVertex& v) const
-{
-    if (v.type == EMoveType::Noop)
-        return Dummy_Color;
-
-    if (v.is_wipe())
-        return Wipe_Color;
-
-    if (v.is_option())
-        return get_option_color(type_to_option(v.type));
-
-    switch (m_settings.view_type)
-    {
-    case EViewType::FeatureType:
-    {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : get_extrusion_role_color(v.role);
-    }
-    case EViewType::Height:
-    {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_height_range.get_color_at(v.height);
-    }
-    case EViewType::Width:
-    {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_width_range.get_color_at(v.width);
-    }
-    case EViewType::Speed:
-    {
-        return m_speed_range.get_color_at(v.feedrate);
-    }
-    case EViewType::FanSpeed:
-    {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_fan_speed_range.get_color_at(v.fan_speed);
-    }
-    case EViewType::Temperature:
-    {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_temperature_range.get_color_at(v.temperature);
-    }
-    case EViewType::VolumetricFlowRate:
-    {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_volumetric_rate_range.get_color_at(v.volumetric_rate);
-    }
-    case EViewType::LayerTimeLinear:
-    {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) :
-            m_layer_time_range[0].get_color_at(m_layers.get_layer_time(m_settings.time_mode, static_cast<size_t>(v.layer_id)));
-    }
-    case EViewType::LayerTimeLogarithmic:
-    {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) :
-            m_layer_time_range[1].get_color_at(m_layers.get_layer_time(m_settings.time_mode, static_cast<size_t>(v.layer_id)));
-    }
-    case EViewType::Tool:
-    {
-        assert(static_cast<size_t>(v.extruder_id) < m_tool_colors.size());
-        return m_tool_colors[v.extruder_id];
-    }
-    case EViewType::ColorPrint:
-    {
-        return m_layers.layer_contains_colorprint_options(static_cast<size_t>(v.layer_id)) ? Dummy_Color :
-            m_tool_colors[static_cast<size_t>(v.color_id) % m_tool_colors.size()];
-    }
-    default: { break; }
-    }
-
-    return Dummy_Color;
 }
 
 void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position)

@@ -109,6 +109,7 @@ public:
     size_t get_vertices_count() const;
     PathVertex get_current_vertex() const;
     PathVertex get_vertex_at(size_t id) const;
+    Color get_vertex_color(const PathVertex& vertex) const;
 
     size_t get_enabled_segments_count() const;
     const std::array<uint32_t, 2>& get_enabled_segments_range() const;
@@ -328,7 +329,6 @@ private:
     void update_view_full_range();
     void update_color_ranges();
     void update_heights_widths();
-    Color select_color(const PathVertex& vertex) const;
     void render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position);
     void render_options(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS

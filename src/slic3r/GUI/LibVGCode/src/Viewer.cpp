@@ -182,6 +182,11 @@ PathVertex Viewer::get_vertex_at(uint32_t id) const
     return m_impl->get_vertex_at(id);
 }
 
+Color Viewer::get_vertex_color(const PathVertex& vertex) const
+{
+    return m_impl->get_vertex_color(vertex);
+}
+
 size_t Viewer::get_enabled_segments_count() const
 {
     return m_impl->get_enabled_segments_count();

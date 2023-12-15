@@ -89,6 +89,8 @@ public:
     //
     PathVertex get_vertex_at(uint32_t id) const;
 
+    Color get_vertex_color(const PathVertex& vertex) const;
+
     //
     // Return the count of path segments enabled for rendering
     //
