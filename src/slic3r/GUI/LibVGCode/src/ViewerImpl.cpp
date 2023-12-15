@@ -743,36 +743,16 @@ void ViewerImpl::render(const Mat4x4& view_matrix, const Mat4x4& projection_matr
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 }
 
-EViewType ViewerImpl::get_view_type() const
-{
-    return m_settings.view_type;
-}
-
 void ViewerImpl::set_view_type(EViewType type)
 {
     m_settings.view_type = type;
     m_settings.update_colors = true;
 }
 
-ETimeMode ViewerImpl::get_time_mode() const
-{
-    return m_settings.time_mode;
-}
-
 void ViewerImpl::set_time_mode(ETimeMode mode)
 {
     m_settings.time_mode = mode;
     m_settings.update_colors = true;
-}
-
-const Interval& ViewerImpl::get_layers_view_range() const
-{
-    return m_layers.get_view_range();
-}
-
-void ViewerImpl::set_layers_view_range(const Interval& range)
-{
-    set_layers_view_range(range[0], range[1]);
 }
 
 void ViewerImpl::set_layers_view_range(Interval::value_type min, Interval::value_type max)
@@ -785,45 +765,10 @@ void ViewerImpl::set_layers_view_range(Interval::value_type min, Interval::value
     m_settings.update_colors = true;
 }
 
-bool ViewerImpl::is_top_layer_only_view_range() const
-{
-    return m_settings.top_layer_only_view_range;
-}
-
 void ViewerImpl::set_top_layer_only_view_range(bool top_layer_only_view_range)
 {
     m_settings.top_layer_only_view_range = top_layer_only_view_range;
     m_settings.update_colors = true;
-}
-
-size_t ViewerImpl::get_layers_count() const
-{
-    return m_layers.count();
-}
-
-float ViewerImpl::get_layer_z(size_t layer_id) const
-{
-    return m_layers.get_layer_z(layer_id);
-}
-
-std::vector<float> ViewerImpl::get_layers_zs() const
-{
-    return m_layers.get_zs();
-}
-
-size_t ViewerImpl::get_layer_id_at(float z) const
-{
-    return m_layers.get_layer_id_at(z);
-}
-
-size_t ViewerImpl::get_used_extruders_count() const
-{
-    return m_used_extruders_ids.size();
-}
-
-const std::vector<uint8_t>& ViewerImpl::get_used_extruders_ids() const
-{
-    return m_used_extruders_ids;
 }
 
 AABox ViewerImpl::get_bounding_box(EBBoxType type) const
@@ -879,21 +824,6 @@ void ViewerImpl::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
     }
 }
 
-const Interval& ViewerImpl::get_view_full_range() const
-{
-    return m_view_range.get_full();
-}
-
-const Interval& ViewerImpl::get_view_enabled_range() const
-{
-    return m_view_range.get_enabled();
-}
-
-const Interval& ViewerImpl::get_view_visible_range() const
-{
-    return m_view_range.get_visible();
-}
-
 void ViewerImpl::set_view_visible_range(uint32_t min, uint32_t max)
 {
     // force update of the full range, to avoid clamping the visible range with full old values
@@ -902,21 +832,6 @@ void ViewerImpl::set_view_visible_range(uint32_t min, uint32_t max)
     m_view_range.set_visible(min, max);
     update_enabled_entities();
     m_settings.update_colors = true;
-}
-
-size_t ViewerImpl::get_vertices_count() const
-{
-    return m_vertices.size();
-}
-
-const PathVertex& ViewerImpl::get_current_vertex() const
-{
-    return get_vertex_at(m_view_range.get_visible()[1]);
-}
-
-const PathVertex& ViewerImpl::get_vertex_at(size_t id) const
-{
-    return (id < m_vertices.size()) ? m_vertices[id] : Dummy_Path_Vertex;
 }
 
 Color ViewerImpl::get_vertex_color(const PathVertex& v) const
@@ -986,76 +901,6 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
     return Dummy_Color;
 }
 
-size_t ViewerImpl::get_enabled_segments_count() const
-{
-    return m_enabled_segments_count;
-}
-
-const Interval& ViewerImpl::get_enabled_segments_range() const
-{
-    return m_enabled_segments_range.get();
-}
-
-size_t ViewerImpl::get_enabled_options_count() const
-{
-    return m_enabled_options_count;
-}
-
-const Interval& ViewerImpl::get_enabled_options_range() const
-{
-    return m_enabled_options_range.get();
-}
-
-std::vector<EGCodeExtrusionRole> ViewerImpl::get_extrusion_roles() const
-{
-    return m_extrusion_roles.get_roles();
-}
-
-float ViewerImpl::get_extrusion_role_time(EGCodeExtrusionRole role) const
-{
-    return m_extrusion_roles.get_time(role, m_settings.time_mode);
-}
-
-size_t ViewerImpl::get_extrusion_roles_count() const
-{
-    return m_extrusion_roles.get_roles_count();
-}
-
-float ViewerImpl::get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const
-{
-    return m_extrusion_roles.get_time(role, mode);
-}
-
-float ViewerImpl::get_travels_time() const
-{
-    return get_travels_time(m_settings.time_mode);
-}
-
-float ViewerImpl::get_travels_time(ETimeMode mode) const
-{
-    return (mode < ETimeMode::COUNT) ? m_travels_time[static_cast<size_t>(mode)] : 0.0f;
-}
-
-std::vector<float> ViewerImpl::get_layers_times() const
-{
-    return get_layers_times(m_settings.time_mode);
-}
-
-std::vector<float> ViewerImpl::get_layers_times(ETimeMode mode) const
-{
-    return m_layers.get_times(mode);
-}
-
-size_t ViewerImpl::get_tool_colors_count() const
-{
-    return m_tool_colors.size();
-}
-
-const std::vector<Color>& ViewerImpl::get_tool_colors() const
-{
-    return m_tool_colors;
-}
-
 void ViewerImpl::set_tool_colors(const std::vector<Color>& colors)
 {
     m_tool_colors = colors;
@@ -1075,11 +920,6 @@ void ViewerImpl::set_extrusion_role_color(EGCodeExtrusionRole role, const Color&
         it->second = color;
 }
 
-void ViewerImpl::reset_default_extrusion_roles_colors()
-{
-    m_extrusion_roles_colors = Default_Extrusion_Roles_Colors;
-}
-
 const Color& ViewerImpl::get_option_color(EOptionType type) const
 {
     const auto it = m_options_colors.find(type);
@@ -1091,11 +931,6 @@ void ViewerImpl::set_option_color(EOptionType type, const Color& color)
     auto it = m_options_colors.find(type);
     if (it != m_options_colors.end())
         it->second = color;
-}
-
-void ViewerImpl::reset_default_options_colors()
-{
-    m_options_colors = Default_Options_Colors;
 }
 
 const Color& ViewerImpl::get_travel_move_color(ETravelMoveType type) const
@@ -1111,61 +946,10 @@ void ViewerImpl::set_travel_move_color(ETravelMoveType type, const Color& color)
         it->second = color;
 }
 
-void ViewerImpl::reset_default_travel_moves_colors()
-{
-    m_travel_moves_colors = Default_Travel_Moves_Colors;
-}
-
-const ColorRange& ViewerImpl::get_height_range() const
-{
-    return m_height_range;
-}
-
-const ColorRange& ViewerImpl::get_width_range() const
-{
-    return m_width_range;
-}
-
-const ColorRange& ViewerImpl::get_speed_range() const
-{
-    return m_speed_range;
-}
-
-const ColorRange& ViewerImpl::get_fan_speed_range() const
-{
-    return m_fan_speed_range;
-}
-
-const ColorRange& ViewerImpl::get_temperature_range() const
-{
-    return m_temperature_range;
-}
-
-const ColorRange& ViewerImpl::get_volumetric_rate_range() const
-{
-    return m_volumetric_rate_range;
-}
-
-const ColorRange& ViewerImpl::get_layer_time_range(EColorRangeType type) const
-{
-    return (static_cast<size_t>(type) < m_layer_time_range.size()) ?
-        m_layer_time_range[static_cast<size_t>(type)] : ColorRange::Dummy_Color_Range;
-}
-
-float ViewerImpl::get_travels_radius() const
-{
-    return m_travels_radius;
-}
-
 void ViewerImpl::set_travels_radius(float radius)
 {
     m_travels_radius = std::clamp(radius, 0.05f, 0.5f);
     update_heights_widths();
-}
-
-float ViewerImpl::get_wipes_radius() const
-{
-    return m_wipes_radius;
 }
 
 void ViewerImpl::set_wipes_radius(float radius)
@@ -1173,83 +957,6 @@ void ViewerImpl::set_wipes_radius(float radius)
     m_wipes_radius = std::clamp(radius, 0.05f, 0.5f);
     update_heights_widths();
 }
-
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-Vec3 ViewerImpl::get_cog_marker_position() const
-{
-    return m_cog_marker.get_position();
-}
-
-float ViewerImpl::get_cog_marker_scale_factor() const
-{
-    return m_cog_marker_scale_factor;
-}
-
-void ViewerImpl::set_cog_marker_scale_factor(float factor)
-{
-    m_cog_marker_scale_factor = std::max(factor, 0.001f);
-}
-
-bool ViewerImpl::is_tool_marker_enabled() const
-{
-    return m_tool_marker.is_enabled();
-}
-
-void ViewerImpl::enable_tool_marker(bool value)
-{
-    m_tool_marker.enable(value);
-}
-
-const Vec3& ViewerImpl::get_tool_marker_position() const
-{
-    return m_tool_marker.get_position();
-}
-
-void ViewerImpl::set_tool_marker_position(const Vec3& position)
-{
-    m_tool_marker.set_position(position);
-}
-
-float ViewerImpl::get_tool_marker_offset_z() const
-{
-    return m_tool_marker.get_offset_z();
-}
-
-void ViewerImpl::set_tool_marker_offset_z(float offset_z)
-{
-    m_tool_marker.set_offset_z(offset_z);
-}
-
-float ViewerImpl::get_tool_marker_scale_factor() const
-{
-    return m_tool_marker_scale_factor;
-}
-
-void ViewerImpl::set_tool_marker_scale_factor(float factor)
-{
-    m_tool_marker_scale_factor = std::max(factor, 0.001f);
-}
-
-const Color& ViewerImpl::get_tool_marker_color() const
-{
-    return m_tool_marker.get_color();
-}
-
-void ViewerImpl::set_tool_marker_color(const Color& color)
-{
-    m_tool_marker.set_color(color);
-}
-
-float ViewerImpl::get_tool_marker_alpha() const
-{
-    return m_tool_marker.get_alpha();
-}
-
-void ViewerImpl::set_tool_marker_alpha(float alpha)
-{
-    m_tool_marker.set_alpha(alpha);
-}
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 static bool is_visible(const PathVertex& v, const Settings& settings)
 {

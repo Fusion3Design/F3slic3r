@@ -71,27 +71,27 @@ public:
     //
     void render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
 
-    EViewType get_view_type() const;
+    EViewType get_view_type() const { return m_settings.view_type; }
     void set_view_type(EViewType type);
 
-    ETimeMode get_time_mode() const;
+    ETimeMode get_time_mode() const { return m_settings.time_mode; }
     void set_time_mode(ETimeMode mode);
 
-    const Interval& get_layers_view_range() const;
-    void set_layers_view_range(const Interval& range);
+    const Interval& get_layers_view_range() const { return m_layers.get_view_range(); }
+    void set_layers_view_range(const Interval& range) { set_layers_view_range(range[0], range[1]); }
     void set_layers_view_range(Interval::value_type min, Interval::value_type max);
 
-    bool is_top_layer_only_view_range() const;
+    bool is_top_layer_only_view_range() const { return m_settings.top_layer_only_view_range; }
     void set_top_layer_only_view_range(bool top_layer_only_view_range);
 
-    size_t get_layers_count() const;
-    float get_layer_z(size_t layer_id) const;
-    std::vector<float> get_layers_zs() const;
+    size_t get_layers_count() const { return m_layers.count(); }
+    float get_layer_z(size_t layer_id) const { return m_layers.get_layer_z(layer_id); }
+    std::vector<float> get_layers_zs() const { return m_layers.get_zs(); }
 
-    size_t get_layer_id_at(float z) const;
+    size_t get_layer_id_at(float z) const { return m_layers.get_layer_id_at(z); }
 
-    size_t get_used_extruders_count() const;
-    const std::vector<uint8_t>& get_used_extruders_ids() const;
+    size_t get_used_extruders_count() const { return m_used_extruders_ids.size(); }
+    const std::vector<uint8_t>& get_used_extruders_ids() const { return m_used_extruders_ids; }
 
     AABox get_bounding_box(EBBoxType type) const;
 
@@ -101,84 +101,91 @@ public:
     bool is_extrusion_role_visible(EGCodeExtrusionRole role) const;
     void toggle_extrusion_role_visibility(EGCodeExtrusionRole role);
 
-    const Interval& get_view_full_range() const;
-    const Interval& get_view_enabled_range() const;
-    const Interval& get_view_visible_range() const;
+    const Interval& get_view_full_range() const { return m_view_range.get_full(); }
+    const Interval& get_view_enabled_range() const { return m_view_range.get_enabled(); }
+    const Interval& get_view_visible_range() const { return m_view_range.get_visible(); }
     void set_view_visible_range(uint32_t min, uint32_t max);
 
-    size_t get_vertices_count() const;
-    const PathVertex& get_current_vertex() const;
-    const PathVertex& get_vertex_at(size_t id) const;
+    size_t get_vertices_count() const { return m_vertices.size(); }
+    const PathVertex& get_current_vertex() const { return get_vertex_at(m_view_range.get_visible()[1]); }
+    const PathVertex& get_vertex_at(size_t id) const {
+        return (id < m_vertices.size()) ? m_vertices[id] : Dummy_Path_Vertex;
+    }
     Color get_vertex_color(const PathVertex& vertex) const;
 
-    size_t get_enabled_segments_count() const;
-    const Interval& get_enabled_segments_range() const;
+    size_t get_enabled_segments_count() const { return m_enabled_segments_count; }
+    const Interval& get_enabled_segments_range() const { return m_enabled_segments_range.get(); }
 
-    size_t get_enabled_options_count() const;
-    const Interval& get_enabled_options_range() const;
+    size_t get_enabled_options_count() const { return m_enabled_options_count; }
+    const Interval& get_enabled_options_range() const { return m_enabled_options_range.get(); }
 
-    size_t get_extrusion_roles_count() const;
-    std::vector<EGCodeExtrusionRole> get_extrusion_roles() const;
-    float get_extrusion_role_time(EGCodeExtrusionRole role) const;
-    float get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const;
+    std::vector<EGCodeExtrusionRole> get_extrusion_roles() const { return m_extrusion_roles.get_roles(); }
+    float get_extrusion_role_time(EGCodeExtrusionRole role) const { return m_extrusion_roles.get_time(role, m_settings.time_mode); }
+    size_t get_extrusion_roles_count() const { return m_extrusion_roles.get_roles_count(); }
+    float get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const { return m_extrusion_roles.get_time(role, mode); }
 
-    float get_travels_time() const;
-    float get_travels_time(ETimeMode mode) const;
-    std::vector<float> get_layers_times() const;
-    std::vector<float> get_layers_times(ETimeMode mode) const;
+    float get_travels_time() const { return get_travels_time(m_settings.time_mode); }
+    float get_travels_time(ETimeMode mode) const {
+        return (mode < ETimeMode::COUNT) ? m_travels_time[static_cast<size_t>(mode)] : 0.0f;
+    }
+    std::vector<float> get_layers_times() const { return get_layers_times(m_settings.time_mode); }
+    std::vector<float> get_layers_times(ETimeMode mode) const { return m_layers.get_times(mode); }
 
-    size_t get_tool_colors_count() const;
-    const std::vector<Color>& get_tool_colors() const;
+    size_t get_tool_colors_count() const { return m_tool_colors.size(); }
+    const std::vector<Color>& get_tool_colors() const { return m_tool_colors; }
     void set_tool_colors(const std::vector<Color>& colors);
 
     const Color& get_extrusion_role_color(EGCodeExtrusionRole role) const;
     void set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color);
-    void reset_default_extrusion_roles_colors();
+    void reset_default_extrusion_roles_colors() { m_extrusion_roles_colors = Default_Extrusion_Roles_Colors; }
 
     const Color& get_option_color(EOptionType type) const;
     void set_option_color(EOptionType type, const Color& color);
-    void reset_default_options_colors();
+    void reset_default_options_colors() { m_options_colors = Default_Options_Colors; }
 
     const Color& get_travel_move_color(ETravelMoveType type) const;
     void set_travel_move_color(ETravelMoveType type, const Color& color);
-    void reset_default_travel_moves_colors();
+    void reset_default_travel_moves_colors() { m_travel_moves_colors = Default_Travel_Moves_Colors; }
 
-    const ColorRange& get_height_range() const;
-    const ColorRange& get_width_range() const;
-    const ColorRange& get_speed_range() const;
-    const ColorRange& get_fan_speed_range() const;
-    const ColorRange& get_temperature_range() const;
-    const ColorRange& get_volumetric_rate_range() const;
-    const ColorRange& get_layer_time_range(EColorRangeType type) const;
+    const ColorRange& get_height_range() const { return m_height_range; }
+    const ColorRange& get_width_range() const { return m_width_range; }
+    const ColorRange& get_speed_range() const { return m_speed_range; }
+    const ColorRange& get_fan_speed_range() const { return m_fan_speed_range; }
+    const ColorRange& get_temperature_range() const { return m_temperature_range; }
+    const ColorRange& get_volumetric_rate_range() const { return m_volumetric_rate_range; }
+    const ColorRange& get_layer_time_range(EColorRangeType type) const {
+        return (static_cast<size_t>(type) < m_layer_time_range.size()) ?
+            m_layer_time_range[static_cast<size_t>(type)] : ColorRange::Dummy_Color_Range;
+    }
 
-    float get_travels_radius() const;
+    float get_travels_radius() const { return m_travels_radius; }
     void set_travels_radius(float radius);
-    float get_wipes_radius() const;
+    float get_wipes_radius() const { return m_wipes_radius; }
     void set_wipes_radius(float radius);
 
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-    Vec3 get_cog_marker_position() const;
+    Vec3 get_cog_marker_position() const { return m_cog_marker.get_position(); }
 
-    float get_cog_marker_scale_factor() const;
-    void set_cog_marker_scale_factor(float factor);
+    float get_cog_marker_scale_factor() const { return m_cog_marker_scale_factor; }
+    void set_cog_marker_scale_factor(float factor) { m_cog_marker_scale_factor = std::max(factor, 0.001f); }
 
-    bool is_tool_marker_enabled() const;
-    void enable_tool_marker(bool value);
+    bool is_tool_marker_enabled() const { return m_tool_marker.is_enabled(); }
+    void enable_tool_marker(bool value) { m_tool_marker.enable(value); }
 
-    const Vec3& get_tool_marker_position() const;
-    void set_tool_marker_position(const Vec3& position);
+    const Vec3& get_tool_marker_position() const { return m_tool_marker.get_position(); }
+    void set_tool_marker_position(const Vec3& position) { m_tool_marker.set_position(position); }
 
-    float get_tool_marker_offset_z() const;
-    void set_tool_marker_offset_z(float offset_z);
+    float get_tool_marker_offset_z() const { return m_tool_marker.get_offset_z(); }
+    void set_tool_marker_offset_z(float offset_z) { m_tool_marker.set_offset_z(offset_z); }
 
-    float get_tool_marker_scale_factor() const;
-    void set_tool_marker_scale_factor(float factor);
+    float get_tool_marker_scale_factor() const { return m_tool_marker_scale_factor; }
+    void set_tool_marker_scale_factor(float factor) { m_tool_marker_scale_factor = std::max(factor, 0.001f); }
 
-    const Color& get_tool_marker_color() const;
-    void set_tool_marker_color(const Color& color);
+    const Color& get_tool_marker_color() const { return m_tool_marker.get_color(); }
+    void set_tool_marker_color(const Color& color) { m_tool_marker.set_color(color); }
 
-    float get_tool_marker_alpha() const;
-    void set_tool_marker_alpha(float size);
+    float get_tool_marker_alpha() const { return m_tool_marker.get_alpha(); }
+    void set_tool_marker_alpha(float alpha) { m_tool_marker.set_alpha(alpha); }
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 private:

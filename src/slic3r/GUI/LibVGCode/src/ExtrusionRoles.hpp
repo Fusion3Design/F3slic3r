@@ -26,11 +26,11 @@ public:
 
     void add(EGCodeExtrusionRole role, const std::array<float, Time_Modes_Count>& times);
 
-    size_t get_roles_count() const;
+    size_t get_roles_count() const { return m_items.size(); }
     std::vector<EGCodeExtrusionRole> get_roles() const;
     float get_time(EGCodeExtrusionRole role, ETimeMode mode) const;
 
-    void reset();
+    void reset() { m_items.clear(); }
 
 private:
     std::map<EGCodeExtrusionRole, Item> m_items;

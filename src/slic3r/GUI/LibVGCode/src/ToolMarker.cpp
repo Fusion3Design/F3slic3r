@@ -165,56 +165,6 @@ void ToolMarker::render()
     glsafe(glBindVertexArray(curr_vertex_array));
 }
 
-bool ToolMarker::is_enabled() const
-{
-    return m_enabled;
-}
-
-void ToolMarker::enable(bool value)
-{
-    m_enabled = value;
-}
-
-const Vec3& ToolMarker::get_position() const
-{
-    return m_position;
-}
-
-void ToolMarker::set_position(const Vec3& position)
-{
-    m_position = position;
-}
-
-float ToolMarker::get_offset_z() const
-{
-    return m_offset_z;
-}
-
-void ToolMarker::set_offset_z(float offset_z)
-{
-    m_offset_z = std::max(offset_z, 0.0f);
-}
-
-const Color& ToolMarker::get_color() const
-{
-    return m_color;
-}
-
-void ToolMarker::set_color(const Color& color)
-{
-    m_color = color;
-}
-
-float ToolMarker::get_alpha() const
-{
-    return m_alpha;
-}
-
-void ToolMarker::set_alpha(float alpha)
-{
-    m_alpha = std::clamp(alpha, 0.25f, 0.75f);
-}
-
 } // namespace libvgcode
 
 //################################################################################################################################

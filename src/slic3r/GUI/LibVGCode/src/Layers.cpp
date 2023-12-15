@@ -55,16 +55,6 @@ void Layers::reset()
     m_view_range.reset();
 }
 
-bool Layers::empty() const
-{
-    return m_items.empty();
-}
-
-size_t Layers::count() const
-{
-    return m_items.size();
-}
-
 std::vector<float> Layers::get_times(ETimeMode mode) const
 {
     std::vector<float> ret;
@@ -86,41 +76,10 @@ std::vector<float> Layers::get_zs() const
     return ret;
 }
 
-float Layers::get_layer_time(ETimeMode mode, size_t layer_id) const
-{
-    return (mode < ETimeMode::COUNT&& layer_id < m_items.size()) ?
-        m_items[layer_id].times[static_cast<size_t>(mode)] : 0.0f;
-}
-
-float Layers::get_layer_z(size_t layer_id) const
-{
-    return (layer_id < m_items.size()) ? m_items[layer_id].z : 0.0f;
-}
-
 size_t Layers::get_layer_id_at(float z) const
 {
     auto iter = std::upper_bound(m_items.begin(), m_items.end(), z, [](float z, const Item& item) { return item.z < z; });
     return std::distance(m_items.begin(), iter);
-}
-
-const Interval& Layers::get_view_range() const
-{
-    return m_view_range.get();
-}
-
-void Layers::set_view_range(const Interval& range)
-{
-    set_view_range(range[0], range[1]);
-}
-
-void Layers::set_view_range(Interval::value_type min, Interval::value_type max)
-{
-    m_view_range.set(min, max);
-}
-
-bool Layers::layer_contains_colorprint_options(size_t layer_id) const
-{
-    return (layer_id < m_items.size()) ? m_items[layer_id].contains_colorprint_options : false;
 }
 
 } // namespace libvgcode

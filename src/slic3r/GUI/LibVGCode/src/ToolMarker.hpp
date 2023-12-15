@@ -28,20 +28,20 @@ public:
     void init(uint16_t resolution, float tip_radius, float tip_height, float stem_radius, float stem_height);
     void render();
 
-    bool is_enabled() const;
-    void enable(bool value);
+    bool is_enabled() const { return m_enabled; }
+    void enable(bool value) { m_enabled = value; }
 
-    const Vec3& get_position() const;
-    void set_position(const Vec3& position);
+    const Vec3& get_position() const { return m_position; }
+    void set_position(const Vec3& position) { m_position = position; }
 
-    float get_offset_z() const;
-    void set_offset_z(float offset_z);
+    float get_offset_z() const { return m_offset_z; }
+    void set_offset_z(float offset_z) { m_offset_z = std::max(offset_z, 0.0f); }
 
-    const Color& get_color() const;
-    void set_color(const Color& color);
+    const Color& get_color() const { return m_color; }
+    void set_color(const Color& color) { m_color = color; }
 
-    float get_alpha() const;
-    void set_alpha(float alpha);
+    float get_alpha() const { return m_alpha; }
+    void set_alpha(float alpha) { m_alpha = std::clamp(alpha, 0.25f, 0.75f); }
 
 private:
     bool m_enabled{ false };

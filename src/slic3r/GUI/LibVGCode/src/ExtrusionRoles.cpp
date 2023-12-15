@@ -27,11 +27,6 @@ void ExtrusionRoles::add(EGCodeExtrusionRole role, const std::array<float, Time_
     }
 }
 
-size_t ExtrusionRoles::get_roles_count() const
-{
-    return m_items.size();
-}
-
 std::vector<EGCodeExtrusionRole> ExtrusionRoles::get_roles() const
 {
     std::vector<EGCodeExtrusionRole> ret;
@@ -49,11 +44,6 @@ float ExtrusionRoles::get_time(EGCodeExtrusionRole role, ETimeMode mode) const
         return 0.0f;
 
     return (mode < ETimeMode::COUNT) ? role_it->second.times[static_cast<size_t>(mode)] : 0.0f;
-}
-
-void ExtrusionRoles::reset()
-{
-    m_items.clear();
 }
 
 } // namespace libvgcode
