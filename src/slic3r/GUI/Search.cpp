@@ -57,7 +57,7 @@ static char marker_by_type(Preset::Type type, PrinterTechnology pt)
 
 std::string Option::opt_key() const
 {
-    return boost::nowide::narrow(key).substr(2);
+    return into_u8(key).substr(2);
 }
 
 void FoundOption::get_marked_label_and_tooltip(const char** label_, const char** tooltip_) const

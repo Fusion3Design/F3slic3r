@@ -1426,7 +1426,7 @@ Worker::Worker(wxWindow* parent)
     wxGetApp().SetWindowVariantForButton(button_path);
     this->Add(button_path, 0, wxEXPAND | wxTOP | wxLEFT, 5);
     button_path->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
-        boost::filesystem::path chosen_dest(boost::nowide::narrow(m_input_path->GetValue()));
+        boost::filesystem::path chosen_dest(into_u8(m_input_path->GetValue()));
 
         wxDirDialog dialog(m_parent, _L("Choose folder") + ":", chosen_dest.string() );
         if (dialog.ShowModal() == wxID_OK)

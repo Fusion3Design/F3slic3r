@@ -1,8 +1,7 @@
 #include "WifiScanner.hpp"
-
+#include "slic3r/GUI/GUI.hpp"
 
 #include <boost/log/trivial.hpp>
-#include <boost/nowide/system.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/filesystem.hpp>
 
@@ -143,7 +142,7 @@ void fill_wifi_map(Slic3r::WifiSsidPskMap& wifi_map, std::string& connected_ssid
                 {
                     wxString xml(xmlstr);
                     boost::property_tree::ptree pt;
-                    std::stringstream ss(boost::nowide::narrow(xml));
+                    std::stringstream ss(Slic3r::GUI::into_u8(xml));
                     boost::property_tree::read_xml(ss, pt);
                     std::string password;
                     std::string psk_protected;

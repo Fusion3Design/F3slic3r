@@ -638,7 +638,7 @@ static void register_win32_device_notification_event()
 //				if (lpdbi->dbcc_classguid == GUID_DEVINTERFACE_VOLUME) {
 //					printf("DBT_DEVICEARRIVAL %d - Media has arrived: %ws\n", msg_count, lpdbi->dbcc_name);
 				if (lpdbi->dbcc_classguid == GUID_DEVINTERFACE_HID)
-			        plater->GetEventHandler()->AddPendingEvent(HIDDeviceAttachedEvent(EVT_HID_DEVICE_ATTACHED, boost::nowide::narrow(lpdbi->dbcc_name)));
+			        plater->GetEventHandler()->AddPendingEvent(HIDDeviceAttachedEvent(EVT_HID_DEVICE_ATTACHED, into_u8(lpdbi->dbcc_name)));
 			}
             break;
 		case DBT_DEVICEREMOVECOMPLETE:
@@ -649,7 +649,7 @@ static void register_win32_device_notification_event()
 //				if (lpdbi->dbcc_classguid == GUID_DEVINTERFACE_VOLUME)
 //					printf("DBT_DEVICEARRIVAL %d - Media was removed: %ws\n", msg_count, lpdbi->dbcc_name);
 				if (lpdbi->dbcc_classguid == GUID_DEVINTERFACE_HID)
-        			plater->GetEventHandler()->AddPendingEvent(HIDDeviceDetachedEvent(EVT_HID_DEVICE_DETACHED, boost::nowide::narrow(lpdbi->dbcc_name)));
+        			plater->GetEventHandler()->AddPendingEvent(HIDDeviceDetachedEvent(EVT_HID_DEVICE_DETACHED, into_u8(lpdbi->dbcc_name)));
 			}
 			break;
         default:
@@ -712,7 +712,7 @@ static void register_win32_device_notification_event()
 		copy_data_structure = (COPYDATASTRUCT*)lParam;
 		if (copy_data_structure->dwData == 1) {
 			LPCWSTR arguments = (LPCWSTR)copy_data_structure->lpData;
-			Slic3r::GUI::wxGetApp().other_instance_message_handler()->handle_message(boost::nowide::narrow(arguments));
+			Slic3r::GUI::wxGetApp().other_instance_message_handler()->handle_message(into_u8(arguments));
 		}
 		return true;
 		});
@@ -1115,9 +1115,9 @@ void GUI_App::jump_to_option(size_t selected)
 {
     const Search::Option& opt = m_searcher.get_option(selected);
     if (opt.type == Preset::TYPE_PREFERENCES)
-        open_preferences(opt.opt_key(), boost::nowide::narrow(opt.group));
+        open_preferences(opt.opt_key(), into_u8(opt.group));
     else
-        get_tab(opt.type)->activate_option(opt.opt_key(), boost::nowide::narrow(opt.category));
+        get_tab(opt.type)->activate_option(opt.opt_key(), into_u8(opt.category));
 }
 
 void GUI_App::jump_to_option(const std::string& composite_key)
@@ -1134,7 +1134,7 @@ void GUI_App::jump_to_option(const std::string& composite_key)
             // so resort searcher before get an option
             m_searcher.sort_options_by_key();
             const Search::Option& opt = m_searcher.get_option(opt_key, tab->type());
-            tab->activate_option(opt_key, boost::nowide::narrow(opt.category));
+            tab->activate_option(opt_key, into_u8(opt.category));
 
             // Revert sort of searcher back
             m_searcher.sort_options_by_label();
@@ -3052,7 +3052,7 @@ void GUI_App::MacOpenURL(const wxString& url)
         BOOST_LOG_TRIVIAL(error) << "Recieved command to open URL, but it is not allowed in app configuration. URL: " << url;
         return;
     }
-    start_download(boost::nowide::narrow(url));
+    start_download(into_u8(url));
 }
 
 #endif /* __APPLE */

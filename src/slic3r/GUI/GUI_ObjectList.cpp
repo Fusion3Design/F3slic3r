@@ -4671,7 +4671,7 @@ void ObjectList::fix_through_winsdk()
 
     // Show info notification
     wxString msg = MenuFactory::get_repaire_result_message(succes_models, failed_models);
-    plater->get_notification_manager()->push_notification(NotificationType::RepairFinished, NotificationManager::NotificationLevel::PrintInfoShortNotificationLevel, boost::nowide::narrow(msg));
+    plater->get_notification_manager()->push_notification(NotificationType::RepairFinished, NotificationManager::NotificationLevel::PrintInfoShortNotificationLevel, into_u8(msg));
 }
 
 void ObjectList::simplify()

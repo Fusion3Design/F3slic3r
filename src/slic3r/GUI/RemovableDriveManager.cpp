@@ -77,8 +77,8 @@ std::vector<DriveData> RemovableDriveManager::search_for_removable_drives() cons
 						ULARGE_INTEGER free_space;
 						::GetDiskFreeSpaceExW(wpath.c_str(), &free_space, nullptr, nullptr);
 						if (free_space.QuadPart > 0) {
-							path += "\\";
-							current_drives.emplace_back(DriveData{ boost::nowide::narrow(volume_name), path });
+                            path += "\\";
+                            current_drives.emplace_back(DriveData{ boost::nowide::narrow(volume_name), path });
 						}
 					}
 				}
