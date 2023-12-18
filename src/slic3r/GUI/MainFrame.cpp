@@ -1516,7 +1516,7 @@ void MainFrame::init_menubar_as_editor()
 
         editMenu->AppendSeparator();
         append_menu_item(editMenu, wxID_ANY, _L("Searc&h") + "\tCtrl+F",
-            _L("Search in settings"), [this](wxCommandEvent&) { m_plater->IsShown() ? m_plater->search() : wxGetApp().show_search_dialog(); },
+            _L("Search in settings"), [this](wxCommandEvent&) { wxGetApp().show_search_dialog(); },
             "search", nullptr, []() {return true; }, this);
     }
 
@@ -2055,9 +2055,6 @@ void MainFrame::select_tab(size_t tab/* = size_t(-1)*/)
         if (tab==0) {
             if (m_settings_dialog.IsShown())
                 this->SetFocus();
-            // plater should be focused for correct navigation inside search window
-            if (m_plater->canvas3D()->is_search_pressed())
-                m_plater->SetFocus();
             return;
         }
         // Show/Activate Settings Dialog

@@ -184,7 +184,6 @@ protected:
 	std::string			m_name;
 	const wxString		m_title;
 	TabPresetComboBox*	m_presets_choice;
-	ScalableButton*		m_search_btn;
 	ScalableButton*		m_btn_compare_preset;
 	ScalableButton*		m_btn_save_preset;
 	ScalableButton*		m_btn_rename_preset;

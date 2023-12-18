@@ -284,7 +284,6 @@ public:
 
     void copy_selection_to_clipboard();
     void paste_from_clipboard();
-    void search();
     void mirror(Axis axis);
     void split_object();
     void split_volume();

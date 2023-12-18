@@ -1829,7 +1829,7 @@ bool GUI_App::suppress_round_corners() const
 
 wxSize GUI_App::get_min_size(wxWindow* display_win) const
 {
-    wxSize min_size(76*m_em_unit, 49 * m_em_unit);
+    wxSize min_size(120 * m_em_unit, 49 * m_em_unit);
 
     const wxDisplay display = wxDisplay(display_win);
     wxRect display_rect = display.GetGeometry();

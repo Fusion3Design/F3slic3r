@@ -6552,23 +6552,6 @@ void Plater::paste_from_clipboard()
         p->view3D->get_canvas3d()->get_selection().paste_from_clipboard();
 }
 
-void Plater::search()
-{
-    if (is_preview_shown())
-        return;
-    // plater should be focused for correct navigation inside search window 
-    this->SetFocus();
-
-    wxKeyEvent evt;
-#ifdef __APPLE__
-    evt.m_keyCode = 'f';
-#else /* __APPLE__ */
-    evt.m_keyCode = WXK_CONTROL_F;
-#endif /* __APPLE__ */
-    evt.SetControlDown(true);
-    canvas3D()->on_char(evt);
-}
-
 void Plater::msw_rescale()
 {
     p->preview->msw_rescale();

@@ -27,6 +27,7 @@
 #include "Widgets/CheckBox.hpp"
 
 class CheckBox;
+class TextInput;
 
 namespace Slic3r {
 
@@ -91,6 +92,8 @@ class OptionsSearcher
     std::map<std::string, GroupAndCategory> groups_and_categories;
     PrinterTechnology                       printer_technology {ptAny};
     ConfigOptionMode                        mode{ comUndef };
+    TextInput*                              search_input    { nullptr };
+    SearchDialog*                           search_dialog   { nullptr };
 
     std::vector<Option>                     options {};
     std::vector<Option>                     preferences_options {};
@@ -112,8 +115,7 @@ class OptionsSearcher
 
 public:
     OptionViewParameters                    view_params;
-
-    SearchDialog*                           search_dialog { nullptr };
+    wxString                                default_string;
 
     OptionsSearcher();
     ~OptionsSearcher();
@@ -148,6 +150,8 @@ public:
     void show_dialog();
     void dlg_sys_color_changed();
     void dlg_msw_rescale();
+
+    void set_search_input(TextInput* input_ctrl);
 };
 
 
@@ -158,11 +162,9 @@ class SearchListModel;
 class SearchDialog : public GUI::DPIDialog
 {
     wxString search_str;
-    wxString default_string;
 
     bool     prevent_list_events {false};
 
-    wxTextCtrl*         search_line         { nullptr };
     wxDataViewCtrl*     search_list         { nullptr };
     SearchListModel*    search_list_model   { nullptr };
     CheckBox*           check_category      { nullptr };
@@ -170,8 +172,6 @@ class SearchDialog : public GUI::DPIDialog
 
     OptionsSearcher*    searcher            { nullptr };
 
-    void OnInputText(wxCommandEvent& event);
-    void OnLeftUpInTextCtrl(wxEvent& event);
     void OnKeyDown(wxKeyEvent& event);
 
     void OnActivate(wxDataViewEvent& event);
@@ -192,6 +192,9 @@ public:
 
     void msw_rescale();
     void on_sys_color_changed() override;
+
+    void input_text(wxString input);
+    void KeyDown(wxKeyEvent& event) { OnKeyDown(event); }
 
 protected:
     void on_dpi_changed(const wxRect& suggested_rect) override { msw_rescale(); }

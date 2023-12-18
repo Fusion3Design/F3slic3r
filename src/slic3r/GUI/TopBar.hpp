@@ -5,6 +5,7 @@
 
 #include <wx/bookctrl.h>
 #include "wxExtensions.hpp"
+#include "Widgets/TextInput.hpp"
 
 class ModeSizer;
 //class ScalableButton;
@@ -55,6 +56,8 @@ class TopBarItemsCtrl : public wxControl
     wxMenuItem*     m_login_menu_item{ nullptr };
     wxMenuItem*     m_connect_dummy_menu_item{ nullptr };
 
+    ::TextInput*    m_search{ nullptr };
+
 public:
     TopBarItemsCtrl(wxWindow* parent);
     ~TopBarItemsCtrl() {}
@@ -76,6 +79,9 @@ public:
     void ApplyWorkspacesMenu();
     void CreateAuthMenu();
     void UpdateAuthMenu();
+    void CreateSearch();
+
+    wxWindow* GetSearchCtrl() { return m_search->GetTextCtrl(); }
 
 private:
     wxWindow*                       m_parent;
@@ -332,7 +338,16 @@ public:
             const bool isFromSelf = event.GetEventObject() == (wxObject*)this;
             const bool isForward = event.GetDirection();
 
-            if (isFromSelf && !isForward)
+            wxWindow* search_win = (dynamic_cast<TopBarItemsCtrl*>(m_bookctrl)->GetSearchCtrl());
+            const bool isFromSearch = event.GetEventObject() == (wxObject*)search_win;
+            if (isFromSearch)
+            {
+                // find the target window in the siblings list
+                wxWindowList& siblings = m_bookctrl->GetChildren();
+                wxWindowList::compatibility_iterator i = siblings.Find(search_win->GetParent());
+                i->GetNext()->GetData()->SetFocus();
+            }
+            else if (isFromSelf && !isForward)
             {
                 // focus is currently on notebook tab and should leave
                 // it backwards (Shift-TAB)
@@ -392,7 +407,6 @@ public:
     void AppendMenuSeparaorItem() {
         GetTopBarItemsCtrl()->AppendMenuSeparaorItem();
     }
-
 
 protected:
     virtual void UpdateSelectedPage(size_t WXUNUSED(newsel)) override

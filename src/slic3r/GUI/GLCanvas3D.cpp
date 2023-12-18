@@ -2858,7 +2858,7 @@ void GLCanvas3D::on_char(wxKeyEvent& evt)
     int keyCode = evt.GetKeyCode();
     int ctrlMask = wxMOD_CONTROL;
     int shiftMask = wxMOD_SHIFT;
-    if (keyCode == WXK_ESCAPE && (_deactivate_undo_redo_toolbar_items() || _deactivate_search_toolbar_item() || _deactivate_arrange_menu()))
+    if (keyCode == WXK_ESCAPE && (_deactivate_undo_redo_toolbar_items() || _deactivate_arrange_menu()))
         return;
 
     if (m_gizmos.on_char(evt)) {
@@ -2890,14 +2890,6 @@ void GLCanvas3D::on_char(wxKeyEvent& evt)
 #endif /* __APPLE__ */
             post_event(SimpleEvent(EVT_GLTOOLBAR_COPY));
         break;
-#ifdef __APPLE__
-        case 'f':
-        case 'F':
-#else /* __APPLE__ */
-        case WXK_CONTROL_F:
-#endif /* __APPLE__ */
-            _activate_search_toolbar_item();
-            break;
 #ifdef __APPLE__
         case 'm':
         case 'M':
@@ -3354,10 +3346,9 @@ void GLCanvas3D::on_mouse_wheel(wxMouseEvent& evt)
         }
     }
 
-    // If the Search window or Undo/Redo list is opened, 
+    // If Undo/Redo list is opened, 
     // update them according to the event
-    if (m_main_toolbar.is_item_pressed("search")    || 
-        m_undoredo_toolbar.is_item_pressed("undo")  || 
+    if (m_undoredo_toolbar.is_item_pressed("undo")  || 
         m_undoredo_toolbar.is_item_pressed("redo")) {
         m_mouse_wheel = int((double)evt.GetWheelRotation() / (double)evt.GetWheelDelta());
         return;
@@ -3664,7 +3655,7 @@ void GLCanvas3D::on_mouse(wxMouseEvent& evt)
         m_dirty = true;
     }
     else if (evt.LeftDown() || evt.RightDown() || evt.MiddleDown()) {
-        if (_deactivate_undo_redo_toolbar_items() || _deactivate_search_toolbar_item() || _deactivate_arrange_menu())
+        if (_deactivate_undo_redo_toolbar_items() || _deactivate_arrange_menu())
             return;
 
         // If user pressed left or right button we first check whether this happened
@@ -4765,73 +4756,6 @@ bool GLCanvas3D::_render_undo_redo_stack(const bool is_undo, float pos_x)
     return action_taken;
 }
 
-// Getter for the const char*[] for the search list 
-static bool search_string_getter(int idx, const char** label, const char** tooltip)
-{
-    const Search::OptionsSearcher& search_list = wxGetApp().searcher();
-    if (0 <= idx && (size_t)idx < search_list.size()) {
-        search_list[idx].get_marked_label_and_tooltip(label, tooltip);
-        return true;
-    }
-    return false;
-}
-
-bool GLCanvas3D::_render_search_list(float pos_x)
-{
-    bool action_taken = false;
-    ImGuiWrapper* imgui = wxGetApp().imgui();
-
-    imgui->set_next_window_pos(pos_x, m_main_toolbar.get_height(), ImGuiCond_Always, 0.5f, 0.0f);
-    std::string title = L("Search");
-    imgui->begin(_(title), ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-
-    int selected = -1;
-    bool edited = false;
-    float em = static_cast<float>(wxGetApp().em_unit());
-#if ENABLE_RETINA_GL
-	em *= m_retina_helper->get_scale_factor();
-#endif // ENABLE_RETINA_GL
-
-    // update searcher before show imGui search dialog on the plater, if printer technology or mode was changed
-    wxGetApp().check_and_update_searcher(wxGetApp().get_mode());
-    Search::OptionsSearcher& searcher = wxGetApp().searcher();
-
-    std::string& search_line = searcher.search_string();
-    char *s = new char[255];
-    strcpy(s, search_line.empty() ? _u8L("Enter a search term").c_str() : search_line.c_str());
-
-    imgui->search_list(ImVec2(45 * em, 30 * em), &search_string_getter, s,
-        wxGetApp().searcher().view_params,
-        selected, edited, m_mouse_wheel, wxGetApp().is_localized());
-
-    search_line = s;
-    delete [] s;
-    if (search_line == _u8L("Enter a search term"))
-        search_line.clear();
-
-    if (edited)
-        searcher.search();
-
-    if (selected >= 0) {
-        // selected == 9999 means that Esc kye was pressed
-        /*// revert commit https://github.com/prusa3d/PrusaSlicer/commit/91897589928789b261ca0dc735ffd46f2b0b99f2
-        if (selected == 9999)
-            action_taken = true;
-        else
-            sidebar.jump_to_option(selected);*/
-        if (selected != 9999) {
-            imgui->end(); // end imgui before the jump to option
-            wxGetApp().jump_to_option(selected);
-            return true;
-        }
-        action_taken = true;
-    }
-
-    imgui->end();
-
-    return action_taken;
-}
-
 bool GLCanvas3D::_render_arrange_menu(float pos_x)
 {
     m_arrange_settings_dialog.render(pos_x, m_main_toolbar.get_height());
@@ -5392,30 +5316,6 @@ bool GLCanvas3D::_init_main_toolbar()
     item.visibility_callback  = []() { return wxGetApp().app_config->get_bool("new_settings_layout_mode") ||
                                               wxGetApp().app_config->get_bool("dlg_settings_layout_mode"); };
     item.left.action_callback = []() { wxGetApp().mainframe->select_tab(); };
-    if (!m_main_toolbar.add_item(item))
-        return false;
-
-    /*
-    if (!m_main_toolbar.add_separator())
-        return false;
-        */
-
-    item.name = "search";
-    item.icon_filename = "search_.svg";
-    item.tooltip = _u8L("Search") + " [" + GUI::shortkey_ctrl_prefix() + "F]";
-    item.sprite_id = 11;
-    item.left.toggable = true;
-    item.left.render_callback = [this](float left, float right, float, float) {
-        if (m_canvas != nullptr) {
-            if (!m_canvas->HasFocus())
-                m_canvas->SetFocus();
-            if (_render_search_list(0.5f * (left + right)))
-                _deactivate_search_toolbar_item();
-        }
-    };
-    item.left.action_callback   = GLToolbarItem::Default_Action_Callback;
-    item.visibility_callback    = GLToolbarItem::Default_Visibility_Callback;
-    item.enabling_callback      = [this]()->bool { return m_gizmos.get_current_type() == GLGizmosManager::Undefined; };
     if (!m_main_toolbar.add_item(item))
         return false;
 
@@ -7653,35 +7553,10 @@ bool GLCanvas3D::_deactivate_undo_redo_toolbar_items()
     return false;
 }
 
-bool GLCanvas3D::is_search_pressed() const
-{
-    return m_main_toolbar.is_item_pressed("search");
-}
-
 bool GLCanvas3D::_deactivate_arrange_menu()
 {
     if (m_main_toolbar.is_item_pressed("arrange")) {
         m_main_toolbar.force_right_action(m_main_toolbar.get_item_id("arrange"), *this);
-        return true;
-    }
-
-    return false;
-}
-
-bool GLCanvas3D::_deactivate_search_toolbar_item()
-{
-    if (is_search_pressed()) {
-        m_main_toolbar.force_left_action(m_main_toolbar.get_item_id("search"), *this);
-        return true;
-    }
-
-    return false;
-}
-
-bool GLCanvas3D::_activate_search_toolbar_item()
-{
-    if (!m_main_toolbar.is_item_pressed("search")) {
-        m_main_toolbar.force_left_action(m_main_toolbar.get_item_id("search"), *this);
         return true;
     }
 

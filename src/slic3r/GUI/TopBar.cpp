@@ -2,6 +2,7 @@
 
 #include "GUI_App.hpp"
 #include "Plater.hpp"
+#include "Search.hpp"
 #include "UserAccount.hpp"
 //#include "wxExtensions.hpp"
 #include "format.hpp"
@@ -181,6 +182,13 @@ void TopBarItemsCtrl::UpdateAuthMenu()
         m_user_menu_item->SetItemLabel(user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymus"));
 }
 
+void TopBarItemsCtrl::CreateSearch()
+{
+    m_search = new ::TextInput(this, wxGetApp().searcher().default_string, "", "search", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+    wxGetApp().UpdateDarkUI(m_search);
+    wxGetApp().searcher().set_search_input(m_search);
+}
+
 TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL)
 {
@@ -216,6 +224,10 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
 
     m_buttons_sizer = new wxFlexGridSizer(1, m_btn_margin, m_btn_margin);
     left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, 2 * m_btn_margin);
+
+    CreateSearch();
+
+    left_sizer->Add(m_search, 1, wxALIGN_CENTER_VERTICAL | wxLEFT, 3 * m_btn_margin);
 
     m_sizer->Add(left_sizer, 1, wxEXPAND);
 
@@ -259,6 +271,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
 void TopBarItemsCtrl::OnPaint(wxPaintEvent&)
 {
     wxGetApp().UpdateDarkUI(this);
+    m_search->Refresh();
     return;
     const wxSize sz = GetSize();
     wxPaintDC dc(this);
