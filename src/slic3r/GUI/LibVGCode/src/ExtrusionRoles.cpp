@@ -1,18 +1,8 @@
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#include "libslic3r/Technologies.hpp"
-//################################################################################################################################
-
 ///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
 #include "ExtrusionRoles.hpp"
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 namespace libvgcode {
 
@@ -47,8 +37,3 @@ float ExtrusionRoles::get_time(EGCodeExtrusionRole role, ETimeMode mode) const
 }
 
 } // namespace libvgcode
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################

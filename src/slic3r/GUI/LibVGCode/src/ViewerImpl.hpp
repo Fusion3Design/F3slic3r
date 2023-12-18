@@ -5,11 +5,6 @@
 #ifndef VGCODE_VIEWERIMPL_HPP
 #define VGCODE_VIEWERIMPL_HPP
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
-
 #include "Settings.hpp"
 #include "SegmentTemplate.hpp"
 #include "OptionTemplate.hpp"
@@ -364,10 +359,5 @@ private:
 };
 
 } // namespace libvgcode
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 #endif // VGCODE_VIEWERIMPL_HPP

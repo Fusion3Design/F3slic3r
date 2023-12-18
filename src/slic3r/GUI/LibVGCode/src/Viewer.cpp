@@ -1,19 +1,9 @@
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#include "libslic3r/Technologies.hpp"
-//################################################################################################################################
-
 ///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
 #include "../include/Viewer.hpp"
 #include "ViewerImpl.hpp"
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 namespace libvgcode {
 
@@ -445,8 +435,3 @@ void Viewer::set_tool_marker_alpha(float alpha)
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 } // namespace libvgcode
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################

@@ -5,10 +5,7 @@
 #ifndef VGCODE_TYPES_HPP
 #define VGCODE_TYPES_HPP
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
+#define ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS 1
 
 #include <array>
 #include <vector>
@@ -239,10 +236,5 @@ extern EOptionType type_to_option(EMoveType type);
 extern Color lerp(const Color& c1, const Color& c2, float t);
 
 } // namespace libvgcode
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 #endif // VGCODE_TYPES_HPP

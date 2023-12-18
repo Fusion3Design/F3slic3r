@@ -1,18 +1,8 @@
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#include "libslic3r/Technologies.hpp"
-//################################################################################################################################
-
 ///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak, Vojtěch Bubník @bubnikv
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
 #include "OpenGLUtils.hpp"
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 #include <iostream>
 #include <assert.h>
@@ -58,8 +48,3 @@ bool check_opengl_version()
 }
 
 } // namespace libvgcode
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################

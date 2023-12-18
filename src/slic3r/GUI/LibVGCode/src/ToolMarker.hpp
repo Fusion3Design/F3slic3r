@@ -5,13 +5,9 @@
 #ifndef VGCODE_TOOLMARKER_HPP
 #define VGCODE_TOOLMARKER_HPP
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-//################################################################################################################################
-
 #include "../include/Types.hpp"
+
+#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 namespace libvgcode {
 
@@ -58,10 +54,6 @@ private:
 
 } // namespace libvgcode
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 #endif // VGCODE_TOOLMARKER_HPP

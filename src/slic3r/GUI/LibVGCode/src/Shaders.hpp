@@ -5,10 +5,8 @@
 #ifndef VGCODE_SHADERS_HPP
 #define VGCODE_SHADERS_HPP
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
+// needed for tech ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#include "../include/Types.hpp"
 
 namespace libvgcode {
 
@@ -296,11 +294,6 @@ static const char* Tool_Marker_Fragment_Shader =
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 } // namespace libvgcode
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 #endif // VGCODE_SHADERS_HPP
 

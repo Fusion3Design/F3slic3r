@@ -1,8 +1,3 @@
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#include "libslic3r/Technologies.hpp"
-//################################################################################################################################
-
 ///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
@@ -15,11 +10,7 @@
 #include <assert.h>
 #include <algorithm>
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-//################################################################################################################################
 
 namespace libvgcode {
 
@@ -166,8 +157,4 @@ Vec3 CogMarker::get_position() const
 
 } // namespace libvgcode
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################

@@ -1,8 +1,3 @@
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#include "libslic3r/Technologies.hpp"
-//################################################################################################################################
-
 ///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak, Vojtěch Bubník @bubnikv, Oleksandra Iushchenko @YuSanka
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
@@ -12,11 +7,6 @@
 #include "Shaders.hpp"
 #include "OpenGLUtils.hpp"
 #include "Utils.hpp"
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 #include <map>
 #include <assert.h>
@@ -1310,8 +1300,3 @@ void ViewerImpl::render_tool_marker(const Mat4x4& view_matrix, const Mat4x4& pro
 #endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
 } // namespace libvgcode
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################

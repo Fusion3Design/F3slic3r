@@ -5,11 +5,6 @@
 #ifndef VGCODE_OPTIONTEMPLATE_HPP
 #define VGCODE_OPTIONTEMPLATE_HPP
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
-
 #include <cstdint>
 
 namespace libvgcode {
@@ -37,10 +32,5 @@ private:
 };
 
 } // namespace libvgcode
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 #endif // VGCODE_OPTIONTEMPLATE_HPP

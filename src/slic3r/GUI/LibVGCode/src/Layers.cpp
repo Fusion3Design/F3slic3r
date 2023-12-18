@@ -1,8 +1,3 @@
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#include "libslic3r/Technologies.hpp"
-//################################################################################################################################
-
 ///|/ Copyright (c) Prusa Research 2023 Enrico Turri @enricoturri1966, Pavel Mikuš @Godrak
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
@@ -10,11 +5,6 @@
 #include "Layers.hpp"
 
 #include "../include/PathVertex.hpp"
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 #include <assert.h>
 
@@ -83,8 +73,3 @@ size_t Layers::get_layer_id_at(float z) const
 }
 
 } // namespace libvgcode
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################

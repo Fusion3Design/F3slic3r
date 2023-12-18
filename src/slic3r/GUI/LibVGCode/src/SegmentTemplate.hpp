@@ -5,11 +5,6 @@
 #ifndef VGCODE_SEGMENTTEMPLATE_HPP
 #define VGCODE_SEGMENTTEMPLATE_HPP
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
-
 namespace libvgcode {
 
 class SegmentTemplate
@@ -31,10 +26,5 @@ private:
 };
 
 } // namespace libvgcode
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 #endif // VGCODE_SEGMENTTEMPLATE_HPP

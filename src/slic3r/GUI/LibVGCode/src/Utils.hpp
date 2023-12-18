@@ -5,11 +5,6 @@
 #ifndef VGCODE_UTILS_HPP
 #define VGCODE_UTILS_HPP
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
-
 #include "../include/Types.hpp"
 
 namespace libvgcode {
@@ -26,10 +21,5 @@ extern Vec3 operator - (const Vec3& v1, const Vec3& v2);
 extern Vec3 operator * (float f, const Vec3& v);
 
 } // namespace libvgcode
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 #endif // VGCODE_UTILS_HPP

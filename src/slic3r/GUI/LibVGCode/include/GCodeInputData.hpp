@@ -5,11 +5,6 @@
 #ifndef VGCODE_GCODEINPUTDATA_HPP
 #define VGCODE_GCODEINPUTDATA_HPP
 
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#if ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
-
 #include "PathVertex.hpp"
 
 namespace libvgcode {
@@ -29,10 +24,5 @@ struct GCodeInputData
 };
 
 } // namespace libvgcode
-
-//################################################################################################################################
-// PrusaSlicer development only -> !!!TO BE REMOVED!!!
-#endif // ENABLE_NEW_GCODE_VIEWER
-//################################################################################################################################
 
 #endif // VGCODE_BITSET_HPP
