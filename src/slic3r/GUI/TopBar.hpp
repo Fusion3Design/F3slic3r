@@ -27,6 +27,7 @@ class TopBarItemsCtrl : public wxControl
         ~Button() {}
 
         void set_selected(bool selected);
+        void set_hovered (bool hovered);
     };
 
     class ButtonWithPopup : public Button
@@ -79,7 +80,7 @@ public:
 private:
     wxWindow*                       m_parent;
     wxFlexGridSizer*                m_buttons_sizer;
-    wxBoxSizer*                     m_sizer;
+    wxFlexGridSizer*                m_sizer;
     ButtonWithPopup*                m_menu_btn {nullptr};
     ButtonWithPopup*                m_workspace_btn {nullptr};
     ButtonWithPopup*                m_auth_btn {nullptr};

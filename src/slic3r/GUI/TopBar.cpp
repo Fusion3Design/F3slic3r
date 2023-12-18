@@ -34,6 +34,12 @@ TopBarItemsCtrl::Button::Button(wxWindow* parent, const wxString& label, const s
     }
     else
         this->SetMinSize(wxSize(-1, size.y));
+
+    //button events
+    Bind(wxEVT_SET_FOCUS,    [this](wxFocusEvent& event) { set_hovered(true ); event.Skip(); });
+    Bind(wxEVT_KILL_FOCUS,   [this](wxFocusEvent& event) { set_hovered(false); event.Skip(); });
+    Bind(wxEVT_ENTER_WINDOW, [this](wxMouseEvent& event) { set_hovered(true ); event.Skip(); });
+    Bind(wxEVT_LEAVE_WINDOW, [this](wxMouseEvent& event) { set_hovered(false); event.Skip(); });
 }
 
 void TopBarItemsCtrl::Button::set_selected(bool selected)
@@ -61,6 +67,35 @@ void TopBarItemsCtrl::Button::set_selected(bool selected)
     }
 }
 
+void TopBarItemsCtrl::Button::set_hovered(bool hovered)
+{
+    using namespace Slic3r::GUI;
+    const wxFont& new_font = hovered ? wxGetApp().bold_font() : wxGetApp().normal_font();
+
+    this->SetFont(new_font);
+#ifdef _WIN32
+    this->GetParent()->Refresh(); // force redraw a background of the selected mode button
+#else
+    SetForegroundColour(wxSystemSettings::GetColour(set_focus ? wxSYS_COLOUR_BTNTEXT :
+#if defined (__linux__) && defined (__WXGTK3__)
+        wxSYS_COLOUR_GRAYTEXT
+#elif defined (__linux__) && defined (__WXGTK2__)
+        wxSYS_COLOUR_BTNTEXT
+#else 
+        wxSYS_COLOUR_BTNSHADOW
+#endif    
+    ));
+#endif /* no _WIN32 */
+
+    const wxColour& color = hovered       ? wxGetApp().get_color_selected_btn_bg() :
+                            m_is_selected ? wxGetApp().get_label_clr_default()       :
+                                            wxGetApp().get_window_default_clr();
+    this->SetBackgroundColour(color);
+
+    this->Refresh();
+    this->Update();
+}
+
 TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const wxString& label, const std::string& icon_name)
     :TopBarItemsCtrl::Button(parent, label, icon_name, 24)
 {
@@ -80,6 +115,9 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
 
 static wxString get_workspace_name(Slic3r::ConfigOptionMode mode) 
 {
+    return  mode == Slic3r::ConfigOptionMode::comSimple   ? _L("Beginners") :
+            mode == Slic3r::ConfigOptionMode::comAdvanced ? _L("Regulars")  : _L("Josef Prusa");
+
     return  mode == Slic3r::ConfigOptionMode::comSimple   ? _L("Beginner workspace") :
             mode == Slic3r::ConfigOptionMode::comAdvanced ? _L("Regular workspace")  : _L("Josef Prusa's workspace");
 }
@@ -154,15 +192,19 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     m_btn_margin  = std::lround(0.9 * em);
     m_line_margin = std::lround(0.1 * em);
 
-    m_sizer = new wxBoxSizer(wxHORIZONTAL);
+    m_sizer = new wxFlexGridSizer(2);
+    m_sizer->AddGrowableCol(0);
+    m_sizer->SetFlexibleDirection(wxHORIZONTAL);
     this->SetSizer(m_sizer);
+
+    wxBoxSizer* left_sizer = new wxBoxSizer(wxHORIZONTAL);
 
 #ifdef __APPLE__
     auto logo = new wxStaticBitmap(this, wxID_ANY, *get_bmp_bundle(wxGetApp().logo_name(), 24));
-    m_sizer->Add(logo, 1, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
+    left_sizer->Add(logo, 1, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
 #else
     m_menu_btn = new ButtonWithPopup(this, _L("Menu"), wxGetApp().logo_name());
-    m_sizer->Add(m_menu_btn, 1, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
+    left_sizer->Add(m_menu_btn, 0, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
     
     m_menu_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
         m_menu_btn->set_selected(true);
@@ -173,14 +215,18 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
 #endif
 
     m_buttons_sizer = new wxFlexGridSizer(1, m_btn_margin, m_btn_margin);
-    m_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, 2 * m_btn_margin);
+    left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, 2 * m_btn_margin);
+
+    m_sizer->Add(left_sizer, 1, wxEXPAND);
+
+    wxBoxSizer* right_sizer = new wxBoxSizer(wxHORIZONTAL);
 
     // create modes menu
     ApplyWorkspacesMenu();
 
     m_workspace_btn = new ButtonWithPopup(this, _L("Workspace"), "mode_simple");
-    m_sizer->AddStretchSpacer(20);
-    m_sizer->Add(m_workspace_btn, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT);
+    right_sizer->AddStretchSpacer(20);
+    right_sizer->Add(m_workspace_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT);
     
     m_workspace_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
         m_workspace_btn->set_selected(true);
@@ -193,7 +239,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     CreateAuthMenu();
 
     m_auth_btn = new ButtonWithPopup(this, "user", 35);
-    m_sizer->Add(m_auth_btn, 1, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT | wxLEFT, m_btn_margin);
+    right_sizer->Add(m_auth_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT | wxLEFT, m_btn_margin);
     
     m_auth_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
         UpdateAuthMenu();
@@ -203,12 +249,17 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     });    
     m_auth_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_auth_btn->set_selected(false); });
 
+    m_sizer->Add(right_sizer);
+
+    m_sizer->SetItemMinSize(1, wxSize(42 * wxGetApp().em_unit(), -1));
+
     this->Bind(wxEVT_PAINT, &TopBarItemsCtrl::OnPaint, this);
 }
 
 void TopBarItemsCtrl::OnPaint(wxPaintEvent&)
 {
     wxGetApp().UpdateDarkUI(this);
+    return;
     const wxSize sz = GetSize();
     wxPaintDC dc(this);
 
