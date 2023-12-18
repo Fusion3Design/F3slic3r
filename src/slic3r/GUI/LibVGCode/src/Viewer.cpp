@@ -87,6 +87,11 @@ bool Viewer::is_top_layer_only_view_range() const
     return m_impl->is_top_layer_only_view_range();
 }
 
+bool Viewer::is_spiral_vase_mode() const
+{
+    return m_impl->is_spiral_vase_mode();
+}
+
 void Viewer::set_top_layer_only_view_range(bool top_layer_only_view_range)
 {
     m_impl->set_top_layer_only_view_range(top_layer_only_view_range);

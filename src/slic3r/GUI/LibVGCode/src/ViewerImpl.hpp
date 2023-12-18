@@ -84,6 +84,8 @@ public:
     bool is_top_layer_only_view_range() const { return m_settings.top_layer_only_view_range; }
     void set_top_layer_only_view_range(bool top_layer_only_view_range);
 
+    bool is_spiral_vase_mode() const { return m_settings.spiral_vase_mode; }
+
     size_t get_layers_count() const { return m_layers.count(); }
     float get_layer_z(size_t layer_id) const { return m_layers.get_layer_z(layer_id); }
     std::vector<float> get_layers_zs() const { return m_layers.get_zs(); }

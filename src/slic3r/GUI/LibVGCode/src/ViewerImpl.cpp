@@ -697,7 +697,7 @@ void ViewerImpl::update_colors()
 {
     update_color_ranges();
 
-    const uint32_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers.get_view_range()[1] : 0;
+    const size_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers.get_view_range()[1] : 0;
     const bool color_top_layer_only = m_view_range.get_full()[1] != m_view_range.get_visible()[1];
     std::vector<float> colors(m_vertices.size());
     for (size_t i = 0; i < m_vertices.size(); ++i) {

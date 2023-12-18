@@ -47,6 +47,8 @@ public:
     bool is_top_layer_only_view_range() const;
     void set_top_layer_only_view_range(bool top_layer_only_view_range);
 
+    bool is_spiral_vase_mode() const;
+
     size_t get_layers_count() const;
     float get_layer_z(size_t layer_id) const;
     std::vector<float> get_layers_zs() const;
@@ -171,6 +173,7 @@ public:
 
     float get_travels_radius() const;
     void set_travels_radius(float radius);
+
     float get_wipes_radius() const;
     void set_wipes_radius(float radius);
 
