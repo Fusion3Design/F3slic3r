@@ -502,43 +502,86 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
         }
 
         if (properties_shown) {
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Type") + ":");
-            ImGui::SameLine();
-            imgui.text(to_string(vertex.type));
-            if (vertex.is_extrusion()) {
-                ImGui::SameLine();
-                imgui.text("(" + to_string(vertex.role) + ")");
+            auto append_table_row = [&imgui](const std::string& label, std::function<void(void)> value_callback) {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, label);
+                ImGui::TableSetColumnIndex(1);
+                value_callback();
+            };
+
+            ImGui::Separator();
+            if (ImGui::BeginTable("Properties", 2)) {
+                const bool imperial_units = wxGetApp().app_config->get_bool("use_inches");
+                char buff[1024];
+
+                append_table_row(_u8L("Type") + ":", [&imgui, &vertex]() {
+                    std::string text = _u8L(to_string(vertex.type));
+                    if (vertex.is_extrusion())
+                        text += " (" + _u8L(to_string(vertex.role)) + ")";
+                    imgui.text(text);
+                });
+                append_table_row(_u8L("Width") + ":", [&imgui, &vertex, &buff, imperial_units]() {
+                    std::string text;
+                    if (vertex.is_extrusion()) {
+                        sprintf(buff, "%.3f", vertex.width);
+                        text = std::string(buff) + " ";
+                        text += imperial_units ? _u8L("in") : _u8L("mm");
+                    }
+                    else
+                        text = _u8L("N/A");
+                    imgui.text(text);
+                });
+                append_table_row(_u8L("Height") + ":", [&imgui, &vertex, &buff, imperial_units]() {
+                    std::string text;
+                    if (vertex.is_extrusion()) {
+                        sprintf(buff, "%.3f", vertex.height);
+                        text = std::string(buff) + " ";
+                        text += imperial_units ? _u8L("in") : _u8L("mm");
+                    }
+                    else
+                        text = _u8L("N/A");
+                    imgui.text(text);
+                });
+                append_table_row(_u8L("Layer") + ":", [&imgui, &vertex, &buff]() {
+                    sprintf(buff, "%d", vertex.layer_id + 1);
+                    const std::string text = std::string(buff);
+                    imgui.text(text);
+                });
+                append_table_row(_u8L("Speed") + ":", [&imgui, &vertex, &buff, imperial_units]() {
+                    std::string text;
+                    if (vertex.is_extrusion()) {
+                        sprintf(buff, "%.1f", vertex.feedrate);
+                        text = std::string(buff) + " ";
+                        text += imperial_units ? _u8L("in/s") : _u8L("mm/s");
+                    }
+                    else
+                        text = _u8L("N/A");
+                  imgui.text(text);
+                });
+                append_table_row(_u8L("Fan speed") + ":", [&imgui, &vertex, &buff]() {
+                    std::string text;
+                    if (vertex.is_extrusion()) {
+                        sprintf(buff, "%.0f", vertex.fan_speed);
+                        text = std::string(buff) + " " + _u8L("%");
+                    }
+                    else
+                        text = _u8L("N/A");
+                    imgui.text(text);
+                });
+                append_table_row(_u8L("Temperature") + ":", [&imgui, &vertex, &buff]() {
+                    sprintf(buff, "%.0f", vertex.temperature);
+                    const std::string text = std::string(buff) + " " + _u8L("°C");
+                    imgui.text(text);
+                });
+                append_table_row(_u8L("Time") + ":", [viewer, &imgui, &vertex, &buff]() {
+                    sprintf(buff, "%.3f", vertex.times[static_cast<size_t>(viewer->get_time_mode())]);
+                    const std::string text = std::string(buff) + " " + _u8L("s");
+                    imgui.text(text);
+                });
+
+                ImGui::EndTable();
             }
-            const bool imperial_units = wxGetApp().app_config->get_bool("use_inches");
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Width") + ":");
-            if (vertex.is_extrusion()) {
-                sprintf(buf, "%.3f", vertex.width);
-                ImGui::SameLine();
-                imgui.text(std::string(buf));
-                ImGui::SameLine();
-                imgui.text(imperial_units ? _u8L("in") : _u8L("mm"));
-            }
-            else {
-                ImGui::SameLine();
-                imgui.text(_u8L("N/A"));
-            }
-            ImGui::SameLine();
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Height") + ":");
-            if (vertex.is_extrusion()) {
-                sprintf(buf, "%.3f", vertex.height);
-                ImGui::SameLine();
-                imgui.text(std::string(buf));
-                ImGui::SameLine();
-                imgui.text(imperial_units ? _u8L("in") : _u8L("mm"));
-            }
-            else {
-                ImGui::SameLine();
-                imgui.text(_u8L("N/A"));
-            }
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Layer") + ":");
-            sprintf(buf, "%d", vertex.layer_id + 1);
-            ImGui::SameLine();
-            imgui.text(std::string(buf));
         }
 
         // force extra frame to automatically update window size
