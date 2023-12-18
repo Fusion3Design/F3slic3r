@@ -57,7 +57,7 @@ static char marker_by_type(Preset::Type type, PrinterTechnology pt)
 
 std::string Option::opt_key() const
 {
-    return boost::nowide::narrow(key).substr(2);
+    return into_u8(key).substr(2);
 }
 
 void FoundOption::get_marked_label_and_tooltip(const char** label_, const char** tooltip_) const
@@ -241,7 +241,7 @@ bool OptionsSearcher::search(const std::string& search, bool force/* = false*/)
         return out;
     };
 
-    auto get_tooltip = [this, &sep](const Option& opt)
+    auto get_tooltip = [this, &sep](const Option& opt) -> wxString
     {
         return  marker_by_type(opt.type, printer_technology) +
                 opt.category_local + sep +
@@ -254,7 +254,7 @@ bool OptionsSearcher::search(const std::string& search, bool force/* = false*/)
         const Option &opt = options[i];
         if (full_list) {
             std::string label = into_u8(get_label(opt));
-            found.emplace_back(FoundOption{ label, label, boost::nowide::narrow(get_tooltip(opt)), i, 0 });
+            found.emplace_back(FoundOption{ label, label, into_u8(get_tooltip(opt)), i, 0 });
             continue;
         }
 
@@ -291,7 +291,7 @@ bool OptionsSearcher::search(const std::string& search, bool force/* = false*/)
             boost::erase_all(label_plain, std::string(1, char(ImGui::ColorMarkerStart)));
             boost::erase_all(label_plain, std::string(1, char(ImGui::ColorMarkerEnd)));
 #endif
-	        found.emplace_back(FoundOption{ label_plain, label_u8, boost::nowide::narrow(get_tooltip(opt)), i, score });
+            found.emplace_back(FoundOption{ label_plain, label_u8, into_u8(get_tooltip(opt)), i, score });
         }
     }
 

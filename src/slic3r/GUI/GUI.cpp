@@ -473,10 +473,10 @@ bool create_process(const boost::filesystem::path& path, const std::wstring& cmd
 			return true;
 		}
 		else
-			error_msg = "CreateProcessW failed to create process " + boost::nowide::narrow(path.wstring());
+			error_msg = "CreateProcessW failed to create process " + into_u8(path.wstring());
 	}
 	else
-		error_msg = "Executable doesn't exists. Path: " + boost::nowide::narrow(path.wstring());
+		error_msg = "Executable doesn't exists. Path: " + into_u8(path.wstring());
 	return false;
 }
 #endif //_WIN32

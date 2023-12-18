@@ -58,8 +58,8 @@ namespace {
 		std::string ret;
 		PWSTR path = NULL;
 		HRESULT hr = SHGetKnownFolderPath(FOLDERID_Downloads, 0, NULL, &path);
-		if (SUCCEEDED(hr)) {
-			ret = boost::nowide::narrow(path);
+        if (SUCCEEDED(hr)) {
+            ret = boost::nowide::narrow(path);
 		}
 		CoTaskMemFree(path);
 		return ret;
