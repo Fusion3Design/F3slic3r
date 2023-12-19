@@ -161,12 +161,9 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels
         if (curr_type == EMoveType::Travel) {
             // for travel moves set the extrusion role
             // which will be used later to select the proper color
-            if (curr.delta_extruder == 0.0f)
-                extrusion_role = static_cast<EGCodeExtrusionRole>(ETravelMoveType::Move);
-            else if (curr.delta_extruder > 0.0f)
-                extrusion_role = static_cast<EGCodeExtrusionRole>(ETravelMoveType::Extrude);
-            else
-                extrusion_role = static_cast<EGCodeExtrusionRole>(ETravelMoveType::Retract);
+            extrusion_role = (curr.delta_extruder == 0.0f) ? static_cast<EGCodeExtrusionRole>(ETravelMoveType::Move) :
+                             (curr.delta_extruder > 0.0f) ?  static_cast<EGCodeExtrusionRole>(ETravelMoveType::Extrude) :
+                                                             static_cast<EGCodeExtrusionRole>(ETravelMoveType::Retract);
         }
         else
             extrusion_role = convert(curr.extrusion_role);
@@ -364,9 +361,16 @@ static void convert_to_vertices(const Slic3r::ExtrusionEntityCollection& extrusi
     }
 }
 
-static void convert_brim_skirt_to_vertices(const Slic3r::Print& print, std::vector<PathVertex>& vertices)
+struct VerticesData
 {
-//    auto start_time = std::chrono::high_resolution_clock::now();
+    std::vector<PathVertex> vertices;
+    std::vector<float> layers_zs;
+};
+
+static void convert_brim_skirt_to_vertices(const Slic3r::Print& print, std::vector<VerticesData>& vertices_data)
+{
+    vertices_data.emplace_back(VerticesData());
+    VerticesData& data = vertices_data.back();
 
     // number of skirt layers
     size_t total_layer_count = 0;
@@ -382,35 +386,29 @@ static void convert_brim_skirt_to_vertices(const Slic3r::Print& print, std::vect
     // This is not critical as this is just an initial preview.
     const Slic3r::PrintObject* highest_object = *std::max_element(print.objects().begin(), print.objects().end(),
         [](auto l, auto r) { return l->layers().size() < r->layers().size(); });
-    std::vector<float> print_zs;
-    print_zs.reserve(skirt_height * 2);
+    data.layers_zs.reserve(skirt_height * 2);
     for (size_t i = 0; i < std::min(skirt_height, highest_object->layers().size()); ++i) {
-        print_zs.emplace_back(float(highest_object->layers()[i]->print_z));
+        data.layers_zs.emplace_back(float(highest_object->layers()[i]->print_z));
     }
     // Only add skirt for the raft layers.
     for (size_t i = 0; i < std::min(skirt_height, std::min(highest_object->slicing_parameters().raft_layers(), highest_object->support_layers().size())); ++i) {
-        print_zs.emplace_back(float(highest_object->support_layers()[i]->print_z));
+        data.layers_zs.emplace_back(float(highest_object->support_layers()[i]->print_z));
     }
-    Slic3r::sort_remove_duplicates(print_zs);
-    skirt_height = std::min(skirt_height, print_zs.size());
-    print_zs.erase(print_zs.begin() + skirt_height, print_zs.end());
+    Slic3r::sort_remove_duplicates(data.layers_zs);
+    skirt_height = std::min(skirt_height, data.layers_zs.size());
+    data.layers_zs.erase(data.layers_zs.begin() + skirt_height, data.layers_zs.end());
 
     for (size_t i = 0; i < skirt_height; ++i) {
         if (i == 0)
-            convert_to_vertices(print.brim(), print_zs[i], i, 0, 0, EGCodeExtrusionRole::Skirt, Slic3r::Point(0, 0), vertices);
-        convert_to_vertices(print.skirt(), print_zs[i], i, 0, 0, EGCodeExtrusionRole::Skirt, Slic3r::Point(0, 0), vertices);
+            convert_to_vertices(print.brim(), data.layers_zs[i], i, 0, 0, EGCodeExtrusionRole::Skirt, Slic3r::Point(0, 0), data.vertices);
+        convert_to_vertices(print.skirt(), data.layers_zs[i], i, 0, 0, EGCodeExtrusionRole::Skirt, Slic3r::Point(0, 0), data.vertices);
     }
-
-//    auto end_time = std::chrono::high_resolution_clock::now();
-//    std::cout << "convert_brim_skirt: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms\n";
 }
 
 class WipeTowerHelper
 {
 public:
-    WipeTowerHelper(const Slic3r::Print& print)
-    : m_print(print)
-    {
+    WipeTowerHelper(const Slic3r::Print& print) : m_print(print) {
         const Slic3r::PrintConfig& config = m_print.config();
         const Slic3r::WipeTowerData& wipe_tower_data = m_print.wipe_tower_data();
         if (wipe_tower_data.priming && config.single_extruder_multi_material_priming) {
@@ -446,9 +444,11 @@ private:
     size_t m_layers_count{ 0 };
 };
 
-static void convert_wipe_tower_to_vertices(const Slic3r::Print& print, const std::vector<std::string>& str_tool_colors, std::vector<PathVertex>& vertices)
+static void convert_wipe_tower_to_vertices(const Slic3r::Print& print, const std::vector<std::string>& str_tool_colors,
+    std::vector<VerticesData>& vertices_data)
 {
-//    auto start_time = std::chrono::high_resolution_clock::now();
+    vertices_data.emplace_back(VerticesData());
+    VerticesData& data = vertices_data.back();
 
     WipeTowerHelper wipe_tower_helper(print);
     const float angle = wipe_tower_helper.get_angle();
@@ -457,6 +457,7 @@ static void convert_wipe_tower_to_vertices(const Slic3r::Print& print, const std
     for (size_t item = 0; item < wipe_tower_helper.get_layers_count(); ++item) {
         const std::vector<Slic3r::WipeTower::ToolChangeResult>& layer = wipe_tower_helper.tool_change(item);
         for (const Slic3r::WipeTower::ToolChangeResult& extrusions : layer) {
+            data.layers_zs.emplace_back(extrusions.print_z);
             for (size_t i = 1; i < extrusions.extrusions.size(); /*no increment*/) {
                 const Slic3r::WipeTower::Extrusion& e = extrusions.extrusions[i];
                 if (e.width == 0.0f) {
@@ -496,13 +497,12 @@ static void convert_wipe_tower_to_vertices(const Slic3r::Print& print, const std
                 }
 
                 convert_lines_to_vertices(lines, widths, heights, extrusions.print_z, item, static_cast<size_t>(e.tool), 0,
-                                        EGCodeExtrusionRole::WipeTower, lines.front().a == lines.back().b, vertices);
+                                          EGCodeExtrusionRole::WipeTower, lines.front().a == lines.back().b, data.vertices);
             }
         }
     }
 
-//    auto end_time = std::chrono::high_resolution_clock::now();
-//    std::cout << "convert_wipe_tower: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms\n";
+    Slic3r::sort_remove_duplicates(data.layers_zs);
 }
 
 class ObjectHelper
@@ -615,14 +615,8 @@ private:
     }
 };
 
-struct ObjectData
-{
-    std::vector<PathVertex> vertices;
-    std::vector<float> layers_zs;
-};
-
 static void convert_object_to_vertices(const Slic3r::PrintObject& object, const std::vector<std::string>& str_tool_colors,
-    const std::vector<Slic3r::CustomGCode::Item>& color_print_values, size_t extruders_count, ObjectData& data)
+    const std::vector<Slic3r::CustomGCode::Item>& color_print_values, size_t extruders_count, VerticesData& data)
 {
     const bool has_perimeters = object.is_step_done(Slic3r::posPerimeters);
     const bool has_infill     = object.is_step_done(Slic3r::posInfill);
@@ -697,36 +691,14 @@ static void convert_object_to_vertices(const Slic3r::PrintObject& object, const 
 }
 
 static void convert_objects_to_vertices(const Slic3r::SpanOfConstPtrs<Slic3r::PrintObject>& objects, const std::vector<std::string>& str_tool_colors,
-    const std::vector<Slic3r::CustomGCode::Item>& color_print_values, size_t extruders_count, std::vector<PathVertex>& vertices)
+    const std::vector<Slic3r::CustomGCode::Item>& color_print_values, size_t extruders_count, std::vector<VerticesData>& data)
 {
-//    auto start_time = std::chrono::high_resolution_clock::now();
-
     // extract vertices and layers zs object by object
-    std::vector<ObjectData> objects_data(objects.size());
+    data.reserve(data.size() + objects.size());
     for (size_t i = 0; i < objects.size(); ++i) {
-        convert_object_to_vertices(*objects[i], str_tool_colors, color_print_values, extruders_count, objects_data[i]);
+        data.emplace_back(VerticesData());
+        convert_object_to_vertices(*objects[i], str_tool_colors, color_print_values, extruders_count, data.back());
     }
-
-    // collect layers zs
-    std::vector<float> layers;
-    for (const ObjectData& data : objects_data) {
-        layers.reserve(layers.size() + data.layers_zs.size());
-        std::copy(data.layers_zs.begin(), data.layers_zs.end(), std::back_inserter(layers));
-    }
-    Slic3r::sort_remove_duplicates(layers);
-
-    // collect extracted vertices layer by layer
-    float min_z = 0.0f;
-    for (float z : layers) {
-        for (ObjectData& data : objects_data) {
-            std::copy_if(data.vertices.begin(), data.vertices.end(), std::back_inserter(vertices),
-                [min_z, z](const PathVertex& v) { return min_z < v.position[2] && v.position[2] <= z; });
-        }
-        min_z = z;
-    }
-
-//    auto end_time = std::chrono::high_resolution_clock::now();
-//    std::cout << "convert_objects: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms\n";
 }
 
 // mapping from Slic3r::Print to libvgcode::GCodeInputData
@@ -734,15 +706,33 @@ GCodeInputData convert(const Slic3r::Print& print, const std::vector<std::string
     const std::vector<Slic3r::CustomGCode::Item>& color_print_values, size_t extruders_count)
 {
     GCodeInputData ret;
-
+    std::vector<VerticesData> data;
     if (print.is_step_done(Slic3r::psSkirtBrim) && (print.has_skirt() || print.has_brim()))
-        convert_brim_skirt_to_vertices(print, ret.vertices);
-
+        // extract vertices and layers zs from skirt/brim
+        convert_brim_skirt_to_vertices(print, data);
     if (!print.wipe_tower_data().tool_changes.empty() && print.is_step_done(Slic3r::psWipeTower))
-        convert_wipe_tower_to_vertices(print, str_tool_colors, ret.vertices);
+        // extract vertices and layers zs from wipe tower
+        convert_wipe_tower_to_vertices(print, str_tool_colors, data);
+    // extract vertices and layers zs from objects
+    convert_objects_to_vertices(print.objects(), str_tool_colors, color_print_values, extruders_count, data);
 
-    convert_objects_to_vertices(print.objects(), str_tool_colors, color_print_values, extruders_count, ret.vertices);
+    // collect layers zs
+    std::vector<float> layers;
+    for (const VerticesData& d : data) {
+        layers.reserve(layers.size() + d.layers_zs.size());
+        std::copy(d.layers_zs.begin(), d.layers_zs.end(), std::back_inserter(layers));
+    }
+    Slic3r::sort_remove_duplicates(layers);
 
+    // collect extracted vertices layer by layer
+    float min_z = 0.0f;
+    for (float z : layers) {
+        for (const VerticesData& d : data) {
+            std::copy_if(d.vertices.begin(), d.vertices.end(), std::back_inserter(ret.vertices),
+            [min_z, z](const PathVertex& v) { return min_z < v.position[2] && v.position[2] <= z; });
+        }
+        min_z = z;
+    }
     return ret;
 }
 
