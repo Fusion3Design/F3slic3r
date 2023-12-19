@@ -67,8 +67,7 @@ void SegmentTemplate::render(size_t count)
     glsafe(glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &curr_vertex_array));
 
     glsafe(glBindVertexArray(m_vao_id));
-    glsafe(glDrawArraysInstanced(GL_TRIANGLES, 0, VERTEX_DATA.size(), count));
-
+    glsafe(glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(VERTEX_DATA.size()), static_cast<GLsizei>(count)));
     glsafe(glBindVertexArray(curr_vertex_array));
 }
 

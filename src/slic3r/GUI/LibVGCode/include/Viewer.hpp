@@ -105,7 +105,7 @@ public:
     //
     // Return the count of detected extrusion roles
     //
-    uint32_t get_extrusion_roles_count() const;
+    size_t get_extrusion_roles_count() const;
 
     //
     // Return the list of detected extrusion roles

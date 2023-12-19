@@ -10,10 +10,11 @@
 
 #include <map>
 #include <assert.h>
-#include <exception>
+#include <stdexcept>
 #include <cstdio>
 #include <string>
 #include <algorithm>
+#include <cmath>
 
 namespace libvgcode {
 
@@ -180,7 +181,7 @@ static Mat4x4 inverse(const Mat4x4& m)
     float det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
     assert(det != 0.0f);
 
-    det = 1.0 / det;
+    det = 1.0f / det;
 
     std::array<float, 16> ret = {};
     for (int i = 0; i < 16; ++i) {
@@ -534,10 +535,10 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
         Vec3 position = v.position;
         if (move_type == EMoveType::Extrude)
             // push down extrusion vertices by half height to render them at the right z
-            position[2] -= 0.5 * v.height;
+            position[2] -= 0.5f * v.height;
         positions.emplace_back(position);
 
-        const float angle = atan2(prev_line[0] * this_line[1] - prev_line[1] * this_line[0], dot(prev_line, this_line));
+        const float angle = std::atan2(prev_line[0] * this_line[1] - prev_line[1] * this_line[0], dot(prev_line, this_line));
         heights_widths_angles.push_back({ v.height, v.width, angle });
     }
 
@@ -612,7 +613,7 @@ void ViewerImpl::update_enabled_entities()
             --range[0];
     }
 
-    for (uint32_t i = range[0]; i < range[1]; ++i) {
+    for (size_t i = range[0]; i < range[1]; ++i) {
         const PathVertex& v = m_vertices[i];
 
         if (!m_valid_lines_bitset[i] && !v.is_option())
@@ -637,9 +638,9 @@ void ViewerImpl::update_enabled_entities()
             continue;
 
         if (v.is_option())
-            enabled_options.push_back(i);
+            enabled_options.push_back(static_cast<uint32_t>(i));
         else
-            enabled_segments.push_back(i);
+            enabled_segments.push_back(static_cast<uint32_t>(i));
     }
 
     m_enabled_segments_count = enabled_segments.size();

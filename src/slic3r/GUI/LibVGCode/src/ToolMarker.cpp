@@ -6,7 +6,7 @@
 #include "OpenGLUtils.hpp"
 #include "Utils.hpp"
 
-#include <algorithm>
+#include <cmath>
 
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
 
@@ -49,8 +49,8 @@ void ToolMarker::init(uint16_t resolution, float tip_radius, float tip_height, f
 
     for (uint16_t i = 0; i < resolution; ++i) {
         const float angle = angle_step * float(i);
-        cosines[i] = ::cos(angle);
-        sines[i] = -::sin(angle);
+        cosines[i] = std::cos(angle);
+        sines[i] = -std::sin(angle);
     }
 
     const float total_height = tip_height + stem_height;

@@ -4,6 +4,7 @@
 ///|/
 #include "Utils.hpp"
 
+#include <assert.h>
 #include <cmath>
 
 namespace libvgcode {

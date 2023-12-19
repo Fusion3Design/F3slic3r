@@ -8,6 +8,7 @@
 #include "../include/Types.hpp"
 
 #if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#include <algorithm>
 
 namespace libvgcode {
 

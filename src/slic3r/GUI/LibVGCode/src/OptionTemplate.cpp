@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 namespace libvgcode {
 
@@ -43,7 +44,7 @@ void OptionTemplate::init(uint8_t resolution)
     add_vertex({ 0.0f, 0.0f, 0.5f }, { 0.0f, 0.0f, 1.0f }, top_vertices);
     for (uint8_t i = 0; i <= m_resolution; ++i) {
         const float ii = float(i) * step;
-        const Vec3 pos = { 0.5f * ::cos(ii), 0.5f * ::sin(ii), 0.0f };
+        const Vec3 pos = { 0.5f * std::cos(ii), 0.5f * std::sin(ii), 0.0f };
         const Vec3 norm = normalize(pos);
         add_vertex(pos, norm, top_vertices);
     }
@@ -56,7 +57,7 @@ void OptionTemplate::init(uint8_t resolution)
     add_vertex({ 0.0f, 0.0f, -0.5f }, { 0.0f, 0.0f, -1.0f }, bottom_vertices);
     for (uint8_t i = 0; i <= m_resolution; ++i) {
         const float ii = -float(i) * step;
-        const Vec3 pos = { 0.5f * ::cos(ii), 0.5f * ::sin(ii), 0.0f };
+        const Vec3 pos = { 0.5f * std::cos(ii), 0.5f * std::sin(ii), 0.0f };
         const Vec3 norm = normalize(pos);
         add_vertex(pos, norm, bottom_vertices);
     }
@@ -103,10 +104,9 @@ void OptionTemplate::render(size_t count)
     glsafe(glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &curr_vertex_array));
 
     glsafe(glBindVertexArray(m_top_vao_id));
-    glsafe(glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, m_vertices_count, count));
+    glsafe(glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, static_cast<GLsizei>(m_vertices_count), static_cast<GLsizei>(count)));
     glsafe(glBindVertexArray(m_bottom_vao_id));
-    glsafe(glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, m_vertices_count, count));
-
+    glsafe(glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, static_cast<GLsizei>(m_vertices_count), static_cast<GLsizei>(count)));
     glsafe(glBindVertexArray(curr_vertex_array));
 }
 

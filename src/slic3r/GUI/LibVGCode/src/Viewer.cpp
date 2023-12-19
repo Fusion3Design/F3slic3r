@@ -202,7 +202,7 @@ const Interval& Viewer::get_enabled_options_range() const
     return m_impl->get_enabled_options_range();
 }
 
-uint32_t Viewer::get_extrusion_roles_count() const
+size_t Viewer::get_extrusion_roles_count() const
 {
     return m_impl->get_extrusion_roles_count();
 }

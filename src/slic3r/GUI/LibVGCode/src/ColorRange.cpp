@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <assert.h>
+#include <cmath>
 
 namespace libvgcode {
 
@@ -45,7 +46,7 @@ Color ColorRange::get_color_at(float value) const
     if (step > 0.0f) {
         if (m_type == EColorRangeType::Logarithmic) {
             if (m_range[0] != 0.0f)
-                global_t = log(value / m_range[0]) / step;
+                global_t = std::log(value / m_range[0]) / step;
         }
         else
             global_t = (value - m_range[0]) / step;
@@ -54,7 +55,7 @@ Color ColorRange::get_color_at(float value) const
     const size_t color_max_idx = Ranges_Colors.size() - 1;
 
     // Compute the two colors just below (low) and above (high) the input value
-    const size_t color_low_idx = std::clamp<size_t>(global_t, 0, color_max_idx);
+    const size_t color_low_idx = std::clamp<size_t>(static_cast<size_t>(global_t), 0, color_max_idx);
     const size_t color_high_idx = std::clamp<size_t>(color_low_idx + 1, 0, color_max_idx);
 
     // Interpolate between the low and high colors to find exactly which color the input value should get

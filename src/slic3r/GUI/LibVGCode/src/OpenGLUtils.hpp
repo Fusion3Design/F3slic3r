@@ -18,7 +18,7 @@ extern void glAssertRecentCallImpl(const char* file_name, unsigned int line, con
 inline void glAssertRecentCall() { glAssertRecentCallImpl(__FILE__, __LINE__, __FUNCTION__); }
 #define glsafe(cmd) do { cmd; glAssertRecentCallImpl(__FILE__, __LINE__, __FUNCTION__); } while (false)
 #define glcheck() do { glAssertRecentCallImpl(__FILE__, __LINE__, __FUNCTION__); } while (false)
-#else // HAS_GLSAFE
+#else
 inline void glAssertRecentCall() { }
 #define glsafe(cmd) cmd
 #define glcheck()
