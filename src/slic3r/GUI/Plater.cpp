@@ -906,11 +906,17 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         }
         
     });
+    this->q->Bind(EVT_PRUSAAUTH_RESET, [this](PrusaAuthFailEvent& evt) {
+        BOOST_LOG_TRIVIAL(error) << "Network error message: " << evt.data;
+        user_account->on_communication_fail(evt.data, wxGetApp().app_config);
+        this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
+        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Connection to PrusaConnect has failed."));
+    });
     this->q->Bind(EVT_PRUSAAUTH_FAIL, [this](PrusaAuthFailEvent& evt) {
         BOOST_LOG_TRIVIAL(error) << "Network error message: " << evt.data;
         user_account->on_communication_fail(evt.data, wxGetApp().app_config);
         this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
-        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::WarningNotificationLevel, evt.data);
+        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Connection to PrusaConnect has failed."));
     });
     this->q->Bind(EVT_PRUSAAUTH_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
         this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);

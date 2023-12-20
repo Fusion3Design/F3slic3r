@@ -23,6 +23,7 @@ wxDECLARE_EVENT(EVT_PA_ID_USER_FAIL, PrusaAuthFailEvent);
 wxDECLARE_EVENT(EVT_PRUSAAUTH_SUCCESS, PrusaAuthSuccessEvent);
 wxDECLARE_EVENT(EVT_PRUSACONNECT_PRINTERS_SUCCESS, PrusaAuthSuccessEvent);
 wxDECLARE_EVENT(EVT_PRUSAAUTH_FAIL, PrusaAuthFailEvent);
+wxDECLARE_EVENT(EVT_PRUSAAUTH_RESET, PrusaAuthFailEvent);
 
 typedef std::function<void(const std::string& body)> UserActionSuccessFn;
 typedef std::function<void(const std::string& body)> UserActionFailFn;
@@ -33,7 +34,7 @@ enum class UserActionID {
     REFRESH_TOKEN,
     CODE_FOR_TOKEN,
     TEST_CONNECTION,
-    USER_ID,
+    LOGIN_USER_ID,
     CONNECT_DUMMY,
     CONNECT_PRINTERS,
 };
@@ -102,7 +103,7 @@ public:
         m_actions[UserActionID::REFRESH_TOKEN] = std::make_unique<UserActionPost>("EXCHANGE_TOKENS", "https://test-account.prusa3d.com/o/token/");
         m_actions[UserActionID::CODE_FOR_TOKEN] = std::make_unique<UserActionPost>("EXCHANGE_TOKENS", "https://test-account.prusa3d.com/o/token/");
         m_actions[UserActionID::TEST_CONNECTION] = std::make_unique<UserActionGetWithEvent>("TEST_CONNECTION", "https://test-account.prusa3d.com/api/v1/me/", evt_handler, wxEVT_NULL, EVT_PRUSAAUTH_FAIL);
-        m_actions[UserActionID::USER_ID] = std::make_unique<UserActionGetWithEvent>("USER_ID", "https://test-account.prusa3d.com/api/v1/me/", evt_handler, EVT_PA_ID_USER_SUCCESS, EVT_PRUSAAUTH_FAIL);
+        m_actions[UserActionID::LOGIN_USER_ID] = std::make_unique<UserActionGetWithEvent>("USER_ID", "https://test-account.prusa3d.com/api/v1/me/", evt_handler, EVT_PA_ID_USER_SUCCESS, EVT_PRUSAAUTH_FAIL);
         m_actions[UserActionID::CONNECT_DUMMY] = std::make_unique<UserActionGetWithEvent>("CONNECT_DUMMY", "https://dev.connect.prusa3d.com/slicer/dummy"/*"dev.connect.prusa:8000/slicer/dummy"*/, evt_handler, EVT_PRUSAAUTH_SUCCESS, EVT_PRUSAAUTH_FAIL);
         m_actions[UserActionID::CONNECT_PRINTERS] = std::make_unique<UserActionGetWithEvent>("CONNECT_PRINTERS", "https://dev.connect.prusa3d.com/slicer/printers"/*"dev.connect.prusa:8000/slicer/printers"*/, evt_handler, EVT_PRUSACONNECT_PRINTERS_SUCCESS, EVT_PRUSAAUTH_FAIL);
     }
@@ -112,7 +113,7 @@ public:
         m_actions[UserActionID::REFRESH_TOKEN].reset(nullptr);
         m_actions[UserActionID::CODE_FOR_TOKEN].reset(nullptr);
         m_actions[UserActionID::TEST_CONNECTION].reset(nullptr);
-        m_actions[UserActionID::USER_ID].reset(nullptr);
+        m_actions[UserActionID::LOGIN_USER_ID].reset(nullptr);
         m_actions[UserActionID::CONNECT_DUMMY].reset(nullptr);
         m_actions[UserActionID::CONNECT_PRINTERS].reset(nullptr);
         //assert(m_actions.empty());
@@ -121,11 +122,14 @@ public:
         m_access_token.clear();
         m_refresh_token.clear();
         m_shared_session_key.clear();
+        m_proccessing_enabled = false;
     }
 
+    // Functions that automatically enable action queu processing
     void init_with_code(const std::string& code, const std::string& code_verifier);
-    void process_action_queue();
     void enqueue_action(UserActionID id, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input);
+
+    void process_action_queue();
     bool is_initialized() { return !m_access_token.empty() || !m_refresh_token.empty(); }
     std::string get_access_token() const { return m_access_token; }
     std::string get_refresh_token() const { return m_refresh_token; }
@@ -137,6 +141,10 @@ private:
     void refresh_failed_callback(const std::string& body);
     void cancel_queue();
     std::string client_id() const { return "UfTRUm5QjWwaQEGpWQBHGHO3reAyuzgOdBaiqO52"; }
+
+    // false prevents action queu to be processed - no communication is done
+    // sets to true by init_with_code or enqueue_action call
+    bool        m_proccessing_enabled {false}; 
 
     std::string m_access_token;
     std::string m_refresh_token;

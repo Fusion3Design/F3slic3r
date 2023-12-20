@@ -35,10 +35,13 @@ public:
     //
     bool is_logged();
     void do_login();
-    void do_logout();
+    void do_logout(AppConfig* app_config);
+    void do_clear(AppConfig* app_config);
     // Trigger function starts various remote operations
+#if 0
     void enqueue_user_id_action();
     void enqueue_connect_dummy_action();
+#endif
     void enqueue_connect_printers_action();
    
     

@@ -32,7 +32,7 @@ public:
 
     bool is_logged();
     void do_login();
-    void do_logout();
+    void do_logout(AppConfig* app_config);
 
     void set_remember_session(bool remember);
 
@@ -47,6 +47,7 @@ public:
     bool on_login_code_recieved(const std::string& url_message);
     bool on_user_id_success(const std::string data, AppConfig* app_config, std::string& out_username);
     bool on_communication_fail(const std::string data, AppConfig* app_config);
+    bool on_communication_reset(const std::string data, AppConfig* app_config);
     bool on_logout(AppConfig* app_config);
     bool on_connect_printers_success(const std::string data, AppConfig* app_config, bool& out_printers_changed, std::string& out_message);
 
@@ -60,6 +61,7 @@ public:
     std::string get_nozzle_from_json(const std::string& message) const;
 private:
     void set_username(const std::string& username, AppConfig* app_config);
+    void reset(AppConfig* app_config);
 
     std::unique_ptr<Slic3r::GUI::PrusaAuthCommunication> m_auth_communication;
     

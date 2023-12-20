@@ -24,6 +24,14 @@ void UserAccount::set_username(const std::string& username, AppConfig* app_confi
     m_auth_communication->set_username(username, app_config);
 }
 
+void UserAccount::reset(AppConfig* app_config)
+{
+    m_username = {};
+    m_user_data.clear();
+    m_printer_map.clear();
+    m_auth_communication->do_clear(app_config);
+}
+
 void UserAccount::set_remember_session(bool remember)
 {
     m_auth_communication->set_remember_session(remember);
@@ -37,9 +45,9 @@ void UserAccount::do_login()
 {
     m_auth_communication->do_login();
 }
-void UserAccount::do_logout()
+void UserAccount::do_logout(AppConfig* app_config)
 {
-    m_auth_communication->do_logout();
+    m_auth_communication->do_logout(app_config);
 }
 
 std::string UserAccount::get_access_token()
@@ -107,6 +115,12 @@ bool UserAccount::on_communication_fail(const std::string data, AppConfig* app_c
 {
     // TODO: should we just declare disconnect on every fail?
     //set_username({}, app_config);
+    return true;
+}
+
+bool UserAccount::on_communication_reset(const std::string data, AppConfig* app_config)
+{
+    set_username({}, app_config);
     return true;
 }
 

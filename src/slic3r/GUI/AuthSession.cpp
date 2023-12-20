@@ -25,22 +25,23 @@ wxDEFINE_EVENT(EVT_PA_ID_USER_FAIL, PrusaAuthFailEvent);
 wxDEFINE_EVENT(EVT_PRUSAAUTH_SUCCESS, PrusaAuthSuccessEvent);
 wxDEFINE_EVENT(EVT_PRUSACONNECT_PRINTERS_SUCCESS, PrusaAuthSuccessEvent);
 wxDEFINE_EVENT(EVT_PRUSAAUTH_FAIL, PrusaAuthFailEvent);
+wxDEFINE_EVENT(EVT_PRUSAAUTH_RESET, PrusaAuthFailEvent);
 
 void UserActionPost::perform(const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
 {
     std::string url = m_url;
-    BOOST_LOG_TRIVIAL(info) << m_action_name <<" POST " << url << " body: " << input;
+    //BOOST_LOG_TRIVIAL(info) << m_action_name <<" POST " << url << " body: " << input;
     auto http = Http::post(std::move(url));
     if (!input.empty())
         http.set_post_body(input);
     http.header("Content-type", "application/x-www-form-urlencoded");
     http.on_error([&](std::string body, std::string error, unsigned status) {
-        BOOST_LOG_TRIVIAL(error) << m_action_name << " action failed. status: " << status << " Body: " << body;
+        //BOOST_LOG_TRIVIAL(error) << m_action_name << " action failed. status: " << status << " Body: " << body;
         if (fail_callback)
             fail_callback(body);
     });
     http.on_complete([&, this](std::string body, unsigned status) {
-        BOOST_LOG_TRIVIAL(info) << m_action_name << "action success. Status: " << status << " Body: " << body;
+        //BOOST_LOG_TRIVIAL(info) << m_action_name << "action success. Status: " << status << " Body: " << body;
         if (success_callback)
             success_callback(body);
     });
@@ -50,11 +51,11 @@ void UserActionPost::perform(const std::string& access_token, UserActionSuccessF
 void UserActionGetWithEvent::perform(const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, /*UNUSED*/ const std::string& input)
 {
     std::string url = m_url;
-    BOOST_LOG_TRIVIAL(info) << m_action_name << " GET " << url;
+    //BOOST_LOG_TRIVIAL(info) << m_action_name << " GET " << url;
     auto http = Http::get(url);
     http.header("Authorization", "Bearer " + access_token);
     http.on_error([&](std::string body, std::string error, unsigned status) {
-        BOOST_LOG_TRIVIAL(error) << m_action_name << " action failed. status: " << status << " Body: " << body;
+        //BOOST_LOG_TRIVIAL(error) << m_action_name << " action failed. status: " << status << " Body: " << body;
         if (fail_callback)
             fail_callback(body);
         std::string message = GUI::format("%1% action failed (%2%): %3%", m_action_name, std::to_string(status), body);
@@ -62,7 +63,7 @@ void UserActionGetWithEvent::perform(const std::string& access_token, UserAction
             wxQueueEvent(m_evt_handler, new PrusaAuthFailEvent(m_fail_evt_type, std::move(message)));
     });
     http.on_complete([&, this](std::string body, unsigned status) {
-        BOOST_LOG_TRIVIAL(info) << m_action_name << " action success. Status: " << status << " Body: " << body;
+        //BOOST_LOG_TRIVIAL(info) << m_action_name << " action success. Status: " << status << " Body: " << body;
         if (success_callback)
             success_callback(body);
         if (m_succ_evt_type != wxEVT_NULL)
@@ -74,9 +75,11 @@ void UserActionGetWithEvent::perform(const std::string& access_token, UserAction
 
 void AuthSession::process_action_queue()
 {
-    BOOST_LOG_TRIVIAL(debug) << "process_action_queue start";
+    if (!m_proccessing_enabled)
+        return;
+    //BOOST_LOG_TRIVIAL(debug) << "process_action_queue start";
     if (m_priority_action_queue.empty() && m_action_queue.empty()) {
-        BOOST_LOG_TRIVIAL(debug) << "process_action_queue queues empty";
+        //BOOST_LOG_TRIVIAL(debug) << "process_action_queue queues empty";
         // update printers on every periodic wakeup call
         enqueue_action(UserActionID::CONNECT_PRINTERS, nullptr, nullptr, {});
         //return;
@@ -94,7 +97,7 @@ void AuthSession::process_action_queue()
     }
 
     if (!this->is_initialized()) {
-        BOOST_LOG_TRIVIAL(debug) << "process_action_queue not initialized";
+        //BOOST_LOG_TRIVIAL(debug) << "process_action_queue not initialized";
         return;
     }
 
@@ -103,12 +106,13 @@ void AuthSession::process_action_queue()
         if (!m_action_queue.empty())
             m_action_queue.pop();
     }
-    BOOST_LOG_TRIVIAL(debug) << "process_action_queue end";
+    //BOOST_LOG_TRIVIAL(debug) << "process_action_queue end";
 }
 
 void AuthSession::enqueue_action(UserActionID id, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
 {
-    BOOST_LOG_TRIVIAL(info) << "enqueue_action " << (int)id;
+    //BOOST_LOG_TRIVIAL(info) << "enqueue_action " << (int)id;
+    m_proccessing_enabled = true;
     m_action_queue.push({ id, success_callback, fail_callback, input });
 }
 
@@ -163,6 +167,7 @@ void AuthSession::init_with_code(const std::string& code, const std::string& cod
         m_shared_session_key = shared_session_key;
     };
 
+    m_proccessing_enabled = true;
     // fail fn might be cancel_queue here
     m_priority_action_queue.push({ UserActionID::CODE_FOR_TOKEN, succ_fn, std::bind(&AuthSession::enqueue_refresh, this, std::placeholders::_1), post_fields });
 }

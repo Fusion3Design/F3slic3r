@@ -164,7 +164,7 @@ void TopBarItemsCtrl::CreateAuthMenu()
         [this](wxCommandEvent&) {
             auto user_account = wxGetApp().plater()->get_user_account();
             if (user_account->is_logged())
-                user_account->do_logout();
+                user_account->do_logout(wxGetApp().app_config);
             else
                 user_account->do_login();
         }, get_bmp_bundle("login", 16), nullptr, []() { return true; }, this);

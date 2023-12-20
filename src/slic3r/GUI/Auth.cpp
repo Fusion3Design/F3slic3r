@@ -149,7 +149,7 @@ PrusaAuthCommunication::PrusaAuthCommunication(wxEvtHandler* evt_handler, AppCon
         m_remember_session = true;
     m_session = std::make_unique<AuthSession>(evt_handler, access_token, refresh_token, shared_session_key);
     init_session_thread();
-    // perform login at the start - do we want this
+    // perform login at the start
     if (m_remember_session)
         do_login();
 }
@@ -218,19 +218,24 @@ void PrusaAuthCommunication::do_login()
         std::lock_guard<std::mutex> lock(m_session_mutex);
         if (!m_session->is_initialized()) {
             login_redirect();
-            //return;
         }
-        m_session->enqueue_action(UserActionID::USER_ID, nullptr, nullptr, {});
+        m_session->enqueue_action(UserActionID::LOGIN_USER_ID, nullptr, nullptr, {});
     }
     wakeup_session_thread();
 }
-void PrusaAuthCommunication::do_logout()
+void PrusaAuthCommunication::do_logout(AppConfig* app_config)
+{
+    do_clear(app_config);
+    wxQueueEvent(m_evt_handler, new PrusaAuthSuccessEvent(GUI::EVT_LOGGEDOUT_PRUSAAUTH, {}));
+}
+
+void PrusaAuthCommunication::do_clear(AppConfig* app_config)
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         m_session->clear();
     }
-    wxQueueEvent(m_evt_handler, new PrusaAuthSuccessEvent(GUI::EVT_LOGGEDOUT_PRUSAAUTH, {}));
+    set_username({}, app_config);
 }
 
 void PrusaAuthCommunication::on_login_code_recieved(const std::string& url_message)
@@ -243,12 +248,12 @@ void PrusaAuthCommunication::on_login_code_recieved(const std::string& url_messa
     wakeup_session_thread();
 }
 
+#if 0
 void PrusaAuthCommunication::enqueue_user_id_action()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         if (!m_session->is_initialized()) {
-            //login_redirect();
             return;
         }
         m_session->enqueue_action(UserActionID::USER_ID, nullptr, nullptr, {});
@@ -268,6 +273,7 @@ void PrusaAuthCommunication::enqueue_connect_dummy_action()
     }
     wakeup_session_thread();
 }
+#endif
 
 void PrusaAuthCommunication::enqueue_connect_printers_action()
 {
