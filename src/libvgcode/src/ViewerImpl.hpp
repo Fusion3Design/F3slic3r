@@ -8,10 +8,10 @@
 #include "Settings.hpp"
 #include "SegmentTemplate.hpp"
 #include "OptionTemplate.hpp"
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
 #include "CogMarker.hpp"
 #include "ToolMarker.hpp"
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 #include "../include/PathVertex.hpp"
 #include "../include/ColorRange.hpp"
 #include "Bitset.hpp"
@@ -160,7 +160,7 @@ public:
     float get_wipes_radius() const { return m_wipes_radius; }
     void set_wipes_radius(float radius);
 
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
     Vec3 get_cog_marker_position() const { return m_cog_marker.get_position(); }
 
     float get_cog_marker_scale_factor() const { return m_cog_marker_scale_factor; }
@@ -183,7 +183,7 @@ public:
 
     float get_tool_marker_alpha() const { return m_tool_marker.get_alpha(); }
     void set_tool_marker_alpha(float alpha) { m_tool_marker.set_alpha(alpha); }
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 
 private:
     Settings m_settings;
@@ -212,7 +212,7 @@ private:
     //
     OptionTemplate m_option_template;
 
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
     //
     // The OpenGL element used to represent the center of gravity
     //
@@ -224,7 +224,7 @@ private:
     //
     ToolMarker m_tool_marker;
     float m_tool_marker_scale_factor{ 1.0f };
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 
     //
     // cpu buffer to store vertices
@@ -259,10 +259,10 @@ private:
     //
     unsigned int m_segments_shader_id{ 0 };
     unsigned int m_options_shader_id{ 0 };
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
     unsigned int m_cog_marker_shader_id{ 0 };
     unsigned int m_tool_marker_shader_id{ 0 };
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 
     //
     // Cache for OpenGL uniforms id for segments shader 
@@ -285,7 +285,7 @@ private:
     int m_uni_options_colors_tex_id{ -1 };
     int m_uni_options_segment_index_tex_id{ -1 };
 
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
     //
     // Cache for OpenGL uniforms id for cog marker shader 
     //
@@ -302,7 +302,7 @@ private:
     int m_uni_tool_marker_view_matrix{ -1 };
     int m_uni_tool_marker_projection_matrix{ -1 };
     int m_uni_tool_marker_color_base{ -1 };
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 
     //
     // gpu buffers to store positions
@@ -335,10 +335,10 @@ private:
     void update_heights_widths();
     void render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position);
     void render_options(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
     void render_cog_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
     void render_tool_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 
     //
     // Palette used to render extrusion moves by extrusion roles

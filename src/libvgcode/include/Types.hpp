@@ -5,7 +5,7 @@
 #ifndef VGCODE_TYPES_HPP
 #define VGCODE_TYPES_HPP
 
-#define ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS 1
+#define ENABLE_COG_AND_TOOL_MARKERS 0
 
 #include <array>
 #include <vector>
@@ -152,10 +152,10 @@ enum class EOptionType : uint8_t
     ColorChanges,
     PausePrints,
     CustomGCodes,
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
     CenterOfGravity,
     ToolMarker,
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
     COUNT
 };
 

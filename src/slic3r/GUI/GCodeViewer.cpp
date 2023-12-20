@@ -193,11 +193,11 @@ void GCodeViewer::TBuffer::add_path(const GCodeProcessorResult::MoveVertex& move
 #endif // !ENABLE_NEW_GCODE_VIEWER
 
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-void GCodeViewer::COG::render()
-#else
+#if ENABLE_COG_AND_TOOL_MARKERS
 void GCodeViewer::COG::render(bool fixed_screen_size)
-#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#else
+void GCodeViewer::COG::render()
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 #else
 void GCodeViewer::COG::render()
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -206,12 +206,12 @@ void GCodeViewer::COG::render()
         return;
 
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-    init();
-#else
+#if ENABLE_COG_AND_TOOL_MARKERS
     fixed_screen_size = true;
     init(fixed_screen_size);
-#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#else
+    init();
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 #else
     init();
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -227,11 +227,11 @@ void GCodeViewer::COG::render()
     const Camera& camera = wxGetApp().plater()->get_camera();
     Transform3d model_matrix = Geometry::translation_transform(cog()) * Geometry::scale_transform(m_scale_factor);
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-    if (m_fixed_screen_size) {
-#else
+#if ENABLE_COG_AND_TOOL_MARKERS
     if (fixed_screen_size) {
-#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#else
+    if (m_fixed_screen_size) {
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 #else
     if (m_fixed_screen_size) {
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -916,9 +916,9 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
 #if ENABLE_NEW_GCODE_VIEWER
 void GCodeViewer::SequentialView::render(float legend_height, const libvgcode::Viewer* viewer, uint32_t gcode_id)
 {
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
     if (viewer == nullptr)
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
     marker.render();
     marker.render_position_window(viewer);
 #else
@@ -1151,7 +1151,7 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
     m_viewer.reset_default_extrusion_roles_colors();
     m_viewer.load(std::move(data));
 
-#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if !ENABLE_COG_AND_TOOL_MARKERS
     const size_t vertices_count = m_viewer.get_vertices_count();
     m_cog.reset();
     for (size_t i = 1; i < vertices_count; ++i) {
@@ -1167,7 +1167,7 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
             m_cog.add_segment(curr_pos, prev_pos, curr.volumetric_rate / curr.feedrate * (curr_pos - prev_pos).norm());
         }
     }
-#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // !ENABLE_COG_AND_TOOL_MARKERS
 
     const libvgcode::AABox bbox = m_viewer.get_bounding_box(wxGetApp().is_gcode_viewer() ? libvgcode::EBBoxType::Full : libvgcode::EBBoxType::ExtrusionNoCustom);
     m_paths_bounding_box.min = libvgcode::convert(bbox[0]).cast<double>();
@@ -1492,7 +1492,7 @@ void GCodeViewer::render()
 #endif // !ENABLE_NEW_GCODE_VIEWER
 
 #if ENABLE_NEW_GCODE_VIEWER
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
     if (is_legend_shown()) {
         ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
         const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
@@ -1525,7 +1525,7 @@ void GCodeViewer::render()
 
         imgui.end();
     }
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 #endif // ENABLE_NEW_GCODE_VIEWER
 }
 
@@ -3853,12 +3853,12 @@ void GCodeViewer::render_toolpaths()
     const Camera& camera = wxGetApp().plater()->get_camera();
     libvgcode::Mat4x4 converted_view_matrix = libvgcode::convert(static_cast<Matrix4f>(camera.get_view_matrix().matrix().cast<float>()));
     libvgcode::Mat4x4 converted_projetion_matrix = libvgcode::convert(static_cast<Matrix4f>(camera.get_projection_matrix().matrix().cast<float>()));
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
     m_viewer.set_cog_marker_scale_factor(m_cog_marker_fixed_screen_size ? 10.0f * m_cog_marker_size * camera.get_inv_zoom() : m_cog_marker_size);
     m_viewer.enable_tool_marker(m_viewer.get_view_enabled_range()[1] != m_viewer.get_view_visible_range()[1]);
     m_viewer.set_tool_marker_position(m_viewer.get_current_vertex().position);
     m_viewer.set_tool_marker_scale_factor(m_tool_marker_fixed_screen_size ? 10.0f * m_tool_marker_size * camera.get_inv_zoom() : m_tool_marker_size);
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
     m_viewer.render(converted_view_matrix, converted_projetion_matrix);
 
 #if ENABLE_NEW_GCODE_VIEWER_DEBUG
@@ -3949,7 +3949,7 @@ void GCodeViewer::render_toolpaths()
 
             ImGui::EndTable();
 
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
             ImGui::Separator();
 
             if (ImGui::BeginTable("Cog", 2)) {
@@ -4001,7 +4001,7 @@ void GCodeViewer::render_toolpaths()
 
                 ImGui::EndTable();
             }
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
         }
 
         ImGui::Separator();
@@ -5566,7 +5566,9 @@ void GCodeViewer::render_legend(float& legend_height)
         std::function<void(ImGuiWindow& window, const ImVec2& pos, float size)> draw_callback) {
 #if ENABLE_NEW_GCODE_VIEWER
         bool active = false;
-#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
+        active = (type == Preview::OptionType::Shells) ? m_shells.visible : m_viewer.is_option_visible(libvgcode::convert(type));
+#else
         switch (type)
         {
         case Preview::OptionType::CenterOfGravity: { active = m_cog.is_visible(); break; }
@@ -5574,9 +5576,7 @@ void GCodeViewer::render_legend(float& legend_height)
         case Preview::OptionType::Shells:          { active = m_shells.visible; break; }
         default:                                   { active = m_viewer.is_option_visible(libvgcode::convert(type)); break; }
         }
-#else
-        active = (type == Preview::OptionType::Shells) ? m_shells.visible : m_viewer.is_option_visible(libvgcode::convert(type));
-#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 #else
         auto is_flag_set = [](unsigned int flags, unsigned int flag) {
             return (flags & (1 << flag)) != 0;
@@ -5596,28 +5596,28 @@ void GCodeViewer::render_legend(float& legend_height)
           const libvgcode::Interval& view_visible_range = m_viewer.get_view_visible_range();
           const libvgcode::Interval& view_enabled_range = m_viewer.get_view_enabled_range();
           bool keep_visible_range = false;
-#if ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
-            switch (type)
-            {
-            case Preview::OptionType::CenterOfGravity: { m_cog.set_visible(!active); break; }
-            case Preview::OptionType::ToolMarker:      { m_sequential_view.marker.set_visible(!active); break; }
-            case Preview::OptionType::Shells:          { m_shells.visible = !active; break; }
-            default:                                   {
-                m_viewer.toggle_option_visibility(libvgcode::convert(type));
-                if (view_visible_range != view_enabled_range)
-                    keep_visible_range = true;
-                break;
-            }
-            }
+#if ENABLE_COG_AND_TOOL_MARKERS
+          if (type == Preview::OptionType::Shells)
+              m_shells.visible = !active;
+          else {
+              m_viewer.toggle_option_visibility(libvgcode::convert(type));
+              if (view_visible_range != view_enabled_range)
+                  keep_visible_range = true;
+          }
 #else
-            if (type == Preview::OptionType::Shells)
-                m_shells.visible = !active;
-            else {
-                m_viewer.toggle_option_visibility(libvgcode::convert(type));
-                if (view_visible_range != view_enabled_range)
-                    keep_visible_range = true;
-            }
-#endif // ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+          switch (type)
+          {
+          case Preview::OptionType::CenterOfGravity: { m_cog.set_visible(!active); break; }
+          case Preview::OptionType::ToolMarker:      { m_sequential_view.marker.set_visible(!active); break; }
+          case Preview::OptionType::Shells:          { m_shells.visible = !active; break; }
+          default:                                   {
+              m_viewer.toggle_option_visibility(libvgcode::convert(type));
+              if (view_visible_range != view_enabled_range)
+                  keep_visible_range = true;
+              break;
+          }
+          }
+#endif // ENABLE_COG_AND_TOOL_MARKERS
             std::optional<int> view_visible_range_min;
             std::optional<int> view_visible_range_max;
             if (keep_visible_range) {

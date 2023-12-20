@@ -7,6 +7,8 @@
 
 #include "../include/Types.hpp"
 
+#include <cfloat>
+
 namespace libvgcode {
 
 //

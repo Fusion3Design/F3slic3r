@@ -172,7 +172,7 @@ public:
     float get_wipes_radius() const;
     void set_wipes_radius(float radius);
 
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
     //
     // Returns the position of the center of gravity of the toolpaths.
     // It does not take in account extrusions of type:
@@ -204,7 +204,7 @@ public:
 
     float get_tool_marker_alpha() const;
     void set_tool_marker_alpha(float alpha);
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 
 private:
     ViewerImpl* m_impl{ nullptr };

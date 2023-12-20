@@ -357,7 +357,7 @@ void Viewer::set_wipes_radius(float radius)
     m_impl->set_wipes_radius(radius);
 }
 
-#if !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#if ENABLE_COG_AND_TOOL_MARKERS
 Vec3 Viewer::get_cog_position() const
 {
     return m_impl->get_cog_marker_position();
@@ -432,6 +432,6 @@ void Viewer::set_tool_marker_alpha(float alpha)
 {
     m_impl->set_tool_marker_alpha(alpha);
 }
-#endif // !ENABLE_NEW_GCODE_VIEWER_NO_COG_AND_TOOL_MARKERS
+#endif // ENABLE_COG_AND_TOOL_MARKERS
 
 } // namespace libvgcode
