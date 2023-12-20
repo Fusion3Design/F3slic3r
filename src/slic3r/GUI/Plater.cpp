@@ -5842,6 +5842,9 @@ void Plater::connect_gcode()
         assert(preset_id != size_t(-1));
         preset_bundle->printers.select_preset(preset_id);
         wxGetApp().get_tab(Preset::Type::TYPE_PRINTER)->select_preset(preset->name);
+        p->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
+        p->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, format(_u8L("Changed Printer to %1%."), preset->name));
+        select_view_3D("3D");
         return;
     }
 
@@ -5852,6 +5855,9 @@ void Plater::connect_gcode()
         assert(preset_id != size_t(-1));
         preset_bundle->printers.select_preset(preset_id);
         wxGetApp().get_tab(Preset::Type::TYPE_PRINTER)->select_preset(preset->name);
+        p->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
+        p->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, format(_u8L("Changed Printer to %1%."), preset->name));
+        select_view_3D("3D");
         return;
     }
 

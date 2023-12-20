@@ -224,6 +224,7 @@ public:
     bool is_background_process_update_scheduled() const;
     void suppress_background_process(const bool stop_background_process) ;
     void send_gcode();
+    void send_gcode_inner(DynamicPrintConfig* physical_printer_config);
 	void eject_drive();
     void connect_gcode();
 
