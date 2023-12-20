@@ -5,6 +5,8 @@
 #ifndef VGCODE_SEGMENTTEMPLATE_HPP
 #define VGCODE_SEGMENTTEMPLATE_HPP
 
+#include <cstddef>
+
 namespace libvgcode {
 
 class SegmentTemplate

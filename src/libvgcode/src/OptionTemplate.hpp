@@ -6,6 +6,7 @@
 #define VGCODE_OPTIONTEMPLATE_HPP
 
 #include <cstdint>
+#include <cstddef>
 
 namespace libvgcode {
 
