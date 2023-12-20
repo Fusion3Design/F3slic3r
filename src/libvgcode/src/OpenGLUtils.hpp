@@ -5,8 +5,8 @@
 #ifndef VGCODE_OPENGLUTILS_HPP
 #define VGCODE_OPENGLUTILS_HPP
 
-// OpenGL dependencies
-#include <GL/glew.h>
+// OpenGL loader
+#include "../glad/include/glad/glad.h"
 
 namespace libvgcode {
 #ifndef NDEBUG
@@ -24,6 +24,7 @@ inline void glAssertRecentCall() { }
 #define glcheck()
 #endif // HAS_GLSAFE
 
+extern bool load_opengl();
 extern bool check_opengl_version();
 
 } // namespace libvgcode

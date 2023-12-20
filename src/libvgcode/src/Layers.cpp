@@ -7,6 +7,7 @@
 #include "../include/PathVertex.hpp"
 
 #include <assert.h>
+#include <algorithm>
 
 namespace libvgcode {
 

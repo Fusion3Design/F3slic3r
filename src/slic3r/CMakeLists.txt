@@ -92,47 +92,10 @@ set(SLIC3R_GUI_SOURCES
     GUI/Gizmos/GLGizmoMmuSegmentation.hpp
     GUI/Gizmos/GLGizmoMeasure.cpp
     GUI/Gizmos/GLGizmoMeasure.hpp
-#====================================================================================================================
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     GUI/LibVGCode/LibVGCodeWrapper.hpp
     GUI/LibVGCode/LibVGCodeWrapper.cpp
-    GUI/LibVGCode/include/ColorRange.hpp
-    GUI/LibVGCode/include/GCodeInputData.hpp
-    GUI/LibVGCode/include/PathVertex.hpp
-    GUI/LibVGCode/include/Types.hpp
-    GUI/LibVGCode/include/Viewer.hpp
-    GUI/LibVGCode/src/Bitset.hpp
-    GUI/LibVGCode/src/Bitset.cpp
-    GUI/LibVGCode/src/CogMarker.hpp
-    GUI/LibVGCode/src/CogMarker.cpp
-    GUI/LibVGCode/src/ColorRange.cpp
-    GUI/LibVGCode/src/ExtrusionRoles.hpp
-    GUI/LibVGCode/src/ExtrusionRoles.cpp
-    GUI/LibVGCode/src/GCodeInputData.cpp	
-    GUI/LibVGCode/src/Layers.hpp
-    GUI/LibVGCode/src/Layers.cpp
-    GUI/LibVGCode/src/OpenGLUtils.hpp
-    GUI/LibVGCode/src/OpenGLUtils.cpp
-    GUI/LibVGCode/src/OptionTemplate.hpp
-    GUI/LibVGCode/src/OptionTemplate.cpp
-    GUI/LibVGCode/src/PathVertex.cpp
-    GUI/LibVGCode/src/Range.hpp
-    GUI/LibVGCode/src/Range.cpp
-    GUI/LibVGCode/src/SegmentTemplate.hpp
-    GUI/LibVGCode/src/SegmentTemplate.cpp
-    GUI/LibVGCode/src/Settings.hpp
-    GUI/LibVGCode/src/Settings.cpp
-    GUI/LibVGCode/src/Shaders.hpp
-    GUI/LibVGCode/src/ToolMarker.hpp
-    GUI/LibVGCode/src/ToolMarker.cpp
-    GUI/LibVGCode/src/Types.cpp
-    GUI/LibVGCode/src/Utils.hpp
-    GUI/LibVGCode/src/Utils.cpp
-    GUI/LibVGCode/src/Viewer.cpp
-    GUI/LibVGCode/src/ViewerImpl.hpp
-    GUI/LibVGCode/src/ViewerImpl.cpp
-    GUI/LibVGCode/src/ViewRange.hpp
-    GUI/LibVGCode/src/ViewRange.cpp
-#====================================================================================================================	
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     GUI/GLSelectionRectangle.cpp
     GUI/GLSelectionRectangle.hpp
     GUI/GLModel.hpp
@@ -425,7 +388,10 @@ endforeach()
 
 encoding_check(libslic3r_gui)
 
-target_link_libraries(libslic3r_gui libslic3r avrdude libcereal imgui GLEW::GLEW OpenGL::GL hidapi libcurl ${wxWidgets_LIBRARIES} NanoSVG::nanosvg NanoSVG::nanosvgrast)
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+target_link_libraries(libslic3r_gui libslic3r avrdude libcereal imgui libvgcode GLEW::GLEW OpenGL::GL hidapi libcurl ${wxWidgets_LIBRARIES} NanoSVG::nanosvg NanoSVG::nanosvgrast)
+#target_link_libraries(libslic3r_gui libslic3r avrdude libcereal imgui GLEW::GLEW OpenGL::GL hidapi libcurl ${wxWidgets_LIBRARIES} NanoSVG::nanosvg NanoSVG::nanosvgrast)
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 if (MSVC)
     target_link_libraries(libslic3r_gui Setupapi.lib)

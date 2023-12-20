@@ -339,9 +339,10 @@ void ViewerImpl::init()
     if (m_initialized)
         return;
 
-    const bool is_valid_opengl_version = check_opengl_version();
-    assert(is_valid_opengl_version);
-    if (!is_valid_opengl_version)
+    if (!load_opengl())
+        throw std::runtime_error("LibVGCode was unable to initialize OpenGL\n");
+
+    if (!check_opengl_version())
         throw std::runtime_error("LibVGCode requires an active OpenGL context based on OpenGL 3.2 or higher:\n");
 
     // segments shader

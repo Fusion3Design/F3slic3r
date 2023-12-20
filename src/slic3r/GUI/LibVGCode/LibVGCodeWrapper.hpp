@@ -10,10 +10,10 @@
 #include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "slic3r/GUI/GUI_Preview.hpp"
 
-#include "include/Viewer.hpp"
-#include "include/PathVertex.hpp"
-#include "include/GCodeInputData.hpp"
-#include "include/ColorRange.hpp"
+#include <libvgcode/include/Viewer.hpp>
+#include <libvgcode/include/PathVertex.hpp>
+#include <libvgcode/include/GCodeInputData.hpp>
+#include <libvgcode/include/ColorRange.hpp>
 
 namespace Slic3r {
 class Print;

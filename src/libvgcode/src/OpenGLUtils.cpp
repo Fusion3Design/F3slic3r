@@ -32,6 +32,11 @@ void glAssertRecentCallImpl(const char* file_name, unsigned int line, const char
 }
 #endif // HAS_GLSAFE
 
+bool load_opengl()
+{
+    return gladLoadGL() != 0;
+}
+
 bool check_opengl_version()
 {
     bool ret = false;
