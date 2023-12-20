@@ -352,6 +352,7 @@ public:
 	// Set extruder temperature, don't wait by default.
 	WipeTowerWriter& set_extruder_temp(int temperature, bool wait = false)
 	{
+        m_gcode += "G4 S0\n"; // to flush planner queue
         m_gcode += "M" + std::to_string(wait ? 109 : 104) + " S" + std::to_string(temperature) + "\n";
         return *this;
     }
