@@ -139,7 +139,7 @@ void TopBarItemsCtrl::ApplyWorkspacesMenu()
             [this, mode](wxCommandEvent&) {
                 if (wxGetApp().get_mode() != mode)
                     wxGetApp().save_mode(mode);
-            }, get_bmp_bundle("mode", 16, -1, wxGetApp().get_mode_btn_color(mode)), nullptr, []() { return true; }, this);
+            }, get_bmp_bundle("mode", 16, -1, wxGetApp().get_mode_btn_color(mode)));
 
         if (mode < Slic3r::ConfigOptionMode::comExpert)
             m_workspaces_menu.AppendSeparator();
@@ -152,7 +152,7 @@ void TopBarItemsCtrl::CreateAuthMenu()
         [this](wxCommandEvent& e) { 
             m_auth_btn->set_selected(true);
             wxGetApp().plater()->PopupMenu(&m_auth_menu, m_auth_btn->GetPosition());
-        }, get_bmp_bundle("user", 16), nullptr, []() { return true; }, this);
+        }, get_bmp_bundle("user", 16));
 
     m_auth_menu.AppendSeparator();
 
@@ -167,7 +167,7 @@ void TopBarItemsCtrl::CreateAuthMenu()
                 user_account->do_logout(wxGetApp().app_config);
             else
                 user_account->do_login();
-        }, get_bmp_bundle("login", 16), nullptr, []() { return true; }, this);
+        }, get_bmp_bundle("login", 16));
 }
 
 void TopBarItemsCtrl::UpdateAuthMenu()
