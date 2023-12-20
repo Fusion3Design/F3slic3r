@@ -5857,6 +5857,23 @@ void Plater::connect_gcode()
 
     // TODO: get api key from dialog_msg and upload the file
     // api key is not currently in the message
+    std::string api_key;
+
+    // This is private key for our printer "Loki" - DELETE!
+    //api_key = "PAARWQ2Ibd69fdbf";
+    if (api_key.empty())
+    {
+        return;
+    }
+    std::string connect_address = p->user_account->get_connect_address();
+
+    PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *preset);
+    ph_printer.config.opt_string("printhost_apikey") = api_key;
+    ph_printer.config.opt_string("print_host") = connect_address;
+    ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnect));
+    DynamicPrintConfig* physical_printer_config = &ph_printer.config;
+
+    send_gcode_inner(physical_printer_config);
 }
 
 void Plater::send_gcode()
@@ -5893,6 +5910,11 @@ void Plater::send_gcode()
             physical_printer_config->opt_string("printhost_apikey") = std::string();
     }
     */
+    send_gcode_inner(physical_printer_config);
+}
+
+void Plater::send_gcode_inner(DynamicPrintConfig* physical_printer_config)
+{
     PrintHostJob upload_job(physical_printer_config);
     if (upload_job.empty())
         return;
@@ -5968,6 +5990,7 @@ void Plater::send_gcode()
 
         p->export_gcode(fs::path(), false, std::move(upload_job));
     }
+
 }
 
 // Called when the Eject button is pressed.

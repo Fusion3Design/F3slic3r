@@ -55,6 +55,7 @@ public:
     std::string get_access_token();
     const ConnectPrinterStateMap& get_printer_state_map() const { return m_printer_map; }
     const std::map<std::string, std::string> get_user_data() const { return m_user_data; }
+    std::string get_connect_address() const { return "https://connect.prusa3d.com"; }
 
     // standalone utility methods
     std::string get_model_from_json(const std::string& message) const;
