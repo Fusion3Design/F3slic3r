@@ -24,10 +24,11 @@ namespace Slic3r {
 namespace GUI {
 
 
-WebViewPanel::WebViewPanel(wxWindow *parent)
+WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
         : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
+        , m_default_url (default_url)
  {
-    wxString url = "https://dev.connect.prusa3d.com/prusa-slicer/printers";
+    //wxString url = "https://dev.connect.prusa3d.com/prusa-slicer/printers";
     //std::string strlang = wxGetApp().app_config->get("language");
     //if (strlang != "")
     //    url = wxString::Format("file://%s/web/homepage/index.html?lang=%s", from_u8(resources_dir()), strlang);
@@ -74,7 +75,7 @@ WebViewPanel::WebViewPanel(wxWindow *parent)
 #endif
 
     // Create the webview
-    m_browser = WebView::CreateWebView(this, url);
+    m_browser = WebView::CreateWebView(this, m_default_url);
     if (m_browser == nullptr) {
         wxLogError("Could not init m_browser");
         return;
@@ -160,16 +161,15 @@ void WebViewPanel::load_url(wxString& url)
     m_browser->SetFocus();
 }
 
+void WebViewPanel::load_default_url()
+{
+    assert(!m_default_url.empty());
+    load_url(m_default_url);
+}
+
 void WebViewPanel::on_show(wxShowEvent& evt)
 {
-    // run script with access token to login
-    if (evt.IsShown()) {
-        std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
-        wxString script = GUI::format_wxstr("window.setAccessToken(\'%1%\')", token);
-        // TODO: should this be happening every OnShow?
-        run_script(script);
-    }
-   
+
 }
 
 void WebViewPanel::on_idle(wxIdleEvent& WXUNUSED(evt))
@@ -237,7 +237,6 @@ void WebViewPanel::on_close(wxCloseEvent& evt)
 
 void WebViewPanel::on_script_message(wxWebViewEvent& evt)
 {
-    wxGetApp().handle_web_request(evt.GetString().ToUTF8().data());
 }
 
 
@@ -411,19 +410,36 @@ SourceViewDialog::SourceViewDialog(wxWindow* parent, wxString source) :
     SetSizer(sizer);
 }
 
+ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
+    : WebViewPanel(parent, L"https://dev.connect.prusa3d.com/prusa-slicer/printers")
+{
+}
+void ConnectWebViewPanel::on_show(wxShowEvent& evt)
+{
+    // run script with access token to login
+    if (evt.IsShown()) {
+        std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
+        wxString script = GUI::format_wxstr("window.setAccessToken(\'%1%\')", token);
+        // TODO: should this be happening every OnShow?
+        run_script(script);
+    }
+}
 
-WebViewDialog::WebViewDialog(wxWindow* parent)
+void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
+{
+    wxGetApp().handle_web_request(evt.GetString().ToUTF8().data());
+}
+
+
+WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url)
     : wxDialog(parent, wxID_ANY, "Webview Dialog", wxDefaultPosition, wxSize(1366, 768)/* wxSize(100 * wxGetApp().em_unit(), 100 * wxGetApp().em_unit())*/)
 {
-    wxString url = "https://dev.connect.prusa3d.com/prusa-slicer/printers";
     ////std::string strlang = wxGetApp().app_config->get("language");
     ////if (strlang != "")
     ////    url = wxString::Format("file://%s/web/homepage/index.html?lang=%s", from_u8(resources_dir()), strlang);
     ////m_bbl_user_agent = wxString::Format("BBL-Slicer/v%s", SLIC3R_VERSION);
 
     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
-
-
 
     // Create the webview
     m_browser = WebView::CreateWebView(this, url);
@@ -439,21 +455,8 @@ WebViewDialog::WebViewDialog(wxWindow* parent)
     Bind(wxEVT_SHOW, &WebViewDialog::on_show, this);
     Bind(wxEVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED, &WebViewDialog::on_script_message, this, m_browser->GetId());
 }
-
 WebViewDialog::~WebViewDialog()
 {
-
-}
-
-void WebViewDialog::on_show(wxShowEvent& evt)
-{
-    if (evt.IsShown()) {
-        std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
-        wxString script = GUI::format_wxstr("window.setAccessToken(\'%1%\')", token);
-        // TODO: should this be happening every OnShow?
-        run_script(script);
-    }
-
 }
 
 void WebViewDialog::run_script(const wxString& javascript)
@@ -463,8 +466,25 @@ void WebViewDialog::run_script(const wxString& javascript)
     bool res = WebView::run_script(m_browser, javascript);
 }
 
-void WebViewDialog::on_script_message(wxWebViewEvent& evt)
+
+
+PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val)
+    : WebViewDialog(parent, L"https://dev.connect.prusa3d.com/prusa-slicer/printers")
+    , m_ret_val(ret_val)
 {
+}
+void PrinterPickWebViewDialog::on_show(wxShowEvent& evt)
+{
+    if (evt.IsShown()) {
+        std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
+        wxString script = GUI::format_wxstr("window.setAccessToken(\'%1%\')", token);
+        // TODO: should this be happening every OnShow?
+        run_script(script);
+    }
+}
+void PrinterPickWebViewDialog::on_script_message(wxWebViewEvent& evt)
+{
+    m_ret_val = evt.GetString().ToUTF8().data();
     this->EndModal(wxID_OK);
 }
 

@@ -130,8 +130,10 @@ enum class NotificationType
 	URLNotRegistered,
 	// Config file was detected during startup, open wifi config dialog via hypertext
 	WifiConfigFileDetected,
-	// 
+	// Info abouty successful login or logout
 	PrusaAuthUserID,
+	// Debug notification for connect communication
+	PrusaConnectPrinters,
 };
 
 class NotificationManager

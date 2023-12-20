@@ -1,5 +1,7 @@
 #include "UserAccount.hpp"
 
+#include "format.hpp"
+
 #include <boost/regex.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -88,9 +90,16 @@ bool UserAccount::on_user_id_success(const std::string data, AppConfig* app_conf
        
     }
     assert(m_user_data.find("public_username") != m_user_data.end());
+    if (m_user_data.find("public_username") == m_user_data.end())
+    {
+        BOOST_LOG_TRIVIAL(error) << "User ID message from Connect did not contain public_username. Login failed. Message data: " << data;
+        return false;
+    }
     std::string public_username = m_user_data["public_username"];
     set_username(public_username, app_config);
     out_username = public_username;
+    // update printers list
+    enqueue_connect_printers_action();
     return true;
 }
 
@@ -136,7 +145,7 @@ bool UserAccount::on_connect_printers_success(const std::string data, AppConfig*
         return false;
     }
     // fill m_printer_map with data from ptree
-     // tree string is in format {"printers": [{..}, {..}]}
+    // tree string is in format {"printers": [{..}, {..}]}
 
     ConnectPrinterStateMap new_printer_map;
 
@@ -176,11 +185,11 @@ bool UserAccount::on_connect_printers_success(const std::string data, AppConfig*
     }
 
     // compare new and old printer map and update old map into new
-    out_printers_changed = true;
+    out_printers_changed = false;
     for (const auto& it : new_printer_map) {
         if (m_printer_map.find(it.first) == m_printer_map.end()) {
             // printer is not in old map, add it by copying data from new map
-            out_printers_changed = false;
+            out_printers_changed = true;
             m_printer_map[it.first].reserve(static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT));
             for (size_t i = 0; i < static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT); i++) {
                 m_printer_map[it.first].push_back(new_printer_map[it.first][i]);
@@ -189,7 +198,7 @@ bool UserAccount::on_connect_printers_success(const std::string data, AppConfig*
             // printer is in old map, check state by state
             for (size_t i = 0; i < static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT); i++) {
                 if (m_printer_map[it.first][i] != new_printer_map[it.first][i])  {
-                    out_printers_changed = false;
+                    out_printers_changed = true;
                     m_printer_map[it.first][i] = new_printer_map[it.first][i];
                 }
             }
@@ -220,9 +229,6 @@ std::string UserAccount::get_model_from_json(const std::string& message) const
         std::string printer_type = parse_tree_for_param(ptree, "printer_type");
         if (auto pair = printer_type_and_name_table.find(printer_type); pair != printer_type_and_name_table.end()) {
             out = pair->second;
-        }
-        else {
-            out = parse_tree_for_param(ptree, "printer_type_name");
         }
         //assert(!out.empty());
     }

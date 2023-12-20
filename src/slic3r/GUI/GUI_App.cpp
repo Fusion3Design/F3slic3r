@@ -2639,7 +2639,7 @@ wxMenu* GUI_App::get_config_menu()
             wxMediaPlayerDialog("Media").ShowModal();
             break;
         case ConfigMenuConnectDialog:
-            WebViewDialog(plater()).ShowModal();
+            //WebViewDialog(plater()).ShowModal();
             break;
         default:
             break;
@@ -2681,7 +2681,7 @@ void GUI_App::open_preferences(const std::string& highlight_option /*= std::stri
     if (mainframe->preferences_dialog->settings_layout_changed()) {
         // hide full main_sizer for mainFrame
         mainframe->GetSizer()->Show(false);
-        mainframe->update_layout();
+        mainframe->update_layout();  
         mainframe->select_tab(size_t(0));
     }
 }
@@ -3673,5 +3673,25 @@ void GUI_App::handle_web_request(std::string cmd)
     this->plater()->get_notification_manager()->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);    
 }
 
+void GUI_App::show_monitor_tab(bool show, const std::string& address/* = {}*/)
+{
+    std::string url = address;
+    if(url.find("http://") != 0 && url.find("https://") != 0) {
+        url = "https://" + url;
+    }
+
+    if (!show) {
+        this->mainframe->select_tab(size_t(0));
+        mainframe->remove_monitor_tab();
+    }
+    else {
+        if (mainframe->get_monitor_tab_added())
+            mainframe->set_monitor_tab_url(boost::nowide::widen(url));
+        else
+            mainframe->add_monitor_tab(boost::nowide::widen(url));
+            this->mainframe->select_tab(size_t(5));
+            this->mainframe->select_tab(size_t(0));
+    }
+}
 } // GUI
 } //Slic3r

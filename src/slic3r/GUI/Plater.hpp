@@ -225,6 +225,7 @@ public:
     void suppress_background_process(const bool stop_background_process) ;
     void send_gcode();
 	void eject_drive();
+    void connect_gcode();
 
     void take_snapshot(const std::string &snapshot_name);
     void take_snapshot(const wxString &snapshot_name);

@@ -835,12 +835,62 @@ void MainFrame::create_preset_tabs()
     add_created_tab(new TabSLAMaterial(m_tabpanel), "resin");
     add_created_tab(new TabPrinter(m_tabpanel), wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF ? "printer" : "sla_printer");
     
-    m_webview = new WebViewPanel(m_tabpanel);
-    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_webview, "PrusaConnect", "");
+    m_connect_webview = new ConnectWebViewPanel(m_tabpanel);
+    m_monitor_webview = new WebViewPanel(m_tabpanel, L"");
     /*
     m_media = new MediaMainPanel(this);
     dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_media, "Media");
     */
+}
+
+void MainFrame::enable_connect_tab()
+{
+    if (m_connect_webview_added)
+        return;
+    size_t selected = m_tabpanel->GetSelection();
+    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_connect_webview, "PrusaConnect", "", true);
+    m_connect_webview->load_default_url();
+    m_tabpanel->SetSelection(selected);
+    m_connect_webview_added = true;
+}
+void MainFrame::disable_connect_tab()
+{
+    if (!m_connect_webview_added)
+        return;
+    size_t selected = m_tabpanel->GetSelection();
+    if (selected == 4)
+        m_tabpanel->SetSelection(0);
+    dynamic_cast<TopBar*>(m_tabpanel)->RemovePage(4);
+    m_connect_webview_added = false;
+}
+
+void MainFrame::add_monitor_tab(const wxString& url)
+{
+    if (m_monitor_webview_added)
+        return;
+    size_t selected = m_tabpanel->GetSelection();
+    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_monitor_webview, "Monitor", "", true);
+    m_monitor_webview->set_default_url(url);
+    m_monitor_webview->load_default_url();
+    m_tabpanel->SetSelection(selected);
+    m_monitor_webview_added = true;
+
+}
+void MainFrame::remove_monitor_tab()
+{
+    if (!m_monitor_webview_added)
+        return;
+    size_t selected = m_tabpanel->GetSelection();
+    if (selected == 4)
+        m_tabpanel->SetSelection(0);
+    dynamic_cast<TopBar*>(m_tabpanel)->RemovePage(m_tabpanel->GetPageCount() - 1);
+    m_monitor_webview_added = false;
+}
+void MainFrame::set_monitor_tab_url(const wxString& url)
+{
+    assert(m_monitor_webview_added);
+    m_monitor_webview->set_default_url(url);
+    m_monitor_webview->load_default_url();
 }
 
 void MainFrame::add_created_tab(Tab* panel,  const std::string& bmp_name /*= ""*/)
@@ -1523,9 +1573,6 @@ void MainFrame::init_menubar_as_editor()
         append_menu_check_item(viewMenu, wxID_ANY, _L("&Collapse Sidebar") + sep + "Shift+" + sep_space + "Tab", _L("Collapse sidebar"),
             [this](wxCommandEvent&) { m_plater->collapse_sidebar(!m_plater->is_sidebar_collapsed()); }, this,
             []() { return true; }, [this]() { return m_plater->is_sidebar_collapsed(); }, this);
-        append_menu_check_item(viewMenu, wxID_ANY, _L("&Load URL"), _L("Load URL"),
-            [this](wxCommandEvent&) {  wxString url = "https://dev.connect.prusa3d.com/"/*"file:///C:/Projects/BambuStudio/resources/web/homepage/index.html"*/; m_webview->load_url(url); }, this,
-            []() { return true; }, []() { return true; }, this);
 #ifndef __APPLE__
         // OSX adds its own menu item to toggle fullscreen.
         append_menu_check_item(viewMenu, wxID_ANY, _L("&Fullscreen") + "\t" + "F11", _L("Fullscreen"),

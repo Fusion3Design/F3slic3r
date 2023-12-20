@@ -29,16 +29,18 @@
 namespace Slic3r {
 namespace GUI {
 
-#define DEBUG_URL_PANEL 
+//#define DEBUG_URL_PANEL 
 class WebViewPanel : public wxPanel
 {
 public:
-    WebViewPanel(wxWindow *parent);
+    WebViewPanel(wxWindow *parent, const wxString& default_url);
     virtual ~WebViewPanel();
 
     void load_url(wxString& url);
+    void load_default_url();
 
-    void on_show(wxShowEvent& evt);
+    virtual void on_show(wxShowEvent& evt);
+    virtual void on_script_message(wxWebViewEvent& evt);
 
     void on_idle(wxIdleEvent& evt);
     void on_url(wxCommandEvent& evt);
@@ -47,7 +49,6 @@ public:
     void on_stop(wxCommandEvent& evt);
     void on_reload(wxCommandEvent& evt);
     
-    void on_script_message(wxWebViewEvent& evt);
     void on_view_source_request(wxCommandEvent& evt);
     void on_view_text_request(wxCommandEvent& evt);
     void on_tools_clicked(wxCommandEvent& evt);
@@ -65,7 +66,9 @@ public:
 
     wxTimer * m_LoginUpdateTimer{nullptr};
 
-private:
+    wxString get_default_url() const { return m_default_url; }
+    void set_default_url(const wxString& url) { m_default_url = url; }
+protected:
 
     wxWebView* m_browser;
 #ifdef DEBUG_URL_PANEL
@@ -80,7 +83,6 @@ private:
 
     wxMenu* m_tools_menu;
     wxMenuItem* m_script_custom;
-
     
     wxInfoBar *m_info;
     wxStaticText* m_info_text;
@@ -90,27 +92,44 @@ private:
     // Last executed JavaScript snippet, for convenience.
     wxString m_javascript;
     wxString m_response_js;
-
-    wxString m_bbl_user_agent;
+    wxString m_default_url;
 
     //DECLARE_EVENT_TABLE()
+};
+
+class ConnectWebViewPanel : public WebViewPanel
+{
+public:
+    ConnectWebViewPanel(wxWindow* parent);
+    void on_show(wxShowEvent& evt) override;
+    void on_script_message(wxWebViewEvent& evt) override;
 };
 
 
 class WebViewDialog : public wxDialog
 {
 public:
-    WebViewDialog(wxWindow* parent);
+    WebViewDialog(wxWindow* parent, const wxString& url);
     virtual ~WebViewDialog();
 
-    void on_show(wxShowEvent& evt);
-    void run_script(const wxString& javascript);
-    void on_script_message(wxWebViewEvent& evt);
+    virtual void on_show(wxShowEvent& evt) = 0;
+    virtual void on_script_message(wxWebViewEvent& evt) = 0;
 
-private:
+    void run_script(const wxString& javascript);
+
+protected:
     wxWebView* m_browser;
 };
 
+class PrinterPickWebViewDialog : public WebViewDialog
+{
+public:
+    PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val);
+    void on_show(wxShowEvent& evt) override;
+    void on_script_message(wxWebViewEvent& evt) override;
+private:
+    std::string& m_ret_val;
+};
 
 class SourceViewDialog : public wxDialog
 {

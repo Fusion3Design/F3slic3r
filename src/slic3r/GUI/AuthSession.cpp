@@ -58,13 +58,15 @@ void UserActionGetWithEvent::perform(const std::string& access_token, UserAction
         if (fail_callback)
             fail_callback(body);
         std::string message = GUI::format("%1% action failed (%2%): %3%", m_action_name, std::to_string(status), body);
-        wxQueueEvent(m_evt_handler, new PrusaAuthFailEvent(m_fail_evt_type, std::move(message)));
+        if (m_succ_evt_type != wxEVT_NULL)
+            wxQueueEvent(m_evt_handler, new PrusaAuthFailEvent(m_fail_evt_type, std::move(message)));
     });
     http.on_complete([&, this](std::string body, unsigned status) {
         BOOST_LOG_TRIVIAL(info) << m_action_name << " action success. Status: " << status << " Body: " << body;
         if (success_callback)
             success_callback(body);
-        wxQueueEvent(m_evt_handler, new PrusaAuthSuccessEvent(m_succ_evt_type, body));
+        if (m_succ_evt_type != wxEVT_NULL)
+            wxQueueEvent(m_evt_handler, new PrusaAuthSuccessEvent(m_succ_evt_type, body));
     });
 
     http.perform_sync();
@@ -75,7 +77,9 @@ void AuthSession::process_action_queue()
     BOOST_LOG_TRIVIAL(debug) << "process_action_queue start";
     if (m_priority_action_queue.empty() && m_action_queue.empty()) {
         BOOST_LOG_TRIVIAL(debug) << "process_action_queue queues empty";
-        return;
+        // update printers on every periodic wakeup call
+        enqueue_action(UserActionID::CONNECT_PRINTERS, nullptr, nullptr, {});
+        //return;
     }
 
     if (this->is_initialized()) {

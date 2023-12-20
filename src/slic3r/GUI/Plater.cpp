@@ -123,6 +123,7 @@
 #include "FileArchiveDialog.hpp"
 #include "UserAccount.hpp"
 #include "DesktopIntegrationDialog.hpp"
+#include "WebViewDialog.hpp"
 
 #ifdef __APPLE__
 #include "Gizmos/GLGizmosManager.hpp"
@@ -884,6 +885,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     
     this->q->Bind(EVT_LOGGEDOUT_PRUSAAUTH, [this](PrusaAuthSuccessEvent& evt) {
         user_account->on_logout(wxGetApp().app_config);
+        this->main_frame->disable_connect_tab();
         std::string text = _u8L("Logged out.");
         this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
         this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
@@ -893,6 +895,9 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         std::string username;
         bool succ = user_account->on_user_id_success(evt.data, wxGetApp().app_config, username);
         if (succ) {
+            // show connect tab
+            this->main_frame->enable_connect_tab();
+            // login notification
             std::string text = format(_u8L("Logged as %1%."), username);
             this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
             this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
@@ -916,11 +921,16 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         bool printers_changed = false;
         bool succ = user_account->on_connect_printers_success(evt.data, wxGetApp().app_config, printers_changed, text);
         if (succ) {
-            std::string out = GUI::format("Printers in your PrusaConnect team %1%:\n%2%", (printers_changed ? "changed" : "didn't changed"), text);
-            this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
-            this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
             if (printers_changed)
+            {
+                // this could be moved outside if to notify for "no change"
+                //std::string out = GUI::format("Printers in your PrusaConnect team %1%:\n%2%", (printers_changed ? "changed" : "didn't changed"), text);
+                std::string out = GUI::format("Printers in your PrusaConnect team:\n%1%",  text);
+                this->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
+                this->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
+                // this should be done only if printers_changed
                 sidebar->update_printer_presets_combobox();
+            }
         } else {
             // TODO
         }
@@ -3479,7 +3489,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
     DynamicPrintConfig* selected_printer_config = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
     const auto print_host_opt = selected_printer_config ? selected_printer_config->option<ConfigOptionString>("print_host") : nullptr;
     const bool send_gcode_shown = print_host_opt != nullptr && !print_host_opt->value.empty();
-    
+    const bool connect_gcode_shown = print_host_opt == nullptr && user_account->is_logged();
     // when a background processing is ON, export_btn and/or send_btn are showing
     if (get_config_bool("background_processing"))
     {
@@ -3487,6 +3497,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
 		if (sidebar->show_reslice(false) |
 			sidebar->show_export(true) |
 			sidebar->show_send(send_gcode_shown) |
+            sidebar->show_connect(connect_gcode_shown) |
 			sidebar->show_export_removable(removable_media_status.has_removable_drives))
             sidebar->Layout();
     }
@@ -3498,6 +3509,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
         if (sidebar->show_reslice(ready_to_slice) |
             sidebar->show_export(!ready_to_slice) |
             sidebar->show_send(send_gcode_shown && !ready_to_slice) |
+            sidebar->show_connect(connect_gcode_shown && !ready_to_slice) |
 			sidebar->show_export_removable(!ready_to_slice && removable_media_status.has_removable_drives))
             sidebar->Layout();
     }
@@ -5800,6 +5812,46 @@ bool load_secret(const std::string& id, const std::string& opt, std::string& usr
     return false;
 #endif // wxUSE_SECRETSTORE 
 }
+}
+void Plater::connect_gcode()
+{
+    assert(p->user_account->is_logged());
+    std::string  dialog_msg;
+    if(PrinterPickWebViewDialog(this, dialog_msg).ShowModal() != wxID_OK) {
+        return;
+    }
+    if (dialog_msg.empty())  {
+        return;
+    }
+    BOOST_LOG_TRIVIAL(error) << dialog_msg;
+
+    std::string model_name = p->user_account->get_model_from_json(dialog_msg);
+    std::string nozzle = p->user_account->get_nozzle_from_json(dialog_msg);
+    assert(!model_name.empty());
+    PresetBundle* preset_bundle = wxGetApp().preset_bundle;
+    const Preset* preset = preset_bundle->printers.find_system_preset_by_model_and_variant(model_name, nozzle);
+
+    // if selected (in connect) preset is not visible, make it visible and selected 
+    if (!preset->is_visible) {
+        size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(preset->name);
+        assert(preset_id != size_t(-1));
+        preset_bundle->printers.select_preset(preset_id);
+        wxGetApp().get_tab(Preset::Type::TYPE_PRINTER)->select_preset(preset->name);
+        return;
+    }
+
+    // if selected (in connect) preset is not selected in slicer, select it
+    if (preset_bundle->printers.get_selected_preset_name() != preset->name)
+    {
+        size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(preset->name);
+        assert(preset_id != size_t(-1));
+        preset_bundle->printers.select_preset(preset_id);
+        wxGetApp().get_tab(Preset::Type::TYPE_PRINTER)->select_preset(preset->name);
+        return;
+    }
+
+    // TODO: get api key from dialog_msg and upload the file
+    // api key is not currently in the message
 }
 
 void Plater::send_gcode()

@@ -667,7 +667,7 @@ PlaterPresetComboBox::PlaterPresetComboBox(wxWindow *parent, Preset::Type preset
     });
 
     if (m_type == Preset::TYPE_PRINTER)
-        connect_info = new wxGenericStaticText(parent, wxID_ANY, "Info about <b>Connect</b> for printer preset");
+        connect_info = new wxGenericStaticText(parent, wxID_ANY, /*"Info about <b>Connect</b> for printer preset"*/ "");
 }
 
 PlaterPresetComboBox::~PlaterPresetComboBox()

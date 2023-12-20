@@ -411,6 +411,7 @@ public:
     void            request_user_logout() {}
     int             request_user_unbind(std::string dev_id) { return 0; }
     void            handle_web_request(std::string cmd);
+    void            show_monitor_tab(bool show, const std::string& address = {});
     // return true if preset vas invisible and we have to installed it to make it selectable
     bool            select_printer_from_connect(const Preset* printer_preset);
     void            handle_script_message(std::string msg) {}

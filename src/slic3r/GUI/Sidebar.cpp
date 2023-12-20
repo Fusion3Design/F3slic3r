@@ -483,6 +483,7 @@ Sidebar::Sidebar(Plater *parent)
 
     init_scalable_btn(&m_btn_send_gcode   , "export_gcode", _L("Send to printer") + " " +GUI::shortkey_ctrl_prefix() + "Shift+G");
 	init_scalable_btn(&m_btn_export_gcode_removable, "export_to_sd", _L("Export to SD card / Flash drive") + " " + GUI::shortkey_ctrl_prefix() + "U");
+    init_scalable_btn(&m_btn_connect_gcode, "connect_gcode", _L("Send to Connect") + " " + GUI::shortkey_ctrl_prefix() + "Shift+G");
 
     // regular buttons "Slice now" and "Export G-code" 
 
@@ -510,6 +511,7 @@ Sidebar::Sidebar(Plater *parent)
     complect_btns_sizer->Add(m_btn_export_gcode, 1, wxEXPAND);
     complect_btns_sizer->Add(m_btn_send_gcode, 0, wxLEFT, margin_5);
 	complect_btns_sizer->Add(m_btn_export_gcode_removable, 0, wxLEFT, margin_5);
+    complect_btns_sizer->Add(m_btn_connect_gcode, 0, wxLEFT, margin_5);
 
     btns_sizer->Add(m_btn_reslice, 0, wxEXPAND | wxTOP, margin_5);
     btns_sizer->Add(complect_btns_sizer, 0, wxEXPAND | wxTOP, margin_5);
@@ -547,6 +549,7 @@ Sidebar::Sidebar(Plater *parent)
 
     m_btn_send_gcode->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->send_gcode(); });
     m_btn_export_gcode_removable->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->export_gcode(true); });
+    m_btn_connect_gcode->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->connect_gcode(); });
 
     this->Bind(wxEVT_COMBOBOX, &Sidebar::on_select_preset, this);
 
@@ -721,6 +724,13 @@ void Sidebar::on_select_preset(wxCommandEvent& evt)
          * and for SLA presets they should be deleted
          */
         m_object_list->update_object_list_by_printer_technology();
+
+        if (combo->is_selected_physical_printer())
+        {
+            wxGetApp().show_monitor_tab(true, wxGetApp().preset_bundle->physical_printers.get_selected_printer().config.opt_string("print_host"));
+        }
+        else
+            wxGetApp().show_monitor_tab(false);
     }
 
 #ifdef __WXMSW__
@@ -812,6 +822,7 @@ void Sidebar::sys_color_changed()
     // btn...->msw_rescale() updates icon on button, so use it
     m_btn_send_gcode            ->sys_color_changed();
     m_btn_export_gcode_removable->sys_color_changed();
+    m_btn_connect_gcode         ->sys_color_changed();
 
     m_scrolled_panel->Layout();
     m_scrolled_panel->Refresh();
@@ -1085,12 +1096,15 @@ void Sidebar::enable_buttons(bool enable)
     m_btn_export_gcode->Enable(enable);
     m_btn_send_gcode->Enable(enable);
     m_btn_export_gcode_removable->Enable(enable);
+    m_btn_connect_gcode->Enable(enable);
 }
 
 bool Sidebar::show_reslice(bool show)          const { return m_btn_reslice->Show(show); }
 bool Sidebar::show_export(bool show)           const { return m_btn_export_gcode->Show(show); }
 bool Sidebar::show_send(bool show)             const { return m_btn_send_gcode->Show(show); }
 bool Sidebar::show_export_removable(bool show) const { return m_btn_export_gcode_removable->Show(show); }
+bool Sidebar::show_connect(bool show)          const { return m_btn_connect_gcode->Show(show); }
+
 
 void Sidebar::update_mode()
 {
@@ -1119,7 +1133,8 @@ void Sidebar::set_btn_label(const ActionButtonType btn_type, const wxString& lab
     {
     case ActionButtonType::Reslice:   m_btn_reslice->SetLabelText(label);        break;
     case ActionButtonType::Export:    m_btn_export_gcode->SetLabelText(label);   break;
-    case ActionButtonType::SendGCode: /*m_btn_send_gcode->SetLabelText(label);*/     break;
+    case ActionButtonType::SendGCode: /*m_btn_send_gcode->SetLabelText(label);*/ break;
+    case ActionButtonType::Connect: /*m_btn_connect_gcode->SetLabelText(label);*/ break;
     }
 }
 

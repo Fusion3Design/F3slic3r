@@ -49,7 +49,8 @@ class Plater;
 enum class ActionButtonType : int {
     Reslice,
     Export,
-    SendGCode
+    SendGCode,
+    Connect
 };
 
 class Sidebar : public wxPanel
@@ -79,6 +80,7 @@ class Sidebar : public wxPanel
     wxButton*       m_btn_reslice               { nullptr };
     ScalableButton* m_btn_send_gcode            { nullptr };
     ScalableButton* m_btn_export_gcode_removable{ nullptr }; //exports to removable drives (appears only if removable drive is connected)
+    ScalableButton* m_btn_connect_gcode         { nullptr };
 
     std::unique_ptr<FreqChangedParams>  m_frequently_changed_parameters;
     std::unique_ptr<ObjectManipulation> m_object_manipulation;
@@ -123,6 +125,7 @@ public:
     bool show_export(bool show) const;
     bool show_send(bool show) const;
     bool show_export_removable(bool show) const;
+    bool show_connect(bool show) const;
 
     void collapse(bool collapse);
     void change_top_border_for_mode_sizer(bool increase_border);

@@ -98,6 +98,11 @@ class MainFrame : public DPIFrame
     size_t      m_last_selected_tab;
     Search::OptionsSearcher m_searcher;
 
+    WebViewPanel*       m_connect_webview{ nullptr };
+    bool                m_connect_webview_added{ false };
+    WebViewPanel*       m_monitor_webview{ nullptr };
+    bool                m_monitor_webview_added{ false };
+
     std::string     get_base_name(const wxString &full_name, const char *extension = nullptr) const;
     std::string     get_dir_name(const wxString &full_name) const;
 
@@ -210,6 +215,14 @@ public:
     void        add_to_recent_projects(const wxString& filename);
     void        technology_changed();
 
+    void    enable_connect_tab();
+    void    disable_connect_tab();
+
+    void    add_monitor_tab(const wxString& url);
+    void    remove_monitor_tab();
+    void    set_monitor_tab_url(const wxString& url);
+    bool    get_monitor_tab_added() const { return m_monitor_webview_added; }
+
     PrintHostQueueDialog* printhost_queue_dlg() { return m_printhost_queue_dlg; }
 
     Plater*               m_plater { nullptr };
@@ -221,9 +234,7 @@ public:
     PreferencesDialog*    preferences_dialog { nullptr };
     PrintHostQueueDialog* m_printhost_queue_dlg;
     GalleryDialog*        m_gallery_dialog{ nullptr };
-    WebViewPanel*         m_webview{ nullptr };
-    MediaMainPanel*       m_media{ nullptr};
-
+    
 #ifdef __APPLE__
     std::unique_ptr<wxTaskBarIcon> m_taskbar_icon;
 #endif // __APPLE__

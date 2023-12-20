@@ -107,7 +107,7 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
         //webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewArchiveHandler("wxfs")));
         // And the memory: file system
         //webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewFSHandler("memory")));
-        webView->Create(parent, wxID_ANY, url2, wxDefaultPosition, wxDefaultSize);
+        webView->Create(parent, wxID_ANY, correct_url, wxDefaultPosition, wxDefaultSize);
         webView->SetUserAgent(wxString::Format("PrusaSlicer/v%s", SLIC3R_VERSION));
 #endif
 #ifndef __WIN32__

@@ -72,11 +72,11 @@ private:
         {"1.3.1", "MK3S"        },
         {"1.4.0", "MK4"         },
         {"2.1.0", "MINI"        },
+        {"3.1.0", "XL"          },
         // ysFIXME : needs to add Connect ids for next printers
         {"0.0.0", "MK4IS"       },
         {"0.0.0", "MK3SMMU2S"   },
         {"0.0.0", "MK3MMU2"     },
-        {"0.0.0", "XL"          },
         {"0.0.0", "MK2.5S"      },
         {"0.0.0", "MK2.5"       },
         {"0.0.0", "MK2.5SMMU2S" },
