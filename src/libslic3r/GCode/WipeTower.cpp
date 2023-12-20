@@ -633,14 +633,10 @@ void WipeTower::set_extruder(size_t idx, const PrintConfig& config)
         m_filpar[idx].cooling_moves           = config.filament_cooling_moves.get_at(idx);
         m_filpar[idx].cooling_initial_speed   = float(config.filament_cooling_initial_speed.get_at(idx));
         m_filpar[idx].cooling_final_speed     = float(config.filament_cooling_final_speed.get_at(idx));
-        m_filpar[idx].filament_skinnydip_move              = config.filament_skinnydip_move.get_at(idx);
-        m_filpar[idx].filament_cold_ramming                = config.filament_cold_ramming.get_at(idx);
         m_filpar[idx].filament_skinnydip_loading_speed     = float(config.filament_skinnydip_loading_speed.get_at(idx));
         m_filpar[idx].filament_skinnydip_unloading_speed   = float(config.filament_skinnydip_unloading_speed.get_at(idx));
         m_filpar[idx].filament_skinnydip_distance          = float(config.filament_skinnydip_distance.get_at(idx));
-        m_filpar[idx].filament_skinnydip_number_of_dips    = config.filament_skinnydip_number_of_dips.get_at(idx);
         m_filpar[idx].filament_skinnydip_extra_move        = float(config.filament_skinnydip_extra_move.get_at(idx));
-        m_filpar[idx].filament_skinnydip_delay             = float(config.filament_skinnydip_delay.get_at(idx));
     }
 
     m_filpar[idx].filament_area = float((M_PI/4.f) * pow(config.filament_diameter.get_at(idx), 2)); // all extruders are assumed to have the same filament diameter at this point
@@ -934,11 +930,6 @@ void WipeTower::toolchange_Unload(
     }
     
 
-    bool cold_ramming = m_filpar[m_current_tool].filament_cold_ramming;
-
-    if (cold_ramming)
-        writer.set_extruder_temp(0, false);
-
     // now the ramming itself:
     while (do_ramming && i < m_filpar[m_current_tool].ramming_speed.size())
     {
@@ -982,7 +973,7 @@ void WipeTower::toolchange_Unload(
     // be already set and there is no need to change anything. Also, the temperature could be changed
     // for wrong extruder.
     if (m_semm) {
-        if (new_temperature != 0 && (new_temperature != m_old_temperature || is_first_layer() || cold_ramming) ) { 	// Set the extruder temperature, but don't wait.
+        if (new_temperature != 0 && (new_temperature != m_old_temperature || is_first_layer()) ) { 	// Set the extruder temperature, but don't wait.
             // If the required temperature is the same as last time, don't emit the M104 again (if user adjusted the value, it would be reset)
             // However, always change temperatures on the first layer (this is to avoid issues with priming lines turned off).
             writer.set_extruder_temp(new_temperature, false);
@@ -992,48 +983,40 @@ void WipeTower::toolchange_Unload(
 
     // Cooling:
     const int& number_of_moves = m_filpar[m_current_tool].cooling_moves;
-    if (m_semm && (number_of_moves > 0 || m_filpar[m_current_tool].filament_skinnydip_number_of_dips > 0)) {
+    if (m_semm && number_of_moves > 0) {
         const float& initial_speed = m_filpar[m_current_tool].cooling_initial_speed;
         const float& final_speed   = m_filpar[m_current_tool].cooling_final_speed;
 
         float speed_inc = (final_speed - initial_speed) / (2.f * number_of_moves - 1.f);
-        bool skinnydip_done = false;
 
         writer.suppress_preview()
               .travel(writer.x(), writer.y() + y_step);
         old_x = writer.x();
         turning_point = xr-old_x > old_x-xl ? xr : xl;
-        for (int i=0; i<=number_of_moves; ++i) { // the last one is for skinnydip
+        for (int i=0; i<number_of_moves; ++i) {
 
-            // Skinnydip:
-            if (! skinnydip_done && (m_filpar[m_current_tool].filament_skinnydip_move == i || i == number_of_moves)) {
+            // Skinnydip - happens after every cooling move except for the last one.
+            if (i>0 && m_filpar[m_current_tool].filament_skinnydip_distance != 0) {
                 float dist_e = m_filpar[m_current_tool].filament_skinnydip_distance + m_cooling_tube_length / 2.f;
 
-                for (int s=0; s<m_filpar[m_current_tool].filament_skinnydip_number_of_dips; ++s) {
-                    
-                    // Only last 5mm will be done with the fast x travel. The point is to spread possible blobs
-                    // along the whole wipe tower.
-                    if (dist_e > 5) {
-                        //writer.load_move_x_advanced_there_and_back(turning_point, dist_e-5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, 50);
-                        float cent = writer.x();
-                        writer.load_move_x_advanced(turning_point, 0.5*(dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
-                        writer.load_move_x_advanced(cent,          0.5*(dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
-                        writer.travel(cent, writer.y());
-                        writer.load_move_x_advanced_there_and_back(turning_point, 5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
-                    } else
-                        writer.load_move_x_advanced_there_and_back(turning_point, dist_e, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
-                    writer.load_move_x_advanced_there_and_back(turning_point, -dist_e, m_filpar[m_current_tool].filament_skinnydip_unloading_speed, 50);
+                // Only last 5mm will be done with the fast x travel. The point is to spread possible blobs
+                // along the whole wipe tower.
+                if (dist_e > 5) {
+                    //writer.load_move_x_advanced_there_and_back(turning_point, dist_e-5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, 50);
+                    float cent = writer.x();
+                    writer.load_move_x_advanced(turning_point, 0.5*(dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
+                    writer.load_move_x_advanced(cent,          0.5*(dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
+                    writer.travel(cent, writer.y());
+                    writer.load_move_x_advanced_there_and_back(turning_point, 5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
+                } else
+                    writer.load_move_x_advanced_there_and_back(turning_point, dist_e, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
+                writer.load_move_x_advanced_there_and_back(turning_point, -dist_e, m_filpar[m_current_tool].filament_skinnydip_unloading_speed, 50);
                 
-                    writer.wait(m_filpar[m_current_tool].filament_skinnydip_delay);
-                    if (m_filpar[m_current_tool].filament_skinnydip_extra_move != 0.f)
-                        dist_e += m_filpar[m_current_tool].filament_skinnydip_extra_move;
-
-                }
-                skinnydip_done = true;
+                if (m_filpar[m_current_tool].filament_skinnydip_extra_move != 0.f)
+                    dist_e += m_filpar[m_current_tool].filament_skinnydip_extra_move;
             }
             if (i == number_of_moves)
                     break;
-
 
             float speed = initial_speed + speed_inc * 2*i;
             writer.load_move_x_advanced(turning_point, m_cooling_tube_length, speed);

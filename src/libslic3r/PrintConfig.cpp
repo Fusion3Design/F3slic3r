@@ -1093,27 +1093,6 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
-    def = this->add("filament_cold_ramming", coBools);
-    def->label = L("ELIAS: Cold ramming");
-    def->tooltip = L("");
-    def->min = 0;
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionBools { false });
-
-    def = this->add("filament_skinnydip_move", coInts);
-    def->label = L("ELIAS: Skinnydip is performed after N-th cooling move");
-    def->tooltip = L("Zero - before cooling. Larger than number of cooling moves - after cooling.");
-    def->min = 0;
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionInts { 0 });
-
-    def = this->add("filament_skinnydip_number_of_dips", coInts);
-    def->label = L("ELIAS: Number of skinnydips");
-    def->tooltip = L("");
-    def->min = 0;
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionInts { 0 });
-
     def = this->add("filament_skinnydip_loading_speed", coFloats);
     def->label = L("ELIAS: Skinnydip loading speed");
     def->tooltip = L("");
@@ -1139,14 +1118,6 @@ void PrintConfigDef::init_fff_params()
     def->label = L("ELIAS Skinnydip extension per dip");
     def->tooltip = L("...");
     def->sidetext = L("mm");
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionFloats { 0. });
-
-    def = this->add("filament_skinnydip_delay", coFloats);
-    def->label = L("ELIAS Skinnydip delay");
-    def->tooltip = L("...");
-    def->sidetext = L("s");
-    def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
