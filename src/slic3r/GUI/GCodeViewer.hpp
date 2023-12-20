@@ -15,7 +15,7 @@
 #if ENABLE_NEW_GCODE_VIEWER
 #include "LibVGCode/LibVGCodeWrapper.hpp"
 // needed for tech ENABLE_COG_AND_TOOL_MARKERS
-#include "LibVGCode/include/Types.hpp"
+#include <libvgcode/include/Types.hpp>
 #endif // ENABLE_NEW_GCODE_VIEWER
 
 #include <cstdint>
