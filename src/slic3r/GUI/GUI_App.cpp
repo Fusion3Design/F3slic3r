@@ -3679,7 +3679,7 @@ void GUI_App::show_monitor_tab(bool show, const std::string& address/* = {}*/)
     if(url.find("http://") != 0 && url.find("https://") != 0) {
         url = "https://" + url;
     }
-
+#if 0
     if (!show) {
         this->mainframe->select_tab(size_t(0));
         mainframe->remove_monitor_tab();
@@ -3692,6 +3692,7 @@ void GUI_App::show_monitor_tab(bool show, const std::string& address/* = {}*/)
             this->mainframe->select_tab(size_t(5));
             this->mainframe->select_tab(size_t(0));
     }
+#endif
 }
 } // GUI
 } //Slic3r

@@ -929,12 +929,11 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         if (succ) {
             if (printers_changed)
             {
-                // this could be moved outside if to notify for "no change"
                 //std::string out = GUI::format("Printers in your PrusaConnect team %1%:\n%2%", (printers_changed ? "changed" : "didn't changed"), text);
-                std::string out = GUI::format("Printers in your PrusaConnect team:\n%1%",  text);
-                this->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
-                this->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
-                // this should be done only if printers_changed
+                //std::string out = GUI::format("Printers in your PrusaConnect team:\n%1%",  text);
+                //this->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
+                //this->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
+
                 sidebar->update_printer_presets_combobox();
             }
         } else {
