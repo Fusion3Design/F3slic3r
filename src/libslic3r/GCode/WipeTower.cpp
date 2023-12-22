@@ -109,6 +109,11 @@ public:
         return *this;
     }
 
+    WipeTowerWriter& switch_filament_monitoring(bool enable) {
+        m_gcode += std::string("G4 S0\n") + "M591 " + (enable ? "S0" : "R") + "\n";
+        return *this;
+    }
+
 	// Suppress / resume G-code preview in Slic3r. Slic3r will have difficulty to differentiate the various
 	// filament loading and cooling moves from normal extrusion moves. Therefore the writer
 	// is asked to suppres output of some lines, which look like extrusions.
@@ -934,6 +939,9 @@ void WipeTower::toolchange_Unload(
             sum_of_depths += tch.required_depth;
         }
     }
+
+    if (m_is_mk4mmu3)
+        writer.switch_filament_monitoring(false);
     
 
     // now the ramming itself:
@@ -975,6 +983,10 @@ void WipeTower::toolchange_Unload(
               .retract(0.10f * total_retraction_distance, 0.3f * m_filpar[m_current_tool].unloading_speed * 60.f)
               .resume_preview();
     }
+
+    if (m_is_mk4mmu3)
+        writer.switch_filament_monitoring(true);
+
     // Wipe tower should only change temperature with single extruder MM. Otherwise, all temperatures should
     // be already set and there is no need to change anything. Also, the temperature could be changed
     // for wrong extruder.
@@ -1004,6 +1016,13 @@ void WipeTower::toolchange_Unload(
             // Skinnydip - happens after every cooling move except for the last one.
             if (i>0 && m_filpar[m_current_tool].filament_skinnydip_distance != 0) {
                 float dist_e = m_filpar[m_current_tool].filament_skinnydip_distance + m_cooling_tube_length / 2.f;
+
+                // Skinnydip turning point shall be no farther than 20mm from the current nozzle position:
+
+
+
+                if (m_is_mk4mmu3)
+                    writer.switch_filament_monitoring(false);
 
                 // Only last 5mm will be done with the fast x travel. The point is to spread possible blobs
                 // along the whole wipe tower.
