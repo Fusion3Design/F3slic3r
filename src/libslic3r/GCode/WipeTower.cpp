@@ -588,6 +588,8 @@ WipeTower::WipeTower(const PrintConfig& config, const PrintRegionConfig& default
         m_set_extruder_trimpot    = config.high_current_on_filament_swap;
     }
 
+    m_is_mk4mmu3 = boost::icontains(config.printer_model.value, "MK4") && boost::icontains(config.printer_model.value, "MMU");
+
     // Calculate where the priming lines should be - very naive test not detecting parallelograms etc.
     const std::vector<Vec2d>& bed_points = config.bed_shape.values;
     BoundingBoxf bb(bed_points);
@@ -892,10 +894,13 @@ void WipeTower::toolchange_Unload(
 	float e_done = 0;									// measures E move done from each segment   
 
     const bool do_ramming = m_semm || m_filpar[m_current_tool].multitool_ramming;
+    const bool cold_ramming = m_is_mk4mmu3;
 
     if (do_ramming) {
         writer.travel(ramming_start_pos); // move to starting position
         writer.disable_linear_advance();
+        if (cold_ramming)
+            writer.set_extruder_temp(new_temperature - 20);
     }
     else
         writer.set_position(ramming_start_pos);
@@ -974,7 +979,7 @@ void WipeTower::toolchange_Unload(
     // be already set and there is no need to change anything. Also, the temperature could be changed
     // for wrong extruder.
     if (m_semm) {
-        if (new_temperature != 0 && (new_temperature != m_old_temperature || is_first_layer()) ) { 	// Set the extruder temperature, but don't wait.
+        if (new_temperature != 0 && (new_temperature != m_old_temperature || is_first_layer() || cold_ramming) ) { 	// Set the extruder temperature, but don't wait.
             // If the required temperature is the same as last time, don't emit the M104 again (if user adjusted the value, it would be reset)
             // However, always change temperatures on the first layer (this is to avoid issues with priming lines turned off).
             writer.set_extruder_temp(new_temperature, false);
