@@ -60,7 +60,7 @@ macro(list_projects result curdir)
   set(dirlist "")
   foreach(child ${children})
     if(IS_DIRECTORY ${curdir}/${child})
-      string(REGEX MATCH "^\\+([a-zA-Z0-9]+)" is_package_dir ${child})
+      string(REGEX MATCH "^\\+([a-zA-Z0-9_]+)" is_package_dir ${child})
       if(is_package_dir AND EXISTS ${curdir}/${child}/${CMAKE_MATCH_1}.cmake) 
         list(APPEND dirlist ${CMAKE_MATCH_1})
       endif()
@@ -127,25 +127,6 @@ list_projects(FOUND_PACKAGES ${CMAKE_CURRENT_LIST_DIR})
 
 dep_message(STATUS "Found external package definitions: ${FOUND_PACKAGES}")
 
-# Current list of all required dependencies for PS (top level)
-set(REQUIRED_PACKAGES
-    Boost
-    Catch2
-    Cereal
-    CURL
-    EXPAT
-    NLopt
-    GLEW
-    TBB
-    Qhull
-    wxWidgets
-    OpenVDB
-    CGAL
-    OCCT
-    ZLIB
-    LibBGCode
-)
-
 set(${PROJECT_NAME}_PLATFORM_PACKAGES "" CACHE STRING "Select packages which are provided by the platform" )
 set(SYSTEM_PROVIDED_PACKAGES OpenGL)
 
@@ -158,7 +139,6 @@ if (UNIX)
         list(APPEND SYSTEM_PROVIDED_PACKAGES CURL)
     endif ()
 endif ()
-
 
 list(APPEND SYSTEM_PROVIDED_PACKAGES ${${PROJECT_NAME}_PLATFORM_PACKAGES})
 list(REMOVE_DUPLICATES SYSTEM_PROVIDED_PACKAGES)
@@ -200,8 +180,11 @@ foreach (pkg ${FOUND_PACKAGES})
 
         if (${pkg} IN_LIST SYSTEM_PROVIDED_PACKAGES)
           check_system_package(${pkg} _checked_list)
-        elseif (${pkg} IN_LIST REQUIRED_PACKAGES)
-          list(APPEND DEPS_TO_BUILD ${pkg})
+        else ()
+          get_target_property(_is_excluded_from_all dep_${pkg} EXCLUDE_FROM_ALL)
+          if (NOT _is_excluded_from_all)
+            list(APPEND DEPS_TO_BUILD ${pkg})
+          endif ()
         endif ()
     endif ()
 endforeach()
@@ -218,9 +201,7 @@ foreach (pkg ${SUPPORTED_PACKAGES})
     elseif(TARGET dep_${deppkg})
       dep_message(STATUS "Mapping dep_${deppkg} => dep_${pkg}")
       add_dependencies(dep_${pkg} dep_${deppkg})
-      if (${pkg} IN_LIST REQUIRED_PACKAGES)
-        list(APPEND _build_list dep_${deppkg})
-      endif ()
+      list(APPEND _build_list dep_${deppkg})
     endif ()
   endforeach()
 endforeach()
