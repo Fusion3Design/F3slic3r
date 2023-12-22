@@ -1019,8 +1019,7 @@ void WipeTower::toolchange_Unload(
                 float dist_e = m_filpar[m_current_tool].filament_skinnydip_distance + m_cooling_tube_length / 2.f;
 
                 // Skinnydip turning point shall be no farther than 20mm from the current nozzle position:
-
-
+                float skinnydip_turning_point = std::clamp(old_x + 20.f * (turning_point - old_x > 0.f ? 1.f : -1.f), xl, xr);
 
                 if (m_is_mk4mmu3)
                     writer.switch_filament_monitoring(false);
@@ -1030,12 +1029,12 @@ void WipeTower::toolchange_Unload(
                 if (dist_e > 5) {
                     //writer.load_move_x_advanced_there_and_back(turning_point, dist_e-5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, 50);
                     float cent = writer.x();
-                    writer.load_move_x_advanced(turning_point, 0.5*(dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
+                    writer.load_move_x_advanced(skinnydip_turning_point, 0.5*(dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
                     writer.load_move_x_advanced(cent,          0.5*(dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
                     writer.travel(cent, writer.y());
-                    writer.load_move_x_advanced_there_and_back(turning_point, 5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
+                    writer.load_move_x_advanced_there_and_back(skinnydip_turning_point, 5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
                 } else
-                    writer.load_move_x_advanced_there_and_back(turning_point, dist_e, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
+                    writer.load_move_x_advanced_there_and_back(skinnydip_turning_point, dist_e, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
 
                 //writer.load_move_x_advanced_there_and_back(turning_point, -dist_e, m_filpar[m_current_tool].filament_skinnydip_unloading_speed, 50);
                 // Retract while the print head is stationary, so if there is a blob, it is not dragged along.
