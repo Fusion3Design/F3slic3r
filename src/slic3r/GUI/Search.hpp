@@ -147,7 +147,8 @@ public:
     }
     void sort_options_by_label() { sort_options(); }
 
-    void show_dialog();
+    void update_dialog_position();
+    void show_dialog(bool show = true);
     void dlg_sys_color_changed();
     void dlg_msw_rescale();
 
@@ -184,7 +185,7 @@ class SearchDialog : public GUI::DPIDialog
     void update_list();
 
 public:
-    SearchDialog(OptionsSearcher* searcher);
+    SearchDialog(OptionsSearcher* searcher, wxWindow* parent);
     ~SearchDialog();
 
     void Popup(wxPoint position = wxDefaultPosition);

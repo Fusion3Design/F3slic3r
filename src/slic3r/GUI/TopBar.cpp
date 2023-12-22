@@ -185,6 +185,7 @@ void TopBarItemsCtrl::UpdateAuthMenu()
 void TopBarItemsCtrl::CreateSearch()
 {
     m_search = new ::TextInput(this, wxGetApp().searcher().default_string, "", "search", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+    m_search->SetMaxSize(wxSize(42*em_unit(this), -1));
     wxGetApp().UpdateDarkUI(m_search);
     wxGetApp().searcher().set_search_input(m_search);
 }
@@ -223,11 +224,13 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
 #endif
 
     m_buttons_sizer = new wxFlexGridSizer(1, m_btn_margin, m_btn_margin);
-    left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, 2 * m_btn_margin);
+    left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 2 * m_btn_margin);
 
     CreateSearch();
 
-    left_sizer->Add(m_search, 1, wxALIGN_CENTER_VERTICAL | wxLEFT, 3 * m_btn_margin);
+    wxBoxSizer* search_sizer = new wxBoxSizer(wxVERTICAL);
+    search_sizer->Add(m_search, 0, wxEXPAND | wxALIGN_RIGHT);
+    left_sizer->Add(search_sizer, 1, wxALIGN_CENTER_VERTICAL);
 
     m_sizer->Add(left_sizer, 1, wxEXPAND);
 

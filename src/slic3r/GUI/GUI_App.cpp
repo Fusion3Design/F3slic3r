@@ -1113,6 +1113,10 @@ void GUI_App::jump_to_option(const std::string& composite_key)
 
 void GUI_App::show_search_dialog()
 {
+    // To avoid endless loop caused by mutual lose focuses from serch_input and search_dialog
+    // invoke killFocus for serch_input by set focus to tab_panel
+    GUI::wxGetApp().tab_panel()->SetFocus();
+
     check_and_update_searcher(get_mode());
     m_searcher->show_dialog();
 }

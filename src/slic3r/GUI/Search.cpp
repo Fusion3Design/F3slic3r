@@ -16,6 +16,8 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "GUI_App.hpp"
+#include "I18N.hpp"
+#include "format.hpp"
 #include "MainFrame.hpp"
 #include "Tab.hpp"
 
@@ -422,24 +424,60 @@ Option OptionsSearcher::get_option(const std::string& opt_key, const wxString& l
     return create_option(opt_key, label, type, gc);
 }
 
-void OptionsSearcher::show_dialog()
+static bool has_focus(wxWindow* win)
 {
-    if (!search_dialog)
-        search_dialog = new SearchDialog(this);
+    if (win->HasFocus())
+        return true;
 
-    wxSize srch_sz = search_input->GetSize();
-    if (search_dialog->GetPosition().x != search_input->GetPosition().x)
-        search_dialog->SetPosition(search_input->GetScreenPosition() + wxPoint(0, srch_sz.y));
+    auto children = win->GetChildren();
+    for (auto child : children) {
+        if (has_focus(child))
+            return true;
+    }
 
-    wxSize dlg_sz = search_dialog->GetSize();
-    if (dlg_sz.x < srch_sz.x)
-        search_dialog->SetSize(wxSize(srch_sz.x, dlg_sz.y));
+    return false;
+}
+
+void OptionsSearcher::update_dialog_position()
+{
+    if (search_dialog) {
+        search_dialog->CenterOnParent(wxHORIZONTAL);
+        search_dialog->SetPosition({ search_dialog->GetPosition().x, search_input->GetScreenPosition().y + search_input->GetSize().y });
+    }
+}
+
+void OptionsSearcher::show_dialog(bool show /*= true*/)
+{
+    if (search_dialog && !show) {
+        search_dialog->EndModal(wxID_CLOSE);
+        return;
+    }
+
+    if (!search_dialog) {
+        search_dialog = new SearchDialog(this, search_input);
+        update_dialog_position();
+
+        search_dialog->Bind(wxEVT_KILL_FOCUS, [this](wxFocusEvent& e)
+        {
+            if (search_dialog->IsShown() && !search_input->HasFocus())
+                show_dialog(false);
+            e.Skip();
+        });
+
+        search_input->Bind(wxEVT_KILL_FOCUS, [this](wxFocusEvent& e)
+        {
+            e.Skip();
+            if (search_dialog->IsShown() && !has_focus(search_dialog))
+                show_dialog(false);
+        });
+    }
 
     search_string();
     search_input->SetSelection(-1,-1);
 
     search_dialog->Popup();
-    search_input->SetFocus();
+    if (!search_input->HasFocus())
+        search_input->SetFocus();
 }
 
 void OptionsSearcher::dlg_sys_color_changed()
@@ -460,12 +498,13 @@ void OptionsSearcher::set_search_input(TextInput* input_ctrl)
 
     search_input->Bind(wxEVT_TEXT, [this](wxEvent& e)
     {
-        if (search_dialog && search_dialog->IsShown())
+        if (search_dialog) {
             search_dialog->input_text(search_input->GetValue());
-        else {
-            GUI::wxGetApp().check_and_update_searcher(GUI::wxGetApp().get_mode());
-            show_dialog();
+            if (!search_dialog->IsShown())
+                search_dialog->Popup();
         }
+        else
+            GUI::wxGetApp().show_search_dialog();
     });
 
     wxTextCtrl* ctrl = search_input->GetTextCtrl();
@@ -488,6 +527,12 @@ void OptionsSearcher::set_search_input(TextInput* input_ctrl)
             search_input->SetValue("");
         event.Skip();
     });
+
+    search_input->Bind(wxEVT_MOVE, [this](wxMoveEvent& event)
+    {
+        event.Skip();
+        update_dialog_position();
+    });
 }
 
 void OptionsSearcher::add_key(const std::string& opt_key, Preset::Type type, const wxString& group, const wxString& category)
@@ -509,8 +554,8 @@ static const std::map<const char, int> icon_idxs = {
     {ImGui::PreferencesButton   , 5},
 };
 
-SearchDialog::SearchDialog(OptionsSearcher* searcher)
-    : GUI::DPIDialog(GUI::wxGetApp().tab_panel(), wxID_ANY, _L("Search"), wxDefaultPosition, wxDefaultSize, wxSTAY_ON_TOP | wxRESIZE_BORDER),
+SearchDialog::SearchDialog(OptionsSearcher* searcher, wxWindow* parent)
+    : GUI::DPIDialog(parent ? parent : GUI::wxGetApp().tab_panel(), wxID_ANY, _L("Search"), wxDefaultPosition, wxDefaultSize, wxSTAY_ON_TOP | wxRESIZE_BORDER),
     searcher(searcher)
 {
     SetFont(GUI::wxGetApp().normal_font());
