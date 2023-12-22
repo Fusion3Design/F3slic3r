@@ -903,7 +903,8 @@ void WipeTower::toolchange_Unload(
 
     if (do_ramming) {
         writer.travel(ramming_start_pos); // move to starting position
-        writer.disable_linear_advance();
+        if (! m_is_mk4mmu3)
+            writer.disable_linear_advance();
         if (cold_ramming)
             writer.set_extruder_temp(new_temperature - 20);
     }
