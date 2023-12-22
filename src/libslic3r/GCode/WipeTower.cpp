@@ -1016,7 +1016,13 @@ void WipeTower::toolchange_Unload(
                     writer.load_move_x_advanced_there_and_back(turning_point, 5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
                 } else
                     writer.load_move_x_advanced_there_and_back(turning_point, dist_e, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
-                writer.load_move_x_advanced_there_and_back(turning_point, -dist_e, m_filpar[m_current_tool].filament_skinnydip_unloading_speed, 50);
+
+                //writer.load_move_x_advanced_there_and_back(turning_point, -dist_e, m_filpar[m_current_tool].filament_skinnydip_unloading_speed, 50);
+                // Retract while the print head is stationary, so if there is a blob, it is not dragged along.
+                writer.retract(dist_e, m_filpar[m_current_tool].filament_skinnydip_unloading_speed * 60.f);
+
+                if (m_is_mk4mmu3)
+                    writer.switch_filament_monitoring(true);
                 
                 if (m_filpar[m_current_tool].filament_skinnydip_extra_move != 0.f)
                     dist_e += m_filpar[m_current_tool].filament_skinnydip_extra_move;
