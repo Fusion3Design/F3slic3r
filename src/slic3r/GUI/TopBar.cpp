@@ -77,7 +77,7 @@ void TopBarItemsCtrl::Button::set_hovered(bool hovered)
 #ifdef _WIN32
     this->GetParent()->Refresh(); // force redraw a background of the selected mode button
 #else
-    SetForegroundColour(wxSystemSettings::GetColour(set_focus ? wxSYS_COLOUR_BTNTEXT :
+    SetForegroundColour(wxSystemSettings::GetColour(hovered ? wxSYS_COLOUR_BTNTEXT :
 #if defined (__linux__) && defined (__WXGTK3__)
         wxSYS_COLOUR_GRAYTEXT
 #elif defined (__linux__) && defined (__WXGTK2__)
@@ -136,7 +136,7 @@ void TopBarItemsCtrl::ApplyWorkspacesMenu()
                                                   Slic3r::ConfigOptionMode::comExpert }) {
         const wxString label = get_workspace_name(mode);
         append_menu_item(&m_workspaces_menu, wxID_ANY, label, label,
-            [this, mode](wxCommandEvent&) {
+            [mode](wxCommandEvent&) {
                 if (wxGetApp().get_mode() != mode)
                     wxGetApp().save_mode(mode);
             }, get_bmp_bundle("mode", 16, -1, wxGetApp().get_mode_btn_color(mode)));
@@ -157,11 +157,11 @@ void TopBarItemsCtrl::CreateAuthMenu()
     m_auth_menu.AppendSeparator();
 
     m_connect_dummy_menu_item = append_menu_item(&m_auth_menu, wxID_ANY, _L("PrusaConnect Printers"), "",
-        [this](wxCommandEvent&) { wxGetApp().plater()->get_user_account()->enqueue_connect_printers_action(); }, 
+        [](wxCommandEvent&) { wxGetApp().plater()->get_user_account()->enqueue_connect_printers_action(); }, 
         "", nullptr, []() { return wxGetApp().plater()->get_user_account()->is_logged(); }, this->GetParent());
 
     m_login_menu_item = append_menu_item(&m_auth_menu, wxID_ANY, "", "",
-        [this](wxCommandEvent&) {
+        [](wxCommandEvent&) {
             auto user_account = wxGetApp().plater()->get_user_account();
             if (user_account->is_logged())
                 user_account->do_logout(wxGetApp().app_config);

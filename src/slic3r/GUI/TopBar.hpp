@@ -84,7 +84,6 @@ public:
     wxWindow* GetSearchCtrl() { return m_search->GetTextCtrl(); }
 
 private:
-    wxWindow*                       m_parent;
     wxFlexGridSizer*                m_buttons_sizer;
     wxFlexGridSizer*                m_sizer;
     ButtonWithPopup*                m_menu_btn {nullptr};
@@ -473,8 +472,6 @@ private:
 
     unsigned m_showTimeout,
              m_hideTimeout;
-
-    TopBarItemsCtrl* m_ctrl{ nullptr };
 
 };
 //#endif // _WIN32

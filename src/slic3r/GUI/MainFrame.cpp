@@ -1516,7 +1516,7 @@ void MainFrame::init_menubar_as_editor()
 
         editMenu->AppendSeparator();
         append_menu_item(editMenu, wxID_ANY, _L("Searc&h") + "\tCtrl+F",
-            _L("Search in settings"), [this](wxCommandEvent&) { wxGetApp().show_search_dialog(); },
+            _L("Search in settings"), [](wxCommandEvent&) { wxGetApp().show_search_dialog(); },
             "search", nullptr, []() {return true; }, this);
     }
 

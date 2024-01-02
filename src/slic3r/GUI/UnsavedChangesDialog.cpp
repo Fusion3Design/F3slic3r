@@ -2067,7 +2067,7 @@ void DiffPresetDialog::button_event(Action act)
                                           get_selected_options(type));
             });
         else if (!presets_to_save.empty())
-            process_options([this](Preset::Type type) {
+            process_options([](Preset::Type type) {
                 if (Tab* tab = wxGetApp().get_tab(type)) {
                     tab->update_preset_choice();
                     wxGetApp().sidebar().update_presets(type);
