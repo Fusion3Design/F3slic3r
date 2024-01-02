@@ -593,7 +593,7 @@ WipeTower::WipeTower(const PrintConfig& config, const PrintRegionConfig& default
         m_set_extruder_trimpot    = config.high_current_on_filament_swap;
     }
 
-    m_is_mk4mmu3 = boost::icontains(config.printer_model.value, "MK4") && boost::icontains(config.printer_model.value, "MMU");
+    m_is_mk4mmu3 = boost::icontains(config.printer_notes.value, "PRINTER_MODEL_MK4") && boost::icontains(config.printer_notes.value, "MMU");
 
     // Calculate where the priming lines should be - very naive test not detecting parallelograms etc.
     const std::vector<Vec2d>& bed_points = config.bed_shape.values;
