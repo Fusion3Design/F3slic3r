@@ -964,7 +964,12 @@ std::set<std::string> query_options = {
 bool CLI::processed_profiles_sharing()
 {
     if (m_profiles_sharing.empty())
+#if 0 // fsFIXME !!! just for the test
+        DynamicPrintConfig config = Slic3r::load_full_print_config("0.20mm QUALITY @MINI", "Prusament PLA", "Original Prusa MINI & MINI+");
+        return true;
+#else
         return false;
+#endif
 
     std::string ret;
     for (auto const& opt_key : m_profiles_sharing) {

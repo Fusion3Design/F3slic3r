@@ -5,7 +5,7 @@
 #ifndef slic3r_ProfilesSharingUtils_hpp_
 #define slic3r_ProfilesSharingUtils_hpp_
 
-#include "libslic3r/Config.hpp"
+#include "libslic3r/PrintConfig.hpp"
 
 namespace Slic3r {
 
@@ -17,6 +17,8 @@ std::string get_json_print_filament_profiles(const std::string& printer_profile)
 //implemented at MacUtils.mm
 std::string GetDataDir();
 #endif //__APPLE__
+
+DynamicPrintConfig load_full_print_config(const std::string& print_preset, const std::string& filament_preset, const std::string& printer_preset);
 
 } // namespace Slic3r
 

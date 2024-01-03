@@ -452,4 +452,40 @@ std::string get_json_print_filament_profiles(const std::string& printer_profile)
     return "";
 }
 
+// Helper function for FS
+DynamicPrintConfig load_full_print_config(const std::string& print_preset_name, const std::string& filament_preset_name, const std::string& printer_preset_name)
+{
+    DynamicPrintConfig config = {};
+
+    if (is_datadir()) {
+        PresetBundle preset_bundle;
+
+        if (load_preset_bandle_from_datadir(preset_bundle)) {
+            config.apply(FullPrintConfig::defaults());
+
+            const Preset* print_preset = preset_bundle.prints.find_preset(print_preset_name);
+            if (print_preset)
+                config.apply_only(print_preset->config, print_preset->config.keys());
+            else
+                printf("Print profile '%s' wasn't found.\n", print_preset->name.c_str());
+
+            const Preset* filament_preset = preset_bundle.filaments.find_preset(filament_preset_name);
+            if (filament_preset)
+                config.apply_only(filament_preset->config, filament_preset->config.keys());
+            else
+                printf("Filament profile '%s' wasn't found.\n", filament_preset->name.c_str());
+
+            const Preset* printer_preset = preset_bundle.printers.find_preset(printer_preset_name);
+            if (printer_preset)
+                config.apply_only(printer_preset->config, printer_preset->config.keys());
+            else
+                printf("Printer profile '%s' wasn't found.\n", printer_preset->name.c_str());
+        }
+    }
+    else
+        printf("Datadir wasn't found\n");
+
+    return config;
+}
+
 } // namespace Slic3r
