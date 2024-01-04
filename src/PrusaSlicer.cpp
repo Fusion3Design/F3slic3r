@@ -973,6 +973,7 @@ bool CLI::processed_profiles_sharing()
         if (opt_key == "query-printer-models") {
             ret = Slic3r::get_json_printer_models(Preset::printer_technology(m_config));
         }
+/*
         else if (opt_key == "query-printer-profiles") {
             if (!m_config.has("printer_model") || !m_config.has("printer_variant")) {
                 boost::nowide::cerr << "error in '" << opt_key << "' : this action requires set 'printer-model' and 'printer-variant' options" << std::endl;
@@ -985,6 +986,7 @@ bool CLI::processed_profiles_sharing()
                       "' with printer_variant '" + m_config.opt_string("printer_variant") + 
                       "' wasn't found among intalled printers.\nOr the request can be wrong.\n";
         }
+*/
         else if (opt_key == "query-print-filament-profiles") {
             if (!m_config.has("printer-profile")) {
                 boost::nowide::cerr << "error: this action requires set printer-preset option" << opt_key << std::endl;

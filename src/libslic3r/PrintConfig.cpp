@@ -5129,24 +5129,21 @@ CLIProfilesSharingConfigDef::CLIProfilesSharingConfigDef()
     def->label = L("Get list of printer models");
     def->tooltip = L("Get available printer models into JSON.\n"
                    "Note:\nTo print printer models for required technology use 'printer-technology' option. By default printer_technology is FFF.\n"
-                   "To print out JSON into file use 'output' option.\n"
-                   "To specify configuration folder use 'datadir' option. Otherwise all known vendors will be loaded and processed.");
+                   "To print out JSON into file use 'output' option.");
 
-
+/*
     def = this->add("query-printer-profiles", coBool);
     def->label = L("Get list of printer profiles in respect to selected printer model and printer variant");
     def->tooltip = L("Get list of printer profiles in respect to selected 'printer-model' and 'printer-variant' into JSON.\n"
                    "Note:\n"
-                   "To print out JSON into file use 'output' option.\n"
-                   "To specify configuration folder use 'datadir' option. Otherwise all known vendors will be loaded and processed.");
-
+                   "To print out JSON into file use 'output' option.");
+*/
 
     def = this->add("query-print-filament-profiles", coBool);
     def->label = L("Get list of prints and filaments profiles in respect to selected printer profile");
     def->tooltip = L("Get list of prints and filaments profiles in respect to selected 'printer-profile' into JSON.\n"
                    "Note:\n"
-                   "To print out JSON into file use 'output' option.\n"
-                   "To specify configuration folder use 'datadir' option. Otherwise all known vendors will be loaded and processed.");
+                   "To print out JSON into file use 'output' option.");
 
     def = this->add("printer-profile", coString);
     def->label = L("Printer preset name");

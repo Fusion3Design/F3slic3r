@@ -10,7 +10,7 @@
 namespace Slic3r {
 
 std::string get_json_printer_models(PrinterTechnology printer_technology);
-std::string get_json_printer_profiles(const std::string& printer_model, const std::string& printer_variant);
+//std::string get_json_printer_profiles(const std::string& printer_model, const std::string& printer_variant);
 std::string get_json_print_filament_profiles(const std::string& printer_profile);
 
 #if __APPLE__
