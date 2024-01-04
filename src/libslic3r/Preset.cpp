@@ -1213,6 +1213,20 @@ const std::string& PresetCollection::get_preset_name_by_alias(const std::string&
     return alias;
 }
 
+const std::string& PresetCollection::get_preset_name_by_alias_invisible(const std::string& alias) const
+{
+    for (
+        // Find the 1st profile name with the alias.
+        auto it = Slic3r::lower_bound_by_predicate(m_map_alias_to_profile_name.begin(), m_map_alias_to_profile_name.end(), [&alias](auto& l) { return l.first < alias; });
+        // Continue over all profile names with the same alias.
+        it != m_map_alias_to_profile_name.end() && it->first == alias; ++it)
+        if (auto it_preset = this->find_preset_internal(it->second);
+            it_preset != m_presets.end() && it_preset->name == it->second &&
+            it_preset->is_compatible)
+            return it_preset->name;
+    return alias;
+}
+
 const std::string* PresetCollection::get_preset_name_renamed(const std::string &old_name) const
 {
 	auto it_renamed = m_map_system_profile_renamed.find(old_name);
@@ -1478,13 +1492,13 @@ Preset& PresetCollection::select_preset(size_t idx)
     return m_presets[idx];
 }
 
-bool PresetCollection::select_preset_by_name(const std::string &name_w_suffix, bool force)
+bool PresetCollection::select_preset_by_name(const std::string &name_w_suffix, bool force, bool force_invisible /*= false*/)
 {
     std::string name = Preset::remove_suffix_modified(name_w_suffix);
     // 1) Try to find the preset by its name.
     auto it = this->find_preset_internal(name);
     size_t idx = 0;
-    if (it != m_presets.end() && it->name == name && it->is_visible)
+    if (it != m_presets.end() && it->name == name && (force_invisible || it->is_visible))
         // Preset found by its name and it is visible.
         idx = it - m_presets.begin();
     else {

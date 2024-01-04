@@ -300,6 +300,7 @@ struct Plater::priv
     static const std::regex pattern_any_amf;
     static const std::regex pattern_prusa;
     static const std::regex pattern_zip;
+    static const std::regex pattern_printRequest;
 
     priv(Plater *q, MainFrame *main_frame);
     ~priv();
@@ -597,6 +598,7 @@ const std::regex Plater::priv::pattern_zip_amf(".*[.]zip[.]amf", std::regex::ica
 const std::regex Plater::priv::pattern_any_amf(".*[.](amf|amf[.]xml|zip[.]amf)", std::regex::icase);
 const std::regex Plater::priv::pattern_prusa(".*prusa", std::regex::icase);
 const std::regex Plater::priv::pattern_zip(".*zip", std::regex::icase);
+const std::regex Plater::priv::pattern_printRequest(".*printRequest", std::regex::icase);
 
 Plater::priv::priv(Plater *q, MainFrame *main_frame)
     : q(q)
@@ -1198,6 +1200,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
         const bool type_zip_amf = !type_3mf && std::regex_match(path.string(), pattern_zip_amf);
         const bool type_any_amf = !type_3mf && std::regex_match(path.string(), pattern_any_amf);
         const bool type_prusa = std::regex_match(path.string(), pattern_prusa);
+        const bool type_printRequest =  std::regex_match(path.string(), pattern_printRequest);
 
         Slic3r::Model model;
         bool is_project_file = type_prusa;
@@ -1370,7 +1373,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                     convert_model_if(model, answer_convert_from_imperial_units == wxID_YES);
                 }
 
-                if (model.looks_like_multipart_object()) {
+                if (!type_printRequest && model.looks_like_multipart_object()) {
                     if (answer_consider_as_multi_part_objects == wxOK_DEFAULT) {
                         RichMessageDialog dlg(q, _L(
                             "This file contains several objects positioned at multiple heights.\n"
@@ -1409,6 +1412,58 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                 }
                 if (!model_object->instances.empty())
                   model_object->ensure_on_bed(is_project_file);
+                if (type_printRequest)  {
+                    for (ModelInstance* obj_instance : model_object->instances)  {
+                        obj_instance->set_offset(obj_instance->get_offset() + Slic3r::to_3d(this->bed.build_volume().bed_center(), -model_object->origin_translation(2)));
+                    }
+                }
+            }
+            if (type_printRequest) {
+                assert(model.materials.size());
+
+                for (const auto& material : model.materials) {
+                    std::string preset_name = wxGetApp().preset_bundle->get_preset_name_by_alias_invisible(Preset::Type::TYPE_SLA_MATERIAL,
+                        Preset::remove_suffix_modified(material.first));
+                    Preset* prst = wxGetApp().preset_bundle->sla_materials.find_preset(preset_name, false);
+                    if (!prst) { //did not find compatible profile 
+                        // try find alias of material comaptible with another print profile - if exists, use the print profile
+                        auto& prints = wxGetApp().preset_bundle->sla_prints;
+                        std::string edited_print_name = prints.get_edited_preset().name;
+                        bool found = false;
+                        for (auto it = prints.begin(); it != prints.end(); ++it)
+                        {
+                            if (it->name != edited_print_name) {
+                                BOOST_LOG_TRIVIAL(error) << it->name;
+                                wxGetApp().get_tab(Preset::Type::TYPE_SLA_PRINT)->select_preset(it->name, false);
+                                preset_name = wxGetApp().preset_bundle->get_preset_name_by_alias_invisible(Preset::Type::TYPE_SLA_MATERIAL,
+                                    Preset::remove_suffix_modified(material.first));
+                                prst = wxGetApp().preset_bundle->sla_materials.find_preset(preset_name, false);
+                                if (prst) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!found) {
+                            // return to original print profile
+                            wxGetApp().get_tab(Preset::Type::TYPE_SLA_PRINT)->select_preset(edited_print_name, false);
+                            std::string notif_text = into_u8(_L("Material preset was not loaded:"));
+                            notif_text += "\n - " + preset_name;
+                            q->get_notification_manager()->push_notification(NotificationType::CustomNotification,
+                                NotificationManager::NotificationLevel::PrintInfoNotificationLevel, notif_text);
+                            break;
+                        }
+                    }
+
+                    PresetBundle* preset_bundle = wxGetApp().preset_bundle;
+                    if (preset_bundle->sla_materials.get_selected_preset_name() != preset_name) {
+                        preset_bundle->sla_materials.select_preset_by_name(preset_name, false, true);
+                        preset_bundle->tmp_installed_presets = { preset_name };
+                        q->notify_about_installed_presets();
+                        wxGetApp().load_current_presets(false);// For this case we shouldn't check printer_presets
+                    }
+                    break;
+                }
             }
 
             if (one_by_one) {
@@ -4814,7 +4869,7 @@ void ProjectDropDialog::on_dpi_changed(const wxRect& suggested_rect)
 
 bool Plater::load_files(const wxArrayString& filenames, bool delete_after_load/*=false*/)
 {
-    const std::regex pattern_drop(".*[.](stl|obj|amf|3mf|prusa|step|stp|zip)", std::regex::icase);
+    const std::regex pattern_drop(".*[.](stl|obj|amf|3mf|prusa|step|stp|zip|printRequest)", std::regex::icase);
     const std::regex pattern_gcode_drop(".*[.](gcode|g|bgcode|bgc)", std::regex::icase);
 
     std::vector<fs::path> paths;
