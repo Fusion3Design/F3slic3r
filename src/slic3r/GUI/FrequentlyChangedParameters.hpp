@@ -17,6 +17,8 @@
 #ifndef slic3r_FreqChangedParams_hpp_
 #define slic3r_FreqChangedParams_hpp_
 
+#include <memory>
+
 #include "Event.hpp"
 
 class wxButton;

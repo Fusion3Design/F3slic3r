@@ -48,7 +48,7 @@ if (SLIC3R_GUI)
     if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
         set (wxWidgets_CONFIG_OPTIONS "--toolkit=gtk${SLIC3R_GTK}")
     endif ()
-    find_package(wxWidgets 3.2 MODULE REQUIRED COMPONENTS base core adv html gl webview media)
+    find_package(wxWidgets 3.2 MODULE REQUIRED COMPONENTS base core adv html gl webview)
 
     include(${wxWidgets_USE_FILE})
 

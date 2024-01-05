@@ -876,7 +876,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
        //auto downloader_worker = new DownloaderUtils::Worker(nullptr);
        DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
 #ifdef __linux__
-       if (downloader_worker->get_perform_registration_linux())
+       if (DownloaderUtils::Worker::perform_registration_linux)
            DesktopIntegrationDialog::perform_downloader_desktop_integration();
 #endif // __linux__
        // than open url

@@ -33,7 +33,7 @@ add_cmake_project(wxWidgets
         "-DCMAKE_DEBUG_POSTFIX:STRING="
         -DwxBUILD_PRECOMP=ON
         ${_wx_toolkit}
-        -DwxUSE_MEDIACTRL=ON
+        -DwxUSE_MEDIACTRL=OFF
         -DwxUSE_DETECT_SM=OFF
         -DwxUSE_UNICODE=ON
         -DwxUSE_UNICODE_UTF8=${_unicode_utf8}

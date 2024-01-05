@@ -70,25 +70,36 @@ private:
     std::map<std::string, std::string>  m_user_data;
     std::string                         m_username;
 
+    // first string is "printer_type" code from Connect edpoints
     const std::map<std::string, std::string> printer_type_and_name_table = {
+        {"1.2.5", "MK2.5"       },
+        {"1.2.6", "MK2.5S"      },
         {"1.3.0", "MK3"         },
         {"1.3.1", "MK3S"        },
+        {"1.3.5", "MK3.5"       },
+        {"1.3.9", "MK3.9"       },
         {"1.4.0", "MK4"         },
         {"2.1.0", "MINI"        },
         {"3.1.0", "XL"          },
+        {"5.1.0", "SL1"         },
         // ysFIXME : needs to add Connect ids for next printers
         {"0.0.0", "MK4IS"       },
         {"0.0.0", "MK3SMMU2S"   },
         {"0.0.0", "MK3MMU2"     },
-        {"0.0.0", "MK2.5S"      },
-        {"0.0.0", "MK2.5"       },
         {"0.0.0", "MK2.5SMMU2S" },
         {"0.0.0", "MK2.5MMU2"   },
         {"0.0.0", "MK2S"        },
         {"0.0.0", "MK2SMM"      },
-        {"0.0.0", "SL1"         },
         {"0.0.0", "SL1S"        },
     };
+    /* TODO: 
+        4	1	0	iXL
+        6	2	0	Trilab DeltiQ 2
+        6	2	1	Trilab DelriQ 2 Plus
+        7	1	0	Trilab AzteQ
+        7	2	0	Trilab AzteQ Industrial
+        7	2	1	Trilab AzteQ Industrial Plus
+    */
 
     const std::map<std::string, ConnectPrinterState> printer_state_table = {
         {"OFFLINE"  , ConnectPrinterState::CONNECT_PRINTER_OFFLINE},

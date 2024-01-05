@@ -21,6 +21,7 @@
 
 #include <wx/panel.h>
 #include <wx/string.h>
+#include <wx/sizer.h>
 
 #include "libslic3r/Preset.hpp"
 #include "GUI.hpp"
