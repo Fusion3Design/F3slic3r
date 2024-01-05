@@ -89,11 +89,13 @@ class Preview : public wxPanel
     BackgroundSlicingProcess* m_process;
     GCodeProcessorResult* m_gcode_result;
 
+#if !ENABLE_NEW_GCODE_VIEWER
 #ifdef __linux__
     // We are getting mysterious crashes on Linux in gtk due to OpenGL context activation GH #1874 #1955.
     // So we are applying a workaround here.
     bool m_volumes_cleanup_required { false };
 #endif /* __linux__ */
+#endif // !ENABLE_NEW_GCODE_VIEWER
 
     // Calling this function object forces Plater::schedule_background_process.
     std::function<void()> m_schedule_background_process;
@@ -138,7 +140,11 @@ public:
 
     void load_gcode_shells();
     void load_print(bool keep_z_range = false);
+#if ENABLE_NEW_GCODE_VIEWER
+    void reload_print();
+#else
     void reload_print(bool keep_volumes = false);
+#endif // ENABLE_NEW_GCODE_VIEWER
     void refresh_print();
 
     void msw_rescale();

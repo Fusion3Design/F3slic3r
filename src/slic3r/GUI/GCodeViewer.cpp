@@ -4747,6 +4747,22 @@ void GCodeViewer::render_legend(float& legend_height)
         return std::make_pair(it->second.first * koef, it->second.second);
     };
 
+#if ENABLE_NEW_GCODE_VIEWER
+    auto toggle_extrusion_role_visibility = [this](libvgcode::EGCodeExtrusionRole role) {
+        const libvgcode::Interval view_visible_range = m_viewer.get_view_visible_range();
+        const libvgcode::Interval view_enabled_range = m_viewer.get_view_enabled_range();
+        m_viewer.toggle_extrusion_role_visibility(role);
+        std::optional<int> view_visible_range_min;
+        std::optional<int> view_visible_range_max;
+        if (view_visible_range != view_enabled_range) {
+            view_visible_range_min = static_cast<int>(view_visible_range[0]);
+            view_visible_range_max = static_cast<int>(view_visible_range[1]);
+        }
+        wxGetApp().plater()->update_preview_moves_slider(view_visible_range_min, view_visible_range_max);
+        wxGetApp().plater()->get_current_canvas3D()->set_as_dirty();
+    };
+#endif // ENABLE_NEW_GCODE_VIEWER
+
     // data used to properly align items in columns when showing time
     std::array<float, 4> offsets = { 0.0f, 0.0f, 0.0f, 0.0f };
     std::vector<std::string> labels;
@@ -4903,9 +4919,12 @@ void GCodeViewer::render_legend(float& legend_height)
    
 #if ENABLE_NEW_GCODE_VIEWER
     if (curr_view_type_i != new_view_type_i) {
-        m_viewer.set_view_type(static_cast<libvgcode::EViewType>(new_view_type_i));
+        enable_view_type_cache_load(false);
+        set_view_type(static_cast<libvgcode::EViewType>(new_view_type_i));
+        enable_view_type_cache_load(true);
         wxGetApp().plater()->set_keep_current_preview_type(true);
-        wxGetApp().plater()->refresh_print();
+        wxGetApp().plater()->get_current_canvas3D()->set_as_dirty();
+        wxGetApp().plater()->get_current_canvas3D()->request_extra_frame();
         view_type_changed = true;
     }
 
@@ -4960,19 +4979,7 @@ void GCodeViewer::render_legend(float& legend_height)
 
                 append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_extrusion_role_color(role)), labels[i],
                     visible, times[i], percents[i], max_time_percent, offsets, used_filaments_m[i], used_filaments_g[i],
-                    [this, role]() {
-                        const libvgcode::Interval view_visible_range = m_viewer.get_view_visible_range();
-                        const libvgcode::Interval view_enabled_range = m_viewer.get_view_enabled_range();
-                        m_viewer.toggle_extrusion_role_visibility((libvgcode::EGCodeExtrusionRole)role);
-                        std::optional<int> view_visible_range_min;
-                        std::optional<int> view_visible_range_max;
-                        if (view_visible_range != view_enabled_range) {
-                            view_visible_range_min = static_cast<int>(view_visible_range[0]);
-                            view_visible_range_max = static_cast<int>(view_visible_range[1]);
-                        }
-                        wxGetApp().plater()->update_preview_moves_slider(view_visible_range_min, view_visible_range_max);
-                        wxGetApp().plater()->get_current_canvas3D()->set_as_dirty();
-                    }
+                    [role, toggle_extrusion_role_visibility]() { toggle_extrusion_role_visibility(role); }
                 );
 #else
             max_time_percent = std::max(max_time_percent, time_mode.travel_time / time_mode.time);
@@ -5430,12 +5437,12 @@ void GCodeViewer::render_legend(float& legend_height)
             ImGui::Separator();
             if (imgui.button(btn_text, ImVec2(-1.0f, 0.0f), true)) {
 #if ENABLE_NEW_GCODE_VIEWER
-                m_viewer.toggle_extrusion_role_visibility((libvgcode::EGCodeExtrusionRole)GCodeExtrusionRole::Custom);
+                toggle_extrusion_role_visibility(libvgcode::EGCodeExtrusionRole::Custom);
 #else
                 m_extrusions.role_visibility_flags = custom_visible ? m_extrusions.role_visibility_flags & ~(1 << int(GCodeExtrusionRole::Custom)) :
                     m_extrusions.role_visibility_flags | (1 << int(GCodeExtrusionRole::Custom));
-#endif // ENABLE_NEW_GCODE_VIEWER
                 wxGetApp().plater()->refresh_print();
+#endif // ENABLE_NEW_GCODE_VIEWER
             }
         }
     }

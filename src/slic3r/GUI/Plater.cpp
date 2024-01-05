@@ -2707,7 +2707,11 @@ void Plater::priv::set_current_panel(wxPanel* panel)
                 q->reslice();
             }
             // keeps current gcode preview, if any
+#if ENABLE_NEW_GCODE_VIEWER
+            preview->reload_print();
+#else
             preview->reload_print(true);
+#endif // ENABLE_NEW_GCODE_VIEWER
         }
 
         preview->set_as_dirty();
@@ -4020,7 +4024,11 @@ void Plater::load_gcode(const wxString& filename)
     // cleanup view before to start loading/processing
     p->gcode_result.reset();
     reset_gcode_toolpaths();
+#if ENABLE_NEW_GCODE_VIEWER
+    p->preview->reload_print();
+#else
     p->preview->reload_print(false);
+#endif // ENABLE_NEW_GCODE_VIEWER
     p->get_current_canvas3D()->render();
 
     wxBusyCursor wait;
@@ -4041,7 +4049,11 @@ void Plater::load_gcode(const wxString& filename)
     // show results
     try
     {
+#if ENABLE_NEW_GCODE_VIEWER
+        p->preview->reload_print();
+#else
         p->preview->reload_print(false);
+#endif // ENABLE_NEW_GCODE_VIEWER
     }
     catch (const std::exception&)
     {
@@ -4049,7 +4061,11 @@ void Plater::load_gcode(const wxString& filename)
         p->gcode_result.reset();
         reset_gcode_toolpaths();
         set_default_bed_shape();
+#if ENABLE_NEW_GCODE_VIEWER
+        p->preview->reload_print();
+#else
         p->preview->reload_print(false);
+#endif // ENABLE_NEW_GCODE_VIEWER
         p->get_current_canvas3D()->render();
         MessageDialog(this, _L("The selected file") + ":\n" + filename + "\n" + _L("does not contain valid gcode."),
             wxString(GCODEVIEWER_APP_NAME) + " - " + _L("Error while loading .gcode file"), wxOK | wxICON_WARNING | wxCENTRE).ShowModal();
@@ -5791,7 +5807,11 @@ void Plater::reslice()
     if (clean_gcode_toolpaths)
         reset_gcode_toolpaths();
 
+#if ENABLE_NEW_GCODE_VIEWER
+    p->preview->reload_print();
+#else
     p->preview->reload_print(!clean_gcode_toolpaths);
+#endif // ENABLE_NEW_GCODE_VIEWER
 }
 
 void Plater::reslice_until_step_inner(int step, const ModelObject &object, bool postpone_error_messages)

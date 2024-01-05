@@ -305,6 +305,16 @@ void Preview::load_print(bool keep_z_range)
     Layout();
 }
 
+#if ENABLE_NEW_GCODE_VIEWER
+void Preview::reload_print()
+{
+    if (!IsShown())
+        return;
+
+    m_loaded = false;
+    load_print();
+}
+#else
 void Preview::reload_print(bool keep_volumes)
 {
 #ifdef __linux__
@@ -331,6 +341,7 @@ void Preview::reload_print(bool keep_volumes)
 
     load_print();
 }
+#endif // ENABLE_NEW_GCODE_VIEWER
 
 void Preview::refresh_print()
 {
@@ -437,8 +448,12 @@ wxBoxSizer* Preview::create_layers_slider_sizer()
         m_schedule_background_process();
 
         m_keep_current_preview_type = false;
+#if ENABLE_NEW_GCODE_VIEWER
+        reload_print();
+#else
         reload_print(false);
-        });
+#endif // ENABLE_NEW_GCODE_VIEWER
+    });
 
     return sizer;
 }
@@ -850,18 +865,20 @@ void Preview::load_print_as_fff(bool keep_z_range)
     }
 
 #if ENABLE_NEW_GCODE_VIEWER
-    const libvgcode::EViewType gcode_view_type = m_canvas->get_gcode_view_type();
+    libvgcode::EViewType gcode_view_type = m_canvas->get_gcode_view_type();
+    const bool gcode_preview_data_valid = !m_gcode_result->moves.empty();
+    const bool is_pregcode_preview = !gcode_preview_data_valid && wxGetApp().is_editor();
 #else
     GCodeViewer::EViewType gcode_view_type = m_canvas->get_gcode_view_preview_type();
+    const bool gcode_preview_data_valid = !m_gcode_result->moves.empty();
 #endif // ENABLE_NEW_GCODE_VIEWER
-    bool gcode_preview_data_valid = !m_gcode_result->moves.empty();
 
     // Collect colors per extruder.
     std::vector<std::string> colors;
     std::vector<CustomGCode::Item> color_print_values = {};
-    // set color print values, if it si selected "ColorPrint" view type
+    // set color print values, if it is selected "ColorPrint" view type
 #if ENABLE_NEW_GCODE_VIEWER
-    if (gcode_view_type == libvgcode::EViewType::ColorPrint) {
+    if (gcode_view_type == libvgcode::EViewType::ColorPrint || is_pregcode_preview) {
 #else
     if (gcode_view_type == GCodeViewer::EViewType::ColorPrint) {
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -891,6 +908,10 @@ void Preview::load_print_as_fff(bool keep_z_range)
         if (gcode_preview_data_valid) {
             // Load the real G-code preview.
             m_canvas->load_gcode_preview(*m_gcode_result, colors);
+#if ENABLE_NEW_GCODE_VIEWER
+            // the view type may have been changed by the call m_canvas->load_gcode_preview()
+            gcode_view_type = m_canvas->get_gcode_view_type();
+#endif // ENABLE_NEW_GCODE_VIEWER
             m_left_sizer->Layout();
             Refresh();
             zs = m_canvas->get_gcode_layers_zs();
@@ -898,9 +919,18 @@ void Preview::load_print_as_fff(bool keep_z_range)
                 m_left_sizer->Show(m_bottom_toolbar_panel);
             m_loaded = true;
         }
+#if ENABLE_NEW_GCODE_VIEWER
+        else if (is_pregcode_preview) {
+#else
         else if (wxGetApp().is_editor()) {
+#endif // ENABLE_NEW_GCODE_VIEWER
             // Load the initial preview based on slices, not the final G-code.
             m_canvas->load_preview(colors, color_print_values);
+#if ENABLE_NEW_GCODE_VIEWER
+            // the view type has been changed by the call m_canvas->load_gcode_preview()
+            if (gcode_view_type == libvgcode::EViewType::ColorPrint && !color_print_values.empty())
+                m_canvas->set_gcode_view_type(gcode_view_type);
+#endif // ENABLE_NEW_GCODE_VIEWER
             m_left_sizer->Hide(m_bottom_toolbar_panel);
             m_left_sizer->Layout();
             Refresh();
@@ -917,10 +947,10 @@ void Preview::load_print_as_fff(bool keep_z_range)
         }
 
         if (!zs.empty() && !m_keep_current_preview_type) {
-            unsigned int number_extruders = wxGetApp().is_editor() ?
+            const unsigned int number_extruders = wxGetApp().is_editor() ?
                 (unsigned int)print->extruders().size() :
                 m_canvas->get_gcode_extruders_count();
-            std::vector<Item> gcodes = wxGetApp().is_editor() ?
+            const std::vector<Item> gcodes = wxGetApp().is_editor() ?
                 wxGetApp().plater()->model().custom_gcode_per_print_z.gcodes :
                 m_canvas->get_custom_gcode_per_print_z();
             const bool contains_color_gcodes = std::any_of(std::begin(gcodes), std::end(gcodes),
@@ -936,13 +966,20 @@ void Preview::load_print_as_fff(bool keep_z_range)
 #endif // ENABLE_NEW_GCODE_VIEWER
             if (choice != gcode_view_type) {
 #if ENABLE_NEW_GCODE_VIEWER
+                const bool gcode_view_type_cache_load = m_canvas->is_gcode_view_type_cache_load_enabled();
+                if (gcode_view_type_cache_load)
+                    m_canvas->enable_gcode_view_type_cache_load(false);
                 m_canvas->set_gcode_view_type(choice);
+                if (gcode_view_type_cache_load)
+                    m_canvas->enable_gcode_view_type_cache_load(true);
 #else
                 m_canvas->set_gcode_view_preview_type(choice);
 #endif // ENABLE_NEW_GCODE_VIEWER
                 if (wxGetApp().is_gcode_viewer())
                     m_keep_current_preview_type = true;
+#if !ENABLE_NEW_GCODE_VIEWER
                 refresh_print();
+#endif // !ENABLE_NEW_GCODE_VIEWER
             }
         }
 

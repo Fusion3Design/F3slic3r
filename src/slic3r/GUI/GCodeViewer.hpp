@@ -866,6 +866,13 @@ private:
 #endif // ENABLE_COG_AND_TOOL_MARKERS
     bool m_legend_visible{ true };
     bool m_legend_enabled{ true };
+    struct ViewTypeCache
+    {
+        bool write{ false };
+        bool load{ false };
+        libvgcode::EViewType value{ libvgcode::EViewType::FeatureType };
+    };
+    ViewTypeCache m_view_type_cache;
 #else
     EViewType m_view_type{ EViewType::FeatureType };
     bool m_legend_enabled{ true };
@@ -974,8 +981,18 @@ public:
     bool is_contained_in_bed() const { return m_contained_in_bed; }
 
 #if ENABLE_NEW_GCODE_VIEWER
-    void set_view_type(libvgcode::EViewType type) { m_viewer.set_view_type(type); }
+    void set_view_type(libvgcode::EViewType type) {
+        m_viewer.set_view_type((m_view_type_cache.load && m_view_type_cache.value != type) ? m_view_type_cache.value : type);
+        const libvgcode::EViewType view_type = get_view_type();
+        if (m_view_type_cache.write && m_view_type_cache.value != view_type)
+            m_view_type_cache.value = view_type;
+    }
+
     libvgcode::EViewType get_view_type() const { return m_viewer.get_view_type(); }
+    void enable_view_type_cache_load(bool enable) { m_view_type_cache.load = enable; }
+    void enable_view_type_cache_write(bool enable) { m_view_type_cache.write = enable; }
+    bool is_view_type_cache_load_enabled() const { return m_view_type_cache.load; }
+    bool is_view_type_cache_write_enabled() const { return m_view_type_cache.write; }
 #else
     EViewType get_view_type() const { return m_view_type; }
     void set_view_type(EViewType type) {
