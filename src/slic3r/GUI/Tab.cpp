@@ -2272,7 +2272,6 @@ void TabFilament::build()
         optgroup->append_single_option_line("filament_cooling_initial_speed");
         optgroup->append_single_option_line("filament_cooling_final_speed");
         optgroup->append_single_option_line("filament_skinnydip_loading_speed");
-        optgroup->append_single_option_line("filament_skinnydip_unloading_speed");
         optgroup->append_single_option_line("filament_skinnydip_distance");
         optgroup->append_single_option_line("filament_skinnydip_extra_move");
 

@@ -23,7 +23,7 @@ public:
     {
         SetBackgroundStyle(wxBG_STYLE_PAINT);
         m_rect = wxRect(wxPoint(legend_side,0),rect.GetSize()-wxSize(legend_side,legend_side));
-        visible_area = wxRect2DDouble(0.0, 0.0, sampling*ramming_speed_size, 40.);
+        visible_area = wxRect2DDouble(0.0, 0.0, sampling*ramming_speed_size, 60.);
         m_buttons.clear();
         if (initial_buttons.size()>0)
             for (const auto& pair : initial_buttons)

@@ -1100,13 +1100,6 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
-    def = this->add("filament_skinnydip_unloading_speed", coFloats);
-    def->label = L("ELIAS: Skinnydip unloading speed");
-    def->tooltip = L("");
-    def->min = 0;
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionFloats { 0. });
-
     def = this->add("filament_skinnydip_distance", coFloats);
     def->label = L("ELIAS: Skinnydip distance measured from the center of the cooling tube");
     def->tooltip = L("");

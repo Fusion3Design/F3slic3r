@@ -110,7 +110,7 @@ public:
     }
 
     WipeTowerWriter& switch_filament_monitoring(bool enable) {
-        m_gcode += std::string("G4 S0\n") + "M591 " + (enable ? "S0" : "R") + "\n";
+        m_gcode += std::string("G4 S0\n") + "M591 " + (enable ? "R" : "S0") + "\n";
         return *this;
     }
 
@@ -642,7 +642,6 @@ void WipeTower::set_extruder(size_t idx, const PrintConfig& config)
         m_filpar[idx].cooling_initial_speed   = float(config.filament_cooling_initial_speed.get_at(idx));
         m_filpar[idx].cooling_final_speed     = float(config.filament_cooling_final_speed.get_at(idx));
         m_filpar[idx].filament_skinnydip_loading_speed     = float(config.filament_skinnydip_loading_speed.get_at(idx));
-        m_filpar[idx].filament_skinnydip_unloading_speed   = float(config.filament_skinnydip_unloading_speed.get_at(idx));
         m_filpar[idx].filament_skinnydip_distance          = float(config.filament_skinnydip_distance.get_at(idx));
         m_filpar[idx].filament_skinnydip_extra_move        = float(config.filament_skinnydip_extra_move.get_at(idx));
     }
@@ -988,6 +987,10 @@ void WipeTower::toolchange_Unload(
     if (m_is_mk4mmu3)
         writer.switch_filament_monitoring(true);
 
+    const int& number_of_cooling_moves = m_filpar[m_current_tool].cooling_moves;
+    const bool cooling_will_happen = m_semm && number_of_cooling_moves > 0;
+    bool change_temp_later = false;
+
     // Wipe tower should only change temperature with single extruder MM. Otherwise, all temperatures should
     // be already set and there is no need to change anything. Also, the temperature could be changed
     // for wrong extruder.
@@ -995,28 +998,34 @@ void WipeTower::toolchange_Unload(
         if (new_temperature != 0 && (new_temperature != m_old_temperature || is_first_layer() || cold_ramming) ) { 	// Set the extruder temperature, but don't wait.
             // If the required temperature is the same as last time, don't emit the M104 again (if user adjusted the value, it would be reset)
             // However, always change temperatures on the first layer (this is to avoid issues with priming lines turned off).
-            writer.set_extruder_temp(new_temperature, false);
+            if (cold_ramming && cooling_will_happen)
+                change_temp_later = true;
+            else
+                writer.set_extruder_temp(new_temperature, false);
             m_old_temperature = new_temperature;
         }
     }
 
     // Cooling:
-    const int& number_of_moves = m_filpar[m_current_tool].cooling_moves;
-    if (m_semm && number_of_moves > 0) {
+    if (cooling_will_happen) {
         const float& initial_speed = m_filpar[m_current_tool].cooling_initial_speed;
         const float& final_speed   = m_filpar[m_current_tool].cooling_final_speed;
 
-        float speed_inc = (final_speed - initial_speed) / (2.f * number_of_moves - 1.f);
+        float speed_inc = (final_speed - initial_speed) / (2.f * number_of_cooling_moves - 1.f);
+
+        if (m_is_mk4mmu3)
+            writer.disable_linear_advance();
 
         writer.suppress_preview()
               .travel(writer.x(), writer.y() + y_step);
         old_x = writer.x();
         turning_point = xr-old_x > old_x-xl ? xr : xl;
-        for (int i=0; i<number_of_moves; ++i) {
+        float skinnydip_dist_e = m_filpar[m_current_tool].filament_skinnydip_distance + m_cooling_tube_length / 2.f;
+
+        for (int i=0; i<number_of_cooling_moves; ++i) {
 
             // Skinnydip - happens after every cooling move except for the last one.
             if (i>0 && m_filpar[m_current_tool].filament_skinnydip_distance != 0) {
-                float dist_e = m_filpar[m_current_tool].filament_skinnydip_distance + m_cooling_tube_length / 2.f;
 
                 // Skinnydip turning point shall be no farther than 20mm from the current nozzle position:
                 float skinnydip_turning_point = std::clamp(old_x + 20.f * (turning_point - old_x > 0.f ? 1.f : -1.f), xl, xr);
@@ -1026,28 +1035,28 @@ void WipeTower::toolchange_Unload(
 
                 // Only last 5mm will be done with the fast x travel. The point is to spread possible blobs
                 // along the whole wipe tower.
-                if (dist_e > 5) {
-                    //writer.load_move_x_advanced_there_and_back(turning_point, dist_e-5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, 50);
+                if (skinnydip_dist_e > 5) {
                     float cent = writer.x();
-                    writer.load_move_x_advanced(skinnydip_turning_point, 0.5*(dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
-                    writer.load_move_x_advanced(cent,          0.5*(dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
+                    writer.load_move_x_advanced(skinnydip_turning_point, (skinnydip_dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
+                    writer.load_move_x_advanced(cent, 5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
                     writer.travel(cent, writer.y());
-                    writer.load_move_x_advanced_there_and_back(skinnydip_turning_point, 5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
                 } else
-                    writer.load_move_x_advanced_there_and_back(skinnydip_turning_point, dist_e, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
+                    writer.load_move_x_advanced_there_and_back(skinnydip_turning_point, skinnydip_dist_e, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
 
-                //writer.load_move_x_advanced_there_and_back(turning_point, -dist_e, m_filpar[m_current_tool].filament_skinnydip_unloading_speed, 50);
                 // Retract while the print head is stationary, so if there is a blob, it is not dragged along.
-                writer.retract(dist_e, m_filpar[m_current_tool].filament_skinnydip_unloading_speed * 60.f);
+                writer.retract(skinnydip_dist_e, m_filpar[m_current_tool].unloading_speed * 60.f);
 
                 if (m_is_mk4mmu3)
                     writer.switch_filament_monitoring(true);
                 
                 if (m_filpar[m_current_tool].filament_skinnydip_extra_move != 0.f)
-                    dist_e += m_filpar[m_current_tool].filament_skinnydip_extra_move;
+                    skinnydip_dist_e += m_filpar[m_current_tool].filament_skinnydip_extra_move;
             }
-            if (i == number_of_moves)
-                    break;
+
+            if (i == number_of_cooling_moves - 1 && change_temp_later) {
+                // If cold_ramming, the temperature change should be done before the last cooling move.
+                    writer.set_extruder_temp(new_temperature, false);
+            }
 
             float speed = initial_speed + speed_inc * 2*i;
             writer.load_move_x_advanced(turning_point, m_cooling_tube_length, speed);
@@ -1153,21 +1162,23 @@ void WipeTower::toolchange_Wipe(
 
     // MATHIEU TEST:
     writer.set_extrusion_flow(m_extrusion_flow * m_extra_flow);
+    const float line_width = m_perimeter_width * m_extra_flow;
+    writer.change_analyzer_line_width(line_width);
 
 	// Variables x_to_wipe and traversed_x are here to be able to make sure it always wipes at least
     //   the ordered volume, even if it means violating the box. This can later be removed and simply
     // wipe until the end of the assigned area.
 
-	float x_to_wipe = volume_to_length(wipe_volume, m_perimeter_width, m_layer_height) * (is_first_layer() ? m_extra_spacing : 1.f);
-	float dy = (is_first_layer() ? 1.f : m_extra_spacing) * m_perimeter_width; // Don't use the extra spacing for the first layer.
+	float x_to_wipe = volume_to_length(wipe_volume, line_width, m_layer_height) * (is_first_layer() ? m_extra_spacing : 1.f);
+	float dy = (is_first_layer() ? 1.f : m_extra_spacing) * line_width; // Don't use the extra spacing for the first layer.
     // All the calculations in all other places take the spacing into account for all the layers.
 
     const float target_speed = is_first_layer() ? m_first_layer_speed * 60.f : m_infill_speed * 60.f;
     float wipe_speed = 0.33f * target_speed;
 
-    // if there is less than 2.5*m_perimeter_width to the edge, advance straightaway (there is likely a blob anyway)
-    if ((m_left_to_right ? xr-writer.x() : writer.x()-xl) < 2.5f*m_perimeter_width) {
-        writer.travel((m_left_to_right ? xr-m_perimeter_width : xl+m_perimeter_width),writer.y()+dy);
+    // if there is less than 2.5*line_width to the edge, advance straightaway (there is likely a blob anyway)
+    if ((m_left_to_right ? xr-writer.x() : writer.x()-xl) < 2.5f*line_width) {
+        writer.travel((m_left_to_right ? xr-line_width : xl+line_width),writer.y()+dy);
         m_left_to_right = !m_left_to_right;
     }
     
@@ -1182,21 +1193,21 @@ void WipeTower::toolchange_Wipe(
 
 		float traversed_x = writer.x();
 		if (m_left_to_right)
-            writer.extrude(xr - (i % 4 == 0 ? 0 : 1.5f*m_perimeter_width), writer.y(), wipe_speed);
+            writer.extrude(xr - (i % 4 == 0 ? 0 : 1.5f*line_width), writer.y(), wipe_speed);
 		else
-            writer.extrude(xl + (i % 4 == 1 ? 0 : 1.5f*m_perimeter_width), writer.y(), wipe_speed);
+            writer.extrude(xl + (i % 4 == 1 ? 0 : 1.5f*line_width), writer.y(), wipe_speed);
 
-        if (writer.y()+float(EPSILON) > cleaning_box.lu.y()-0.5f*m_perimeter_width)
+        if (writer.y()+float(EPSILON) > cleaning_box.lu.y()-0.5f*line_width)
             break;		// in case next line would not fit
 
 		traversed_x -= writer.x();
         x_to_wipe -= std::abs(traversed_x);
 		if (x_to_wipe < WT_EPSILON) {
-            writer.travel(m_left_to_right ? xl + 1.5f*m_perimeter_width : xr - 1.5f*m_perimeter_width, writer.y(), 7200);
+            writer.travel(m_left_to_right ? xl + 1.5f*line_width : xr - 1.5f*line_width, writer.y(), 7200);
 			break;
 		}
 		// stepping to the next line:
-        writer.extrude(writer.x() + (i % 4 == 0 ? -1.f : (i % 4 == 1 ? 1.f : 0.f)) * 1.5f*m_perimeter_width, writer.y() + dy);
+        writer.extrude(writer.x() + (i % 4 == 0 ? -1.f : (i % 4 == 1 ? 1.f : 0.f)) * 1.5f*line_width, writer.y() + dy);
 		m_left_to_right = !m_left_to_right;
 	}
 
@@ -1210,6 +1221,7 @@ void WipeTower::toolchange_Wipe(
         m_left_to_right = !m_left_to_right;
 
     writer.set_extrusion_flow(m_extrusion_flow); // Reset the extrusion flow.
+    writer.change_analyzer_line_width(m_perimeter_width);
 }
 
 
@@ -1584,7 +1596,7 @@ void WipeTower::save_on_last_wipe()
                 float width = m_wipe_tower_width - 3*m_perimeter_width; // width we draw into
                 float length_to_save = finish_layer().total_extrusion_length_in_plane();
                 float length_to_wipe = volume_to_length(toolchange.wipe_volume,
-                                      m_perimeter_width, m_layer_info->height)  - toolchange.first_wipe_line - length_to_save;
+                                      m_perimeter_width, m_layer_info->height) / m_extra_flow  - toolchange.first_wipe_line - length_to_save;
 
                 length_to_wipe = std::max(length_to_wipe,0.f);
                 float depth_to_wipe = m_perimeter_width * (std::floor(length_to_wipe/width) + ( length_to_wipe > 0.f ? 1.f : 0.f ) );
@@ -1634,7 +1646,7 @@ void WipeTower::generate(std::vector<std::vector<WipeTower::ToolChangeResult>> &
         return;
 
 	plan_tower();
-    for (int i=0;i<5;++i) {
+    for (int i = 0; i<5; ++i) {
         save_on_last_wipe();
         plan_tower();
     }

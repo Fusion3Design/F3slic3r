@@ -238,7 +238,6 @@ public:
         float               delay = 0.f ;
 
 		float               filament_skinnydip_loading_speed = 0.f;
-		float               filament_skinnydip_unloading_speed = 0.f;
 		float               filament_skinnydip_distance = 0.f;
 		float               filament_skinnydip_extra_move = 0.f;
 		
