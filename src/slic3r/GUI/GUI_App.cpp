@@ -3011,7 +3011,15 @@ void GUI_App::MacOpenURL(const wxString& url)
         BOOST_LOG_TRIVIAL(error) << "Recieved command to open URL, but it is not allowed in app configuration. URL: " << url;
         return;
     }
-    start_download(into_u8(url));
+
+    std::string narrow_url = into_u8(url);
+    if (boost::starts_with(narrow_url, "prusaslicer://open?file=")) {
+        start_download(std::move(narrow_url));
+    } else if (boost::starts_with(narrow_url, "prusaslicer://login")) {
+        plater()->get_user_account()->on_login_code_recieved(std::move(narrow_url));
+    } else {
+        BOOST_LOG_TRIVIAL(error) << "MacOpenURL recieved improper URL: " << url;
+    }
 }
 
 #endif /* __APPLE */
