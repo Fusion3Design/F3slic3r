@@ -1,5 +1,4 @@
 #import "AppUpdater.hpp"
-#import "ProfilesSharingUtils.hpp"
 
 #import <Foundation/Foundation.h>
 
@@ -15,16 +14,6 @@ std::string get_downloads_path_mac()
 	// 2)
 	//[NSURL fileURLWithPath:[NSHomeDirectory() stringByAppendingPathComponent:@"Downloads"]];
 	//return std::string();
-}
-
-// ProfilesSharingUtils.hpp
-std::string GetDataDir()
-{
-	NSURL* url = [[NSFileManager defaultManager] URLForDirectory:NSApplicationSupportDirectory
-												 inDomain:NSUserDomainMask
-												 appropriateForURL:nil create:NO error:nil];
-
-	return std::string([(CFStringRef)url.path UTF8String]);
 }
 
 }

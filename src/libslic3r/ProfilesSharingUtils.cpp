@@ -3,10 +3,10 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "ProfilesSharingUtils.hpp"
-#include "libslic3r/Utils.hpp"
-#include "libslic3r/format.hpp"
-#include "libslic3r/PrintConfig.hpp"
-#include "libslic3r/PresetBundle.hpp"
+#include "Utils.hpp"
+#include "format.hpp"
+#include "PrintConfig.hpp"
+#include "PresetBundle.hpp"
 
 #include <boost/property_tree/json_parser.hpp>
 

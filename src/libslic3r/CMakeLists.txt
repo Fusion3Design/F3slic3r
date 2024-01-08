@@ -508,7 +508,15 @@ set(SLIC3R_SOURCES
     Arachne/WallToolPaths.hpp
     Arachne/WallToolPaths.cpp
     StaticMap.hpp
+    ProfilesSharingUtils.hpp
+    ProfilesSharingUtils.cpp
 )
+
+if (APPLE)
+    list(APPEND SLIC3R_SOURCES
+            MacUtils.mm
+        )
+endif ()
 
 add_library(libslic3r STATIC ${SLIC3R_SOURCES})
 

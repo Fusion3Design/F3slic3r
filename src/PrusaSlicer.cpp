@@ -61,10 +61,9 @@
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/Thread.hpp"
 #include "libslic3r/BlacklistedLibraryCheck.hpp"
+#include "libslic3r/ProfilesSharingUtils.hpp"
 
 #include "PrusaSlicer.hpp"
-
-#include "slic3r/Utils/ProfilesSharingUtils.hpp"
 
 #ifdef SLIC3R_GUI
     #include "slic3r/GUI/GUI_Init.hpp"
