@@ -3650,6 +3650,13 @@ bool GUI_App::select_printer_from_connect(const Preset* preset)
 
     bool is_installed{ false };
 
+    // When physical printer is selected, it somehow remains selected in printer tab
+    // TabPresetComboBox::update() looks at physical_printers and if some has selected = true, it overrides the selection.
+    // This might be, because OnSelect event callback is not triggered
+    if(preset_bundle->physical_printers.get_selected_printer_config()) {
+        preset_bundle->physical_printers.unselect_printer();
+    }
+
     if (!preset->is_visible) {
         size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(preset->name);
         assert(preset_id != size_t(-1));
