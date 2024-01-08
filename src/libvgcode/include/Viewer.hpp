@@ -113,6 +113,16 @@ public:
     std::vector<EGCodeExtrusionRole> get_extrusion_roles() const;
 
     //
+    // Return the count of detected options
+    //
+    size_t get_options_count() const;
+
+    //
+    // Return the list of detected options
+    //
+    const std::vector<EOptionType>& get_options() const;
+
+    //
     // Return the estimated time for the given role and the current time mode
     //
     float get_extrusion_role_time(EGCodeExtrusionRole role) const;
@@ -153,10 +163,6 @@ public:
     const Color& get_option_color(EOptionType type) const;
     void set_option_color(EOptionType type, const Color& color);
     void reset_default_options_colors();
-
-    const Color& get_travel_move_color(ETravelMoveType type) const;
-    void set_travel_move_color(ETravelMoveType type, const Color& color);
-    void reset_default_travel_moves_colors();
 
     const ColorRange& get_height_range() const;
     const ColorRange& get_width_range() const;

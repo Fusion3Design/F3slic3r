@@ -16,10 +16,10 @@ class ExtrusionRoles
 public:
     struct Item
     {
-        std::array<float, Time_Modes_Count> times;
+        std::array<float, TIME_MODES_COUNT> times;
     };
 
-    void add(EGCodeExtrusionRole role, const std::array<float, Time_Modes_Count>& times);
+    void add(EGCodeExtrusionRole role, const std::array<float, TIME_MODES_COUNT>& times);
 
     size_t get_roles_count() const { return m_items.size(); }
     std::vector<EGCodeExtrusionRole> get_roles() const;

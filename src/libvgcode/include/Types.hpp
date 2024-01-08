@@ -15,8 +15,8 @@ namespace libvgcode {
 
 static constexpr float PI = 3.141592f;
 
-static constexpr float Default_Travels_Radius = 0.1f;
-static constexpr float Default_Wipes_Radius   = 0.1f;
+static constexpr float DEFAULT_TRAVELS_RADIUS = 0.1f;
+static constexpr float DEFAULT_WIPES_RADIUS   = 0.1f;
 
 //
 // Vector in 3 dimensions
@@ -77,7 +77,7 @@ enum class EViewType : uint8_t
     COUNT
 };
 
-static constexpr size_t View_Types_Count = static_cast<size_t>(EViewType::COUNT);
+static constexpr size_t VIEW_TYPES_COUNT = static_cast<size_t>(EViewType::COUNT);
 
 //
 // Move types
@@ -98,20 +98,7 @@ enum class EMoveType : uint8_t
     COUNT
 };
 
-static constexpr size_t Move_Types_Count = static_cast<size_t>(EMoveType::COUNT);
-
-//
-// Travel move types
-//
-enum class ETravelMoveType : uint8_t
-{
-    Move,
-    Extrude,
-    Retract,
-    COUNT
-};
-
-static constexpr size_t Travel_Move_Types_Count = static_cast<size_t>(ETravelMoveType::COUNT);
+static constexpr size_t MOVE_TYPES_COUNT = static_cast<size_t>(EMoveType::COUNT);
 
 //
 // Extrusion roles
@@ -136,7 +123,7 @@ enum class EGCodeExtrusionRole : uint8_t
     COUNT
 };
 
-static constexpr size_t GCode_Extrusion_Roles_Count = static_cast<size_t>(EGCodeExtrusionRole::COUNT);
+static constexpr size_t GCODE_EXTRUSION_ROLES_COUNT = static_cast<size_t>(EGCodeExtrusionRole::COUNT);
 
 //
 // Option types
@@ -159,7 +146,7 @@ enum class EOptionType : uint8_t
     COUNT
 };
 
-static constexpr size_t Option_Types_Count = static_cast<size_t>(EOptionType::COUNT);
+static constexpr size_t OPTION_TYPES_COUNT = static_cast<size_t>(EOptionType::COUNT);
 
 //
 // Time modes
@@ -171,7 +158,7 @@ enum class ETimeMode : uint8_t
     COUNT
 };
 
-static constexpr size_t Time_Modes_Count = static_cast<size_t>(ETimeMode::COUNT);
+static constexpr size_t TIME_MODES_COUNT = static_cast<size_t>(ETimeMode::COUNT);
 
 //
 // Color range types
@@ -183,7 +170,7 @@ enum class EColorRangeType : uint8_t
     COUNT
 };
 
-static constexpr size_t Color_Range_Types_Count = static_cast<size_t>(EColorRangeType::COUNT);
+static constexpr size_t COLOR_RANGE_TYPES_COUNT = static_cast<size_t>(EColorRangeType::COUNT);
 
 //
 // Bounding box types
@@ -196,20 +183,19 @@ enum class EBBoxType : uint8_t
     COUNT
 };
 
-static constexpr size_t BBox_Types_Count = static_cast<size_t>(EBBoxType::COUNT);
+static constexpr size_t BBOX_TYPES_COUNT = static_cast<size_t>(EBBoxType::COUNT);
 
 //
 // Predefined colors
 //
-static const Color Dummy_Color{  64,  64,  64 };
-static const Color Wipe_Color { 255, 255,   0 };
+static const Color DUMMY_COLOR{  64,  64,  64 };
 
 //
 // Palette used to render moves by ranges
 // EViewType: Height, Width, Speed, FanSpeed, Temperature, VolumetricFlowRate,
 //            LayerTimeLinear, LayerTimeLogarithmic
 //
-static const std::vector<Color> Ranges_Colors{ {
+static const std::vector<Color> RANGES_COLORS{ {
     {  11,  44, 122 }, // bluish
     {  19,  89, 133 },
     {  28, 136, 145 },
@@ -226,7 +212,7 @@ static const std::vector<Color> Ranges_Colors{ {
 //
 // Mapping from EMoveType to EOptionType
 //
-extern EOptionType type_to_option(EMoveType type);
+extern EOptionType move_type_to_option(EMoveType type);
 
 //
 // Returns the linear interpolation between the two given colors

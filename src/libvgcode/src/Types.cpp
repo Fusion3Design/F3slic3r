@@ -9,10 +9,12 @@
 namespace libvgcode {
 
 // mapping from EMoveType to EOptionType
-EOptionType type_to_option(EMoveType type)
+EOptionType move_type_to_option(EMoveType type)
 {
     switch (type)
     {
+    case EMoveType::Travel:      { return EOptionType::Travels; }
+    case EMoveType::Wipe:        { return EOptionType::Wipes; }
     case EMoveType::Retract:     { return EOptionType::Retractions; }
     case EMoveType::Unretract:   { return EOptionType::Unretractions; }
     case EMoveType::Seam:        { return EOptionType::Seams; }

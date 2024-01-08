@@ -45,7 +45,7 @@ private:
     {
         float z{ 0.0f };
         Range range;
-        std::array<float, Time_Modes_Count> times{ 0.0f, 0.0f };
+        std::array<float, TIME_MODES_COUNT> times{ 0.0f, 0.0f };
         bool contains_colorprint_options{ false };
     };
     

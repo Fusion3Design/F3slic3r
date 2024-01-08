@@ -77,7 +77,7 @@ struct PathVertex
     //
     // Segment estimated times
     //
-    std::array<float, Time_Modes_Count> times{ 0.0f, 0.0f };
+    std::array<float, TIME_MODES_COUNT> times{ 0.0f, 0.0f };
 
     //
     // Return true if the segment is an extrusion move
@@ -102,7 +102,7 @@ struct PathVertex
     bool is_custom_gcode() const;
 };
 
-static const PathVertex Dummy_Path_Vertex = PathVertex();
+static const PathVertex DUMMY_PATH_VERTEX = PathVertex();
 
 } // namespace libvgcode
 

@@ -1956,7 +1956,7 @@ private:
         const bool color_top_layer_only = m_viewer.get_view_full_range()[1] != m_viewer.get_view_visible_range()[1];
         const libvgcode::Color color = (color_top_layer_only && v.layer_id < top_layer_id &&
               (!m_viewer.is_spiral_vase_mode() || vertex_id != m_viewer.get_view_enabled_range()[0])) ?
-              libvgcode::Dummy_Color : m_viewer.get_vertex_color(v);
+              libvgcode::DUMMY_COLOR : m_viewer.get_vertex_color(v);
         auto color_it = std::find_if(m_colors.begin(), m_colors.end(), [&color](const libvgcode::Color& m) { return m == color; });
         if (color_it == m_colors.end()) {
             m_colors.emplace_back(color);
@@ -4547,7 +4547,7 @@ void GCodeViewer::render_legend(float& legend_height)
             char buf[1024];
             ::sprintf(buf, "%.*f", decimals, value);
 #if ENABLE_NEW_GCODE_VIEWER
-            append_item(EItemType::Rect, libvgcode::convert(libvgcode::Ranges_Colors[i]), buf);
+            append_item(EItemType::Rect, libvgcode::convert(libvgcode::RANGES_COLORS[i]), buf);
 #else
             append_item(EItemType::Rect, Range_Colors[i], buf);
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -4560,11 +4560,11 @@ void GCodeViewer::render_legend(float& legend_height)
             append_range_item(0, values.front(), decimals);
         else if (values.size() == 2) {
             // two items use case
-            append_range_item(static_cast<int>(libvgcode::Ranges_Colors.size()) - 1, values.back(), decimals);
+            append_range_item(static_cast<int>(libvgcode::RANGES_COLORS.size()) - 1, values.back(), decimals);
             append_range_item(0, values.front(), decimals);
         }
         else {
-            for (int i = static_cast<int>(libvgcode::Ranges_Colors.size()) - 1; i >= 0; --i) {
+            for (int i = static_cast<int>(libvgcode::RANGES_COLORS.size()) - 1; i >= 0; --i) {
                 append_range_item(i, values[i], decimals);
             }
         }
@@ -4596,7 +4596,7 @@ void GCodeViewer::render_legend(float& legend_height)
             if (str_value == "0s")
                 str_value = "< 1s";
 #if ENABLE_NEW_GCODE_VIEWER
-            append_item(EItemType::Rect, libvgcode::convert(libvgcode::Ranges_Colors[i]), str_value);
+            append_item(EItemType::Rect, libvgcode::convert(libvgcode::RANGES_COLORS[i]), str_value);
 #else
             append_item(EItemType::Rect, Range_Colors[i], str_value);
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -4609,11 +4609,11 @@ void GCodeViewer::render_legend(float& legend_height)
             append_range_item(0, values.front());
         else if (values.size() == 2) {
             // two items use case
-            append_range_item(static_cast<int>(libvgcode::Ranges_Colors.size()) - 1, values.back());
+            append_range_item(static_cast<int>(libvgcode::RANGES_COLORS.size()) - 1, values.back());
             append_range_item(0, values.front());
         }
         else {
-            for (int i = static_cast<int>(libvgcode::Ranges_Colors.size()) - 1; i >= 0; --i) {
+            for (int i = static_cast<int>(libvgcode::RANGES_COLORS.size()) - 1; i >= 0; --i) {
                 append_range_item(i, values[i]);
             }
         }
@@ -4777,8 +4777,8 @@ void GCodeViewer::render_legend(float& legend_height)
         // calculate offsets to align time/percentage data
         const std::vector<libvgcode::EGCodeExtrusionRole>& roles = m_viewer.get_extrusion_roles();
         for (libvgcode::EGCodeExtrusionRole role : roles) {
-            assert(static_cast<size_t>(role) < libvgcode::GCode_Extrusion_Roles_Count);
-            if (static_cast<size_t>(role) < libvgcode::GCode_Extrusion_Roles_Count) {
+            assert(static_cast<size_t>(role) < libvgcode::GCODE_EXTRUSION_ROLES_COUNT);
+            if (static_cast<size_t>(role) < libvgcode::GCODE_EXTRUSION_ROLES_COUNT) {
                 labels.push_back(_u8L(gcode_extrusion_role_to_string(convert(role))));
                 auto [time, percent] = role_time_and_percent(role);
 #else
@@ -4972,7 +4972,7 @@ void GCodeViewer::render_legend(float& legend_height)
             const std::vector<libvgcode::EGCodeExtrusionRole>& roles = m_viewer.get_extrusion_roles();
             for (size_t i = 0; i < roles.size(); ++i) {
                 libvgcode::EGCodeExtrusionRole role = roles[i];
-                if (static_cast<size_t>(role) >= libvgcode::GCode_Extrusion_Roles_Count)
+                if (static_cast<size_t>(role) >= libvgcode::GCODE_EXTRUSION_ROLES_COUNT)
                     continue;
 
                 const bool visible = m_viewer.is_extrusion_role_visible(role);
@@ -5005,7 +5005,7 @@ void GCodeViewer::render_legend(float& legend_height)
 
 #if ENABLE_NEW_GCODE_VIEWER
             if (m_viewer.is_option_visible(libvgcode::EOptionType::Travels))
-                append_item(EItemType::Line, libvgcode::convert(m_viewer.get_travel_move_color(libvgcode::ETravelMoveType::Move)), _u8L("Travel"), true, short_time_ui(get_time_dhms(travels_time)),
+                append_item(EItemType::Line, libvgcode::convert(m_viewer.get_option_color(libvgcode::EOptionType::Travels)), _u8L("Travel"), true, short_time_ui(get_time_dhms(travels_time)),
                     travels_time / time_mode.time, max_time_percent, offsets, 0.0f, 0.0f);
 #else
             if (m_buffers[buffer_id(EMoveType::Travel)].visible)

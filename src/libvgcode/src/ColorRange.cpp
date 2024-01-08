@@ -52,14 +52,14 @@ Color ColorRange::get_color_at(float value) const
             global_t = (value - m_range[0]) / step;
     }
 
-    const size_t color_max_idx = Ranges_Colors.size() - 1;
+    const size_t color_max_idx = RANGES_COLORS.size() - 1;
 
     // Compute the two colors just below (low) and above (high) the input value
     const size_t color_low_idx = std::clamp<size_t>(static_cast<size_t>(global_t), 0, color_max_idx);
     const size_t color_high_idx = std::clamp<size_t>(color_low_idx + 1, 0, color_max_idx);
 
     // Interpolate between the low and high colors to find exactly which color the input value should get
-    return lerp(Ranges_Colors[color_low_idx], Ranges_Colors[color_high_idx], global_t - static_cast<float>(color_low_idx));
+    return lerp(RANGES_COLORS[color_low_idx], RANGES_COLORS[color_high_idx], global_t - static_cast<float>(color_low_idx));
 }
 
 const std::array<float, 2>& ColorRange::get_range() const
@@ -74,11 +74,11 @@ float ColorRange::get_step_size() const
     default:
     case EColorRangeType::Linear:
     {
-        return (m_range[1] - m_range[0]) / (static_cast<float>(Ranges_Colors.size()) - 1.0f);
+        return (m_range[1] - m_range[0]) / (static_cast<float>(RANGES_COLORS.size()) - 1.0f);
     }
     case EColorRangeType::Logarithmic:
     {
-        return (m_range[0] != 0.0f) ? std::log(m_range[1] / m_range[0]) / (static_cast<float>(Ranges_Colors.size()) - 1.0f) : 0.0f;
+        return (m_range[0] != 0.0f) ? std::log(m_range[1] / m_range[0]) / (static_cast<float>(RANGES_COLORS.size()) - 1.0f) : 0.0f;
     }
     }
 }
@@ -98,7 +98,7 @@ std::vector<float> ColorRange::get_values() const
     }
     else {
         const float step_size = get_step_size();
-        for (size_t i = 0; i < Ranges_Colors.size(); ++i) {
+        for (size_t i = 0; i < RANGES_COLORS.size(); ++i) {
             float value = 0.0f;
             switch (m_type)
             {

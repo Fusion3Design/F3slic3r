@@ -282,7 +282,7 @@ static void delete_buffers(unsigned int& id)
 // Palette used to render extrusion moves by extrusion roles
 // EViewType: FeatureType
 //
-const std::map<EGCodeExtrusionRole, Color> ViewerImpl::Default_Extrusion_Roles_Colors{ {
+const std::map<EGCodeExtrusionRole, Color> ViewerImpl::DEFAULT_EXTRUSION_ROLES_COLORS{ {
     { EGCodeExtrusionRole::None,                       { 230, 179, 179 } },
     { EGCodeExtrusionRole::Perimeter,                  { 255, 230,  77 } },
     { EGCodeExtrusionRole::ExternalPerimeter,          { 255, 125,  56 } },
@@ -304,7 +304,9 @@ const std::map<EGCodeExtrusionRole, Color> ViewerImpl::Default_Extrusion_Roles_C
 // Palette used to render options
 // EViewType: FeatureType
 //
-const std::map<EOptionType, Color> ViewerImpl::Default_Options_Colors{ {
+const std::map<EOptionType, Color> ViewerImpl::DEFAULT_OPTIONS_COLORS{ {
+    { EOptionType::Travels,       {  56,  72, 155 } },
+    { EOptionType::Wipes,         { 255, 255,   0 } },
     { EOptionType::Retractions,   { 205,  34, 214 } },
     { EOptionType::Unretractions, {  73, 173, 207 } },
     { EOptionType::Seams,         { 230, 230, 230 } },
@@ -312,17 +314,6 @@ const std::map<EOptionType, Color> ViewerImpl::Default_Options_Colors{ {
     { EOptionType::ColorChanges,  { 218, 148, 139 } },
     { EOptionType::PausePrints,   {  82, 240, 131 } },
     { EOptionType::CustomGCodes,  { 226, 210,  67 } }
-} };
-
-//
-// Palette used to render travel moves
-// EViewType: FeatureType, Height, Width, FanSpeed, Temperature, VolumetricFlowRate,
-//            LayerTimeLinear, LayerTimeLogarithmic
-//
-const std::map<ETravelMoveType, Color> ViewerImpl::Default_Travel_Moves_Colors{ {
-    { ETravelMoveType::Move,     {  56,  72, 155 } },
-    { ETravelMoveType::Extrude,  {  29, 108,  26 } },
-    { ETravelMoveType::Retract,  { 129,  16,   7 } }
 } };
 
 ViewerImpl::~ViewerImpl()
@@ -428,6 +419,7 @@ void ViewerImpl::reset()
     m_layers.reset();
     m_view_range.reset();
     m_extrusion_roles.reset();
+    m_options.clear();
     m_travels_time = { 0.0f, 0.0f };
     m_used_extruders_ids.clear();
     m_vertices.clear();
@@ -471,12 +463,16 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
         const PathVertex& v = m_vertices[i];
         m_layers.update(v, static_cast<uint32_t>(i));
         if (v.type == EMoveType::Travel) {
-            for (size_t j = 0; j < Time_Modes_Count; ++j) {
+            for (size_t j = 0; j < TIME_MODES_COUNT; ++j) {
                 m_travels_time[j] += v.times[j];
             }
         }
         else
             m_extrusion_roles.add(v.role, v.times);
+
+        const EOptionType option_type = move_type_to_option(v.type);
+        if (option_type != EOptionType::COUNT)
+            m_options.emplace_back(option_type);
 
         if (v.type == EMoveType::Extrude)
             m_used_extruders_ids.emplace_back(v.extruder_id);
@@ -498,6 +494,10 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
 
     if (!m_layers.empty())
         m_layers.set_view_range(0, static_cast<uint32_t>(m_layers.count()) - 1);
+
+    std::sort(m_options.begin(), m_options.end());
+    m_options.erase(std::unique(m_options.begin(), m_options.end()), m_options.end());
+    m_options.shrink_to_fit();
 
     std::sort(m_used_extruders_ids.begin(), m_used_extruders_ids.end());
     m_used_extruders_ids.erase(std::unique(m_used_extruders_ids.begin(), m_used_extruders_ids.end()), m_used_extruders_ids.end());
@@ -628,7 +628,7 @@ void ViewerImpl::update_enabled_entities()
                 continue;
         }
         else if (v.is_option()) {
-            if (!m_settings.options_visibility.at(type_to_option(v.type)))
+            if (!m_settings.options_visibility.at(move_type_to_option(v.type)))
                 continue;
         }
         else if (v.is_extrusion()) {
@@ -695,7 +695,7 @@ void ViewerImpl::update_colors()
     for (size_t i = 0; i < m_vertices.size(); ++i) {
         colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id &&
                      (!m_settings.spiral_vase_mode || i != m_view_range.get_enabled()[0])) ?
-            encode_color(Dummy_Color) : encode_color(get_vertex_color(m_vertices[i]));
+            encode_color(DUMMY_COLOR) : encode_color(get_vertex_color(m_vertices[i]));
     }
 
     // update gpu buffer for colors
@@ -793,7 +793,16 @@ void ViewerImpl::toggle_option_visibility(EOptionType type)
     auto it = m_settings.options_visibility.find(type);
     if (it != m_settings.options_visibility.end()) {
         it->second = !it->second;
+        const Interval old_enabled_range = m_view_range.get_enabled();
         update_view_full_range();
+        const Interval& new_enabled_range = m_view_range.get_enabled();
+        if (old_enabled_range != new_enabled_range) {
+            const Interval& visible_range = m_view_range.get_visible();
+            if (old_enabled_range == visible_range)
+                m_view_range.set_visible(new_enabled_range);
+            else if (m_settings.top_layer_only_view_range && new_enabled_range[0] < visible_range[0])
+                m_view_range.set_visible(new_enabled_range[0], visible_range[1]);
+        }
         m_settings.update_enabled_entities = true;
         m_settings.update_colors = true;
     }
@@ -829,27 +838,24 @@ void ViewerImpl::set_view_visible_range(uint32_t min, uint32_t max)
 Color ViewerImpl::get_vertex_color(const PathVertex& v) const
 {
     if (v.type == EMoveType::Noop)
-        return Dummy_Color;
+        return DUMMY_COLOR;
 
-    if (v.is_wipe())
-        return Wipe_Color;
-
-    if (v.is_option())
-        return get_option_color(type_to_option(v.type));
+    if (v.is_wipe() || v.is_option())
+        return get_option_color(move_type_to_option(v.type));
 
     switch (m_settings.view_type)
     {
     case EViewType::FeatureType:
     {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : get_extrusion_role_color(v.role);
+        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : get_extrusion_role_color(v.role);
     }
     case EViewType::Height:
     {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_height_range.get_color_at(v.height);
+        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_height_range.get_color_at(v.height);
     }
     case EViewType::Width:
     {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_width_range.get_color_at(v.width);
+        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_width_range.get_color_at(v.width);
     }
     case EViewType::Speed:
     {
@@ -857,24 +863,24 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
     }
     case EViewType::FanSpeed:
     {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_fan_speed_range.get_color_at(v.fan_speed);
+        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_fan_speed_range.get_color_at(v.fan_speed);
     }
     case EViewType::Temperature:
     {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_temperature_range.get_color_at(v.temperature);
+        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_temperature_range.get_color_at(v.temperature);
     }
     case EViewType::VolumetricFlowRate:
     {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) : m_volumetric_rate_range.get_color_at(v.volumetric_rate);
+        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_volumetric_rate_range.get_color_at(v.volumetric_rate);
     }
     case EViewType::LayerTimeLinear:
     {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) :
+        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) :
             m_layer_time_range[0].get_color_at(m_layers.get_layer_time(m_settings.time_mode, static_cast<size_t>(v.layer_id)));
     }
     case EViewType::LayerTimeLogarithmic:
     {
-        return v.is_travel() ? get_travel_move_color(static_cast<ETravelMoveType>(v.role)) :
+        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) :
             m_layer_time_range[1].get_color_at(m_layers.get_layer_time(m_settings.time_mode, static_cast<size_t>(v.layer_id)));
     }
     case EViewType::Tool:
@@ -884,13 +890,13 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
     }
     case EViewType::ColorPrint:
     {
-        return m_layers.layer_contains_colorprint_options(static_cast<size_t>(v.layer_id)) ? Dummy_Color :
+        return m_layers.layer_contains_colorprint_options(static_cast<size_t>(v.layer_id)) ? DUMMY_COLOR :
             m_tool_colors[static_cast<size_t>(v.color_id) % m_tool_colors.size()];
     }
     default: { break; }
     }
 
-    return Dummy_Color;
+    return DUMMY_COLOR;
 }
 
 void ViewerImpl::set_tool_colors(const std::vector<Color>& colors)
@@ -902,7 +908,7 @@ void ViewerImpl::set_tool_colors(const std::vector<Color>& colors)
 const Color& ViewerImpl::get_extrusion_role_color(EGCodeExtrusionRole role) const
 {
     const auto it = m_extrusion_roles_colors.find(role);
-    return (it == m_extrusion_roles_colors.end()) ? Dummy_Color : it->second;
+    return (it == m_extrusion_roles_colors.end()) ? DUMMY_COLOR : it->second;
 }
 
 void ViewerImpl::set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color)
@@ -915,26 +921,13 @@ void ViewerImpl::set_extrusion_role_color(EGCodeExtrusionRole role, const Color&
 const Color& ViewerImpl::get_option_color(EOptionType type) const
 {
     const auto it = m_options_colors.find(type);
-    return (it == m_options_colors.end()) ? Dummy_Color : it->second;
+    return (it == m_options_colors.end()) ? DUMMY_COLOR : it->second;
 }
 
 void ViewerImpl::set_option_color(EOptionType type, const Color& color)
 {
     auto it = m_options_colors.find(type);
     if (it != m_options_colors.end())
-        it->second = color;
-}
-
-const Color& ViewerImpl::get_travel_move_color(ETravelMoveType type) const
-{
-    const auto it = m_travel_moves_colors.find(type);
-    return (it == m_travel_moves_colors.end()) ? Dummy_Color : it->second;
-}
-
-void ViewerImpl::set_travel_move_color(ETravelMoveType type, const Color& color)
-{
-    auto it = m_travel_moves_colors.find(type);
-    if (it != m_travel_moves_colors.end())
         it->second = color;
 }
 
@@ -952,19 +945,15 @@ void ViewerImpl::set_wipes_radius(float radius)
 
 static bool is_visible(const PathVertex& v, const Settings& settings)
 {
-    try {
-        return ((v.type == EMoveType::Travel      && !settings.options_visibility.at(EOptionType::Travels)) ||
-                (v.type == EMoveType::Wipe        && !settings.options_visibility.at(EOptionType::Wipes)) ||
-                (v.type == EMoveType::Retract     && !settings.options_visibility.at(EOptionType::Retractions)) ||
-                (v.type == EMoveType::Unretract   && !settings.options_visibility.at(EOptionType::Unretractions)) ||
-                (v.type == EMoveType::Seam        && !settings.options_visibility.at(EOptionType::Seams)) ||
-                (v.type == EMoveType::ToolChange  && !settings.options_visibility.at(EOptionType::ToolChanges)) ||
-                (v.type == EMoveType::ColorChange && !settings.options_visibility.at(EOptionType::ColorChanges)) ||
-                (v.type == EMoveType::PausePrint  && !settings.options_visibility.at(EOptionType::PausePrints)) ||
-                (v.type == EMoveType::CustomGCode && !settings.options_visibility.at(EOptionType::CustomGCodes)) ||
-                (v.type == EMoveType::Extrude     && !settings.extrusion_roles_visibility.at(v.role))) ? false : true;
+    const EOptionType option_type = move_type_to_option(v.type);
+    try
+    {
+        return (option_type == EOptionType::COUNT) ?
+            (v.type == EMoveType::Extrude) ? settings.extrusion_roles_visibility.at(v.role) : false :
+            settings.options_visibility.at(option_type);
     }
-    catch (...) {
+    catch (...)
+    {
         return false;
     }
 }

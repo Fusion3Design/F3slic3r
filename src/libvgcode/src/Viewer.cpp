@@ -212,6 +212,16 @@ std::vector<EGCodeExtrusionRole> Viewer::get_extrusion_roles() const
     return m_impl->get_extrusion_roles();
 }
 
+size_t Viewer::get_options_count() const
+{
+    return m_impl->get_options_count();
+}
+
+const std::vector<EOptionType>& Viewer::get_options() const
+{
+    return m_impl->get_options();
+}
+
 float Viewer::get_extrusion_role_time(EGCodeExtrusionRole role) const
 {
     return m_impl->get_extrusion_role_time(role);
@@ -285,21 +295,6 @@ void Viewer::set_option_color(EOptionType type, const Color& color)
 void Viewer::reset_default_options_colors()
 {
     m_impl->reset_default_options_colors();
-}
-
-const Color& Viewer::get_travel_move_color(ETravelMoveType type) const
-{
-    return m_impl->get_travel_move_color(type);
-}
-
-void Viewer::set_travel_move_color(ETravelMoveType type, const Color& color)
-{
-    m_impl->set_travel_move_color(type, color);
-}
-
-void Viewer::reset_default_travel_moves_colors()
-{
-    m_impl->reset_default_travel_moves_colors();
 }
 
 const ColorRange& Viewer::get_height_range() const

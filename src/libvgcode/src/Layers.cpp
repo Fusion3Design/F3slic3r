@@ -33,7 +33,7 @@ void Layers::update(const PathVertex& vertex, uint32_t vertex_id)
         if (vertex.type == EMoveType::Extrude && vertex.role != EGCodeExtrusionRole::Custom && item.z != vertex.position[2])
             item.z = vertex.position[2];
         item.range.set_max(vertex_id);
-        for (size_t i = 0; i < Time_Modes_Count; ++i) {
+        for (size_t i = 0; i < TIME_MODES_COUNT; ++i) {
             item.times[i] += vertex.times[i];
         }
         item.contains_colorprint_options |= is_colorprint_option(vertex);

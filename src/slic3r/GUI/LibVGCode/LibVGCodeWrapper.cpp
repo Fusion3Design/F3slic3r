@@ -157,17 +157,6 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels
         const Slic3r::GCodeProcessorResult::MoveVertex& prev = moves[i - 1];
         const EMoveType curr_type = convert(curr.type);
 
-        EGCodeExtrusionRole extrusion_role;
-        if (curr_type == EMoveType::Travel) {
-            // for travel moves set the extrusion role
-            // which will be used later to select the proper color
-            extrusion_role = (curr.delta_extruder == 0.0f) ? static_cast<EGCodeExtrusionRole>(ETravelMoveType::Move) :
-                             (curr.delta_extruder > 0.0f) ?  static_cast<EGCodeExtrusionRole>(ETravelMoveType::Extrude) :
-                                                             static_cast<EGCodeExtrusionRole>(ETravelMoveType::Retract);
-        }
-        else
-            extrusion_role = convert(curr.extrusion_role);
-
         float width;
         float height;
         switch (curr_type)
@@ -192,19 +181,20 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels
         }
         }
 
-        if (type_to_option(curr_type) == libvgcode::EOptionType::COUNT) {
+        const EOptionType option_type = move_type_to_option(curr_type);
+        if (option_type == EOptionType::COUNT || option_type == EOptionType::Travels || option_type == EOptionType::Wipes) {
             if (ret.vertices.empty() || prev.type != curr.type || prev.extrusion_role != curr.extrusion_role) {
                 // to allow libvgcode to properly detect the start/end of a path we need to add a 'phantom' vertex
                 // equal to the current one with the exception of the position, which should match the previous move position,
                 // and the times, which are set to zero
 #if ENABLE_COG_AND_TOOL_MARKERS
                 const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, curr.fan_speed,
-                    curr.temperature, curr.volumetric_rate(), 0.0f, extrusion_role, curr_type,
+                    curr.temperature, curr.volumetric_rate(), 0.0f, convert(curr.extrusion_role), curr_type,
                     static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
                     static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
 #else
                 const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, curr.fan_speed,
-                    curr.temperature, curr.volumetric_rate(), extrusion_role, curr_type,
+                    curr.temperature, curr.volumetric_rate(), convert(curr.extrusion_role), curr_type,
                     static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
                     static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
 #endif // ENABLE_COG_AND_TOOL_MARKERS
@@ -215,11 +205,11 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels
 #if ENABLE_COG_AND_TOOL_MARKERS
         const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.fan_speed,
             curr.temperature, curr.volumetric_rate(), curr.mm3_per_mm * (curr.position - prev.position).norm(),
-            extrusion_role, curr_type, static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
+            convert(curr.extrusion_role), curr_type, static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
             static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };
 #else
         const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.fan_speed,
-            curr.temperature, curr.volumetric_rate(), extrusion_role, curr_type,  static_cast<uint32_t>(curr.gcode_id),
+            curr.temperature, curr.volumetric_rate(), convert(curr.extrusion_role), curr_type,  static_cast<uint32_t>(curr.gcode_id),
             static_cast<uint32_t>(curr.layer_id), static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };
 #endif // ENABLE_COG_AND_TOOL_MARKERS
         ret.vertices.emplace_back(vertex);

@@ -106,7 +106,7 @@ public:
     size_t get_vertices_count() const { return m_vertices.size(); }
     const PathVertex& get_current_vertex() const { return get_vertex_at(m_view_range.get_visible()[1]); }
     const PathVertex& get_vertex_at(size_t id) const {
-        return (id < m_vertices.size()) ? m_vertices[id] : Dummy_Path_Vertex;
+        return (id < m_vertices.size()) ? m_vertices[id] : DUMMY_PATH_VERTEX;
     }
     Color get_vertex_color(const PathVertex& vertex) const;
 
@@ -121,6 +121,9 @@ public:
     size_t get_extrusion_roles_count() const { return m_extrusion_roles.get_roles_count(); }
     float get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const { return m_extrusion_roles.get_time(role, mode); }
 
+    size_t get_options_count() const { return m_options.size(); }
+    const std::vector<EOptionType>& get_options() const { return m_options; }
+
     float get_travels_time() const { return get_travels_time(m_settings.time_mode); }
     float get_travels_time(ETimeMode mode) const {
         return (mode < ETimeMode::COUNT) ? m_travels_time[static_cast<size_t>(mode)] : 0.0f;
@@ -134,15 +137,11 @@ public:
 
     const Color& get_extrusion_role_color(EGCodeExtrusionRole role) const;
     void set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color);
-    void reset_default_extrusion_roles_colors() { m_extrusion_roles_colors = Default_Extrusion_Roles_Colors; }
+    void reset_default_extrusion_roles_colors() { m_extrusion_roles_colors = DEFAULT_EXTRUSION_ROLES_COLORS; }
 
     const Color& get_option_color(EOptionType type) const;
     void set_option_color(EOptionType type, const Color& color);
-    void reset_default_options_colors() { m_options_colors = Default_Options_Colors; }
-
-    const Color& get_travel_move_color(ETravelMoveType type) const;
-    void set_travel_move_color(ETravelMoveType type, const Color& color);
-    void reset_default_travel_moves_colors() { m_travel_moves_colors = Default_Travel_Moves_Colors; }
+    void reset_default_options_colors() { m_options_colors = DEFAULT_OPTIONS_COLORS; }
 
     const ColorRange& get_height_range() const { return m_height_range; }
     const ColorRange& get_width_range() const { return m_width_range; }
@@ -190,17 +189,17 @@ private:
     Layers m_layers;
     ViewRange m_view_range;
     ExtrusionRoles m_extrusion_roles;
-    std::array<float, Time_Modes_Count> m_travels_time{ 0.0f, 0.0f };
+    std::vector<EOptionType> m_options;
+    std::array<float, TIME_MODES_COUNT> m_travels_time{ 0.0f, 0.0f };
     std::vector<uint8_t> m_used_extruders_ids;
-    float m_travels_radius{ Default_Travels_Radius };
-    float m_wipes_radius{ Default_Wipes_Radius };
+    float m_travels_radius{ DEFAULT_TRAVELS_RADIUS };
+    float m_wipes_radius{ DEFAULT_WIPES_RADIUS };
 
     bool m_initialized{ false };
     bool m_loading{ false };
 
-    std::map<EGCodeExtrusionRole, Color> m_extrusion_roles_colors{ Default_Extrusion_Roles_Colors };
-    std::map<EOptionType, Color> m_options_colors{ Default_Options_Colors };
-    std::map<ETravelMoveType, Color> m_travel_moves_colors{ Default_Travel_Moves_Colors };
+    std::map<EGCodeExtrusionRole, Color> m_extrusion_roles_colors{ DEFAULT_EXTRUSION_ROLES_COLORS };
+    std::map<EOptionType, Color> m_options_colors{ DEFAULT_OPTIONS_COLORS };
 
     //
     // The OpenGL element used to represent all toolpath segments
@@ -249,7 +248,7 @@ private:
     ColorRange m_fan_speed_range;
     ColorRange m_temperature_range;
     ColorRange m_volumetric_rate_range;
-    std::array<ColorRange, Color_Range_Types_Count> m_layer_time_range{
+    std::array<ColorRange, COLOR_RANGE_TYPES_COUNT> m_layer_time_range{
         ColorRange(EColorRangeType::Linear), ColorRange(EColorRangeType::Logarithmic)
     };
     std::vector<Color> m_tool_colors;
@@ -344,18 +343,12 @@ private:
     // Palette used to render extrusion moves by extrusion roles
     // EViewType: FeatureType
     //
-    static const std::map<EGCodeExtrusionRole, Color> Default_Extrusion_Roles_Colors;
+    static const std::map<EGCodeExtrusionRole, Color> DEFAULT_EXTRUSION_ROLES_COLORS;
     //
     // Palette used to render options
     // EViewType: FeatureType
     //
-    static const std::map<EOptionType, Color> Default_Options_Colors;
-    //
-    // Palette used to render travel moves
-    // EViewType: FeatureType, Height, Width, FanSpeed, Temperature, VolumetricFlowRate,
-    //            LayerTimeLinear, LayerTimeLogarithmic
-    //
-    static const std::map<ETravelMoveType, Color> Default_Travel_Moves_Colors;
+    static const std::map<EOptionType, Color> DEFAULT_OPTIONS_COLORS;
 };
 
 } // namespace libvgcode
