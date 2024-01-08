@@ -737,6 +737,10 @@ void Preview::update_moves_slider()
 
     const libvgcode::Interval& range = m_canvas->get_gcode_view_enabled_range();
     uint32_t last_gcode_id = m_canvas->get_gcode_vertex_at(range[0]).gcode_id;
+    std::optional<uint32_t> gcode_id_min = visible_range_min.has_value() ?
+        std::optional<uint32_t>{ m_canvas->get_gcode_vertex_at(*visible_range_min).gcode_id } : std::nullopt;
+    std::optional<uint32_t> gcode_id_max = visible_range_max.has_value() ?
+        std::optional<uint32_t>{ m_canvas->get_gcode_vertex_at(*visible_range_max).gcode_id } : std::nullopt;
 
     const size_t range_size = range[1] - range[0] + 1;
     std::vector<double> values;
@@ -750,28 +754,33 @@ void Preview::update_moves_slider()
 
     for (size_t i = range[0]; i <= range[1]; ++i) {
         const uint32_t gcode_id = m_canvas->get_gcode_vertex_at(i).gcode_id;
+        bool skip = false;
         if (i > range[0]) {
             // skip consecutive moves with same gcode id (resulting from processing G2 and G3 lines)
             if (last_gcode_id == gcode_id) {
                 values.back() = static_cast<double>(i + 1);
-                alternate_values.back() = static_cast<double>(gcode_id);
-                continue;
+                skip = true;
             }
             else
                 last_gcode_id = gcode_id;
         }
 
-        values.emplace_back(static_cast<double>(i + 1));
-        alternate_values.emplace_back(static_cast<double>(gcode_id));
-        if (visible_range_min.has_value() && i + 1 == visible_range_min)
+        if (!skip) {
+            values.emplace_back(static_cast<double>(i + 1));
+            alternate_values.emplace_back(static_cast<double>(gcode_id));
+        }
+
+        if (gcode_id_min.has_value() && alternate_values.back() == static_cast<double>(*gcode_id_min))
             visible_range_min_id = counter;
-        else if (visible_range_max.has_value() && i + 1 == visible_range_max)
+        else if (gcode_id_max.has_value() && alternate_values.back() == static_cast<double>(*gcode_id_max))
             visible_range_max_id = counter;
-        ++counter;
+
+        if (!skip)
+            ++counter;
     }
 
-    const int span_min_id = visible_range_min_id.has_value() ? static_cast<int>(*visible_range_min_id) : 0;
-    const int span_max_id = visible_range_max_id.has_value() ? static_cast<int>(*visible_range_max_id) : static_cast<int>(values.size()) - 1;
+    const int span_min_id = visible_range_min_id.has_value() ? std::max(0, static_cast<int>(*visible_range_min_id) - 1) : 0;
+    const int span_max_id = visible_range_max_id.has_value() ? std::max(0, static_cast<int>(*visible_range_max_id) - 1) : static_cast<int>(values.size()) - 1;
 
     m_moves_slider->SetSliderValues(values);
     m_moves_slider->SetSliderAlternateValues(alternate_values);

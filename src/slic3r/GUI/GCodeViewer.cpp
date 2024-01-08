@@ -5600,37 +5600,28 @@ void GCodeViewer::render_legend(float& legend_height)
 
         if (imgui.draw_radio_button(name, 1.5f * icon_size, active, draw_callback)) {
 #if ENABLE_NEW_GCODE_VIEWER
-          const libvgcode::Interval& view_visible_range = m_viewer.get_view_visible_range();
-          const libvgcode::Interval& view_enabled_range = m_viewer.get_view_enabled_range();
-          bool keep_visible_range = false;
+            const libvgcode::Interval view_visible_range = m_viewer.get_view_visible_range();
+            const libvgcode::Interval view_enabled_range = m_viewer.get_view_enabled_range();
+            const bool keep_visible_range = view_visible_range != view_enabled_range;
 #if ENABLE_COG_AND_TOOL_MARKERS
-          if (type == Preview::OptionType::Shells)
-              m_shells.visible = !active;
-          else {
-              m_viewer.toggle_option_visibility(libvgcode::convert(type));
-              if (view_visible_range != view_enabled_range)
-                  keep_visible_range = true;
-          }
+            if (type == Preview::OptionType::Shells)
+                m_shells.visible = !active;
+            else
+                m_viewer.toggle_option_visibility(libvgcode::convert(type));
 #else
-          switch (type)
-          {
-          case Preview::OptionType::CenterOfGravity: { m_cog.set_visible(!active); break; }
-          case Preview::OptionType::ToolMarker:      { m_sequential_view.marker.set_visible(!active); break; }
-          case Preview::OptionType::Shells:          { m_shells.visible = !active; break; }
-          default:                                   {
-              m_viewer.toggle_option_visibility(libvgcode::convert(type));
-              if (view_visible_range != view_enabled_range)
-                  keep_visible_range = true;
-              break;
-          }
-          }
-#endif // ENABLE_COG_AND_TOOL_MARKERS
-            std::optional<int> view_visible_range_min;
-            std::optional<int> view_visible_range_max;
-            if (keep_visible_range) {
-                view_visible_range_min = static_cast<int>(view_visible_range[0]);
-                view_visible_range_max = static_cast<int>(view_visible_range[1]);
+            switch (type)
+            {
+            case Preview::OptionType::CenterOfGravity: { m_cog.set_visible(!active); break; }
+            case Preview::OptionType::ToolMarker:      { m_sequential_view.marker.set_visible(!active); break; }
+            case Preview::OptionType::Shells:          { m_shells.visible = !active; break; }
+            default:                                   {
+                m_viewer.toggle_option_visibility(libvgcode::convert(type));
+                break;
             }
+            }
+#endif // ENABLE_COG_AND_TOOL_MARKERS
+            std::optional<int> view_visible_range_min = keep_visible_range ? std::optional<int>{ static_cast<int>(view_visible_range[0]) } : std::nullopt;
+            std::optional<int> view_visible_range_max = keep_visible_range ? std::optional<int>{ static_cast<int>(view_visible_range[1]) } : std::nullopt;
             wxGetApp().plater()->update_preview_moves_slider(view_visible_range_min, view_visible_range_max);
 #else
             unsigned int new_flags = set_flag(flags, flag, !active);
