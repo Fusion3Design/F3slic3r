@@ -957,8 +957,10 @@ const Color& ViewerImpl::get_option_color(EOptionType type) const
 void ViewerImpl::set_option_color(EOptionType type, const Color& color)
 {
     auto it = m_options_colors.find(type);
-    if (it != m_options_colors.end())
+    if (it != m_options_colors.end()) {
         it->second = color;
+        m_settings.update_colors = true;
+    }
 }
 
 void ViewerImpl::set_travels_radius(float radius)
