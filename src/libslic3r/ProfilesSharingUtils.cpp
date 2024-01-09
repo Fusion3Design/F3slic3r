@@ -116,8 +116,6 @@ static bool load_preset_bandle_from_datadir(PresetBundle& preset_bundle)
         return false;
     }
 
-    printf("Loading: AppConfig");
-
     if (std::string error = app_config.load(); !error.empty()) {
         throw Slic3r::RuntimeError(Slic3r::format("Error parsing PrusaSlicer config file, it is probably corrupted. "
             "Try to manually delete the file to recover from the error. Your user profiles will not be affected."
@@ -133,7 +131,6 @@ static bool load_preset_bandle_from_datadir(PresetBundle& preset_bundle)
     // Suppress the '- default -' presets.
     preset_bundle.set_default_suppressed(app_config.get_bool("no_defaults"));
     try {
-        printf(", presets");
         auto preset_substitutions = preset_bundle.load_presets(app_config, ForwardCompatibilitySubstitutionRule::EnableSystemSilent);
         if (!preset_substitutions.empty()) {
             printf("Some substitutions are found during loading presets.\n");
@@ -233,7 +230,6 @@ std::string get_json_printer_profiles(const std::string& printer_model_name, con
     PresetBundle preset_bundle;
     if (!load_preset_bandle_from_datadir(preset_bundle))
         return "";
-    printf(", vendors");
 
     const VendorMap& vendors = preset_bundle.vendors;
     for (const auto& [vendor_id, vendor] : vendors) {
@@ -260,30 +256,28 @@ static bool is_compatible_preset(const Preset& printer_preset, const PrinterAttr
             printer_preset.config.opt_string("printer_variant") == attr.variant_name;
 }
 
-static void add_profile_node(pt::ptree& printer_profiles_node, const Preset& printer_preset)
+static void add_profile_node(pt::ptree& printer_profiles_node, const std::string& preset_name)
 {
     pt::ptree profile_node;
-    profile_node.put("name", printer_preset.name);
-    profile_node.put("is_user_profile", printer_preset.is_user());
+    profile_node.put("", preset_name);
     printer_profiles_node.push_back(std::make_pair("", profile_node));
 }
 
-static pt::ptree get_printer_profiles_node(const PrinterPresetCollection& printer_presets,
-                                           const PrinterAttr& attr)
+static void get_printer_profiles_node(pt::ptree& printer_profiles_node, 
+                                      pt::ptree& user_printer_profiles_node,
+                                      const PrinterPresetCollection& printer_presets,
+                                      const PrinterAttr& attr)
 {
-    pt::ptree printer_profiles_node;
-
     for (const Preset& printer_preset : printer_presets) {
 
         if (printer_preset.is_user()) {
             const Preset* parent_preset = printer_presets.get_preset_parent(printer_preset);
             if (parent_preset && printer_preset.is_visible && is_compatible_preset(*parent_preset, attr))
-                add_profile_node(printer_profiles_node, printer_preset);
+                add_profile_node(user_printer_profiles_node, printer_preset.name);
         }
         else if (printer_preset.is_visible && is_compatible_preset(printer_preset, attr))
-            add_profile_node(printer_profiles_node, printer_preset);
+            add_profile_node(printer_profiles_node, printer_preset.name);
     }
-    return printer_profiles_node;
 }
 
 static void add_printer_models(pt::ptree& vendor_node,
@@ -297,12 +291,13 @@ static void add_printer_models(pt::ptree& vendor_node,
 
         pt::ptree variants_node;
         pt::ptree printer_profiles_node;
+        pt::ptree user_printer_profiles_node;
 
         if (printer_model.technology == ptSLA) {
             PrinterAttr attr({ vendor_profile->id, printer_model.id, "default" });
 
-            printer_profiles_node = get_printer_profiles_node(printer_presets, attr);
-            if (printer_profiles_node.empty())
+            get_printer_profiles_node(printer_profiles_node, user_printer_profiles_node, printer_presets, attr);
+            if (printer_profiles_node.empty() && user_printer_profiles_node.empty())
                 continue;
         }
         else {
@@ -310,13 +305,15 @@ static void add_printer_models(pt::ptree& vendor_node,
 
                 PrinterAttr attr({ vendor_profile->id, printer_model.id, variant.name });
 
-                printer_profiles_node = get_printer_profiles_node(printer_presets, attr);
-                if (printer_profiles_node.empty())
+                get_printer_profiles_node(printer_profiles_node, user_printer_profiles_node, printer_presets, attr);
+                if (printer_profiles_node.empty() && user_printer_profiles_node.empty())
                     continue;
 
                 pt::ptree variant_node;
                 variant_node.put("name", variant.name);
                 variant_node.add_child("printer_profiles", printer_profiles_node);
+                if (!user_printer_profiles_node.empty())
+                    variant_node.add_child("user_printer_profiles", user_printer_profiles_node);
 
                 variants_node.push_back(std::make_pair("", variant_node));
             }
@@ -332,8 +329,11 @@ static void add_printer_models(pt::ptree& vendor_node,
 
         if (!variants_node.empty())
             data_node.add_child("variants", variants_node);
-        else
+        else {
             data_node.add_child("printer_profiles", printer_profiles_node);
+            if (!user_printer_profiles_node.empty())
+                data_node.add_child("user_printer_profiles", user_printer_profiles_node);
+        }
 
         data_node.put("vendor_name", vendor_profile->name);
         data_node.put("vendor_id", vendor_profile->id);
@@ -350,7 +350,6 @@ std::string get_json_printer_models(PrinterTechnology printer_technology)
     PresetBundle preset_bundle;
     if (!load_preset_bandle_from_datadir(preset_bundle))
         return "";
-    printf(", vendors");
             
     pt::ptree vendor_node;
 
@@ -371,9 +370,8 @@ static std::string get_installed_print_and_filament_profiles(const PresetBundle*
 {
     PrinterTechnology printer_technology = printer_preset->printer_technology();
 
-    printf("\n\nSearching for compatible print profiles .");
-
     pt::ptree print_profiles;
+    pt::ptree user_print_profiles;
 
     const PresetWithVendorProfile printer_preset_with_vendor_profile = preset_bundle->printers.get_preset_with_vendor_profile(*printer_preset);
 
@@ -381,24 +379,14 @@ static std::string get_installed_print_and_filament_profiles(const PresetBundle*
     const PresetCollection& material_presets    = printer_technology == ptFFF ? preset_bundle->filaments : preset_bundle->sla_materials;
     const std::string       material_node_name  = printer_technology == ptFFF ? "filament_profiles"      : "sla_material_profiles";
 
-    int output_counter{ 0 };
     for (auto print_preset : print_presets) {
-
-        ++output_counter;
-        if (output_counter == 10) {
-            printf(".");
-            output_counter = 0;
-        }
 
         const PresetWithVendorProfile print_preset_with_vendor_profile = print_presets.get_preset_with_vendor_profile(print_preset);
 
         if (is_compatible_with_printer(print_preset_with_vendor_profile, printer_preset_with_vendor_profile))
         {
-            pt::ptree print_profile_node;
-            print_profile_node.put("name", print_preset.name);
-            print_profile_node.put("is_user_profile", print_preset.is_user());
-
             pt::ptree materials_profile_node;
+            pt::ptree user_materials_profile_node;
 
             for (auto material_preset : material_presets) {
 
@@ -411,25 +399,35 @@ static std::string get_installed_print_and_filament_profiles(const PresetBundle*
                 if (is_compatible_with_printer(material_preset_with_vendor_profile, printer_preset_with_vendor_profile) &&
                     is_compatible_with_print(material_preset_with_vendor_profile, print_preset_with_vendor_profile, printer_preset_with_vendor_profile)) {
                     pt::ptree material_node;
-                    material_node.put("name", material_preset.name);
-                    material_node.put("is_user_profile", material_preset.is_user());
-                    materials_profile_node.push_back(std::make_pair("", material_node));
+                    material_node.put("", material_preset.name);
+                    if (material_preset.is_user())
+                        user_materials_profile_node.push_back(std::make_pair("", material_node));
+                    else
+                        materials_profile_node.push_back(std::make_pair("", material_node));
                 }
             }
 
+            pt::ptree print_profile_node;
+            print_profile_node.put("name", print_preset.name);
             print_profile_node.add_child(material_node_name, materials_profile_node);
-            print_profiles.push_back(std::make_pair("", print_profile_node));
+            if (!user_materials_profile_node.empty())
+                print_profile_node.add_child("user_" + material_node_name, user_materials_profile_node);
+
+            if (print_preset.is_user())
+                user_print_profiles.push_back(std::make_pair("", print_profile_node));
+            else
+                print_profiles.push_back(std::make_pair("", print_profile_node));
         }
     }
 
-    printf("\n");
-
-    if (print_profiles.empty())
+    if (print_profiles.empty() && user_print_profiles.empty())
         return "";
 
     pt::ptree tree;
     tree.put("printer_profile", printer_preset->name);
     tree.add_child("print_profiles", print_profiles);
+    if (!user_print_profiles.empty())
+        tree.add_child("user_print_profiles", user_print_profiles);
 
     // Serialize the tree into JSON and return it.
     std::stringstream ss;
