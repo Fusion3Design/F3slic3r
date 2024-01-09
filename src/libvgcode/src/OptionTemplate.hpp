@@ -14,18 +14,28 @@ class OptionTemplate
 {
 public:
     OptionTemplate() = default;
-    ~OptionTemplate();
+    ~OptionTemplate() { shutdown(); }
     OptionTemplate(const OptionTemplate& other) = delete;
     OptionTemplate(OptionTemplate&& other) = delete;
     OptionTemplate& operator = (const OptionTemplate& other) = delete;
     OptionTemplate& operator = (OptionTemplate&& other) = delete;
 
+    //
+    // Initialize gpu buffers.
+    //
     void init(uint8_t resolution);
+    //
+    // Release gpu buffers.
+    //
+    void shutdown();
     void render(size_t count);
 
 private:
     uint8_t m_resolution{ 0 };
     uint8_t m_vertices_count{ 0 };
+    //
+    // gpu buffers ids.
+    //
     unsigned int m_top_vao_id{ 0 };
     unsigned int m_top_vbo_id{ 0 };
     unsigned int m_bottom_vao_id{ 0 };

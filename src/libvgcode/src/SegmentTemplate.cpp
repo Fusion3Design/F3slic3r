@@ -26,15 +26,6 @@ static constexpr const std::array<uint8_t, 24> VERTEX_DATA = {
     5, 7, 6, // back spike
 };
 
-SegmentTemplate::~SegmentTemplate()
-{
-    if (m_vbo_id != 0)
-        glsafe(glDeleteBuffers(1, &m_vbo_id));
-
-    if (m_vao_id != 0)
-        glsafe(glDeleteVertexArrays(1, &m_vao_id));
-}
-
 void SegmentTemplate::init()
 {
     if (m_vao_id != 0)
@@ -56,6 +47,18 @@ void SegmentTemplate::init()
 
     glsafe(glBindBuffer(GL_ARRAY_BUFFER, curr_array_buffer));
     glsafe(glBindVertexArray(curr_vertex_array));
+}
+
+void SegmentTemplate::shutdown()
+{
+    if (m_vbo_id != 0) {
+        glsafe(glDeleteBuffers(1, &m_vbo_id));
+        m_vbo_id = 0;
+    }
+    if (m_vao_id != 0) {
+        glsafe(glDeleteVertexArrays(1, &m_vao_id));
+        m_vao_id = 0;
+    }
 }
 
 void SegmentTemplate::render(size_t count)

@@ -316,15 +316,6 @@ const std::map<EOptionType, Color> ViewerImpl::DEFAULT_OPTIONS_COLORS{ {
     { EOptionType::CustomGCodes,  { 226, 210,  67 } }
 } };
 
-ViewerImpl::~ViewerImpl()
-{
-    reset();
-    if (m_options_shader_id != 0)
-        glsafe(glDeleteProgram(m_options_shader_id));
-    if (m_segments_shader_id != 0)
-        glsafe(glDeleteProgram(m_segments_shader_id));
-}
-
 void ViewerImpl::init()
 {
     if (m_initialized)
@@ -412,6 +403,26 @@ void ViewerImpl::init()
 #endif // ENABLE_COG_AND_TOOL_MARKERS
 
     m_initialized = true;
+}
+
+void ViewerImpl::shutdown()
+{
+    reset();
+#if ENABLE_COG_AND_TOOL_MARKERS
+    m_tool_marker.shutdown();
+    m_cog_marker.shutdown();
+#endif // ENABLE_COG_AND_TOOL_MARKERS
+    m_option_template.shutdown();
+    m_segment_template.shutdown();
+    if (m_options_shader_id != 0) {
+        glsafe(glDeleteProgram(m_options_shader_id));
+        m_options_shader_id = 0;
+    }
+    if (m_segments_shader_id != 0) {
+        glsafe(glDeleteProgram(m_segments_shader_id));
+        m_segments_shader_id = 0;
+    }
+    m_initialized = false;
 }
 
 void ViewerImpl::reset()
@@ -593,6 +604,9 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
 
 void ViewerImpl::update_enabled_entities()
 {
+    if (m_vertices.empty())
+        return;
+
     std::vector<uint32_t> enabled_segments;
     std::vector<uint32_t> enabled_options;
     Interval range = m_view_range.get_visible();
@@ -687,6 +701,20 @@ static float encode_color(const Color& color) {
 
 void ViewerImpl::update_colors()
 {
+    if (m_colors_buf_id == 0)
+      return;
+
+    if (!m_used_extruders_ids.empty()) {
+        // ensure that the number of defined tool colors matches the max id of the used extruders 
+        const size_t max_used_extruder_id = 1 + static_cast<size_t>(m_used_extruders_ids.back());
+        const size_t tool_colors_size = m_tool_colors.size();
+        if (m_tool_colors.size() < max_used_extruder_id) {
+            for (size_t i = 0; i < max_used_extruder_id - tool_colors_size; ++i) {
+                m_tool_colors.emplace_back(DUMMY_COLOR);
+            }
+        }
+    }
+
     update_color_ranges();
 
     const size_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers.get_view_range()[1] : 0;

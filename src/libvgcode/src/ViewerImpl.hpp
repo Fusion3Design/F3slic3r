@@ -27,19 +27,23 @@ class ViewerImpl
 {
 public:
     ViewerImpl() = default;
-    ~ViewerImpl();
+    ~ViewerImpl() { shutdown(); }
     ViewerImpl(const ViewerImpl& other) = delete;
     ViewerImpl(ViewerImpl&& other) = delete;
     ViewerImpl& operator = (const ViewerImpl& other) = delete;
     ViewerImpl& operator = (ViewerImpl&& other) = delete;
 
     //
-    // Initialize shaders, uniform indices and segment geometry
+    // Initialize shaders, uniform indices and segment geometry.
     //
     void init();
+    //
+    // Release the resources used by the viewer.
+    //
+    void shutdown();
 
     //
-    // Reset all caches and free gpu memory
+    // Reset all caches and free gpu memory.
     //
     void reset();
 

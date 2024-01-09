@@ -22,6 +22,11 @@ void Viewer::init()
     m_impl->init();
 }
 
+void Viewer::shutdown()
+{
+    m_impl->shutdown();
+}
+
 void Viewer::reset()
 {
     m_impl->reset();

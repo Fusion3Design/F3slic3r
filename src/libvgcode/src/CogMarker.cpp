@@ -14,16 +14,6 @@
 
 namespace libvgcode {
 
-CogMarker::~CogMarker()
-{
-    if (m_ibo_id != 0)
-        glsafe(glDeleteBuffers(1, &m_ibo_id));
-    if (m_vbo_id != 0)
-        glsafe(glDeleteBuffers(1, &m_vbo_id));
-    if (m_vao_id != 0)
-        glsafe(glDeleteVertexArrays(1, &m_vao_id));
-}
-
 // Geometry:
 // sphere with 'resolution' sides, centered at (0.0, 0.0, 0.0) and radius equal to 'radius'
 void CogMarker::init(uint8_t resolution, float radius)
@@ -120,6 +110,22 @@ void CogMarker::init(uint8_t resolution, float radius)
 
     glsafe(glBindBuffer(GL_ARRAY_BUFFER, curr_array_buffer));
     glsafe(glBindVertexArray(curr_vertex_array));
+}
+
+void CogMarker::shutdown()
+{
+    if (m_ibo_id != 0) {
+        glsafe(glDeleteBuffers(1, &m_ibo_id));
+        m_ibo_id = 0;
+    }
+    if (m_vbo_id != 0) {
+        glsafe(glDeleteBuffers(1, &m_vbo_id));
+        m_vbo_id = 0;
+    }
+    if (m_vao_id != 0) {
+        glsafe(glDeleteVertexArrays(1, &m_vao_id));
+        m_vao_id = 0;
+    }
 }
 
 void CogMarker::render()

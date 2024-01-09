@@ -13,16 +13,26 @@ class SegmentTemplate
 {
 public:
     SegmentTemplate() = default;
-    ~SegmentTemplate();
+    ~SegmentTemplate() { shutdown(); }
     SegmentTemplate(const SegmentTemplate& other) = delete;
     SegmentTemplate(SegmentTemplate&& other) = delete;
     SegmentTemplate& operator = (const SegmentTemplate& other) = delete;
     SegmentTemplate& operator = (SegmentTemplate&& other) = delete;
 
+    //
+    // Initialize gpu buffers.
+    //
     void init();
+    //
+    // Release gpu buffers.
+    //
+    void shutdown();
     void render(size_t count);
 
 private:
+    //
+    // gpu buffers ids.
+    //
     unsigned int m_vao_id{ 0 };
     unsigned int m_vbo_id{ 0 };
 };

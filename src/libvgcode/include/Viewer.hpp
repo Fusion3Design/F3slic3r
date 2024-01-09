@@ -24,9 +24,24 @@ public:
     Viewer& operator = (const Viewer& other) = delete;
     Viewer& operator = (Viewer&& other) = delete;
 
+    //
+    // Initialize the viewer.
+    // This method must be called after a valid OpenGL context has been already created
+    // and before to call any other method of the viewer.
+    //
     void init();
+    //
+    // Release the resources used by the viewer.
+    // This method must be called before releasing the OpenGL context if the viewer
+    // destructor is called after releasing the OpenGL context.
+    //
+    void shutdown();
     void reset();
     void load(GCodeInputData&& gcode_data);
+    //
+    // Render the toolpaths according to the current settings,
+    // using the given camera matrices.
+    //
     void render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
 
     EViewType get_view_type() const;

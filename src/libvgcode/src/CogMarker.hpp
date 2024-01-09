@@ -15,16 +15,20 @@ class CogMarker
 {
 public:
     CogMarker() = default;
-    ~CogMarker();
+    ~CogMarker() { shutdown(); }
     CogMarker(const CogMarker& other) = delete;
     CogMarker(CogMarker&& other) = delete;
     CogMarker& operator = (const CogMarker& other) = delete;
     CogMarker& operator = (CogMarker&& other) = delete;
 
     //
-    // Initialize geometry on gpu
+    // Initialize gpu buffers.
     //
     void init(uint8_t resolution, float radius);
+    //
+    // Release gpu buffers.
+    //
+    void shutdown();
     void render();
 
     //
@@ -50,6 +54,9 @@ private:
     Vec3 m_total_position{ 0.0f, 0.0f, 0.0f };
 
     uint16_t m_indices_count{ 0 };
+    //
+    // gpu buffers ids.
+    //
     unsigned int m_vao_id{ 0 };
     unsigned int m_vbo_id{ 0 };
     unsigned int m_ibo_id{ 0 };

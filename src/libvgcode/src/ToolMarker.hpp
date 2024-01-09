@@ -16,13 +16,20 @@ class ToolMarker
 {
 public:
     ToolMarker() = default;
-    ~ToolMarker();
+    ~ToolMarker() { shutdown(); }
     ToolMarker(const ToolMarker& other) = delete;
     ToolMarker(ToolMarker&& other) = delete;
     ToolMarker& operator = (const ToolMarker& other) = delete;
     ToolMarker& operator = (ToolMarker&& other) = delete;
 
+    //
+    // Initialize gpu buffers.
+    //
     void init(uint16_t resolution, float tip_radius, float tip_height, float stem_radius, float stem_height);
+    //
+    // Release gpu buffers.
+    //
+    void shutdown();
     void render();
 
     bool is_enabled() const { return m_enabled; }
@@ -48,6 +55,9 @@ private:
     float m_alpha{ 0.5f };
 
     uint16_t m_indices_count{ 0 };
+    //
+    // gpu buffers ids.
+    //
     unsigned int m_vao_id{ 0 };
     unsigned int m_vbo_id{ 0 };
     unsigned int m_ibo_id{ 0 };
