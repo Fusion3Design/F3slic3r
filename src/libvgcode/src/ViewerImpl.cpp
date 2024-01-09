@@ -942,8 +942,10 @@ const Color& ViewerImpl::get_extrusion_role_color(EGCodeExtrusionRole role) cons
 void ViewerImpl::set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color)
 {
     auto it = m_extrusion_roles_colors.find(role);
-    if (it != m_extrusion_roles_colors.end())
+    if (it != m_extrusion_roles_colors.end()) {
         it->second = color;
+        m_settings.update_colors = true;
+    }
 }
 
 const Color& ViewerImpl::get_option_color(EOptionType type) const
