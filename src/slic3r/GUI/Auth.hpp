@@ -58,7 +58,7 @@ public:
     std::string get_username() const { return m_username; }
     std::string get_access_token();
 
-    
+    void set_polling_enabled(bool enabled);
 
 private:
     std::unique_ptr<AuthSession>            m_session;

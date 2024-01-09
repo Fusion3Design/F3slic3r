@@ -81,8 +81,10 @@ void AuthSession::process_action_queue()
     if (m_priority_action_queue.empty() && m_action_queue.empty()) {
         //BOOST_LOG_TRIVIAL(debug) << "process_action_queue queues empty";
         // update printers on every periodic wakeup call
-        enqueue_action(UserActionID::CONNECT_PRINTERS, nullptr, nullptr, {});
-        //return;
+        if (m_polling_enabled)
+            enqueue_action(UserActionID::CONNECT_PRINTERS, nullptr, nullptr, {});
+        else 
+            return;
     }
 
     if (this->is_initialized()) {

@@ -215,6 +215,9 @@ void AppConfig::set_defaults()
     if (get("wifi_config_dialog_declined").empty())
         set("wifi_config_dialog_declined", "0");
 
+    if (get("connect_polling").empty())
+        set("connect_polling", "1");
+
 #ifdef _WIN32
     if (get("use_legacy_3DConnexion").empty())
         set("use_legacy_3DConnexion", "0");

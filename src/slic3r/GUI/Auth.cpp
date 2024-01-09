@@ -147,7 +147,7 @@ PrusaAuthCommunication::PrusaAuthCommunication(wxEvtHandler* evt_handler, AppCon
     }
     if (!access_token.empty() || !refresh_token.empty())
         m_remember_session = true;
-    m_session = std::make_unique<AuthSession>(evt_handler, access_token, refresh_token, shared_session_key);
+    m_session = std::make_unique<AuthSession>(evt_handler, access_token, refresh_token, shared_session_key, app_config->get_bool("connect_polling"));
     init_session_thread();
     // perform login at the start
     if (m_remember_session)
@@ -190,6 +190,14 @@ std::string PrusaAuthCommunication::get_access_token()
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         return m_session->get_access_token();
+    }
+}
+
+void PrusaAuthCommunication::set_polling_enabled(bool enabled)
+{
+    {
+        std::lock_guard<std::mutex> lock(m_session_mutex);
+        return m_session->set_polling_enabled(enabled);
     }
 }
 

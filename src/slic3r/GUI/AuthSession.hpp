@@ -93,10 +93,11 @@ struct ActionQueueData
 class AuthSession
 {
 public:
-    AuthSession(wxEvtHandler* evt_handler, const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key)
+    AuthSession(wxEvtHandler* evt_handler, const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key, bool polling_enabled)
         : m_access_token(access_token)
         , m_refresh_token(refresh_token)
         , m_shared_session_key(shared_session_key)
+        , m_polling_enabled(polling_enabled)
     {
         // do not forget to add delete to destructor
         m_actions[UserActionID::DUMMY_ACTION] = std::make_unique<DummyUserAction>();
@@ -134,7 +135,8 @@ public:
     std::string get_access_token() const { return m_access_token; }
     std::string get_refresh_token() const { return m_refresh_token; }
     std::string get_shared_session_key() const { return m_shared_session_key; }
-
+    
+    void set_polling_enabled(bool enabled) {m_polling_enabled = enabled; }
 private:
     void enqueue_test_with_refresh();
     void enqueue_refresh(const std::string& body);
@@ -145,6 +147,8 @@ private:
     // false prevents action queu to be processed - no communication is done
     // sets to true by init_with_code or enqueue_action call
     bool        m_proccessing_enabled {false}; 
+    // triggers CONNECT_PRINTERS action when woken up on idle
+    bool        m_polling_enabled;
 
     std::string m_access_token;
     std::string m_refresh_token;
