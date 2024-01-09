@@ -2743,9 +2743,6 @@ void GLCanvas3D::load_preview(const std::vector<std::string>& str_tool_colors, c
 
     _set_current();
 
-    // Release OpenGL data before generating new data.
-    this->reset_volumes();
-
 #if ENABLE_NEW_GCODE_VIEWER
     libvgcode::GCodeInputData data = libvgcode::convert(*print, str_tool_colors, color_print_values, static_cast<size_t>(wxGetApp().extruders_edited_cnt()));
 
@@ -2756,6 +2753,9 @@ void GLCanvas3D::load_preview(const std::vector<std::string>& str_tool_colors, c
     m_gcode_viewer.set_view_type(libvgcode::EViewType::FeatureType);
     m_gcode_viewer.load_as_preview(std::move(data), str_tool_colors);
 #else
+    // Release OpenGL data before generating new data.
+    this->reset_volumes();
+
     const BuildVolume& build_volume = m_bed.build_volume();
     _load_print_toolpaths(build_volume);
     _load_wipe_tower_toolpaths(build_volume, str_tool_colors);

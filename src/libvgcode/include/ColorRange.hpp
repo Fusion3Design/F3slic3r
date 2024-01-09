@@ -12,7 +12,7 @@
 namespace libvgcode {
 
 //
-// Helper class to interpolate between colors defined in Ranges_Colors palette.
+// Helper class to interpolate between colors defined in RANGES_COLORS palette.
 // Interpolation can be done linearly or logarithmically.
 // Usage:
 // 1) Define an instance of ColorRange of the desired interpolation type
@@ -64,7 +64,7 @@ public:
     float get_step_size() const;
     std::vector<float> get_values() const;
 
-    static const ColorRange Dummy_Color_Range;
+    static const ColorRange DUMMY_COLOR_RANGE;
 
 private:
     EColorRangeType m_type{ EColorRangeType::Linear };

@@ -27,19 +27,26 @@ public:
     //
     // Initialize the viewer.
     // This method must be called after a valid OpenGL context has been already created
-    // and before to call any other method of the viewer.
+    // and before calling any other method of the viewer.
     //
     void init();
     //
     // Release the resources used by the viewer.
     // This method must be called before releasing the OpenGL context if the viewer
-    // destructor is called after releasing the OpenGL context.
+    // goes out of scope after releasing the OpenGL context.
     //
     void shutdown();
+    //
+    // Reset the contents of the viewer.
+    // Automatically called by load() method.
+    //
     void reset();
+    //
+    // Setup the viewer content from the given data.
+    //
     void load(GCodeInputData&& gcode_data);
     //
-    // Render the toolpaths according to the current settings,
+    // Render the toolpaths according to the current settings and
     // using the given camera matrices.
     //
     void render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
@@ -92,7 +99,7 @@ public:
     size_t get_vertices_count() const;
 
     //
-    // Return the vertex pointed by the max value of the view current range
+    // Return the vertex pointed by the max value of the view visible range
     //
     const PathVertex& get_current_vertex() const;
 
@@ -101,6 +108,9 @@ public:
     //
     const PathVertex& get_vertex_at(size_t id) const;
 
+    //
+    // Return the color used to render the given vertex with the current settings.
+    //
     Color get_vertex_color(const PathVertex& vertex) const;
 
     //
@@ -108,6 +118,9 @@ public:
     //
     size_t get_enabled_segments_count() const;
 
+    //
+    // Return the Interval containing the enabled segments
+    //
     const Interval& get_enabled_segments_range() const;
 
     //
@@ -115,6 +128,9 @@ public:
     //
     size_t get_enabled_options_count() const;
 
+    //
+    // Return the Interval containing the enabled options
+    //
     const Interval& get_enabled_options_range() const;
 
     //

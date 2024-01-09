@@ -463,6 +463,8 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     if (gcode_data.vertices.empty())
         return;
 
+    reset();
+
     m_loading = true;
 
     m_vertices = std::move(gcode_data.vertices);

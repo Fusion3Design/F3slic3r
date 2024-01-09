@@ -1290,8 +1290,6 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print & p
 #if ENABLE_NEW_GCODE_VIEWER
 void GCodeViewer::load_as_preview(libvgcode::GCodeInputData&& data, const std::vector<std::string>& str_tool_colors)
 {
-    m_viewer.reset();
-
     if (!str_tool_colors.empty()) {
         std::vector<ColorRGBA> tool_colors;
         decode_colors(str_tool_colors, tool_colors);

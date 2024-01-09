@@ -155,7 +155,7 @@ public:
     const ColorRange& get_volumetric_rate_range() const { return m_volumetric_rate_range; }
     const ColorRange& get_layer_time_range(EColorRangeType type) const {
         return (static_cast<size_t>(type) < m_layer_time_range.size()) ?
-            m_layer_time_range[static_cast<size_t>(type)] : ColorRange::Dummy_Color_Range;
+            m_layer_time_range[static_cast<size_t>(type)] : ColorRange::DUMMY_COLOR_RANGE;
     }
 
     float get_travels_radius() const { return m_travels_radius; }

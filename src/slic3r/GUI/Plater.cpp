@@ -6233,6 +6233,9 @@ void Plater::on_config_change(const DynamicPrintConfig &config)
             p->reset_gcode_toolpaths();
             p->view3D->get_canvas3d()->reset_sequential_print_clearance();
             p->view3D->get_canvas3d()->set_sla_view_type(GLCanvas3D::ESLAViewType::Original);
+#if ENABLE_NEW_GCODE_VIEWER
+            p->preview->get_canvas3d()->reset_volumes();
+#endif // ENABLE_NEW_GCODE_VIEWER
         }
         else if (opt_key == "bed_shape" || opt_key == "bed_custom_texture" || opt_key == "bed_custom_model") {
             bed_shape_changed = true;

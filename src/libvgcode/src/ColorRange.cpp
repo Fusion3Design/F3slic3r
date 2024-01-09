@@ -10,7 +10,7 @@
 
 namespace libvgcode {
 
-const ColorRange ColorRange::Dummy_Color_Range = ColorRange();
+const ColorRange ColorRange::DUMMY_COLOR_RANGE = ColorRange();
 
 ColorRange::ColorRange(EColorRangeType type)
 : m_type(type)
