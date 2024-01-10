@@ -55,8 +55,8 @@ extern ETimeMode convert(const Slic3r::PrintEstimatedStatistics::ETimeMode& mode
 extern Slic3r::PrintEstimatedStatistics::ETimeMode convert(const ETimeMode& mode);
 
 // mapping from Slic3r::GCodeProcessorResult to libvgcode::GCodeInputData
-extern GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels_radius = DEFAULT_TRAVELS_RADIUS,
-    float wipes_radius = DEFAULT_WIPES_RADIUS);
+extern GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels_radius = DEFAULT_TRAVELS_RADIUS_MM,
+    float wipes_radius = DEFAULT_WIPES_RADIUS_MM);
 
 // mapping from Slic3r::Print to libvgcode::GCodeInputData
 extern GCodeInputData convert(const Slic3r::Print& print, const std::vector<std::string>& str_tool_colors,

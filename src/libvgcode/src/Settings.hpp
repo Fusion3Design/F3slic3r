@@ -13,14 +13,23 @@ namespace libvgcode {
 
 struct Settings
 {
-		bool update_view_full_range{ true };
-		bool update_enabled_entities{ true };
-		bool update_colors{ true };
+		//
+	  // Visualization parameters
+		//
 		EViewType view_type{ EViewType::FeatureType };
 		ETimeMode time_mode{ ETimeMode::Normal };
 		bool top_layer_only_view_range{ false };
 		bool spiral_vase_mode{ false };
+		//
+		// Required update flags
+		//
+		bool update_view_full_range{ true };
+		bool update_enabled_entities{ true };
+		bool update_colors{ true };
 
+		//
+		// Visibility maps
+		//
 		std::map<EOptionType, bool> options_visibility{ {
 				{ EOptionType::Travels,         false },
 				{ EOptionType::Wipes,           false },

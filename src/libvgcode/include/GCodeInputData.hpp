@@ -16,9 +16,9 @@ struct GCodeInputData
     // Required to properly detect fictitious layer changes when spiral vase mode is enabled.
     //
     bool spiral_vase_mode{ false };
-
     //
     // List of path vertices (gcode moves)
+    // See: PathVertex
     //
     std::vector<PathVertex> vertices;
 };

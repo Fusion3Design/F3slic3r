@@ -196,8 +196,8 @@ private:
     std::vector<EOptionType> m_options;
     std::array<float, TIME_MODES_COUNT> m_travels_time{ 0.0f, 0.0f };
     std::vector<uint8_t> m_used_extruders_ids;
-    float m_travels_radius{ DEFAULT_TRAVELS_RADIUS };
-    float m_wipes_radius{ DEFAULT_WIPES_RADIUS };
+    float m_travels_radius{ DEFAULT_TRAVELS_RADIUS_MM };
+    float m_wipes_radius{ DEFAULT_WIPES_RADIUS_MM };
 
     bool m_initialized{ false };
     bool m_loading{ false };

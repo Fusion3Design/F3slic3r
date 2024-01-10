@@ -15,8 +15,14 @@ namespace libvgcode {
 
 static constexpr float PI = 3.141592f;
 
-static constexpr float DEFAULT_TRAVELS_RADIUS = 0.1f;
-static constexpr float DEFAULT_WIPES_RADIUS   = 0.1f;
+//
+// Default radius, in mm, of the cylinders used to render the travel moves.
+//
+static constexpr float DEFAULT_TRAVELS_RADIUS_MM = 0.1f;
+//
+// Default radius, in mm, of the cylinders used to render the wipe moves.
+//
+static constexpr float DEFAULT_WIPES_RADIUS_MM = 0.1f;
 
 //
 // Vector in 3 dimensions
@@ -188,7 +194,7 @@ static constexpr size_t BBOX_TYPES_COUNT = static_cast<size_t>(EBBoxType::COUNT)
 //
 // Predefined colors
 //
-static const Color DUMMY_COLOR{  64,  64,  64 };
+static const Color DUMMY_COLOR{ 64, 64, 64 };
 
 //
 // Palette used to render moves by ranges
@@ -211,6 +217,8 @@ static const std::vector<Color> RANGES_COLORS{ {
 
 //
 // Mapping from EMoveType to EOptionType
+// Returns EOptionType::COUNT if the given move type does not correspond
+// to any option type.
 //
 extern EOptionType move_type_to_option(EMoveType type);
 

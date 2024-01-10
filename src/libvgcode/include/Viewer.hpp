@@ -33,7 +33,7 @@ public:
     //
     // Release the resources used by the viewer.
     // This method must be called before releasing the OpenGL context if the viewer
-    // goes out of scope after releasing the OpenGL context.
+    // goes out of scope after releasing it.
     //
     void shutdown();
     //
@@ -51,28 +51,108 @@ public:
     //
     void render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
 
+    //
+    // ************************************************************************
+    // Settings
+    // The following methods can be used to query/customize the parameters
+    // used to chenge the way toolpaths are rendered.
+    // ************************************************************************
+    //
+
+    //
+    // View type
+    // See: EViewType
+    //
     EViewType get_view_type() const;
     void set_view_type(EViewType type);
-
+    //
+    // Time mode
+    // See: ETimeMode
+    //
     ETimeMode get_time_mode() const;
     void set_time_mode(ETimeMode mode);
-
-    const Interval& get_layers_view_range() const;
-    void set_layers_view_range(const Interval& range);
-    void set_layers_view_range(Interval::value_type min, Interval::value_type max);
-
+    //
+    // Top layer only
+    // Whether or not the visible range is limited to the current top layer only.
+    //
     bool is_top_layer_only_view_range() const;
-    void set_top_layer_only_view_range(bool top_layer_only_view_range);
-
+    void set_top_layer_only_view_range(bool top_layer_only);
+    //
+    // Spiral vase mode
+    // Whether or not the gcode was generated with spiral vase mode enabled.
+    // See: GCodeInputData
+    //
     bool is_spiral_vase_mode() const;
 
-    size_t get_layers_count() const;
-    float get_layer_z(size_t layer_id) const;
-    std::vector<float> get_layers_zs() const;
+    //
+    // ************************************************************************
+    // Layers range
+    // The following methods can be used to query/customize the visualized
+    // layers range.
+    // Layers are detected during the call to load() method.
+    // Their count can be queried using get_layers_count() method.
+    // Their global range is [0..get_layers_count() - 1].
+    // ************************************************************************
+    //
 
+    //
+    // Return the current layers range.
+    //
+    const Interval& get_layers_view_range() const;
+    //
+    // Set the current layers range with the given interval.
+    // Values are clamped to [0..get_layers_count() - 1].
+    //
+    void set_layers_view_range(const Interval& range);
+    //
+    // Set the current layers range with the given min and max values.
+    // Values are clamped to [0..get_layers_count() - 1].
+    //
+    void set_layers_view_range(Interval::value_type min, Interval::value_type max);
+    //
+    // Return the count of detected layers.
+    //
+    size_t get_layers_count() const;
+
+    //
+    // ************************************************************************
+    // Layers zs
+    // The following methods can be used to query the layers zs.
+    // Layers are detected during the call to load() method.
+    // Their count can be queried using get_layers_count() method.
+    // Their global range is [0..get_layers_count() - 1].
+    // ************************************************************************
+    //
+
+    //
+    // Return the z of the layer with the given id
+    // or 0.0f if the id does not belong to [0..get_layers_count() - 1].
+    //
+    float get_layer_z(size_t layer_id) const;
+    //
+    // Return the list of zs of the detected layers.
+    //
+    std::vector<float> get_layers_zs() const;
+    //
+    // Return the id of the layer closest to the given z.
+    //
     size_t get_layer_id_at(float z) const;
 
+    //
+    // ************************************************************************
+    // Extruders
+    // The following methods can be used to query informations about extruders.
+    // Extruders are detected during the call to load() method.
+    // ************************************************************************
+    //
+
+    //
+    // Return the count of detected used extruders.
+    //
     size_t get_used_extruders_count() const;
+    //
+    // Return the list of ids of the detected used extruders.
+    //
     const std::vector<uint8_t>& get_used_extruders_ids() const;
 
     AABox get_bounding_box(EBBoxType type) const;
@@ -88,7 +168,7 @@ public:
     const Interval& get_view_visible_range() const;
 
     //
-    // min must be smaller than max
+    // Set the current visible range.
     // values are clamped to the current view global range
     // 
     void set_view_visible_range(uint32_t min, uint32_t max);
@@ -195,18 +275,49 @@ public:
     void set_option_color(EOptionType type, const Color& color);
     void reset_default_options_colors();
 
+    //
+    // Get the color range for height.
+    //
     const ColorRange& get_height_range() const;
+    //
+    // Get the color range for width.
+    //
     const ColorRange& get_width_range() const;
+    //
+    // Get the color range for speed.
+    //
     const ColorRange& get_speed_range() const;
+    //
+    // Get the color range for fan speed.
+    //
     const ColorRange& get_fan_speed_range() const;
+    //
+    // Get the color range for temperature.
+    //
     const ColorRange& get_temperature_range() const;
+    //
+    // Get the color range for volumetric range.
+    //
     const ColorRange& get_volumetric_rate_range() const;
+    //
+    // Get the color range for the layer time range with the given type.
+    //
     const ColorRange& get_layer_time_range(EColorRangeType type) const;
-
+    //
+    // Get the radius, in mm, of the cylinders used to render the travel moves.
+    //
     float get_travels_radius() const;
+    //
+    // Set the radius, in mm, of the cylinders used to render the travel moves.
+    //
     void set_travels_radius(float radius);
-
+    //
+    // Get the radius, in mm, of the cylinders used to render the wipe moves.
+    //
     float get_wipes_radius() const;
+    //
+    // Set the radius, in mm, of the cylinders used to render the wipe moves.
+    //
     void set_wipes_radius(float radius);
 
 #if ENABLE_COG_AND_TOOL_MARKERS

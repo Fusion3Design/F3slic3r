@@ -62,6 +62,21 @@ void Viewer::set_time_mode(ETimeMode mode)
     m_impl->set_time_mode(mode);
 }
 
+bool Viewer::is_top_layer_only_view_range() const
+{
+    return m_impl->is_top_layer_only_view_range();
+}
+
+void Viewer::set_top_layer_only_view_range(bool top_layer_only)
+{
+    m_impl->set_top_layer_only_view_range(top_layer_only);
+}
+
+bool Viewer::is_spiral_vase_mode() const
+{
+    return m_impl->is_spiral_vase_mode();
+}
+
 const Interval& Viewer::get_layers_view_range() const
 {
     return m_impl->get_layers_view_range();
@@ -75,21 +90,6 @@ void Viewer::set_layers_view_range(const Interval& range)
 void Viewer::set_layers_view_range(Interval::value_type min, Interval::value_type max)
 {
     m_impl->set_layers_view_range(min, max);
-}
-
-bool Viewer::is_top_layer_only_view_range() const
-{
-    return m_impl->is_top_layer_only_view_range();
-}
-
-bool Viewer::is_spiral_vase_mode() const
-{
-    return m_impl->is_spiral_vase_mode();
-}
-
-void Viewer::set_top_layer_only_view_range(bool top_layer_only_view_range)
-{
-    m_impl->set_top_layer_only_view_range(top_layer_only_view_range);
 }
 
 size_t Viewer::get_layers_count() const

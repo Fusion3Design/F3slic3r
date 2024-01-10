@@ -779,6 +779,8 @@ void ViewerImpl::set_time_mode(ETimeMode mode)
 
 void ViewerImpl::set_layers_view_range(Interval::value_type min, Interval::value_type max)
 {
+    min = std::clamp<Interval::value_type>(min, 0, m_layers.count() - 1);
+    max = std::clamp<Interval::value_type>(max, 0, m_layers.count() - 1);
     m_layers.set_view_range(min, max);
     // force immediate update of the full range
     update_view_full_range();
