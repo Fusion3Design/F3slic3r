@@ -268,6 +268,9 @@ static void get_printer_profiles_node(pt::ptree& printer_profiles_node,
                                       const PrinterPresetCollection& printer_presets,
                                       const PrinterAttr& attr)
 {
+    printer_profiles_node.clear();
+    user_printer_profiles_node.clear();
+
     for (const Preset& printer_preset : printer_presets) {
 
         if (printer_preset.is_user()) {
@@ -465,23 +468,23 @@ DynamicPrintConfig load_full_print_config(const std::string& print_preset_name, 
             if (print_preset)
                 config.apply_only(print_preset->config, print_preset->config.keys());
             else
-                printf("Print profile '%s' wasn't found.\n", print_preset->name.c_str());
+                BOOST_LOG_TRIVIAL(warning) << Slic3r::format("Print profile '%1%' wasn't found.", print_preset_name);
 
             const Preset* filament_preset = preset_bundle.filaments.find_preset(filament_preset_name);
             if (filament_preset)
                 config.apply_only(filament_preset->config, filament_preset->config.keys());
             else
-                printf("Filament profile '%s' wasn't found.\n", filament_preset->name.c_str());
+                BOOST_LOG_TRIVIAL(warning) << Slic3r::format("Filament profile '%1%' wasn't found.", filament_preset_name);
 
             const Preset* printer_preset = preset_bundle.printers.find_preset(printer_preset_name);
             if (printer_preset)
                 config.apply_only(printer_preset->config, printer_preset->config.keys());
             else
-                printf("Printer profile '%s' wasn't found.\n", printer_preset->name.c_str());
+                BOOST_LOG_TRIVIAL(warning) << Slic3r::format("Printer profile '%1%' wasn't found.", printer_preset_name);
         }
     }
     else
-        printf("Datadir wasn't found\n");
+        BOOST_LOG_TRIVIAL(error) << "Datadir wasn't found\n";
 
     return config;
 }

@@ -1012,7 +1012,6 @@ bool CLI::processed_profiles_sharing()
 
     std::string cmdline_param = m_config.opt_string("output");
     if (cmdline_param.empty()) {
-        printf("\n");
         if (ret.empty())
             printf("Wrong request");
         else
