@@ -5598,8 +5598,14 @@ void GCodeViewer::render_legend(float& legend_height)
 
         if (imgui.draw_radio_button(name, 1.5f * icon_size, active, draw_callback)) {
 #if ENABLE_NEW_GCODE_VIEWER
-            const libvgcode::Interval view_visible_range = m_viewer.get_view_visible_range();
+            // check whether we need to keep the current visible range
+            libvgcode::Interval view_visible_range = m_viewer.get_view_visible_range();
             const libvgcode::Interval view_enabled_range = m_viewer.get_view_enabled_range();
+            // update visible range to take in account for skipped moves
+            const uint32_t view_first_visible_gcode_id = m_viewer.get_vertex_at(view_visible_range[0]).gcode_id;
+            while (view_visible_range[0] > view_enabled_range[0] && view_first_visible_gcode_id == m_viewer.get_vertex_at(view_visible_range[0] - 1).gcode_id) {
+                --view_visible_range[0];
+            }
             const bool keep_visible_range = view_visible_range != view_enabled_range;
 #if ENABLE_COG_AND_TOOL_MARKERS
             if (type == Preview::OptionType::Shells)

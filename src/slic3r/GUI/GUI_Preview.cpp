@@ -768,19 +768,16 @@ void Preview::update_moves_slider()
         if (!skip) {
             values.emplace_back(static_cast<double>(i + 1));
             alternate_values.emplace_back(static_cast<double>(gcode_id));
-        }
-
-        if (gcode_id_min.has_value() && alternate_values.back() == static_cast<double>(*gcode_id_min))
-            visible_range_min_id = counter;
-        else if (gcode_id_max.has_value() && alternate_values.back() == static_cast<double>(*gcode_id_max))
-            visible_range_max_id = counter;
-
-        if (!skip)
+            if (gcode_id_min.has_value() && alternate_values.back() == static_cast<double>(*gcode_id_min))
+                visible_range_min_id = counter;
+            else if (gcode_id_max.has_value() && alternate_values.back() == static_cast<double>(*gcode_id_max))
+                visible_range_max_id = counter;
             ++counter;
+        }
     }
 
-    const int span_min_id = visible_range_min_id.has_value() ? std::max(0, static_cast<int>(*visible_range_min_id) - 1) : 0;
-    const int span_max_id = visible_range_max_id.has_value() ? std::max(0, static_cast<int>(*visible_range_max_id) - 1) : static_cast<int>(values.size()) - 1;
+    const int span_min_id = visible_range_min_id.has_value() ? *visible_range_min_id : 0;
+    const int span_max_id = visible_range_max_id.has_value() ? *visible_range_max_id : static_cast<int>(values.size()) - 1;
 
     m_moves_slider->SetSliderValues(values);
     m_moves_slider->SetSliderAlternateValues(alternate_values);
