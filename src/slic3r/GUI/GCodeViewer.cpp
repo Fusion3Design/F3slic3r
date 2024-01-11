@@ -1108,7 +1108,10 @@ void GCodeViewer::init()
 #if ENABLE_NEW_GCODE_VIEWER
 void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const Print& print, const std::vector<std::string>& str_tool_colors)
 {
-    m_viewer.set_top_layer_only_view_range(get_app_config()->get_bool("seq_top_layer_only"));
+    const bool current_top_layer_only = m_viewer.is_top_layer_only_view_range();
+    const bool required_top_layer_only = get_app_config()->get_bool("seq_top_layer_only");
+    if (current_top_layer_only != required_top_layer_only)
+        m_viewer.toggle_top_layer_only_view_range();
 
     std::vector<ColorRGBA> tool_colors;
     if (m_viewer.get_view_type() == libvgcode::EViewType::Tool && !gcode_result.extruder_colors.empty())

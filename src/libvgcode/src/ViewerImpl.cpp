@@ -789,9 +789,12 @@ void ViewerImpl::set_layers_view_range(Interval::value_type min, Interval::value
     m_settings.update_colors = true;
 }
 
-void ViewerImpl::set_top_layer_only_view_range(bool top_layer_only_view_range)
+void ViewerImpl::toggle_top_layer_only_view_range()
 {
-    m_settings.top_layer_only_view_range = top_layer_only_view_range;
+    m_settings.top_layer_only_view_range = !m_settings.top_layer_only_view_range;
+    update_view_full_range();
+    m_view_range.set_visible(m_view_range.get_enabled());
+    m_settings.update_enabled_entities = true;
     m_settings.update_colors = true;
 }
 

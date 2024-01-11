@@ -76,7 +76,11 @@ public:
     // Whether or not the visible range is limited to the current top layer only.
     //
     bool is_top_layer_only_view_range() const;
-    void set_top_layer_only_view_range(bool top_layer_only);
+    //
+    // Toggle the top layer only state.
+    //
+    void toggle_top_layer_only_view_range();
+
     //
     // Spiral vase mode
     // Whether or not the gcode was generated with spiral vase mode enabled.

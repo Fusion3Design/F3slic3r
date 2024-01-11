@@ -81,7 +81,7 @@ public:
     void set_layers_view_range(Interval::value_type min, Interval::value_type max);
 
     bool is_top_layer_only_view_range() const { return m_settings.top_layer_only_view_range; }
-    void set_top_layer_only_view_range(bool top_layer_only_view_range);
+    void toggle_top_layer_only_view_range();
 
     bool is_spiral_vase_mode() const { return m_settings.spiral_vase_mode; }
 
