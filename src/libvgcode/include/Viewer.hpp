@@ -264,8 +264,8 @@ public:
     std::vector<float> get_layers_times(ETimeMode mode) const;
 
     size_t get_tool_colors_count() const;
-    const std::vector<Color>& get_tool_colors() const;
-    void set_tool_colors(const std::vector<Color>& colors);
+    const Palette& get_tool_colors() const;
+    void set_tool_colors(const Palette& colors);
 
     const Color& get_extrusion_role_color(EGCodeExtrusionRole role) const;
     void set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color);
@@ -276,33 +276,33 @@ public:
     void reset_default_options_colors();
 
     //
-    // Get the color range for height.
+    // Get the color range for the given view type.
+    // Valid view types are:
+    // EViewType::Height
+    // EViewType::Width
+    // EViewType::Speed
+    // EViewType::FanSpeed
+    // EViewType::Temperature
+    // EViewType::VolumetricFlowRate
+    // EViewType::LayerTimeLinear
+    // EViewType::LayerTimeLogarithmic
     //
-    const ColorRange& get_height_range() const;
+    const ColorRange& get_color_range(EViewType type) const;
     //
-    // Get the color range for width.
+    // Set the palette for the color range corresponding to the given view type
+    // with the given value.
+    // Valid view types are:
+    // EViewType::Height
+    // EViewType::Width
+    // EViewType::Speed
+    // EViewType::FanSpeed
+    // EViewType::Temperature
+    // EViewType::VolumetricFlowRate
+    // EViewType::LayerTimeLinear
+    // EViewType::LayerTimeLogarithmic
     //
-    const ColorRange& get_width_range() const;
-    //
-    // Get the color range for speed.
-    //
-    const ColorRange& get_speed_range() const;
-    //
-    // Get the color range for fan speed.
-    //
-    const ColorRange& get_fan_speed_range() const;
-    //
-    // Get the color range for temperature.
-    //
-    const ColorRange& get_temperature_range() const;
-    //
-    // Get the color range for volumetric range.
-    //
-    const ColorRange& get_volumetric_rate_range() const;
-    //
-    // Get the color range for the layer time range with the given type.
-    //
-    const ColorRange& get_layer_time_range(EColorRangeType type) const;
+    void set_color_range_palette(EViewType type, const Palette& palette);
+
     //
     // Get the radius, in mm, of the cylinders used to render the travel moves.
     //

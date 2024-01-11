@@ -931,7 +931,7 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
     return DUMMY_COLOR;
 }
 
-void ViewerImpl::set_tool_colors(const std::vector<Color>& colors)
+void ViewerImpl::set_tool_colors(const Palette& colors)
 {
     m_tool_colors = colors;
     m_settings.update_colors = true;
@@ -965,6 +965,39 @@ void ViewerImpl::set_option_color(EOptionType type, const Color& color)
         it->second = color;
         m_settings.update_colors = true;
     }
+}
+
+const ColorRange& ViewerImpl::get_color_range(EViewType type) const
+{
+    switch (type)
+    {
+    case EViewType::Height:               { return m_height_range; }
+    case EViewType::Width:                { return m_width_range; }
+    case EViewType::Speed:                { return m_speed_range; }
+    case EViewType::FanSpeed:             { return m_fan_speed_range; }
+    case EViewType::Temperature:          { return m_temperature_range; }
+    case EViewType::VolumetricFlowRate:   { return m_volumetric_rate_range; }
+    case EViewType::LayerTimeLinear:      { return m_layer_time_range[0]; }
+    case EViewType::LayerTimeLogarithmic: { return m_layer_time_range[1]; }
+    default:                              { return ColorRange::DUMMY_COLOR_RANGE; }
+    }
+}
+
+void ViewerImpl::set_color_range_palette(EViewType type, const Palette& palette)
+{
+    switch (type)
+    {
+    case EViewType::Height:               { m_height_range.set_palette(palette); }
+    case EViewType::Width:                { m_width_range.set_palette(palette); }
+    case EViewType::Speed:                { m_speed_range.set_palette(palette); }
+    case EViewType::FanSpeed:             { m_fan_speed_range.set_palette(palette); }
+    case EViewType::Temperature:          { m_temperature_range.set_palette(palette); }
+    case EViewType::VolumetricFlowRate:   { m_volumetric_rate_range.set_palette(palette); }
+    case EViewType::LayerTimeLinear:      { m_layer_time_range[0].set_palette(palette); }
+    case EViewType::LayerTimeLogarithmic: { m_layer_time_range[1].set_palette(palette); }
+    default:                              { break; }
+    }
+    m_settings.update_colors = true;
 }
 
 void ViewerImpl::set_travels_radius(float radius)

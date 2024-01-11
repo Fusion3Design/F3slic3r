@@ -262,12 +262,12 @@ size_t Viewer::get_tool_colors_count() const
     return m_impl->get_tool_colors_count();
 }
 
-const std::vector<Color>& Viewer::get_tool_colors() const
+const Palette& Viewer::get_tool_colors() const
 {
     return m_impl->get_tool_colors();
 }
 
-void Viewer::set_tool_colors(const std::vector<Color>& colors)
+void Viewer::set_tool_colors(const Palette& colors)
 {
     m_impl->set_tool_colors(colors);
 }
@@ -302,39 +302,14 @@ void Viewer::reset_default_options_colors()
     m_impl->reset_default_options_colors();
 }
 
-const ColorRange& Viewer::get_height_range() const
+const ColorRange& Viewer::get_color_range(EViewType type) const
 {
-    return m_impl->get_height_range();
+    return m_impl->get_color_range(type);
 }
 
-const ColorRange& Viewer::get_width_range() const
+void Viewer::set_color_range_palette(EViewType type, const Palette& palette)
 {
-    return m_impl->get_width_range();
-}
-
-const ColorRange& Viewer::get_speed_range() const
-{
-    return m_impl->get_speed_range();
-}
-
-const ColorRange& Viewer::get_fan_speed_range() const
-{
-    return m_impl->get_fan_speed_range();
-}
-
-const ColorRange& Viewer::get_temperature_range() const
-{
-    return m_impl->get_temperature_range();
-}
-
-const ColorRange& Viewer::get_volumetric_rate_range() const
-{
-    return m_impl->get_volumetric_rate_range();
-}
-
-const ColorRange& Viewer::get_layer_time_range(EColorRangeType type) const
-{
-    return m_impl->get_layer_time_range(type);
+    m_impl->set_color_range_palette(type, palette);
 }
 
 float Viewer::get_travels_radius() const

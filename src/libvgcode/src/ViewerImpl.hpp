@@ -136,8 +136,8 @@ public:
     std::vector<float> get_layers_times(ETimeMode mode) const { return m_layers.get_times(mode); }
 
     size_t get_tool_colors_count() const { return m_tool_colors.size(); }
-    const std::vector<Color>& get_tool_colors() const { return m_tool_colors; }
-    void set_tool_colors(const std::vector<Color>& colors);
+    const Palette& get_tool_colors() const { return m_tool_colors; }
+    void set_tool_colors(const Palette& colors);
 
     const Color& get_extrusion_role_color(EGCodeExtrusionRole role) const;
     void set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color);
@@ -147,16 +147,8 @@ public:
     void set_option_color(EOptionType type, const Color& color);
     void reset_default_options_colors() { m_options_colors = DEFAULT_OPTIONS_COLORS; }
 
-    const ColorRange& get_height_range() const { return m_height_range; }
-    const ColorRange& get_width_range() const { return m_width_range; }
-    const ColorRange& get_speed_range() const { return m_speed_range; }
-    const ColorRange& get_fan_speed_range() const { return m_fan_speed_range; }
-    const ColorRange& get_temperature_range() const { return m_temperature_range; }
-    const ColorRange& get_volumetric_rate_range() const { return m_volumetric_rate_range; }
-    const ColorRange& get_layer_time_range(EColorRangeType type) const {
-        return (static_cast<size_t>(type) < m_layer_time_range.size()) ?
-            m_layer_time_range[static_cast<size_t>(type)] : ColorRange::DUMMY_COLOR_RANGE;
-    }
+    const ColorRange& get_color_range(EViewType type) const;
+    void set_color_range_palette(EViewType type, const Palette& palette);
 
     float get_travels_radius() const { return m_travels_radius; }
     void set_travels_radius(float radius);
@@ -255,7 +247,7 @@ private:
     std::array<ColorRange, COLOR_RANGE_TYPES_COUNT> m_layer_time_range{
         ColorRange(EColorRangeType::Linear), ColorRange(EColorRangeType::Logarithmic)
     };
-    std::vector<Color> m_tool_colors;
+    Palette m_tool_colors;
 
     //
     // OpenGL shader ids

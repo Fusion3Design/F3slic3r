@@ -51,6 +51,11 @@ using Mat4x4 = std::array<float, 16>;
 using Color = std::array<uint8_t, 3>;
 
 //
+// Color palette
+//
+using Palette = std::vector<Color>;
+
+//
 // Axis aligned box in 3 dimensions
 // [0] -> { min_x, min_y, min_z }
 // [1] -> { max_x, max_y, max_z }
@@ -195,25 +200,6 @@ static constexpr size_t BBOX_TYPES_COUNT = static_cast<size_t>(EBBoxType::COUNT)
 // Predefined colors
 //
 static const Color DUMMY_COLOR{ 64, 64, 64 };
-
-//
-// Palette used to render moves by ranges
-// EViewType: Height, Width, Speed, FanSpeed, Temperature, VolumetricFlowRate,
-//            LayerTimeLinear, LayerTimeLogarithmic
-//
-static const std::vector<Color> RANGES_COLORS{ {
-    {  11,  44, 122 }, // bluish
-    {  19,  89, 133 },
-    {  28, 136, 145 },
-    {   4, 214,  15 },
-    { 170, 242,   0 },
-    { 252, 249,   3 },
-    { 245, 206,  10 },
-    { 227, 136,  32 },
-    { 209, 104,  48 },
-    { 194,  82,  60 },
-    { 148,  38,  22 }  // reddish
-} };
 
 //
 // Mapping from EMoveType to EOptionType

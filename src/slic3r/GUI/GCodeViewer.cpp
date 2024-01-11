@@ -3936,14 +3936,14 @@ void GCodeViewer::render_toolpaths()
                 imgui.text(buf);
             };
 
-            add_range_property_row("height range", m_viewer.get_height_range().get_range());
-            add_range_property_row("width range", m_viewer.get_width_range().get_range());
-            add_range_property_row("speed range", m_viewer.get_speed_range().get_range());
-            add_range_property_row("fan speed range", m_viewer.get_fan_speed_range().get_range());
-            add_range_property_row("temperature range", m_viewer.get_temperature_range().get_range());
-            add_range_property_row("volumetric rate range", m_viewer.get_volumetric_rate_range().get_range());
-            add_range_property_row("layer time linear range", m_viewer.get_layer_time_range(libvgcode::EColorRangeType::Linear).get_range());
-            add_range_property_row("layer time logarithmic range", m_viewer.get_layer_time_range(libvgcode::EColorRangeType::Logarithmic).get_range());
+            add_range_property_row("height range", m_viewer.get_color_range(libvgcode::EViewType::Height).get_range());
+            add_range_property_row("width range", m_viewer.get_color_range(libvgcode::EViewType::Width).get_range());
+            add_range_property_row("speed range", m_viewer.get_color_range(libvgcode::EViewType::Speed).get_range());
+            add_range_property_row("fan speed range", m_viewer.get_color_range(libvgcode::EViewType::FanSpeed).get_range());
+            add_range_property_row("temperature range", m_viewer.get_color_range(libvgcode::EViewType::Temperature).get_range());
+            add_range_property_row("volumetric rate range", m_viewer.get_color_range(libvgcode::EViewType::VolumetricFlowRate).get_range());
+            add_range_property_row("layer time linear range", m_viewer.get_color_range(libvgcode::EViewType::LayerTimeLinear).get_range());
+            add_range_property_row("layer time logarithmic range", m_viewer.get_color_range(libvgcode::EViewType::LayerTimeLogarithmic).get_range());
 
             ImGui::EndTable();
 
@@ -4538,14 +4538,15 @@ void GCodeViewer::render_legend(float& legend_height)
 
 #if ENABLE_NEW_GCODE_VIEWER
     auto append_range = [append_item](const libvgcode::ColorRange& range, unsigned int decimals) {
+        auto append_range_item = [append_item, &range](int i, float value, unsigned int decimals) {
 #else
     auto append_range = [append_item](const Extrusions::Range& range, unsigned int decimals) {
-#endif // ENABLE_NEW_GCODE_VIEWER
         auto append_range_item = [append_item](int i, float value, unsigned int decimals) {
+#endif // ENABLE_NEW_GCODE_VIEWER
             char buf[1024];
             ::sprintf(buf, "%.*f", decimals, value);
 #if ENABLE_NEW_GCODE_VIEWER
-            append_item(EItemType::Rect, libvgcode::convert(libvgcode::RANGES_COLORS[i]), buf);
+            append_item(EItemType::Rect, libvgcode::convert(range.get_palette()[i]), buf);
 #else
             append_item(EItemType::Rect, Range_Colors[i], buf);
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -4558,11 +4559,11 @@ void GCodeViewer::render_legend(float& legend_height)
             append_range_item(0, values.front(), decimals);
         else if (values.size() == 2) {
             // two items use case
-            append_range_item(static_cast<int>(libvgcode::RANGES_COLORS.size()) - 1, values.back(), decimals);
+            append_range_item(static_cast<int>(range.get_palette().size()) - 1, values.back(), decimals);
             append_range_item(0, values.front(), decimals);
         }
         else {
-            for (int i = static_cast<int>(libvgcode::RANGES_COLORS.size()) - 1; i >= 0; --i) {
+            for (int i = static_cast<int>(range.get_palette().size()) - 1; i >= 0; --i) {
                 append_range_item(i, values[i], decimals);
             }
         }
@@ -4586,15 +4587,16 @@ void GCodeViewer::render_legend(float& legend_height)
 
 #if ENABLE_NEW_GCODE_VIEWER
     auto append_time_range = [append_item](const libvgcode::ColorRange& range) {
+        auto append_range_item = [append_item, &range](int i, float value) {
 #else
     auto append_time_range = [append_item](const Extrusions::Range& range, Extrusions::Range::EType type) {
-#endif // ENABLE_NEW_GCODE_VIEWER
         auto append_range_item = [append_item](int i, float value) {
+#endif // ENABLE_NEW_GCODE_VIEWER
             std::string str_value = get_time_dhms(value);
             if (str_value == "0s")
                 str_value = "< 1s";
 #if ENABLE_NEW_GCODE_VIEWER
-            append_item(EItemType::Rect, libvgcode::convert(libvgcode::RANGES_COLORS[i]), str_value);
+            append_item(EItemType::Rect, libvgcode::convert(range.get_palette()[i]), str_value);
 #else
             append_item(EItemType::Rect, Range_Colors[i], str_value);
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -4607,11 +4609,11 @@ void GCodeViewer::render_legend(float& legend_height)
             append_range_item(0, values.front());
         else if (values.size() == 2) {
             // two items use case
-            append_range_item(static_cast<int>(libvgcode::RANGES_COLORS.size()) - 1, values.back());
+            append_range_item(static_cast<int>(range.get_palette().size()) - 1, values.back());
             append_range_item(0, values.front());
         }
         else {
-            for (int i = static_cast<int>(libvgcode::RANGES_COLORS.size()) - 1; i >= 0; --i) {
+            for (int i = static_cast<int>(range.get_palette().size()) - 1; i >= 0; --i) {
                 append_range_item(i, values[i]);
             }
         }
@@ -5014,14 +5016,14 @@ void GCodeViewer::render_legend(float& legend_height)
             break;
         }
 #if ENABLE_NEW_GCODE_VIEWER
-        case libvgcode::EViewType::Height:               { append_range(m_viewer.get_height_range(), 3); break; }
-        case libvgcode::EViewType::Width:                { append_range(m_viewer.get_width_range(), 3); break; }
-        case libvgcode::EViewType::Speed:                { append_range(m_viewer.get_speed_range(), 1); break; }
-        case libvgcode::EViewType::FanSpeed:             { append_range(m_viewer.get_fan_speed_range(), 0); break; }
-        case libvgcode::EViewType::Temperature:          { append_range(m_viewer.get_temperature_range(), 0); break; }
-        case libvgcode::EViewType::VolumetricFlowRate:   { append_range(m_viewer.get_volumetric_rate_range(), 3); break; }
-        case libvgcode::EViewType::LayerTimeLinear:      { append_time_range(m_viewer.get_layer_time_range(libvgcode::EColorRangeType::Linear)); break; }
-        case libvgcode::EViewType::LayerTimeLogarithmic: { append_time_range(m_viewer.get_layer_time_range(libvgcode::EColorRangeType::Logarithmic)); break; }
+        case libvgcode::EViewType::Height:               { append_range(m_viewer.get_color_range(libvgcode::EViewType::Height), 3); break; }
+        case libvgcode::EViewType::Width:                { append_range(m_viewer.get_color_range(libvgcode::EViewType::Width), 3); break; }
+        case libvgcode::EViewType::Speed:                { append_range(m_viewer.get_color_range(libvgcode::EViewType::Speed), 1); break; }
+        case libvgcode::EViewType::FanSpeed:             { append_range(m_viewer.get_color_range(libvgcode::EViewType::FanSpeed), 0); break; }
+        case libvgcode::EViewType::Temperature:          { append_range(m_viewer.get_color_range(libvgcode::EViewType::Temperature), 0); break; }
+        case libvgcode::EViewType::VolumetricFlowRate:   { append_range(m_viewer.get_color_range(libvgcode::EViewType::VolumetricFlowRate), 3); break; }
+        case libvgcode::EViewType::LayerTimeLinear:      { append_time_range(m_viewer.get_color_range(libvgcode::EViewType::LayerTimeLinear)); break; }
+        case libvgcode::EViewType::LayerTimeLogarithmic: { append_time_range(m_viewer.get_color_range(libvgcode::EViewType::LayerTimeLogarithmic)); break; }
         case libvgcode::EViewType::Tool: {
             // shows only extruders actually used
             const std::vector<uint8_t>& used_extruders_ids = m_viewer.get_used_extruders_ids();
