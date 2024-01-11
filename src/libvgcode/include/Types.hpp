@@ -16,13 +16,18 @@ namespace libvgcode {
 static constexpr float PI = 3.141592f;
 
 //
-// Default radius, in mm, of the cylinders used to render the travel moves.
+// Predefined values for the radius, in mm, of the cylinders used to render the travel moves.
 //
 static constexpr float DEFAULT_TRAVELS_RADIUS_MM = 0.1f;
+static constexpr float MIN_TRAVELS_RADIUS_MM = 0.05f;
+static constexpr float MAX_TRAVELS_RADIUS_MM = 1.0f;
+
 //
-// Default radius, in mm, of the cylinders used to render the wipe moves.
+// Predefined values for the radius, in mm, of the cylinders used to render the wipe moves.
 //
 static constexpr float DEFAULT_WIPES_RADIUS_MM = 0.1f;
+static constexpr float MIN_WIPES_RADIUS_MM = 0.05f;
+static constexpr float MAX_WIPES_RADIUS_MM = 1.0f;
 
 //
 // Vector in 3 dimensions

@@ -309,6 +309,7 @@ public:
     float get_travels_radius() const;
     //
     // Set the radius, in mm, of the cylinders used to render the travel moves.
+    // Radius is clamped to [MIN_TRAVELS_RADIUS_MM..MAX_TRAVELS_RADIUS_MM]
     //
     void set_travels_radius(float radius);
     //
@@ -317,6 +318,7 @@ public:
     float get_wipes_radius() const;
     //
     // Set the radius, in mm, of the cylinders used to render the wipe moves.
+    // Radius is clamped to [MIN_WIPES_RADIUS_MM..MAX_WIPES_RADIUS_MM]
     //
     void set_wipes_radius(float radius);
 

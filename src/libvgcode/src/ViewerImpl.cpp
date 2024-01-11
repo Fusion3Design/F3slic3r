@@ -1002,13 +1002,13 @@ void ViewerImpl::set_color_range_palette(EViewType type, const Palette& palette)
 
 void ViewerImpl::set_travels_radius(float radius)
 {
-    m_travels_radius = std::clamp(radius, 0.05f, 0.5f);
+    m_travels_radius = std::clamp(radius, MIN_TRAVELS_RADIUS_MM, MAX_TRAVELS_RADIUS_MM);
     update_heights_widths();
 }
 
 void ViewerImpl::set_wipes_radius(float radius)
 {
-    m_wipes_radius = std::clamp(radius, 0.05f, 0.5f);
+    m_wipes_radius = std::clamp(radius, MIN_WIPES_RADIUS_MM, MAX_WIPES_RADIUS_MM);
     update_heights_widths();
 }
 
