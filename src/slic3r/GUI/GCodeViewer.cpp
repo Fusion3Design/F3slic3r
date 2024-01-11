@@ -485,7 +485,6 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
 
             ImGui::Separator();
             if (ImGui::BeginTable("Properties", 2)) {
-                const bool imperial_units = wxGetApp().app_config->get_bool("use_inches");
                 char buff[1024];
 
                 append_table_row(_u8L("Type") + ":", [&imgui, &vertex]() {
@@ -494,23 +493,21 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                         text += " (" + _u8L(to_string(vertex.role)) + ")";
                     imgui.text(text);
                 });
-                append_table_row(_u8L("Width") + ":", [&imgui, &vertex, &buff, imperial_units]() {
+                append_table_row(_u8L("Width") + ":", [&imgui, &vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
                         sprintf(buff, "%.3f", vertex.width);
-                        text = std::string(buff) + " ";
-                        text += imperial_units ? _u8L("in") : _u8L("mm");
+                        text = std::string(buff) + " " + _u8L("mm");
                     }
                     else
                         text = _u8L("N/A");
                     imgui.text(text);
                 });
-                append_table_row(_u8L("Height") + ":", [&imgui, &vertex, &buff, imperial_units]() {
+                append_table_row(_u8L("Height") + ":", [&imgui, &vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
                         sprintf(buff, "%.3f", vertex.height);
-                        text = std::string(buff) + " ";
-                        text += imperial_units ? _u8L("in") : _u8L("mm");
+                        text = std::string(buff) + " " + _u8L("mm");
                     }
                     else
                         text = _u8L("N/A");
@@ -521,12 +518,11 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                     const std::string text = std::string(buff);
                     imgui.text(text);
                 });
-                append_table_row(_u8L("Speed") + ":", [&imgui, &vertex, &buff, imperial_units]() {
+                append_table_row(_u8L("Speed") + ":", [&imgui, &vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
                         sprintf(buff, "%.1f", vertex.feedrate);
-                        text = std::string(buff) + " ";
-                        text += imperial_units ? _u8L("in/s") : _u8L("mm/s");
+                        text = std::string(buff) + " " + _u8L("mm/s");
                     }
                     else
                         text = _u8L("N/A");
