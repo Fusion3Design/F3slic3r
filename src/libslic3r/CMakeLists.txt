@@ -510,6 +510,8 @@ set(SLIC3R_SOURCES
     StaticMap.hpp
     ProfilesSharingUtils.hpp
     ProfilesSharingUtils.cpp
+    Utils/DirectoriesUtils.hpp
+    Utils/DirectoriesUtils.cpp
 )
 
 if (APPLE)

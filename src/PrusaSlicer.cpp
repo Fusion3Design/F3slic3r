@@ -62,6 +62,7 @@
 #include "libslic3r/Thread.hpp"
 #include "libslic3r/BlacklistedLibraryCheck.hpp"
 #include "libslic3r/ProfilesSharingUtils.hpp"
+#include "libslic3r/Utils/DirectoriesUtils.hpp"
 
 #include "PrusaSlicer.hpp"
 
@@ -848,7 +849,10 @@ bool CLI::setup(int argc, char **argv)
         for (const t_optiondef_map::value_type &optdef : *options)
             m_config.option(optdef.first, true);
 
-    set_data_dir(m_config.opt_string("datadir"));
+    if (std::string provided_datadir = m_config.opt_string("datadir"); provided_datadir.empty()) {
+        set_data_dir(get_default_datadir());
+    } else
+        set_data_dir(provided_datadir);
     
     //FIXME Validating at this stage most likely does not make sense, as the config is not fully initialized yet.
     if (!validity.empty()) {
@@ -962,13 +966,15 @@ std::set<std::string> query_options = {
 
 bool CLI::processed_profiles_sharing()
 {
-    if (m_profiles_sharing.empty())
+    if (m_profiles_sharing.empty()) {
 #if 0 // fsFIXME !!! just for the test
-        DynamicPrintConfig config = Slic3r::load_full_print_config("0.20mm QUALITY @MINI", "Prusament PLA", "Original Prusa MINI & MINI+");
+        Slic3r::DynamicPrintConfig config = {};
+        bool was_loaded = Slic3r::load_full_print_config("0.20mm QUALITY @MINI", "Prusament PLA", "Original Prusa MINI & MINI+", config);
         return true;
 #else
         return false;
 #endif
+    }
 
     std::string ret;
     for (auto const& opt_key : m_profiles_sharing) {
@@ -986,9 +992,10 @@ bool CLI::processed_profiles_sharing()
             ret = Slic3r::get_json_printer_profiles(m_config.opt_string("printer_model"), m_config.opt_string("printer_variant"));
 
             if (ret.empty())
-                ret = "\nPrinter_model '" + m_config.opt_string("printer_model") + 
-                      "' with printer_variant '" + m_config.opt_string("printer_variant") + 
-                      "' wasn't found among intalled printers.\nOr the request can be wrong.\n";
+                boost::nowide::cerr <<  "Printer_model '" << m_config.opt_string("printer_model") <<
+                                        "' with printer_variant '" << m_config.opt_string("printer_variant") << 
+                                        "' wasn't found among installed printers." << std::endl << 
+                                        "Or the request can be wrong." << std::endl;
         }
 */
         else if (opt_key == "query-print-filament-profiles") {
@@ -999,8 +1006,9 @@ bool CLI::processed_profiles_sharing()
             ret = Slic3r::get_json_print_filament_profiles(m_config.opt_string("printer-profile"));
 
             if (ret.empty())
-                ret = "\nPrinter profile '" + m_config.opt_string("printer-profile") + 
-                      "' wasn't found among intalled printers.\nOr the request can be wrong.\n";
+                boost::nowide::cerr <<  "Printer profile '" << m_config.opt_string("printer-profile") <<
+                                        "' wasn't found among installed printers." << std::endl << 
+                                        "Or the request can be wrong." << std::endl;
         }
         else {
             boost::nowide::cerr << "error: option not implemented yet: " << opt_key << std::endl;
@@ -1013,9 +1021,9 @@ bool CLI::processed_profiles_sharing()
     std::string cmdline_param = m_config.opt_string("output");
     if (cmdline_param.empty()) {
         if (ret.empty())
-            printf("Wrong request");
+            boost::nowide::cerr << "Wrong request" << std::endl;
         else
-            printf(ret.c_str());
+            printf("%s", ret.c_str());
     }
     else {
         // if we were supplied a directory, use it and append our automatically generated filename
@@ -1034,9 +1042,7 @@ bool CLI::processed_profiles_sharing()
         c << ret << std::endl;
         c.close();
 
-        printf("\nOutput for your request in written into \"");
-        printf(file.c_str());
-        printf("\"\n");
+        boost::nowide::cout << "Output for your request is written into " << file << std::endl;
     }
 
     return true;

@@ -7,119 +7,25 @@
 #include "format.hpp"
 #include "PrintConfig.hpp"
 #include "PresetBundle.hpp"
+#include "Utils/DirectoriesUtils.hpp"
 
 #include <boost/property_tree/json_parser.hpp>
-
-#if defined(_WIN32)
-
-#include <shlobj.h>
-
-static std::string GetDataDir()
-{
-    HRESULT hr = E_FAIL;
-
-    std::wstring buffer;
-    buffer.resize(MAX_PATH);
-
-    hr = ::SHGetFolderPath
-    (
-        NULL,               // parent window, not used
-        CSIDL_APPDATA,
-        NULL,               // access token (current user)
-        SHGFP_TYPE_CURRENT, // current path, not just default value
-        (LPWSTR)buffer.data()
-    );
-
-    // somewhat incredibly, the error code in the Unicode version is
-    // different from the one in ASCII version for this function
-#if wxUSE_UNICODE
-    if (hr == E_FAIL)
-#else
-    if (hr == S_FALSE)
-#endif
-    {
-        // directory doesn't exist, maybe we can get its default value?
-        hr = ::SHGetFolderPath
-        (
-            NULL,
-            CSIDL_APPDATA,
-            NULL,
-            SHGFP_TYPE_DEFAULT,
-            (LPWSTR)buffer.data()
-        );
-    }
-
-    for (int i=0; i< MAX_PATH; i++)
-        if (buffer.data()[i] == '\0') {
-            buffer.resize(i);
-            break;
-        }
-
-    return  boost::nowide::narrow(buffer);
-}
-
-#elif defined(__linux__)
-
-#include <stdlib.h>
-#include <pwd.h>
-
-static std::string GetDataDir()
-{
-    std::string dir;
-
-    char* ptr;
-    if ((ptr = getenv("XDG_CONFIG_HOME")))
-        dir = std::string(ptr);
-    else {
-        if ((ptr = getenv("HOME")))
-            dir = std::string(ptr);
-        else {
-            struct passwd* who = (struct passwd*)NULL;
-            if ((ptr = getenv("USER")) || (ptr = getenv("LOGNAME")))
-                who = getpwnam(ptr);
-            // make sure the user exists!
-            if (!who)
-                who = getpwuid(getuid());
-
-            dir = std::string(who ? who->pw_dir : 0);
-        }
-        dir += "/.config";
-    }
-
-    if (dir.empty())
-        printf("GetDataDir() > unsupported file layout \n");
-
-    return dir;
-}
-
-#endif
+#include <boost/log/trivial.hpp>
 
 namespace Slic3r {
 
-static bool is_datadir()
-{
-    if (!data_dir().empty())
-        return true;
-
-    const std::string config_dir = GetDataDir();
-    const std::string data_dir = (boost::filesystem::path(config_dir) / SLIC3R_APP_FULL_NAME).make_preferred().string();
-
-    set_data_dir(data_dir);
-    return true;
-}
-
-static bool load_preset_bandle_from_datadir(PresetBundle& preset_bundle)
+static bool load_preset_bundle_from_datadir(PresetBundle& preset_bundle)
 {
     AppConfig app_config = AppConfig(AppConfig::EAppMode::Editor);
     if (!app_config.exists()) {
-        printf("Configuration wasn't found. Check your 'datadir' value.\n");
+        BOOST_LOG_TRIVIAL(error) << "Configuration wasn't found. Check your 'datadir' value.";
         return false;
     }
 
     if (std::string error = app_config.load(); !error.empty()) {
-        throw Slic3r::RuntimeError(Slic3r::format("Error parsing PrusaSlicer config file, it is probably corrupted. "
+        BOOST_LOG_TRIVIAL(error) << Slic3r::format("Error parsing PrusaSlicer config file, it is probably corrupted. "
             "Try to manually delete the file to recover from the error. Your user profiles will not be affected."
-            "\n\n%1%\n\n%2%", app_config.config_path(), error));
+            "\n%1%\n%2%", app_config.config_path(), error);
         return false;
     }
 
@@ -133,7 +39,7 @@ static bool load_preset_bandle_from_datadir(PresetBundle& preset_bundle)
     try {
         auto preset_substitutions = preset_bundle.load_presets(app_config, ForwardCompatibilitySubstitutionRule::EnableSystemSilent);
         if (!preset_substitutions.empty()) {
-            printf("Some substitutions are found during loading presets.\n");
+            BOOST_LOG_TRIVIAL(error) << "Some substitutions are found during loading presets.";
             return false;
         }
 
@@ -164,14 +70,13 @@ static bool load_preset_bandle_from_datadir(PresetBundle& preset_bundle)
                     vendor_profile.models = models;
             }
         }
-
-        return true;
     }
     catch (const std::exception& ex) {
-        delayed_error_load_presets = ex.what();
-        printf(delayed_error_load_presets.c_str());
+        BOOST_LOG_TRIVIAL(error) << ex.what();
         return false;
     }
+
+    return true;
 }
 
 namespace pt = boost::property_tree;
@@ -228,7 +133,7 @@ std::string get_json_printer_profiles(const std::string& printer_model_name, con
     PrinterAttr_ printer_attr({printer_model_name, printer_variant});
 
     PresetBundle preset_bundle;
-    if (!load_preset_bandle_from_datadir(preset_bundle))
+    if (!load_preset_bundle_from_datadir(preset_bundle))
         return "";
 
     const VendorMap& vendors = preset_bundle.vendors;
@@ -347,11 +252,8 @@ static void add_printer_models(pt::ptree& vendor_node,
 
 std::string get_json_printer_models(PrinterTechnology printer_technology)
 {
-    if (!is_datadir())
-        return "";
-
     PresetBundle preset_bundle;
-    if (!load_preset_bandle_from_datadir(preset_bundle))
+    if (!load_preset_bundle_from_datadir(preset_bundle))
         return "";
             
     pt::ptree vendor_node;
@@ -440,11 +342,8 @@ static std::string get_installed_print_and_filament_profiles(const PresetBundle*
 
 std::string get_json_print_filament_profiles(const std::string& printer_profile)
 {
-    if (!is_datadir())
-        return "";
-
     PresetBundle preset_bundle;
-    if (load_preset_bandle_from_datadir(preset_bundle)) {
+    if (load_preset_bundle_from_datadir(preset_bundle)) {
         const Preset* preset = preset_bundle.printers.find_preset(printer_profile, false, false);
         if (preset)
             return get_installed_print_and_filament_profiles(&preset_bundle, preset);
@@ -454,39 +353,41 @@ std::string get_json_print_filament_profiles(const std::string& printer_profile)
 }
 
 // Helper function for FS
-DynamicPrintConfig load_full_print_config(const std::string& print_preset_name, const std::string& filament_preset_name, const std::string& printer_preset_name)
+bool load_full_print_config(const std::string& print_preset_name, const std::string& filament_preset_name, const std::string& printer_preset_name, DynamicPrintConfig& config)
 {
-    DynamicPrintConfig config = {};
-
-    if (is_datadir()) {
-        PresetBundle preset_bundle;
-
-        if (load_preset_bandle_from_datadir(preset_bundle)) {
-            config.apply(FullPrintConfig::defaults());
-
-            const Preset* print_preset = preset_bundle.prints.find_preset(print_preset_name);
-            if (print_preset)
-                config.apply_only(print_preset->config, print_preset->config.keys());
-            else
-                BOOST_LOG_TRIVIAL(warning) << Slic3r::format("Print profile '%1%' wasn't found.", print_preset_name);
-
-            const Preset* filament_preset = preset_bundle.filaments.find_preset(filament_preset_name);
-            if (filament_preset)
-                config.apply_only(filament_preset->config, filament_preset->config.keys());
-            else
-                BOOST_LOG_TRIVIAL(warning) << Slic3r::format("Filament profile '%1%' wasn't found.", filament_preset_name);
-
-            const Preset* printer_preset = preset_bundle.printers.find_preset(printer_preset_name);
-            if (printer_preset)
-                config.apply_only(printer_preset->config, printer_preset->config.keys());
-            else
-                BOOST_LOG_TRIVIAL(warning) << Slic3r::format("Printer profile '%1%' wasn't found.", printer_preset_name);
-        }
+    PresetBundle preset_bundle;
+    if (!load_preset_bundle_from_datadir(preset_bundle)){
+        BOOST_LOG_TRIVIAL(error) << Slic3r::format("Failed to load data from the datadir '%1%'.", data_dir());
+        return false;
     }
-    else
-        BOOST_LOG_TRIVIAL(error) << "Datadir wasn't found\n";
 
-    return config;
+    config = {};
+    config.apply(FullPrintConfig::defaults());
+
+    bool is_failed{ false };
+
+    if (const Preset* print_preset = preset_bundle.prints.find_preset(print_preset_name))
+        config.apply_only(print_preset->config, print_preset->config.keys());
+    else {
+        BOOST_LOG_TRIVIAL(warning) << Slic3r::format("Print profile '%1%' wasn't found.", print_preset_name);
+        is_failed |= true;
+    }
+
+    if (const Preset* filament_preset = preset_bundle.filaments.find_preset(filament_preset_name))
+        config.apply_only(filament_preset->config, filament_preset->config.keys());
+    else {
+        BOOST_LOG_TRIVIAL(warning) << Slic3r::format("Filament profile '%1%' wasn't found.", filament_preset_name);
+        is_failed |= true;
+    }
+
+    if (const Preset* printer_preset = preset_bundle.printers.find_preset(printer_preset_name))
+        config.apply_only(printer_preset->config, printer_preset->config.keys());
+    else {
+        BOOST_LOG_TRIVIAL(warning) << Slic3r::format("Printer profile '%1%' wasn't found.", printer_preset_name);
+        is_failed |= true;
+    }
+
+    return !is_failed;
 }
 
 } // namespace Slic3r
