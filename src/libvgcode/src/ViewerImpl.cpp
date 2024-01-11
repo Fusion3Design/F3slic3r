@@ -857,7 +857,7 @@ void ViewerImpl::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
     }
 }
 
-void ViewerImpl::set_view_visible_range(uint32_t min, uint32_t max)
+void ViewerImpl::set_view_visible_range(Interval::value_type min, Interval::value_type max)
 {
     // force update of the full range, to avoid clamping the visible range with full old values
     // when calling m_view_range.set_visible()

@@ -162,7 +162,7 @@ const Interval& Viewer::get_view_visible_range() const
     return m_impl->get_view_visible_range();
 }
 
-void Viewer::set_view_visible_range(uint32_t min, uint32_t max)
+void Viewer::set_view_visible_range(Interval::value_type min, Interval::value_type max)
 {
     m_impl->set_view_visible_range(min, max);
 }

@@ -105,7 +105,7 @@ public:
     const Interval& get_view_full_range() const { return m_view_range.get_full(); }
     const Interval& get_view_enabled_range() const { return m_view_range.get_enabled(); }
     const Interval& get_view_visible_range() const { return m_view_range.get_visible(); }
-    void set_view_visible_range(uint32_t min, uint32_t max);
+    void set_view_visible_range(Interval::value_type min, Interval::value_type max);
 
     size_t get_vertices_count() const { return m_vertices.size(); }
     const PathVertex& get_current_vertex() const { return get_vertex_at(m_view_range.get_visible()[1]); }

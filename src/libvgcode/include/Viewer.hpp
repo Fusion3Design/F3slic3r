@@ -171,7 +171,7 @@ public:
     // Set the current visible range.
     // values are clamped to the current view global range
     // 
-    void set_view_visible_range(uint32_t min, uint32_t max);
+    void set_view_visible_range(Interval::value_type min, Interval::value_type max);
 
     //
     // Return the count of vertices used to render the toolpaths
