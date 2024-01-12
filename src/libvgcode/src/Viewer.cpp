@@ -77,6 +77,11 @@ bool Viewer::is_spiral_vase_mode() const
     return m_impl->is_spiral_vase_mode();
 }
 
+std::vector<ETimeMode> Viewer::get_time_modes() const
+{
+    return m_impl->get_time_modes();
+}
+
 const Interval& Viewer::get_layers_view_range() const
 {
     return m_impl->get_layers_view_range();
@@ -177,9 +182,19 @@ const PathVertex& Viewer::get_current_vertex() const
     return m_impl->get_current_vertex();
 }
 
+size_t Viewer::get_current_vertex_id() const
+{
+    return m_impl->get_current_vertex_id();
+}
+
 const PathVertex& Viewer::get_vertex_at(size_t id) const
 {
     return m_impl->get_vertex_at(id);
+}
+
+float Viewer::get_estimated_time_at(size_t id) const
+{
+    return m_impl->get_estimated_time_at(id);
 }
 
 Color Viewer::get_vertex_color(const PathVertex& vertex) const

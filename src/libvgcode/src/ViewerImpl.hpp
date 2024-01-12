@@ -85,6 +85,8 @@ public:
 
     bool is_spiral_vase_mode() const { return m_settings.spiral_vase_mode; }
 
+    std::vector<ETimeMode> get_time_modes() const;
+
     size_t get_layers_count() const { return m_layers.count(); }
     float get_layer_z(size_t layer_id) const { return m_layers.get_layer_z(layer_id); }
     std::vector<float> get_layers_zs() const { return m_layers.get_zs(); }
@@ -108,10 +110,12 @@ public:
     void set_view_visible_range(Interval::value_type min, Interval::value_type max);
 
     size_t get_vertices_count() const { return m_vertices.size(); }
-    const PathVertex& get_current_vertex() const { return get_vertex_at(m_view_range.get_visible()[1]); }
+    const PathVertex& get_current_vertex() const { return get_vertex_at(get_current_vertex_id()); }
+    size_t get_current_vertex_id() const { return static_cast<size_t>(m_view_range.get_visible()[1]); }
     const PathVertex& get_vertex_at(size_t id) const {
         return (id < m_vertices.size()) ? m_vertices[id] : DUMMY_PATH_VERTEX;
     }
+    float get_estimated_time_at(size_t id) const;
     Color get_vertex_color(const PathVertex& vertex) const;
 
     size_t get_enabled_segments_count() const { return m_enabled_segments_count; }

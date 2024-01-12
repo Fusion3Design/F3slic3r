@@ -80,13 +80,16 @@ public:
     // Toggle the top layer only state.
     //
     void toggle_top_layer_only_view_range();
-
     //
     // Spiral vase mode
     // Whether or not the gcode was generated with spiral vase mode enabled.
     // See: GCodeInputData
     //
     bool is_spiral_vase_mode() const;
+    //
+    // Return the list of detected time modes.
+    //
+    std::vector<ETimeMode> get_time_modes() const;
 
     //
     // ************************************************************************
@@ -188,9 +191,20 @@ public:
     const PathVertex& get_current_vertex() const;
 
     //
+    // Return the index of vertex pointed by the max value of the view visible range
+    //
+    size_t get_current_vertex_id() const;
+
+    //
     // Return the vertex at the given index
     //
     const PathVertex& get_vertex_at(size_t id) const;
+
+    //
+    // Return the estimated time, in seconds, at the vertex with the given index
+    // using the current time mode.
+    //
+    float get_estimated_time_at(size_t id) const;
 
     //
     // Return the color used to render the given vertex with the current settings.

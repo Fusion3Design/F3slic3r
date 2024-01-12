@@ -15,6 +15,7 @@
 #include <string>
 #include <algorithm>
 #include <cmath>
+#include <numeric>
 
 namespace libvgcode {
 
@@ -798,6 +799,17 @@ void ViewerImpl::toggle_top_layer_only_view_range()
     m_settings.update_colors = true;
 }
 
+std::vector<ETimeMode> ViewerImpl::get_time_modes() const
+{
+    std::vector<ETimeMode> ret;
+    for (size_t i = 0; i < TIME_MODES_COUNT; ++i) {
+        if (std::accumulate(m_vertices.begin(), m_vertices.end(), 0.0f,
+            [i](float a, const PathVertex& v) { return a + v.times[i]; }) > 0.0f)
+            ret.push_back(static_cast<ETimeMode>(i));
+    }
+    return ret;
+}
+
 AABox ViewerImpl::get_bounding_box(EBBoxType type) const
 {
     assert(type < EBBoxType::COUNT);
@@ -868,6 +880,12 @@ void ViewerImpl::set_view_visible_range(Interval::value_type min, Interval::valu
     m_view_range.set_visible(min, max);
     update_enabled_entities();
     m_settings.update_colors = true;
+}
+
+float ViewerImpl::get_estimated_time_at(size_t id) const
+{
+    return std::accumulate(m_vertices.begin(), m_vertices.begin() + id + 1, 0.0f, 
+        [this](float a, const PathVertex& v) { return a + v.times[static_cast<size_t>(m_settings.time_mode)]; });
 }
 
 Color ViewerImpl::get_vertex_color(const PathVertex& v) const

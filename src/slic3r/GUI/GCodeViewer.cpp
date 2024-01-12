@@ -461,8 +461,11 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
         imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Position") + ":");
         ImGui::SameLine();
         libvgcode::PathVertex vertex = viewer->get_current_vertex();
-        if (vertex.type == libvgcode::EMoveType::Seam)
-            vertex = viewer->get_vertex_at(viewer->get_view_visible_range()[1] - 1);
+        size_t vertex_id = viewer->get_current_vertex_id();
+        if (vertex.type == libvgcode::EMoveType::Seam) {
+            vertex_id = static_cast<size_t>(viewer->get_view_visible_range()[1]) - 1;
+            vertex = viewer->get_vertex_at(vertex_id);
+        }
 
         char buf[1024];
         sprintf(buf, "X: %.3f, Y: %.3f, Z: %.3f", vertex.position[0], vertex.position[1], vertex.position[2]);
@@ -487,65 +490,65 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
             if (ImGui::BeginTable("Properties", 2)) {
                 char buff[1024];
 
-                append_table_row(_u8L("Type") + ":", [&imgui, &vertex]() {
+                append_table_row(_u8L("Type"), [&imgui, &vertex]() {
                     std::string text = _u8L(to_string(vertex.type));
                     if (vertex.is_extrusion())
                         text += " (" + _u8L(to_string(vertex.role)) + ")";
                     imgui.text(text);
                 });
-                append_table_row(_u8L("Width") + ":", [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Width") + " (" + _u8L("mm") + ")", [&imgui, &vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
                         sprintf(buff, "%.3f", vertex.width);
-                        text = std::string(buff) + " " + _u8L("mm");
+                        text = std::string(buff);
                     }
                     else
                         text = _u8L("N/A");
                     imgui.text(text);
                 });
-                append_table_row(_u8L("Height") + ":", [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Height") + " (" + _u8L("mm") + ")", [&imgui, &vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
                         sprintf(buff, "%.3f", vertex.height);
-                        text = std::string(buff) + " " + _u8L("mm");
+                        text = std::string(buff);
                     }
                     else
                         text = _u8L("N/A");
                     imgui.text(text);
                 });
-                append_table_row(_u8L("Layer") + ":", [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Layer"), [&imgui, &vertex, &buff]() {
                     sprintf(buff, "%d", vertex.layer_id + 1);
                     const std::string text = std::string(buff);
                     imgui.text(text);
                 });
-                append_table_row(_u8L("Speed") + ":", [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Speed") + " (" + _u8L("mm/s") + ")", [&imgui, &vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
                         sprintf(buff, "%.1f", vertex.feedrate);
-                        text = std::string(buff) + " " + _u8L("mm/s");
+                        text = std::string(buff);
                     }
                     else
                         text = _u8L("N/A");
-                  imgui.text(text);
+                    imgui.text(text);
                 });
-                append_table_row(_u8L("Fan speed") + ":", [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Fan speed") + " (" + _u8L("%") + ")", [&imgui, &vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
                         sprintf(buff, "%.0f", vertex.fan_speed);
-                        text = std::string(buff) + " " + _u8L("%");
+                        text = std::string(buff);
                     }
                     else
                         text = _u8L("N/A");
                     imgui.text(text);
                 });
-                append_table_row(_u8L("Temperature") + ":", [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Temperature") + " (" + _u8L("°C") + ")", [&imgui, &vertex, &buff]() {
                     sprintf(buff, "%.0f", vertex.temperature);
-                    const std::string text = std::string(buff) + " " + _u8L("°C");
-                    imgui.text(text);
+                    imgui.text(std::string(buff));
                 });
-                append_table_row(_u8L("Time") + ":", [viewer, &imgui, &vertex, &buff]() {
-                    sprintf(buff, "%.3f", vertex.times[static_cast<size_t>(viewer->get_time_mode())]);
-                    const std::string text = std::string(buff) + " " + _u8L("s");
+                append_table_row(_u8L("Time"), [viewer, &imgui, &vertex, &buff, vertex_id]() {
+                    const float estimated_time = viewer->get_estimated_time_at(vertex_id);
+                    sprintf(buff, "%s (%.3fs)", get_time_dhms(estimated_time).c_str(), vertex.times[static_cast<size_t>(viewer->get_time_mode())]);
+                    const std::string text = std::string(buff);
                     imgui.text(text);
                 });
 
