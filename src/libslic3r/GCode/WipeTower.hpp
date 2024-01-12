@@ -401,6 +401,7 @@ private:
 		WipeTowerWriter &writer,
 		const box_coordinates  &cleaning_box, 
 		const std::string&	 	current_material,
+		const int 				old_temperature,
 		const int 				new_temperature);
 
 	void toolchange_Change(
