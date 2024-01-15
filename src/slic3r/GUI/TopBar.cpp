@@ -26,12 +26,18 @@ TopBarItemsCtrl::Button::Button(wxWindow* parent, const wxString& label, const s
 :ScalableButton(parent, wxID_ANY, icon_name, label, wxDefaultSize, wxDefaultPosition, wxNO_BORDER, px_cnt)
 {
     int btn_margin = em_unit(this);
-    wxSize size = GetTextExtent(label) + wxSize(6 * btn_margin, int(1.5 * btn_margin));
+    int x, y;
+    GetTextExtent(label, &x, &y);
+    wxSize size(x + 4 * btn_margin, y + int(1.5 * btn_margin));
     if (icon_name.empty())
         this->SetMinSize(size);
-    if (label.IsEmpty()) {
+    else if (label.IsEmpty()) {
+#ifdef __APPLE__
+        this->SetMinSize(wxSize(px_cnt, px_cnt));
+#else
         const int btn_side = px_cnt + btn_margin;
         this->SetMinSize(wxSize(btn_side, btn_side));
+#endif
     }
     else
         this->SetMinSize(wxSize(-1, size.y));
@@ -47,6 +53,16 @@ void TopBarItemsCtrl::Button::set_selected(bool selected)
 {
     m_is_selected = selected;
 
+#ifdef _WIN32
+    this->SetBackgroundColour(m_is_selected ? wxGetApp().get_label_clr_default() : wxGetApp().get_window_default_clr());
+    this->SetForegroundColour(m_is_selected ? wxGetApp().get_window_default_clr(): wxGetApp().get_label_clr_default() );
+#else
+    this->SetBackgroundColour(m_is_selected ? wxGetApp().get_highlight_default_clr() : wxTransparentColor);
+#endif
+
+    return;
+
+    // #ysFIXME delete after testing on Linux
     if (m_is_selected) {
 #ifdef __APPLE__
         this->SetBackgroundColour(wxGetApp().get_highlight_default_clr());
@@ -76,21 +92,16 @@ void TopBarItemsCtrl::Button::set_hovered(bool hovered)
     this->SetFont(new_font);
 #ifdef _WIN32
     this->GetParent()->Refresh(); // force redraw a background of the selected mode button
-#else
-    SetForegroundColour(wxSystemSettings::GetColour(hovered ? wxSYS_COLOUR_BTNTEXT :
-#if defined (__linux__) && defined (__WXGTK3__)
-        wxSYS_COLOUR_GRAYTEXT
-#elif defined (__linux__) && defined (__WXGTK2__)
-        wxSYS_COLOUR_BTNTEXT
-#else 
-        wxSYS_COLOUR_BTNSHADOW
-#endif    
-    ));
 #endif /* no _WIN32 */
 
     const wxColour& color = hovered       ? wxGetApp().get_color_selected_btn_bg() :
+#ifdef _WIN32
                             m_is_selected ? wxGetApp().get_label_clr_default()       :
                                             wxGetApp().get_window_default_clr();
+#else
+                            m_is_selected ? wxGetApp().get_highlight_default_clr():
+                                            wxTransparentColor;
+#endif
     this->SetBackgroundColour(color);
 
     this->Refresh();
@@ -209,8 +220,8 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     wxBoxSizer* left_sizer = new wxBoxSizer(wxHORIZONTAL);
 
 #ifdef __APPLE__
-    auto logo = new wxStaticBitmap(this, wxID_ANY, *get_bmp_bundle(wxGetApp().logo_name(), 24));
-    left_sizer->Add(logo, 1, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
+    auto logo = new wxStaticBitmap(this, wxID_ANY, *get_bmp_bundle(wxGetApp().logo_name(), 40));
+    left_sizer->Add(logo, 0, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
 #else
     m_menu_btn = new ButtonWithPopup(this, _L("Menu"), wxGetApp().logo_name());
     left_sizer->Add(m_menu_btn, 0, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
@@ -224,7 +235,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
 #endif
 
     m_buttons_sizer = new wxFlexGridSizer(1, m_btn_margin, m_btn_margin);
-    left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 2 * m_btn_margin);
+    left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL/* | wxLEFT*/ | wxRIGHT, 2 * m_btn_margin);
 
     CreateSearch();
 
@@ -264,7 +275,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     });    
     m_auth_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_auth_btn->set_selected(false); });
 
-    m_sizer->Add(right_sizer);
+    m_sizer->Add(right_sizer, 0, wxALIGN_CENTER_VERTICAL);
 
     m_sizer->SetItemMinSize(1, wxSize(42 * wxGetApp().em_unit(), -1));
 
@@ -319,10 +330,16 @@ void TopBarItemsCtrl::Rescale()
 
 void TopBarItemsCtrl::OnColorsChanged()
 {
-    m_menu_btn->sys_color_changed();
+    wxGetApp().UpdateDarkUI(this);
+    if (m_menu_btn)
+        m_menu_btn->sys_color_changed();
 
-    for (ScalableButton* btn : m_pageButtons)
-        btn->sys_color_changed();
+    m_workspace_btn->sys_color_changed();
+    m_auth_btn->sys_color_changed();
+    m_search->SysColorsChanged();
+
+    UpdateSelection();
+    UpdateMode();
 
     m_sizer->Layout();
 }

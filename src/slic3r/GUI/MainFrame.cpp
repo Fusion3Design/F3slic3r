@@ -844,6 +844,10 @@ void MainFrame::create_preset_tabs()
     
     m_connect_webview = new ConnectWebViewPanel(m_tabpanel);
     m_monitor_webview = new WebViewPanel(m_tabpanel, L"");
+    // new created tabs have to be hidden by default
+    m_connect_webview->Hide();
+    m_monitor_webview->Hide();
+
     /*
     m_media = new MediaMainPanel(this);
     dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_media, "Media");
