@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <algorithm>
 
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
 namespace libvgcode {
 
@@ -163,4 +163,4 @@ Vec3 CogMarker::get_position() const
 
 } // namespace libvgcode
 
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS

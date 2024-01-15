@@ -8,7 +8,7 @@
 
 #include <cmath>
 
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
 namespace libvgcode {
 
@@ -164,4 +164,4 @@ void ToolMarker::render()
 
 } // namespace libvgcode
 
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS

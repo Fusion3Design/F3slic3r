@@ -40,10 +40,10 @@ struct Settings
 				{ EOptionType::ColorChanges,    false },
 				{ EOptionType::PausePrints,     false },
 				{ EOptionType::CustomGCodes,    false },
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 				{ EOptionType::CenterOfGravity, false },
 				{ EOptionType::ToolMarker,      true }
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 		} };
 
 		std::map<EGCodeExtrusionRole, bool> extrusion_roles_visibility{ {

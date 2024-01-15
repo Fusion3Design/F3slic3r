@@ -14,7 +14,7 @@
 
 #if ENABLE_NEW_GCODE_VIEWER
 #include "LibVGCode/LibVGCodeWrapper.hpp"
-// needed for tech ENABLE_COG_AND_TOOL_MARKERS
+// needed for tech VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 #include <libvgcode/include/Types.hpp>
 #endif // ENABLE_NEW_GCODE_VIEWER
 
@@ -399,10 +399,10 @@ class GCodeViewer
         GLModel m_model;
         bool m_visible{ false };
 #if ENABLE_NEW_GCODE_VIEWER
-#if !ENABLE_COG_AND_TOOL_MARKERS
+#if !VGCODE_ENABLE_COG_AND_TOOL_MARKERS
         // whether or not to render the model with fixed screen size
         bool m_fixed_screen_size{ true };
-#endif // !ENABLE_COG_AND_TOOL_MARKERS
+#endif // !VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 #else
         // whether or not to render the model with fixed screen size
         bool m_fixed_screen_size{ true };
@@ -413,11 +413,11 @@ class GCodeViewer
 
     public:
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
       void render(bool fixed_screen_size);
 #else
       void render();
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 #else
         void render();
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -447,11 +447,11 @@ class GCodeViewer
 
     private:
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
         void init(bool fixed_screen_size) {
 #else
         void init() {
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 #else
         void init() {
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -459,11 +459,11 @@ class GCodeViewer
                 return;
 
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
             const float radius = fixed_screen_size ? 10.0f : 1.0f;
 #else
             const float radius = m_fixed_screen_size ? 10.0f : 1.0f;
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 #else
             const float radius = m_fixed_screen_size ? 10.0f : 1.0f;
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -857,13 +857,13 @@ private:
     Shells m_shells;
     COG m_cog;
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     // whether or not to render the cog model with fixed screen size
     bool m_cog_marker_fixed_screen_size{ true };
     float m_cog_marker_size{ 1.0f };
     bool m_tool_marker_fixed_screen_size{ false };
     float m_tool_marker_size{ 1.0f };
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     bool m_legend_visible{ true };
     bool m_legend_enabled{ true };
     struct ViewTypeCache
@@ -926,11 +926,11 @@ public:
     void reset();
     void render();
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     void render_cog() { m_cog.render(m_cog_marker_fixed_screen_size); }
 #else
     void render_cog() { m_cog.render(); }
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     bool has_data() const { return !m_viewer.get_extrusion_roles().empty(); }
 #else
     void render_cog() { m_cog.render(); }
@@ -963,7 +963,6 @@ public:
         return ret;
     }
     std::vector<float> get_layers_times() const { return m_viewer.get_layers_times(); }
-    std::vector<float> get_layers_times(libvgcode::ETimeMode mode) const { return m_viewer.get_layers_times(mode); }
 #else
     const std::vector<double>& get_layers_zs() const { return m_layers.get_zs(); }
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -1035,10 +1034,10 @@ public:
     void load_shells(const Print& print);
 
 #if ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     float get_cog_marker_scale_factor() const { return m_viewer.get_cog_marker_scale_factor(); }
     void set_cog_marker_scale_factor(float factor) { return m_viewer.set_cog_marker_scale_factor(factor); }
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 #endif // ENABLE_NEW_GCODE_VIEWER
 
 private:

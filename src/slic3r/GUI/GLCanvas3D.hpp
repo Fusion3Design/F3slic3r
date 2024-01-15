@@ -841,8 +841,6 @@ public:
 #if ENABLE_NEW_GCODE_VIEWER
     std::vector<double> get_gcode_layers_zs() const;
     std::vector<float> get_gcode_layers_times() const { return m_gcode_viewer.get_layers_times(); }
-    std::vector<float> get_gcode_layers_times(libvgcode::ETimeMode mode) const { return m_gcode_viewer.get_layers_times(mode); }
-
     const std::vector<float>& get_gcode_layers_times_cache() const { return m_gcode_layers_times_cache; }
     void reset_gcode_layers_times_cache() { m_gcode_layers_times_cache.clear(); }
 #else

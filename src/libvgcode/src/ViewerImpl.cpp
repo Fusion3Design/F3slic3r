@@ -368,7 +368,7 @@ void ViewerImpl::init()
 
     m_option_template.init(16);
 
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     // cog marker shader
     m_cog_marker_shader_id = init_shader("cog_marker", Cog_Marker_Vertex_Shader, Cog_Marker_Fragment_Shader);
 
@@ -401,7 +401,7 @@ void ViewerImpl::init()
            m_uni_tool_marker_color_base != -1);
 
     m_tool_marker.init(32, 2.0f, 4.0f, 1.0f, 8.0f);
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
     m_initialized = true;
 }
@@ -409,10 +409,10 @@ void ViewerImpl::init()
 void ViewerImpl::shutdown()
 {
     reset();
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     m_tool_marker.shutdown();
     m_cog_marker.shutdown();
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     m_option_template.shutdown();
     m_segment_template.shutdown();
     if (m_options_shader_id != 0) {
@@ -436,9 +436,9 @@ void ViewerImpl::reset()
     m_used_extruders_ids.clear();
     m_vertices.clear();
     m_valid_lines_bitset.clear();
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     m_cog_marker.reset();
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
     m_enabled_segments_count = 0;
     m_enabled_options_count = 0;
@@ -492,7 +492,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
             m_used_extruders_ids.emplace_back(v.extruder_id);
 
         if (i > 0) {
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
             // updates calculation for center of gravity
             if (v.type == EMoveType::Extrude &&
                 v.role != EGCodeExtrusionRole::Skirt &&
@@ -502,7 +502,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
                 v.role != EGCodeExtrusionRole::Custom) {
                 m_cog_marker.update(0.5f * (v.position + m_vertices[i - 1].position), v.weight);
             }
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
         }
     }
 
@@ -758,12 +758,12 @@ void ViewerImpl::render(const Mat4x4& view_matrix, const Mat4x4& projection_matr
     render_segments(view_matrix, projection_matrix, camera_position);
     render_options(view_matrix, projection_matrix);
 
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     if (m_settings.options_visibility.at(EOptionType::ToolMarker))
         render_tool_marker(view_matrix, projection_matrix);
     if (m_settings.options_visibility.at(EOptionType::CenterOfGravity))
         render_cog_marker(view_matrix, projection_matrix);
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 }
 
 void ViewerImpl::set_view_type(EViewType type)
@@ -1299,7 +1299,7 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
     glsafe(glActiveTexture(curr_active_texture));
 }
 
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 void ViewerImpl::render_cog_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
 {
     if (m_cog_marker_shader_id == 0)
@@ -1378,6 +1378,6 @@ void ViewerImpl::render_tool_marker(const Mat4x4& view_matrix, const Mat4x4& pro
 
     glsafe(glUseProgram(curr_shader));
 }
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
 } // namespace libvgcode

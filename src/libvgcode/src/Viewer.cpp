@@ -72,66 +72,6 @@ void Viewer::toggle_top_layer_only_view_range()
     m_impl->toggle_top_layer_only_view_range();
 }
 
-bool Viewer::is_spiral_vase_mode() const
-{
-    return m_impl->is_spiral_vase_mode();
-}
-
-std::vector<ETimeMode> Viewer::get_time_modes() const
-{
-    return m_impl->get_time_modes();
-}
-
-const Interval& Viewer::get_layers_view_range() const
-{
-    return m_impl->get_layers_view_range();
-}
-
-void Viewer::set_layers_view_range(const Interval& range)
-{
-    m_impl->set_layers_view_range(range);
-}
-
-void Viewer::set_layers_view_range(Interval::value_type min, Interval::value_type max)
-{
-    m_impl->set_layers_view_range(min, max);
-}
-
-size_t Viewer::get_layers_count() const
-{
-    return m_impl->get_layers_count();
-}
-
-float Viewer::get_layer_z(size_t layer_id) const
-{
-    return m_impl->get_layer_z(layer_id);
-}
-
-std::vector<float> Viewer::get_layers_zs() const
-{
-    return m_impl->get_layers_zs();
-}
-
-size_t Viewer::get_layer_id_at(float z) const
-{
-    return m_impl->get_layer_id_at(z);
-}
-
-size_t Viewer::get_used_extruders_count() const
-{
-    return m_impl->get_used_extruders_count();
-}
-
-const std::vector<uint8_t>& Viewer::get_used_extruders_ids() const
-{
-    return m_impl->get_used_extruders_ids();
-}
-
-AABox Viewer::get_bounding_box(EBBoxType type) const
-{
-    return m_impl->get_bounding_box(type);
-}
-
 bool Viewer::is_option_visible(EOptionType type) const
 {
     return m_impl->is_option_visible(type);
@@ -150,141 +90,6 @@ bool Viewer::is_extrusion_role_visible(EGCodeExtrusionRole role) const
 void Viewer::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
 {
     m_impl->toggle_extrusion_role_visibility(role);
-}
-
-const Interval& Viewer::get_view_full_range() const
-{
-    return m_impl->get_view_full_range();
-}
-
-const Interval& Viewer::get_view_enabled_range() const
-{
-    return m_impl->get_view_enabled_range();
-}
-
-const Interval& Viewer::get_view_visible_range() const
-{
-    return m_impl->get_view_visible_range();
-}
-
-void Viewer::set_view_visible_range(Interval::value_type min, Interval::value_type max)
-{
-    m_impl->set_view_visible_range(min, max);
-}
-
-size_t Viewer::get_vertices_count() const
-{
-    return m_impl->get_vertices_count();
-}
-
-const PathVertex& Viewer::get_current_vertex() const
-{
-    return m_impl->get_current_vertex();
-}
-
-size_t Viewer::get_current_vertex_id() const
-{
-    return m_impl->get_current_vertex_id();
-}
-
-const PathVertex& Viewer::get_vertex_at(size_t id) const
-{
-    return m_impl->get_vertex_at(id);
-}
-
-float Viewer::get_estimated_time_at(size_t id) const
-{
-    return m_impl->get_estimated_time_at(id);
-}
-
-Color Viewer::get_vertex_color(const PathVertex& vertex) const
-{
-    return m_impl->get_vertex_color(vertex);
-}
-
-size_t Viewer::get_enabled_segments_count() const
-{
-    return m_impl->get_enabled_segments_count();
-}
-
-const Interval& Viewer::get_enabled_segments_range() const
-{
-    return m_impl->get_enabled_segments_range();
-}
-
-size_t Viewer::get_enabled_options_count() const
-{
-    return m_impl->get_enabled_options_count();
-}
-
-const Interval& Viewer::get_enabled_options_range() const
-{
-    return m_impl->get_enabled_options_range();
-}
-
-size_t Viewer::get_extrusion_roles_count() const
-{
-    return m_impl->get_extrusion_roles_count();
-}
-
-std::vector<EGCodeExtrusionRole> Viewer::get_extrusion_roles() const
-{
-    return m_impl->get_extrusion_roles();
-}
-
-size_t Viewer::get_options_count() const
-{
-    return m_impl->get_options_count();
-}
-
-const std::vector<EOptionType>& Viewer::get_options() const
-{
-    return m_impl->get_options();
-}
-
-float Viewer::get_extrusion_role_time(EGCodeExtrusionRole role) const
-{
-    return m_impl->get_extrusion_role_time(role);
-}
-
-float Viewer::get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const
-{
-    return m_impl->get_extrusion_role_time(role, mode);
-}
-
-float Viewer::get_travels_time() const
-{
-    return m_impl->get_travels_time();
-}
-
-float Viewer::get_travels_time(ETimeMode mode) const
-{
-    return m_impl->get_travels_time(mode);
-}
-
-std::vector<float> Viewer::get_layers_times() const
-{
-    return m_impl->get_layers_times();
-}
-
-std::vector<float> Viewer::get_layers_times(ETimeMode mode) const
-{
-    return m_impl->get_layers_times(mode);
-}
-
-size_t Viewer::get_tool_colors_count() const
-{
-    return m_impl->get_tool_colors_count();
-}
-
-const Palette& Viewer::get_tool_colors() const
-{
-    return m_impl->get_tool_colors();
-}
-
-void Viewer::set_tool_colors(const Palette& colors)
-{
-    m_impl->set_tool_colors(colors);
 }
 
 const Color& Viewer::get_extrusion_role_color(EGCodeExtrusionRole role) const
@@ -317,6 +122,21 @@ void Viewer::reset_default_options_colors()
     m_impl->reset_default_options_colors();
 }
 
+size_t Viewer::get_tool_colors_count() const
+{
+    return m_impl->get_tool_colors_count();
+}
+
+const Palette& Viewer::get_tool_colors() const
+{
+    return m_impl->get_tool_colors();
+}
+
+void Viewer::set_tool_colors(const Palette& colors)
+{
+    m_impl->set_tool_colors(colors);
+}
+
 const ColorRange& Viewer::get_color_range(EViewType type) const
 {
     return m_impl->get_color_range(type);
@@ -347,7 +167,174 @@ void Viewer::set_wipes_radius(float radius)
     m_impl->set_wipes_radius(radius);
 }
 
-#if ENABLE_COG_AND_TOOL_MARKERS
+size_t Viewer::get_layers_count() const
+{
+    return m_impl->get_layers_count();
+}
+
+const Interval& Viewer::get_layers_view_range() const
+{
+    return m_impl->get_layers_view_range();
+}
+
+void Viewer::set_layers_view_range(const Interval& range)
+{
+    m_impl->set_layers_view_range(range);
+}
+
+void Viewer::set_layers_view_range(Interval::value_type min, Interval::value_type max)
+{
+    m_impl->set_layers_view_range(min, max);
+}
+
+const Interval& Viewer::get_view_visible_range() const
+{
+    return m_impl->get_view_visible_range();
+}
+
+void Viewer::set_view_visible_range(Interval::value_type min, Interval::value_type max)
+{
+    m_impl->set_view_visible_range(min, max);
+}
+
+const Interval& Viewer::get_view_full_range() const
+{
+    return m_impl->get_view_full_range();
+}
+
+const Interval& Viewer::get_view_enabled_range() const
+{
+    return m_impl->get_view_enabled_range();
+}
+
+bool Viewer::is_spiral_vase_mode() const
+{
+    return m_impl->is_spiral_vase_mode();
+}
+
+float Viewer::get_layer_z(size_t layer_id) const
+{
+    return m_impl->get_layer_z(layer_id);
+}
+
+std::vector<float> Viewer::get_layers_zs() const
+{
+    return m_impl->get_layers_zs();
+}
+
+size_t Viewer::get_layer_id_at(float z) const
+{
+    return m_impl->get_layer_id_at(z);
+}
+
+size_t Viewer::get_used_extruders_count() const
+{
+    return m_impl->get_used_extruders_count();
+}
+
+const std::vector<uint8_t>& Viewer::get_used_extruders_ids() const
+{
+    return m_impl->get_used_extruders_ids();
+}
+
+std::vector<ETimeMode> Viewer::get_time_modes() const
+{
+    return m_impl->get_time_modes();
+}
+
+size_t Viewer::get_vertices_count() const
+{
+    return m_impl->get_vertices_count();
+}
+
+const PathVertex& Viewer::get_current_vertex() const
+{
+    return m_impl->get_current_vertex();
+}
+
+size_t Viewer::get_current_vertex_id() const
+{
+    return m_impl->get_current_vertex_id();
+}
+
+const PathVertex& Viewer::get_vertex_at(size_t id) const
+{
+    return m_impl->get_vertex_at(id);
+}
+
+float Viewer::get_estimated_time_at(size_t id) const
+{
+    return m_impl->get_estimated_time_at(id);
+}
+
+Color Viewer::get_vertex_color(const PathVertex& vertex) const
+{
+    return m_impl->get_vertex_color(vertex);
+}
+
+size_t Viewer::get_extrusion_roles_count() const
+{
+    return m_impl->get_extrusion_roles_count();
+}
+
+std::vector<EGCodeExtrusionRole> Viewer::get_extrusion_roles() const
+{
+    return m_impl->get_extrusion_roles();
+}
+
+size_t Viewer::get_options_count() const
+{
+    return m_impl->get_options_count();
+}
+
+const std::vector<EOptionType>& Viewer::get_options() const
+{
+    return m_impl->get_options();
+}
+
+float Viewer::get_extrusion_role_time(EGCodeExtrusionRole role) const
+{
+    return m_impl->get_extrusion_role_time(role);
+}
+
+float Viewer::get_travels_time() const
+{
+    return m_impl->get_travels_time();
+}
+
+std::vector<float> Viewer::get_layers_times() const
+{
+    return m_impl->get_layers_times();
+}
+
+AABox Viewer::get_bounding_box(EBBoxType type) const
+{
+    return m_impl->get_bounding_box(type);
+}
+
+#if VGCODE_ENABLE_DEBUG_CODE
+size_t Viewer::get_enabled_segments_count() const
+{
+    return m_impl->get_enabled_segments_count();
+}
+
+const Interval& Viewer::get_enabled_segments_range() const
+{
+    return m_impl->get_enabled_segments_range();
+}
+
+size_t Viewer::get_enabled_options_count() const
+{
+    return m_impl->get_enabled_options_count();
+}
+
+const Interval& Viewer::get_enabled_options_range() const
+{
+    return m_impl->get_enabled_options_range();
+}
+#endif // VGCODE_ENABLE_DEBUG_CODE
+
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 Vec3 Viewer::get_cog_position() const
 {
     return m_impl->get_cog_marker_position();
@@ -422,6 +409,6 @@ void Viewer::set_tool_marker_alpha(float alpha)
 {
     m_impl->set_tool_marker_alpha(alpha);
 }
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
 } // namespace libvgcode

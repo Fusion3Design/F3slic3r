@@ -8,10 +8,10 @@
 #include "Settings.hpp"
 #include "SegmentTemplate.hpp"
 #include "OptionTemplate.hpp"
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 #include "CogMarker.hpp"
 #include "ToolMarker.hpp"
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 #include "../include/PathVertex.hpp"
 #include "../include/ColorRange.hpp"
 #include "Bitset.hpp"
@@ -118,26 +118,23 @@ public:
     float get_estimated_time_at(size_t id) const;
     Color get_vertex_color(const PathVertex& vertex) const;
 
+#if VGCODE_ENABLE_DEBUG_CODE
     size_t get_enabled_segments_count() const { return m_enabled_segments_count; }
     const Interval& get_enabled_segments_range() const { return m_enabled_segments_range.get(); }
 
     size_t get_enabled_options_count() const { return m_enabled_options_count; }
     const Interval& get_enabled_options_range() const { return m_enabled_options_range.get(); }
+#endif // VGCODE_ENABLE_DEBUG_CODE
 
+    size_t get_extrusion_roles_count() const { return m_extrusion_roles.get_roles_count(); }
     std::vector<EGCodeExtrusionRole> get_extrusion_roles() const { return m_extrusion_roles.get_roles(); }
     float get_extrusion_role_time(EGCodeExtrusionRole role) const { return m_extrusion_roles.get_time(role, m_settings.time_mode); }
-    size_t get_extrusion_roles_count() const { return m_extrusion_roles.get_roles_count(); }
-    float get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const { return m_extrusion_roles.get_time(role, mode); }
 
     size_t get_options_count() const { return m_options.size(); }
     const std::vector<EOptionType>& get_options() const { return m_options; }
 
-    float get_travels_time() const { return get_travels_time(m_settings.time_mode); }
-    float get_travels_time(ETimeMode mode) const {
-        return (mode < ETimeMode::COUNT) ? m_travels_time[static_cast<size_t>(mode)] : 0.0f;
-    }
-    std::vector<float> get_layers_times() const { return get_layers_times(m_settings.time_mode); }
-    std::vector<float> get_layers_times(ETimeMode mode) const { return m_layers.get_times(mode); }
+    float get_travels_time() const { return m_travels_time[static_cast<size_t>(m_settings.time_mode)]; }
+    std::vector<float> get_layers_times() const { return m_layers.get_times(m_settings.time_mode); }
 
     size_t get_tool_colors_count() const { return m_tool_colors.size(); }
     const Palette& get_tool_colors() const { return m_tool_colors; }
@@ -159,7 +156,7 @@ public:
     float get_wipes_radius() const { return m_wipes_radius; }
     void set_wipes_radius(float radius);
 
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     Vec3 get_cog_marker_position() const { return m_cog_marker.get_position(); }
 
     float get_cog_marker_scale_factor() const { return m_cog_marker_scale_factor; }
@@ -182,7 +179,7 @@ public:
 
     float get_tool_marker_alpha() const { return m_tool_marker.get_alpha(); }
     void set_tool_marker_alpha(float alpha) { m_tool_marker.set_alpha(alpha); }
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
 private:
     Settings m_settings;
@@ -211,7 +208,7 @@ private:
     //
     OptionTemplate m_option_template;
 
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
     // The OpenGL element used to represent the center of gravity
     //
@@ -223,7 +220,7 @@ private:
     //
     ToolMarker m_tool_marker;
     float m_tool_marker_scale_factor{ 1.0f };
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
     //
     // cpu buffer to store vertices
@@ -258,10 +255,10 @@ private:
     //
     unsigned int m_segments_shader_id{ 0 };
     unsigned int m_options_shader_id{ 0 };
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     unsigned int m_cog_marker_shader_id{ 0 };
     unsigned int m_tool_marker_shader_id{ 0 };
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
     //
     // Cache for OpenGL uniforms id for segments shader 
@@ -284,7 +281,7 @@ private:
     int m_uni_options_colors_tex_id{ -1 };
     int m_uni_options_segment_index_tex_id{ -1 };
 
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
     // Cache for OpenGL uniforms id for cog marker shader 
     //
@@ -301,7 +298,7 @@ private:
     int m_uni_tool_marker_view_matrix{ -1 };
     int m_uni_tool_marker_projection_matrix{ -1 };
     int m_uni_tool_marker_color_base{ -1 };
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
     //
     // gpu buffers to store positions
@@ -334,10 +331,10 @@ private:
     void update_heights_widths();
     void render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position);
     void render_options(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     void render_cog_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
     void render_tool_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
     //
     // Palette used to render extrusion moves by extrusion roles

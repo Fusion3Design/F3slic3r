@@ -116,13 +116,13 @@ EOptionType convert(const Slic3r::GUI::Preview::OptionType& type)
     case Slic3r::GUI::Preview::OptionType::ColorChanges:    { return EOptionType::ColorChanges; }
     case Slic3r::GUI::Preview::OptionType::PausePrints:     { return EOptionType::PausePrints; }
     case Slic3r::GUI::Preview::OptionType::CustomGCodes:    { return EOptionType::CustomGCodes; }
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     case Slic3r::GUI::Preview::OptionType::CenterOfGravity: { return EOptionType::CenterOfGravity; }
     case Slic3r::GUI::Preview::OptionType::ToolMarker:      { return EOptionType::ToolMarker; }
 #else
     case Slic3r::GUI::Preview::OptionType::CenterOfGravity: { return EOptionType::COUNT; }
     case Slic3r::GUI::Preview::OptionType::ToolMarker:      { return EOptionType::COUNT; }
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     default:                                                { return EOptionType::COUNT; }
     }
 }
@@ -187,7 +187,7 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels
                 // to allow libvgcode to properly detect the start/end of a path we need to add a 'phantom' vertex
                 // equal to the current one with the exception of the position, which should match the previous move position,
                 // and the times, which are set to zero
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
                 const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, curr.fan_speed,
                     curr.temperature, curr.volumetric_rate(), 0.0f, convert(curr.extrusion_role), curr_type,
                     static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
@@ -197,12 +197,12 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels
                     curr.temperature, curr.volumetric_rate(), convert(curr.extrusion_role), curr_type,
                     static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
                     static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
                 ret.vertices.emplace_back(vertex);
             }
         }
 
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
         const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.fan_speed,
             curr.temperature, curr.volumetric_rate(), curr.mm3_per_mm * (curr.position - prev.position).norm(),
             convert(curr.extrusion_role), curr_type, static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
@@ -211,7 +211,7 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels
         const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.fan_speed,
             curr.temperature, curr.volumetric_rate(), convert(curr.extrusion_role), curr_type,  static_cast<uint32_t>(curr.gcode_id),
             static_cast<uint32_t>(curr.layer_id), static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
         ret.vertices.emplace_back(vertex);
     }
     ret.vertices.shrink_to_fit();
@@ -236,7 +236,7 @@ static void convert_lines_to_vertices(const Slic3r::Lines& lines, const std::vec
         if (ii == 0) {
             // add a dummy vertex at the start, to separate the current line from the others
             const Slic3r::Vec2f a = unscale(line.a).cast<float>();
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
             libvgcode::PathVertex vertex = { convert(Slic3r::Vec3f(a.x(), a.y(), top_z)), heights[i], widths[i], 0.0f, 0.0f,
                 0.0f, 0.0f, 0.0f, extrusion_role, EMoveType::Noop, 0, static_cast<uint32_t>(layer_id),
                 static_cast<uint8_t>(extruder_id), static_cast<uint8_t>(color_id), { 0.0f, 0.0f } };
@@ -244,7 +244,7 @@ static void convert_lines_to_vertices(const Slic3r::Lines& lines, const std::vec
             libvgcode::PathVertex vertex = { convert(Slic3r::Vec3f(a.x(), a.y(), top_z)), heights[i], widths[i], 0.0f, 0.0f,
                 0.0f, 0.0f, extrusion_role, EMoveType::Noop, 0, static_cast<uint32_t>(layer_id),
                 static_cast<uint8_t>(extruder_id), static_cast<uint8_t>(color_id), { 0.0f, 0.0f } };
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
             vertices.emplace_back(vertex);
             // add the starting vertex of the segment
             vertex.type = EMoveType::Extrude;
@@ -252,7 +252,7 @@ static void convert_lines_to_vertices(const Slic3r::Lines& lines, const std::vec
         }
         // add the ending vertex of the segment
         const Slic3r::Vec2f b = unscale(line.b).cast<float>();
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
         const libvgcode::PathVertex vertex = { convert(Slic3r::Vec3f(b.x(), b.y(), top_z)), heights[i], widths[i], 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, extrusion_role, EMoveType::Extrude, 0, static_cast<uint32_t>(layer_id),
             static_cast<uint8_t>(extruder_id), static_cast<uint8_t>(color_id), { 0.0f, 0.0f } };
@@ -260,7 +260,7 @@ static void convert_lines_to_vertices(const Slic3r::Lines& lines, const std::vec
         const libvgcode::PathVertex vertex = { convert(Slic3r::Vec3f(b.x(), b.y(), top_z)), heights[i], widths[i], 0.0f, 0.0f,
             0.0f, 0.0f, extrusion_role, EMoveType::Extrude, 0, static_cast<uint32_t>(layer_id),
             static_cast<uint8_t>(extruder_id), static_cast<uint8_t>(color_id), { 0.0f, 0.0f } };
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
         vertices.emplace_back(vertex);
     }
 }

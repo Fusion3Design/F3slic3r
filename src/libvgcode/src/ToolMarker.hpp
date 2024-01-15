@@ -7,7 +7,7 @@
 
 #include "../include/Types.hpp"
 
-#if ENABLE_COG_AND_TOOL_MARKERS
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 #include <algorithm>
 
 namespace libvgcode {
@@ -65,6 +65,6 @@ private:
 
 } // namespace libvgcode
 
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
 #endif // VGCODE_TOOLMARKER_HPP

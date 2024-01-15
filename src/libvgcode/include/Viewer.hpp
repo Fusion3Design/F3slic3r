@@ -43,6 +43,7 @@ public:
     void reset();
     //
     // Setup the viewer content from the given data.
+    // See: GCodeInputData
     //
     void load(GCodeInputData&& gcode_data);
     //
@@ -55,7 +56,7 @@ public:
     // ************************************************************************
     // Settings
     // The following methods can be used to query/customize the parameters
-    // used to chenge the way toolpaths are rendered.
+    // used to render the toolpaths.
     // ************************************************************************
     //
 
@@ -81,218 +82,60 @@ public:
     //
     void toggle_top_layer_only_view_range();
     //
-    // Spiral vase mode
-    // Whether or not the gcode was generated with spiral vase mode enabled.
-    // See: GCodeInputData
+    // Returns true if the given option is visible.
     //
-    bool is_spiral_vase_mode() const;
-    //
-    // Return the list of detected time modes.
-    //
-    std::vector<ETimeMode> get_time_modes() const;
-
-    //
-    // ************************************************************************
-    // Layers range
-    // The following methods can be used to query/customize the visualized
-    // layers range.
-    // Layers are detected during the call to load() method.
-    // Their count can be queried using get_layers_count() method.
-    // Their global range is [0..get_layers_count() - 1].
-    // ************************************************************************
-    //
-
-    //
-    // Return the current layers range.
-    //
-    const Interval& get_layers_view_range() const;
-    //
-    // Set the current layers range with the given interval.
-    // Values are clamped to [0..get_layers_count() - 1].
-    //
-    void set_layers_view_range(const Interval& range);
-    //
-    // Set the current layers range with the given min and max values.
-    // Values are clamped to [0..get_layers_count() - 1].
-    //
-    void set_layers_view_range(Interval::value_type min, Interval::value_type max);
-    //
-    // Return the count of detected layers.
-    //
-    size_t get_layers_count() const;
-
-    //
-    // ************************************************************************
-    // Layers zs
-    // The following methods can be used to query the layers zs.
-    // Layers are detected during the call to load() method.
-    // Their count can be queried using get_layers_count() method.
-    // Their global range is [0..get_layers_count() - 1].
-    // ************************************************************************
-    //
-
-    //
-    // Return the z of the layer with the given id
-    // or 0.0f if the id does not belong to [0..get_layers_count() - 1].
-    //
-    float get_layer_z(size_t layer_id) const;
-    //
-    // Return the list of zs of the detected layers.
-    //
-    std::vector<float> get_layers_zs() const;
-    //
-    // Return the id of the layer closest to the given z.
-    //
-    size_t get_layer_id_at(float z) const;
-
-    //
-    // ************************************************************************
-    // Extruders
-    // The following methods can be used to query informations about extruders.
-    // Extruders are detected during the call to load() method.
-    // ************************************************************************
-    //
-
-    //
-    // Return the count of detected used extruders.
-    //
-    size_t get_used_extruders_count() const;
-    //
-    // Return the list of ids of the detected used extruders.
-    //
-    const std::vector<uint8_t>& get_used_extruders_ids() const;
-
-    AABox get_bounding_box(EBBoxType type) const;
-
     bool is_option_visible(EOptionType type) const;
+    //
+    // Toggle the visibility state of the given option.
+    //
     void toggle_option_visibility(EOptionType type);
-
+    //
+    // Returns true if the given extrusion role is visible.
+    //
     bool is_extrusion_role_visible(EGCodeExtrusionRole role) const;
+    //
+    // Toggle the visibility state of the given extrusion role.
+    //
     void toggle_extrusion_role_visibility(EGCodeExtrusionRole role);
-
-    const Interval& get_view_full_range() const;
-    const Interval& get_view_enabled_range() const;
-    const Interval& get_view_visible_range() const;
-
     //
-    // Set the current visible range.
-    // values are clamped to the current view global range
-    // 
-    void set_view_visible_range(Interval::value_type min, Interval::value_type max);
-
+    // Return the color used to render the given extrusion rols.
     //
-    // Return the count of vertices used to render the toolpaths
-    //
-    size_t get_vertices_count() const;
-
-    //
-    // Return the vertex pointed by the max value of the view visible range
-    //
-    const PathVertex& get_current_vertex() const;
-
-    //
-    // Return the index of vertex pointed by the max value of the view visible range
-    //
-    size_t get_current_vertex_id() const;
-
-    //
-    // Return the vertex at the given index
-    //
-    const PathVertex& get_vertex_at(size_t id) const;
-
-    //
-    // Return the estimated time, in seconds, at the vertex with the given index
-    // using the current time mode.
-    //
-    float get_estimated_time_at(size_t id) const;
-
-    //
-    // Return the color used to render the given vertex with the current settings.
-    //
-    Color get_vertex_color(const PathVertex& vertex) const;
-
-    //
-    // Return the count of path segments enabled for rendering
-    //
-    size_t get_enabled_segments_count() const;
-
-    //
-    // Return the Interval containing the enabled segments
-    //
-    const Interval& get_enabled_segments_range() const;
-
-    //
-    // Return the count of options enabled for rendering
-    //
-    size_t get_enabled_options_count() const;
-
-    //
-    // Return the Interval containing the enabled options
-    //
-    const Interval& get_enabled_options_range() const;
-
-    //
-    // Return the count of detected extrusion roles
-    //
-    size_t get_extrusion_roles_count() const;
-
-    //
-    // Return the list of detected extrusion roles
-    //
-    std::vector<EGCodeExtrusionRole> get_extrusion_roles() const;
-
-    //
-    // Return the count of detected options
-    //
-    size_t get_options_count() const;
-
-    //
-    // Return the list of detected options
-    //
-    const std::vector<EOptionType>& get_options() const;
-
-    //
-    // Return the estimated time for the given role and the current time mode
-    //
-    float get_extrusion_role_time(EGCodeExtrusionRole role) const;
-
-    //
-    // Return the estimated time for the given role and the given time mode
-    //
-    float get_extrusion_role_time(EGCodeExtrusionRole role, ETimeMode mode) const;
-
-    //
-    // Return the estimated time for the travel moves and the current time mode
-    //
-    float get_travels_time() const;
-
-    //
-    // Return the estimated time for the travel moves and the given time mode
-    //
-    float get_travels_time(ETimeMode mode) const;
-
-    //
-    // Return the list of layers time for the current time mode
-    //
-    std::vector<float> get_layers_times() const;
-
-    //
-    // Return the list of layers time for the given time mode
-    //
-    std::vector<float> get_layers_times(ETimeMode mode) const;
-
-    size_t get_tool_colors_count() const;
-    const Palette& get_tool_colors() const;
-    void set_tool_colors(const Palette& colors);
-
     const Color& get_extrusion_role_color(EGCodeExtrusionRole role) const;
+    //
+    // Set the color used to render the given extrusion role.
+    //
     void set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color);
+    //
+    // Reset the colors used to render the extrusion roles to the default value.
+    //
     void reset_default_extrusion_roles_colors();
-
+    //
+    // Return the color used to render the given option.
+    //
     const Color& get_option_color(EOptionType type) const;
+    //
+    // Set the color used to render the given option.
+    //
     void set_option_color(EOptionType type, const Color& color);
+    //
+    // Reset the colors used to render the options to the default value.
+    //
     void reset_default_options_colors();
-
+    //
+    // Return the count of colors in the palette used to render
+    // the toolpaths when the view type is EViewType::Tool.
+    //
+    size_t get_tool_colors_count() const;
+    //
+    // Return the palette used to render the toolpaths when
+    // the view type is EViewType::Tool.
+    //
+    const Palette& get_tool_colors() const;
+    //
+    // Set the palette used to render the toolpaths when
+    // the view type is EViewType::Tool with the given one.
+    //
+    void set_tool_colors(const Palette& colors);
     //
     // Get the color range for the given view type.
     // Valid view types are:
@@ -320,7 +163,6 @@ public:
     // EViewType::LayerTimeLogarithmic
     //
     void set_color_range_palette(EViewType type, const Palette& palette);
-
     //
     // Get the radius, in mm, of the cylinders used to render the travel moves.
     //
@@ -339,8 +181,153 @@ public:
     // Radius is clamped to [MIN_WIPES_RADIUS_MM..MAX_WIPES_RADIUS_MM]
     //
     void set_wipes_radius(float radius);
+    //
+    // Return the count of detected layers.
+    //
+    size_t get_layers_count() const;
+    //
+    // Return the current visible layers range.
+    //
+    const Interval& get_layers_view_range() const;
+    //
+    // Set the current visible layers range with the given interval.
+    // Values are clamped to [0..get_layers_count() - 1].
+    //
+    void set_layers_view_range(const Interval& range);
+    //
+    // Set the current visible layers range with the given min and max values.
+    // Values are clamped to [0..get_layers_count() - 1].
+    //
+    void set_layers_view_range(Interval::value_type min, Interval::value_type max);
+    //
+    // Return the current visible range.
+    // Three ranges are defined: full, enabled and visible.
+    // For all of them the range endpoints represent:
+    // [0] -> min vertex id
+    // [1] -> max vertex id
+    // Full is the range of vertices that could potentially be visualized accordingly to the current settings.
+    // Enabled is the part of the full range that is selected for visualization accordingly to the current settings.
+    // Visible is the part of the enabled range that is actually visualized accordingly to the current settings.
+    // 
+    const Interval& get_view_visible_range() const;
+    //
+    // Set the current visible range.
+    // Values are clamped to the current view enabled range;
+    // 
+    void set_view_visible_range(Interval::value_type min, Interval::value_type max);
+    //
+    // Return the current full range.
+    //
+    const Interval& get_view_full_range() const;
+    //
+    // Return the current enabled range.
+    //
+    const Interval& get_view_enabled_range() const;
 
-#if ENABLE_COG_AND_TOOL_MARKERS
+    //
+    // ************************************************************************
+    // Property getters
+    // The following methods can be used to query detected properties.
+    // ************************************************************************
+    //
+
+    //
+    // Spiral vase mode
+    // Whether or not the gcode was generated with spiral vase mode enabled.
+    // See: GCodeInputData
+    //
+    bool is_spiral_vase_mode() const;
+    //
+    // Return the z of the layer with the given id
+    // or 0.0f if the id does not belong to [0..get_layers_count() - 1].
+    //
+    float get_layer_z(size_t layer_id) const;
+    //
+    // Return the list of zs of the detected layers.
+    //
+    std::vector<float> get_layers_zs() const;
+    //
+    // Return the id of the layer closest to the given z.
+    //
+    size_t get_layer_id_at(float z) const;
+    //
+    // Return the count of detected used extruders.
+    //
+    size_t get_used_extruders_count() const;
+    //
+    // Return the list of ids of the detected used extruders.
+    //
+    const std::vector<uint8_t>& get_used_extruders_ids() const;
+    //
+    // Return the list of detected time modes.
+    //
+    std::vector<ETimeMode> get_time_modes() const;
+    //
+    // Return the count of vertices used to render the toolpaths
+    //
+    size_t get_vertices_count() const;
+    //
+    // Return the vertex pointed by the max value of the view visible range
+    //
+    const PathVertex& get_current_vertex() const;
+    //
+    // Return the index of vertex pointed by the max value of the view visible range
+    //
+    size_t get_current_vertex_id() const;
+    //
+    // Return the vertex at the given index
+    //
+    const PathVertex& get_vertex_at(size_t id) const;
+    //
+    // Return the estimated time, in seconds, at the vertex with the given index
+    // using the current time mode.
+    //
+    float get_estimated_time_at(size_t id) const;
+    //
+    // Return the color used to render the given vertex with the current settings.
+    //
+    Color get_vertex_color(const PathVertex& vertex) const;
+    //
+    // Return the count of detected extrusion roles
+    //
+    size_t get_extrusion_roles_count() const;
+    //
+    // Return the list of detected extrusion roles
+    //
+    std::vector<EGCodeExtrusionRole> get_extrusion_roles() const;
+    //
+    // Return the count of detected options.
+    //
+    size_t get_options_count() const;
+    //
+    // Return the list of detected options.
+    //
+    const std::vector<EOptionType>& get_options() const;
+    //
+    // Return the estimated time for the given role and the current time mode.
+    //
+    float get_extrusion_role_time(EGCodeExtrusionRole role) const;
+    //
+    // Return the estimated time for the travel moves and the current time mode.
+    //
+    float get_travels_time() const;
+    //
+    // Return the list of layers time for the current time mode.
+    //
+    std::vector<float> get_layers_times() const;
+    //
+    // Return the axes aligned bounding box of the toolpaths.
+    //
+    AABox get_bounding_box(EBBoxType type) const;
+
+#if VGCODE_ENABLE_DEBUG_CODE
+    size_t get_enabled_segments_count() const;
+    const Interval& get_enabled_segments_range() const;
+    size_t get_enabled_options_count() const;
+    const Interval& get_enabled_options_range() const;
+#endif // VGCODE_ENABLE_DEBUG_CODE
+
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
     // Returns the position of the center of gravity of the toolpaths.
     // It does not take in account extrusions of type:
@@ -372,7 +359,7 @@ public:
 
     float get_tool_marker_alpha() const;
     void set_tool_marker_alpha(float alpha);
-#endif // ENABLE_COG_AND_TOOL_MARKERS
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
 private:
     ViewerImpl* m_impl{ nullptr };
