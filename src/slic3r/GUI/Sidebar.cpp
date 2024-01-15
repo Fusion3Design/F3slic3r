@@ -332,9 +332,6 @@ Sidebar::Sidebar(Plater *parent)
     auto *scrolled_sizer = new wxBoxSizer(wxVERTICAL);
     m_scrolled_panel->SetSizer(scrolled_sizer);
 
-    // Sizer with buttons for mode changing
-    m_mode_sizer = new ModeSizer(m_scrolled_panel, int(0.5 * wxGetApp().em_unit()));
-
     // The preset chooser
     m_presets_sizer = new wxFlexGridSizer(10, 1, 1, 2);
     m_presets_sizer->AddGrowableCol(0, 1);
@@ -437,10 +434,6 @@ Sidebar::Sidebar(Plater *parent)
     // Info boxes
     m_object_info = new ObjectInfo(m_scrolled_panel);
     m_sliced_info = new SlicedInfo(m_scrolled_panel);
-
-    // Sizer in the scrolled area
-    if (m_mode_sizer)
-        scrolled_sizer->Add(m_mode_sizer, 0, wxALIGN_CENTER_HORIZONTAL);
 
     int size_margin = wxGTK3 ? wxLEFT | wxRIGHT : wxLEFT;
 
@@ -742,14 +735,6 @@ void Sidebar::on_select_preset(wxCommandEvent& evt)
 #endif
 }
 
-void Sidebar::change_top_border_for_mode_sizer(bool increase_border)
-{
-    if (m_mode_sizer) {
-        m_mode_sizer->set_items_flag(increase_border ? wxTOP : 0);
-        m_mode_sizer->set_items_border(increase_border ? int(0.5 * wxGetApp().em_unit()) : 0);
-    }
-}
-
 void Sidebar::update_reslice_btn_tooltip()
 {
     wxString tooltip = wxString("Slice") + " [" + GUI::shortkey_ctrl_prefix() + "R]";
@@ -801,8 +786,6 @@ void Sidebar::sys_color_changed()
     for (wxWindow* btn : std::vector<wxWindow*>{ m_btn_reslice, m_btn_export_gcode })
         wxGetApp().UpdateDarkUI(btn, true);
 
-    if (m_mode_sizer)
-        m_mode_sizer->sys_color_changed();
     m_frequently_changed_parameters->sys_color_changed();
     m_object_settings              ->sys_color_changed();
 #endif
@@ -826,12 +809,6 @@ void Sidebar::sys_color_changed()
 
     m_scrolled_panel->Layout();
     m_scrolled_panel->Refresh();
-}
-
-void Sidebar::update_mode_markers()
-{
-    if (m_mode_sizer)
-        m_mode_sizer->update_mode_markers();
 }
 
 ObjectManipulation* Sidebar::obj_manipul()
@@ -1109,8 +1086,6 @@ bool Sidebar::show_connect(bool show)          const { return m_btn_connect_gcod
 void Sidebar::update_mode()
 {
     m_mode = wxGetApp().get_mode();
-    if (m_mode_sizer)
-        m_mode_sizer->SetMode(m_mode);
 
     update_reslice_btn_tooltip();
 
@@ -1149,13 +1124,6 @@ void Sidebar::collapse(bool collapse)
     if (wxGetApp().is_editor())
         wxGetApp().app_config->set("collapsed_sidebar", collapse ? "1" : "0");
 }
-
-#ifdef _MSW_DARK_MODE
-void Sidebar::show_mode_sizer(bool show)
-{
-    m_mode_sizer->Show(show);
-}
-#endif
 
 void Sidebar::update_ui_from_settings()
 {

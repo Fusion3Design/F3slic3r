@@ -262,14 +262,6 @@ void Tab::create_preset_tab()
     m_top_hsizer->Add(m_h_buttons_sizer, 1, wxEXPAND);
     m_top_hsizer->AddSpacer(int(16*scale_factor));
     // StretchSpacer has a strange behavior under OSX, so
-    // There is used just additional sizer for m_mode_sizer with right alignment
-    if (m_mode_sizer) {
-        auto mode_sizer = new wxBoxSizer(wxVERTICAL);
-        // Don't set the 2nd parameter to 1, making the sizer rubbery scalable in Y axis may lead 
-        // to wrong vertical size assigned to wxBitmapComboBoxes, see GH issue #7176.
-        mode_sizer->Add(m_mode_sizer, 0, wxALIGN_RIGHT);
-        m_top_hsizer->Add(mode_sizer, 1, wxALIGN_CENTER_VERTICAL | wxRIGHT, wxOSX ? 15 : 10);
-    }
     // hide whole top sizer to correct layout later
     m_top_hsizer->ShowItems(false);
 
@@ -912,10 +904,6 @@ void Tab::update_mode()
 {
     m_mode = wxGetApp().get_mode();
 
-    // update mode for ModeSizer
-    if (m_mode_sizer)
-        m_mode_sizer->SetMode(m_mode);
-
     update_visibility();
 
     update_changed_tree_ui();
@@ -923,10 +911,6 @@ void Tab::update_mode()
 
 void Tab::update_mode_markers()
 {
-    // update mode for ModeSizer
-    if (m_mode_sizer)
-        m_mode_sizer->update_mode_markers();
-
     if (m_active_page)
         m_active_page->refresh();
 }
@@ -991,8 +975,6 @@ void Tab::sys_color_changed()
     update_label_colours();
 #ifdef _WIN32
     wxWindowUpdateLocker noUpdates(this);
-    if (m_mode_sizer)
-        m_mode_sizer->sys_color_changed();
     wxGetApp().UpdateDarkUI(this);
     wxGetApp().UpdateDarkUI(m_treectrl);
 #endif

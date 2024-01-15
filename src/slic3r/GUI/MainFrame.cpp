@@ -538,11 +538,6 @@ void MainFrame::update_layout()
     }
     }
 
-#ifdef _MSW_DARK_MODE
-    // Sizer with buttons for mode changing
-    m_plater->sidebar().show_mode_sizer(wxGetApp().tabs_as_menu() || m_layout != ESettingsLayout::Old);
-#endif
-
 #ifdef __WXMSW__
     if (update_scaling_state != State::noUpdate)
     {
@@ -586,10 +581,6 @@ void MainFrame::update_layout()
 //        m_tabpanel->SetMinSize(size);
 //    }
 //#endif
-
-#ifdef __APPLE__
-    m_plater->sidebar().change_top_border_for_mode_sizer(m_layout != ESettingsLayout::Old);
-#endif
     
     Layout();
     Thaw();
@@ -1177,9 +1168,6 @@ void MainFrame::update_mode_markers()
     // update markers in common mode sizer
     if (!wxGetApp().tabs_as_menu())
         dynamic_cast<TopBar*>(m_tabpanel)->UpdateModeMarkers();
-
-    // update mode markers on side_bar
-    wxGetApp().sidebar().update_mode_markers();
 
     // update mode markers in tabs
     for (auto tab : wxGetApp().tabs_list)
