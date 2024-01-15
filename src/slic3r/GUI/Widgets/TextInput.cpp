@@ -142,6 +142,16 @@ void TextInput::SetSelection(long from, long to)
         text_ctrl->SetSelection(from, to);
 }
 
+void TextInput::SysColorsChanged()
+{
+    if (auto parent = this->GetParent()) {
+        SetBackgroundColour(parent->GetBackgroundColour());
+        SetForegroundColour(parent->GetForegroundColour());
+        if (this->drop_down_icon.bmp().IsOk())
+            this->drop_down_icon.sys_color_changed();
+    }
+}
+
 void TextInput::SetIcon(const wxBitmapBundle& icon_in)
 {
     icon = icon_in;

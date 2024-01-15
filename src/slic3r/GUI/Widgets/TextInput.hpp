@@ -71,6 +71,8 @@ public:
 
     void SetSelection(long from, long to);
 
+    void SysColorsChanged();
+
 protected:
     virtual void OnEdit() {}
 
