@@ -533,6 +533,8 @@ void OptionsSearcher::set_search_input(TextInput* input_ctrl)
         event.Skip();
         update_dialog_position();
     });
+
+    search_input->SetOnDropDownIcon([](){ GUI::wxGetApp().show_search_dialog(); });
 }
 
 void OptionsSearcher::add_key(const std::string& opt_key, Preset::Type type, const wxString& group, const wxString& category)
