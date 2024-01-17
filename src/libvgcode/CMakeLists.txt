@@ -31,6 +31,7 @@ add_library(libvgcode STATIC
 	src/Settings.hpp
 	src/Settings.cpp
 	src/Shaders.hpp
+	src/ShadersES.hpp
 	src/ToolMarker.hpp
 	src/ToolMarker.cpp
 	src/Types.cpp

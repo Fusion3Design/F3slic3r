@@ -28,6 +28,11 @@ public:
     // Initialize the viewer.
     // This method must be called after a valid OpenGL context has been already created
     // and before calling any other method of the viewer.
+    // Throws an std::runtime_error exception if:
+    // * the method is called before creating an OpenGL context
+    // * the created OpenGL context does not support for OpenGL 3.2 or greater
+    // * when using OpenGL ES, the created OpenGL ES context does not support OpenGL ES 2.0 or greater
+    // * any of the shaders fails to compile
     //
     void init();
     //

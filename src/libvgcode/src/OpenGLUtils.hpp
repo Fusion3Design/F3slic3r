@@ -24,8 +24,21 @@ inline void glAssertRecentCall() { }
 #define glcheck()
 #endif // HAS_GLSAFE
 
-extern bool load_opengl();
-extern bool check_opengl_version();
+class OpenGLWrapper
+{
+public:
+    OpenGLWrapper() = delete;
+
+    static bool load_opengl();
+    static bool is_detected() { return s_detected; }
+    static bool is_valid() { return s_valid; }
+    static bool is_es() { return s_es; }
+
+private:
+    static bool s_detected;
+    static bool s_valid;
+    static bool s_es;
+};
 
 } // namespace libvgcode
 

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <assert.h>
 #include <cctype>
+#include <stdio.h>
 
 namespace libvgcode {
 
@@ -32,24 +33,37 @@ void glAssertRecentCallImpl(const char* file_name, unsigned int line, const char
 }
 #endif // HAS_GLSAFE
 
-bool load_opengl()
-{
-    return gladLoadGL() != 0;
-}
+static const std::string OPENGL_ES_STR = "OpenGL ES";
 
-bool check_opengl_version()
+bool OpenGLWrapper::s_detected = false;
+bool OpenGLWrapper::s_valid = false;
+bool OpenGLWrapper::s_es = false;
+
+bool OpenGLWrapper::load_opengl()
 {
-    bool ret = false;
-    const GLubyte* version = glGetString(GL_VERSION);
-    if (version != nullptr) {
-        const std::string version_str(reinterpret_cast<const char*>(version));
-        if (version_str.length() > 4 && isdigit(version_str[0]) && isdigit(version_str[2])) {
-            const int major = version_str[0] - '0';
-            const int minor = version_str[2] - '0';
-            ret = major > 3 || (major == 3 && minor >= 2);
-        }
+    if (gladLoadGL() == 0)
+        return false;
+
+    s_detected = true;
+
+    const char* version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+    if (version == nullptr)
+        return false;
+
+    std::string version_str(version);
+    const size_t pos = version_str.find(OPENGL_ES_STR.c_str());
+    if (pos == 0) {
+        s_es = true;
+        version_str = version_str.substr(OPENGL_ES_STR.length() + 1);
     }
-    return ret;
+    GLint major = 0;
+    GLint minor = 0;
+    const int res = sscanf(version_str.c_str(), "%d.%d", &major, &minor);
+    if (res != 2)
+        return false;
+
+    s_valid = s_es ? major > 2 || (major == 2 && minor >= 0) : major > 3 || (major == 3 && minor >= 2);
+    return s_valid;
 }
 
 } // namespace libvgcode

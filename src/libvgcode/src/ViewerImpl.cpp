@@ -5,6 +5,7 @@
 #include "ViewerImpl.hpp"
 #include "../include/GCodeInputData.hpp"
 #include "Shaders.hpp"
+#include "ShadersES.hpp"
 #include "OpenGLUtils.hpp"
 #include "Utils.hpp"
 
@@ -322,14 +323,21 @@ void ViewerImpl::init()
     if (m_initialized)
         return;
 
-    if (!load_opengl())
-        throw std::runtime_error("LibVGCode was unable to initialize OpenGL\n");
-
-    if (!check_opengl_version())
-        throw std::runtime_error("LibVGCode requires an active OpenGL context based on OpenGL 3.2 or higher:\n");
+    if (!OpenGLWrapper::load_opengl()) {
+        if (!OpenGLWrapper::is_detected())
+            throw std::runtime_error("LibVGCode was unable to initialize OpenGL. A valid OpenGL context is missing.\n");
+        else if (!OpenGLWrapper::is_valid()) {
+            if (OpenGLWrapper::is_es())
+                throw std::runtime_error("LibVGCode requires an active OpenGL ES context based on OpenGL ES 2.0 or higher:\n");
+            else
+                throw std::runtime_error("LibVGCode requires an active OpenGL context based on OpenGL 3.2 or higher:\n");
+        }
+    }
 
     // segments shader
-    m_segments_shader_id = init_shader("segments", Segments_Vertex_Shader, Segments_Fragment_Shader);
+    m_segments_shader_id = OpenGLWrapper::is_es() ?
+        init_shader("segments", Segments_Vertex_Shader_ES, Segments_Fragment_Shader_ES) :
+        init_shader("segments", Segments_Vertex_Shader, Segments_Fragment_Shader);
 
     m_uni_segments_view_matrix_id            = glGetUniformLocation(m_segments_shader_id, "view_matrix");
     m_uni_segments_projection_matrix_id      = glGetUniformLocation(m_segments_shader_id, "projection_matrix");
@@ -350,7 +358,9 @@ void ViewerImpl::init()
     m_segment_template.init();
 
     // options shader
-    m_options_shader_id = init_shader("options", Options_Vertex_Shader, Options_Fragment_Shader);
+    m_options_shader_id = OpenGLWrapper::is_es() ? 
+        init_shader("options", Options_Vertex_Shader_ES, Options_Fragment_Shader_ES) :
+        init_shader("options", Options_Vertex_Shader, Options_Fragment_Shader);
 
     m_uni_options_view_matrix_id            = glGetUniformLocation(m_options_shader_id, "view_matrix");
     m_uni_options_projection_matrix_id      = glGetUniformLocation(m_options_shader_id, "projection_matrix");
@@ -370,7 +380,9 @@ void ViewerImpl::init()
 
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     // cog marker shader
-    m_cog_marker_shader_id = init_shader("cog_marker", Cog_Marker_Vertex_Shader, Cog_Marker_Fragment_Shader);
+    m_cog_marker_shader_id = OpenGLWrapper::is_es() ?
+        init_shader("cog_marker", Cog_Marker_Vertex_Shader_ES, Cog_Marker_Fragment_Shader_ES) :
+        init_shader("cog_marker", Cog_Marker_Vertex_Shader, Cog_Marker_Fragment_Shader);
 
     m_uni_cog_marker_world_center_position = glGetUniformLocation(m_cog_marker_shader_id, "world_center_position");
     m_uni_cog_marker_scale_factor          = glGetUniformLocation(m_cog_marker_shader_id, "scale_factor");
@@ -385,7 +397,9 @@ void ViewerImpl::init()
     m_cog_marker.init(32, 1.0f);
 
     // tool marker shader
-    m_tool_marker_shader_id = init_shader("tool_marker", Tool_Marker_Vertex_Shader, Tool_Marker_Fragment_Shader);
+    m_tool_marker_shader_id = OpenGLWrapper::is_es() ?
+        init_shader("tool_marker", Tool_Marker_Vertex_Shader_ES, Tool_Marker_Fragment_Shader_ES) :
+        init_shader("tool_marker", Tool_Marker_Vertex_Shader, Tool_Marker_Fragment_Shader);
 
     m_uni_tool_marker_world_origin      = glGetUniformLocation(m_tool_marker_shader_id, "world_origin");
     m_uni_tool_marker_scale_factor      = glGetUniformLocation(m_tool_marker_shader_id, "scale_factor");
