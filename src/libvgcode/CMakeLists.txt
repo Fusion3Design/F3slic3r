@@ -47,3 +47,6 @@ add_library(libvgcode STATIC
 	glad/include/KHR/khrplatform.h
 	glad/src/glad.c
 )
+
+# glad includes
+include_directories(glad/include)
