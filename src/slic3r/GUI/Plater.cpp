@@ -870,7 +870,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         bring_instance_forward();
     });
 
-    this->q->Bind(EVT_OPEN_PRUSAAUTH, [this](OpenPrusaAuthEvent& evt) {
+    this->q->Bind(EVT_OPEN_PRUSAAUTH, [](OpenPrusaAuthEvent& evt) {
        BOOST_LOG_TRIVIAL(info)  << "open browser: " << evt.data;
        // first register url to be sure to get the code back
        //auto downloader_worker = new DownloaderUtils::Worker(nullptr);
@@ -5861,12 +5861,10 @@ void Plater::connect_gcode()
         return;
     }
 
-    // TODO: get api key from dialog_msg and upload the file
-    // api key is not currently in the message
-    std::string api_key;
+    // TODO: break if printer not ready
 
-    // This is private key for our printer "Loki" - DELETE!
-    //api_key = "PAARWQ2Ibd69fdbf";
+    // get api key from dialog_msg and upload the file
+    std::string api_key = p->user_account->get_apikey_from_json(dialog_msg);
     if (api_key.empty())
     {
         return;

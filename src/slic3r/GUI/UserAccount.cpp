@@ -270,4 +270,21 @@ std::string UserAccount::get_nozzle_from_json(const std::string& message) const
     return out;
 }
 
+std::string UserAccount::get_apikey_from_json(const std::string& message) const
+{
+    std::string out;
+    try {
+        std::stringstream ss(message);
+        pt::ptree ptree;
+        pt::read_json(ss, ptree);
+
+        out = parse_tree_for_param(ptree, "prusaconnect_api_key");
+        //assert(!out.empty());
+    }
+    catch (const std::exception& e) {
+        BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
+    }
+    return out;
+}
+
 }} // namespace slic3r::GUI

@@ -463,7 +463,7 @@ void WebViewDialog::run_script(const wxString& javascript)
 {
     if (!m_browser) 
         return;
-    bool res = WebView::run_script(m_browser, javascript);
+    //bool res = WebView::run_script(m_browser, javascript);
 }
 
 

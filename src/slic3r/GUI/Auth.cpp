@@ -380,7 +380,6 @@ std::string CodeChalengeGenerator::sha256(const std::string& input)
 {
     HCRYPTPROV          prov_handle = NULL;
     HCRYPTHASH          hash_handle = NULL;
-    std::vector<BYTE>   buffer(1024);
     DWORD               hash_size = 0;
     DWORD               buffer_size = sizeof(DWORD);
     std::string         output;
@@ -423,13 +422,7 @@ std::string CodeChalengeGenerator::sha256(const std::string& input) {
     unsigned char digest[CC_SHA256_DIGEST_LENGTH];
     CC_SHA256_Final(digest, &sha256);
 
-    // Convert the result to a string
-    char hashString[CC_SHA256_DIGEST_LENGTH * 2 + 1];
-    for (int i = 0; i < CC_SHA256_DIGEST_LENGTH; i++) {
-        sprintf(&hashString[i * 2], "%02x", digest[i]);
-    }
-
-    return std::string(hashString);
+    return std::string(reinterpret_cast<char*>(digest), CC_SHA256_DIGEST_LENGTH);
 }
 #else
 std::string CodeChalengeGenerator::sha256(const std::string& input) {

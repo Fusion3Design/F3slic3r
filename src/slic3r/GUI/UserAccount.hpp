@@ -60,6 +60,7 @@ public:
     // standalone utility methods
     std::string get_model_from_json(const std::string& message) const;
     std::string get_nozzle_from_json(const std::string& message) const;
+    std::string get_apikey_from_json(const std::string& message) const;
 private:
     void set_username(const std::string& username, AppConfig* app_config);
     void reset(AppConfig* app_config);
