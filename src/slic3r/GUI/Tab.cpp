@@ -1148,13 +1148,13 @@ void Tab::activate_option(const std::string& opt_key, const wxString& category)
 {
     wxString page_title = translate_category(category, m_type);
 
-    auto cur_item = m_treectrl->GetFirstVisibleItem();
-    if (!cur_item)
-        return;
-
     // We should to activate a tab with searched option, if it doesn't.
     // And do it before finding of the cur_item to avoid a case when Tab isn't activated jet and all treeItems are invisible
     wxGetApp().mainframe->select_tab(this);
+
+    auto cur_item = m_treectrl->GetFirstVisibleItem();
+    if (!cur_item)
+        return;
 
     while (cur_item) {
         auto title = m_treectrl->GetItemText(cur_item);

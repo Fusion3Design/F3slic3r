@@ -512,11 +512,12 @@ void OptionsSearcher::set_search_input(TextInput* input_ctrl)
 
     ctrl->Bind(wxEVT_KEY_DOWN, [this](wxKeyEvent& e)
     {
-        if (e.GetKeyCode() == WXK_TAB)
+        int key = e.GetKeyCode();
+        if (key == WXK_TAB)
             search_input->Navigate(e.ShiftDown() ? wxNavigationKeyEvent::IsBackward : wxNavigationKeyEvent::IsForward);
-        else if (e.GetKeyCode() == WXK_ESCAPE)
+        else if (key == WXK_ESCAPE)
             search_dialog->EndModal(wxID_CLOSE);
-        else if (search_dialog)
+        else if (search_dialog && (key == WXK_UP || key == WXK_DOWN || key == WXK_NUMPAD_ENTER || key == WXK_RETURN))
             search_dialog->KeyDown(e);
         e.Skip();
     });
@@ -525,6 +526,11 @@ void OptionsSearcher::set_search_input(TextInput* input_ctrl)
     {
         if (search_input->GetValue() == default_string)
             search_input->SetValue("");
+        event.Skip();
+    });
+
+    ctrl->Bind(wxEVT_LEFT_DOWN, [](wxMouseEvent& event) {
+        GUI::wxGetApp().show_search_dialog();
         event.Skip();
     });
 
@@ -637,7 +643,7 @@ SearchDialog::SearchDialog(OptionsSearcher* searcher, wxWindow* parent)
         check_english ->Bind(wxEVT_CHECKBOX, &SearchDialog::OnCheck, this);
 
 //    Bind(wxEVT_MOTION, &SearchDialog::OnMotion, this);
-    Bind(wxEVT_LEFT_DOWN, &SearchDialog::OnLeftDown, this);
+//    Bind(wxEVT_LEFT_DOWN, &SearchDialog::OnLeftDown, this);
 
     SetSizer(topSizer);
     topSizer->SetSizeHints(this);
@@ -660,7 +666,11 @@ void SearchDialog::Popup(wxPoint position /*= wxDefaultPosition*/)
 
     if (position != wxDefaultPosition)
         this->SetPosition(position);
+#ifdef __APPLE__
+    this->ShowWithoutActivating();
+#else
     this->Show();
+#endif
 }
 
 void SearchDialog::ProcessSelection(wxDataViewItem selection)
