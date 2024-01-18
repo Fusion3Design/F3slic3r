@@ -17,9 +17,9 @@ Viewer::~Viewer()
     delete m_impl;
 }
 
-void Viewer::init()
+void Viewer::init(const std::string& opengl_context_version)
 {
-    m_impl->init();
+    m_impl->init(opengl_context_version);
 }
 
 void Viewer::shutdown()

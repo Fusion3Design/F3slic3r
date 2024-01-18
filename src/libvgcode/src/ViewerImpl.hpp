@@ -19,6 +19,8 @@
 #include "Layers.hpp"
 #include "ExtrusionRoles.hpp"
 
+#include <string>
+
 namespace libvgcode {
 
 struct GCodeInputData;
@@ -36,17 +38,15 @@ public:
     //
     // Initialize shaders, uniform indices and segment geometry.
     //
-    void init();
+    void init(const std::string& opengl_context_version);
     //
     // Release the resources used by the viewer.
     //
     void shutdown();
-
     //
     // Reset all caches and free gpu memory.
     //
     void reset();
-
     //
     // Setup all the variables used for visualization of the toolpaths
     // from the given gcode data.
@@ -58,7 +58,6 @@ public:
     // of the current settings
     //
     void update_enabled_entities();
-
     //
     // Update the color of toolpaths in dependence of the current
     // view type and settings

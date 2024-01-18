@@ -8,6 +8,8 @@
 // OpenGL loader
 #include "../glad/include/glad/glad.h"
 
+#include <string>
+
 namespace libvgcode {
 #ifndef NDEBUG
 #define HAS_GLSAFE
@@ -27,17 +29,13 @@ inline void glAssertRecentCall() { }
 class OpenGLWrapper
 {
 public:
-    OpenGLWrapper() = delete;
-
-    static bool load_opengl();
-    static bool is_detected() { return s_detected; }
-    static bool is_valid() { return s_valid; }
-    static bool is_es() { return s_es; }
+    bool load_opengl(const std::string& context_version);
+    bool is_valid_context() { return m_valid_context; }
+    bool is_opengl_es()     { return m_opengl_es; }
 
 private:
-    static bool s_detected;
-    static bool s_valid;
-    static bool s_es;
+    bool m_valid_context{ false };
+    bool m_opengl_es{ false };
 };
 
 } // namespace libvgcode

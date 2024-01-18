@@ -7,6 +7,8 @@
 
 #include "Types.hpp"
 
+#include <string>
+
 namespace libvgcode {
 
 class ViewerImpl;
@@ -26,15 +28,16 @@ public:
 
     //
     // Initialize the viewer.
+    // Param opengl_context_version must be the string returned by glGetString(GL_VERSION).
     // This method must be called after a valid OpenGL context has been already created
     // and before calling any other method of the viewer.
     // Throws an std::runtime_error exception if:
     // * the method is called before creating an OpenGL context
-    // * the created OpenGL context does not support for OpenGL 3.2 or greater
+    // * the created OpenGL context does not support OpenGL 3.2 or greater
     // * when using OpenGL ES, the created OpenGL ES context does not support OpenGL ES 2.0 or greater
     // * any of the shaders fails to compile
     //
-    void init();
+    void init(const std::string& opengl_context_version);
     //
     // Release the resources used by the viewer.
     // This method must be called before releasing the OpenGL context if the viewer

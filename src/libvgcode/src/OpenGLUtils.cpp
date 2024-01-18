@@ -9,11 +9,6 @@
 #include <cctype>
 #include <stdio.h>
 
-// Visual Studio warnings
-#ifdef _MSC_VER
-#pragma warning (disable: 4996) // 'This function or variable may be unsafe': strcpy, strdup, sprintf, vsnprintf, sscanf, fopen
-#endif // _MSC_VER
-
 namespace libvgcode {
 
 #ifdef HAS_GLSAFE
@@ -38,37 +33,40 @@ void glAssertRecentCallImpl(const char* file_name, unsigned int line, const char
 }
 #endif // HAS_GLSAFE
 
-static const std::string OPENGL_ES_STR = "OpenGL ES";
+static const char* OPENGL_ES_PREFIXES[] = { "OpenGL ES-CM ", "OpenGL ES-CL ", "OpenGL ES ", nullptr };
 
-bool OpenGLWrapper::s_detected = false;
-bool OpenGLWrapper::s_valid = false;
-bool OpenGLWrapper::s_es = false;
-
-bool OpenGLWrapper::load_opengl()
+bool OpenGLWrapper::load_opengl(const std::string& context_version)
 {
-    if (gladLoadGL() == 0)
-        return false;
+    m_valid_context = false;
+    m_opengl_es = false;
 
-    s_detected = true;
-
-    const char* version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
-    if (version == nullptr)
-        return false;
-
-    std::string version_str(version);
-    const size_t pos = version_str.find(OPENGL_ES_STR.c_str());
-    if (pos == 0) {
-        s_es = true;
-        version_str = version_str.substr(OPENGL_ES_STR.length() + 1);
+    const char* version = context_version.c_str();
+    for (int i = 0; OPENGL_ES_PREFIXES[i] != nullptr; ++i) {
+        const size_t length = strlen(OPENGL_ES_PREFIXES[i]);
+        if (strncmp(version, OPENGL_ES_PREFIXES[i], length) == 0) {
+            version += length;
+            m_opengl_es = true;
+            break;
+        }
     }
+
     GLint major = 0;
     GLint minor = 0;
-    const int res = sscanf(version_str.c_str(), "%d.%d", &major, &minor);
+#ifdef _MSC_VER
+    const int res = sscanf_s(version, "%d.%d", &major, &minor);
+#else
+    const int res = sscanf(version, "%d.%d", &major, &minor);
+#endif // _MSC_VER
     if (res != 2)
         return false;
 
-    s_valid = s_es ? major > 2 || (major == 2 && minor >= 0) : major > 3 || (major == 3 && minor >= 2);
-    return s_valid;
+    m_valid_context = m_opengl_es ? major > 2 || (major == 2 && minor >= 0) : major > 3 || (major == 3 && minor >= 2);
+
+    const int glad_res = gladLoadGL();
+    if (glad_res == 0)
+        return false;
+
+    return m_valid_context;
 }
 
 } // namespace libvgcode

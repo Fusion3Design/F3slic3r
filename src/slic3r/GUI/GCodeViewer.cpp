@@ -1098,7 +1098,8 @@ void GCodeViewer::init()
 #if ENABLE_NEW_GCODE_VIEWER
     try
     {
-        m_viewer.init();
+        m_viewer.init(reinterpret_cast<const char*>(glGetString(GL_VERSION)));
+        glcheck();
     }
     catch (const std::exception& e)
     {

@@ -318,24 +318,25 @@ const std::map<EOptionType, Color> ViewerImpl::DEFAULT_OPTIONS_COLORS{ {
     { EOptionType::CustomGCodes,  { 226, 210,  67 } }
 } };
 
-void ViewerImpl::init()
+void ViewerImpl::init(const std::string& opengl_context_version)
 {
     if (m_initialized)
         return;
 
-    if (!OpenGLWrapper::load_opengl()) {
-        if (!OpenGLWrapper::is_detected())
-            throw std::runtime_error("LibVGCode was unable to initialize OpenGL. A valid OpenGL context is missing.\n");
-        else if (!OpenGLWrapper::is_valid()) {
-            if (OpenGLWrapper::is_es())
-                throw std::runtime_error("LibVGCode requires an active OpenGL ES context based on OpenGL ES 2.0 or higher:\n");
+    OpenGLWrapper opengl_wrapper;
+    if (!opengl_wrapper.load_opengl(opengl_context_version)) {
+        if (opengl_wrapper.is_valid_context())
+            throw std::runtime_error("LibVGCode was unable to initialize the GLAD library.\n");
+        else {
+            if (opengl_wrapper.is_opengl_es())
+                throw std::runtime_error("LibVGCode requires an OpenGL ES context based on OpenGL ES 2.0 or higher.\n");
             else
-                throw std::runtime_error("LibVGCode requires an active OpenGL context based on OpenGL 3.2 or higher:\n");
+                throw std::runtime_error("LibVGCode requires an OpenGL context based on OpenGL 3.2 or higher.\n");
         }
     }
 
     // segments shader
-    m_segments_shader_id = OpenGLWrapper::is_es() ?
+    m_segments_shader_id = opengl_wrapper.is_opengl_es() ?
         init_shader("segments", Segments_Vertex_Shader_ES, Segments_Fragment_Shader_ES) :
         init_shader("segments", Segments_Vertex_Shader, Segments_Fragment_Shader);
 
@@ -358,7 +359,7 @@ void ViewerImpl::init()
     m_segment_template.init();
 
     // options shader
-    m_options_shader_id = OpenGLWrapper::is_es() ? 
+    m_options_shader_id = opengl_wrapper.is_opengl_es() ?
         init_shader("options", Options_Vertex_Shader_ES, Options_Fragment_Shader_ES) :
         init_shader("options", Options_Vertex_Shader, Options_Fragment_Shader);
 
@@ -380,7 +381,7 @@ void ViewerImpl::init()
 
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     // cog marker shader
-    m_cog_marker_shader_id = OpenGLWrapper::is_es() ?
+    m_cog_marker_shader_id = opengl_wrapper.is_opengl_es() ?
         init_shader("cog_marker", Cog_Marker_Vertex_Shader_ES, Cog_Marker_Fragment_Shader_ES) :
         init_shader("cog_marker", Cog_Marker_Vertex_Shader, Cog_Marker_Fragment_Shader);
 
@@ -397,7 +398,7 @@ void ViewerImpl::init()
     m_cog_marker.init(32, 1.0f);
 
     // tool marker shader
-    m_tool_marker_shader_id = OpenGLWrapper::is_es() ?
+    m_tool_marker_shader_id = opengl_wrapper.is_opengl_es() ?
         init_shader("tool_marker", Tool_Marker_Vertex_Shader_ES, Tool_Marker_Fragment_Shader_ES) :
         init_shader("tool_marker", Tool_Marker_Vertex_Shader, Tool_Marker_Fragment_Shader);
 
