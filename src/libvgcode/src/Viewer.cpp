@@ -232,7 +232,7 @@ size_t Viewer::get_used_extruders_count() const
     return m_impl->get_used_extruders_count();
 }
 
-const std::vector<uint8_t>& Viewer::get_used_extruders_ids() const
+std::vector<uint8_t> Viewer::get_used_extruders_ids() const
 {
     return m_impl->get_used_extruders_ids();
 }
@@ -290,6 +290,16 @@ size_t Viewer::get_options_count() const
 const std::vector<EOptionType>& Viewer::get_options() const
 {
     return m_impl->get_options();
+}
+
+size_t Viewer::get_color_prints_count(uint8_t extruder_id) const
+{
+    return m_impl->get_color_prints_count(extruder_id);
+}
+
+std::vector<ColorPrint> Viewer::get_color_prints(uint8_t extruder_id) const
+{
+    return m_impl->get_color_prints(extruder_id);
 }
 
 float Viewer::get_extrusion_role_time(EGCodeExtrusionRole role) const

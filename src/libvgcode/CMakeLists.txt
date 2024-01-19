@@ -3,6 +3,7 @@ project(libvgcode)
 
 add_library(libvgcode STATIC
 	# API
+	include/ColorPrint.hpp
     include/ColorRange.hpp
     include/GCodeInputData.hpp
     include/PathVertex.hpp
@@ -13,6 +14,7 @@ add_library(libvgcode STATIC
 	src/Bitset.cpp
 	src/CogMarker.hpp
 	src/CogMarker.cpp
+	src/ColorPrint.cpp
 	src/ColorRange.cpp
 	src/ExtrusionRoles.hpp
 	src/ExtrusionRoles.cpp

@@ -280,11 +280,7 @@ static void delete_buffers(unsigned int& id)
     }
 }
 
-//
-// Palette used to render extrusion moves by extrusion roles
-// EViewType: FeatureType
-//
-const std::map<EGCodeExtrusionRole, Color> ViewerImpl::DEFAULT_EXTRUSION_ROLES_COLORS{ {
+static const std::map<EGCodeExtrusionRole, Color> DEFAULT_EXTRUSION_ROLES_COLORS{ {
     { EGCodeExtrusionRole::None,                       { 230, 179, 179 } },
     { EGCodeExtrusionRole::Perimeter,                  { 255, 230,  77 } },
     { EGCodeExtrusionRole::ExternalPerimeter,          { 255, 125,  56 } },
@@ -302,11 +298,7 @@ const std::map<EGCodeExtrusionRole, Color> ViewerImpl::DEFAULT_EXTRUSION_ROLES_C
     { EGCodeExtrusionRole::Custom,                     {  94, 209, 148 } }
 } };
 
-//
-// Palette used to render options
-// EViewType: FeatureType
-//
-const std::map<EOptionType, Color> ViewerImpl::DEFAULT_OPTIONS_COLORS{ {
+static const std::map<EOptionType, Color> DEFAULT_OPTIONS_COLORS{ {
     { EOptionType::Travels,       {  56,  72, 155 } },
     { EOptionType::Wipes,         { 255, 255,   0 } },
     { EOptionType::Retractions,   { 205,  34, 214 } },
@@ -317,6 +309,12 @@ const std::map<EOptionType, Color> ViewerImpl::DEFAULT_OPTIONS_COLORS{ {
     { EOptionType::PausePrints,   {  82, 240, 131 } },
     { EOptionType::CustomGCodes,  { 226, 210,  67 } }
 } };
+
+ViewerImpl::ViewerImpl()
+{
+    reset_default_extrusion_roles_colors();
+    reset_default_options_colors();
+}
 
 void ViewerImpl::init(const std::string& opengl_context_version)
 {
@@ -447,8 +445,8 @@ void ViewerImpl::reset()
     m_view_range.reset();
     m_extrusion_roles.reset();
     m_options.clear();
+    m_used_extruders.clear();
     m_travels_time = { 0.0f, 0.0f };
-    m_used_extruders_ids.clear();
     m_vertices.clear();
     m_valid_lines_bitset.clear();
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
@@ -486,25 +484,33 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     m_vertices = std::move(gcode_data.vertices);
     m_settings.spiral_vase_mode = gcode_data.spiral_vase_mode;
 
-    m_used_extruders_ids.reserve(m_vertices.size());
-
+    std::array<float, TIME_MODES_COUNT> times{ 0.0f, 0.0f };
     for (size_t i = 0; i < m_vertices.size(); ++i) {
         const PathVertex& v = m_vertices[i];
+
         m_layers.update(v, static_cast<uint32_t>(i));
-        if (v.type == EMoveType::Travel) {
-            for (size_t j = 0; j < TIME_MODES_COUNT; ++j) {
+
+        for (size_t j = 0; j < TIME_MODES_COUNT; ++j) {
+            times[j] += v.times[j];
+            if (v.type == EMoveType::Travel)
                 m_travels_time[j] += v.times[j];
-            }
         }
-        else
-            m_extrusion_roles.add(v.role, v.times);
 
         const EOptionType option_type = move_type_to_option(v.type);
         if (option_type != EOptionType::COUNT)
             m_options.emplace_back(option_type);
 
-        if (v.type == EMoveType::Extrude)
-            m_used_extruders_ids.emplace_back(v.extruder_id);
+        if (v.type == EMoveType::Extrude) {
+            m_extrusion_roles.add(v.role, v.times);
+
+            auto estruder_it = m_used_extruders.find(v.extruder_id);
+            if (estruder_it == m_used_extruders.end())
+                estruder_it = m_used_extruders.insert({ v.extruder_id, std::vector<ColorPrint>() }).first;
+            if (estruder_it->second.empty() || estruder_it->second.back().color_id != v.color_id) {
+                const ColorPrint cp = { v.extruder_id, v.color_id, v.layer_id, times };
+                estruder_it->second.emplace_back(cp);
+            }
+        }
 
         if (i > 0) {
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
@@ -527,10 +533,6 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     std::sort(m_options.begin(), m_options.end());
     m_options.erase(std::unique(m_options.begin(), m_options.end()), m_options.end());
     m_options.shrink_to_fit();
-
-    std::sort(m_used_extruders_ids.begin(), m_used_extruders_ids.end());
-    m_used_extruders_ids.erase(std::unique(m_used_extruders_ids.begin(), m_used_extruders_ids.end()), m_used_extruders_ids.end());
-    m_used_extruders_ids.shrink_to_fit();
 
     // reset segments visibility bitset
     m_valid_lines_bitset = BitSet<>(m_vertices.size());
@@ -720,11 +722,11 @@ static float encode_color(const Color& color) {
 void ViewerImpl::update_colors()
 {
     if (m_colors_buf_id == 0)
-      return;
+        return;
 
-    if (!m_used_extruders_ids.empty()) {
+    if (!m_used_extruders.empty()) {
         // ensure that the number of defined tool colors matches the max id of the used extruders 
-        const size_t max_used_extruder_id = 1 + static_cast<size_t>(m_used_extruders_ids.back());
+        const size_t max_used_extruder_id = 1 + static_cast<size_t>(m_used_extruders.rbegin()->first);
         const size_t tool_colors_size = m_tool_colors.size();
         if (m_tool_colors.size() < max_used_extruder_id) {
             for (size_t i = 0; i < max_used_extruder_id - tool_colors_size; ++i) {
@@ -823,6 +825,28 @@ std::vector<ETimeMode> ViewerImpl::get_time_modes() const
             ret.push_back(static_cast<ETimeMode>(i));
     }
     return ret;
+}
+
+std::vector<uint8_t> ViewerImpl::get_used_extruders_ids() const
+{
+    std::vector<uint8_t> ret;
+    ret.reserve(m_used_extruders.size());
+    for (const auto& [id, colors] : m_used_extruders) {
+        ret.emplace_back(id);
+    }
+    return ret;
+}
+
+size_t ViewerImpl::get_color_prints_count(uint8_t extruder_id) const
+{
+    const auto it = m_used_extruders.find(extruder_id);
+    return (it == m_used_extruders.end()) ? 0 : it->second.size();
+}
+
+std::vector<ColorPrint> ViewerImpl::get_color_prints(uint8_t extruder_id) const
+{
+    const auto it = m_used_extruders.find(extruder_id);
+    return (it == m_used_extruders.end()) ? std::vector<ColorPrint>() : it->second;
 }
 
 AABox ViewerImpl::get_bounding_box(EBBoxType type) const
@@ -988,6 +1012,11 @@ void ViewerImpl::set_extrusion_role_color(EGCodeExtrusionRole role, const Color&
     }
 }
 
+void ViewerImpl::reset_default_extrusion_roles_colors()
+{
+    m_extrusion_roles_colors = DEFAULT_EXTRUSION_ROLES_COLORS;
+}
+
 const Color& ViewerImpl::get_option_color(EOptionType type) const
 {
     const auto it = m_options_colors.find(type);
@@ -1001,6 +1030,11 @@ void ViewerImpl::set_option_color(EOptionType type, const Color& color)
         it->second = color;
         m_settings.update_colors = true;
     }
+}
+
+void ViewerImpl::reset_default_options_colors()
+{
+    m_options_colors = DEFAULT_OPTIONS_COLORS;
 }
 
 const ColorRange& ViewerImpl::get_color_range(EViewType type) const

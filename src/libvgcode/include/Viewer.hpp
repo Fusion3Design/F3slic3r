@@ -15,6 +15,7 @@ class ViewerImpl;
 struct GCodeInputData;
 struct PathVertex;
 class ColorRange;
+struct ColorPrint;
 
 class Viewer
 {
@@ -265,7 +266,7 @@ public:
     //
     // Return the list of ids of the detected used extruders.
     //
-    const std::vector<uint8_t>& get_used_extruders_ids() const;
+    std::vector<uint8_t> get_used_extruders_ids() const;
     //
     // Return the list of detected time modes.
     //
@@ -311,6 +312,14 @@ public:
     // Return the list of detected options.
     //
     const std::vector<EOptionType>& get_options() const;
+    //
+    // Return the count of detected color prints.
+    //
+    size_t get_color_prints_count(uint8_t extruder_id) const;
+    //
+    // Return the list of detected color prints.
+    //
+    std::vector<ColorPrint> get_color_prints(uint8_t extruder_id) const;
     //
     // Return the estimated time for the given role and the current time mode.
     //

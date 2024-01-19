@@ -14,6 +14,7 @@
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 #include "../include/PathVertex.hpp"
 #include "../include/ColorRange.hpp"
+#include "../include/ColorPrint.hpp"
 #include "Bitset.hpp"
 #include "ViewRange.hpp"
 #include "Layers.hpp"
@@ -28,7 +29,7 @@ struct GCodeInputData;
 class ViewerImpl
 {
 public:
-    ViewerImpl() = default;
+    ViewerImpl();
     ~ViewerImpl() { shutdown(); }
     ViewerImpl(const ViewerImpl& other) = delete;
     ViewerImpl(ViewerImpl&& other) = delete;
@@ -92,8 +93,11 @@ public:
 
     size_t get_layer_id_at(float z) const { return m_layers.get_layer_id_at(z); }
 
-    size_t get_used_extruders_count() const { return m_used_extruders_ids.size(); }
-    const std::vector<uint8_t>& get_used_extruders_ids() const { return m_used_extruders_ids; }
+    size_t get_used_extruders_count() const { return m_used_extruders.size(); }
+    std::vector<uint8_t> get_used_extruders_ids() const;
+
+    size_t get_color_prints_count(uint8_t extruder_id) const;
+    std::vector<ColorPrint> get_color_prints(uint8_t extruder_id) const;
 
     AABox get_bounding_box(EBBoxType type) const;
 
@@ -141,11 +145,11 @@ public:
 
     const Color& get_extrusion_role_color(EGCodeExtrusionRole role) const;
     void set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color);
-    void reset_default_extrusion_roles_colors() { m_extrusion_roles_colors = DEFAULT_EXTRUSION_ROLES_COLORS; }
+    void reset_default_extrusion_roles_colors();
 
     const Color& get_option_color(EOptionType type) const;
     void set_option_color(EOptionType type, const Color& color);
-    void reset_default_options_colors() { m_options_colors = DEFAULT_OPTIONS_COLORS; }
+    void reset_default_options_colors();
 
     const ColorRange& get_color_range(EViewType type) const;
     void set_color_range_palette(EViewType type, const Palette& palette);
@@ -181,62 +185,88 @@ public:
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
 private:
+    //
+    // Settings used to render the toolpaths
+    //
     Settings m_settings;
+    //
+    // Detected layers
+    //
     Layers m_layers;
-    ViewRange m_view_range;
+    //
+    // Detected extrusion roles
+    //
     ExtrusionRoles m_extrusion_roles;
+    //
+    // Detected options
+    //
     std::vector<EOptionType> m_options;
+    //
+    // Detected used extruders ids
+    //
+    std::map<uint8_t, std::vector<ColorPrint>> m_used_extruders;
+    //
+    // Vertices ranges for visualization
+    //
+    ViewRange m_view_range;
+    //
+    // Detected travel moves times
+    //
     std::array<float, TIME_MODES_COUNT> m_travels_time{ 0.0f, 0.0f };
-    std::vector<uint8_t> m_used_extruders_ids;
+    //
+    // Radius of cylinders used to render travel moves segments
+    //
     float m_travels_radius{ DEFAULT_TRAVELS_RADIUS_MM };
+    //
+    // Radius of cylinders used to render wipe moves segments
+    //
     float m_wipes_radius{ DEFAULT_WIPES_RADIUS_MM };
+    //
+    // Palette used to render extrusion roles
+    //
+    std::map<EGCodeExtrusionRole, Color> m_extrusion_roles_colors;
+    //
+    // Palette used to render options
+    //
+    std::map<EOptionType, Color> m_options_colors;
 
     bool m_initialized{ false };
     bool m_loading{ false };
-
-    std::map<EGCodeExtrusionRole, Color> m_extrusion_roles_colors{ DEFAULT_EXTRUSION_ROLES_COLORS };
-    std::map<EOptionType, Color> m_options_colors{ DEFAULT_OPTIONS_COLORS };
 
     //
     // The OpenGL element used to represent all toolpath segments
     //
     SegmentTemplate m_segment_template;
-
     //
     // The OpenGL element used to represent all option markers
     //
     OptionTemplate m_option_template;
-
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
     // The OpenGL element used to represent the center of gravity
     //
     CogMarker m_cog_marker;
     float m_cog_marker_scale_factor{ 1.0f };
-
     //
     // The OpenGL element used to represent the tool nozzle
     //
     ToolMarker m_tool_marker;
     float m_tool_marker_scale_factor{ 1.0f };
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-
     //
     // cpu buffer to store vertices
     //
     std::vector<PathVertex> m_vertices;
     Range m_enabled_segments_range;
     Range m_enabled_options_range;
-
     //
-    // Member variables used for toolpaths visibiliity
+    // Variables used for toolpaths visibiliity
     //
     BitSet<> m_valid_lines_bitset;
     size_t m_enabled_segments_count{ 0 };
     size_t m_enabled_options_count{ 0 };
-
     //
-    // Member variables used for toolpaths coloring
+    // Variables used for toolpaths coloring
     //
     ColorRange m_height_range;
     ColorRange m_width_range;
@@ -248,9 +278,8 @@ private:
         ColorRange(EColorRangeType::Linear), ColorRange(EColorRangeType::Logarithmic)
     };
     Palette m_tool_colors;
-
     //
-    // OpenGL shader ids
+    // OpenGL shaders ids
     //
     unsigned int m_segments_shader_id{ 0 };
     unsigned int m_options_shader_id{ 0 };
@@ -258,7 +287,6 @@ private:
     unsigned int m_cog_marker_shader_id{ 0 };
     unsigned int m_tool_marker_shader_id{ 0 };
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-
     //
     // Cache for OpenGL uniforms id for segments shader 
     //
@@ -269,7 +297,6 @@ private:
     int m_uni_segments_height_width_angle_tex_id{ -1 };
     int m_uni_segments_colors_tex_id{ -1 };
     int m_uni_segments_segment_index_tex_id{ -1 };
-
     //
     // Cache for OpenGL uniforms id for options shader 
     //
@@ -279,7 +306,6 @@ private:
     int m_uni_options_height_width_angle_tex_id{ -1 };
     int m_uni_options_colors_tex_id{ -1 };
     int m_uni_options_segment_index_tex_id{ -1 };
-
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
     // Cache for OpenGL uniforms id for cog marker shader 
@@ -288,7 +314,6 @@ private:
     int m_uni_cog_marker_scale_factor{ -1 };
     int m_uni_cog_marker_view_matrix{ -1 };
     int m_uni_cog_marker_projection_matrix{ -1 };
-
     //
     // Cache for OpenGL uniforms id for tool marker shader 
     //
@@ -298,29 +323,28 @@ private:
     int m_uni_tool_marker_projection_matrix{ -1 };
     int m_uni_tool_marker_color_base{ -1 };
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-
     //
-    // gpu buffers to store positions
+    // OpenGL buffers to store positions
     //
     unsigned int m_positions_buf_id{ 0 };
     unsigned int m_positions_tex_id{ 0 };
     //
-    // gpu buffers to store heights, widths and angles
+    // OpenGL buffers to store heights, widths and angles
     //
     unsigned int m_heights_widths_angles_buf_id{ 0 };
     unsigned int m_heights_widths_angles_tex_id{ 0 };
     //
-    // gpu buffers to store colors
+    // OpenGL buffers to store colors
     //
     unsigned int m_colors_buf_id{ 0 };
     unsigned int m_colors_tex_id{ 0 };
     //
-    // gpu buffers to store enabled segments
+    // OpenGL buffers to store enabled segments
     //
     unsigned int m_enabled_segments_buf_id{ 0 };
     unsigned int m_enabled_segments_tex_id{ 0 };
     //
-    // gpu buffers to store enabled options
+    // OpenGL buffers to store enabled options
     //
     unsigned int m_enabled_options_buf_id{ 0 };
     unsigned int m_enabled_options_tex_id{ 0 };
@@ -334,17 +358,6 @@ private:
     void render_cog_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
     void render_tool_marker(const Mat4x4& view_matrix, const Mat4x4& projection_matrix);
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-
-    //
-    // Palette used to render extrusion moves by extrusion roles
-    // EViewType: FeatureType
-    //
-    static const std::map<EGCodeExtrusionRole, Color> DEFAULT_EXTRUSION_ROLES_COLORS;
-    //
-    // Palette used to render options
-    // EViewType: FeatureType
-    //
-    static const std::map<EOptionType, Color> DEFAULT_OPTIONS_COLORS;
 };
 
 } // namespace libvgcode
