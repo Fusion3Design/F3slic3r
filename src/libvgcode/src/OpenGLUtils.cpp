@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <cctype>
 #include <stdio.h>
+#include <cstring>
 
 namespace libvgcode {
 
