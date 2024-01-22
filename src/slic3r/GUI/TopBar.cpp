@@ -182,7 +182,7 @@ void TopBarItemsCtrl::UpdateAuthMenu()
 {
     auto user_account = wxGetApp().plater()->get_user_account();
     if (m_login_menu_item) {
-        m_login_menu_item->SetItemLabel(user_account->is_logged() ? _L("PrusaAuth Log out") : _L("PrusaAuth Log in"));
+        m_login_menu_item->SetItemLabel(user_account->is_logged() ? _L("Prusa Account Log out") : _L("Prusa Account Log in"));
         m_login_menu_item->SetBitmap(user_account->is_logged() ? *get_bmp_bundle("logout", 16) : *get_bmp_bundle("login", 16));
     }
 
