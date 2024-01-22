@@ -24,10 +24,12 @@ wxDEFINE_EVENT(EVT_PA_ID_USER_SUCCESS, PrusaAuthSuccessEvent);
 wxDEFINE_EVENT(EVT_PA_ID_USER_FAIL, PrusaAuthFailEvent);
 wxDEFINE_EVENT(EVT_PRUSAAUTH_SUCCESS, PrusaAuthSuccessEvent);
 wxDEFINE_EVENT(EVT_PRUSACONNECT_PRINTERS_SUCCESS, PrusaAuthSuccessEvent);
+wxDEFINE_EVENT(EVT_PA_AVATAR_SUCCESS, PrusaAuthSuccessEvent);
 wxDEFINE_EVENT(EVT_PRUSAAUTH_FAIL, PrusaAuthFailEvent);
 wxDEFINE_EVENT(EVT_PRUSAAUTH_RESET, PrusaAuthFailEvent);
 
-void UserActionPost::perform(const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
+
+void UserActionPost::perform( /*UNUSED*/ const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
 {
     std::string url = m_url;
     //BOOST_LOG_TRIVIAL(info) << m_action_name <<" POST " << url << " body: " << input;
@@ -69,6 +71,30 @@ void UserActionGetWithEvent::perform(const std::string& access_token, UserAction
         if (m_succ_evt_type != wxEVT_NULL)
             wxQueueEvent(m_evt_handler, new PrusaAuthSuccessEvent(m_succ_evt_type, body));
     });
+
+    http.perform_sync();
+}
+
+void UserActionNoAuthGetWithEvent::perform(/*UNUSED*/ const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
+{
+    std::string url = m_url + input;
+    //BOOST_LOG_TRIVIAL(info) << m_action_name << " GET " << url;
+    auto http = Http::get(url);
+    http.on_error([&](std::string body, std::string error, unsigned status) {
+        //BOOST_LOG_TRIVIAL(error) << m_action_name << " action failed. status: " << status << " Body: " << body;
+        if (fail_callback)
+            fail_callback(body);
+        std::string message = GUI::format("%1% action failed (%2%): %3%", m_action_name, std::to_string(status), body);
+        if (m_succ_evt_type != wxEVT_NULL)
+            wxQueueEvent(m_evt_handler, new PrusaAuthFailEvent(m_fail_evt_type, std::move(message)));
+        });
+    http.on_complete([&, this](std::string body, unsigned status) {
+        //BOOST_LOG_TRIVIAL(info) << m_action_name << " action success. Status: " << status << " Body: " << body;
+        if (success_callback)
+            success_callback(body);
+        if (m_succ_evt_type != wxEVT_NULL)
+            wxQueueEvent(m_evt_handler, new PrusaAuthSuccessEvent(m_succ_evt_type, body));
+        });
 
     http.perform_sync();
 }

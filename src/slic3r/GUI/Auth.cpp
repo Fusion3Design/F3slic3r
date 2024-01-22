@@ -296,6 +296,18 @@ void PrusaAuthCommunication::enqueue_connect_printers_action()
     wakeup_session_thread();
 }
 
+void PrusaAuthCommunication::enqueue_avatar_action(const std::string url)
+{
+    {
+        std::lock_guard<std::mutex> lock(m_session_mutex);
+        if (!m_session->is_initialized()) {
+            BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
+            return;
+        }
+        m_session->enqueue_action(UserActionID::AVATAR, nullptr, nullptr, url);
+    }
+    wakeup_session_thread();
+}
 void PrusaAuthCommunication::init_session_thread()
 {
     m_thread = std::thread([this]() {

@@ -940,7 +940,14 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             // TODO
         }
     });
-    
+    this->q->Bind(EVT_PA_AVATAR_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
+       boost::filesystem::path png_path = boost::filesystem::path(Slic3r::data_dir()) / "cache" / "avatar.png";
+       FILE* file; 
+       file = fopen(png_path.string().c_str(), "wb");
+       fwrite(evt.data.c_str(), 1, evt.data.size(), file);
+       fclose(file);
+    });
+
 	wxGetApp().other_instance_message_handler()->init(this->q);
 
     // collapse sidebar according to saved value

@@ -43,8 +43,8 @@ public:
     void enqueue_connect_dummy_action();
 #endif
     void enqueue_connect_printers_action();
-   
-    
+    void enqueue_avatar_action(const std::string url);
+
     // Callbacks - called from UI after receiving Event from Session thread. Some might use Session thread.
     // 
     // Called when browser returns code via prusaslicer:// custom url.

@@ -41,6 +41,7 @@ public:
     void enqueue_connect_dummy_action();
 #endif
     void enqueue_connect_printers_action();
+    void enqueue_avatar_action(const std::string& url);
 
     // Functions called from UI where events emmited from AuthSession are binded
     // Returns bool if data were correctly proccessed

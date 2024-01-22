@@ -72,6 +72,11 @@ void UserAccount::enqueue_connect_printers_action()
     m_auth_communication->enqueue_connect_printers_action();
 }
 
+void UserAccount::enqueue_avatar_action(const std::string& url)
+{
+    m_auth_communication->enqueue_avatar_action(url);
+}
+
 bool UserAccount::on_login_code_recieved(const std::string& url_message)
 {
     m_auth_communication->on_login_code_recieved(url_message);
@@ -93,20 +98,26 @@ bool UserAccount::on_user_id_success(const std::string data, AppConfig* app_conf
     for (const auto& section : ptree) {
         const auto opt = ptree.get_optional<std::string>(section.first);
         if (opt) {
-            BOOST_LOG_TRIVIAL(debug) << static_cast<std::string>(section.first) << *opt;
+            BOOST_LOG_TRIVIAL(debug) << static_cast<std::string>(section.first) << "    " << *opt;
             m_user_data[section.first] = *opt;
         }
        
     }
     assert(m_user_data.find("public_username") != m_user_data.end());
-    if (m_user_data.find("public_username") == m_user_data.end())
-    {
-        BOOST_LOG_TRIVIAL(error) << "User ID message from Connect did not contain public_username. Login failed. Message data: " << data;
+    if (m_user_data.find("public_username") == m_user_data.end()) {
+        BOOST_LOG_TRIVIAL(error) << "User ID message from PrusaAuth did not contain public_username. Login failed. Message data: " << data;
         return false;
     }
     std::string public_username = m_user_data["public_username"];
     set_username(public_username, app_config);
     out_username = public_username;
+    // equeue GET with avatar url
+    if (m_user_data.find("avatar") != m_user_data.end()) {
+        enqueue_avatar_action(m_user_data["avatar"]);
+    }
+    else {
+        BOOST_LOG_TRIVIAL(warning) << "User ID message from PrusaAcuth did not contain avatar.";
+    }
     // update printers list
     enqueue_connect_printers_action();
     return true;

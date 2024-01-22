@@ -22,6 +22,7 @@ wxDECLARE_EVENT(EVT_PA_ID_USER_SUCCESS, PrusaAuthSuccessEvent);
 wxDECLARE_EVENT(EVT_PA_ID_USER_FAIL, PrusaAuthFailEvent);
 wxDECLARE_EVENT(EVT_PRUSAAUTH_SUCCESS, PrusaAuthSuccessEvent);
 wxDECLARE_EVENT(EVT_PRUSACONNECT_PRINTERS_SUCCESS, PrusaAuthSuccessEvent);
+wxDECLARE_EVENT(EVT_PA_AVATAR_SUCCESS, PrusaAuthSuccessEvent);
 wxDECLARE_EVENT(EVT_PRUSAAUTH_FAIL, PrusaAuthFailEvent);
 wxDECLARE_EVENT(EVT_PRUSAAUTH_RESET, PrusaAuthFailEvent);
 
@@ -37,6 +38,7 @@ enum class UserActionID {
     LOGIN_USER_ID,
     CONNECT_DUMMY,
     CONNECT_PRINTERS,
+    AVATAR,
 };
 class UserAction
 {
@@ -59,6 +61,23 @@ public:
         , UserAction(name, url)
     {}
     ~UserActionGetWithEvent() {}
+    void perform(const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) override;
+private:
+    wxEventType   m_succ_evt_type;
+    wxEventType   m_fail_evt_type;
+    wxEvtHandler* m_evt_handler;
+};
+
+class UserActionNoAuthGetWithEvent : public UserAction
+{
+public:
+    UserActionNoAuthGetWithEvent(const std::string name, const std::string url, wxEvtHandler* evt_handler, wxEventType succ_event_type, wxEventType fail_event_type)
+        : m_succ_evt_type(succ_event_type)
+        , m_fail_evt_type(fail_event_type)
+        , m_evt_handler(evt_handler)
+        , UserAction(name, url)
+    {}
+    ~UserActionNoAuthGetWithEvent() {}
     void perform(const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) override;
 private:
     wxEventType   m_succ_evt_type;
@@ -107,6 +126,7 @@ public:
         m_actions[UserActionID::LOGIN_USER_ID] = std::make_unique<UserActionGetWithEvent>("USER_ID", "https://test-account.prusa3d.com/api/v1/me/", evt_handler, EVT_PA_ID_USER_SUCCESS, EVT_PRUSAAUTH_FAIL);
         m_actions[UserActionID::CONNECT_DUMMY] = std::make_unique<UserActionGetWithEvent>("CONNECT_DUMMY", "https://dev.connect.prusa3d.com/slicer/dummy"/*"dev.connect.prusa:8000/slicer/dummy"*/, evt_handler, EVT_PRUSAAUTH_SUCCESS, EVT_PRUSAAUTH_FAIL);
         m_actions[UserActionID::CONNECT_PRINTERS] = std::make_unique<UserActionGetWithEvent>("CONNECT_PRINTERS", "https://dev.connect.prusa3d.com/slicer/printers"/*"dev.connect.prusa:8000/slicer/printers"*/, evt_handler, EVT_PRUSACONNECT_PRINTERS_SUCCESS, EVT_PRUSAAUTH_FAIL);
+        m_actions[UserActionID::AVATAR] = std::make_unique<UserActionNoAuthGetWithEvent>("AVATAR", "https://test-media.printables.com/media/", evt_handler, EVT_PA_AVATAR_SUCCESS, EVT_PRUSAAUTH_FAIL);
     }
     ~AuthSession()
     {
@@ -117,6 +137,7 @@ public:
         m_actions[UserActionID::LOGIN_USER_ID].reset(nullptr);
         m_actions[UserActionID::CONNECT_DUMMY].reset(nullptr);
         m_actions[UserActionID::CONNECT_PRINTERS].reset(nullptr);
+        m_actions[UserActionID::AVATAR].reset(nullptr);
         //assert(m_actions.empty());
     }
     void clear() {
