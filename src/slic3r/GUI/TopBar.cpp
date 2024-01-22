@@ -128,10 +128,7 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
 static wxString get_workspace_name(Slic3r::ConfigOptionMode mode) 
 {
     return  mode == Slic3r::ConfigOptionMode::comSimple   ? _L("Beginners") :
-            mode == Slic3r::ConfigOptionMode::comAdvanced ? _L("Regulars")  : _L("Josef Prusa");
-
-    return  mode == Slic3r::ConfigOptionMode::comSimple   ? _L("Beginner workspace") :
-            mode == Slic3r::ConfigOptionMode::comAdvanced ? _L("Regular workspace")  : _L("Josef Prusa's workspace");
+            mode == Slic3r::ConfigOptionMode::comAdvanced ? _L("Regulars")  : _L("Experts");
 }
 
 void TopBarItemsCtrl::ApplyWorkspacesMenu()
@@ -189,8 +186,14 @@ void TopBarItemsCtrl::UpdateAuthMenu()
         m_login_menu_item->SetBitmap(user_account->is_logged() ? *get_bmp_bundle("logout", 16) : *get_bmp_bundle("login", 16));
     }
 
+    const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymus");
     if (m_user_menu_item)
-        m_user_menu_item->SetItemLabel(user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymus"));
+        m_user_menu_item->SetItemLabel(user_name);
+
+    m_auth_btn->SetLabel(user_name);
+    m_auth_btn->SetBitmapMargins(0, 0);
+ //   m_auth_btn->SetBitmap_("icon_name");
+    m_auth_btn->Refresh();
 }
 
 void TopBarItemsCtrl::CreateSearch()
@@ -264,7 +267,8 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     // create Auth menu
     CreateAuthMenu();
 
-    m_auth_btn = new ButtonWithPopup(this, "user", 35);
+//    m_auth_btn = new ButtonWithPopup(this, "user", 35);
+    m_auth_btn = new ButtonWithPopup(this, _L("Anonymus"), "user");
     right_sizer->Add(m_auth_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT | wxLEFT, m_btn_margin);
     
     m_auth_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {

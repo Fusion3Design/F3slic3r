@@ -223,6 +223,8 @@ public:
     void    set_monitor_tab_url(const wxString& url);
     bool    get_monitor_tab_added() const { return m_monitor_webview_added; }
 
+    void    refresh_auth_menu();
+
     PrintHostQueueDialog* printhost_queue_dlg() { return m_printhost_queue_dlg; }
 
     Plater*               m_plater { nullptr };

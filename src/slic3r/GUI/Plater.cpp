@@ -901,6 +901,9 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             std::string text = format(_u8L("Logged as %1%."), username);
             this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
             this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
+
+            // Update User name in TopBar
+            this->main_frame->refresh_auth_menu();
         } else {
             // TODO
         }

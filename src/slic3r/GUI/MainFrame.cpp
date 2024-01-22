@@ -904,6 +904,12 @@ void MainFrame::set_monitor_tab_url(const wxString& url)
     m_monitor_webview->load_default_url();
 }
 
+void Slic3r::GUI::MainFrame::refresh_auth_menu()
+{
+    // Update User name in TopBar
+    dynamic_cast<TopBar*>(m_tabpanel)->GetTopBarItemsCtrl()->UpdateAuthMenu();
+}
+
 void MainFrame::add_created_tab(Tab* panel,  const std::string& bmp_name /*= ""*/)
 {
     panel->create_preset_tab();
