@@ -211,16 +211,20 @@ void TopBarItemsCtrl::CreateSearch()
     wxGetApp().searcher().set_search_input(m_search);
 }
 
+void TopBarItemsCtrl::update_margins()
+{
+    int em = em_unit(this);
+    m_btn_margin  = std::lround(0.9 * em);
+    m_line_margin = std::lround(0.1 * em);
+}
+
 TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL)
 {
 #ifdef __WINDOWS__
     SetDoubleBuffered(true);
 #endif //__WINDOWS__
-
-    int em = em_unit(this);
-    m_btn_margin  = std::lround(0.9 * em);
-    m_line_margin = std::lround(0.1 * em);
+    update_margins();
 
     m_sizer = new wxFlexGridSizer(2);
     m_sizer->AddGrowableCol(0);
@@ -330,9 +334,14 @@ void TopBarItemsCtrl::UpdateMode()
 
 void TopBarItemsCtrl::Rescale()
 {
+    update_margins();
+
     int em = em_unit(this);
-    m_btn_margin = std::lround(0.3 * em);
-    m_line_margin = std::lround(0.1 * em);
+    m_search->SetMinSize(wxSize(4 * em, -1));
+    m_search->SetMaxSize(wxSize(42 * em, -1));
+    m_search->Rescale();
+    m_sizer->SetItemMinSize(1, wxSize(42 * em, -1));
+
     m_buttons_sizer->SetVGap(m_btn_margin);
     m_buttons_sizer->SetHGap(m_btn_margin);
 

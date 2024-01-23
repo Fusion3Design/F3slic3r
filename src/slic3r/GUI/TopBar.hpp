@@ -93,6 +93,8 @@ private:
     int                             m_selection {-1};
     int                             m_btn_margin;
     int                             m_line_margin;
+
+    void    update_margins();
 };
 
 class TopBar : public wxBookCtrlBase
