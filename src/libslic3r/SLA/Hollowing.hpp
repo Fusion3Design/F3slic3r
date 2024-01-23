@@ -81,33 +81,16 @@ using DrainHoles = std::vector<DrainHole>;
 
 constexpr float HoleStickOutLength = 1.f;
 
+constexpr float IsoAtZero = 0.f;
+
 double get_voxel_scale(double mesh_volume, const HollowingConfig &hc);
 
 InteriorPtr generate_interior(const VoxelGrid &mesh,
                               const HollowingConfig &  = {},
                               const JobController &ctl = {});
 
-inline InteriorPtr generate_interior(const indexed_triangle_set &mesh,
-                                     const HollowingConfig &hc = {},
-                                     const JobController &ctl = {})
-{
-    auto voxel_scale = get_voxel_scale(its_volume(mesh), hc);
-    auto statusfn = [&ctl](int){ return ctl.stopcondition && ctl.stopcondition(); };
-    auto grid = mesh_to_grid(mesh, MeshToGridParams{}
-                                              .voxel_scale(voxel_scale)
-                                              .exterior_bandwidth(3.f)
-                                              .interior_bandwidth(3.f)
-                                              .statusfn(statusfn));
-
-    if (!grid || (ctl.stopcondition && ctl.stopcondition()))
-        return {};
-
-//    if (its_is_splittable(mesh))
-    grid = redistance_grid(*grid, 0.0f, 3.f, 3.f);
-
-    return grid ? generate_interior(*grid, hc, ctl) : InteriorPtr{};
-}
-
+// Return the maximum possible volume (upper bound) of a csg mesh.
+// Not the exact volume, that would require actually doing the booleans.
 template<class Cont> double csgmesh_positive_maxvolume(const Cont &csg)
 {
     double mesh_vol = 0;
@@ -142,19 +125,30 @@ InteriorPtr generate_interior(const Range<It>       &csgparts,
                       .voxel_scale(voxsc)
                       .exterior_bandwidth(3.f)
                       .interior_bandwidth(3.f)
-                      .statusfn([&ctl](int){ return ctl.stopcondition && ctl.stopcondition(); });
+                      .statusfn([&ctl](int){
+                          return ctl.stopcondition && ctl.stopcondition();
+                      });
 
     auto ptr = csg::voxelize_csgmesh(csgparts, params);
 
     if (!ptr || (ctl.stopcondition && ctl.stopcondition()))
         return {};
 
-    // TODO: figure out issues without the redistance
-//    if (csgparts.size() > 1 || its_is_splittable(*csg::get_mesh(*csgparts.begin())))
+    ptr = redistance_grid(*ptr, IsoAtZero,
+                          params.exterior_bandwidth(),
+                          params.interior_bandwidth());
 
-    ptr = redistance_grid(*ptr, 0.0f, 3.f, 3.f);
+    return ptr ? generate_interior(*ptr, hc, ctl) :
+                 InteriorPtr{};
+}
 
-    return ptr ? generate_interior(*ptr, hc, ctl) : InteriorPtr{};
+inline InteriorPtr generate_interior(const indexed_triangle_set &mesh,
+                                     const HollowingConfig &hc = {},
+                                     const JobController &ctl = {})
+{
+    auto csgmesh = std::array{ csg::CSGPart{&mesh} };
+
+    return generate_interior(range(csgmesh), hc, ctl);
 }
 
 // Will do the hollowing
