@@ -35,8 +35,8 @@ public:
     //
     bool is_logged();
     void do_login();
-    void do_logout(AppConfig* app_config);
-    void do_clear(AppConfig* app_config);
+    void do_logout();
+    void do_clear();
     // Trigger function starts various remote operations
 #if 0
     void enqueue_user_id_action();
@@ -52,8 +52,9 @@ public:
     void on_login_code_recieved(const std::string& url_message);
 
 
-    void set_username(const std::string& username, AppConfig* app_config);
-    void set_remember_session(bool b) { m_remember_session = b; }
+    void set_username(const std::string& username);
+    void set_remember_session(bool b);
+    bool get_remember_session() const {return m_remember_session; }
 
     std::string get_username() const { return m_username; }
     std::string get_access_token();
@@ -69,9 +70,10 @@ private:
     bool                                    m_thread_stop { false };
     std::string                             m_code_verifier;
     wxEvtHandler*                           m_evt_handler;
+    AppConfig*                              m_app_config;
     // if not empty - user is logged in
     std::string                             m_username;
-    bool                                    m_remember_session {false};
+    bool                                    m_remember_session {true};
 
     void wakeup_session_thread();
     void init_session_thread();

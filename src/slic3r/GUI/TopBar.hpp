@@ -51,11 +51,11 @@ class TopBarItemsCtrl : public wxControl
     wxMenu          m_main_menu;
     wxMenu          m_workspaces_menu;
     wxMenu          m_auth_menu;
-
+    // Prusa Account (Auth) menu items
     wxMenuItem*     m_user_menu_item{ nullptr };
     wxMenuItem*     m_login_menu_item{ nullptr };
-    wxMenuItem*     m_connect_dummy_menu_item{ nullptr };
-
+    //wxMenuItem*     m_connect_dummy_menu_item{ nullptr };
+    
     ::TextInput*    m_search{ nullptr };
 
 public:

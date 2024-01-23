@@ -163,16 +163,23 @@ void TopBarItemsCtrl::CreateAuthMenu()
         }, get_bmp_bundle("user", 16));
 
     m_auth_menu.AppendSeparator();
-
+    /*
     m_connect_dummy_menu_item = append_menu_item(&m_auth_menu, wxID_ANY, _L("PrusaConnect Printers"), "",
         [](wxCommandEvent&) { wxGetApp().plater()->get_user_account()->enqueue_connect_printers_action(); }, 
         "", nullptr, []() { return wxGetApp().plater()->get_user_account()->is_logged(); }, this->GetParent());
+    */
+    wxMenuItem* remember_me_menu_item = append_menu_check_item(&m_auth_menu, wxID_ANY, _L("Remember me"), ""
+        , [](wxCommandEvent&) {  wxGetApp().plater()->get_user_account()->toggle_remember_session(); }
+        , &m_auth_menu
+        , []() { return wxGetApp().plater()->get_user_account() ? wxGetApp().plater()->get_user_account()->is_logged()            : false; }
+        , []() { return wxGetApp().plater()->get_user_account() ? wxGetApp().plater()->get_user_account()->get_remember_session() : false; }
+        , this->GetParent());
 
     m_login_menu_item = append_menu_item(&m_auth_menu, wxID_ANY, "", "",
         [](wxCommandEvent&) {
             auto user_account = wxGetApp().plater()->get_user_account();
             if (user_account->is_logged())
-                user_account->do_logout(wxGetApp().app_config);
+                user_account->do_logout();
             else
                 user_account->do_login();
         }, get_bmp_bundle("login", 16));
@@ -189,7 +196,7 @@ void TopBarItemsCtrl::UpdateAuthMenu()
     const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymus");
     if (m_user_menu_item)
         m_user_menu_item->SetItemLabel(user_name);
-
+   
     m_auth_btn->SetLabel(user_name);
     m_auth_btn->SetBitmapMargins(0, 0);
  //   m_auth_btn->SetBitmap_("icon_name");

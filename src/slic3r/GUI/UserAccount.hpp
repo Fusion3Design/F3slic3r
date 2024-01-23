@@ -32,10 +32,11 @@ public:
 
     bool is_logged();
     void do_login();
-    void do_logout(AppConfig* app_config);
+    void do_logout();
 
     void set_remember_session(bool remember);
-
+    void toggle_remember_session();
+    bool get_remember_session();
 #if 0
     void enqueue_user_id_action();
     void enqueue_connect_dummy_action();
@@ -46,7 +47,7 @@ public:
     // Functions called from UI where events emmited from AuthSession are binded
     // Returns bool if data were correctly proccessed
     bool on_login_code_recieved(const std::string& url_message);
-    bool on_user_id_success(const std::string data, AppConfig* app_config, std::string& out_username);
+    bool on_user_id_success(const std::string data, std::string& out_username);
     bool on_communication_fail(const std::string data, AppConfig* app_config);
     bool on_communication_reset(const std::string data, AppConfig* app_config);
     bool on_logout(AppConfig* app_config);
@@ -63,8 +64,8 @@ public:
     std::string get_nozzle_from_json(const std::string& message) const;
     std::string get_apikey_from_json(const std::string& message) const;
 private:
-    void set_username(const std::string& username, AppConfig* app_config);
-    void reset(AppConfig* app_config);
+    void set_username(const std::string& username);
+    void reset();
 
     std::unique_ptr<Slic3r::GUI::PrusaAuthCommunication> m_auth_communication;
     

@@ -3436,17 +3436,14 @@ bool GUI_App::open_browser_with_warning_dialog(const wxString& url, wxWindow* pa
 
 bool GUI_App::open_login_browser_with_dialog(const wxString& url, wxWindow* parent/* = nullptr*/, int flags/* = 0*/)
 {
-    bool launch = true;
-
-    // warning dialog containes a "Remember my choice" checkbox
-    std::string option_key = "suppress_hyperlinks";
-    RichMessageDialog dialog(parent, _L("Open Log in page in default browser?"), _L("PrusaSlicer: Open Log in page"), wxICON_QUESTION | wxYES_NO);
-    dialog.ShowCheckBox(_L("Remember me"), true);
-    auto answer = dialog.ShowModal();
-    launch = answer == wxID_YES;
-    plater()->get_user_account()->set_remember_session(dialog.IsCheckBoxChecked());
-           
-    return  launch && wxLaunchDefaultBrowser(url, flags);
+    bool auth_login_dialog_confirmed = app_config->get_bool("auth_login_dialog_confirmed");
+    if (!auth_login_dialog_confirmed) {
+        RichMessageDialog dialog(parent, _L("Open default browser with Prusa Account Log in page?\n(On Yes, You will not be asked again.)"), _L("PrusaSlicer: Open Log in page"), wxICON_QUESTION | wxYES_NO);
+         if (dialog.ShowModal() != wxID_YES)
+             return false;
+         app_config->set("auth_login_dialog_confirmed", "1");
+    }
+    return  wxLaunchDefaultBrowser(url, flags);
 }
 
 // static method accepting a wxWindow object as first parameter

@@ -893,7 +893,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
 
     this->q->Bind(EVT_PA_ID_USER_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
         std::string username;
-        bool succ = user_account->on_user_id_success(evt.data, wxGetApp().app_config, username);
+        bool succ = user_account->on_user_id_success(evt.data, username);
         if (succ) {
             // show connect tab
             this->main_frame->enable_connect_tab();

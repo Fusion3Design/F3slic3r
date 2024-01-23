@@ -19,23 +19,31 @@ UserAccount::UserAccount(wxEvtHandler* evt_handler, AppConfig* app_config)
 UserAccount::~UserAccount()
 {}
 
-void UserAccount::set_username(const std::string& username, AppConfig* app_config)
+void UserAccount::set_username(const std::string& username)
 {
     m_username = username;
-    m_auth_communication->set_username(username, app_config);
+    m_auth_communication->set_username(username);
 }
 
-void UserAccount::reset(AppConfig* app_config)
+void UserAccount::reset()
 {
     m_username = {};
     m_user_data.clear();
     m_printer_map.clear();
-    m_auth_communication->do_clear(app_config);
+    m_auth_communication->do_clear();
 }
 
 void UserAccount::set_remember_session(bool remember)
 {
     m_auth_communication->set_remember_session(remember);
+}
+void UserAccount::toggle_remember_session()
+{
+    m_auth_communication->set_remember_session(!m_auth_communication->get_remember_session());
+}
+bool UserAccount::get_remember_session()
+{
+    return m_auth_communication->get_remember_session();
 }
 
 bool UserAccount::is_logged()
@@ -46,9 +54,9 @@ void UserAccount::do_login()
 {
     m_auth_communication->do_login();
 }
-void UserAccount::do_logout(AppConfig* app_config)
+void UserAccount::do_logout()
 {
-    m_auth_communication->do_logout(app_config);
+    m_auth_communication->do_logout();
 }
 
 std::string UserAccount::get_access_token()
@@ -83,7 +91,7 @@ bool UserAccount::on_login_code_recieved(const std::string& url_message)
     return true;
 }
 
-bool UserAccount::on_user_id_success(const std::string data, AppConfig* app_config, std::string& out_username)
+bool UserAccount::on_user_id_success(const std::string data, std::string& out_username)
 {
     boost::property_tree::ptree ptree;
     try {
@@ -109,7 +117,7 @@ bool UserAccount::on_user_id_success(const std::string data, AppConfig* app_conf
         return false;
     }
     std::string public_username = m_user_data["public_username"];
-    set_username(public_username, app_config);
+    set_username(public_username);
     out_username = public_username;
     // equeue GET with avatar url
     if (m_user_data.find("avatar") != m_user_data.end()) {
@@ -132,13 +140,13 @@ bool UserAccount::on_communication_fail(const std::string data, AppConfig* app_c
 
 bool UserAccount::on_communication_reset(const std::string data, AppConfig* app_config)
 {
-    set_username({}, app_config);
+    set_username({});
     return true;
 }
 
 bool UserAccount::on_logout( AppConfig* app_config)
 {
-    set_username({}, app_config);
+    set_username({});
     return true;
 }
 

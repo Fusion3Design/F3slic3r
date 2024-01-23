@@ -132,6 +132,7 @@ bool load_secret(const std::string& opt, std::string& usr, std::string& psswd)
 
 PrusaAuthCommunication::PrusaAuthCommunication(wxEvtHandler* evt_handler, AppConfig* app_config)
     : m_evt_handler(evt_handler)
+    , m_app_config(app_config)
 {
     std::string access_token, refresh_token, shared_session_key;
     if (is_secret_store_ok()) {
@@ -141,13 +142,13 @@ PrusaAuthCommunication::PrusaAuthCommunication(wxEvtHandler* evt_handler, AppCon
         assert(key0 == key1);
         shared_session_key = key0;
     } else {
-        access_token = app_config->get("access_token");
-        refresh_token = app_config->get("refresh_token");
-        shared_session_key = app_config->get("shared_session_key");
+        access_token = m_app_config->get("access_token");
+        refresh_token = m_app_config->get("refresh_token");
+        shared_session_key = m_app_config->get("shared_session_key");
     }
     if (!access_token.empty() || !refresh_token.empty())
         m_remember_session = true;
-    m_session = std::make_unique<AuthSession>(evt_handler, access_token, refresh_token, shared_session_key, app_config->get_bool("connect_polling"));
+    m_session = std::make_unique<AuthSession>(evt_handler, access_token, refresh_token, shared_session_key, m_app_config->get_bool("connect_polling"));
     init_session_thread();
     // perform login at the start
     if (m_remember_session)
@@ -168,7 +169,7 @@ PrusaAuthCommunication::~PrusaAuthCommunication() {
     }
 }
 
-void PrusaAuthCommunication::set_username(const std::string& username, AppConfig* app_config)
+void PrusaAuthCommunication::set_username(const std::string& username)
 {
     m_username = username;
     {
@@ -178,11 +179,18 @@ void PrusaAuthCommunication::set_username(const std::string& username, AppConfig
             save_secret("refresh_token", m_session->get_shared_session_key(), m_remember_session ? m_session->get_refresh_token() : std::string());
         }
         else {
-            app_config->set("access_token", m_remember_session ? m_session->get_access_token() : std::string());
-            app_config->set("refresh_token", m_remember_session ? m_session->get_refresh_token() : std::string());
-            app_config->set("shared_session_key", m_remember_session ? m_session->get_shared_session_key() : std::string());
+            m_app_config->set("access_token", m_remember_session ? m_session->get_access_token() : std::string());
+            m_app_config->set("refresh_token", m_remember_session ? m_session->get_refresh_token() : std::string());
+            m_app_config->set("shared_session_key", m_remember_session ? m_session->get_shared_session_key() : std::string());
         }
     }
+}
+
+void PrusaAuthCommunication::set_remember_session(bool b)
+{ 
+    m_remember_session = b;
+    // tokens needs to be stored or deleted
+    set_username(m_username);
 }
 
 std::string PrusaAuthCommunication::get_access_token()
@@ -231,19 +239,19 @@ void PrusaAuthCommunication::do_login()
     }
     wakeup_session_thread();
 }
-void PrusaAuthCommunication::do_logout(AppConfig* app_config)
+void PrusaAuthCommunication::do_logout()
 {
-    do_clear(app_config);
+    do_clear();
     wxQueueEvent(m_evt_handler, new PrusaAuthSuccessEvent(GUI::EVT_LOGGEDOUT_PRUSAAUTH, {}));
 }
 
-void PrusaAuthCommunication::do_clear(AppConfig* app_config)
+void PrusaAuthCommunication::do_clear()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         m_session->clear();
     }
-    set_username({}, app_config);
+    set_username({});
 }
 
 void PrusaAuthCommunication::on_login_code_recieved(const std::string& url_message)
