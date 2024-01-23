@@ -34,6 +34,9 @@ public:
         bool m_core_profile{ false };
         int m_max_tex_size{ 0 };
         float m_max_anisotropy{ 0.0f };
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        int m_samples{ 0 };
+//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
         std::string m_version_string;
         Semver m_version = Semver::invalid();
@@ -138,11 +141,9 @@ public:
     static bool force_power_of_two_textures() { return s_force_power_of_two_textures; }
 
 private:
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
-    static void detect_multisample(const wxGLAttributes& attribList);
-#else
+#if !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
     static void detect_multisample(int* attribList);
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
 };
 
 } // namespace GUI
