@@ -857,7 +857,9 @@ public:
 #endif // ENABLE_NEW_GCODE_VIEWER
     void set_volumes_z_range(const std::array<double, 2>& range);
     void set_toolpaths_z_range(const std::array<unsigned int, 2>& range);
+#if !ENABLE_NEW_GCODE_VIEWER
     std::vector<CustomGCode::Item>& get_custom_gcode_per_print_z() { return m_gcode_viewer.get_custom_gcode_per_print_z(); }
+#endif // !ENABLE_NEW_GCODE_VIEWER
     size_t get_gcode_extruders_count() { return m_gcode_viewer.get_extruders_count(); }
 
     std::vector<int> load_object(const ModelObject& model_object, int obj_idx, std::vector<int> instance_idxs);
@@ -868,21 +870,27 @@ public:
     void reload_scene(bool refresh_immediately, bool force_full_scene_refresh = false);
 
     void load_gcode_shells();
-    void load_gcode_preview(const GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors);
 #if ENABLE_NEW_GCODE_VIEWER
+    void load_gcode_preview(const GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors,
+        const std::vector<std::string>& str_color_print_colors);
     void set_gcode_view_type(libvgcode::EViewType type) { return m_gcode_viewer.set_view_type(type); }
     libvgcode::EViewType get_gcode_view_type() const { return m_gcode_viewer.get_view_type(); }
     void enable_gcode_view_type_cache_load(bool enable) { m_gcode_viewer.enable_view_type_cache_load(enable); }
     void enable_gcode_view_type_cache_write(bool enable) { m_gcode_viewer.enable_view_type_cache_write(enable); }
     bool is_gcode_view_type_cache_load_enabled() const { return m_gcode_viewer.is_view_type_cache_load_enabled(); }
     bool is_gcode_view_type_cache_write_enabled() const { return m_gcode_viewer.is_view_type_cache_write_enabled(); }
+
+    void load_preview(const std::vector<std::string>& str_tool_colors, const std::vector<std::string>& str_color_print_colors,
+        const std::vector<CustomGCode::Item>& color_print_values);
 #else
+    void load_gcode_preview(const GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors);
     void refresh_gcode_preview_render_paths(bool keep_sequential_current_first, bool keep_sequential_current_last);
     void set_gcode_view_preview_type(GCodeViewer::EViewType type) { return m_gcode_viewer.set_view_type(type); }
     GCodeViewer::EViewType get_gcode_view_preview_type() const { return m_gcode_viewer.get_view_type(); }
+
+    void load_preview(const std::vector<std::string>& str_tool_colors, const std::vector<CustomGCode::Item>& color_print_values);
 #endif // ENABLE_NEW_GCODE_VIEWER
     void load_sla_preview();
-    void load_preview(const std::vector<std::string>& str_tool_colors, const std::vector<CustomGCode::Item>& color_print_values);
     void bind_event_handlers();
     void unbind_event_handlers();
 

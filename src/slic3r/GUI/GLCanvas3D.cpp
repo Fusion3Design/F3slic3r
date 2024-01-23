@@ -2687,19 +2687,21 @@ void GLCanvas3D::load_gcode_shells()
     m_gcode_viewer.set_force_shells_visible(true);
 }
 
-void GLCanvas3D::load_gcode_preview(const GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors)
-{
 #if ENABLE_NEW_GCODE_VIEWER
+void GLCanvas3D::load_gcode_preview(const GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors,
+    const std::vector<std::string>& str_color_print_colors)
+{
     m_gcode_viewer.enable_legend(true);
     m_gcode_viewer.enable_view_type_cache_write(true);
     m_gcode_viewer.enable_view_type_cache_load(true);
     m_gcode_viewer.set_view_type(m_gcode_viewer.get_view_type());
-    m_gcode_viewer.load_as_gcode(gcode_result, *this->fff_print(), str_tool_colors);
+    m_gcode_viewer.load_as_gcode(gcode_result, *this->fff_print(), str_tool_colors, str_color_print_colors);
     m_gcode_layers_times_cache = m_gcode_viewer.get_layers_times();
 #else
+void GLCanvas3D::load_gcode_preview(const GCodeProcessorResult& gcode_result, const std::vector<std::string>& str_tool_colors)
+{
     m_gcode_viewer.load(gcode_result, *this->fff_print());
 #endif // ENABLE_NEW_GCODE_VIEWER
-
     if (wxGetApp().is_editor()) {
         _set_warning_notification_if_needed(EWarning::ToolpathOutside);
         _set_warning_notification_if_needed(EWarning::GCodeConflict);
@@ -2735,7 +2737,12 @@ void GLCanvas3D::load_sla_preview()
     }
 }
 
+#if ENABLE_NEW_GCODE_VIEWER
+void GLCanvas3D::load_preview(const std::vector<std::string>& str_tool_colors, const std::vector<std::string>& str_color_print_colors,
+    const std::vector<CustomGCode::Item>& color_print_values)
+#else
 void GLCanvas3D::load_preview(const std::vector<std::string>& str_tool_colors, const std::vector<CustomGCode::Item>& color_print_values)
+#endif // ENABLE_NEW_GCODE_VIEWER
 {
     const Print *print = this->fff_print();
     if (print == nullptr)
@@ -2744,14 +2751,15 @@ void GLCanvas3D::load_preview(const std::vector<std::string>& str_tool_colors, c
     _set_current();
 
 #if ENABLE_NEW_GCODE_VIEWER
-    libvgcode::GCodeInputData data = libvgcode::convert(*print, str_tool_colors, color_print_values, static_cast<size_t>(wxGetApp().extruders_edited_cnt()));
+    libvgcode::GCodeInputData data = libvgcode::convert(*print, str_tool_colors, str_color_print_colors, color_print_values,
+        static_cast<size_t>(wxGetApp().extruders_edited_cnt()));
 
     // send data to the viewer
     m_gcode_viewer.enable_legend(false);
     m_gcode_viewer.enable_view_type_cache_write(false);
     m_gcode_viewer.enable_view_type_cache_load(false);
     m_gcode_viewer.set_view_type(libvgcode::EViewType::FeatureType);
-    m_gcode_viewer.load_as_preview(std::move(data), str_tool_colors);
+    m_gcode_viewer.load_as_preview(std::move(data));
 #else
     // Release OpenGL data before generating new data.
     this->reset_volumes();

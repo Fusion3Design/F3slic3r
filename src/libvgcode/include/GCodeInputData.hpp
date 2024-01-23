@@ -5,6 +5,7 @@
 #ifndef VGCODE_GCODEINPUTDATA_HPP
 #define VGCODE_GCODEINPUTDATA_HPP
 
+#include "Types.hpp"
 #include "PathVertex.hpp"
 
 namespace libvgcode {
@@ -21,6 +22,14 @@ struct GCodeInputData
     // See: PathVertex
     //
     std::vector<PathVertex> vertices;
+    //
+    // Palette for extruders colors
+    //
+    Palette tools_colors;
+    //
+    // Palette for color print colors
+    //
+    Palette color_print_colors;
 };
 
 } // namespace libvgcode

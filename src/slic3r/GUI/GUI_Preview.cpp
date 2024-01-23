@@ -526,7 +526,11 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
         ticks_info_from_model = plater->model().custom_gcode_per_print_z;
     else {
         ticks_info_from_model.mode = CustomGCode::Mode::SingleExtruder;
+#if ENABLE_NEW_GCODE_VIEWER
+        ticks_info_from_model.gcodes = m_gcode_result->custom_gcode_per_print_z;
+#else
         ticks_info_from_model.gcodes = m_canvas->get_custom_gcode_per_print_z();
+#endif // ENABLE_NEW_GCODE_VIEWER
     }
     check_layers_slider_values(ticks_info_from_model.gcodes, layers_z);
 
@@ -874,20 +878,23 @@ void Preview::load_print_as_fff(bool keep_z_range)
     libvgcode::EViewType gcode_view_type = m_canvas->get_gcode_view_type();
     const bool gcode_preview_data_valid = !m_gcode_result->moves.empty();
     const bool is_pregcode_preview = !gcode_preview_data_valid && wxGetApp().is_editor();
+
+    const std::vector<std::string> tool_colors = wxGetApp().plater()->get_extruder_colors_from_plater_config(m_gcode_result);
+    const std::vector<CustomGCode::Item>& color_print_values = wxGetApp().is_editor() ?
+        wxGetApp().plater()->model().custom_gcode_per_print_z.gcodes : m_gcode_result->custom_gcode_per_print_z;
+    std::vector<std::string> color_print_colors;
+    if (!color_print_values.empty()) {
+        color_print_colors = wxGetApp().plater()->get_colors_for_color_print(m_gcode_result);
+        color_print_colors.push_back("#808080"); // gray color for pause print or custom G-code 
+    }
 #else
     GCodeViewer::EViewType gcode_view_type = m_canvas->get_gcode_view_preview_type();
     const bool gcode_preview_data_valid = !m_gcode_result->moves.empty();
-#endif // ENABLE_NEW_GCODE_VIEWER
 
     // Collect colors per extruder.
     std::vector<std::string> colors;
     std::vector<CustomGCode::Item> color_print_values = {};
-    // set color print values, if it is selected "ColorPrint" view type
-#if ENABLE_NEW_GCODE_VIEWER
-    if (gcode_view_type == libvgcode::EViewType::ColorPrint || is_pregcode_preview) {
-#else
     if (gcode_view_type == GCodeViewer::EViewType::ColorPrint) {
-#endif // ENABLE_NEW_GCODE_VIEWER
         colors = wxGetApp().plater()->get_colors_for_color_print(m_gcode_result);
 
         if (!gcode_preview_data_valid) {
@@ -898,25 +905,25 @@ void Preview::load_print_as_fff(bool keep_z_range)
             colors.push_back("#808080"); // gray color for pause print or custom G-code 
         }
     }
-#if ENABLE_NEW_GCODE_VIEWER
-    else if (gcode_preview_data_valid || gcode_view_type == libvgcode::EViewType::Tool) {
-#else
     else if (gcode_preview_data_valid || gcode_view_type == GCodeViewer::EViewType::Tool) {
-#endif // ENABLE_NEW_GCODE_VIEWER
         colors = wxGetApp().plater()->get_extruder_colors_from_plater_config(m_gcode_result);
         color_print_values.clear();
     }
+#endif // ENABLE_NEW_GCODE_VIEWER
 
     std::vector<double> zs;
 
     if (IsShown()) {
         m_canvas->set_selected_extruder(0);
         if (gcode_preview_data_valid) {
-            // Load the real G-code preview.
-            m_canvas->load_gcode_preview(*m_gcode_result, colors);
 #if ENABLE_NEW_GCODE_VIEWER
+            // Load the real G-code preview.
+            m_canvas->load_gcode_preview(*m_gcode_result, tool_colors, color_print_colors);
             // the view type may have been changed by the call m_canvas->load_gcode_preview()
             gcode_view_type = m_canvas->get_gcode_view_type();
+#else
+            // Load the real G-code preview.
+            m_canvas->load_gcode_preview(*m_gcode_result, colors);
 #endif // ENABLE_NEW_GCODE_VIEWER
             m_left_sizer->Layout();
             Refresh();
@@ -927,15 +934,15 @@ void Preview::load_print_as_fff(bool keep_z_range)
         }
 #if ENABLE_NEW_GCODE_VIEWER
         else if (is_pregcode_preview) {
-#else
-        else if (wxGetApp().is_editor()) {
-#endif // ENABLE_NEW_GCODE_VIEWER
             // Load the initial preview based on slices, not the final G-code.
-            m_canvas->load_preview(colors, color_print_values);
-#if ENABLE_NEW_GCODE_VIEWER
+            m_canvas->load_preview(tool_colors, color_print_colors, color_print_values);
             // the view type has been changed by the call m_canvas->load_gcode_preview()
             if (gcode_view_type == libvgcode::EViewType::ColorPrint && !color_print_values.empty())
                 m_canvas->set_gcode_view_type(gcode_view_type);
+#else
+        else if (wxGetApp().is_editor()) {
+            // Load the initial preview based on slices, not the final G-code.
+            m_canvas->load_preview(colors, color_print_values);
 #endif // ENABLE_NEW_GCODE_VIEWER
             m_left_sizer->Hide(m_bottom_toolbar_panel);
             m_left_sizer->Layout();
@@ -954,18 +961,19 @@ void Preview::load_print_as_fff(bool keep_z_range)
 
         if (!zs.empty() && !m_keep_current_preview_type) {
             const unsigned int number_extruders = wxGetApp().is_editor() ?
-                (unsigned int)print->extruders().size() :
-                m_canvas->get_gcode_extruders_count();
+                (unsigned int)print->extruders().size() : m_canvas->get_gcode_extruders_count();
+#if ENABLE_NEW_GCODE_VIEWER
+            const bool contains_color_gcodes = std::any_of(std::begin(color_print_values), std::end(color_print_values),
+                [](auto const& item) { return item.type == CustomGCode::Type::ColorChange; });
+            const libvgcode::EViewType choice = contains_color_gcodes ?
+                libvgcode::EViewType::ColorPrint :
+                (number_extruders > 1) ? libvgcode::EViewType::Tool : libvgcode::EViewType::FeatureType;
+#else
             const std::vector<Item> gcodes = wxGetApp().is_editor() ?
                 wxGetApp().plater()->model().custom_gcode_per_print_z.gcodes :
                 m_canvas->get_custom_gcode_per_print_z();
             const bool contains_color_gcodes = std::any_of(std::begin(gcodes), std::end(gcodes),
                 [](auto const& item) { return item.type == CustomGCode::Type::ColorChange || item.type == CustomGCode::Type::ToolChange; });
-#if ENABLE_NEW_GCODE_VIEWER
-            const libvgcode::EViewType choice = contains_color_gcodes ?
-                libvgcode::EViewType::ColorPrint :
-                (number_extruders > 1) ? libvgcode::EViewType::Tool : libvgcode::EViewType::FeatureType;
-#else
             const GCodeViewer::EViewType choice = contains_color_gcodes ?
                 GCodeViewer::EViewType::ColorPrint :
                 (number_extruders > 1) ? GCodeViewer::EViewType::Tool : GCodeViewer::EViewType::FeatureType;

@@ -482,6 +482,9 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     m_loading = true;
 
     m_vertices = std::move(gcode_data.vertices);
+    m_tool_colors = std::move(gcode_data.tools_colors);
+    m_color_print_colors = std::move(gcode_data.color_print_colors);
+
     m_settings.spiral_vase_mode = gcode_data.spiral_vase_mode;
 
     std::array<float, TIME_MODES_COUNT> times{ 0.0f, 0.0f };
@@ -983,7 +986,7 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
     case EViewType::ColorPrint:
     {
         return m_layers.layer_contains_colorprint_options(static_cast<size_t>(v.layer_id)) ? DUMMY_COLOR :
-            m_tool_colors[static_cast<size_t>(v.color_id) % m_tool_colors.size()];
+            m_color_print_colors[static_cast<size_t>(v.color_id) % m_color_print_colors.size()];
     }
     default: { break; }
     }
@@ -994,6 +997,12 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
 void ViewerImpl::set_tool_colors(const Palette& colors)
 {
     m_tool_colors = colors;
+    m_settings.update_colors = true;
+}
+
+void ViewerImpl::set_color_print_colors(const Palette& colors)
+{
+    m_color_print_colors = colors;
     m_settings.update_colors = true;
 }
 

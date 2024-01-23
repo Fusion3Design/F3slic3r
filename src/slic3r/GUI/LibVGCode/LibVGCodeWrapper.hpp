@@ -36,6 +36,9 @@ extern Slic3r::ColorRGBA convert(const Color& c);
 // mapping from Slic3r::ColorRGBA to libvgcode::Color
 extern Color convert(const Slic3r::ColorRGBA& c);
 
+// mapping from encoded color to libvgcode::Color
+extern Color convert(const std::string& color_str);
+
 // mapping from libvgcode::EGCodeExtrusionRole to Slic3r::GCodeExtrusionRole
 extern Slic3r::GCodeExtrusionRole convert(EGCodeExtrusionRole role);
 
@@ -55,12 +58,13 @@ extern ETimeMode convert(const Slic3r::PrintEstimatedStatistics::ETimeMode& mode
 extern Slic3r::PrintEstimatedStatistics::ETimeMode convert(const ETimeMode& mode);
 
 // mapping from Slic3r::GCodeProcessorResult to libvgcode::GCodeInputData
-extern GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, float travels_radius = DEFAULT_TRAVELS_RADIUS_MM,
-    float wipes_radius = DEFAULT_WIPES_RADIUS_MM);
+extern GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, const std::vector<std::string>& str_tool_colors,
+    const std::vector<std::string>& str_color_print_colors, const Viewer& viewer);
 
 // mapping from Slic3r::Print to libvgcode::GCodeInputData
 extern GCodeInputData convert(const Slic3r::Print& print, const std::vector<std::string>& str_tool_colors,
-    const std::vector<Slic3r::CustomGCode::Item>& color_print_values, size_t extruders_count);
+    const std::vector<std::string>& str_color_print_colors, const std::vector<Slic3r::CustomGCode::Item>& color_print_values,
+    size_t extruders_count);
 
 } // namespace libvgcode
 

@@ -146,6 +146,21 @@ public:
     //
     void set_tool_colors(const Palette& colors);
     //
+    // Return the count of colors in the palette used to render
+    // the toolpaths when the view type is EViewType::ColorPrint.
+    //
+    size_t get_color_print_colors_count() const;
+    //
+    // Return the palette used to render the toolpaths when
+    // the view type is EViewType::ColorPrint.
+    //
+    const Palette& get_color_print_colors() const;
+    //
+    // Set the palette used to render the toolpaths when
+    // the view type is EViewType::ColorPrint with the given one.
+    //
+    void set_color_print_colors(const Palette& colors);
+    //
     // Get the color range for the given view type.
     // Valid view types are:
     // EViewType::Height

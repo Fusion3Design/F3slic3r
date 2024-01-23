@@ -913,8 +913,9 @@ public:
 
     // extract rendering data from the given parameters
 #if ENABLE_NEW_GCODE_VIEWER
-    void load_as_gcode(const GCodeProcessorResult& gcode_result, const Print& print, const std::vector<std::string>& str_tool_colors);
-    void load_as_preview(libvgcode::GCodeInputData&& data, const std::vector<std::string>& str_tool_colors);
+    void load_as_gcode(const GCodeProcessorResult& gcode_result, const Print& print, const std::vector<std::string>& str_tool_colors,
+        const std::vector<std::string>& str_color_print_colors);
+    void load_as_preview(libvgcode::GCodeInputData&& data);
 #else
     void load(const GCodeProcessorResult& gcode_result, const Print& print);
     // recalculate ranges in dependence of what is visible and sets tool/print colors
@@ -1024,7 +1025,9 @@ public:
 
     void toggle_gcode_window_visibility() { m_sequential_view.gcode_window.toggle_visibility(); }
 
+#if !ENABLE_NEW_GCODE_VIEWER
     std::vector<CustomGCode::Item>& get_custom_gcode_per_print_z() { return m_custom_gcode_per_print_z; }
+#endif // !ENABLE_NEW_GCODE_VIEWER
     size_t get_extruders_count() { return m_extruders_count; }
 
     void invalidate_legend() { m_legend_resizer.reset(); }

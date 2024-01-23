@@ -1110,37 +1110,33 @@ void GCodeViewer::init()
 }
 
 #if ENABLE_NEW_GCODE_VIEWER
-void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const Print& print, const std::vector<std::string>& str_tool_colors)
+void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const Print& print, const std::vector<std::string>& str_tool_colors,
+    const std::vector<std::string>& str_color_print_colors)
 {
     const bool current_top_layer_only = m_viewer.is_top_layer_only_view_range();
     const bool required_top_layer_only = get_app_config()->get_bool("seq_top_layer_only");
     if (current_top_layer_only != required_top_layer_only)
         m_viewer.toggle_top_layer_only_view_range();
 
-    std::vector<ColorRGBA> tool_colors;
-    if (m_viewer.get_view_type() == libvgcode::EViewType::Tool && !gcode_result.extruder_colors.empty())
-        // update tool colors from config stored in the gcode
-        decode_colors(gcode_result.extruder_colors, tool_colors);
-    else
-        // update tool colors
-        decode_colors(str_tool_colors, tool_colors);
-
-    // ensure there are enough colors defined
-    const ColorRGBA default_color = { 1.0f, 0.5f, 0.0f, 1.0f }; // "#FF8000"
-    while (tool_colors.size() < std::max<size_t>(1, gcode_result.extruders_count)) {
-        tool_colors.push_back(default_color);
-    }
-
-    std::vector<libvgcode::Color> colors;
-    colors.reserve(tool_colors.size());
-    for (const ColorRGBA& color : tool_colors) {
-        colors.emplace_back(libvgcode::convert(color));
-    }
-    m_viewer.set_tool_colors(colors);
-
     // avoid processing if called with the same gcode_result
-    if (m_last_result_id == gcode_result.id)
+    if (m_last_result_id == gcode_result.id && wxGetApp().is_editor()) {
+        // collect tool colors
+        libvgcode::Palette tools_colors;
+        tools_colors.reserve(str_tool_colors.size());
+        for (const std::string& color : str_tool_colors) {
+            tools_colors.emplace_back(libvgcode::convert(color));
+        }
+        m_viewer.set_tool_colors(tools_colors);
+
+        // collect color print colors
+        libvgcode::Palette color_print_colors;
+        color_print_colors.reserve(str_color_print_colors.size());
+        for (const std::string& color : str_color_print_colors) {
+            color_print_colors.emplace_back(libvgcode::convert(color));
+        }
+        m_viewer.set_color_print_colors(color_print_colors);
         return;
+    }
 
     m_last_result_id = gcode_result.id;
 
@@ -1148,7 +1144,7 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
     reset();
 
     // convert data from PrusaSlicer format to libvgcode format
-    libvgcode::GCodeInputData data = libvgcode::convert(gcode_result, m_viewer.get_travels_radius(), m_viewer.get_wipes_radius());
+    libvgcode::GCodeInputData data = libvgcode::convert(gcode_result, str_tool_colors, str_color_print_colors, m_viewer);
 
     // send data to the viewer
     m_viewer.reset_default_extrusion_roles_colors();
@@ -1291,19 +1287,8 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print & p
 }
 
 #if ENABLE_NEW_GCODE_VIEWER
-void GCodeViewer::load_as_preview(libvgcode::GCodeInputData&& data, const std::vector<std::string>& str_tool_colors)
+void GCodeViewer::load_as_preview(libvgcode::GCodeInputData&& data)
 {
-    if (!str_tool_colors.empty()) {
-        std::vector<ColorRGBA> tool_colors;
-        decode_colors(str_tool_colors, tool_colors);
-        std::vector<libvgcode::Color> colors;
-        colors.reserve(tool_colors.size());
-        for (const ColorRGBA& color : tool_colors) {
-            colors.emplace_back(libvgcode::convert(color));
-        }
-        m_viewer.set_tool_colors(colors);
-    }
-
     m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::Skirt,                    { 127, 255, 127 });
     m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::ExternalPerimeter,        { 255, 255, 0 });
     m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::SupportMaterial,          { 127, 255, 127 });
