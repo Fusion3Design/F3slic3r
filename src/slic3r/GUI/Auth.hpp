@@ -44,6 +44,7 @@ public:
 #endif
     void enqueue_connect_printers_action();
     void enqueue_avatar_action(const std::string url);
+    void enqueue_test_connection();
 
     // Callbacks - called from UI after receiving Event from Session thread. Some might use Session thread.
     // 
@@ -73,7 +74,7 @@ private:
     AppConfig*                              m_app_config;
     // if not empty - user is logged in
     std::string                             m_username;
-    bool                                    m_remember_session {true};
+    bool                                    m_remember_session { true }; // if default is true, on every login Remember me will be checked.
 
     void wakeup_session_thread();
     void init_session_thread();

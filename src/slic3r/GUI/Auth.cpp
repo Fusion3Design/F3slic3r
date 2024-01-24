@@ -146,12 +146,11 @@ PrusaAuthCommunication::PrusaAuthCommunication(wxEvtHandler* evt_handler, AppCon
         refresh_token = m_app_config->get("refresh_token");
         shared_session_key = m_app_config->get("shared_session_key");
     }
-    if (!access_token.empty() || !refresh_token.empty())
-        m_remember_session = true;
+    bool has_token =  !access_token.empty() && !refresh_token.empty();
     m_session = std::make_unique<AuthSession>(evt_handler, access_token, refresh_token, shared_session_key, m_app_config->get_bool("connect_polling"));
     init_session_thread();
-    // perform login at the start
-    if (m_remember_session)
+    // perform login at the start, but only with tokens
+    if (has_token)
         do_login();
 }
 
@@ -234,8 +233,9 @@ void PrusaAuthCommunication::do_login()
         std::lock_guard<std::mutex> lock(m_session_mutex);
         if (!m_session->is_initialized()) {
             login_redirect();
+        } else { 
+            m_session->enqueue_test_with_refresh();
         }
-        m_session->enqueue_action(UserActionID::LOGIN_USER_ID, nullptr, nullptr, {});
     }
     wakeup_session_thread();
 }
@@ -289,7 +289,7 @@ void PrusaAuthCommunication::enqueue_connect_dummy_action()
     }
     wakeup_session_thread();
 }
-#endif
+#endif 0
 
 void PrusaAuthCommunication::enqueue_connect_printers_action()
 {
@@ -299,7 +299,19 @@ void PrusaAuthCommunication::enqueue_connect_printers_action()
             BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
             return;
         }
-        m_session->enqueue_action(UserActionID::CONNECT_PRINTERS, nullptr, nullptr, {});
+        m_session->enqueue_action(UserActionID::AUTH_ACTION_CONNECT_PRINTERS, nullptr, nullptr, {});
+    }
+    wakeup_session_thread();
+}
+void PrusaAuthCommunication::enqueue_test_connection()
+{
+    {
+        std::lock_guard<std::mutex> lock(m_session_mutex);
+        if (!m_session->is_initialized()) {
+            BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
+            return;
+        }
+        m_session->enqueue_action(UserActionID::AUTH_ACTION_TEST_CONNECTION, nullptr, nullptr, {});
     }
     wakeup_session_thread();
 }
@@ -312,7 +324,7 @@ void PrusaAuthCommunication::enqueue_avatar_action(const std::string url)
             BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
             return;
         }
-        m_session->enqueue_action(UserActionID::AVATAR, nullptr, nullptr, url);
+        m_session->enqueue_action(UserActionID::AUTH_ACTION_AVATAR, nullptr, nullptr, url);
     }
     wakeup_session_thread();
 }

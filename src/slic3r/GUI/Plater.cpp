@@ -884,42 +884,52 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
      });
     
     this->q->Bind(EVT_LOGGEDOUT_PRUSAAUTH, [this](PrusaAuthSuccessEvent& evt) {
-        user_account->on_logout(wxGetApp().app_config);
-        this->main_frame->disable_connect_tab();
-        std::string text = _u8L("Logged out.");
+        user_account->clear();
+        std::string text = _u8L("Logged out from Prusa Account.");
         this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
         this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
+        this->main_frame->disable_connect_tab();
+        this->main_frame->refresh_auth_menu();
     });
 
     this->q->Bind(EVT_PA_ID_USER_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
         std::string username;
-        bool succ = user_account->on_user_id_success(evt.data, username);
-        if (succ) {
-            // show connect tab
-            this->main_frame->enable_connect_tab();
+        if (user_account->on_user_id_success(evt.data, username)) {
             // login notification
-            std::string text = format(_u8L("Logged as %1%."), username);
+            std::string text = format(_u8L("Logged to Prusa Account as %1%."), username);
             this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
             this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
-
+            // show connect tab
+            this->main_frame->enable_connect_tab();
             // Update User name in TopBar
             this->main_frame->refresh_auth_menu();
         } else {
-            // TODO
+            // data were corrupt and username was not retrieved
+            // procced as if EVT_PRUSAAUTH_RESET was recieved
+            BOOST_LOG_TRIVIAL(error) << "Reseting Prusa Account communication. Recieved data were corrupt.";
+            user_account->clear();
+            this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
+            this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Failed to connect to Prusa Account."));
+            // Update User name in TopBar
+            this->main_frame->refresh_auth_menu();
+            // Update sidebar printer status
+            sidebar->update_printer_presets_combobox();
         }
         
     });
     this->q->Bind(EVT_PRUSAAUTH_RESET, [this](PrusaAuthFailEvent& evt) {
-        BOOST_LOG_TRIVIAL(error) << "Network error message: " << evt.data;
-        user_account->on_communication_fail(evt.data, wxGetApp().app_config);
+        BOOST_LOG_TRIVIAL(error) << "Reseting Prusa Account communication. Error message: " << evt.data;
+        user_account->clear();
         this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
-        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Connection to PrusaConnect has failed."));
+        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Failed to connect to Prusa Account."));
+        // Update User name in TopBar
+        this->main_frame->refresh_auth_menu();
+        // Update sidebar printer status
+        sidebar->update_printer_presets_combobox();
     });
     this->q->Bind(EVT_PRUSAAUTH_FAIL, [this](PrusaAuthFailEvent& evt) {
-        BOOST_LOG_TRIVIAL(error) << "Network error message: " << evt.data;
-        user_account->on_communication_fail(evt.data, wxGetApp().app_config);
-        this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
-        this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Connection to PrusaConnect has failed."));
+        BOOST_LOG_TRIVIAL(error) << "Failed communication with Prusa Account: " << evt.data;
+        user_account->on_communication_fail();
     });
     this->q->Bind(EVT_PRUSAAUTH_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
         this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
@@ -928,19 +938,13 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     this->q->Bind(EVT_PRUSACONNECT_PRINTERS_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
         std::string text;
         bool printers_changed = false;
-        bool succ = user_account->on_connect_printers_success(evt.data, wxGetApp().app_config, printers_changed, text);
-        if (succ) {
-            if (printers_changed)
-            {
-                //std::string out = GUI::format("Printers in your PrusaConnect team %1%:\n%2%", (printers_changed ? "changed" : "didn't changed"), text);
-                //std::string out = GUI::format("Printers in your PrusaConnect team:\n%1%",  text);
-                //this->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
-                //this->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
-
+        if (user_account->on_connect_printers_success(evt.data, wxGetApp().app_config, printers_changed)) {
+            if (printers_changed) {
                 sidebar->update_printer_presets_combobox();
             }
         } else {
-            // TODO
+            // message was corrupt, procceed like EVT_PRUSAAUTH_FAIL
+            user_account->on_communication_fail();
         }
     });
     this->q->Bind(EVT_PA_AVATAR_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {

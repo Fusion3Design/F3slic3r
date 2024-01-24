@@ -25,7 +25,7 @@ void UserAccount::set_username(const std::string& username)
     m_auth_communication->set_username(username);
 }
 
-void UserAccount::reset()
+void UserAccount::clear()
 {
     m_username = {};
     m_user_data.clear();
@@ -79,10 +79,9 @@ void UserAccount::enqueue_connect_printers_action()
 {
     m_auth_communication->enqueue_connect_printers_action();
 }
-
-void UserAccount::enqueue_avatar_action(const std::string& url)
+void UserAccount::enqueue_avatar_action()
 {
-    m_auth_communication->enqueue_avatar_action(url);
+    m_auth_communication->enqueue_avatar_action(m_user_data["avatar"]);
 }
 
 bool UserAccount::on_login_code_recieved(const std::string& url_message)
@@ -111,7 +110,6 @@ bool UserAccount::on_user_id_success(const std::string data, std::string& out_us
         }
        
     }
-    assert(m_user_data.find("public_username") != m_user_data.end());
     if (m_user_data.find("public_username") == m_user_data.end()) {
         BOOST_LOG_TRIVIAL(error) << "User ID message from PrusaAuth did not contain public_username. Login failed. Message data: " << data;
         return false;
@@ -121,33 +119,24 @@ bool UserAccount::on_user_id_success(const std::string data, std::string& out_us
     out_username = public_username;
     // equeue GET with avatar url
     if (m_user_data.find("avatar") != m_user_data.end()) {
-        enqueue_avatar_action(m_user_data["avatar"]);
+        enqueue_avatar_action();
     }
     else {
-        BOOST_LOG_TRIVIAL(warning) << "User ID message from PrusaAcuth did not contain avatar.";
+        BOOST_LOG_TRIVIAL(error) << "User ID message from PrusaAuth did not contain avatar.";
     }
     // update printers list
     enqueue_connect_printers_action();
     return true;
 }
 
-bool UserAccount::on_communication_fail(const std::string data, AppConfig* app_config)
+void UserAccount::on_communication_fail()
 {
-    // TODO: should we just declare disconnect on every fail?
-    //set_username({}, app_config);
-    return true;
-}
-
-bool UserAccount::on_communication_reset(const std::string data, AppConfig* app_config)
-{
-    set_username({});
-    return true;
-}
-
-bool UserAccount::on_logout( AppConfig* app_config)
-{
-    set_username({});
-    return true;
+    m_fail_counter++;
+    if (m_fail_counter > 5) // there is no deeper reason why 5
+    {
+        m_auth_communication->enqueue_test_connection();
+        m_fail_counter = 0;
+    }
 }
 
 namespace {
@@ -166,7 +155,7 @@ namespace {
     }
 }
 
-bool UserAccount::on_connect_printers_success(const std::string data, AppConfig* app_config, bool& out_printers_changed, std::string& out_message)
+bool UserAccount::on_connect_printers_success(const std::string data, AppConfig* app_config, bool& out_printers_changed)
 {
     BOOST_LOG_TRIVIAL(debug) << "PrusaConnect printers message: " << data;
     pt::ptree ptree;
@@ -237,17 +226,6 @@ bool UserAccount::on_connect_printers_success(const std::string data, AppConfig*
                 }
             }
         }
-    }
-
-    std::string out;
-    for (const auto& it : m_printer_map)
-    {
-        out_message += GUI::format("%1%: O%2% I%3% P%4% F%5% \n"
-            , it.first
-            , std::to_string(it.second[static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_OFFLINE)])
-            , std::to_string(it.second[static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_IDLE)])
-            , std::to_string(it.second[static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_PRINTING)])
-            , std::to_string(it.second[static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_FINISHED)]));
     }
     return true;
 }

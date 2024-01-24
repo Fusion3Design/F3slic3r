@@ -42,16 +42,17 @@ public:
     void enqueue_connect_dummy_action();
 #endif
     void enqueue_connect_printers_action();
-    void enqueue_avatar_action(const std::string& url);
+    void enqueue_avatar_action();
 
     // Functions called from UI where events emmited from AuthSession are binded
     // Returns bool if data were correctly proccessed
     bool on_login_code_recieved(const std::string& url_message);
     bool on_user_id_success(const std::string data, std::string& out_username);
-    bool on_communication_fail(const std::string data, AppConfig* app_config);
-    bool on_communication_reset(const std::string data, AppConfig* app_config);
-    bool on_logout(AppConfig* app_config);
-    bool on_connect_printers_success(const std::string data, AppConfig* app_config, bool& out_printers_changed, std::string& out_message);
+    // Called on EVT_PRUSAAUTH_FAIL, triggers test after several calls
+    void on_communication_fail();
+    // Clears all data and connections, called on logout or EVT_PRUSAAUTH_RESET
+    void clear();
+    bool on_connect_printers_success(const std::string data, AppConfig* app_config, bool& out_printers_changed);
 
     std::string get_username() const { return m_username; }
     std::string get_access_token();
@@ -65,13 +66,14 @@ public:
     std::string get_apikey_from_json(const std::string& message) const;
 private:
     void set_username(const std::string& username);
-    void reset();
+   
 
     std::unique_ptr<Slic3r::GUI::PrusaAuthCommunication> m_auth_communication;
     
     ConnectPrinterStateMap              m_printer_map;
     std::map<std::string, std::string>  m_user_data;
     std::string                         m_username;
+    size_t                              m_fail_counter { 0 };
 
     // first string is "printer_type" code from Connect edpoints
     const std::map<std::string, std::string> printer_type_and_name_table = {

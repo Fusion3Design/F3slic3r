@@ -26,75 +26,47 @@ wxDEFINE_EVENT(EVT_PRUSAAUTH_SUCCESS, PrusaAuthSuccessEvent);
 wxDEFINE_EVENT(EVT_PRUSACONNECT_PRINTERS_SUCCESS, PrusaAuthSuccessEvent);
 wxDEFINE_EVENT(EVT_PA_AVATAR_SUCCESS, PrusaAuthSuccessEvent);
 wxDEFINE_EVENT(EVT_PRUSAAUTH_FAIL, PrusaAuthFailEvent);
+wxDEFINE_EVENT(EVT_PA_AVATAR_FAIL, PrusaAuthFailEvent);
 wxDEFINE_EVENT(EVT_PRUSAAUTH_RESET, PrusaAuthFailEvent);
 
 
-void UserActionPost::perform( /*UNUSED*/ const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
+void UserActionPost::perform(/*UNUSED*/ wxEvtHandler* evt_handler, /*UNUSED*/ const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
 {
     std::string url = m_url;
-    //BOOST_LOG_TRIVIAL(info) << m_action_name <<" POST " << url << " body: " << input;
     auto http = Http::post(std::move(url));
     if (!input.empty())
         http.set_post_body(input);
     http.header("Content-type", "application/x-www-form-urlencoded");
-    http.on_error([&](std::string body, std::string error, unsigned status) {
-        //BOOST_LOG_TRIVIAL(error) << m_action_name << " action failed. status: " << status << " Body: " << body;
+    http.on_error([fail_callback](std::string body, std::string error, unsigned status) {
         if (fail_callback)
             fail_callback(body);
     });
-    http.on_complete([&, this](std::string body, unsigned status) {
-        //BOOST_LOG_TRIVIAL(info) << m_action_name << "action success. Status: " << status << " Body: " << body;
+    http.on_complete([success_callback](std::string body, unsigned status) {
         if (success_callback)
             success_callback(body);
     });
     http.perform_sync();
 }
 
-void UserActionGetWithEvent::perform(const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, /*UNUSED*/ const std::string& input)
-{
-    std::string url = m_url;
-    //BOOST_LOG_TRIVIAL(info) << m_action_name << " GET " << url;
-    auto http = Http::get(url);
-    http.header("Authorization", "Bearer " + access_token);
-    http.on_error([&](std::string body, std::string error, unsigned status) {
-        //BOOST_LOG_TRIVIAL(error) << m_action_name << " action failed. status: " << status << " Body: " << body;
-        if (fail_callback)
-            fail_callback(body);
-        std::string message = GUI::format("%1% action failed (%2%): %3%", m_action_name, std::to_string(status), body);
-        if (m_succ_evt_type != wxEVT_NULL)
-            wxQueueEvent(m_evt_handler, new PrusaAuthFailEvent(m_fail_evt_type, std::move(message)));
-    });
-    http.on_complete([&, this](std::string body, unsigned status) {
-        //BOOST_LOG_TRIVIAL(info) << m_action_name << " action success. Status: " << status << " Body: " << body;
-        if (success_callback)
-            success_callback(body);
-        if (m_succ_evt_type != wxEVT_NULL)
-            wxQueueEvent(m_evt_handler, new PrusaAuthSuccessEvent(m_succ_evt_type, body));
-    });
-
-    http.perform_sync();
-}
-
-void UserActionNoAuthGetWithEvent::perform(/*UNUSED*/ const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
+void UserActionGetWithEvent::perform(wxEvtHandler* evt_handler, const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
 {
     std::string url = m_url + input;
-    //BOOST_LOG_TRIVIAL(info) << m_action_name << " GET " << url;
-    auto http = Http::get(url);
-    http.on_error([&](std::string body, std::string error, unsigned status) {
-        //BOOST_LOG_TRIVIAL(error) << m_action_name << " action failed. status: " << status << " Body: " << body;
+    auto http = Http::get(std::move(url));
+    if (!access_token.empty())
+        http.header("Authorization", "Bearer " + access_token);
+    http.on_error([evt_handler, fail_callback, action_name = &m_action_name, fail_evt_type = m_fail_evt_type](std::string body, std::string error, unsigned status) {
         if (fail_callback)
             fail_callback(body);
-        std::string message = GUI::format("%1% action failed (%2%): %3%", m_action_name, std::to_string(status), body);
-        if (m_succ_evt_type != wxEVT_NULL)
-            wxQueueEvent(m_evt_handler, new PrusaAuthFailEvent(m_fail_evt_type, std::move(message)));
-        });
-    http.on_complete([&, this](std::string body, unsigned status) {
-        //BOOST_LOG_TRIVIAL(info) << m_action_name << " action success. Status: " << status << " Body: " << body;
+        std::string message = GUI::format("%1% action failed (%2%): %3%", action_name, std::to_string(status), body);
+        if (fail_evt_type != wxEVT_NULL)
+            wxQueueEvent(evt_handler, new PrusaAuthFailEvent(fail_evt_type, std::move(message)));
+    });
+    http.on_complete([evt_handler, success_callback, succ_evt_type = m_succ_evt_type](std::string body, unsigned status) {
         if (success_callback)
             success_callback(body);
-        if (m_succ_evt_type != wxEVT_NULL)
-            wxQueueEvent(m_evt_handler, new PrusaAuthSuccessEvent(m_succ_evt_type, body));
-        });
+        if (succ_evt_type != wxEVT_NULL)
+            wxQueueEvent(evt_handler, new PrusaAuthSuccessEvent(succ_evt_type, body));
+    });
 
     http.perform_sync();
 }
@@ -103,46 +75,35 @@ void AuthSession::process_action_queue()
 {
     if (!m_proccessing_enabled)
         return;
-    //BOOST_LOG_TRIVIAL(debug) << "process_action_queue start";
     if (m_priority_action_queue.empty() && m_action_queue.empty()) {
-        //BOOST_LOG_TRIVIAL(debug) << "process_action_queue queues empty";
         // update printers on every periodic wakeup call
         if (m_polling_enabled)
-            enqueue_action(UserActionID::CONNECT_PRINTERS, nullptr, nullptr, {});
+            enqueue_action(UserActionID::AUTH_ACTION_CONNECT_PRINTERS, nullptr, nullptr, {});
         else 
             return;
     }
-
-    if (this->is_initialized()) {
-        // if priority queue already has some action f.e. to exchange tokens, the test should not be neccessary but also shouldn't be problem
-        enqueue_test_with_refresh();
-    }
-
+    // priority queue works even when tokens are empty or broken
     while (!m_priority_action_queue.empty()) {
-        m_actions[m_priority_action_queue.front().action_id]->perform(m_access_token, m_priority_action_queue.front().success_callback, m_priority_action_queue.front().fail_callback, m_priority_action_queue.front().input);
+        m_actions[m_priority_action_queue.front().action_id]->perform(p_evt_handler, m_access_token, m_priority_action_queue.front().success_callback, m_priority_action_queue.front().fail_callback, m_priority_action_queue.front().input);
         if (!m_priority_action_queue.empty())
             m_priority_action_queue.pop();
     }
-
-    if (!this->is_initialized()) {
-        //BOOST_LOG_TRIVIAL(debug) << "process_action_queue not initialized";
+    // regular queue has to wait until priority fills tokens
+    if (!this->is_initialized())
         return;
-    }
-
     while (!m_action_queue.empty()) {
-        m_actions[m_action_queue.front().action_id]->perform(m_access_token, m_action_queue.front().success_callback, m_action_queue.front().fail_callback, m_action_queue.front().input);
+        m_actions[m_action_queue.front().action_id]->perform(p_evt_handler, m_access_token, m_action_queue.front().success_callback, m_action_queue.front().fail_callback, m_action_queue.front().input);
         if (!m_action_queue.empty())
             m_action_queue.pop();
     }
-    //BOOST_LOG_TRIVIAL(debug) << "process_action_queue end";
 }
 
 void AuthSession::enqueue_action(UserActionID id, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
 {
-    //BOOST_LOG_TRIVIAL(info) << "enqueue_action " << (int)id;
     m_proccessing_enabled = true;
     m_action_queue.push({ id, success_callback, fail_callback, input });
 }
+
 
 void AuthSession::init_with_code(const std::string& code, const std::string& code_verifier)
 {
@@ -154,115 +115,99 @@ void AuthSession::init_with_code(const std::string& code, const std::string& cod
         "&redirect_uri=" + REDIRECT_URI +
         "&code_verifier="+ code_verifier;
 
-    auto succ_fn = [&](const std::string& body){
-        // Data we need
-        std::string access_token, refresh_token, shared_session_key;
-        try {
-            std::stringstream ss(body);
-            pt::ptree ptree;
-            pt::read_json(ss, ptree);
-
-            const auto access_token_optional = ptree.get_optional<std::string>("access_token");
-            const auto refresh_token_optional = ptree.get_optional<std::string>("refresh_token");
-            const auto shared_session_key_optional = ptree.get_optional<std::string>("shared_session_key");
-
-            if (access_token_optional)
-                access_token = *access_token_optional;
-            if (refresh_token_optional)
-                refresh_token = *refresh_token_optional;
-            if (shared_session_key_optional)
-                shared_session_key = *shared_session_key_optional;
-        }
-        catch (const std::exception&) {
-            BOOST_LOG_TRIVIAL(error) << "Auth::http_access Could not parse server response.";
-        }
-
-        assert(!access_token.empty() && !refresh_token.empty() && !shared_session_key.empty());
-        if (access_token.empty() || refresh_token.empty() || shared_session_key.empty()) {
-            BOOST_LOG_TRIVIAL(error) << "Refreshing token has failed.";
-            m_access_token = std::string();
-            m_refresh_token = std::string();
-            m_shared_session_key = std::string();
-            return;
-        }
-
-        BOOST_LOG_TRIVIAL(info) << "access_token: " << access_token;
-        BOOST_LOG_TRIVIAL(info) << "refresh_token: " << refresh_token;
-        BOOST_LOG_TRIVIAL(info) << "shared_session_key: " << shared_session_key;
-
-        m_access_token = access_token;
-        m_refresh_token = refresh_token;
-        m_shared_session_key = shared_session_key;
-    };
-
     m_proccessing_enabled = true;
     // fail fn might be cancel_queue here
-    m_priority_action_queue.push({ UserActionID::CODE_FOR_TOKEN, succ_fn, std::bind(&AuthSession::enqueue_refresh, this, std::placeholders::_1), post_fields });
+    m_priority_action_queue.push({ UserActionID::AUTH_ACTION_CODE_FOR_TOKEN
+        , std::bind(&AuthSession::token_success_callback, this, std::placeholders::_1)
+        , std::bind(&AuthSession::code_exchange_fail_callback, this, std::placeholders::_1)
+        , post_fields });
+}
+
+void AuthSession::token_success_callback(const std::string& body)
+{
+    // Data we need
+    std::string access_token, refresh_token, shared_session_key;
+    try {
+        std::stringstream ss(body);
+        pt::ptree ptree;
+        pt::read_json(ss, ptree);
+
+        const auto access_token_optional = ptree.get_optional<std::string>("access_token");
+        const auto refresh_token_optional = ptree.get_optional<std::string>("refresh_token");
+        const auto shared_session_key_optional = ptree.get_optional<std::string>("shared_session_key");
+
+        if (access_token_optional)
+            access_token = *access_token_optional;
+        if (refresh_token_optional)
+            refresh_token = *refresh_token_optional;
+        if (shared_session_key_optional)
+            shared_session_key = *shared_session_key_optional;
+    }
+    catch (const std::exception&) {
+        std::string msg = "Could not parse server response after code exchange.";
+        wxQueueEvent(p_evt_handler, new PrusaAuthFailEvent(EVT_PRUSAAUTH_RESET, std::move(msg)));
+        return;
+    }
+
+    if (access_token.empty() || refresh_token.empty() || shared_session_key.empty()) {
+        // just debug msg, no need to translate
+        std::string msg = GUI::format("Failed read tokens after POST.\nAccess token: %1%\nRefresh token: %2%\nShared session token: %3%\nbody: %4%", access_token, refresh_token, shared_session_key, body);
+        m_access_token = std::string();
+        m_refresh_token = std::string();
+        m_shared_session_key = std::string();
+        wxQueueEvent(p_evt_handler, new PrusaAuthFailEvent(EVT_PRUSAAUTH_RESET, std::move(msg)));
+        return;
+    }
+
+    BOOST_LOG_TRIVIAL(info) << "access_token: " << access_token;
+    BOOST_LOG_TRIVIAL(info) << "refresh_token: " << refresh_token;
+    BOOST_LOG_TRIVIAL(info) << "shared_session_key: " << shared_session_key;
+
+    m_access_token = access_token;
+    m_refresh_token = refresh_token;
+    m_shared_session_key = shared_session_key;
+    enqueue_action(UserActionID::AUTH_ACTION_USER_ID, nullptr, nullptr, {});
+}
+
+void AuthSession::code_exchange_fail_callback(const std::string& body)
+{
+    clear();
+    cancel_queue();
+    // Unlike refresh_fail_callback, no event was triggered so far, do it. (AUTH_ACTION_CODE_FOR_TOKEN does not send events)
+    wxQueueEvent(p_evt_handler, new PrusaAuthFailEvent(EVT_PRUSAAUTH_RESET, std::move(body)));
 }
 
 void AuthSession::enqueue_test_with_refresh()
 {
     // on test fail - try refresh
-    m_priority_action_queue.push({ UserActionID::TEST_CONNECTION, nullptr, std::bind(&AuthSession::enqueue_refresh, this, std::placeholders::_1), {} });
+    m_proccessing_enabled = true;
+    m_priority_action_queue.push({ UserActionID::AUTH_ACTION_TEST_ACCESS_TOKEN, nullptr, std::bind(&AuthSession::enqueue_refresh, this, std::placeholders::_1), {} });
 }
 
 void AuthSession::enqueue_refresh(const std::string& body)
 {
+    assert(!m_refresh_token.empty());
     std::string post_fields = "grant_type=refresh_token" 
         "&client_id=" + client_id() +
         "&refresh_token=" + m_refresh_token;
 
-    auto succ_callback = [&](const std::string& body){
-        std::string new_access_token;
-        std::string new_refresh_token;
-        std::string new_shared_session_key;
-        try {
-            std::stringstream ss(body);
-            pt::ptree ptree;
-            pt::read_json(ss, ptree);
-
-            const auto access_token_optional = ptree.get_optional<std::string>("access_token");
-            const auto refresh_token_optional = ptree.get_optional<std::string>("refresh_token");
-            const auto shared_session_key_optional = ptree.get_optional<std::string>("shared_session_key");
-
-            if (access_token_optional)
-                new_access_token = *access_token_optional;
-            if (refresh_token_optional)
-                new_refresh_token = *refresh_token_optional;
-            if (shared_session_key_optional)
-                new_shared_session_key = *shared_session_key_optional;
-        }
-        catch (const std::exception&) {
-            BOOST_LOG_TRIVIAL(error) << "Could not parse server response.";
-        }
-
-        assert(!new_access_token.empty() && !new_refresh_token.empty() && !new_shared_session_key.empty());
-        if (new_access_token.empty() || new_refresh_token.empty() || new_shared_session_key.empty()) {
-            BOOST_LOG_TRIVIAL(error) << "Refreshing token has failed.";
-            m_access_token = std::string();
-            m_refresh_token = std::string();
-            m_shared_session_key = std::string();
-            // TODO: cancel following queue
-        }
-
-        BOOST_LOG_TRIVIAL(info) << "access_token: " << new_access_token;
-        BOOST_LOG_TRIVIAL(info) << "refresh_token: " << new_refresh_token;
-        BOOST_LOG_TRIVIAL(info) << "shared_session_key: " << new_shared_session_key;
-
-        m_access_token = new_access_token;
-        m_refresh_token = new_refresh_token;
-        m_shared_session_key = new_shared_session_key;
-        m_priority_action_queue.push({ UserActionID::TEST_CONNECTION, nullptr, std::bind(&AuthSession::refresh_failed_callback, this, std::placeholders::_1), {} });
-    };
-
-    m_priority_action_queue.push({ UserActionID::REFRESH_TOKEN, succ_callback, std::bind(&AuthSession::refresh_failed_callback, this, std::placeholders::_1), post_fields });
+    m_priority_action_queue.push({ UserActionID::AUTH_ACTION_REFRESH_TOKEN
+        , std::bind(&AuthSession::token_success_callback, this, std::placeholders::_1)
+        , std::bind(&AuthSession::refresh_fail_callback, this, std::placeholders::_1)
+        , post_fields });
 }
 
-void AuthSession::refresh_failed_callback(const std::string& body)
+void AuthSession::refresh_fail_callback(const std::string& body)
 {
     clear();
     cancel_queue();
+    // No need to notify UI thread here
+    // backtrace: load tokens -> TEST_TOKEN fail (access token bad) -> REFRESH_TOKEN fail (refresh token bad)
+    // AUTH_ACTION_TEST_ACCESS_TOKEN triggers EVT_PRUSAAUTH_FAIL, we need also RESET
+    wxQueueEvent(p_evt_handler, new PrusaAuthFailEvent(EVT_PRUSAAUTH_RESET, std::move(body)));
+
 }
+
 void AuthSession::cancel_queue()
 {
     while (!m_priority_action_queue.empty()) {
