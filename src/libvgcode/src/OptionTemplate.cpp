@@ -50,6 +50,9 @@ void OptionTemplate::init(uint8_t resolution)
         add_vertex(pos, norm, bottom_vertices);
     }
 
+    m_size_in_bytes_gpu += top_vertices.size() * sizeof(float);
+    m_size_in_bytes_gpu += bottom_vertices.size() * sizeof(float);
+
     const size_t vertex_stride = 6 * sizeof(float);
     const size_t position_offset = 0;
     const size_t normal_offset = 3 * sizeof(float);
@@ -101,6 +104,8 @@ void OptionTemplate::shutdown()
         glsafe(glDeleteVertexArrays(1, &m_top_vao_id));
         m_top_vao_id = 0;
     }
+
+    m_size_in_bytes_gpu = 0;
 }
 
 void OptionTemplate::render(size_t count)

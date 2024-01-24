@@ -84,11 +84,14 @@ struct BitSet
         return oldval xor (oldval and mask);
     }
 
-    std::pair<size_t, size_t> get_coords(size_t index) const
-    {
+    std::pair<size_t, size_t> get_coords(size_t index) const {
         const size_t block_idx = index / (sizeof(T) * 8);
         const size_t bit_idx = index % (sizeof(T) * 8);
         return { block_idx, bit_idx };
+    }
+
+    size_t size_in_bytes_cpu() const {
+        return blocks.size() * sizeof(T);
     }
 
     size_t size{ 0 };

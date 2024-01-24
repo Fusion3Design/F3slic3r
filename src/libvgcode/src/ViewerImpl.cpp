@@ -577,6 +577,9 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
         heights_widths_angles.push_back({ v.height, v.width, angle });
     }
 
+    m_positions_tex_size = positions.size() * sizeof(Vec3);
+    m_height_width_angle_tex_size = heights_widths_angles.size() * sizeof(Vec3);
+
     if (!positions.empty()) {
         int old_bound_texture = 0;
         glsafe(glGetIntegerv(GL_TEXTURE_BINDING_BUFFER, &old_bound_texture));
@@ -693,6 +696,9 @@ void ViewerImpl::update_enabled_entities()
     else
         m_enabled_options_range.reset();
 
+    m_enabled_segments_tex_size = enabled_segments.size() * sizeof(uint32_t);
+    m_enabled_options_tex_size = enabled_options.size() * sizeof(uint32_t);
+
     // update gpu buffer for enabled segments
     assert(m_enabled_segments_buf_id > 0);
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, m_enabled_segments_buf_id));
@@ -748,6 +754,8 @@ void ViewerImpl::update_colors()
                      (!m_settings.spiral_vase_mode || i != m_view_range.get_enabled()[0])) ?
             encode_color(DUMMY_COLOR) : encode_color(get_vertex_color(m_vertices[i]));
     }
+
+    m_colors_tex_size = colors.size() * sizeof(float);
 
     // update gpu buffer for colors
     assert(m_colors_buf_id > 0);
@@ -1089,6 +1097,47 @@ void ViewerImpl::set_wipes_radius(float radius)
 {
     m_wipes_radius = std::clamp(radius, MIN_WIPES_RADIUS_MM, MAX_WIPES_RADIUS_MM);
     update_heights_widths();
+}
+
+size_t ViewerImpl::get_used_cpu_memory() const
+{
+    size_t ret = sizeof(*this);
+    ret += m_layers.size_in_bytes_cpu();
+    ret += STDVEC_MEMSIZE(m_options, EOptionType);
+    ret += m_used_extruders.size() * sizeof(std::map<uint8_t, ColorPrint>::value_type);
+    ret += m_extrusion_roles_colors.size() * sizeof(std::map<EGCodeExtrusionRole, Color>::value_type);
+    ret += m_options_colors.size() * sizeof(std::map<EOptionType, Color>::value_type);
+    ret += STDVEC_MEMSIZE(m_vertices, PathVertex);
+    ret += m_valid_lines_bitset.size_in_bytes_cpu();
+    ret += m_height_range.size_in_bytes_cpu();
+    ret += m_width_range.size_in_bytes_cpu();
+    ret += m_speed_range.size_in_bytes_cpu();
+    ret += m_fan_speed_range.size_in_bytes_cpu();
+    ret += m_temperature_range.size_in_bytes_cpu();
+    ret += m_volumetric_rate_range.size_in_bytes_cpu();
+    for (size_t i = 0; i < COLOR_RANGE_TYPES_COUNT; ++i) {
+        ret += m_layer_time_range[i].size_in_bytes_cpu();
+    }
+    ret += STDVEC_MEMSIZE(m_tool_colors, Color);
+    ret += STDVEC_MEMSIZE(m_color_print_colors, Color);
+    return ret;
+}
+
+size_t ViewerImpl::get_used_gpu_memory() const
+{
+    size_t ret = 0;
+    ret += m_segment_template.size_in_bytes_gpu();
+    ret += m_option_template.size_in_bytes_gpu();
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+    ret += m_tool_marker.size_in_bytes_gpu();
+    ret += m_cog_marker.size_in_bytes_gpu();
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+    ret += m_positions_tex_size;
+    ret += m_height_width_angle_tex_size;
+    ret += m_colors_tex_size;
+    ret += m_enabled_segments_tex_size;
+    ret += m_enabled_options_tex_size;
+    return ret;
 }
 
 static bool is_visible(const PathVertex& v, const Settings& settings)

@@ -7,6 +7,12 @@
 
 #include "../include/Types.hpp"
 
+#ifdef _WIN32
+#define STDVEC_MEMSIZE(NAME, TYPE) NAME.capacity() * ((sizeof(TYPE) + __alignof(TYPE) - 1) / __alignof(TYPE)) * __alignof(TYPE)
+#else
+#define STDVEC_MEMSIZE(NAME, TYPE) NAME.capacity() * ((sizeof(TYPE) + alignof(TYPE) - 1) / alignof(TYPE)) * alignof(TYPE)
+#endif // _WIN32
+
 namespace libvgcode {
 
 extern void add_vertex(const Vec3& position, const Vec3& normal, std::vector<float>& vertices);

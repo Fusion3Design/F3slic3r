@@ -40,6 +40,8 @@ public:
         return (layer_id < m_items.size()) ? m_items[layer_id].contains_colorprint_options : false;
     }
 
+    size_t size_in_bytes_cpu() const;
+
 private:
     struct Item
     {

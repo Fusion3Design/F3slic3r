@@ -85,6 +85,9 @@ void CogMarker::init(uint8_t resolution, float radius)
         }
     }
 
+    m_size_in_bytes_gpu += vertices.size() * sizeof(float);
+    m_size_in_bytes_gpu += indices.size() * sizeof(uint16_t);
+
     const size_t vertex_stride = 6 * sizeof(float);
     const size_t position_offset = 0;
     const size_t normal_offset = 3 * sizeof(float);
@@ -126,6 +129,8 @@ void CogMarker::shutdown()
         glsafe(glDeleteVertexArrays(1, &m_vao_id));
         m_vao_id = 0;
     }
+
+    m_size_in_bytes_gpu = 0;
 }
 
 void CogMarker::render()

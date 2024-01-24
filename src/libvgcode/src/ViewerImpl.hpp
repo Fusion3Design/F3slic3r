@@ -116,7 +116,7 @@ public:
     const PathVertex& get_current_vertex() const { return get_vertex_at(get_current_vertex_id()); }
     size_t get_current_vertex_id() const { return static_cast<size_t>(m_view_range.get_visible()[1]); }
     const PathVertex& get_vertex_at(size_t id) const {
-        return (id < m_vertices.size()) ? m_vertices[id] : DUMMY_PATH_VERTEX;
+        return (id < m_vertices.size()) ? m_vertices[id] : PathVertex::DUMMY_PATH_VERTEX;
     }
     float get_estimated_time_at(size_t id) const;
     Color get_vertex_color(const PathVertex& vertex) const;
@@ -162,6 +162,9 @@ public:
     void set_travels_radius(float radius);
     float get_wipes_radius() const { return m_wipes_radius; }
     void set_wipes_radius(float radius);
+
+    size_t get_used_cpu_memory() const;
+    size_t get_used_gpu_memory() const;
 
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     Vec3 get_cog_marker_position() const { return m_cog_marker.get_position(); }
@@ -293,7 +296,7 @@ private:
     unsigned int m_tool_marker_shader_id{ 0 };
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
-    // Cache for OpenGL uniforms id for segments shader 
+    // Caches for OpenGL uniforms id for segments shader 
     //
     int m_uni_segments_view_matrix_id{ -1 };
     int m_uni_segments_projection_matrix_id{ -1 };
@@ -303,7 +306,7 @@ private:
     int m_uni_segments_colors_tex_id{ -1 };
     int m_uni_segments_segment_index_tex_id{ -1 };
     //
-    // Cache for OpenGL uniforms id for options shader 
+    // Caches for OpenGL uniforms id for options shader 
     //
     int m_uni_options_view_matrix_id{ -1 };
     int m_uni_options_projection_matrix_id{ -1 };
@@ -313,14 +316,14 @@ private:
     int m_uni_options_segment_index_tex_id{ -1 };
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
-    // Cache for OpenGL uniforms id for cog marker shader 
+    // Caches for OpenGL uniforms id for cog marker shader 
     //
     int m_uni_cog_marker_world_center_position{ -1 };
     int m_uni_cog_marker_scale_factor{ -1 };
     int m_uni_cog_marker_view_matrix{ -1 };
     int m_uni_cog_marker_projection_matrix{ -1 };
     //
-    // Cache for OpenGL uniforms id for tool marker shader 
+    // Caches for OpenGL uniforms id for tool marker shader 
     //
     int m_uni_tool_marker_world_origin{ -1 };
     int m_uni_tool_marker_scale_factor{ -1 };
@@ -353,6 +356,14 @@ private:
     //
     unsigned int m_enabled_options_buf_id{ 0 };
     unsigned int m_enabled_options_tex_id{ 0 };
+    //
+    // Caches for size of data sent to gpu, in bytes
+    //
+    size_t m_positions_tex_size{ 0 };
+    size_t m_height_width_angle_tex_size{ 0 };
+    size_t m_colors_tex_size{ 0 };
+    size_t m_enabled_segments_tex_size{ 0 };
+    size_t m_enabled_options_tex_size{ 0 };
 
     void update_view_full_range();
     void update_color_ranges();

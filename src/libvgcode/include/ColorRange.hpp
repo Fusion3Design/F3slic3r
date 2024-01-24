@@ -25,19 +25,6 @@ static const Palette DEFAULT_RANGES_COLORS{ {
     { 148,  38,  22 }  // reddish
 } };
 
-//
-// Helper class to interpolate between colors defined in a palette.
-// Interpolation can be done linearly or logarithmically.
-// Usage:
-// 1) Define an instance of ColorRange of the desired interpolation type
-//    ColorRange range(EColorRangeType::Linear);
-// 2) Pass to the instance all the values needed to setup the range:
-//    for (size_t i = 0; i < my_data.size(); ++i) {
-//        range.update(my_data[i]);
-//    }
-// 3) Get the color at the desired value:
-//    Color c = range.get_color_at(value);
-//
 class ColorRange
 {
 public:
@@ -79,6 +66,10 @@ public:
     // get_palette().size() - If more than two distinct values were detected while setting up this ColorRange.
     //
     std::vector<float> get_values() const;
+    //
+    // Return the size of the palette, in bytes
+    //
+    size_t size_in_bytes_cpu() const;
 
     static const ColorRange DUMMY_COLOR_RANGE;
 

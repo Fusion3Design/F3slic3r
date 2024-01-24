@@ -3884,6 +3884,20 @@ void GCodeViewer::render_toolpaths()
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "cpu memory");
+            ImGui::TableSetColumnIndex(1);
+            imgui.text(format_memsize(m_viewer.get_used_cpu_memory()));
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "gpu memory");
+            ImGui::TableSetColumnIndex(1);
+            imgui.text(format_memsize(m_viewer.get_used_gpu_memory()));
+
+            ImGui::Separator();
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
             imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "layers range");
             ImGui::TableSetColumnIndex(1);
             const libvgcode::Interval& layers_range = m_viewer.get_layers_view_range();

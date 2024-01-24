@@ -4,6 +4,8 @@
 ///|/
 #include "../include/ColorRange.hpp"
 
+#include "Utils.hpp"
+
 #include <algorithm>
 #include <assert.h>
 #include <cmath>
@@ -109,6 +111,12 @@ std::vector<float> ColorRange::get_values() const
         }
     }
 
+    return ret;
+}
+
+size_t ColorRange::size_in_bytes_cpu() const
+{
+    size_t ret = STDVEC_MEMSIZE(m_palette, Color);
     return ret;
 }
 

@@ -6,6 +6,8 @@
 
 namespace libvgcode {
 
+const PathVertex PathVertex::DUMMY_PATH_VERTEX = PathVertex();
+
 bool PathVertex::is_extrusion() const
 {
     return type == EMoveType::Extrude;

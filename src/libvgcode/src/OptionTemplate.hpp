@@ -30,6 +30,11 @@ public:
     void shutdown();
     void render(size_t count);
 
+    //
+    // Return the size of the data sent to gpu, in bytes.
+    //
+    size_t size_in_bytes_gpu() const { return m_size_in_bytes_gpu; }
+
 private:
     uint8_t m_resolution{ 0 };
     uint8_t m_vertices_count{ 0 };
@@ -40,6 +45,10 @@ private:
     unsigned int m_top_vbo_id{ 0 };
     unsigned int m_bottom_vao_id{ 0 };
     unsigned int m_bottom_vbo_id{ 0 };
+    //
+    // Size of the data sent to gpu, in bytes.
+    //
+    size_t m_size_in_bytes_gpu{ 0 };
 };
 
 } // namespace libvgcode

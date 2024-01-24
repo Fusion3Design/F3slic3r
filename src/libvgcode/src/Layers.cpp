@@ -5,6 +5,7 @@
 #include "Layers.hpp"
 
 #include "../include/PathVertex.hpp"
+#include "Utils.hpp"
 
 #include <assert.h>
 #include <algorithm>
@@ -71,6 +72,12 @@ size_t Layers::get_layer_id_at(float z) const
 {
     auto iter = std::upper_bound(m_items.begin(), m_items.end(), z, [](float z, const Item& item) { return item.z < z; });
     return std::distance(m_items.begin(), iter);
+}
+
+size_t Layers::size_in_bytes_cpu() const
+{
+    size_t ret = STDVEC_MEMSIZE(m_items, Item);
+    return ret;
 }
 
 } // namespace libvgcode

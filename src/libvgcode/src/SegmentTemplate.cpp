@@ -31,6 +31,8 @@ void SegmentTemplate::init()
     if (m_vao_id != 0)
         return;
 
+    m_size_in_bytes_gpu += VERTEX_DATA.size() * sizeof(uint8_t);
+
     int curr_vertex_array;
     glsafe(glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &curr_vertex_array));
     int curr_array_buffer;
@@ -59,6 +61,8 @@ void SegmentTemplate::shutdown()
         glsafe(glDeleteVertexArrays(1, &m_vao_id));
         m_vao_id = 0;
     }
+
+    m_size_in_bytes_gpu = 0;
 }
 
 void SegmentTemplate::render(size_t count)

@@ -337,6 +337,16 @@ AABox Viewer::get_bounding_box(EBBoxType type) const
     return m_impl->get_bounding_box(type);
 }
 
+size_t Viewer::get_used_cpu_memory() const
+{
+    return m_impl->get_used_cpu_memory();
+}
+
+size_t Viewer::get_used_gpu_memory() const
+{
+    return m_impl->get_used_gpu_memory();
+}
+
 #if VGCODE_ENABLE_DEBUG_CODE
 size_t Viewer::get_enabled_segments_count() const
 {

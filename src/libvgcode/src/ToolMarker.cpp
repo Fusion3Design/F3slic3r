@@ -105,6 +105,9 @@ void ToolMarker::init(uint16_t resolution, float tip_radius, float tip_height, f
         add_triangle(5 * resolution + 1, v3, i + 5 * resolution + 2, indices);
     }
 
+    m_size_in_bytes_gpu += vertices.size() * sizeof(float);
+    m_size_in_bytes_gpu += indices.size() * sizeof(uint16_t);
+
     const size_t vertex_stride = 6 * sizeof(float);
     const size_t position_offset = 0;
     const size_t normal_offset = 3 * sizeof(float);
@@ -146,6 +149,8 @@ void ToolMarker::shutdown()
         glsafe(glDeleteVertexArrays(1, &m_vao_id));
         m_vao_id = 0;
     }
+
+    m_size_in_bytes_gpu = 0;
 }
 
 void ToolMarker::render()

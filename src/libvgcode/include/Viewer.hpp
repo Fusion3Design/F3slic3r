@@ -351,6 +351,14 @@ public:
     // Return the axes aligned bounding box of the toolpaths.
     //
     AABox get_bounding_box(EBBoxType type) const;
+    //
+    // Return the size of the used cpu memory, in bytes
+    //
+    size_t get_used_cpu_memory() const;
+    //
+    // Return the size of the used gpu memory, in bytes
+    //
+    size_t get_used_gpu_memory() const;
 
 #if VGCODE_ENABLE_DEBUG_CODE
     size_t get_enabled_segments_count() const;
