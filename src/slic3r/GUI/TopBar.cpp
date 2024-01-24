@@ -185,7 +185,7 @@ void TopBarItemsCtrl::CreateAuthMenu()
         }, get_bmp_bundle("login", 16));
 }
 
-void TopBarItemsCtrl::UpdateAuthMenu()
+void TopBarItemsCtrl::UpdateAuthMenu(bool avatar/* = false*/)
 {
     auto user_account = wxGetApp().plater()->get_user_account();
     if (m_login_menu_item) {
@@ -198,8 +198,19 @@ void TopBarItemsCtrl::UpdateAuthMenu()
         m_user_menu_item->SetItemLabel(user_name);
    
     m_auth_btn->SetLabel(user_name);
-    m_auth_btn->SetBitmapMargins(0, 0);
- //   m_auth_btn->SetBitmap_("icon_name");
+    if (avatar) {
+        if (user_account->is_logged()) {
+            boost::filesystem::path path = boost::filesystem::path(boost::filesystem::path(Slic3r::data_dir()) / "cache" / "avatar.png");
+            ScalableBitmap new_logo(this, path, m_auth_btn->GetBitmapSize());
+            if (new_logo.IsOk())
+                m_auth_btn->SetBitmap_(new_logo);
+            else
+                m_auth_btn->SetBitmap_("user");
+        }
+        else {
+            m_auth_btn->SetBitmap_("user");
+        }
+    }
     m_auth_btn->Refresh();
 }
 

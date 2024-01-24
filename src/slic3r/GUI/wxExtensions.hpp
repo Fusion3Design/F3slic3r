@@ -167,6 +167,10 @@ public:
                     const  wxSize icon_size,
                     const bool grayscale = false);
 
+    ScalableBitmap( wxWindow                    *parent,
+                    boost::filesystem::path&    icon_path,
+                    const  wxSize               icon_size);
+
     ~ScalableBitmap() {}
 
     void                sys_color_changed();
@@ -181,6 +185,7 @@ public:
     wxSize              GetSize()   const { return get_preferred_size(m_bmp, m_parent); }
     int                 GetWidth()  const { return GetSize().GetWidth(); }
     int                 GetHeight() const { return GetSize().GetHeight(); }
+    bool                IsOk()      const { return m_bmp.IsOk(); }
 
 private:
     wxWindow*       m_parent{ nullptr };
@@ -263,6 +268,7 @@ public:
     bool SetBitmap_(const std::string& bmp_name);
     void SetBitmapDisabled_(const ScalableBitmap &bmp);
     int  GetBitmapHeight();
+    wxSize  GetBitmapSize();
 
     virtual void    sys_color_changed();
 

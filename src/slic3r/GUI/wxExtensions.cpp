@@ -830,6 +830,22 @@ ScalableBitmap(parent, icon_name, icon_size.x, icon_size.y, grayscale)
 {
 }
 
+ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_path, const wxSize icon_size)
+    :m_parent(parent), m_bmp_width(icon_size.x), m_bmp_height(icon_size.y)
+{
+    wxString path = Slic3r::GUI::from_u8(icon_path.string());
+    wxBitmap bitmap;
+    const std::string ext = icon_path.extension().string();
+    if (ext == ".png") {
+        bitmap.LoadFile(path, wxBITMAP_TYPE_PNG);
+        wxBitmap::Rescale(bitmap, icon_size);
+        m_bmp = wxBitmapBundle(bitmap);
+    }
+    else if (ext == ".svg") {
+        m_bmp = wxBitmapBundle::FromSVGFile(path, icon_size);
+    }
+}
+
 void ScalableBitmap::sys_color_changed()
 {
     m_bmp = *get_bmp_bundle(m_icon_name, m_bmp_width, m_bmp_height);
@@ -925,12 +941,20 @@ int ScalableButton::GetBitmapHeight()
 #endif
 }
 
+wxSize ScalableButton::GetBitmapSize()
+{
+#ifdef __APPLE__
+    return wxSize(GetBitmap().GetScaledWidth(), GetBitmap().GetScaledHeight());
+#else
+    return wxSize(GetBitmap().GetWidth(), GetBitmap().GetHeight());
+#endif
+}
+
 void ScalableButton::sys_color_changed()
 {
+    Slic3r::GUI::wxGetApp().UpdateDarkUI(this, m_has_border);
     if (m_current_icon_name.empty())
         return;
-    Slic3r::GUI::wxGetApp().UpdateDarkUI(this, m_has_border);
-
     wxBitmapBundle bmp = *get_bmp_bundle(m_current_icon_name, m_bmp_width, m_bmp_height);
     SetBitmap(bmp);
     SetBitmapCurrent(bmp);

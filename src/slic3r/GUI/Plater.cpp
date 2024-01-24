@@ -889,7 +889,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         this->notification_manager->close_notification_of_type(NotificationType::PrusaAuthUserID);
         this->notification_manager->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
         this->main_frame->disable_connect_tab();
-        this->main_frame->refresh_auth_menu();
+        this->main_frame->refresh_auth_menu(true);
     });
 
     this->q->Bind(EVT_PA_ID_USER_SUCCESS, [this](PrusaAuthSuccessEvent& evt) {
@@ -953,6 +953,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
        file = fopen(png_path.string().c_str(), "wb");
        fwrite(evt.data.c_str(), 1, evt.data.size(), file);
        fclose(file);
+       this->main_frame->refresh_auth_menu(true);
     });
 
 	wxGetApp().other_instance_message_handler()->init(this->q);

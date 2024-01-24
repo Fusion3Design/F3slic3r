@@ -78,7 +78,7 @@ public:
     void AppendMenuSeparaorItem();
     void ApplyWorkspacesMenu();
     void CreateAuthMenu();
-    void UpdateAuthMenu();
+    void UpdateAuthMenu(bool avatar = false);
     void CreateSearch();
 
     wxWindow* GetSearchCtrl() { return m_search->GetTextCtrl(); }
