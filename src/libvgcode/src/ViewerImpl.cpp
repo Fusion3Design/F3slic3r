@@ -687,15 +687,6 @@ void ViewerImpl::update_enabled_entities()
     m_enabled_segments_count = enabled_segments.size();
     m_enabled_options_count = enabled_options.size();
 
-    if (m_enabled_segments_count > 0)
-        m_enabled_segments_range.set(enabled_segments.front(), enabled_segments.back());
-    else
-        m_enabled_segments_range.reset();
-    if (m_enabled_options_count > 0)
-        m_enabled_options_range.set(enabled_options.front(), enabled_options.back());
-    else
-        m_enabled_options_range.reset();
-
     m_enabled_segments_tex_size = enabled_segments.size() * sizeof(uint32_t);
     m_enabled_options_tex_size = enabled_options.size() * sizeof(uint32_t);
 

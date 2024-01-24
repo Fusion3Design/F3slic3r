@@ -347,28 +347,6 @@ size_t Viewer::get_used_gpu_memory() const
     return m_impl->get_used_gpu_memory();
 }
 
-#if VGCODE_ENABLE_DEBUG_CODE
-size_t Viewer::get_enabled_segments_count() const
-{
-    return m_impl->get_enabled_segments_count();
-}
-
-const Interval& Viewer::get_enabled_segments_range() const
-{
-    return m_impl->get_enabled_segments_range();
-}
-
-size_t Viewer::get_enabled_options_count() const
-{
-    return m_impl->get_enabled_options_count();
-}
-
-const Interval& Viewer::get_enabled_options_range() const
-{
-    return m_impl->get_enabled_options_range();
-}
-#endif // VGCODE_ENABLE_DEBUG_CODE
-
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 Vec3 Viewer::get_cog_position() const
 {

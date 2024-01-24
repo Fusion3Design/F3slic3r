@@ -360,13 +360,6 @@ public:
     //
     size_t get_used_gpu_memory() const;
 
-#if VGCODE_ENABLE_DEBUG_CODE
-    size_t get_enabled_segments_count() const;
-    const Interval& get_enabled_segments_range() const;
-    size_t get_enabled_options_count() const;
-    const Interval& get_enabled_options_range() const;
-#endif // VGCODE_ENABLE_DEBUG_CODE
-
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
     // Returns the position of the center of gravity of the toolpaths.

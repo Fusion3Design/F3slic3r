@@ -3862,24 +3862,6 @@ void GCodeViewer::render_toolpaths()
             ImGui::TableSetColumnIndex(1);
             imgui.text(std::to_string(m_viewer.get_vertices_count()));
 
-#if VGCODE_ENABLE_DEBUG_CODE
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled lines");
-            ImGui::TableSetColumnIndex(1);
-            const libvgcode::Interval& enabled_segments_range = m_viewer.get_enabled_segments_range();
-            imgui.text(std::to_string(m_viewer.get_enabled_segments_count()) + " [" + std::to_string(enabled_segments_range[0]) +
-                "-" + std::to_string(enabled_segments_range[1]) + "]");
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "# enabled options");
-            ImGui::TableSetColumnIndex(1);
-            const libvgcode::Interval& enabled_options_range = m_viewer.get_enabled_options_range();
-            imgui.text(std::to_string(m_viewer.get_enabled_options_count()) + " [" + std::to_string(enabled_options_range[0]) +
-                "-" + std::to_string(enabled_options_range[1]) + "]");
-#endif // VGCODE_ENABLE_DEBUG_CODE
-
             ImGui::Separator();
 
             ImGui::TableNextRow();

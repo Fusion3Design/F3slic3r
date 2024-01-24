@@ -121,14 +121,6 @@ public:
     float get_estimated_time_at(size_t id) const;
     Color get_vertex_color(const PathVertex& vertex) const;
 
-#if VGCODE_ENABLE_DEBUG_CODE
-    size_t get_enabled_segments_count() const { return m_enabled_segments_count; }
-    const Interval& get_enabled_segments_range() const { return m_enabled_segments_range.get(); }
-
-    size_t get_enabled_options_count() const { return m_enabled_options_count; }
-    const Interval& get_enabled_options_range() const { return m_enabled_options_range.get(); }
-#endif // VGCODE_ENABLE_DEBUG_CODE
-
     size_t get_extrusion_roles_count() const { return m_extrusion_roles.get_roles_count(); }
     std::vector<EGCodeExtrusionRole> get_extrusion_roles() const { return m_extrusion_roles.get_roles(); }
     float get_extrusion_role_time(EGCodeExtrusionRole role) const { return m_extrusion_roles.get_time(role, m_settings.time_mode); }
@@ -264,13 +256,17 @@ private:
     // cpu buffer to store vertices
     //
     std::vector<PathVertex> m_vertices;
-    Range m_enabled_segments_range;
-    Range m_enabled_options_range;
     //
     // Variables used for toolpaths visibiliity
     //
     BitSet<> m_valid_lines_bitset;
+    //
+    // Count of enabled segments
+    //
     size_t m_enabled_segments_count{ 0 };
+    //
+    // Count of enabled options
+    //
     size_t m_enabled_options_count{ 0 };
     //
     // Variables used for toolpaths coloring
