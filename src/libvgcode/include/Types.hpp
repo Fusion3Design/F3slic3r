@@ -189,19 +189,6 @@ enum class EColorRangeType : uint8_t
 static constexpr size_t COLOR_RANGE_TYPES_COUNT = static_cast<size_t>(EColorRangeType::COUNT);
 
 //
-// Bounding box types
-//
-enum class EBBoxType : uint8_t
-{
-    Full,
-    Extrusion,
-    ExtrusionNoCustom,
-    COUNT
-};
-
-static constexpr size_t BBOX_TYPES_COUNT = static_cast<size_t>(EBBoxType::COUNT);
-
-//
 // Predefined colors
 //
 static const Color DUMMY_COLOR{ 64, 64, 64 };

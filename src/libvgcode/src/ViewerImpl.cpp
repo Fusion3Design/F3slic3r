@@ -851,20 +851,31 @@ std::vector<ColorPrint> ViewerImpl::get_color_prints(uint8_t extruder_id) const
     return (it == m_used_extruders.end()) ? std::vector<ColorPrint>() : it->second;
 }
 
-AABox ViewerImpl::get_bounding_box(EBBoxType type) const
+AABox ViewerImpl::get_bounding_box(const std::vector<EMoveType>& types) const
 {
-    assert(type < EBBoxType::COUNT);
     Vec3 min = { FLT_MAX, FLT_MAX, FLT_MAX };
     Vec3 max = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
     for (const PathVertex& v : m_vertices) {
-        if (type != EBBoxType::Full && (v.type != EMoveType::Extrude || v.width == 0.0f || v.height == 0.0f))
-            continue;
-        else if (type == EBBoxType::ExtrusionNoCustom && v.role == EGCodeExtrusionRole::Custom)
-            continue;
+        if (std::find(types.begin(), types.end(), v.type) != types.end()) {
+            for (int j = 0; j < 3; ++j) {
+                min[j] = std::min(min[j], v.position[j]);
+                max[j] = std::max(max[j], v.position[j]);
+            }
+        }
+    }
+    return { min, max };
+}
 
-        for (int j = 0; j < 3; ++j) {
-            min[j] = std::min(min[j], v.position[j]);
-            max[j] = std::max(max[j], v.position[j]);
+AABox ViewerImpl::get_extrusion_bounding_box(const std::vector<EGCodeExtrusionRole>& roles) const
+{
+    Vec3 min = { FLT_MAX, FLT_MAX, FLT_MAX };
+    Vec3 max = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+    for (const PathVertex& v : m_vertices) {
+        if (v.is_extrusion() && std::find(roles.begin(), roles.end(), v.role) != roles.end()) {
+            for (int j = 0; j < 3; ++j) {
+              min[j] = std::min(min[j], v.position[j]);
+              max[j] = std::max(max[j], v.position[j]);
+            }
         }
     }
     return { min, max };

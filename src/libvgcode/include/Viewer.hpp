@@ -348,9 +348,21 @@ public:
     //
     std::vector<float> get_layers_times() const;
     //
-    // Return the axes aligned bounding box of the toolpaths.
+    // Return the axes aligned bounding box containing all the given types.
     //
-    AABox get_bounding_box(EBBoxType type) const;
+    AABox get_bounding_box(const std::vector<EMoveType>& types = {
+        EMoveType::Retract, EMoveType::Unretract, EMoveType::Seam, EMoveType::ToolChange,
+        EMoveType::ColorChange, EMoveType::PausePrint, EMoveType::CustomGCode, EMoveType::Travel,
+        EMoveType::Wipe, EMoveType::Extrude }) const;
+    //
+    // Return the axes aligned bounding box containing all the extrusions with the given roles.
+    //
+    AABox get_extrusion_bounding_box(const std::vector<EGCodeExtrusionRole>& roles = {
+        EGCodeExtrusionRole::Perimeter, EGCodeExtrusionRole::ExternalPerimeter, EGCodeExtrusionRole::OverhangPerimeter,
+        EGCodeExtrusionRole::InternalInfill, EGCodeExtrusionRole::SolidInfill, EGCodeExtrusionRole::TopSolidInfill,
+        EGCodeExtrusionRole::Ironing, EGCodeExtrusionRole::BridgeInfill, EGCodeExtrusionRole::GapFill,
+        EGCodeExtrusionRole::Skirt, EGCodeExtrusionRole::SupportMaterial, EGCodeExtrusionRole::SupportMaterialInterface,
+        EGCodeExtrusionRole::WipeTower, EGCodeExtrusionRole::Custom }) const;
     //
     // Return the size of the used cpu memory, in bytes
     //

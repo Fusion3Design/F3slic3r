@@ -332,9 +332,14 @@ std::vector<float> Viewer::get_layers_times() const
     return m_impl->get_layers_times();
 }
 
-AABox Viewer::get_bounding_box(EBBoxType type) const
+AABox Viewer::get_bounding_box(const std::vector<EMoveType>& types) const
 {
-    return m_impl->get_bounding_box(type);
+    return m_impl->get_bounding_box(types);
+}
+
+AABox Viewer::get_extrusion_bounding_box(const std::vector<EGCodeExtrusionRole>& roles) const
+{
+    return m_impl->get_extrusion_bounding_box(roles);
 }
 
 size_t Viewer::get_used_cpu_memory() const

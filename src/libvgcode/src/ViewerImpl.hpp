@@ -99,7 +99,16 @@ public:
     size_t get_color_prints_count(uint8_t extruder_id) const;
     std::vector<ColorPrint> get_color_prints(uint8_t extruder_id) const;
 
-    AABox get_bounding_box(EBBoxType type) const;
+    AABox get_bounding_box(const std::vector<EMoveType>& types = {
+        EMoveType::Retract, EMoveType::Unretract, EMoveType::Seam, EMoveType::ToolChange,
+        EMoveType::ColorChange, EMoveType::PausePrint, EMoveType::CustomGCode, EMoveType::Travel,
+        EMoveType::Wipe, EMoveType::Extrude }) const;
+    AABox get_extrusion_bounding_box(const std::vector<EGCodeExtrusionRole>& roles = {
+        EGCodeExtrusionRole::Perimeter, EGCodeExtrusionRole::ExternalPerimeter, EGCodeExtrusionRole::OverhangPerimeter,
+        EGCodeExtrusionRole::InternalInfill, EGCodeExtrusionRole::SolidInfill, EGCodeExtrusionRole::TopSolidInfill,
+        EGCodeExtrusionRole::Ironing, EGCodeExtrusionRole::BridgeInfill, EGCodeExtrusionRole::GapFill,
+        EGCodeExtrusionRole::Skirt, EGCodeExtrusionRole::SupportMaterial, EGCodeExtrusionRole::SupportMaterialInterface,
+        EGCodeExtrusionRole::WipeTower, EGCodeExtrusionRole::Custom }) const;
 
     bool is_option_visible(EOptionType type) const;
     void toggle_option_visibility(EOptionType type);
