@@ -4720,7 +4720,7 @@ void GCodeViewer::render_legend(float& legend_height)
 
 #if ENABLE_NEW_GCODE_VIEWER
     auto role_time_and_percent = [this, time_mode](libvgcode::EGCodeExtrusionRole role) {
-        const float time = m_viewer.get_extrusion_role_time(role);
+        const float time = m_viewer.get_extrusion_role_estimated_time(role);
         return std::make_pair(time, time / time_mode.time);
     };
 #else
@@ -4959,7 +4959,7 @@ void GCodeViewer::render_legend(float& legend_height)
 #endif // ENABLE_NEW_GCODE_VIEWER
         {
 #if ENABLE_NEW_GCODE_VIEWER
-            const float travels_time = m_viewer.get_travels_time();
+            const float travels_time = m_viewer.get_travels_estimated_time();
             max_time_percent = std::max(max_time_percent, travels_time / time_mode.time);
             const std::vector<libvgcode::EGCodeExtrusionRole>& roles = m_viewer.get_extrusion_roles();
             for (size_t i = 0; i < roles.size(); ++i) {

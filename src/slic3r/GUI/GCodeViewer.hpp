@@ -963,7 +963,7 @@ public:
         std::transform(zs.begin(), zs.end(), std::back_inserter(ret), [](float z) { return static_cast<double>(z); });
         return ret;
     }
-    std::vector<float> get_layers_times() const { return m_viewer.get_layers_times(); }
+    std::vector<float> get_layers_times() const { return m_viewer.get_layers_estimated_times(); }
 #else
     const std::vector<double>& get_layers_zs() const { return m_layers.get_zs(); }
 #endif // ENABLE_NEW_GCODE_VIEWER

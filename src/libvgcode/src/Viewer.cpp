@@ -277,6 +277,11 @@ const PathVertex& Viewer::get_vertex_at(size_t id) const
     return m_impl->get_vertex_at(id);
 }
 
+float Viewer::get_estimated_time() const
+{
+    return m_impl->get_estimated_time();
+}
+
 float Viewer::get_estimated_time_at(size_t id) const
 {
     return m_impl->get_estimated_time_at(id);
@@ -317,19 +322,19 @@ std::vector<ColorPrint> Viewer::get_color_prints(uint8_t extruder_id) const
     return m_impl->get_color_prints(extruder_id);
 }
 
-float Viewer::get_extrusion_role_time(EGCodeExtrusionRole role) const
+float Viewer::get_extrusion_role_estimated_time(EGCodeExtrusionRole role) const
 {
-    return m_impl->get_extrusion_role_time(role);
+    return m_impl->get_extrusion_role_estimated_time(role);
 }
 
-float Viewer::get_travels_time() const
+float Viewer::get_travels_estimated_time() const
 {
-    return m_impl->get_travels_time();
+    return m_impl->get_travels_estimated_time();
 }
 
-std::vector<float> Viewer::get_layers_times() const
+std::vector<float> Viewer::get_layers_estimated_times() const
 {
-    return m_impl->get_layers_times();
+    return m_impl->get_layers_estimated_times();
 }
 
 AABox Viewer::get_bounding_box(const std::vector<EMoveType>& types) const

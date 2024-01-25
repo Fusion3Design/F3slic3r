@@ -303,6 +303,10 @@ public:
     //
     const PathVertex& get_vertex_at(size_t id) const;
     //
+    // Return the total estimated time, in seconds, using the current time mode.
+    //
+    float get_estimated_time() const;
+    //
     // Return the estimated time, in seconds, at the vertex with the given index
     // using the current time mode.
     //
@@ -338,15 +342,15 @@ public:
     //
     // Return the estimated time for the given role and the current time mode.
     //
-    float get_extrusion_role_time(EGCodeExtrusionRole role) const;
+    float get_extrusion_role_estimated_time(EGCodeExtrusionRole role) const;
     //
     // Return the estimated time for the travel moves and the current time mode.
     //
-    float get_travels_time() const;
+    float get_travels_estimated_time() const;
     //
     // Return the list of layers time for the current time mode.
     //
-    std::vector<float> get_layers_times() const;
+    std::vector<float> get_layers_estimated_times() const;
     //
     // Return the axes aligned bounding box containing all the given types.
     //

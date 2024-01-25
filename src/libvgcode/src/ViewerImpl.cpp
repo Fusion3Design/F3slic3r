@@ -446,6 +446,7 @@ void ViewerImpl::reset()
     m_extrusion_roles.reset();
     m_options.clear();
     m_used_extruders.clear();
+    m_total_time = { 0.0f, 0.0f };
     m_travels_time = { 0.0f, 0.0f };
     m_vertices.clear();
     m_valid_lines_bitset.clear();
@@ -487,14 +488,13 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
 
     m_settings.spiral_vase_mode = gcode_data.spiral_vase_mode;
 
-    std::array<float, TIME_MODES_COUNT> times{ 0.0f, 0.0f };
     for (size_t i = 0; i < m_vertices.size(); ++i) {
         const PathVertex& v = m_vertices[i];
 
         m_layers.update(v, static_cast<uint32_t>(i));
 
         for (size_t j = 0; j < TIME_MODES_COUNT; ++j) {
-            times[j] += v.times[j];
+            m_total_time[j] += v.times[j];
             if (v.type == EMoveType::Travel)
                 m_travels_time[j] += v.times[j];
         }
@@ -510,7 +510,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
             if (estruder_it == m_used_extruders.end())
                 estruder_it = m_used_extruders.insert({ v.extruder_id, std::vector<ColorPrint>() }).first;
             if (estruder_it->second.empty() || estruder_it->second.back().color_id != v.color_id) {
-                const ColorPrint cp = { v.extruder_id, v.color_id, v.layer_id, times };
+                const ColorPrint cp = { v.extruder_id, v.color_id, v.layer_id, m_total_time };
                 estruder_it->second.emplace_back(cp);
             }
         }
@@ -540,6 +540,9 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     // reset segments visibility bitset
     m_valid_lines_bitset = BitSet<>(m_vertices.size());
     m_valid_lines_bitset.setAll();
+
+    if (m_settings.time_mode != ETimeMode::Normal && m_total_time[static_cast<size_t>(m_settings.time_mode)] == 0.0f)
+        m_settings.time_mode = ETimeMode::Normal;
 
     static constexpr const Vec3 ZERO = { 0.0f, 0.0f, 0.0f };
 

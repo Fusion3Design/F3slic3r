@@ -127,18 +127,19 @@ public:
     const PathVertex& get_vertex_at(size_t id) const {
         return (id < m_vertices.size()) ? m_vertices[id] : PathVertex::DUMMY_PATH_VERTEX;
     }
+    float get_estimated_time() const { return m_total_time[static_cast<size_t>(m_settings.time_mode)]; }
     float get_estimated_time_at(size_t id) const;
     Color get_vertex_color(const PathVertex& vertex) const;
 
     size_t get_extrusion_roles_count() const { return m_extrusion_roles.get_roles_count(); }
     std::vector<EGCodeExtrusionRole> get_extrusion_roles() const { return m_extrusion_roles.get_roles(); }
-    float get_extrusion_role_time(EGCodeExtrusionRole role) const { return m_extrusion_roles.get_time(role, m_settings.time_mode); }
+    float get_extrusion_role_estimated_time(EGCodeExtrusionRole role) const { return m_extrusion_roles.get_time(role, m_settings.time_mode); }
 
     size_t get_options_count() const { return m_options.size(); }
     const std::vector<EOptionType>& get_options() const { return m_options; }
 
-    float get_travels_time() const { return m_travels_time[static_cast<size_t>(m_settings.time_mode)]; }
-    std::vector<float> get_layers_times() const { return m_layers.get_times(m_settings.time_mode); }
+    float get_travels_estimated_time() const { return m_travels_time[static_cast<size_t>(m_settings.time_mode)]; }
+    std::vector<float> get_layers_estimated_times() const { return m_layers.get_times(m_settings.time_mode); }
 
     size_t get_tool_colors_count() const { return m_tool_colors.size(); }
     const Palette& get_tool_colors() const { return m_tool_colors; }
@@ -213,6 +214,10 @@ private:
     // Vertices ranges for visualization
     //
     ViewRange m_view_range;
+    //
+    // Detected total moves times
+    //
+    std::array<float, TIME_MODES_COUNT> m_total_time{ 0.0f, 0.0f };
     //
     // Detected travel moves times
     //
