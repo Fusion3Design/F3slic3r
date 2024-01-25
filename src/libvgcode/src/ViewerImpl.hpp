@@ -173,11 +173,7 @@ public:
     float get_cog_marker_scale_factor() const { return m_cog_marker_scale_factor; }
     void set_cog_marker_scale_factor(float factor) { m_cog_marker_scale_factor = std::max(factor, 0.001f); }
 
-    bool is_tool_marker_enabled() const { return m_tool_marker.is_enabled(); }
-    void enable_tool_marker(bool value) { m_tool_marker.enable(value); }
-
     const Vec3& get_tool_marker_position() const { return m_tool_marker.get_position(); }
-    void set_tool_marker_position(const Vec3& position) { m_tool_marker.set_position(position); }
 
     float get_tool_marker_offset_z() const { return m_tool_marker.get_offset_z(); }
     void set_tool_marker_offset_z(float offset_z) { m_tool_marker.set_offset_z(offset_z); }

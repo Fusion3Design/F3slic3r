@@ -3849,8 +3849,6 @@ void GCodeViewer::render_toolpaths()
     const libvgcode::Mat4x4 converted_projetion_matrix = libvgcode::convert(static_cast<Matrix4f>(camera.get_projection_matrix().matrix().cast<float>()));
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     m_viewer.set_cog_marker_scale_factor(m_cog_marker_fixed_screen_size ? 10.0f * m_cog_marker_size * camera.get_inv_zoom() : m_cog_marker_size);
-    m_viewer.enable_tool_marker(m_viewer.get_view_enabled_range()[1] != m_viewer.get_view_visible_range()[1]);
-    m_viewer.set_tool_marker_position(m_viewer.get_current_vertex().position);
     m_viewer.set_tool_marker_scale_factor(m_tool_marker_fixed_screen_size ? 10.0f * m_tool_marker_size * camera.get_inv_zoom() : m_tool_marker_size);
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     m_viewer.render(converted_view_matrix, converted_projetion_matrix);

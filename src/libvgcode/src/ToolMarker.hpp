@@ -32,9 +32,6 @@ public:
     void shutdown();
     void render();
 
-    bool is_enabled() const { return m_enabled; }
-    void enable(bool value) { m_enabled = value; }
-
     const Vec3& get_position() const { return m_position; }
     void set_position(const Vec3& position) { m_position = position; }
 
@@ -53,7 +50,6 @@ public:
     size_t size_in_bytes_gpu() const { return m_size_in_bytes_gpu; }
 
 private:
-    bool m_enabled{ false };
     Vec3 m_position{ 0.0f, 0.0f, 0.0f };
     float m_offset_z{ 0.5f };
     Color m_color{ 255, 255, 255 };

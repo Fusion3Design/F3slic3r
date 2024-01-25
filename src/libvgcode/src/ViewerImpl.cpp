@@ -1445,8 +1445,10 @@ void ViewerImpl::render_tool_marker(const Mat4x4& view_matrix, const Mat4x4& pro
     if (m_tool_marker_shader_id == 0)
         return;
 
-    if (!m_tool_marker.is_enabled())
+    if (m_view_range.get_visible()[1] == m_view_range.get_enabled()[1])
         return;
+
+    m_tool_marker.set_position(get_current_vertex().position);
 
     int curr_shader;
     glsafe(glGetIntegerv(GL_CURRENT_PROGRAM, &curr_shader));
