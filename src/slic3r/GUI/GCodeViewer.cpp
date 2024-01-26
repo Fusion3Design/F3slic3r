@@ -1113,6 +1113,8 @@ void GCodeViewer::init()
 void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const Print& print, const std::vector<std::string>& str_tool_colors,
     const std::vector<std::string>& str_color_print_colors)
 {
+    m_loaded_as_preview = false;
+
     const bool current_top_layer_only = m_viewer.is_top_layer_only_view_range();
     const bool required_top_layer_only = get_app_config()->get_bool("seq_top_layer_only");
     if (current_top_layer_only != required_top_layer_only)
@@ -1163,7 +1165,7 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
             curr.role != libvgcode::EGCodeExtrusionRole::Custom) {
             const Vec3d curr_pos = libvgcode::convert(curr.position).cast<double>();
             const Vec3d prev_pos = libvgcode::convert(m_viewer.get_vertex_at(i - 1).position).cast<double>();
-            m_cog.add_segment(curr_pos, prev_pos, curr.volumetric_rate / curr.feedrate * (curr_pos - prev_pos).norm());
+            m_cog.add_segment(curr_pos, prev_pos, gcode_result.filament_densities[curr.extruder_id] * curr.volumetric_rate / curr.feedrate * (curr_pos - prev_pos).norm());
         }
     }
 #endif // !VGCODE_ENABLE_COG_AND_TOOL_MARKERS
@@ -1297,6 +1299,8 @@ void GCodeViewer::load(const GCodeProcessorResult& gcode_result, const Print & p
 #if ENABLE_NEW_GCODE_VIEWER
 void GCodeViewer::load_as_preview(libvgcode::GCodeInputData&& data)
 {
+    m_loaded_as_preview = true;
+
     m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::Skirt,                    { 127, 255, 127 });
     m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::ExternalPerimeter,        { 255, 255, 0 });
     m_viewer.set_extrusion_role_color(libvgcode::EGCodeExtrusionRole::SupportMaterial,          { 127, 255, 127 });

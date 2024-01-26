@@ -903,6 +903,7 @@ private:
 
 #if ENABLE_NEW_GCODE_VIEWER
     libvgcode::Viewer m_viewer;
+    bool m_loaded_as_preview{ false };
 #endif // ENABLE_NEW_GCODE_VIEWER
 
 public:
@@ -928,9 +929,15 @@ public:
     void render();
 #if ENABLE_NEW_GCODE_VIEWER
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-    void render_cog() { m_cog.render(m_cog_marker_fixed_screen_size); }
+    void render_cog() {
+        if (!m_loaded_as_preview && m_viewer.get_layers_count() > 0)
+            m_cog.render(m_cog_marker_fixed_screen_size);
+    }
 #else
-    void render_cog() { m_cog.render(); }
+    void render_cog() {
+        if (!m_loaded_as_preview && m_viewer.get_layers_count() > 0)
+            m_cog.render();
+    }
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     bool has_data() const { return !m_viewer.get_extrusion_roles().empty(); }
 #else
