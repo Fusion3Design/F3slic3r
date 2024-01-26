@@ -3866,6 +3866,7 @@ void GCodeViewer::render_toolpaths()
 
         if (ImGui::BeginTable("Data", 2)) {
 
+/*
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "# vertices");
@@ -3873,6 +3874,7 @@ void GCodeViewer::render_toolpaths()
             imgui.text(std::to_string(m_viewer.get_vertices_count()));
 
             ImGui::Separator();
+*/
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -3886,6 +3888,7 @@ void GCodeViewer::render_toolpaths()
             ImGui::TableSetColumnIndex(1);
             imgui.text(format_memsize(m_viewer.get_used_gpu_memory()));
 
+/*
             ImGui::Separator();
 
             ImGui::TableNextRow();
@@ -4018,6 +4021,8 @@ void GCodeViewer::render_toolpaths()
             ImGui::SetNextItemWidth(200.0f);
             if (imgui.slider_float("##WipesRadius", &wipes_radius, 0.05f, 0.5f))
                 m_viewer.set_wipes_radius(wipes_radius);
+
+*/
 
             ImGui::EndTable();
         }
