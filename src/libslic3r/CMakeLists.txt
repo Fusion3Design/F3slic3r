@@ -88,7 +88,6 @@ set(SLIC3R_SOURCES
     ExtrusionSimulator.hpp
     FileParserError.hpp
     Fill/Fill.cpp
-    Fill/Fill.hpp
     Fill/Fill3DHoneycomb.cpp
     Fill/Fill3DHoneycomb.hpp
     Fill/FillAdaptive.cpp
@@ -194,8 +193,6 @@ set(SLIC3R_SOURCES
     GCode/AvoidCrossingPerimeters.hpp
     GCode/Travels.cpp
     GCode/Travels.hpp
-    GCode/LayerChanges.cpp
-    GCode/LayerChanges.hpp
     GCode.cpp
     GCode.hpp
     GCodeReader.cpp

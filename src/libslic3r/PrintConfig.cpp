@@ -4889,9 +4889,15 @@ CLIActionsConfigDef::CLIActionsConfigDef()
     def->cli = "opengl-version";
     def->set_default_value(new ConfigOptionString());
 
+    def = this->add("opengl-compatibility", coBool);
+    def->label = L("OpenGL compatibility profile");
+    def->tooltip = L("Enable OpenGL compatibility profile");
+    def->cli = "opengl-compatibility";
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("opengl-debug", coBool);
     def->label = L("OpenGL debug output");
-    def->tooltip = L("Activate OpenGL debug output on graphic cards which support it");
+    def->tooltip = L("Activate OpenGL debug output on graphic cards which support it (OpenGL 4.3 or higher)");
     def->cli = "opengl-debug";
     def->set_default_value(new ConfigOptionBool(false));
 #endif // ENABLE_GL_CORE_PROFILE
@@ -5065,6 +5071,11 @@ CLIMiscConfigDef::CLIMiscConfigDef()
     def = this->add("datadir", coString);
     def->label = L("Data directory");
     def->tooltip = L("Load and store settings at the given directory. This is useful for maintaining different profiles or including configurations from a network storage.");
+
+    def = this->add("threads", coInt);
+    def->label = L("Maximum number of threads");
+    def->tooltip = L("Sets the maximum number of threads the slicing process will use. If not defined, slic3r will decide.");
+    def->min = 1;
 
     def = this->add("loglevel", coInt);
     def->label = L("Logging level");
