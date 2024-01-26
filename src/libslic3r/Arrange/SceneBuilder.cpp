@@ -182,6 +182,7 @@ void SceneBuilder::build_scene(Scene &sc) &&
         }
     }
 
+    // Call the parent class implementation of build_scene to finish constructing of the scene
     std::move(*this).SceneBuilderBase<SceneBuilder>::build_scene(sc);
 }
 
