@@ -34,7 +34,7 @@ if (MSVC)
     )    
 
     set(_srcdir ${WEBVIEW2_PACKAGE_DIR}/build/native)
-    set(_dstdir ${DESTDIR}/usr/local)
+    set(_dstdir ${${PROJECT_NAME}_DEP_INSTALL_PREFIX})
 
     set(_output  ${_dstdir}/include/WebView2.h
                  ${_dstdir}/bin/WebView2Loader.dll)
