@@ -91,7 +91,6 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
 #endif
     if (!correct_url.empty()) 
         correct_url = wxURI(correct_url).BuildURI();
-    BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << correct_url.ToUTF8();
 
     auto webView = wxWebView::New();
     if (webView) {
@@ -113,7 +112,7 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
 #ifndef __WIN32__
         Slic3r::GUI::wxGetApp().CallAfter([webView] {
 #endif
-        if (!webView->AddScriptMessageHandler("wx")) {
+        if (!webView->AddScriptMessageHandler("_prusaSlicer")) {
             // TODO: dialog to user
             //wxLogError("Could not add script message handler");
             BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << "Could not add script message handler";

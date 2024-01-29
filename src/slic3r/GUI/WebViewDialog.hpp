@@ -103,6 +103,11 @@ public:
     ConnectWebViewPanel(wxWindow* parent);
     void on_show(wxShowEvent& evt) override;
     void on_script_message(wxWebViewEvent& evt) override;
+
+    void connect_set_access_token();
+    void connect_set_language();
+private:
+    std::map<std::string, std::function<void(void)>> m_actions;
 };
 
 

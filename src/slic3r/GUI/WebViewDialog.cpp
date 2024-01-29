@@ -16,9 +16,12 @@
 #include <wx/textdlg.h>
 
 #include <boost/log/trivial.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include "slic3r/GUI/WebView.hpp"
 
+namespace pt = boost::property_tree;
 
 namespace Slic3r {
 namespace GUI {
@@ -29,6 +32,7 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
         , m_default_url (default_url)
  {
     //wxString url = "https://dev.connect.prusa3d.com/prusa-slicer/printers";
+    // https://dev.connect.prusa3d.com/connect-slicer-app/printer-list
     //std::string strlang = wxGetApp().app_config->get("language");
     //if (strlang != "")
     //    url = wxString::Format("file://%s/web/homepage/index.html?lang=%s", from_u8(resources_dir()), strlang);
@@ -135,7 +139,6 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
 
 WebViewPanel::~WebViewPanel()
 {
-    BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << " Start";
     SetEvtHandlerEnabled(false);
 #ifdef DEBUG_URL_PANEL
     delete m_tools_menu;
@@ -146,7 +149,6 @@ WebViewPanel::~WebViewPanel()
         m_LoginUpdateTimer = NULL;
     }
 #endif
-    BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << " End";
 }
 
 
@@ -411,25 +413,82 @@ SourceViewDialog::SourceViewDialog(wxWindow* parent, wxString source) :
 }
 
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
-    : WebViewPanel(parent, L"https://dev.connect.prusa3d.com/prusa-slicer/printers")
+    : WebViewPanel(parent, L"https://dev.connect.prusa3d.com/connect-slicer-app/printer-list")
 {
+    m_actions["requestAccessToken"] = std::bind(&ConnectWebViewPanel::connect_set_access_token, this);
+    m_actions["requestLanguage"] = std::bind(&ConnectWebViewPanel::connect_set_language, this);
 }
 void ConnectWebViewPanel::on_show(wxShowEvent& evt)
 {
     // run script with access token to login
+    /*
     if (evt.IsShown()) {
         std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
-        wxString script = GUI::format_wxstr("window.setAccessToken(\'%1%\')", token);
+        wxString script = GUI::format_wxstr("window._prusaConnect.setAccessToken(\'%1%\')", token);
         // TODO: should this be happening every OnShow?
         run_script(script);
     }
+    */
 }
 
 void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
 {
-    wxGetApp().handle_web_request(evt.GetString().ToUTF8().data());
+    BOOST_LOG_TRIVIAL(info) << "recieved message from _prusaConnect" << evt.GetString();
+    // read msg and choose action
+    /*
+    {"type":"request","detail":{"action":"requestAccessToken"}}
+    */
+    std::string action_string;
+    try {
+        std::stringstream ss(into_u8(evt.GetString()));
+        pt::ptree ptree;
+        pt::read_json(ss, ptree);
+        std::string type_string;
+        if (const auto type = ptree.get_optional<std::string>("type"); type) {
+            type_string = *type;
+        }
+        assert(!type_string.empty());
+        if (type_string == "request") {
+            for (const auto& section : ptree) {
+                if (section.first == "detail") {
+                    if (const auto action = section.second.get_optional<std::string>("action"); action) {
+                        action_string = *action;
+                    }
+                }
+            }
+        }
+    }
+    catch (const std::exception& e) {
+        BOOST_LOG_TRIVIAL(error) << "Could not parse _prusaConnect message. " << e.what();
+        return;
+    }
+
+    if (action_string.empty()) {
+        BOOST_LOG_TRIVIAL(error) << "Recieved invalid message from _prusaConnect (missing action). Message: " << evt.GetString();
+        return;
+    }
+    assert(m_actions.find(action_string) != m_actions.end()); // this assert means there is a action that has no handling.
+    if (m_actions.find(action_string) != m_actions.end()) {
+        m_actions[action_string]();
+    }
+
+    //wxGetApp().handle_web_request(evt.GetString().ToUTF8().data());
 }
 
+
+void ConnectWebViewPanel::connect_set_access_token()
+{
+    std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
+    wxString script = GUI::format_wxstr("window._prusaConnect.setAccessToken(\'%1%\')", token);
+    run_script(script);
+}
+void ConnectWebViewPanel::connect_set_language()
+{
+    // TODO: 
+    std::string lang = "en";
+    wxString script = GUI::format_wxstr("window._prusaConnect.setAccessToken(\'en\')", lang);
+    run_script(script);
+}
 
 WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url)
     : wxDialog(parent, wxID_ANY, "Webview Dialog", wxDefaultPosition, wxSize(1366, 768)/* wxSize(100 * wxGetApp().em_unit(), 100 * wxGetApp().em_unit())*/)
