@@ -1,4 +1,4 @@
-#include "Auth.hpp"
+#include "UserAccountCommunication.hpp"
 #include "GUI_App.hpp"
 #include "format.hpp"
 #include "../Utils/Http.hpp"
@@ -85,7 +85,7 @@ bool save_secret(const std::string& opt, const std::string& usr, const std::stri
         //show_error(nullptr, msg);
         return false;
     }
-    const wxString service = GUI::format_wxstr(L"%1%/PrusaAuth/%2%", SLIC3R_APP_NAME, opt);
+    const wxString service = GUI::format_wxstr(L"%1%/PrusaAccount/%2%", SLIC3R_APP_NAME, opt);
     const wxString username = boost::nowide::widen(usr);
     const wxSecretValue password(boost::nowide::widen(psswd));
     if (!store.Save(service, username, password)) {
@@ -111,7 +111,7 @@ bool load_secret(const std::string& opt, std::string& usr, std::string& psswd)
         //show_error(nullptr, msg);
         return false;
     }
-    const wxString service = GUI::format_wxstr(L"%1%/PrusaAuth/%2%", SLIC3R_APP_NAME, opt);
+    const wxString service = GUI::format_wxstr(L"%1%/PrusaAccount/%2%", SLIC3R_APP_NAME, opt);
     wxString username;
     wxSecretValue password;
     if (!store.Load(service, username, password)) {

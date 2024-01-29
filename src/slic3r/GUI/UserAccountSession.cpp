@@ -1,4 +1,4 @@
-#include "AuthSession.hpp"
+#include "UserAccountSession.hpp"
 #include "GUI_App.hpp"
 #include "format.hpp"
 #include "../Utils/Http.hpp"

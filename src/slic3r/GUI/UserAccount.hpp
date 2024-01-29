@@ -1,7 +1,7 @@
 #ifndef slic3r_UserAccount_hpp_
 #define slic3r_UserAccount_hpp_
 
-#include "Auth.hpp"
+#include "UserAccountCommunication.hpp"
 #include "libslic3r/AppConfig.hpp"
 
 #include <string>

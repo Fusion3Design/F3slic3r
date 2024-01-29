@@ -19,10 +19,10 @@ set(SLIC3R_GUI_SOURCES
     GUI/AboutDialog.hpp
     GUI/ArrangeSettingsDialogImgui.hpp
     GUI/ArrangeSettingsDialogImgui.cpp
-    GUI/Auth.cpp
-    GUI/Auth.hpp
-    GUI/AuthSession.cpp
-    GUI/AuthSession.hpp
+    GUI/UserAccountCommunication.cpp
+    GUI/UserAccountCommunication.hpp
+    GUI/UserAccountSession.cpp
+    GUI/UserAccountSession.hpp
     GUI/UserAccount.cpp
     GUI/UserAccount.hpp
     GUI/WebViewDialog.cpp

@@ -1,5 +1,5 @@
-#ifndef slic3r_AuthSession_hpp_
-#define slic3r_AuthSession_hpp_
+#ifndef slic3r_UserAccountSession_hpp_
+#define slic3r_UserAccountSession_hpp_
 
 #include "Event.hpp"
 #include "libslic3r/AppConfig.hpp"
