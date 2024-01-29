@@ -951,7 +951,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         }
     });
     this->q->Bind(EVT_UA_AVATAR_SUCCESS, [this](UserAccountSuccessEvent& evt) {
-       boost::filesystem::path png_path = boost::filesystem::path(Slic3r::data_dir()) / "cache" / "avatar.png";
+       const std::string filename = "prusaslicer-avatar-" + wxGetApp().get_instance_hash_string() + ".png";
+       const boost::filesystem::path png_path = boost::filesystem::path(wxStandardPaths::Get().GetTempDir().utf8_str().data()) / filename;
        FILE* file; 
        file = fopen(png_path.string().c_str(), "wb");
        fwrite(evt.data.c_str(), 1, evt.data.size(), file);

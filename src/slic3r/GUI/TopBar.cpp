@@ -202,7 +202,8 @@ void TopBarItemsCtrl::UpdateAccountMenu(bool avatar/* = false*/)
     m_account_btn->SetLabel(user_name);
     if (avatar) {
         if (user_account->is_logged()) {
-            boost::filesystem::path path = boost::filesystem::path(boost::filesystem::path(Slic3r::data_dir()) / "cache" / "avatar.png");
+            const std::string filename = "prusaslicer-avatar-" + wxGetApp().get_instance_hash_string() + ".png";
+             boost::filesystem::path path = boost::filesystem::path(wxStandardPaths::Get().GetTempDir().utf8_str().data()) / filename;
             ScalableBitmap new_logo(this, path, m_account_btn->GetBitmapSize());
             if (new_logo.IsOk())
                 m_account_btn->SetBitmap_(new_logo);
