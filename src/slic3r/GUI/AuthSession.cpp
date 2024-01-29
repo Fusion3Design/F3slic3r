@@ -19,15 +19,13 @@ namespace Slic3r {
 namespace GUI {
 
 wxDEFINE_EVENT(EVT_OPEN_PRUSAAUTH, OpenPrusaAuthEvent);
-wxDEFINE_EVENT(EVT_LOGGEDOUT_PRUSAAUTH, PrusaAuthSuccessEvent);
-wxDEFINE_EVENT(EVT_PA_ID_USER_SUCCESS, PrusaAuthSuccessEvent);
-wxDEFINE_EVENT(EVT_PA_ID_USER_FAIL, PrusaAuthFailEvent);
-wxDEFINE_EVENT(EVT_PRUSAAUTH_SUCCESS, PrusaAuthSuccessEvent);
-wxDEFINE_EVENT(EVT_PRUSACONNECT_PRINTERS_SUCCESS, PrusaAuthSuccessEvent);
-wxDEFINE_EVENT(EVT_PA_AVATAR_SUCCESS, PrusaAuthSuccessEvent);
-wxDEFINE_EVENT(EVT_PRUSAAUTH_FAIL, PrusaAuthFailEvent);
-wxDEFINE_EVENT(EVT_PA_AVATAR_FAIL, PrusaAuthFailEvent);
-wxDEFINE_EVENT(EVT_PRUSAAUTH_RESET, PrusaAuthFailEvent);
+wxDEFINE_EVENT(EVT_UA_LOGGEDOUT, UserAccountSuccessEvent);
+wxDEFINE_EVENT(EVT_UA_ID_USER_SUCCESS, UserAccountSuccessEvent);
+wxDEFINE_EVENT(EVT_UA_SUCCESS, UserAccountSuccessEvent);
+wxDEFINE_EVENT(EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, UserAccountSuccessEvent);
+wxDEFINE_EVENT(EVT_UA_AVATAR_SUCCESS, UserAccountSuccessEvent);
+wxDEFINE_EVENT(EVT_UA_FAIL, UserAccountFailEvent);
+wxDEFINE_EVENT(EVT_UA_RESET, UserAccountFailEvent);
 
 
 void UserActionPost::perform(/*UNUSED*/ wxEvtHandler* evt_handler, /*UNUSED*/ const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
@@ -59,26 +57,26 @@ void UserActionGetWithEvent::perform(wxEvtHandler* evt_handler, const std::strin
             fail_callback(body);
         std::string message = GUI::format("%1% action failed (%2%): %3%", action_name, std::to_string(status), body);
         if (fail_evt_type != wxEVT_NULL)
-            wxQueueEvent(evt_handler, new PrusaAuthFailEvent(fail_evt_type, std::move(message)));
+            wxQueueEvent(evt_handler, new UserAccountFailEvent(fail_evt_type, std::move(message)));
     });
     http.on_complete([evt_handler, success_callback, succ_evt_type = m_succ_evt_type](std::string body, unsigned status) {
         if (success_callback)
             success_callback(body);
         if (succ_evt_type != wxEVT_NULL)
-            wxQueueEvent(evt_handler, new PrusaAuthSuccessEvent(succ_evt_type, body));
+            wxQueueEvent(evt_handler, new UserAccountSuccessEvent(succ_evt_type, body));
     });
 
     http.perform_sync();
 }
 
-void AuthSession::process_action_queue()
+void UserAccountSession::process_action_queue()
 {
     if (!m_proccessing_enabled)
         return;
     if (m_priority_action_queue.empty() && m_action_queue.empty()) {
         // update printers on every periodic wakeup call
         if (m_polling_enabled)
-            enqueue_action(UserActionID::AUTH_ACTION_CONNECT_PRINTERS, nullptr, nullptr, {});
+            enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTERS, nullptr, nullptr, {});
         else 
             return;
     }
@@ -98,14 +96,14 @@ void AuthSession::process_action_queue()
     }
 }
 
-void AuthSession::enqueue_action(UserActionID id, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
+void UserAccountSession::enqueue_action(UserAccountActionID id, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
 {
     m_proccessing_enabled = true;
     m_action_queue.push({ id, success_callback, fail_callback, input });
 }
 
 
-void AuthSession::init_with_code(const std::string& code, const std::string& code_verifier)
+void UserAccountSession::init_with_code(const std::string& code, const std::string& code_verifier)
 {
     // Data we have       
     const std::string REDIRECT_URI = "prusaslicer://login";
@@ -117,13 +115,13 @@ void AuthSession::init_with_code(const std::string& code, const std::string& cod
 
     m_proccessing_enabled = true;
     // fail fn might be cancel_queue here
-    m_priority_action_queue.push({ UserActionID::AUTH_ACTION_CODE_FOR_TOKEN
-        , std::bind(&AuthSession::token_success_callback, this, std::placeholders::_1)
-        , std::bind(&AuthSession::code_exchange_fail_callback, this, std::placeholders::_1)
+    m_priority_action_queue.push({ UserAccountActionID::USER_ACCOUNT_ACTION_CODE_FOR_TOKEN
+        , std::bind(&UserAccountSession::token_success_callback, this, std::placeholders::_1)
+        , std::bind(&UserAccountSession::code_exchange_fail_callback, this, std::placeholders::_1)
         , post_fields });
 }
 
-void AuthSession::token_success_callback(const std::string& body)
+void UserAccountSession::token_success_callback(const std::string& body)
 {
     // Data we need
     std::string access_token, refresh_token, shared_session_key;
@@ -145,7 +143,7 @@ void AuthSession::token_success_callback(const std::string& body)
     }
     catch (const std::exception&) {
         std::string msg = "Could not parse server response after code exchange.";
-        wxQueueEvent(p_evt_handler, new PrusaAuthFailEvent(EVT_PRUSAAUTH_RESET, std::move(msg)));
+        wxQueueEvent(p_evt_handler, new UserAccountFailEvent(EVT_UA_RESET, std::move(msg)));
         return;
     }
 
@@ -155,7 +153,7 @@ void AuthSession::token_success_callback(const std::string& body)
         m_access_token = std::string();
         m_refresh_token = std::string();
         m_shared_session_key = std::string();
-        wxQueueEvent(p_evt_handler, new PrusaAuthFailEvent(EVT_PRUSAAUTH_RESET, std::move(msg)));
+        wxQueueEvent(p_evt_handler, new UserAccountFailEvent(EVT_UA_RESET, std::move(msg)));
         return;
     }
 
@@ -166,49 +164,49 @@ void AuthSession::token_success_callback(const std::string& body)
     m_access_token = access_token;
     m_refresh_token = refresh_token;
     m_shared_session_key = shared_session_key;
-    enqueue_action(UserActionID::AUTH_ACTION_USER_ID, nullptr, nullptr, {});
+    enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_USER_ID, nullptr, nullptr, {});
 }
 
-void AuthSession::code_exchange_fail_callback(const std::string& body)
+void UserAccountSession::code_exchange_fail_callback(const std::string& body)
 {
     clear();
     cancel_queue();
-    // Unlike refresh_fail_callback, no event was triggered so far, do it. (AUTH_ACTION_CODE_FOR_TOKEN does not send events)
-    wxQueueEvent(p_evt_handler, new PrusaAuthFailEvent(EVT_PRUSAAUTH_RESET, std::move(body)));
+    // Unlike refresh_fail_callback, no event was triggered so far, do it. (USER_ACCOUNT_ACTION_CODE_FOR_TOKEN does not send events)
+    wxQueueEvent(p_evt_handler, new UserAccountFailEvent(EVT_UA_RESET, std::move(body)));
 }
 
-void AuthSession::enqueue_test_with_refresh()
+void UserAccountSession::enqueue_test_with_refresh()
 {
     // on test fail - try refresh
     m_proccessing_enabled = true;
-    m_priority_action_queue.push({ UserActionID::AUTH_ACTION_TEST_ACCESS_TOKEN, nullptr, std::bind(&AuthSession::enqueue_refresh, this, std::placeholders::_1), {} });
+    m_priority_action_queue.push({ UserAccountActionID::USER_ACCOUNT_ACTION_TEST_ACCESS_TOKEN, nullptr, std::bind(&UserAccountSession::enqueue_refresh, this, std::placeholders::_1), {} });
 }
 
-void AuthSession::enqueue_refresh(const std::string& body)
+void UserAccountSession::enqueue_refresh(const std::string& body)
 {
     assert(!m_refresh_token.empty());
     std::string post_fields = "grant_type=refresh_token" 
         "&client_id=" + client_id() +
         "&refresh_token=" + m_refresh_token;
 
-    m_priority_action_queue.push({ UserActionID::AUTH_ACTION_REFRESH_TOKEN
-        , std::bind(&AuthSession::token_success_callback, this, std::placeholders::_1)
-        , std::bind(&AuthSession::refresh_fail_callback, this, std::placeholders::_1)
+    m_priority_action_queue.push({ UserAccountActionID::USER_ACCOUNT_ACTION_REFRESH_TOKEN
+        , std::bind(&UserAccountSession::token_success_callback, this, std::placeholders::_1)
+        , std::bind(&UserAccountSession::refresh_fail_callback, this, std::placeholders::_1)
         , post_fields });
 }
 
-void AuthSession::refresh_fail_callback(const std::string& body)
+void UserAccountSession::refresh_fail_callback(const std::string& body)
 {
     clear();
     cancel_queue();
     // No need to notify UI thread here
     // backtrace: load tokens -> TEST_TOKEN fail (access token bad) -> REFRESH_TOKEN fail (refresh token bad)
-    // AUTH_ACTION_TEST_ACCESS_TOKEN triggers EVT_PRUSAAUTH_FAIL, we need also RESET
-    wxQueueEvent(p_evt_handler, new PrusaAuthFailEvent(EVT_PRUSAAUTH_RESET, std::move(body)));
+    // USER_ACCOUNT_ACTION_TEST_ACCESS_TOKEN triggers EVT_UA_FAIL, we need also RESET
+    wxQueueEvent(p_evt_handler, new UserAccountFailEvent(EVT_UA_RESET, std::move(body)));
 
 }
 
-void AuthSession::cancel_queue()
+void UserAccountSession::cancel_queue()
 {
     while (!m_priority_action_queue.empty()) {
         m_priority_action_queue.pop();

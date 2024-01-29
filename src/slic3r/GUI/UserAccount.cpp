@@ -13,7 +13,7 @@ namespace Slic3r {
 namespace GUI {
 
 UserAccount::UserAccount(wxEvtHandler* evt_handler, AppConfig* app_config)
-    : m_auth_communication(std::make_unique<PrusaAuthCommunication>(evt_handler, app_config))
+    : m_communication(std::make_unique<UserAccountCommunication>(evt_handler, app_config))
 {}
 
 UserAccount::~UserAccount()
@@ -22,7 +22,7 @@ UserAccount::~UserAccount()
 void UserAccount::set_username(const std::string& username)
 {
     m_username = username;
-    m_auth_communication->set_username(username);
+    m_communication->set_username(username);
 }
 
 void UserAccount::clear()
@@ -30,63 +30,63 @@ void UserAccount::clear()
     m_username = {};
     m_user_data.clear();
     m_printer_map.clear();
-    m_auth_communication->do_clear();
+    m_communication->do_clear();
 }
 
 void UserAccount::set_remember_session(bool remember)
 {
-    m_auth_communication->set_remember_session(remember);
+    m_communication->set_remember_session(remember);
 }
 void UserAccount::toggle_remember_session()
 {
-    m_auth_communication->set_remember_session(!m_auth_communication->get_remember_session());
+    m_communication->set_remember_session(!m_communication->get_remember_session());
 }
 bool UserAccount::get_remember_session()
 {
-    return m_auth_communication->get_remember_session();
+    return m_communication->get_remember_session();
 }
 
 bool UserAccount::is_logged()
 {
-    return m_auth_communication->is_logged();
+    return m_communication->is_logged();
 }
 void UserAccount::do_login()
 {
-    m_auth_communication->do_login();
+    m_communication->do_login();
 }
 void UserAccount::do_logout()
 {
-    m_auth_communication->do_logout();
+    m_communication->do_logout();
 }
 
 std::string UserAccount::get_access_token()
 {
-    return m_auth_communication->get_access_token();
+    return m_communication->get_access_token();
 }
 
 #if 0
 void UserAccount::enqueue_user_id_action()
 {
-    m_auth_communication->enqueue_user_id_action();
+    m_communication->enqueue_user_id_action();
 }
 void UserAccount::enqueue_connect_dummy_action()
 {
-    m_auth_communication->enqueue_connect_dummy_action();
+    m_communication->enqueue_connect_dummy_action();
 }
 #endif
 
 void UserAccount::enqueue_connect_printers_action()
 {
-    m_auth_communication->enqueue_connect_printers_action();
+    m_communication->enqueue_connect_printers_action();
 }
 void UserAccount::enqueue_avatar_action()
 {
-    m_auth_communication->enqueue_avatar_action(m_user_data["avatar"]);
+    m_communication->enqueue_avatar_action(m_user_data["avatar"]);
 }
 
 bool UserAccount::on_login_code_recieved(const std::string& url_message)
 {
-    m_auth_communication->on_login_code_recieved(url_message);
+    m_communication->on_login_code_recieved(url_message);
     return true;
 }
 
@@ -134,7 +134,7 @@ void UserAccount::on_communication_fail()
     m_fail_counter++;
     if (m_fail_counter > 5) // there is no deeper reason why 5
     {
-        m_auth_communication->enqueue_test_connection();
+        m_communication->enqueue_test_connection();
         m_fail_counter = 0;
     }
 }

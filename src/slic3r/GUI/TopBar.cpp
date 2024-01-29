@@ -154,28 +154,30 @@ void TopBarItemsCtrl::ApplyWorkspacesMenu()
     }
 }
 
-void TopBarItemsCtrl::CreateAuthMenu()
+void TopBarItemsCtrl::CreateAccountMenu()
 {
-    m_user_menu_item = append_menu_item(&m_auth_menu, wxID_ANY, "", "",
+    m_user_menu_item = append_menu_item(&m_account_menu, wxID_ANY, "", "",
         [this](wxCommandEvent& e) { 
-            m_auth_btn->set_selected(true);
-            wxGetApp().plater()->PopupMenu(&m_auth_menu, m_auth_btn->GetPosition());
+            m_account_btn->set_selected(true);
+            wxGetApp().plater()->PopupMenu(&m_account_menu, m_account_btn->GetPosition());
         }, get_bmp_bundle("user", 16));
 
-    m_auth_menu.AppendSeparator();
-    /*
-    m_connect_dummy_menu_item = append_menu_item(&m_auth_menu, wxID_ANY, _L("PrusaConnect Printers"), "",
+    m_account_menu.AppendSeparator();
+
+#if 0
+    m_connect_dummy_menu_item = append_menu_item(&m_account_menu, wxID_ANY, _L("PrusaConnect Printers"), "",
         [](wxCommandEvent&) { wxGetApp().plater()->get_user_account()->enqueue_connect_printers_action(); }, 
         "", nullptr, []() { return wxGetApp().plater()->get_user_account()->is_logged(); }, this->GetParent());
-    */
-    wxMenuItem* remember_me_menu_item = append_menu_check_item(&m_auth_menu, wxID_ANY, _L("Remember me"), ""
+#endif // 0
+
+    wxMenuItem* remember_me_menu_item = append_menu_check_item(&m_account_menu, wxID_ANY, _L("Remember me"), ""
         , [](wxCommandEvent&) {  wxGetApp().plater()->get_user_account()->toggle_remember_session(); }
-        , &m_auth_menu
+        , &m_account_menu
         , []() { return wxGetApp().plater()->get_user_account() ? wxGetApp().plater()->get_user_account()->is_logged()            : false; }
         , []() { return wxGetApp().plater()->get_user_account() ? wxGetApp().plater()->get_user_account()->get_remember_session() : false; }
         , this->GetParent());
 
-    m_login_menu_item = append_menu_item(&m_auth_menu, wxID_ANY, "", "",
+    m_login_menu_item = append_menu_item(&m_account_menu, wxID_ANY, "", "",
         [](wxCommandEvent&) {
             auto user_account = wxGetApp().plater()->get_user_account();
             if (user_account->is_logged())
@@ -185,7 +187,7 @@ void TopBarItemsCtrl::CreateAuthMenu()
         }, get_bmp_bundle("login", 16));
 }
 
-void TopBarItemsCtrl::UpdateAuthMenu(bool avatar/* = false*/)
+void TopBarItemsCtrl::UpdateAccountMenu(bool avatar/* = false*/)
 {
     auto user_account = wxGetApp().plater()->get_user_account();
     if (m_login_menu_item) {
@@ -197,21 +199,21 @@ void TopBarItemsCtrl::UpdateAuthMenu(bool avatar/* = false*/)
     if (m_user_menu_item)
         m_user_menu_item->SetItemLabel(user_name);
    
-    m_auth_btn->SetLabel(user_name);
+    m_account_btn->SetLabel(user_name);
     if (avatar) {
         if (user_account->is_logged()) {
             boost::filesystem::path path = boost::filesystem::path(boost::filesystem::path(Slic3r::data_dir()) / "cache" / "avatar.png");
-            ScalableBitmap new_logo(this, path, m_auth_btn->GetBitmapSize());
+            ScalableBitmap new_logo(this, path, m_account_btn->GetBitmapSize());
             if (new_logo.IsOk())
-                m_auth_btn->SetBitmap_(new_logo);
+                m_account_btn->SetBitmap_(new_logo);
             else
-                m_auth_btn->SetBitmap_("user");
+                m_account_btn->SetBitmap_("user");
         }
         else {
-            m_auth_btn->SetBitmap_("user");
+            m_account_btn->SetBitmap_("user");
         }
     }
-    m_auth_btn->Refresh();
+    m_account_btn->Refresh();
 }
 
 void TopBarItemsCtrl::CreateSearch()
@@ -286,20 +288,20 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     });
     m_workspaces_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_workspace_btn->set_selected(false); });
 
-    // create Auth menu
-    CreateAuthMenu();
+    // create Account menu
+    CreateAccountMenu();
 
-//    m_auth_btn = new ButtonWithPopup(this, "user", 35);
-    m_auth_btn = new ButtonWithPopup(this, _L("Anonymus"), "user");
-    right_sizer->Add(m_auth_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT | wxLEFT, m_btn_margin);
+//    m_account_btn = new ButtonWithPopup(this, "user", 35);
+    m_account_btn = new ButtonWithPopup(this, _L("Anonymus"), "user");
+    right_sizer->Add(m_account_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT | wxLEFT, m_btn_margin);
     
-    m_auth_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
-        UpdateAuthMenu();
-        m_auth_btn->set_selected(true);
-        wxPoint pos = m_auth_btn->GetPosition();
-        wxGetApp().plater()->PopupMenu(&m_auth_menu, pos);
+    m_account_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
+        UpdateAccountMenu();
+        m_account_btn->set_selected(true);
+        wxPoint pos = m_account_btn->GetPosition();
+        wxGetApp().plater()->PopupMenu(&m_account_menu, pos);
     });    
-    m_auth_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_auth_btn->set_selected(false); });
+    m_account_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_account_btn->set_selected(false); });
 
     m_sizer->Add(right_sizer, 0, wxALIGN_CENTER_VERTICAL);
 
@@ -366,7 +368,7 @@ void TopBarItemsCtrl::OnColorsChanged()
         m_menu_btn->sys_color_changed();
 
     m_workspace_btn->sys_color_changed();
-    m_auth_btn->sys_color_changed();
+    m_account_btn->sys_color_changed();
     m_search->SysColorsChanged();
 
     UpdateSelection();

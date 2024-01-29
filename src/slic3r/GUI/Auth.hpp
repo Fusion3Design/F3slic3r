@@ -26,10 +26,10 @@ private:
     std::string sha256(const std::string& input);
 };
 
-class PrusaAuthCommunication {
+class UserAccountCommunication {
 public:
-    PrusaAuthCommunication(wxEvtHandler* evt_handler, AppConfig* app_config);
-    ~PrusaAuthCommunication();
+    UserAccountCommunication(wxEvtHandler* evt_handler, AppConfig* app_config);
+    ~UserAccountCommunication();
 
     // UI Session thread Interface 
     //
@@ -63,7 +63,7 @@ public:
     void set_polling_enabled(bool enabled);
 
 private:
-    std::unique_ptr<AuthSession>            m_session;
+    std::unique_ptr<UserAccountSession>     m_session;
     std::thread                             m_thread;
     std::mutex                              m_session_mutex;
     std::mutex                              m_thread_stop_mutex;

@@ -23,7 +23,7 @@ enum class ConnectPrinterState {
 
 typedef std::map<std::string, std::vector<size_t>> ConnectPrinterStateMap;
 // Class UserAccount should handle every request for entities outside PrusaSlicer like PrusaAuth or PrusaConnect.
-// Outside communication is implemented in class PrusaAuthCommunication in Auth.hpp.
+// Outside communication is implemented in class UserAccountCommunication that runs separate thread. Results come back in events to Plater.
 // All incoming data shoud be stored in UserAccount.
 class UserAccount {
 public:
@@ -44,13 +44,13 @@ public:
     void enqueue_connect_printers_action();
     void enqueue_avatar_action();
 
-    // Functions called from UI where events emmited from AuthSession are binded
+    // Functions called from UI where events emmited from UserAccountSession are binded
     // Returns bool if data were correctly proccessed
     bool on_login_code_recieved(const std::string& url_message);
     bool on_user_id_success(const std::string data, std::string& out_username);
-    // Called on EVT_PRUSAAUTH_FAIL, triggers test after several calls
+    // Called on EVT_UA_FAIL, triggers test after several calls
     void on_communication_fail();
-    // Clears all data and connections, called on logout or EVT_PRUSAAUTH_RESET
+    // Clears all data and connections, called on logout or EVT_UA_RESET
     void clear();
     bool on_connect_printers_success(const std::string data, AppConfig* app_config, bool& out_printers_changed);
 
@@ -68,7 +68,7 @@ private:
     void set_username(const std::string& username);
    
 
-    std::unique_ptr<Slic3r::GUI::PrusaAuthCommunication> m_auth_communication;
+    std::unique_ptr<Slic3r::GUI::UserAccountCommunication> m_communication;
     
     ConnectPrinterStateMap              m_printer_map;
     std::map<std::string, std::string>  m_user_data;

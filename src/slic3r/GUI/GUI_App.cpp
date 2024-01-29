@@ -3685,8 +3685,8 @@ void GUI_App::handle_web_request(std::string cmd)
                       (is_installed ? GUI::format(_L("Installed and Select Printer:\n%1%"), preset->name) : 
                                       GUI::format(_L("Select Printer:\n%1%"), preset->name) ):
                       GUI::format(_L("Printer not found:\n%1%"), model_name);
-    this->plater()->get_notification_manager()->close_notification_of_type(NotificationType::PrusaAuthUserID);
-    this->plater()->get_notification_manager()->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);    
+    this->plater()->get_notification_manager()->close_notification_of_type(NotificationType::UserAccountID);
+    this->plater()->get_notification_manager()->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);    
 }
 
 void GUI_App::show_monitor_tab(bool show, const std::string& address/* = {}*/)

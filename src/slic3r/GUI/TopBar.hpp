@@ -50,12 +50,14 @@ class TopBarItemsCtrl : public wxControl
 
     wxMenu          m_main_menu;
     wxMenu          m_workspaces_menu;
-    wxMenu          m_auth_menu;
-    // Prusa Account (Auth) menu items
+    wxMenu          m_account_menu;
+    // Prusa Account menu items
     wxMenuItem*     m_user_menu_item{ nullptr };
     wxMenuItem*     m_login_menu_item{ nullptr };
-    //wxMenuItem*     m_connect_dummy_menu_item{ nullptr };
-    
+#if 0
+    wxMenuItem* m_connect_dummy_menu_item{ nullptr };
+#endif // 0
+
     ::TextInput*    m_search{ nullptr };
 
 public:
@@ -77,8 +79,8 @@ public:
     void AppendMenuItem(wxMenu* menu, const wxString& title);
     void AppendMenuSeparaorItem();
     void ApplyWorkspacesMenu();
-    void CreateAuthMenu();
-    void UpdateAuthMenu(bool avatar = false);
+    void CreateAccountMenu();
+    void UpdateAccountMenu(bool avatar = false);
     void CreateSearch();
 
     wxWindow* GetSearchCtrl() { return m_search->GetTextCtrl(); }
@@ -88,7 +90,7 @@ private:
     wxFlexGridSizer*                m_sizer;
     ButtonWithPopup*                m_menu_btn {nullptr};
     ButtonWithPopup*                m_workspace_btn {nullptr};
-    ButtonWithPopup*                m_auth_btn {nullptr};
+    ButtonWithPopup*                m_account_btn {nullptr};
     std::vector<Button*>            m_pageButtons;
     int                             m_selection {-1};
     int                             m_btn_margin;

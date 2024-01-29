@@ -130,7 +130,7 @@ bool load_secret(const std::string& opt, std::string& usr, std::string& psswd)
 }
 }
 
-PrusaAuthCommunication::PrusaAuthCommunication(wxEvtHandler* evt_handler, AppConfig* app_config)
+UserAccountCommunication::UserAccountCommunication(wxEvtHandler* evt_handler, AppConfig* app_config)
     : m_evt_handler(evt_handler)
     , m_app_config(app_config)
 {
@@ -147,14 +147,14 @@ PrusaAuthCommunication::PrusaAuthCommunication(wxEvtHandler* evt_handler, AppCon
         shared_session_key = m_app_config->get("shared_session_key");
     }
     bool has_token =  !access_token.empty() && !refresh_token.empty();
-    m_session = std::make_unique<AuthSession>(evt_handler, access_token, refresh_token, shared_session_key, m_app_config->get_bool("connect_polling"));
+    m_session = std::make_unique<UserAccountSession>(evt_handler, access_token, refresh_token, shared_session_key, m_app_config->get_bool("connect_polling"));
     init_session_thread();
     // perform login at the start, but only with tokens
     if (has_token)
         do_login();
 }
 
-PrusaAuthCommunication::~PrusaAuthCommunication() {
+UserAccountCommunication::~UserAccountCommunication() {
     if (m_thread.joinable()) {
         // Stop the worker thread, if running.
         {
@@ -168,7 +168,7 @@ PrusaAuthCommunication::~PrusaAuthCommunication() {
     }
 }
 
-void PrusaAuthCommunication::set_username(const std::string& username)
+void UserAccountCommunication::set_username(const std::string& username)
 {
     m_username = username;
     {
@@ -185,14 +185,14 @@ void PrusaAuthCommunication::set_username(const std::string& username)
     }
 }
 
-void PrusaAuthCommunication::set_remember_session(bool b)
+void UserAccountCommunication::set_remember_session(bool b)
 { 
     m_remember_session = b;
     // tokens needs to be stored or deleted
     set_username(m_username);
 }
 
-std::string PrusaAuthCommunication::get_access_token()
+std::string UserAccountCommunication::get_access_token()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -200,7 +200,7 @@ std::string PrusaAuthCommunication::get_access_token()
     }
 }
 
-void PrusaAuthCommunication::set_polling_enabled(bool enabled)
+void UserAccountCommunication::set_polling_enabled(bool enabled)
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -208,7 +208,7 @@ void PrusaAuthCommunication::set_polling_enabled(bool enabled)
     }
 }
 
-void PrusaAuthCommunication::login_redirect()
+void UserAccountCommunication::login_redirect()
 {
     const std::string AUTH_HOST = "https://test-account.prusa3d.com";
     const std::string CLIENT_ID = client_id();
@@ -223,11 +223,11 @@ void PrusaAuthCommunication::login_redirect()
     wxQueueEvent(m_evt_handler,new OpenPrusaAuthEvent(GUI::EVT_OPEN_PRUSAAUTH, std::move(url)));
 }
 
-bool PrusaAuthCommunication::is_logged()
+bool UserAccountCommunication::is_logged()
 {
     return !m_username.empty();
 }
-void PrusaAuthCommunication::do_login()
+void UserAccountCommunication::do_login()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -239,13 +239,13 @@ void PrusaAuthCommunication::do_login()
     }
     wakeup_session_thread();
 }
-void PrusaAuthCommunication::do_logout()
+void UserAccountCommunication::do_logout()
 {
     do_clear();
-    wxQueueEvent(m_evt_handler, new PrusaAuthSuccessEvent(GUI::EVT_LOGGEDOUT_PRUSAAUTH, {}));
+    wxQueueEvent(m_evt_handler, new UserAccountSuccessEvent(GUI::EVT_UA_LOGGEDOUT, {}));
 }
 
-void PrusaAuthCommunication::do_clear()
+void UserAccountCommunication::do_clear()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -254,7 +254,7 @@ void PrusaAuthCommunication::do_clear()
     set_username({});
 }
 
-void PrusaAuthCommunication::on_login_code_recieved(const std::string& url_message)
+void UserAccountCommunication::on_login_code_recieved(const std::string& url_message)
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -265,19 +265,19 @@ void PrusaAuthCommunication::on_login_code_recieved(const std::string& url_messa
 }
 
 #if 0
-void PrusaAuthCommunication::enqueue_user_id_action()
+void UserAccountCommunication::enqueue_user_id_action()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         if (!m_session->is_initialized()) {
             return;
         }
-        m_session->enqueue_action(UserActionID::USER_ID, nullptr, nullptr, {});
+        m_session->enqueue_action(UserAccountActionID::USER_ID, nullptr, nullptr, {});
     }
     wakeup_session_thread();
 }
 
-void PrusaAuthCommunication::enqueue_connect_dummy_action()
+void UserAccountCommunication::enqueue_connect_dummy_action()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -285,13 +285,13 @@ void PrusaAuthCommunication::enqueue_connect_dummy_action()
             BOOST_LOG_TRIVIAL(error) << "Connect Dummy endpoint connection failed - Not Logged in.";
             return;
         }
-        m_session->enqueue_action(UserActionID::CONNECT_DUMMY, nullptr, nullptr, {});
+        m_session->enqueue_action(UserAccountActionID::CONNECT_DUMMY, nullptr, nullptr, {});
     }
     wakeup_session_thread();
 }
 #endif 0
 
-void PrusaAuthCommunication::enqueue_connect_printers_action()
+void UserAccountCommunication::enqueue_connect_printers_action()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -299,11 +299,11 @@ void PrusaAuthCommunication::enqueue_connect_printers_action()
             BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
             return;
         }
-        m_session->enqueue_action(UserActionID::AUTH_ACTION_CONNECT_PRINTERS, nullptr, nullptr, {});
+        m_session->enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTERS, nullptr, nullptr, {});
     }
     wakeup_session_thread();
 }
-void PrusaAuthCommunication::enqueue_test_connection()
+void UserAccountCommunication::enqueue_test_connection()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -311,12 +311,12 @@ void PrusaAuthCommunication::enqueue_test_connection()
             BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
             return;
         }
-        m_session->enqueue_action(UserActionID::AUTH_ACTION_TEST_CONNECTION, nullptr, nullptr, {});
+        m_session->enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_TEST_CONNECTION, nullptr, nullptr, {});
     }
     wakeup_session_thread();
 }
 
-void PrusaAuthCommunication::enqueue_avatar_action(const std::string url)
+void UserAccountCommunication::enqueue_avatar_action(const std::string url)
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -324,11 +324,11 @@ void PrusaAuthCommunication::enqueue_avatar_action(const std::string url)
             BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
             return;
         }
-        m_session->enqueue_action(UserActionID::AUTH_ACTION_AVATAR, nullptr, nullptr, url);
+        m_session->enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_AVATAR, nullptr, nullptr, url);
     }
     wakeup_session_thread();
 }
-void PrusaAuthCommunication::init_session_thread()
+void UserAccountCommunication::init_session_thread()
 {
     m_thread = std::thread([this]() {
         for (;;) {
@@ -349,7 +349,7 @@ void PrusaAuthCommunication::init_session_thread()
     });
 }
 
-void PrusaAuthCommunication::wakeup_session_thread()
+void UserAccountCommunication::wakeup_session_thread()
 {
     m_thread_stop_condition.notify_all();
 }

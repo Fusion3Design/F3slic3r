@@ -14,33 +14,34 @@ namespace Slic3r {
 namespace GUI {
 
 using OpenPrusaAuthEvent = Event<wxString>;
-using PrusaAuthSuccessEvent = Event<std::string>;
-using PrusaAuthFailEvent = Event<std::string>;
+using UserAccountSuccessEvent = Event<std::string>;
+using UserAccountFailEvent = Event<std::string>;
 wxDECLARE_EVENT(EVT_OPEN_PRUSAAUTH, OpenPrusaAuthEvent);
-wxDECLARE_EVENT(EVT_LOGGEDOUT_PRUSAAUTH, PrusaAuthSuccessEvent);
-wxDECLARE_EVENT(EVT_PA_ID_USER_SUCCESS, PrusaAuthSuccessEvent);
-wxDECLARE_EVENT(EVT_PA_ID_USER_FAIL, PrusaAuthFailEvent);
-wxDECLARE_EVENT(EVT_PRUSAAUTH_SUCCESS, PrusaAuthSuccessEvent);
-wxDECLARE_EVENT(EVT_PRUSACONNECT_PRINTERS_SUCCESS, PrusaAuthSuccessEvent);
-wxDECLARE_EVENT(EVT_PA_AVATAR_SUCCESS, PrusaAuthSuccessEvent);
-wxDECLARE_EVENT(EVT_PRUSAAUTH_FAIL, PrusaAuthFailEvent); // Soft fail - clears only after some number of fails
-wxDECLARE_EVENT(EVT_PA_AVATAR_FAIL, PrusaAuthFailEvent); // Soft fail - clears only after some number of fails
-wxDECLARE_EVENT(EVT_PRUSAAUTH_RESET, PrusaAuthFailEvent); // Hard fail - clears all
+wxDECLARE_EVENT(EVT_UA_LOGGEDOUT, UserAccountSuccessEvent);
+wxDECLARE_EVENT(EVT_UA_ID_USER_SUCCESS, UserAccountSuccessEvent);
+wxDECLARE_EVENT(EVT_UA_SUCCESS, UserAccountSuccessEvent);
+wxDECLARE_EVENT(EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, UserAccountSuccessEvent);
+wxDECLARE_EVENT(EVT_UA_AVATAR_SUCCESS, UserAccountSuccessEvent);
+wxDECLARE_EVENT(EVT_UA_FAIL, UserAccountFailEvent); // Soft fail - clears only after some number of fails
+wxDECLARE_EVENT(EVT_UA_RESET, UserAccountFailEvent); // Hard fail - clears all
 
 typedef std::function<void(const std::string& body)> UserActionSuccessFn;
 typedef std::function<void(const std::string& body)> UserActionFailFn;
 
 // UserActions implements different operations via trigger() method. Stored in m_actions.
-enum class UserActionID {
-    AUTH_ACTION_DUMMY,
-    AUTH_ACTION_REFRESH_TOKEN,
-    AUTH_ACTION_CODE_FOR_TOKEN,
-    AUTH_ACTION_USER_ID,
-    AUTH_ACTION_TEST_ACCESS_TOKEN,
-    AUTH_ACTION_TEST_CONNECTION,
-    AUTH_ACTION_CONNECT_DUMMY,
-    AUTH_ACTION_CONNECT_PRINTERS,
-    AUTH_ACTION_AVATAR,
+enum class UserAccountActionID {
+    USER_ACCOUNT_ACTION_DUMMY,
+    USER_ACCOUNT_ACTION_REFRESH_TOKEN,
+    USER_ACCOUNT_ACTION_CODE_FOR_TOKEN,
+    USER_ACCOUNT_ACTION_USER_ID,
+    USER_ACCOUNT_ACTION_TEST_ACCESS_TOKEN,
+    USER_ACCOUNT_ACTION_TEST_CONNECTION,
+    USER_ACCOUNT_ACTION_CONNECT_PRINTERS,
+    USER_ACCOUNT_ACTION_AVATAR,
+#if 0
+    USER_ACCOUNT_ACTION_CONNECT_DUMMY,
+#endif // 0
+
 };
 class UserAction
 {
@@ -86,16 +87,16 @@ public:
 
 struct ActionQueueData
 {
-    UserActionID            action_id;
+    UserAccountActionID            action_id;
     UserActionSuccessFn     success_callback;
     UserActionFailFn        fail_callback;
     std::string             input;
 };
 
-class AuthSession
+class UserAccountSession
 {
 public:
-    AuthSession(wxEvtHandler* evt_handler, const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key, bool polling_enabled)
+    UserAccountSession(wxEvtHandler* evt_handler, const std::string& access_token, const std::string& refresh_token, const std::string& shared_session_key, bool polling_enabled)
         : p_evt_handler(evt_handler)
         , m_access_token(access_token)
         , m_refresh_token(refresh_token)
@@ -105,28 +106,33 @@ public:
     {
         
         // do not forget to add delete to destructor
-        m_actions[UserActionID::AUTH_ACTION_DUMMY] = std::make_unique<DummyUserAction>();
-        m_actions[UserActionID::AUTH_ACTION_REFRESH_TOKEN] = std::make_unique<UserActionPost>("EXCHANGE_TOKENS", "https://test-account.prusa3d.com/o/token/");
-        m_actions[UserActionID::AUTH_ACTION_CODE_FOR_TOKEN] = std::make_unique<UserActionPost>("EXCHANGE_TOKENS", "https://test-account.prusa3d.com/o/token/");
-        m_actions[UserActionID::AUTH_ACTION_USER_ID] = std::make_unique<UserActionGetWithEvent>("USER_ID", "https://test-account.prusa3d.com/api/v1/me/", EVT_PA_ID_USER_SUCCESS, EVT_PRUSAAUTH_RESET);
-        m_actions[UserActionID::AUTH_ACTION_TEST_ACCESS_TOKEN] = std::make_unique<UserActionGetWithEvent>("TEST_ACCESS_TOKEN", "https://test-account.prusa3d.com/api/v1/me/", EVT_PA_ID_USER_SUCCESS, EVT_PRUSAAUTH_FAIL);
-        m_actions[UserActionID::AUTH_ACTION_TEST_CONNECTION] = std::make_unique<UserActionGetWithEvent>("TEST_CONNECTION", "https://test-account.prusa3d.com/api/v1/me/", wxEVT_NULL, EVT_PRUSAAUTH_RESET);
-        m_actions[UserActionID::AUTH_ACTION_CONNECT_DUMMY] = std::make_unique<UserActionGetWithEvent>("CONNECT_DUMMY", "https://dev.connect.prusa3d.com/slicer/dummy"/*"dev.connect.prusa:8000/slicer/dummy"*/, EVT_PRUSAAUTH_SUCCESS, EVT_PRUSAAUTH_FAIL);
-        m_actions[UserActionID::AUTH_ACTION_CONNECT_PRINTERS] = std::make_unique<UserActionGetWithEvent>("CONNECT_PRINTERS", "https://dev.connect.prusa3d.com/slicer/printers"/*"dev.connect.prusa:8000/slicer/printers"*/, EVT_PRUSACONNECT_PRINTERS_SUCCESS, EVT_PRUSAAUTH_FAIL);
-        m_actions[UserActionID::AUTH_ACTION_AVATAR] = std::make_unique<UserActionGetWithEvent>("AVATAR", "https://test-media.printables.com/media/", EVT_PA_AVATAR_SUCCESS, EVT_PA_AVATAR_FAIL);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_DUMMY] = std::make_unique<DummyUserAction>();
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_REFRESH_TOKEN] = std::make_unique<UserActionPost>("EXCHANGE_TOKENS", "https://test-account.prusa3d.com/o/token/");
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CODE_FOR_TOKEN] = std::make_unique<UserActionPost>("EXCHANGE_TOKENS", "https://test-account.prusa3d.com/o/token/");
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_USER_ID] = std::make_unique<UserActionGetWithEvent>("USER_ID", "https://test-account.prusa3d.com/api/v1/me/", EVT_UA_ID_USER_SUCCESS, EVT_UA_RESET);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_TEST_ACCESS_TOKEN] = std::make_unique<UserActionGetWithEvent>("TEST_ACCESS_TOKEN", "https://test-account.prusa3d.com/api/v1/me/", EVT_UA_ID_USER_SUCCESS, EVT_UA_FAIL);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_TEST_CONNECTION] = std::make_unique<UserActionGetWithEvent>("TEST_CONNECTION", "https://test-account.prusa3d.com/api/v1/me/", wxEVT_NULL, EVT_UA_RESET);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTERS] = std::make_unique<UserActionGetWithEvent>("CONNECT_PRINTERS", "https://dev.connect.prusa3d.com/slicer/printers", EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, EVT_UA_FAIL);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_AVATAR] = std::make_unique<UserActionGetWithEvent>("AVATAR", "https://test-media.printables.com/media/", EVT_UA_AVATAR_SUCCESS, EVT_UA_FAIL);
+#if 0
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_DUMMY] = std::make_unique<UserActionGetWithEvent>("CONNECT_DUMMY", "https://dev.connect.prusa3d.com/slicer/dummy", EVT_UA_SUCCESS, EVT_UA_FAIL);
+#endif // 0
+
     }
-    ~AuthSession()
+    ~UserAccountSession()
     {
-        m_actions[UserActionID::AUTH_ACTION_DUMMY].reset(nullptr);
-        m_actions[UserActionID::AUTH_ACTION_REFRESH_TOKEN].reset(nullptr);
-        m_actions[UserActionID::AUTH_ACTION_CODE_FOR_TOKEN].reset(nullptr);
-        m_actions[UserActionID::AUTH_ACTION_USER_ID].reset(nullptr);
-        m_actions[UserActionID::AUTH_ACTION_TEST_ACCESS_TOKEN].reset(nullptr);
-        m_actions[UserActionID::AUTH_ACTION_TEST_CONNECTION].reset(nullptr);
-        m_actions[UserActionID::AUTH_ACTION_CONNECT_DUMMY].reset(nullptr);
-        m_actions[UserActionID::AUTH_ACTION_CONNECT_PRINTERS].reset(nullptr);
-        m_actions[UserActionID::AUTH_ACTION_AVATAR].reset(nullptr);
-        //assert(m_actions.empty());
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_DUMMY].reset(nullptr);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_REFRESH_TOKEN].reset(nullptr);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CODE_FOR_TOKEN].reset(nullptr);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_USER_ID].reset(nullptr);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_TEST_ACCESS_TOKEN].reset(nullptr);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_TEST_CONNECTION].reset(nullptr);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTERS].reset(nullptr);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_AVATAR].reset(nullptr);
+#if 0
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_DUMMY].reset(nullptr);
+#endif // 0
+
     }
     void clear() {
         m_access_token.clear();
@@ -137,7 +143,7 @@ public:
 
     // Functions that automatically enable action queu processing
     void init_with_code(const std::string& code, const std::string& code_verifier);
-    void enqueue_action(UserActionID id, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input);
+    void enqueue_action(UserAccountActionID id, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input);
     // Special enques, that sets callbacks.
     void enqueue_test_with_refresh();
 
@@ -169,7 +175,7 @@ private:
 
     std::queue<ActionQueueData>                             m_action_queue;
     std::queue<ActionQueueData>                             m_priority_action_queue;
-    std::map<UserActionID, std::unique_ptr<UserAction>>     m_actions;
+    std::map<UserAccountActionID, std::unique_ptr<UserAction>>     m_actions;
 
     wxEvtHandler* p_evt_handler;
 };
