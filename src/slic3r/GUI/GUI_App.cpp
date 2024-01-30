@@ -2652,11 +2652,7 @@ void GUI_App::open_preferences(const std::string& highlight_option /*= std::stri
     if (mainframe->preferences_dialog->recreate_GUI())
         recreate_GUI(_L("Restart application") + dots);
 
-#if ENABLE_GCODE_LINES_ID_IN_H_SLIDER
-    if (dlg.seq_top_layer_only_changed() || dlg.seq_seq_top_gcode_indices_changed())
-#else
     if (mainframe->preferences_dialog->seq_top_layer_only_changed())
-#endif // ENABLE_GCODE_LINES_ID_IN_H_SLIDER
         this->plater_->refresh_print();
 
 #ifdef _WIN32

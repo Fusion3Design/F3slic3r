@@ -38,6 +38,9 @@ struct GUI_InitParams
 		bool                        opengl_debug;
 		bool                        opengl_compatibiity_profile;
 #endif // ENABLE_GL_CORE_PROFILE
+#if ENABLE_OPENGL_AUTO_AA_SAMPLES
+		bool                        opengl_aa;
+#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 };
 
 int GUI_Run(GUI_InitParams &params);

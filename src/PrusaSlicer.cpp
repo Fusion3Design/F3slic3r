@@ -181,13 +181,23 @@ int CLI::run(int argc, char **argv)
         return 1;
 
 #ifdef SLIC3R_GUI
+    std::vector<std::string>::iterator it;
+#if ENABLE_OPENGL_AUTO_AA_SAMPLES
+    bool opengl_aa = false;
+    it = std::find(m_actions.begin(), m_actions.end(), "opengl-aa");
+    if (it != m_actions.end()) {
+        start_gui = true;
+        opengl_aa = true;
+        m_actions.erase(it);
+    }
+#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 #if ENABLE_GL_CORE_PROFILE
     std::pair<int, int> opengl_version = { 0, 0 };
     bool                opengl_debug = false;
     bool                opengl_compatibility_profile = false;
 
     // search for special keys into command line parameters
-    auto it = std::find(m_actions.begin(), m_actions.end(), "gcodeviewer");
+    it = std::find(m_actions.begin(), m_actions.end(), "gcodeviewer");
     if (it != m_actions.end()) {
         start_gui = true;
         start_as_gcodeviewer = true;
@@ -242,14 +252,18 @@ int CLI::run(int argc, char **argv)
 #endif // ENABLE_GL_CORE_PROFILE
 #else // SLIC3R_GUI
     // If there is no GUI, we shall ignore the parameters. Remove them from the list.
+#if ENABLE_OPENGL_AUTO_AA_SAMPLES
+    for (const std::string& s : { "opengl-version", "opengl-compatibility", "opengl-debug", "opengl-aa", "gcodeviewer" }) {
+#else
     for (const std::string& s : { "opengl-version", "opengl-compatibility", "opengl-debug", "gcodeviewer" }) {
+#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
         auto it = std::find(m_actions.cbegin(), m_actions.cend(), s);
         if (it != m_actions.end()) {
             boost::nowide::cerr << "Parameter '" << s << "' is ignored, this PrusaSlicer build is CLI only." << std::endl;
             m_actions.erase(it);
         }
     }
-#endif
+#endif // SLIC3R_GUI
 
 
     // Read input file(s) if any.
@@ -743,6 +757,9 @@ int CLI::run(int argc, char **argv)
         params.start_downloader = start_downloader;
         params.download_url = download_url;
         params.delete_after_load = delete_after_load;
+#if ENABLE_OPENGL_AUTO_AA_SAMPLES
+        params.opengl_aa = opengl_aa;
+#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 #if ENABLE_GL_CORE_PROFILE
         params.opengl_version = opengl_version;
         params.opengl_debug = opengl_debug;

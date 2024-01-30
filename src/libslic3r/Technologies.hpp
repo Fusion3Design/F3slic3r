@@ -54,6 +54,9 @@
 // Enable OpenGL core profile context (tested against Mesa 20.1.8 on Windows)
 #define ENABLE_GL_CORE_PROFILE (1 && !ENABLE_OPENGL_ES)
 
+// Enable automatic detection of highest number of samples supported for OpenGL antialising
+#define ENABLE_OPENGL_AUTO_AA_SAMPLES 1
+
 // Enable imgui dialog which allows to set the parameters used to export binarized gcode
 #define ENABLE_BINARIZED_GCODE_DEBUG_WINDOW 0
 

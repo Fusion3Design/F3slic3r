@@ -4915,6 +4915,14 @@ CLIActionsConfigDef::CLIActionsConfigDef()
     def->cli = "gcodeviewer";
     def->set_default_value(new ConfigOptionBool(false));
 
+#if ENABLE_OPENGL_AUTO_AA_SAMPLES
+    def = this->add("opengl-aa", coBool);
+    def->label = L("Automatic OpenGL antialising samples number selection");
+    def->tooltip = L("Automatically select the highest number of samples for OpenGL antialising.");
+    def->cli = "opengl-aa";
+    def->set_default_value(new ConfigOptionBool(false));
+#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
+
 #if ENABLE_GL_CORE_PROFILE
     def = this->add("opengl-version", coString);
     def->label = L("OpenGL version");
