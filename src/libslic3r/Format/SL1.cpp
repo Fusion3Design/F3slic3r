@@ -33,6 +33,7 @@
 
 
 #include <boost/property_tree/ini_parser.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -49,6 +50,88 @@ std::string to_ini(const ConfMap &m)
         ret += param.first + " = " + param.second + "\n";
 
     return ret;
+}
+
+namespace pt = boost::property_tree;
+
+static std::string write_json_with_post_process(const pt::ptree& ptree)
+{
+    std::stringstream oss;
+    pt::write_json(oss, ptree);
+
+    // fix json-out to show node values as a string just for string nodes
+    std::regex reg("\\\"([0-9]+\\.{0,1}[0-9]*)\\\""); // code is borrowed from https://stackoverflow.com/questions/2855741/why-does-boost-property-tree-write-json-save-everything-as-string-is-it-possibl
+    std::string result = std::regex_replace(oss.str(), reg, "$1");
+
+    boost::replace_all(result, "\"true\"",  "true");
+    boost::replace_all(result, "\"false\"", "false");
+
+    return result;
+}
+
+std::string to_json(const SLAPrint& print, const ConfMap &m)
+{
+    auto& cfg = print.full_print_config();
+
+    pt::ptree below_node;
+    pt::ptree above_node;
+
+    const t_config_enum_names& enum_names = ConfigOptionEnum<TiltProfiles>::get_enum_names();
+
+    for (const std::string& opt_key : tilt_options()) {
+        const ConfigOption* opt = cfg.option(opt_key);
+        assert(opt != nullptr);
+
+        switch (opt->type()) {
+        case coFloats: {
+            auto values = static_cast<const ConfigOptionFloats*>(opt);
+            // those options have to be exported in ms instead of s
+            below_node.put<double>(opt_key, int(1000 * values->get_at(0)));
+            above_node.put<double>(opt_key, int(1000 * values->get_at(1)));
+        }
+        break;
+        case coInts: {
+            auto values = static_cast<const ConfigOptionInts*>(opt);
+            int koef = opt_key == "tower_hop_height_nm" ? 1000000 : 1;
+            below_node.put<int>(opt_key, koef * values->get_at(0));
+            above_node.put<int>(opt_key, koef * values->get_at(1));
+        }
+        break;
+        case coBools: {
+            auto values = static_cast<const ConfigOptionBools*>(opt);
+            below_node.put<bool>(opt_key, values->get_at(0));
+            above_node.put<bool>(opt_key, values->get_at(1));
+        }
+        break;
+        case coEnums: {
+            auto values = static_cast<const ConfigOptionEnums<TiltProfiles>*>(opt);
+            below_node.put(opt_key, enum_names[values->get_at(0)]);
+            above_node.put(opt_key, enum_names[values->get_at(1)]);
+        }
+        break;
+        case coNone:
+        default:
+            break;
+        }
+    }
+
+    pt::ptree profile_node;
+    profile_node.put("area_fill", cfg.option("area_fill")->serialize());
+    profile_node.add_child("below_area_fill", below_node);
+    profile_node.add_child("above_area_fill", above_node);
+
+    pt::ptree root;
+    // params from config.ini
+    for (auto& param : m)
+        root.put(param.first, param.second );
+
+    root.put("version", "1");
+    root.add_child("exposure_profile", profile_node);
+
+    // Boost confirms its implementation has no 100% conformance to JSON standard. 
+    // In the boost libraries, boost will always serialize each value as string and parse all values to a string equivalent.
+    // so, post-prosess output
+    return write_json_with_post_process(root);
 }
 
 std::string get_cfg_value(const DynamicPrintConfig &cfg, const std::string &key)
@@ -123,10 +206,15 @@ void fill_slicerconf(ConfMap &m, const SLAPrint &print)
     auto is_banned = [](const std::string &key) {
         return std::binary_search(banned_keys.begin(), banned_keys.end(), key);
     };
+
+    auto is_tilt_param = [](const std::string& key) -> bool {
+        const auto& keys = tilt_options();
+        return std::find(keys.begin(), keys.end(), key) != keys.end();
+    };
     
     auto &cfg = print.full_print_config();
     for (const std::string &key : cfg.keys())
-        if (! is_banned(key) && ! cfg.option(key)->is_nil())
+        if (! is_banned(key) && !is_tilt_param(key) && ! cfg.option(key)->is_nil())
             m[key] = cfg.opt_serialize(key);
     
 }
@@ -211,6 +299,9 @@ void SL1Archive::export_print(Zipper               &zipper,
         zipper << to_ini(iniconf);
         zipper.add_entry("prusaslicer.ini");
         zipper << to_ini(slicerconf);
+
+        zipper.add_entry("config.json");
+        zipper << to_json(print, iniconf);
 
         size_t i = 0;
         for (const sla::EncodedRaster &rst : m_layers) {
