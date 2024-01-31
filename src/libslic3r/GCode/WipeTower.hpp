@@ -240,7 +240,7 @@ public:
 		float               filament_skinnydip_loading_speed = 0.f;
 		float               filament_skinnydip_distance = 0.f;
 		float               filament_skinnydip_extra_move = 0.f;
-		
+
         int                 cooling_moves = 0;
         float               cooling_initial_speed = 0.f;
         float               cooling_final_speed = 0.f;
@@ -252,6 +252,7 @@ public:
         float               filament_area;
 		bool			    multitool_ramming;
 		float               multitool_ramming_time = 0.f;
+		float               filament_minimal_purge_on_wipe_tower = 0.f;
     };
 
 private:
@@ -329,8 +330,9 @@ private:
 	float           m_depth_traversed = 0.f; // Current y position at the wipe tower.
     bool            m_current_layer_finished = false;
 	bool 			m_left_to_right   = true;
-	float			m_extra_spacing   = 1.f;
 	float			m_extra_flow      = 1.f;
+	float			m_extra_spacing_wipe    = 1.f;
+	float			m_extra_spacing_ramming = 1.f;
 
     bool is_first_layer() const { return size_t(m_layer_info - m_plan.begin()) == m_first_layer_idx; }
 
@@ -349,9 +351,6 @@ private:
 
 	// Calculates depth for all layers and propagates them downwards
 	void plan_tower();
-
-	// Goes through m_plan and recalculates depths and width of the WT to make it exactly square - experimental
-	void make_wipe_tower_square();
 
     // Goes through m_plan, calculates border and finish_layer extrusions and subtracts them from last wipe
     void save_on_last_wipe();

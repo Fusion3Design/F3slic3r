@@ -555,8 +555,9 @@ WipeTower::WipeTower(const PrintConfig& config, const PrintRegionConfig& default
     m_wipe_tower_rotation_angle(float(config.wipe_tower_rotation_angle)),
     m_wipe_tower_brim_width(float(config.wipe_tower_brim_width)),
     m_wipe_tower_cone_angle(float(config.wipe_tower_cone_angle)),
-    m_extra_spacing(float(config.wipe_tower_extra_spacing/100.)),
     m_extra_flow(float(config.wipe_tower_extra_flow/100.)),
+    m_extra_spacing_wipe(float(config.wipe_tower_extra_spacing/100. * config.wipe_tower_extra_flow/100.)),
+    m_extra_spacing_ramming(float(config.wipe_tower_extra_spacing/100.)),
     m_y_shift(0.f),
     m_z_pos(0.f),
     m_bridging(float(config.wipe_tower_bridging)),
@@ -629,6 +630,7 @@ void WipeTower::set_extruder(size_t idx, const PrintConfig& config)
     m_filpar[idx].is_soluble = config.wipe_tower_extruder == 0 ? config.filament_soluble.get_at(idx) : (idx != size_t(config.wipe_tower_extruder - 1));
     m_filpar[idx].temperature = config.temperature.get_at(idx);
     m_filpar[idx].first_layer_temperature = config.first_layer_temperature.get_at(idx);
+    m_filpar[idx].filament_minimal_purge_on_wipe_tower = config.filament_minimal_purge_on_wipe_tower.get_at(idx);
 
     // If this is a single extruder MM printer, we will use all the SE-specific config values.
     // Otherwise, the defaults will be used to turn off the SE stuff.
@@ -887,7 +889,7 @@ void WipeTower::toolchange_Unload(
 	float xr = cleaning_box.rd.x() - 1.f * m_perimeter_width;
 
     const float line_width = m_perimeter_width * m_filpar[m_current_tool].ramming_line_width_multiplicator;       // desired ramming line thickness
-	const float y_step = line_width * m_filpar[m_current_tool].ramming_step_multiplicator * m_extra_spacing; // spacing between lines in mm
+	const float y_step = line_width * m_filpar[m_current_tool].ramming_step_multiplicator * m_extra_spacing_ramming; // spacing between lines in mm
 
     const Vec2f ramming_start_pos = Vec2f(xl, cleaning_box.ld.y() + m_depth_traversed + y_step/2.f);
 
@@ -928,7 +930,7 @@ void WipeTower::toolchange_Unload(
             if (tch.old_tool == m_current_tool) {
                 sum_of_depths += tch.ramming_depth;
                 float ramming_end_y = sum_of_depths;
-                ramming_end_y -= (y_step/m_extra_spacing-m_perimeter_width) / 2.f;   // center of final ramming line
+                ramming_end_y -= (y_step/m_extra_spacing_ramming-m_perimeter_width) / 2.f;   // center of final ramming line
 
                 if ( (m_current_shape == SHAPE_REVERSED   && ramming_end_y < sparse_beginning_y - 0.5f*m_perimeter_width  ) ||
                      (m_current_shape == SHAPE_NORMAL && ramming_end_y > sparse_beginning_y + 0.5f*m_perimeter_width  )  )
@@ -1076,7 +1078,7 @@ void WipeTower::toolchange_Unload(
 
     // this is to align ramming and future wiping extrusions, so the future y-steps can be uniform from the start:
     // the perimeter_width will later be subtracted, it is there to not load while moving over just extruded material
-    Vec2f pos = Vec2f(end_of_ramming.x(), end_of_ramming.y() + (y_step/m_extra_spacing-m_perimeter_width) / 2.f + m_perimeter_width);
+    Vec2f pos = Vec2f(end_of_ramming.x(), end_of_ramming.y() + (y_step/m_extra_spacing_ramming-m_perimeter_width) / 2.f + m_perimeter_width);
     if (do_ramming)
         writer.travel(pos, 2400.f);
     else
@@ -1171,8 +1173,8 @@ void WipeTower::toolchange_Wipe(
     //   the ordered volume, even if it means violating the box. This can later be removed and simply
     // wipe until the end of the assigned area.
 
-	float x_to_wipe = volume_to_length(wipe_volume, line_width, m_layer_height) * (is_first_layer() ? m_extra_spacing : 1.f);
-	float dy = (is_first_layer() ? 1.f : m_extra_spacing) * line_width; // Don't use the extra spacing for the first layer.
+	float x_to_wipe = volume_to_length(wipe_volume, m_perimeter_width, m_layer_height) / m_extra_flow;
+	float dy = (is_first_layer() ? m_extra_flow : m_extra_spacing_wipe) * m_perimeter_width; // Don't use the extra spacing for the first layer, but do use the spacing resulting from increased flow.
     // All the calculations in all other places take the spacing into account for all the layers.
 
     const float target_speed = is_first_layer() ? m_first_layer_speed * 60.f : m_infill_speed * 60.f;
@@ -1535,16 +1537,15 @@ void WipeTower::plan_toolchange(float z_par, float layer_height_par, unsigned in
 	float length_to_extrude = volume_to_length(0.25f * std::accumulate(m_filpar[old_tool].ramming_speed.begin(), m_filpar[old_tool].ramming_speed.end(), 0.f),
 										m_perimeter_width * m_filpar[old_tool].ramming_line_width_multiplicator,
 										layer_height_par);
-	depth = (int(length_to_extrude / width) + 1) * (m_perimeter_width * m_filpar[old_tool].ramming_line_width_multiplicator * m_filpar[old_tool].ramming_step_multiplicator);
+	depth = (int(length_to_extrude / width) + 1) * (m_perimeter_width * m_filpar[old_tool].ramming_line_width_multiplicator * m_filpar[old_tool].ramming_step_multiplicator) * m_extra_spacing_ramming;
     float ramming_depth = depth;
     length_to_extrude = width*((length_to_extrude / width)-int(length_to_extrude / width)) - width;
     float first_wipe_line = -length_to_extrude;
-    length_to_extrude += volume_to_length(wipe_volume, m_perimeter_width, layer_height_par);
+    length_to_extrude = (volume_to_length(wipe_volume, m_perimeter_width, layer_height_par) - first_wipe_line) / m_extra_flow;
     length_to_extrude = std::max(length_to_extrude,0.f);
 
-	depth += (int(length_to_extrude / width) + 1) * m_perimeter_width;
-	depth *= m_extra_spacing;
-
+	depth += (int(length_to_extrude / width) + 1) * m_perimeter_width * m_extra_spacing_wipe;
+    
 	m_plan.back().tool_changes.push_back(WipeTowerInfo::ToolChange(old_tool, new_tool, depth, ramming_depth, first_wipe_line, wipe_volume));
 }
 
@@ -1596,14 +1597,17 @@ void WipeTower::save_on_last_wipe()
 
             if (i == idx) {
                 float width = m_wipe_tower_width - 3*m_perimeter_width; // width we draw into
-                float length_to_save = finish_layer().total_extrusion_length_in_plane();
-                float length_to_wipe = volume_to_length(toolchange.wipe_volume,
-                                      m_perimeter_width, m_layer_info->height) / m_extra_flow  - toolchange.first_wipe_line - length_to_save;
+                float length_to_save = finish_layer().total_extrusion_length_in_plane() / m_extra_flow;
+                float length_to_wipe = (volume_to_length(toolchange.wipe_volume,
+                                      m_perimeter_width, m_layer_info->height) - toolchange.first_wipe_line) / m_extra_flow;
+                float minimum_length = volume_to_length(m_filpar[toolchange.new_tool].filament_minimal_purge_on_wipe_tower, m_perimeter_width, m_layer_info->height) / m_extra_flow;
+
+                length_to_wipe = std::max(length_to_wipe - length_to_save, minimum_length);
 
                 length_to_wipe = std::max(length_to_wipe,0.f);
-                float depth_to_wipe = m_perimeter_width * (std::floor(length_to_wipe/width) + ( length_to_wipe > 0.f ? 1.f : 0.f ) );
+                float depth_to_wipe = m_extra_spacing_wipe * m_perimeter_width * (int(length_to_wipe / width) + ( length_to_wipe > 0.f ? 1 : 0 ));
 
-                toolchange.required_depth = (toolchange.ramming_depth + depth_to_wipe) * m_extra_spacing;
+                toolchange.required_depth = toolchange.ramming_depth + depth_to_wipe;
             }
         }
     }
