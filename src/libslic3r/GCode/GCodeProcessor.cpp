@@ -113,7 +113,7 @@ static float intersection_distance(float initial_rate, float final_rate, float a
 static float speed_from_distance(float initial_feedrate, float distance, float acceleration)
 {
     // to avoid invalid negative numbers due to numerical errors 
-    float value = std::max(0.0f, sqr(initial_feedrate) + 2.0f * acceleration * distance);
+    const float value = std::max(0.0f, sqr(initial_feedrate) + 2.0f * acceleration * distance);
     return ::sqrt(value);
 }
 
@@ -122,7 +122,7 @@ static float speed_from_distance(float initial_feedrate, float distance, float a
 static float max_allowable_speed(float acceleration, float target_velocity, float distance)
 {
     // to avoid invalid negative numbers due to numerical errors 
-    float value = std::max(0.0f, sqr(target_velocity) - 2.0f * acceleration * distance);
+    const float value = std::max(0.0f, sqr(target_velocity) - 2.0f * acceleration * distance);
     return std::sqrt(value);
 }
 
@@ -145,30 +145,42 @@ void GCodeProcessor::CpColor::reset()
 
 float GCodeProcessor::Trapezoid::acceleration_time(float entry_feedrate, float acceleration) const
 {
+#if ENABLE_ET_SPE1872
+    return acceleration_time_from_distance(entry_feedrate, acceleration_distance(), acceleration);
+#else
     return acceleration_time_from_distance(entry_feedrate, accelerate_until, acceleration);
+#endif // ENABLE_ET_SPE1872
 }
 
+#if !ENABLE_ET_SPE1872
 float GCodeProcessor::Trapezoid::cruise_time() const
 {
     return (cruise_feedrate != 0.0f) ? cruise_distance() / cruise_feedrate : 0.0f;
 }
+#endif // !ENABLE_ET_SPE1872
 
 float GCodeProcessor::Trapezoid::deceleration_time(float distance, float acceleration) const
 {
-    return acceleration_time_from_distance(cruise_feedrate, (distance - decelerate_after), -acceleration);
+#if ENABLE_ET_SPE1872
+    return acceleration_time_from_distance(cruise_feedrate, deceleration_distance(distance), -acceleration);
+#else
+    return acceleration_time_from_distance(cruise_feedrate, distance - decelerate_after, -acceleration);
+#endif // ENABLE_ET_SPE1872
 }
 
+#if !ENABLE_ET_SPE1872
 float GCodeProcessor::Trapezoid::cruise_distance() const
 {
     return decelerate_after - accelerate_until;
 }
+#endif // !ENABLE_ET_SPE1872
 
 void GCodeProcessor::TimeBlock::calculate_trapezoid()
 {
     trapezoid.cruise_feedrate = feedrate_profile.cruise;
 
     float accelerate_distance = std::max(0.0f, estimated_acceleration_distance(feedrate_profile.entry, feedrate_profile.cruise, acceleration));
-    float decelerate_distance = std::max(0.0f, estimated_acceleration_distance(feedrate_profile.cruise, feedrate_profile.exit, -acceleration));
+    const float decelerate_distance = std::max(0.0f, estimated_acceleration_distance(feedrate_profile.cruise, feedrate_profile.exit, -acceleration));
     float cruise_distance = distance - accelerate_distance - decelerate_distance;
 
     // Not enough space to reach the nominal feedrate.
@@ -182,14 +194,26 @@ void GCodeProcessor::TimeBlock::calculate_trapezoid()
 
     trapezoid.accelerate_until = accelerate_distance;
     trapezoid.decelerate_after = accelerate_distance + cruise_distance;
+
+#if ENABLE_ET_SPE1872
+    const float new_exit_speed = feedrate_profile.entry +
+        acceleration * trapezoid.acceleration_time(feedrate_profile.entry, acceleration) -
+        acceleration * trapezoid.deceleration_time(distance, acceleration);
+    const float delta_exit_speed_percent = std::abs(100.0f * (new_exit_speed - feedrate_profile.exit) / feedrate_profile.exit);
+    if (delta_exit_speed_percent > 1.0f) {
+      // what to do in this case ?
+    }
+#endif // ENABLE_ET_SPE1872
 }
 
+#if !ENABLE_ET_SPE1872
 float GCodeProcessor::TimeBlock::time() const
 {
-    return trapezoid.acceleration_time(feedrate_profile.entry, acceleration)
-        + trapezoid.cruise_time()
-        + trapezoid.deceleration_time(distance, acceleration);
+    return trapezoid.acceleration_time(feedrate_profile.entry, acceleration) +
+        trapezoid.cruise_time() +
+        trapezoid.deceleration_time(distance, acceleration);
 }
+#endif // !ENABLE_ET_SPE1872
 
 void GCodeProcessor::TimeMachine::State::reset()
 {
@@ -236,30 +260,54 @@ void GCodeProcessor::TimeMachine::reset()
 }
 
 #if ENABLE_NEW_GCODE_VIEWER
+#if !ENABLE_ET_SPE1872
 void GCodeProcessor::TimeMachine::simulate_st_synchronize(GCodeProcessorResult& result, PrintEstimatedStatistics::ETimeMode mode, float additional_time)
-#else
-void GCodeProcessor::TimeMachine::simulate_st_synchronize(float additional_time)
-#endif // ENABLE_NEW_GCODE_VIEWER
 {
     if (!enabled)
         return;
 
-#if ENABLE_NEW_GCODE_VIEWER
     calculate_time(result, mode, 0, additional_time);
-#else
-    calculate_time(0, additional_time);
-#endif // ENABLE_NEW_GCODE_VIEWER
 }
-
-static void planner_forward_pass_kernel(GCodeProcessor::TimeBlock& prev, GCodeProcessor::TimeBlock& curr)
+#endif // !ENABLE_ET_SPE1872
+#else
+void GCodeProcessor::TimeMachine::simulate_st_synchronize(float additional_time)
 {
+    if (!enabled)
+        return;
+
+    calculate_time(0, additional_time);
+}
+#endif // ENABLE_NEW_GCODE_VIEWER
+
+static void planner_forward_pass_kernel(const GCodeProcessor::TimeBlock& prev, GCodeProcessor::TimeBlock& curr)
+{
+#if ENABLE_ET_SPE1872_FIRMWARE_BUDDY
+    //
+    // C:\prusa\firmware\Prusa-Firmware-Buddy\lib\Marlin\Marlin\src\module\planner.cpp
+    // Line 954
+    // 
+    // If the previous block is an acceleration block, too short to complete the full speed
+    // change, adjust the entry speed accordingly. Entry speeds have already been reset,
+    // maximized, and reverse-planned. If nominal length is set, max junction speed is
+    // guaranteed to be reached. No need to recheck.
+    if (!prev.flags.nominal_length && prev.feedrate_profile.entry < curr.feedrate_profile.entry) {
+        // Compute the maximum allowable speed
+        const float new_entry_speed = max_allowable_speed(-prev.acceleration, prev.feedrate_profile.entry, prev.distance);
+        // If true, current block is full-acceleration and we can move the planned pointer forward.
+        if (new_entry_speed < curr.feedrate_profile.entry) {
+            // Always <= max_entry_speed_sqr. Backward pass sets this.
+            curr.feedrate_profile.entry = new_entry_speed;
+            curr.flags.recalculate = true;
+        }
+    }
+#else
     // If the previous block is an acceleration block, but it is not long enough to complete the
     // full speed change within the block, we need to adjust the entry speed accordingly. Entry
     // speeds have already been reset, maximized, and reverse planned by reverse planner.
     // If nominal length is true, max junction speed is guaranteed to be reached. No need to recheck.
     if (!prev.flags.nominal_length) {
         if (prev.feedrate_profile.entry < curr.feedrate_profile.entry) {
-            float entry_speed = std::min(curr.feedrate_profile.entry, max_allowable_speed(-prev.acceleration, prev.feedrate_profile.entry, prev.distance));
+            const float entry_speed = std::min(curr.feedrate_profile.entry, max_allowable_speed(-prev.acceleration, prev.feedrate_profile.entry, prev.distance));
 
             // Check for junction speed change
             if (curr.feedrate_profile.entry != entry_speed) {
@@ -268,10 +316,40 @@ static void planner_forward_pass_kernel(GCodeProcessor::TimeBlock& prev, GCodePr
             }
         }
     }
+#endif // ENABLE_ET_SPE1872_FIRMWARE_BUDDY
 }
 
-void planner_reverse_pass_kernel(GCodeProcessor::TimeBlock& curr, GCodeProcessor::TimeBlock& next)
+static void planner_reverse_pass_kernel(GCodeProcessor::TimeBlock& curr, const GCodeProcessor::TimeBlock& next)
 {
+#if ENABLE_ET_SPE1872_FIRMWARE_BUDDY
+    //
+    // C:\prusa\firmware\Prusa-Firmware-Buddy\lib\Marlin\Marlin\src\module\planner.cpp
+    // Line 857
+    // 
+    // If entry speed is already at the maximum entry speed, and there was no change of speed
+    // in the next block, there is no need to recheck. Block is cruising and there is no need to
+    // compute anything for this block,
+    // If not, block entry speed needs to be recalculated to ensure maximum possible planned speed.
+    const float max_entry_speed = curr.max_entry_speed;
+    // Compute maximum entry speed decelerating over the current block from its exit speed.
+    // If not at the maximum entry speed, or the previous block entry speed changed
+    if (curr.feedrate_profile.entry != max_entry_speed || next.flags.recalculate) {
+        // If nominal length true, max junction speed is guaranteed to be reached.
+        // If a block can de/ac-celerate from nominal speed to zero within the length of the block, then
+        // the current block and next block junction speeds are guaranteed to always be at their maximum
+        // junction speeds in deceleration and acceleration, respectively. This is due to how the current
+        // block nominal speed limits both the current and next maximum junction speeds. Hence, in both
+        // the reverse and forward planners, the corresponding block junction speed will always be at the
+        // the maximum junction speed and may always be ignored for any speed reduction checks.
+        const float new_entry_speed = curr.flags.nominal_length ? max_entry_speed :
+            std::min(max_entry_speed, max_allowable_speed(-curr.acceleration, next.feedrate_profile.entry, curr.distance));
+        if (curr.feedrate_profile.entry != new_entry_speed) {
+            // Just Set the new entry speed.
+            curr.feedrate_profile.entry = new_entry_speed;
+            curr.flags.recalculate = true;
+        }
+    }
+#else
     // If entry speed is already at the maximum entry speed, no need to recheck. Block is cruising.
     // If not, block in state of acceleration or deceleration. Reset entry speed to maximum and
     // check for maximum allowable speed reductions to ensure maximum possible planned speed.
@@ -285,6 +363,7 @@ void planner_reverse_pass_kernel(GCodeProcessor::TimeBlock& curr, GCodeProcessor
 
         curr.flags.recalculate = true;
     }
+#endif // ENABLE_ET_SPE1872_FIRMWARE_BUDDY
 }
 
 static void recalculate_trapezoids(std::vector<GCodeProcessor::TimeBlock>& blocks)
@@ -338,12 +417,13 @@ void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, floa
     }
 
     // reverse_pass
-    for (int i = static_cast<int>(blocks.size()) - 1; i > 0; --i)
+    for (int i = static_cast<int>(blocks.size()) - 1; i > 0; --i) {
         planner_reverse_pass_kernel(blocks[i - 1], blocks[i]);
+    }
 
     recalculate_trapezoids(blocks);
 
-    size_t n_blocks_process = blocks.size() - keep_last_n_blocks;
+    const size_t n_blocks_process = blocks.size() - keep_last_n_blocks;
     for (size_t i = 0; i < n_blocks_process; ++i) {
         const TimeBlock& block = blocks[i];
         float block_time = block.time();
@@ -356,6 +436,53 @@ void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, floa
         gcode_time.cache += block_time;
         if (block.layer_id == 1)
             first_layer_time += block_time;
+
+#if ENABLE_ET_SPE1872
+        // detect actual speed moves required to render toolpaths using actual speed
+        if (mode == PrintEstimatedStatistics::ETimeMode::Normal) {
+            GCodeProcessorResult::MoveVertex& curr_move = result.moves[block.move_id];
+            const GCodeProcessorResult::MoveVertex& prev_move = result.moves[block.move_id - 1];
+            const Vec3f move_vector = curr_move.position - prev_move.position;
+
+            assert(curr_move.actual_speed == 0.0f);
+
+            // acceleration phase
+            if (EPSILON < block.trapezoid.accelerate_until && block.trapezoid.accelerate_until < block.distance - EPSILON) {                    
+                const float t = block.trapezoid.accelerate_until / block.distance;
+                const float width = (prev_move.type == EMoveType::Extrude) ? prev_move.width + t * (curr_move.width - prev_move.width) : curr_move.width;
+                const float height = (prev_move.type == EMoveType::Extrude) ? prev_move.height + t * (curr_move.height - prev_move.height) : curr_move.height;
+                actual_speed_moves.push_back({
+                    block.move_id,
+                    block.feedrate_profile.cruise,
+                    prev_move.position + t * move_vector,
+                    width,
+                    height,
+                });
+            }
+            // cruise phase
+            if (block.trapezoid.accelerate_until + EPSILON < block.trapezoid.decelerate_after &&
+                block.trapezoid.decelerate_after < block.distance - EPSILON) {
+                const float t = block.trapezoid.decelerate_after / block.distance;
+                const float width = (prev_move.type == EMoveType::Extrude) ? prev_move.width + t * (curr_move.width - prev_move.width) : curr_move.width;
+                const float height = (prev_move.type == EMoveType::Extrude) ? prev_move.height + t * (curr_move.height - prev_move.height) : curr_move.height;
+                actual_speed_moves.push_back({
+                    block.move_id,
+                    block.feedrate_profile.cruise,
+                    prev_move.position + t * move_vector,
+                    width,
+                    height,
+                });
+            }
+            // deceleration/exit phase
+            actual_speed_moves.push_back({
+                block.move_id,
+                block.feedrate_profile.exit,
+                std::nullopt,
+                std::nullopt,
+                std::nullopt
+            });
+        }
+#endif // ENABLE_ET_SPE1872
 #else
         if (block.move_type == EMoveType::Travel)
             travel_time += block_time;
@@ -1381,12 +1508,18 @@ void GCodeProcessor::finalize(bool perform_post_process)
         }
     }
 
+#if ENABLE_ET_SPE1872
+    calculate_time(m_result);
+#endif // ENABLE_ET_SPE1872
+
     // process the time blocks
     for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
         TimeMachine& machine = m_time_processor.machines[i];
         TimeMachine::CustomGCodeTime& gcode_time = machine.gcode_time;
 #if ENABLE_NEW_GCODE_VIEWER
+#if !ENABLE_ET_SPE1872
         machine.calculate_time(m_result, static_cast<PrintEstimatedStatistics::ETimeMode>(i));
+#endif // !ENABLE_ET_SPE1872
 #else
         machine.calculate_time();
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -2937,13 +3070,20 @@ void GCodeProcessor::process_G1(const std::array<std::optional<double>, 4>& axes
 
         blocks.push_back(block);
 
+#if !ENABLE_ET_SPE1872
         if (blocks.size() > TimeProcessor::Planner::refresh_threshold)
 #if ENABLE_NEW_GCODE_VIEWER
-            machine.calculate_time(m_result, static_cast<PrintEstimatedStatistics::ETimeMode>(i), TimeProcessor::Planner::queue_size);
+              machine.calculate_time(m_result, static_cast<PrintEstimatedStatistics::ETimeMode>(i), TimeProcessor::Planner::queue_size);
 #else
             machine.calculate_time(TimeProcessor::Planner::queue_size);
 #endif // ENABLE_NEW_GCODE_VIEWER
+#endif // !ENABLE_ET_SPE1872
     }
+
+#if ENABLE_ET_SPE1872
+    if (m_time_processor.machines[0].blocks.size() > TimeProcessor::Planner::refresh_threshold)
+        calculate_time(m_result, TimeProcessor::Planner::queue_size);
+#endif // ENABLE_ET_SPE1872
 
     if (m_seams_detector.is_active()) {
         // check for seam starting vertex
@@ -4516,6 +4656,9 @@ void GCodeProcessor::store_move_vertex(EMoveType type, bool internal_only)
         Vec3f(m_end_position[X], m_end_position[Y], m_end_position[Z] - m_z_offset) + m_extruder_offsets[m_extruder_id],
         static_cast<float>(m_end_position[E] - m_start_position[E]),
         m_feedrate,
+#if ENABLE_ET_SPE1872
+        0.0f,
+#endif // ENABLE_ET_SPE1872
         m_width,
         m_height,
         m_mm3_per_mm,
@@ -4670,6 +4813,11 @@ float GCodeProcessor::get_filament_unload_time(size_t extruder_id)
 
 void GCodeProcessor::process_custom_gcode_time(CustomGCode::Type code)
 {
+#if ENABLE_ET_SPE1872
+    //FIXME this simulates st_synchronize! is it correct?
+    // The estimated time may be longer than the real print time.
+    simulate_st_synchronize();
+#endif // ENABLE_ET_SPE1872
     for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
         TimeMachine& machine = m_time_processor.machines[i];
         if (!machine.enabled)
@@ -4680,7 +4828,9 @@ void GCodeProcessor::process_custom_gcode_time(CustomGCode::Type code)
         //FIXME this simulates st_synchronize! is it correct?
         // The estimated time may be longer than the real print time.
 #if ENABLE_NEW_GCODE_VIEWER
+#if !ENABLE_ET_SPE1872
         machine.simulate_st_synchronize(m_result, static_cast<PrintEstimatedStatistics::ETimeMode>(i));
+#endif // !ENABLE_ET_SPE1872
 #else
         machine.simulate_st_synchronize();
 #endif // ENABLE_NEW_GCODE_VIEWER
@@ -4700,6 +4850,68 @@ void GCodeProcessor::process_filaments(CustomGCode::Type code)
         m_used_filaments.process_extruder_cache(m_extruder_id);
 }
 
+#if ENABLE_ET_SPE1872
+void GCodeProcessor::calculate_time(GCodeProcessorResult& result, size_t keep_last_n_blocks, float additional_time)
+{
+    // calculate times
+    std::vector<TimeMachine::ActualSpeedMove> actual_speed_moves;
+    for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
+        TimeMachine& machine = m_time_processor.machines[i];
+        machine.calculate_time(m_result, static_cast<PrintEstimatedStatistics::ETimeMode>(i), keep_last_n_blocks, additional_time);
+        if (static_cast<PrintEstimatedStatistics::ETimeMode>(i) == PrintEstimatedStatistics::ETimeMode::Normal)
+            actual_speed_moves = std::move(machine.actual_speed_moves);
+    }
+
+    // insert actual speed moves into the move list
+    unsigned int inserted_actual_speed_moves_count = 0;
+    std::vector<GCodeProcessorResult::MoveVertex> new_moves;
+    std::map<unsigned int, unsigned int> id_map;
+    for (auto it = actual_speed_moves.begin(); it != actual_speed_moves.end(); ++it) {
+        const unsigned int base_id = it->move_id + inserted_actual_speed_moves_count;
+        if (it->position.has_value()) {
+            // insert actual speed move into the move list
+            // clone from existing move
+            GCodeProcessorResult::MoveVertex new_move = result.moves[base_id];
+            // override modified parameters
+            new_move.time = { 0.0f, 0.0f };
+            new_move.position = *it->position;
+            new_move.actual_speed = it->feedrate;
+            if (it->width.has_value())
+                new_move.width = *it->width;
+            if (it->height.has_value())
+                new_move.height = *it->height;
+            new_move.internal_only = true;
+            new_moves.push_back(new_move);
+        }
+        else {
+            result.moves.insert(result.moves.begin() + base_id, new_moves.begin(), new_moves.end());
+            id_map[it->move_id] = base_id + new_moves.size();
+            // update move actual speed
+            result.moves[base_id + new_moves.size()].actual_speed = it->feedrate;
+            inserted_actual_speed_moves_count += new_moves.size();
+            new_moves.clear();
+        }
+    }
+
+    // synchronize blocks' move_ids with after actual speed moves insertion
+    for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
+        for (GCodeProcessor::TimeBlock& block : m_time_processor.machines[i].blocks) {
+            auto it = id_map.find(block.move_id);
+            if (it != id_map.end()) {
+              int a = 0;
+            }
+            block.move_id = (it != id_map.end()) ? it->second : block.move_id + inserted_actual_speed_moves_count;
+        }
+    }
+}
+#endif // ENABLE_ET_SPE1872
+
+#if ENABLE_ET_SPE1872
+void GCodeProcessor::simulate_st_synchronize(float additional_time)
+{
+    calculate_time(m_result, 0, additional_time);
+}
+#else
 void GCodeProcessor::simulate_st_synchronize(float additional_time)
 {
     for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
@@ -4710,6 +4922,7 @@ void GCodeProcessor::simulate_st_synchronize(float additional_time)
 #endif // ENABLE_NEW_GCODE_VIEWER
     }
 }
+#endif // ENABLE_ET_SPE1872
 
 void GCodeProcessor::update_estimated_statistics()
 {

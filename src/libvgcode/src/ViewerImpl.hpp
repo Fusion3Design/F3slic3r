@@ -284,6 +284,9 @@ private:
     ColorRange m_height_range;
     ColorRange m_width_range;
     ColorRange m_speed_range;
+#if VGCODE_ENABLE_ET_SPE1872
+    ColorRange m_actual_speed_range;
+#endif // VGCODE_ENABLE_ET_SPE1872
     ColorRange m_fan_speed_range;
     ColorRange m_temperature_range;
     ColorRange m_volumetric_rate_range;

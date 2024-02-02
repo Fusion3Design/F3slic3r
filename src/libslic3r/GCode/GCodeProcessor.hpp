@@ -140,6 +140,9 @@ namespace Slic3r {
             Vec3f position{ Vec3f::Zero() }; // mm
             float delta_extruder{ 0.0f }; // mm
             float feedrate{ 0.0f }; // mm/s
+#if ENABLE_ET_SPE1872
+            float actual_speed{ 0.0f }; // mm/s
+#endif // ENABLE_ET_SPE1872
             float width{ 0.0f }; // mm
             float height{ 0.0f }; // mm
             float mm3_per_mm{ 0.0f };
@@ -280,9 +283,19 @@ namespace Slic3r {
             float cruise_feedrate{ 0.0f }; // mm/sec
 
             float acceleration_time(float entry_feedrate, float acceleration) const;
+#if ENABLE_ET_SPE1872
+            float cruise_time() const { return (cruise_feedrate != 0.0f) ? cruise_distance() / cruise_feedrate : 0.0f; }
+#else
             float cruise_time() const;
+#endif // ENABLE_ET_SPE1872
             float deceleration_time(float distance, float acceleration) const;
+#if ENABLE_ET_SPE1872
+            float acceleration_distance() const { return accelerate_until; }
+            float cruise_distance() const { return decelerate_after - accelerate_until; }
+            float deceleration_distance(float distance) const { return distance - decelerate_after; }
+#else
             float cruise_distance() const;
+#endif // ENABLE_ET_SPE1872
         };
 
         struct TimeBlock
@@ -312,7 +325,14 @@ namespace Slic3r {
             // Calculates this block's trapezoid
             void calculate_trapezoid();
 
+#if ENABLE_ET_SPE1872
+            float time() const {
+                return trapezoid.acceleration_time(feedrate_profile.entry, acceleration) +
+                       trapezoid.cruise_time() + trapezoid.deceleration_time(distance, acceleration);
+            }
+#else
             float time() const;
+#endif // ENABLE_ET_SPE1872
         };
 
     private:
@@ -343,6 +363,17 @@ namespace Slic3r {
                 unsigned int remaining_internal_g1_lines;
                 float elapsed_time;
             };
+
+#if ENABLE_ET_SPE1872
+            struct ActualSpeedMove
+            {
+                unsigned int move_id{ 0 };
+                float feedrate{ 0.0f };
+                std::optional<Vec3f> position;
+                std::optional<float> width{ 0.0f };
+                std::optional<float> height{ 0.0f };
+            };
+#endif // ENABLE_ET_SPE1872
 
             bool enabled;
             float acceleration; // mm/s^2
@@ -379,12 +410,17 @@ namespace Slic3r {
             std::array<float, static_cast<size_t>(GCodeExtrusionRole::Count)> roles_time;
             std::vector<float> layers_time;
 #endif // ENABLE_NEW_GCODE_VIEWER
+#if ENABLE_ET_SPE1872
+            std::vector<ActualSpeedMove> actual_speed_moves;
+#endif // ENABLE_ET_SPE1872
 
             void reset();
 
             // Simulates firmware st_synchronize() call
 #if ENABLE_NEW_GCODE_VIEWER
+#if !ENABLE_ET_SPE1872
             void simulate_st_synchronize(GCodeProcessorResult& result, PrintEstimatedStatistics::ETimeMode mode, float additional_time = 0.0f);
+#endif // !ENABLE_ET_SPE1872
             void calculate_time(GCodeProcessorResult& result, PrintEstimatedStatistics::ETimeMode mode, size_t keep_last_n_blocks = 0, float additional_time = 0.0f);
 #else
             void simulate_st_synchronize(float additional_time = 0.0f);
@@ -884,6 +920,10 @@ namespace Slic3r {
 
         void process_custom_gcode_time(CustomGCode::Type code);
         void process_filaments(CustomGCode::Type code);
+
+#if ENABLE_ET_SPE1872
+        void calculate_time(GCodeProcessorResult& result, size_t keep_last_n_blocks = 0, float additional_time = 0.0f);
+#endif // ENABLE_ET_SPE1872
 
         // Simulates firmware st_synchronize() call
         void simulate_st_synchronize(float additional_time = 0.0f);

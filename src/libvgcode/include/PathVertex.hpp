@@ -32,6 +32,12 @@ struct PathVertex
     // Segment speed
     //
     float feedrate{ 0.0f };
+#if VGCODE_ENABLE_ET_SPE1872
+    //
+    // Segment actual speed
+    //
+    float actual_speed{ 0.0f };
+#endif // VGCODE_ENABLE_ET_SPE1872
     //
     // Segment fan speed
     //
