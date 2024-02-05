@@ -30,24 +30,25 @@ namespace Slic3r {
 namespace GUI {
 
 //#define DEBUG_URL_PANEL 
+
 class WebViewPanel : public wxPanel
 {
 public:
     WebViewPanel(wxWindow *parent, const wxString& default_url);
     virtual ~WebViewPanel();
 
-    void load_url(wxString& url);
-    void load_default_url();
+    void load_url(const wxString& url);
+    void load_default_url_delayed();
 
-    virtual void on_show(wxShowEvent& evt);
+    void on_show(wxShowEvent& evt);
     virtual void on_script_message(wxWebViewEvent& evt);
 
     void on_idle(wxIdleEvent& evt);
     void on_url(wxCommandEvent& evt);
-    void on_back(wxCommandEvent& evt);
-    void on_forward(wxCommandEvent& evt);
-    void on_stop(wxCommandEvent& evt);
-    void on_reload(wxCommandEvent& evt);
+    void on_back_button(wxCommandEvent& evt);
+    void on_forward_button(wxCommandEvent& evt);
+    void on_stop_button(wxCommandEvent& evt);
+    void on_reload_button(wxCommandEvent& evt);
     
     void on_view_source_request(wxCommandEvent& evt);
     void on_view_text_request(wxCommandEvent& evt);
@@ -61,16 +62,24 @@ public:
     void on_clear_selection(wxCommandEvent& evt);
     void on_delete_selection(wxCommandEvent& evt);
     void on_select_all(wxCommandEvent& evt);
-   
+    void On_enable_context_menu(wxCommandEvent& evt);
+    void On_enable_dev_tools(wxCommandEvent& evt);
     void on_close(wxCloseEvent& evt);
 
     wxTimer * m_LoginUpdateTimer{nullptr};
 
     wxString get_default_url() const { return m_default_url; }
     void set_default_url(const wxString& url) { m_default_url = url; }
+
+
+    virtual bool Show(bool show = true) override
+    {
+        return wxPanel::Show(show);
+    }
 protected:
 
     wxWebView* m_browser;
+    bool m_load_default_url { false };
 #ifdef DEBUG_URL_PANEL
     
     wxBoxSizer *bSizer_toolbar;
@@ -86,6 +95,9 @@ protected:
     
     wxInfoBar *m_info;
     wxStaticText* m_info_text;
+
+    wxMenuItem* m_context_menu;
+    wxMenuItem* m_dev_tools;
 #endif
     long m_zoomFactor;
 
@@ -101,13 +113,31 @@ class ConnectWebViewPanel : public WebViewPanel
 {
 public:
     ConnectWebViewPanel(wxWindow* parent);
-    void on_show(wxShowEvent& evt) override;
     void on_script_message(wxWebViewEvent& evt) override;
 
     void connect_set_access_token();
     void connect_set_language();
 private:
     std::map<std::string, std::function<void(void)>> m_actions;
+};
+
+class PrinterWebViewPanel : public WebViewPanel
+{
+public:
+    PrinterWebViewPanel(wxWindow* parent, const wxString& default_url);
+    
+    void on_loaded(wxWebViewEvent& evt);
+
+    void send_api_key();
+    void send_credentials();
+    void set_api_key(const std::string& key) { m_api_key = key; }
+    void set_credentials(const std::string& usr, const std::string& psk) { m_usr = usr; m_psk = psk; }
+    void clear() { m_api_key.clear(); m_usr.clear(); m_psk.clear(); m_api_key_sent = false; }
+private:
+    std::string m_api_key;
+    std::string m_usr;
+    std::string m_psk;
+    bool m_api_key_sent {false};
 };
 
 

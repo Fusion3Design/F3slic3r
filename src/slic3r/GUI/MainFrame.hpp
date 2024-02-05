@@ -44,7 +44,7 @@ class MainFrame;
 class PreferencesDialog;
 class GalleryDialog;
 class WebViewPanel; 
-class MediaMainPanel;
+class PrinterWebViewPanel;
 
 enum QuickSlice
 {
@@ -98,10 +98,10 @@ class MainFrame : public DPIFrame
     size_t      m_last_selected_tab;
     Search::OptionsSearcher m_searcher;
 
-    WebViewPanel*       m_connect_webview{ nullptr };
-    bool                m_connect_webview_added{ false };
-    WebViewPanel*       m_monitor_webview{ nullptr };
-    bool                m_monitor_webview_added{ false };
+    WebViewPanel*        m_connect_webview{ nullptr };
+    bool                 m_connect_webview_added{ false };
+    PrinterWebViewPanel* m_printer_webview{ nullptr };
+    bool                 m_printer_webview_added{ false };
 
     std::string     get_base_name(const wxString &full_name, const char *extension = nullptr) const;
     std::string     get_dir_name(const wxString &full_name) const;
@@ -215,13 +215,15 @@ public:
     void        add_to_recent_projects(const wxString& filename);
     void        technology_changed();
 
-    void    enable_connect_tab();
-    void    disable_connect_tab();
+    void    add_connect_webview_tab();
+    void    remove_connect_webview_tab();
 
-    void    add_monitor_tab(const wxString& url);
-    void    remove_monitor_tab();
-    void    set_monitor_tab_url(const wxString& url);
-    bool    get_monitor_tab_added() const { return m_monitor_webview_added; }
+    void    add_printer_webview_tab(const wxString& url);
+    void    remove_printer_webview_tab();
+    void    set_printer_webview_tab_url(const wxString& url);
+    bool    get_printer_webview_tab_added() const { return m_printer_webview_added; }
+    void    set_printer_webview_api_key(const std::string& key);
+    void    set_printer_webview_credentials(const std::string& usr, const std::string& psk);
 
     void    refresh_account_menu(bool avatar = false);
 

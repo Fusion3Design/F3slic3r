@@ -3689,26 +3689,34 @@ void GUI_App::handle_web_request(std::string cmd)
     this->plater()->get_notification_manager()->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);    
 }
 
-void GUI_App::show_monitor_tab(bool show, const std::string& address/* = {}*/)
+void GUI_App::show_printer_webview_tab(bool show, const DynamicPrintConfig& dpc/* = {}*/)
 {
-    std::string url = address;
-    if(url.find("http://") != 0 && url.find("https://") != 0) {
-        url = "https://" + url;
-    }
-#if 0
     if (!show) {
         this->mainframe->select_tab(size_t(0));
-        mainframe->remove_monitor_tab();
+        mainframe->remove_printer_webview_tab();
+    } else {
+        std::string url = dpc.opt_string("print_host");
+        
+        if (url.find("http://") != 0 && url.find("https://") != 0) {
+            url = "http://" + url;
+        }
+
+        // set password / api key
+        if (dynamic_cast<const ConfigOptionEnum<AuthorizationType>*>(dpc.option("printhost_authorization_type"))->value == AuthorizationType::atKeyPassword) {
+            mainframe->set_printer_webview_api_key(dpc.opt_string("printhost_apikey"));
+        }
+#if 0 // The user password authentication is not working in prusa link as of now.
+        else {
+            mainframe->set_printer_webview_credentials(dpc.opt_string("printhost_user"), dpc.opt_string("printhost_password"));
+        }
+#endif // 0       
+        // add printer or change url
+        if (mainframe->get_printer_webview_tab_added()) {
+            mainframe->set_printer_webview_tab_url(from_u8(url));
+        } else {
+            mainframe->add_printer_webview_tab(from_u8(url));
+        }
     }
-    else {
-        if (mainframe->get_monitor_tab_added())
-            mainframe->set_monitor_tab_url(boost::nowide::widen(url));
-        else
-            mainframe->add_monitor_tab(boost::nowide::widen(url));
-            this->mainframe->select_tab(size_t(5));
-            this->mainframe->select_tab(size_t(0));
-    }
-#endif
 }
 } // GUI
 } //Slic3r

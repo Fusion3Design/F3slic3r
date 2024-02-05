@@ -95,13 +95,16 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
     wxMenuItem* viewSource = m_tools_menu->Append(wxID_ANY, _L("View Source"));
     wxMenuItem* viewText = m_tools_menu->Append(wxID_ANY, _L("View Text"));
     m_tools_menu->AppendSeparator();
-  
+
     wxMenu* script_menu = new wxMenu;
    
     m_script_custom = script_menu->Append(wxID_ANY, "Custom script");
     m_tools_menu->AppendSubMenu(script_menu, _L("Run Script"));
     wxMenuItem* addUserScript = m_tools_menu->Append(wxID_ANY, _L("Add user script"));
     wxMenuItem* setCustomUserAgent = m_tools_menu->Append(wxID_ANY, _L("Set custom user agent"));
+
+    m_context_menu = m_tools_menu->AppendCheckItem(wxID_ANY, _L("Enable Context Menu"));
+    m_dev_tools = m_tools_menu->AppendCheckItem(wxID_ANY, _L("Enable Dev Tools"));
 
 #endif
     //Zoom
@@ -116,16 +119,18 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
 
 #ifdef DEBUG_URL_PANEL
     // Connect the button events
-    Bind(wxEVT_BUTTON, &WebViewPanel::on_back, this, m_button_back->GetId());
-    Bind(wxEVT_BUTTON, &WebViewPanel::on_forward, this, m_button_forward->GetId());
-    Bind(wxEVT_BUTTON, &WebViewPanel::on_stop, this, m_button_stop->GetId());
-    Bind(wxEVT_BUTTON, &WebViewPanel::on_reload, this, m_button_reload->GetId());
+    Bind(wxEVT_BUTTON, &WebViewPanel::on_back_button, this, m_button_back->GetId());
+    Bind(wxEVT_BUTTON, &WebViewPanel::on_forward_button, this, m_button_forward->GetId());
+    Bind(wxEVT_BUTTON, &WebViewPanel::on_stop_button, this, m_button_stop->GetId());
+    Bind(wxEVT_BUTTON, &WebViewPanel::on_reload_button, this, m_button_reload->GetId());
     Bind(wxEVT_BUTTON, &WebViewPanel::on_tools_clicked, this, m_button_tools->GetId());
     Bind(wxEVT_TEXT_ENTER, &WebViewPanel::on_url, this, m_url->GetId());
 
     // Connect the menu events
     Bind(wxEVT_MENU, &WebViewPanel::on_view_source_request, this, viewSource->GetId());
     Bind(wxEVT_MENU, &WebViewPanel::on_view_text_request, this, viewText->GetId());
+    Bind(wxEVT_MENU, &WebViewPanel::On_enable_context_menu, this, m_context_menu->GetId());
+    Bind(wxEVT_MENU, &WebViewPanel::On_enable_dev_tools, this, m_dev_tools->GetId());
 
     Bind(wxEVT_MENU, &WebViewPanel::on_run_script_custom, this, m_script_custom->GetId());
     Bind(wxEVT_MENU, &WebViewPanel::on_add_user_script, this, addUserScript->GetId());
@@ -152,7 +157,7 @@ WebViewPanel::~WebViewPanel()
 }
 
 
-void WebViewPanel::load_url(wxString& url)
+void WebViewPanel::load_url(const wxString& url)
 {
     this->Show();
     this->Raise();
@@ -163,15 +168,20 @@ void WebViewPanel::load_url(wxString& url)
     m_browser->SetFocus();
 }
 
-void WebViewPanel::load_default_url()
+void WebViewPanel::load_default_url_delayed()
 {
     assert(!m_default_url.empty());
-    load_url(m_default_url);
+    m_load_default_url = true;
 }
 
 void WebViewPanel::on_show(wxShowEvent& evt)
 {
-
+    if (evt.IsShown() && m_load_default_url)
+    {
+        m_load_default_url = false;
+        load_url(m_default_url);
+    }
+    // TODO: add check that any url was loaded
 }
 
 void WebViewPanel::on_idle(wxIdleEvent& WXUNUSED(evt))
@@ -200,7 +210,7 @@ void WebViewPanel::on_url(wxCommandEvent& WXUNUSED(evt))
 /**
     * Callback invoked when user pressed the "back" button
     */
-void WebViewPanel::on_back(wxCommandEvent& WXUNUSED(evt))
+void WebViewPanel::on_back_button(wxCommandEvent& WXUNUSED(evt))
 {
     m_browser->GoBack();
 }
@@ -208,7 +218,7 @@ void WebViewPanel::on_back(wxCommandEvent& WXUNUSED(evt))
 /**
     * Callback invoked when user pressed the "forward" button
     */
-void WebViewPanel::on_forward(wxCommandEvent& WXUNUSED(evt))
+void WebViewPanel::on_forward_button(wxCommandEvent& WXUNUSED(evt))
 {
     m_browser->GoForward();
 }
@@ -216,7 +226,7 @@ void WebViewPanel::on_forward(wxCommandEvent& WXUNUSED(evt))
 /**
     * Callback invoked when user pressed the "stop" button
     */
-void WebViewPanel::on_stop(wxCommandEvent& WXUNUSED(evt))
+void WebViewPanel::on_stop_button(wxCommandEvent& WXUNUSED(evt))
 {
     m_browser->Stop();
 }
@@ -224,7 +234,7 @@ void WebViewPanel::on_stop(wxCommandEvent& WXUNUSED(evt))
 /**
     * Callback invoked when user pressed the "reload" button
     */
-void WebViewPanel::on_reload(wxCommandEvent& WXUNUSED(evt))
+void WebViewPanel::on_reload_button(wxCommandEvent& WXUNUSED(evt))
 {
     m_browser->Reload();
 }
@@ -279,6 +289,9 @@ void WebViewPanel::on_view_text_request(wxCommandEvent& WXUNUSED(evt))
 void WebViewPanel::on_tools_clicked(wxCommandEvent& WXUNUSED(evt))
 {
 #ifdef DEBUG_URL_PANEL
+    m_context_menu->Check(m_browser->IsContextMenuEnabled());
+    m_dev_tools->Check(m_browser->IsAccessToDevToolsEnabled());
+
     wxPoint position = ScreenToClient(wxGetMousePosition());
     PopupMenu(m_tools_menu, position.x, position.y);
 #endif
@@ -364,6 +377,15 @@ void WebViewPanel::on_select_all(wxCommandEvent& WXUNUSED(evt))
     m_browser->SelectAll();
 }
 
+void WebViewPanel::On_enable_context_menu(wxCommandEvent& evt)
+{
+    m_browser->EnableContextMenu(evt.IsChecked());
+}
+void WebViewPanel::On_enable_dev_tools(wxCommandEvent& evt)
+{
+    m_browser->EnableAccessToDevTools(evt.IsChecked());
+}
+
 /**
     * Callback invoked when a loading error occurs
     */
@@ -387,6 +409,7 @@ case type: \
         WX_ERROR_CASE(wxWEBVIEW_NAV_ERR_OTHER);
     }
 
+    BOOST_LOG_TRIVIAL(warning) << "WebView error: " << category;
     //Show the info bar with an error
 #ifdef DEBUG_URL_PANEL
 
@@ -417,18 +440,6 @@ ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
 {
     m_actions["requestAccessToken"] = std::bind(&ConnectWebViewPanel::connect_set_access_token, this);
     m_actions["requestLanguage"] = std::bind(&ConnectWebViewPanel::connect_set_language, this);
-}
-void ConnectWebViewPanel::on_show(wxShowEvent& evt)
-{
-    // run script with access token to login
-    /*
-    if (evt.IsShown()) {
-        std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
-        wxString script = GUI::format_wxstr("window._prusaConnect.setAccessToken(\'%1%\')", token);
-        // TODO: should this be happening every OnShow?
-        run_script(script);
-    }
-    */
 }
 
 void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
@@ -489,6 +500,74 @@ void ConnectWebViewPanel::connect_set_language()
     wxString script = GUI::format_wxstr("window._prusaConnect.setAccessToken(\'en\')", lang);
     run_script(script);
 }
+
+PrinterWebViewPanel::PrinterWebViewPanel(wxWindow* parent, const wxString& default_url)
+    : WebViewPanel(parent, default_url)
+{
+    m_browser->Bind(wxEVT_WEBVIEW_LOADED, &PrinterWebViewPanel::on_loaded, this);
+}
+
+void PrinterWebViewPanel::on_loaded(wxWebViewEvent& evt)
+{
+    if (evt.GetURL().IsEmpty())
+        return;
+    if (!m_api_key.empty()) {
+        send_api_key();
+    } else if (!m_usr.empty() && !m_psk.empty()) {
+        send_credentials();
+    }
+}
+
+void PrinterWebViewPanel::send_api_key()
+{
+    if (m_api_key_sent)
+        return;
+    m_api_key_sent = true;
+    wxString key = from_u8(m_api_key);
+    wxString script = wxString::Format(R"(
+    // Check if window.fetch exists before overriding
+    if (window.fetch) {
+        const originalFetch = window.fetch;
+        window.fetch = function(input, init = {}) {
+            init.headers = init.headers || {};
+            init.headers['X-API-Key'] = '%s';
+            return originalFetch(input, init);
+        };
+    }
+)",
+    key);
+
+    m_browser->RemoveAllUserScripts();
+    m_browser->AddUserScript(script);
+    m_browser->Reload();
+    
+}
+
+void PrinterWebViewPanel::send_credentials()
+{
+    if (m_api_key_sent)
+        return;
+    m_api_key_sent = true;
+    wxString usr = from_u8(m_usr);
+    wxString psk = from_u8(m_psk);
+    wxString script = wxString::Format(R"(
+    // Check if window.fetch exists before overriding
+    if (window.fetch) {
+        const originalFetch = window.fetch;
+        window.fetch = function(input, init = {}) {
+            init.headers = init.headers || {};
+            init.headers['X-API-Key'] = 'Basic ' + btoa(`%s:%s`);
+            return originalFetch(input, init);
+        };
+    }
+)", usr, psk);
+    
+    m_browser->RemoveAllUserScripts();
+    m_browser->AddUserScript(script);
+    m_browser->Reload();
+    
+}
+
 
 WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url)
     : wxDialog(parent, wxID_ANY, "Webview Dialog", wxDefaultPosition, wxSize(1366, 768)/* wxSize(100 * wxGetApp().em_unit(), 100 * wxGetApp().em_unit())*/)

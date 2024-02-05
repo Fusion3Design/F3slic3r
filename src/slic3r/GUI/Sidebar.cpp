@@ -718,12 +718,11 @@ void Sidebar::on_select_preset(wxCommandEvent& evt)
          */
         m_object_list->update_object_list_by_printer_technology();
 
-        if (combo->is_selected_physical_printer())
-        {
-            wxGetApp().show_monitor_tab(true, wxGetApp().preset_bundle->physical_printers.get_selected_printer().config.opt_string("print_host"));
+        if (combo->is_selected_physical_printer()) {
+            wxGetApp().show_printer_webview_tab(true, wxGetApp().preset_bundle->physical_printers.get_selected_printer().config);
+        } else {
+            wxGetApp().show_printer_webview_tab(false);
         }
-        else
-            wxGetApp().show_monitor_tab(false);
     }
 
 #ifdef __WXMSW__

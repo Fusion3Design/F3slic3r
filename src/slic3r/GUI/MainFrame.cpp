@@ -843,65 +843,74 @@ void MainFrame::create_preset_tabs()
     add_created_tab(new TabPrinter(m_tabpanel), wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF ? "printer" : "sla_printer");
     
     m_connect_webview = new ConnectWebViewPanel(m_tabpanel);
-    m_monitor_webview = new WebViewPanel(m_tabpanel, L"");
+    m_printer_webview = new PrinterWebViewPanel(m_tabpanel, L"");
     // new created tabs have to be hidden by default
     m_connect_webview->Hide();
-    m_monitor_webview->Hide();
+    m_printer_webview->Hide();
 
-    /*
-    m_media = new MediaMainPanel(this);
-    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_media, "Media");
-    */
 }
 
-void MainFrame::enable_connect_tab()
+void MainFrame::add_connect_webview_tab()
 {
-    if (m_connect_webview_added)
-        return;
-    size_t selected = m_tabpanel->GetSelection();
-    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_connect_webview, "PrusaConnect", "", true);
-    m_connect_webview->load_default_url();
-    m_tabpanel->SetSelection(selected);
+    assert(!m_connect_webview_added);
+    // parameters of InsertPage (to prevent ambigous overloaded function)
+        // insert to positon 4, if physical printer is already added, it moves to 5
+    // order of tabs: Plater - Print Settings - Filaments - Printers - Prusa Connect - Prusa Link
+    size_t n = 4;
+    wxWindow* page = m_connect_webview;
+    const wxString text(L"Prusa Connect");
+    const std::string bmp_name = "";
+    bool bSelect = false;
+    dynamic_cast<TopBar*>(m_tabpanel)->InsertPage(n, page, text, bmp_name, bSelect);
+    m_connect_webview->load_default_url_delayed();
     m_connect_webview_added = true;
 }
-void MainFrame::disable_connect_tab()
+void MainFrame::remove_connect_webview_tab()
 {
-    if (!m_connect_webview_added)
-        return;
-    size_t selected = m_tabpanel->GetSelection();
-    if (selected == 4)
+    assert(m_connect_webview_added);
+    // connect tab should always be at position 4
+    if (m_tabpanel->GetSelection() == 4)
         m_tabpanel->SetSelection(0);
     dynamic_cast<TopBar*>(m_tabpanel)->RemovePage(4);
     m_connect_webview_added = false;
 }
 
-void MainFrame::add_monitor_tab(const wxString& url)
+void MainFrame::add_printer_webview_tab(const wxString& url)
 {
-    if (m_monitor_webview_added)
-        return;
-    size_t selected = m_tabpanel->GetSelection();
-    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_monitor_webview, "Monitor", "", true);
-    m_monitor_webview->set_default_url(url);
-    m_monitor_webview->load_default_url();
-    m_tabpanel->SetSelection(selected);
-    m_monitor_webview_added = true;
-
+    assert(!m_printer_webview_added);
+    m_printer_webview_added = true;
+    // add as the last (rightmost) panel
+    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_printer_webview, L"Physical Printer", "", false);
+    m_printer_webview->set_default_url(url);
+    m_printer_webview->load_default_url_delayed();
 }
-void MainFrame::remove_monitor_tab()
+void MainFrame::remove_printer_webview_tab()
 {
-    if (!m_monitor_webview_added)
-        return;
-    size_t selected = m_tabpanel->GetSelection();
-    if (selected == 4)
-        m_tabpanel->SetSelection(0);
+    assert(m_printer_webview_added);
+    m_printer_webview_added = false;
+    m_printer_webview->Hide();
+    // always remove the last tab
     dynamic_cast<TopBar*>(m_tabpanel)->RemovePage(m_tabpanel->GetPageCount() - 1);
-    m_monitor_webview_added = false;
 }
-void MainFrame::set_monitor_tab_url(const wxString& url)
+void MainFrame::set_printer_webview_tab_url(const wxString& url)
 {
-    assert(m_monitor_webview_added);
-    m_monitor_webview->set_default_url(url);
-    m_monitor_webview->load_default_url();
+    assert(m_printer_webview_added);
+    m_printer_webview->clear();
+    m_printer_webview->set_default_url(url);
+    if (m_tabpanel->GetSelection() == m_tabpanel->GetPageCount() - 1) {
+        m_printer_webview->load_url(url);
+    } else {
+        m_printer_webview->load_default_url_delayed();
+    }
+}
+
+void MainFrame::set_printer_webview_api_key(const std::string& key)
+{
+    m_printer_webview->set_api_key(key);
+}
+void MainFrame::set_printer_webview_credentials(const std::string& usr, const std::string& psk)
+{
+    m_printer_webview->set_credentials(usr, psk);
 }
 
 void Slic3r::GUI::MainFrame::refresh_account_menu(bool avatar/* = false */)
