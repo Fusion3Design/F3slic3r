@@ -201,7 +201,7 @@ void GCodeProcessor::TimeBlock::calculate_trapezoid()
         acceleration * trapezoid.deceleration_time(distance, acceleration);
     const float delta_exit_speed_percent = std::abs(100.0f * (new_exit_speed - feedrate_profile.exit) / feedrate_profile.exit);
     if (delta_exit_speed_percent > 1.0f) {
-      // what to do in this case ?
+        // what to do in this case ?
     }
 #endif // ENABLE_ET_SPE1872
 }
@@ -372,7 +372,7 @@ static void recalculate_trapezoids(std::vector<GCodeProcessor::TimeBlock>& block
     GCodeProcessor::TimeBlock* next = nullptr;
 
     for (size_t i = 0; i < blocks.size(); ++i) {
-        GCodeProcessor::TimeBlock& b = blocks[i];
+      GCodeProcessor::TimeBlock& b = blocks[i];
 
         curr = next;
         next = &b;
@@ -441,42 +441,71 @@ void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, floa
         // detect actual speed moves required to render toolpaths using actual speed
         if (mode == PrintEstimatedStatistics::ETimeMode::Normal) {
             GCodeProcessorResult::MoveVertex& curr_move = result.moves[block.move_id];
+            if (curr_move.type != EMoveType::Extrude)
+                continue;
+
+            assert(curr_move.actual_feedrate == 0.0f);
             const GCodeProcessorResult::MoveVertex& prev_move = result.moves[block.move_id - 1];
-            const Vec3f move_vector = curr_move.position - prev_move.position;
+            const bool interpolate = (prev_move.type == EMoveType::Extrude);
 
-            assert(curr_move.actual_speed == 0.0f);
-
-            // acceleration phase
-            if (EPSILON < block.trapezoid.accelerate_until && block.trapezoid.accelerate_until < block.distance - EPSILON) {                    
+            if (block.trapezoid.acceleration_distance() > EPSILON) {
                 const float t = block.trapezoid.accelerate_until / block.distance;
-                const float width = (prev_move.type == EMoveType::Extrude) ? prev_move.width + t * (curr_move.width - prev_move.width) : curr_move.width;
-                const float height = (prev_move.type == EMoveType::Extrude) ? prev_move.height + t * (curr_move.height - prev_move.height) : curr_move.height;
+                const Vec3f position = lerp(prev_move.position, curr_move.position, t);
+                const float delta_extruder = interpolate ? lerp(prev_move.delta_extruder, curr_move.delta_extruder, t) : curr_move.delta_extruder;
+                const float feedrate = interpolate ? lerp(prev_move.feedrate, curr_move.feedrate, t) : curr_move.feedrate;
+                const float width = interpolate ? lerp(prev_move.width, curr_move.width, t) : curr_move.width;
+                const float height = interpolate ? lerp(prev_move.height, curr_move.height, t) : curr_move.height;
+                const float mm3_per_mm = interpolate ? lerp(prev_move.mm3_per_mm, curr_move.mm3_per_mm, t) : curr_move.mm3_per_mm;
+                const float fan_speed = interpolate ? lerp(prev_move.fan_speed, curr_move.fan_speed, t) : curr_move.fan_speed;
+                const float temperature = interpolate ? lerp(prev_move.temperature, curr_move.temperature, t) : curr_move.temperature;
                 actual_speed_moves.push_back({
                     block.move_id,
+                    position,
                     block.feedrate_profile.cruise,
-                    prev_move.position + t * move_vector,
+                    delta_extruder,
+                    feedrate,
                     width,
                     height,
+                    mm3_per_mm,
+                    fan_speed,
+                    temperature
                 });
             }
-            // cruise phase
-            if (block.trapezoid.accelerate_until + EPSILON < block.trapezoid.decelerate_after &&
-                block.trapezoid.decelerate_after < block.distance - EPSILON) {
+
+            const bool has_deceleration = block.trapezoid.deceleration_distance(block.distance) > EPSILON;
+            if (has_deceleration) {
                 const float t = block.trapezoid.decelerate_after / block.distance;
-                const float width = (prev_move.type == EMoveType::Extrude) ? prev_move.width + t * (curr_move.width - prev_move.width) : curr_move.width;
-                const float height = (prev_move.type == EMoveType::Extrude) ? prev_move.height + t * (curr_move.height - prev_move.height) : curr_move.height;
+                const Vec3f position = lerp(prev_move.position, curr_move.position, t);
+                const float delta_extruder = interpolate ? lerp(prev_move.delta_extruder, curr_move.delta_extruder, t) : curr_move.delta_extruder;
+                const float feedrate = interpolate ? lerp(prev_move.feedrate, curr_move.feedrate, t) : curr_move.feedrate;
+                const float width = interpolate ? lerp(prev_move.width, curr_move.width, t) : curr_move.width;
+                const float height = interpolate ? lerp(prev_move.height, curr_move.height, t) : curr_move.height;
+                const float mm3_per_mm = interpolate ? lerp(prev_move.mm3_per_mm, curr_move.mm3_per_mm, t) : curr_move.mm3_per_mm;
+                const float fan_speed = interpolate ? lerp(prev_move.fan_speed, curr_move.fan_speed, t) : curr_move.fan_speed;
+                const float temperature = interpolate ? lerp(prev_move.temperature, curr_move.temperature, t) : curr_move.temperature;
                 actual_speed_moves.push_back({
                     block.move_id,
+                    position,
                     block.feedrate_profile.cruise,
-                    prev_move.position + t * move_vector,
+                    delta_extruder,
+                    feedrate,
                     width,
                     height,
+                    mm3_per_mm,
+                    fan_speed,
+                    temperature
                 });
             }
-            // deceleration/exit phase
+
+            const bool is_cruise_only = block.trapezoid.is_cruise_only(block.distance);
             actual_speed_moves.push_back({
                 block.move_id,
-                block.feedrate_profile.exit,
+                std::nullopt,
+                (is_cruise_only || !has_deceleration) ? block.feedrate_profile.cruise : block.feedrate_profile.exit,
+                std::nullopt,
+                std::nullopt,
+                std::nullopt,
+                std::nullopt,
                 std::nullopt,
                 std::nullopt,
                 std::nullopt
@@ -4875,11 +4904,14 @@ void GCodeProcessor::calculate_time(GCodeProcessorResult& result, size_t keep_la
             // override modified parameters
             new_move.time = { 0.0f, 0.0f };
             new_move.position = *it->position;
-            new_move.actual_speed = it->feedrate;
-            if (it->width.has_value())
-                new_move.width = *it->width;
-            if (it->height.has_value())
-                new_move.height = *it->height;
+            new_move.actual_feedrate = it->actual_feedrate;
+            new_move.delta_extruder = *it->delta_extruder;
+            new_move.feedrate = *it->feedrate;
+            new_move.width = *it->width;
+            new_move.height = *it->height;
+            new_move.mm3_per_mm = *it->mm3_per_mm;
+            new_move.fan_speed = *it->fan_speed;
+            new_move.temperature = *it->temperature;
             new_move.internal_only = true;
             new_moves.push_back(new_move);
         }
@@ -4887,19 +4919,16 @@ void GCodeProcessor::calculate_time(GCodeProcessorResult& result, size_t keep_la
             result.moves.insert(result.moves.begin() + base_id, new_moves.begin(), new_moves.end());
             id_map[it->move_id] = base_id + new_moves.size();
             // update move actual speed
-            result.moves[base_id + new_moves.size()].actual_speed = it->feedrate;
+            result.moves[base_id + new_moves.size()].actual_feedrate = it->actual_feedrate;
             inserted_actual_speed_moves_count += new_moves.size();
             new_moves.clear();
         }
     }
 
-    // synchronize blocks' move_ids with after actual speed moves insertion
+    // synchronize blocks' move_ids with after moves for actual speed insertion
     for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
         for (GCodeProcessor::TimeBlock& block : m_time_processor.machines[i].blocks) {
             auto it = id_map.find(block.move_id);
-            if (it != id_map.end()) {
-              int a = 0;
-            }
             block.move_id = (it != id_map.end()) ? it->second : block.move_id + inserted_actual_speed_moves_count;
         }
     }

@@ -214,12 +214,12 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, const std::ve
                 // and the times, which are set to zero
 #if ENABLE_ET_SPE1872
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-              const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, prev.actual_speed,
+              const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, prev.actual_feedrate,
                   curr.fan_speed, curr.temperature, curr.volumetric_rate(), 0.0f, convert(curr.extrusion_role), curr_type,
                   static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
                   static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
 #else
-              const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, prev.actual_speed,
+              const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, prev.actual_feedrate,
                   curr.fan_speed, curr.temperature, curr.volumetric_rate(), convert(curr.extrusion_role), curr_type,
                   static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
                   static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
@@ -243,13 +243,13 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, const std::ve
 
 #if ENABLE_ET_SPE1872
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-        const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.actual_speed,
+        const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.actual_feedrate,
             curr.fan_speed, curr.temperature, curr.volumetric_rate(),
             result.filament_densities[curr.extruder_id] * curr.mm3_per_mm * (curr.position - prev.position).norm(),
             convert(curr.extrusion_role), curr_type, static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
             static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };
 #else
-        const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.actual_speed,
+        const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.actual_feedrate,
             curr.fan_speed, curr.temperature, curr.volumetric_rate(), convert(curr.extrusion_role), curr_type,
             static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id), static_cast<uint8_t>(curr.extruder_id),
             static_cast<uint8_t>(curr.cp_color_id), curr.time };

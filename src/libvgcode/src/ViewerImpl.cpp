@@ -972,7 +972,7 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
 #if VGCODE_ENABLE_ET_SPE1872
     case EViewType::ActualSpeed:
     {
-        return m_actual_speed_range.get_color_at(v.actual_speed);
+        return m_actual_speed_range.get_color_at(v.actual_feedrate);
     }
 #endif // VGCODE_ENABLE_ET_SPE1872
     case EViewType::FanSpeed:
@@ -1292,7 +1292,7 @@ void ViewerImpl::update_color_ranges()
 #if VGCODE_ENABLE_ET_SPE1872
         if ((v.is_travel() && m_settings.options_visibility.at(EOptionType::Travels)) || v.is_extrusion()) {
             m_speed_range.update(v.feedrate);
-            m_actual_speed_range.update(v.actual_speed);
+            m_actual_speed_range.update(v.actual_feedrate);
         }
 #else
         if ((v.is_travel() && m_settings.options_visibility.at(EOptionType::Travels)) || v.is_extrusion())

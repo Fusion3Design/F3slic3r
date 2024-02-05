@@ -141,7 +141,7 @@ namespace Slic3r {
             float delta_extruder{ 0.0f }; // mm
             float feedrate{ 0.0f }; // mm/s
 #if ENABLE_ET_SPE1872
-            float actual_speed{ 0.0f }; // mm/s
+            float actual_feedrate{ 0.0f }; // mm/s
 #endif // ENABLE_ET_SPE1872
             float width{ 0.0f }; // mm
             float height{ 0.0f }; // mm
@@ -293,6 +293,7 @@ namespace Slic3r {
             float acceleration_distance() const { return accelerate_until; }
             float cruise_distance() const { return decelerate_after - accelerate_until; }
             float deceleration_distance(float distance) const { return distance - decelerate_after; }
+            bool is_cruise_only(float distance) const { return std::abs(cruise_distance() - distance) < EPSILON; }
 #else
             float cruise_distance() const;
 #endif // ENABLE_ET_SPE1872
@@ -368,10 +369,15 @@ namespace Slic3r {
             struct ActualSpeedMove
             {
                 unsigned int move_id{ 0 };
-                float feedrate{ 0.0f };
                 std::optional<Vec3f> position;
-                std::optional<float> width{ 0.0f };
-                std::optional<float> height{ 0.0f };
+                float actual_feedrate{ 0.0f };
+                std::optional<float> delta_extruder;
+                std::optional<float> feedrate;
+                std::optional<float> width;
+                std::optional<float> height;
+                std::optional<float> mm3_per_mm;
+                std::optional<float> fan_speed;
+                std::optional<float> temperature;
             };
 #endif // ENABLE_ET_SPE1872
 
