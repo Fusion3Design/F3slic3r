@@ -174,6 +174,11 @@ void WebViewPanel::load_default_url_delayed()
     m_load_default_url = true;
 }
 
+void WebViewPanel::load_error_page()
+{
+    load_url(wxString::Format("file://%s/web/connection_failed.html", from_u8(resources_dir())));
+}
+
 void WebViewPanel::on_show(wxShowEvent& evt)
 {
     if (evt.IsShown() && m_load_default_url)
@@ -409,10 +414,9 @@ case type: \
         WX_ERROR_CASE(wxWEBVIEW_NAV_ERR_OTHER);
     }
 
-    BOOST_LOG_TRIVIAL(warning) << "WebView error: " << category;
-    //Show the info bar with an error
+    BOOST_LOG_TRIVIAL(error) << "WebView error: " << category;
+    load_error_page();
 #ifdef DEBUG_URL_PANEL
-
     m_info->ShowMessage(_L("An error occurred loading ") + evt.GetURL() + "\n" +
         "'" + category + "'", wxICON_ERROR);
 #endif

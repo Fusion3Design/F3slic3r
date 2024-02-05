@@ -39,9 +39,11 @@ public:
 
     void load_url(const wxString& url);
     void load_default_url_delayed();
+    void load_error_page();
 
     void on_show(wxShowEvent& evt);
     virtual void on_script_message(wxWebViewEvent& evt);
+    void on_loaded(wxWebViewEvent& evt);
 
     void on_idle(wxIdleEvent& evt);
     void on_url(wxCommandEvent& evt);
@@ -71,11 +73,6 @@ public:
     wxString get_default_url() const { return m_default_url; }
     void set_default_url(const wxString& url) { m_default_url = url; }
 
-
-    virtual bool Show(bool show = true) override
-    {
-        return wxPanel::Show(show);
-    }
 protected:
 
     wxWebView* m_browser;
