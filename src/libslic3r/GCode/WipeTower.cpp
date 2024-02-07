@@ -643,8 +643,8 @@ void WipeTower::set_extruder(size_t idx, const PrintConfig& config)
         m_filpar[idx].cooling_moves           = config.filament_cooling_moves.get_at(idx);
         m_filpar[idx].cooling_initial_speed   = float(config.filament_cooling_initial_speed.get_at(idx));
         m_filpar[idx].cooling_final_speed     = float(config.filament_cooling_final_speed.get_at(idx));
-        m_filpar[idx].filament_skinnydip_loading_speed     = float(config.filament_skinnydip_loading_speed.get_at(idx));
-        m_filpar[idx].filament_skinnydip_distance          = float(config.filament_skinnydip_distance.get_at(idx));
+        m_filpar[idx].filament_stamping_loading_speed     = float(config.filament_stamping_loading_speed.get_at(idx));
+        m_filpar[idx].filament_stamping_distance          = float(config.filament_stamping_distance.get_at(idx));
     }
 
     m_filpar[idx].filament_area = float((M_PI/4.f) * pow(config.filament_diameter.get_at(idx), 2)); // all extruders are assumed to have the same filament diameter at this point
@@ -1022,28 +1022,28 @@ void WipeTower::toolchange_Unload(
               .travel(writer.x(), writer.y() + y_step);
         old_x = writer.x();
         turning_point = xr-old_x > old_x-xl ? xr : xl;
-        float skinnydip_dist_e = m_filpar[m_current_tool].filament_skinnydip_distance + m_cooling_tube_length / 2.f;
+        float stamping_dist_e = m_filpar[m_current_tool].filament_stamping_distance + m_cooling_tube_length / 2.f;
 
         for (int i=0; i<number_of_cooling_moves; ++i) {
 
-            // Skinnydip - happens after every cooling move except for the last one.
-            if (i>0 && m_filpar[m_current_tool].filament_skinnydip_distance != 0) {
+            // Stamping - happens after every cooling move except for the last one.
+            if (i>0 && m_filpar[m_current_tool].filament_stamping_distance != 0) {
 
-                // Skinnydip turning point shall be no farther than 20mm from the current nozzle position:
-                float skinnydip_turning_point = std::clamp(old_x + 20.f * (turning_point - old_x > 0.f ? 1.f : -1.f), xl, xr);
+                // Stamping turning point shall be no farther than 20mm from the current nozzle position:
+                float stamping_turning_point = std::clamp(old_x + 20.f * (turning_point - old_x > 0.f ? 1.f : -1.f), xl, xr);
 
                 // Only last 5mm will be done with the fast x travel. The point is to spread possible blobs
                 // along the whole wipe tower.
-                if (skinnydip_dist_e > 5) {
+                if (stamping_dist_e > 5) {
                     float cent = writer.x();
-                    writer.load_move_x_advanced(skinnydip_turning_point, (skinnydip_dist_e - 5), m_filpar[m_current_tool].filament_skinnydip_loading_speed, 200);
-                    writer.load_move_x_advanced(cent, 5, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
+                    writer.load_move_x_advanced(stamping_turning_point, (stamping_dist_e - 5), m_filpar[m_current_tool].filament_stamping_loading_speed, 200);
+                    writer.load_move_x_advanced(cent, 5, m_filpar[m_current_tool].filament_stamping_loading_speed, m_travel_speed);
                     writer.travel(cent, writer.y());
                 } else
-                    writer.load_move_x_advanced_there_and_back(skinnydip_turning_point, skinnydip_dist_e, m_filpar[m_current_tool].filament_skinnydip_loading_speed, m_travel_speed);
+                    writer.load_move_x_advanced_there_and_back(stamping_turning_point, stamping_dist_e, m_filpar[m_current_tool].filament_stamping_loading_speed, m_travel_speed);
 
                 // Retract while the print head is stationary, so if there is a blob, it is not dragged along.
-                writer.retract(skinnydip_dist_e, m_filpar[m_current_tool].unloading_speed * 60.f);
+                writer.retract(stamping_dist_e, m_filpar[m_current_tool].unloading_speed * 60.f);
             }
 
             if (i == number_of_cooling_moves - 1 && change_temp_later) {
@@ -1156,7 +1156,6 @@ void WipeTower::toolchange_Wipe(
 	const float& xl = cleaning_box.ld.x();
 	const float& xr = cleaning_box.rd.x();
 
-    // MATHIEU TEST:
     writer.set_extrusion_flow(m_extrusion_flow * m_extra_flow);
     const float line_width = m_perimeter_width * m_extra_flow;
     writer.change_analyzer_line_width(line_width);

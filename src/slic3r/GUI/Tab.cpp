@@ -2271,8 +2271,8 @@ void TabFilament::build()
         optgroup->append_single_option_line("filament_cooling_moves");
         optgroup->append_single_option_line("filament_cooling_initial_speed");
         optgroup->append_single_option_line("filament_cooling_final_speed");
-        optgroup->append_single_option_line("filament_skinnydip_loading_speed");
-        optgroup->append_single_option_line("filament_skinnydip_distance");
+        optgroup->append_single_option_line("filament_stamping_loading_speed");
+        optgroup->append_single_option_line("filament_stamping_distance");
 
         create_line_with_widget(optgroup.get(), "filament_ramming_parameters", "", [this](wxWindow* parent) {
             auto ramming_dialog_btn = new wxButton(parent, wxID_ANY, _(L("Ramming settings"))+dots, wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);

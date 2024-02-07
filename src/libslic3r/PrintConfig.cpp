@@ -1093,16 +1093,17 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
-    def = this->add("filament_skinnydip_loading_speed", coFloats);
-    def->label = L("ELIAS: Skinnydip loading speed");
-    def->tooltip = L("");
+    def = this->add("filament_stamping_loading_speed", coFloats);
+    def->label = L("Stamping loading speed");
+    def->tooltip = L("Speed used for stamping.");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
-    def = this->add("filament_skinnydip_distance", coFloats);
-    def->label = L("ELIAS: Skinnydip distance measured from the center of the cooling tube");
-    def->tooltip = L("");
+    def = this->add("filament_stamping_distance", coFloats);
+    def->label = L("Stamping distance measured from the center of the cooling tube");
+    def->tooltip = L("If set to nonzero value, filament is moved toward the nozzle between the individual cooling moves (\"stamping\"). "
+                     "This option configures how long this movement should be before the filament is retracted again.");
     def->min = 0;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats { 0. });
@@ -3357,7 +3358,7 @@ void PrintConfigDef::init_fff_params()
     def->set_default_value(new ConfigOptionPercent(100.));
 
     def = this->add("wipe_tower_extra_flow", coPercent);
-    def->label = L("MATHIEU TEST: extra flow");
+    def->label = L("Extra flow for purging");
     def->tooltip = L("");
     def->sidetext = L("%");
     def->mode = comExpert;
