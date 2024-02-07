@@ -4155,8 +4155,13 @@ void GCodeProcessor::post_process()
                 ++m_times_cache_id;
             }
 
+#if ENABLE_ET_SPE1872
+            if (it == m_machine.g1_times_cache.end() || it->id > g1_lines_counter)
+                return ret;
+#else
             if (it->id > g1_lines_counter)
                 return ret;
+#endif // ENABLE_ET_SPE1872
 
             // search for internal G1 lines
             if (GCodeReader::GCodeLine::cmd_is(line, "G2") || GCodeReader::GCodeLine::cmd_is(line, "G3")) {

@@ -90,6 +90,9 @@ enum class EViewType : uint8_t
     FanSpeed,
     Temperature,
     VolumetricFlowRate,
+#if VGCODE_ENABLE_ET_SPE1872
+    ActualVolumetricFlowRate,
+#endif // VGCODE_ENABLE_ET_SPE1872
     LayerTimeLinear,
     LayerTimeLogarithmic,
     Tool,

@@ -1200,11 +1200,14 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
 //        fwrite((void*)&v.width, 1, sizeof(float), out.f);
 //        fwrite((void*)&v.feedrate, 1, sizeof(float), out.f);
 //#if ENABLE_ET_SPE1872
-//        fwrite((void*)&v.actual_speed, 1, sizeof(float), out.f);
+//        fwrite((void*)&v.actual_feedrate, 1, sizeof(float), out.f);
 //#endif // ENABLE_ET_SPE1872
 //        fwrite((void*)&v.fan_speed, 1, sizeof(float), out.f);
 //        fwrite((void*)&v.temperature, 1, sizeof(float), out.f);
 //        fwrite((void*)&v.volumetric_rate, 1, sizeof(float), out.f);
+//#if ENABLE_ET_SPE1872
+//        fwrite((void*)&v.actual_volumetric_rate, 1, sizeof(float), out.f);
+//#endif // ENABLE_ET_SPE1872
 //        fwrite((void*)&v.role, 1, sizeof(uint8_t), out.f);
 //        fwrite((void*)&v.type, 1, sizeof(uint8_t), out.f);
 //        fwrite((void*)&v.gcode_id, 1, sizeof(uint32_t), out.f);
@@ -4984,8 +4987,8 @@ void GCodeViewer::render_legend(float& legend_height)
 #endif // ENABLE_NEW_GCODE_VIEWER
 #if ENABLE_ET_SPE1872
         view_options = { _u8L("Feature type"), _u8L("Height (mm)"), _u8L("Width (mm)"), _u8L("Speed (mm/s)"), _u8L("Actual speed (mm/s)"),
-                         _u8L("Fan speed (%)"), _u8L("Temperature (°C)"), _u8L("Volumetric flow rate (mm³/s)"), _u8L("Layer time (linear)"),
-                         _u8L("Layer time (logarithmic)"), _u8L("Tool"), _u8L("Color Print") };
+                         _u8L("Fan speed (%)"), _u8L("Temperature (°C)"), _u8L("Volumetric flow rate (mm³/s)"), _u8L("Actual volumetric flow rate (mm³/s)"),
+                         _u8L("Layer time (linear)"), _u8L("Layer time (logarithmic)"), _u8L("Tool"), _u8L("Color Print") };
         view_options_id = { static_cast<int>(libvgcode::EViewType::FeatureType),
                             static_cast<int>(libvgcode::EViewType::Height),
                             static_cast<int>(libvgcode::EViewType::Width),
@@ -4994,6 +4997,7 @@ void GCodeViewer::render_legend(float& legend_height)
                             static_cast<int>(libvgcode::EViewType::FanSpeed),
                             static_cast<int>(libvgcode::EViewType::Temperature),
                             static_cast<int>(libvgcode::EViewType::VolumetricFlowRate),
+                            static_cast<int>(libvgcode::EViewType::ActualVolumetricFlowRate),
                             static_cast<int>(libvgcode::EViewType::LayerTimeLinear),
                             static_cast<int>(libvgcode::EViewType::LayerTimeLogarithmic),
                             static_cast<int>(libvgcode::EViewType::Tool),
@@ -5008,7 +5012,8 @@ void GCodeViewer::render_legend(float& legend_height)
     else {
 #if ENABLE_ET_SPE1872
         view_options = { _u8L("Feature type"), _u8L("Height (mm)"), _u8L("Width (mm)"), _u8L("Speed (mm/s)"), _u8L("Actual speed (mm/s)"),
-                         _u8L("Fan speed (%)"), _u8L("Temperature (°C)"), _u8L("Volumetric flow rate (mm³/s)"), _u8L("Tool"), _u8L("Color Print") };
+                         _u8L("Fan speed (%)"), _u8L("Temperature (°C)"), _u8L("Volumetric flow rate (mm³/s)"), _u8L("Actual volumetric flow rate (mm³/s)"),
+                         _u8L("Tool"), _u8L("Color Print") };
         view_options_id = { static_cast<int>(libvgcode::EViewType::FeatureType),
                             static_cast<int>(libvgcode::EViewType::Height),
                             static_cast<int>(libvgcode::EViewType::Width),
@@ -5017,6 +5022,7 @@ void GCodeViewer::render_legend(float& legend_height)
                             static_cast<int>(libvgcode::EViewType::FanSpeed),
                             static_cast<int>(libvgcode::EViewType::Temperature),
                             static_cast<int>(libvgcode::EViewType::VolumetricFlowRate),
+                            static_cast<int>(libvgcode::EViewType::ActualVolumetricFlowRate),
                             static_cast<int>(libvgcode::EViewType::Tool),
                             static_cast<int>(libvgcode::EViewType::ColorPrint) };
 #if ENABLE_NEW_GCODE_VIEWER
@@ -5152,17 +5158,20 @@ void GCodeViewer::render_legend(float& legend_height)
             break;
         }
 #if ENABLE_NEW_GCODE_VIEWER
-        case libvgcode::EViewType::Height:               { append_range(m_viewer.get_color_range(libvgcode::EViewType::Height), 3); break; }
-        case libvgcode::EViewType::Width:                { append_range(m_viewer.get_color_range(libvgcode::EViewType::Width), 3); break; }
-        case libvgcode::EViewType::Speed:                { append_range(m_viewer.get_color_range(libvgcode::EViewType::Speed), 1); break; }
+        case libvgcode::EViewType::Height:                   { append_range(m_viewer.get_color_range(libvgcode::EViewType::Height), 3); break; }
+        case libvgcode::EViewType::Width:                    { append_range(m_viewer.get_color_range(libvgcode::EViewType::Width), 3); break; }
+        case libvgcode::EViewType::Speed:                    { append_range(m_viewer.get_color_range(libvgcode::EViewType::Speed), 1); break; }
 #if ENABLE_ET_SPE1872
-        case libvgcode::EViewType::ActualSpeed:          { append_range(m_viewer.get_color_range(libvgcode::EViewType::ActualSpeed), 1); break; }
+        case libvgcode::EViewType::ActualSpeed:              { append_range(m_viewer.get_color_range(libvgcode::EViewType::ActualSpeed), 1); break; }
 #endif // ENABLE_ET_SPE1872
-        case libvgcode::EViewType::FanSpeed:             { append_range(m_viewer.get_color_range(libvgcode::EViewType::FanSpeed), 0); break; }
-        case libvgcode::EViewType::Temperature:          { append_range(m_viewer.get_color_range(libvgcode::EViewType::Temperature), 0); break; }
-        case libvgcode::EViewType::VolumetricFlowRate:   { append_range(m_viewer.get_color_range(libvgcode::EViewType::VolumetricFlowRate), 3); break; }
-        case libvgcode::EViewType::LayerTimeLinear:      { append_time_range(m_viewer.get_color_range(libvgcode::EViewType::LayerTimeLinear)); break; }
-        case libvgcode::EViewType::LayerTimeLogarithmic: { append_time_range(m_viewer.get_color_range(libvgcode::EViewType::LayerTimeLogarithmic)); break; }
+        case libvgcode::EViewType::FanSpeed:                 { append_range(m_viewer.get_color_range(libvgcode::EViewType::FanSpeed), 0); break; }
+        case libvgcode::EViewType::Temperature:              { append_range(m_viewer.get_color_range(libvgcode::EViewType::Temperature), 0); break; }
+        case libvgcode::EViewType::VolumetricFlowRate:       { append_range(m_viewer.get_color_range(libvgcode::EViewType::VolumetricFlowRate), 3); break; }
+#if ENABLE_ET_SPE1872
+        case libvgcode::EViewType::ActualVolumetricFlowRate: { append_range(m_viewer.get_color_range(libvgcode::EViewType::ActualVolumetricFlowRate), 3); break; }
+#endif // ENABLE_ET_SPE1872
+        case libvgcode::EViewType::LayerTimeLinear:          { append_time_range(m_viewer.get_color_range(libvgcode::EViewType::LayerTimeLinear)); break; }
+        case libvgcode::EViewType::LayerTimeLogarithmic:     { append_time_range(m_viewer.get_color_range(libvgcode::EViewType::LayerTimeLogarithmic)); break; }
         case libvgcode::EViewType::Tool: {
             // shows only extruders actually used
             const std::vector<uint8_t>& used_extruders_ids = m_viewer.get_used_extruders_ids();
@@ -5561,7 +5570,12 @@ void GCodeViewer::render_legend(float& legend_height)
     }
 
 #if ENABLE_NEW_GCODE_VIEWER
+#if ENABLE_ET_SPE1872
+    if (new_view_type == libvgcode::EViewType::Width || new_view_type == libvgcode::EViewType::VolumetricFlowRate ||
+        new_view_type == libvgcode::EViewType::ActualVolumetricFlowRate) {
+#else
     if (new_view_type == libvgcode::EViewType::Width || new_view_type == libvgcode::EViewType::VolumetricFlowRate) {
+#endif // ENABLE_ET_SPE1872
         const std::vector<libvgcode::EGCodeExtrusionRole>& roles = m_viewer.get_extrusion_roles();
         const auto custom_it = std::find(roles.begin(), roles.end(), libvgcode::EGCodeExtrusionRole::Custom);
         if (custom_it != roles.end()) {

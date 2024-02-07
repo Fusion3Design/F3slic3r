@@ -157,6 +157,9 @@ namespace Slic3r {
             bool internal_only{ false };
 
             float volumetric_rate() const { return feedrate * mm3_per_mm; }
+#if ENABLE_ET_SPE1872
+            float actual_volumetric_rate() const { return actual_feedrate * mm3_per_mm; }
+#endif // ENABLE_ET_SPE1872
         };
 
         std::string filename;

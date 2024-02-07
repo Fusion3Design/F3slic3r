@@ -50,6 +50,12 @@ struct PathVertex
     // Segment volumetric rate
     //
     float volumetric_rate{ 0.0f };
+#if VGCODE_ENABLE_ET_SPE1872
+    //
+    // Segment actual volumetric rate
+    //
+    float actual_volumetric_rate{ 0.0f };
+#endif // VGCODE_ENABLE_ET_SPE1872
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     //
     // Segment weight

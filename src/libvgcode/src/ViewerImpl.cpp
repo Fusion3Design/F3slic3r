@@ -987,6 +987,12 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
     {
         return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_volumetric_rate_range.get_color_at(v.volumetric_rate);
     }
+#if VGCODE_ENABLE_ET_SPE1872
+    case EViewType::ActualVolumetricFlowRate:
+    {
+        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_actual_volumetric_rate_range.get_color_at(v.actual_volumetric_rate);
+    }
+#endif // VGCODE_ENABLE_ET_SPE1872
     case EViewType::LayerTimeLinear:
     {
         return v.is_travel() ? get_option_color(move_type_to_option(v.type)) :
@@ -1069,18 +1075,21 @@ const ColorRange& ViewerImpl::get_color_range(EViewType type) const
 {
     switch (type)
     {
-    case EViewType::Height:               { return m_height_range; }
-    case EViewType::Width:                { return m_width_range; }
-    case EViewType::Speed:                { return m_speed_range; }
+    case EViewType::Height:                   { return m_height_range; }
+    case EViewType::Width:                    { return m_width_range; }
+    case EViewType::Speed:                    { return m_speed_range; }
 #if VGCODE_ENABLE_ET_SPE1872
-    case EViewType::ActualSpeed:          { return m_actual_speed_range; }
+    case EViewType::ActualSpeed:              { return m_actual_speed_range; }
 #endif // VGCODE_ENABLE_ET_SPE1872
-    case EViewType::FanSpeed:             { return m_fan_speed_range; }
-    case EViewType::Temperature:          { return m_temperature_range; }
-    case EViewType::VolumetricFlowRate:   { return m_volumetric_rate_range; }
-    case EViewType::LayerTimeLinear:      { return m_layer_time_range[0]; }
-    case EViewType::LayerTimeLogarithmic: { return m_layer_time_range[1]; }
-    default:                              { return ColorRange::DUMMY_COLOR_RANGE; }
+    case EViewType::FanSpeed:                 { return m_fan_speed_range; }
+    case EViewType::Temperature:              { return m_temperature_range; }
+    case EViewType::VolumetricFlowRate:       { return m_volumetric_rate_range; }
+#if VGCODE_ENABLE_ET_SPE1872
+    case EViewType::ActualVolumetricFlowRate: { return m_actual_volumetric_rate_range; }
+#endif // VGCODE_ENABLE_ET_SPE1872
+    case EViewType::LayerTimeLinear:          { return m_layer_time_range[0]; }
+    case EViewType::LayerTimeLogarithmic:     { return m_layer_time_range[1]; }
+    default:                                  { return ColorRange::DUMMY_COLOR_RANGE; }
     }
 }
 
@@ -1088,18 +1097,21 @@ void ViewerImpl::set_color_range_palette(EViewType type, const Palette& palette)
 {
     switch (type)
     {
-    case EViewType::Height:               { m_height_range.set_palette(palette); }
-    case EViewType::Width:                { m_width_range.set_palette(palette); }
-    case EViewType::Speed:                { m_speed_range.set_palette(palette); }
+    case EViewType::Height:                   { m_height_range.set_palette(palette); }
+    case EViewType::Width:                    { m_width_range.set_palette(palette); }
+    case EViewType::Speed:                    { m_speed_range.set_palette(palette); }
 #if VGCODE_ENABLE_ET_SPE1872
-    case EViewType::ActualSpeed:          { m_actual_speed_range.set_palette(palette); }
+    case EViewType::ActualSpeed:              { m_actual_speed_range.set_palette(palette); }
 #endif // VGCODE_ENABLE_ET_SPE1872
-    case EViewType::FanSpeed:             { m_fan_speed_range.set_palette(palette); }
-    case EViewType::Temperature:          { m_temperature_range.set_palette(palette); }
-    case EViewType::VolumetricFlowRate:   { m_volumetric_rate_range.set_palette(palette); }
-    case EViewType::LayerTimeLinear:      { m_layer_time_range[0].set_palette(palette); }
-    case EViewType::LayerTimeLogarithmic: { m_layer_time_range[1].set_palette(palette); }
-    default:                              { break; }
+    case EViewType::FanSpeed:                 { m_fan_speed_range.set_palette(palette); }
+    case EViewType::Temperature:              { m_temperature_range.set_palette(palette); }
+    case EViewType::VolumetricFlowRate:       { m_volumetric_rate_range.set_palette(palette); }
+#if VGCODE_ENABLE_ET_SPE1872
+    case EViewType::ActualVolumetricFlowRate: { m_actual_volumetric_rate_range.set_palette(palette); }
+#endif // VGCODE_ENABLE_ET_SPE1872
+    case EViewType::LayerTimeLinear:          { m_layer_time_range[0].set_palette(palette); }
+    case EViewType::LayerTimeLogarithmic:     { m_layer_time_range[1].set_palette(palette); }
+    default:                                  { break; }
     }
     m_settings.update_colors = true;
 }
@@ -1135,6 +1147,9 @@ size_t ViewerImpl::get_used_cpu_memory() const
     ret += m_fan_speed_range.size_in_bytes_cpu();
     ret += m_temperature_range.size_in_bytes_cpu();
     ret += m_volumetric_rate_range.size_in_bytes_cpu();
+#if VGCODE_ENABLE_ET_SPE1872
+    ret += m_actual_volumetric_rate_range.size_in_bytes_cpu();
+#endif // VGCODE_ENABLE_ET_SPE1872
     for (size_t i = 0; i < COLOR_RANGE_TYPES_COUNT; ++i) {
         ret += m_layer_time_range[i].size_in_bytes_cpu();
     }
@@ -1275,6 +1290,9 @@ void ViewerImpl::update_color_ranges()
     m_fan_speed_range.reset();
     m_temperature_range.reset();
     m_volumetric_rate_range.reset();
+#if VGCODE_ENABLE_ET_SPE1872
+    m_actual_volumetric_rate_range.reset();
+#endif // VGCODE_ENABLE_ET_SPE1872
     m_layer_time_range[0].reset(); // ColorRange::EType::Linear
     m_layer_time_range[1].reset(); // ColorRange::EType::Logarithmic
 
@@ -1285,6 +1303,9 @@ void ViewerImpl::update_color_ranges()
             if (!v.is_custom_gcode() || m_settings.extrusion_roles_visibility.at(EGCodeExtrusionRole::Custom)) {
                 m_width_range.update(round_to_bin(v.width));
                 m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate));
+#if VGCODE_ENABLE_ET_SPE1872
+                m_actual_volumetric_rate_range.update(round_to_bin(v.actual_volumetric_rate));
+#endif // VGCODE_ENABLE_ET_SPE1872
             }
             m_fan_speed_range.update(v.fan_speed);
             m_temperature_range.update(v.temperature);
