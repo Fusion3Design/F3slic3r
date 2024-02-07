@@ -531,6 +531,18 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                         text = _u8L("N/A");
                     imgui.text(text);
                 });
+#if ENABLE_ET_SPE1872
+                append_table_row(_u8L("Actual speed") + " (" + _u8L("mm/s") + ")", [&imgui, &vertex, &buff]() {
+                    std::string text;
+                    if (vertex.is_extrusion()) {
+                        sprintf(buff, "%.1f", vertex.actual_feedrate);
+                        text = std::string(buff);
+                    }
+                    else
+                        text = _u8L("N/A");
+                    imgui.text(text);
+                });
+#endif // ENABLE_ET_SPE1872
                 append_table_row(_u8L("Fan speed") + " (" + _u8L("%") + ")", [&imgui, &vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
@@ -554,6 +566,36 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
 
                 ImGui::EndTable();
             }
+
+#if ENABLE_ET_SPE1872_DEBUG
+            if (vertex.is_extrusion() || vertex.is_travel() || vertex.is_wipe()) {
+                const std::array<float, 2>& interval = viewer->get_color_range(libvgcode::EViewType::ActualSpeed).get_range();
+                const size_t vertices_count = viewer->get_vertices_count();
+                const libvgcode::PathVertex& curr_vertex = viewer->get_current_vertex();
+                const size_t curr_id = viewer->get_current_vertex_id();
+                size_t start_id = curr_id;
+                while (start_id > 0) {
+                    --start_id;
+                    if (curr_vertex.gcode_id != viewer->get_vertex_at(start_id).gcode_id)
+                        break;
+                }
+                size_t end_id = curr_id;
+                while (end_id < vertices_count - 1) {
+                    ++end_id;
+                    if (curr_vertex.gcode_id != viewer->get_vertex_at(end_id).gcode_id)
+                        break;
+                }
+                std::vector<float> actual_speed_profile;
+                for (size_t i = start_id; i < end_id; ++i) {
+                    actual_speed_profile.push_back(viewer->get_vertex_at(i).actual_feedrate);
+                }
+
+                ImGui::Spacing();
+                imgui.text(_u8L("Actual speed profile"));
+                ImGui::Separator();
+                ImGui::PlotLines("##ActualSpeedProfile", actual_speed_profile.data(), static_cast<int>(actual_speed_profile.size()), 0, nullptr, 0.0f, interval[1], { 0.0f, 150.0f });
+            }
+#endif // ENABLE_ET_SPE1872_DEBUG
         }
 
         // force extra frame to automatically update window size

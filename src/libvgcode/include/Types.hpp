@@ -7,6 +7,7 @@
 
 #define VGCODE_ENABLE_COG_AND_TOOL_MARKERS 0
 #define VGCODE_ENABLE_ET_SPE1872 1
+#define VGCODE_ENABLE_ET_SPE1872_DEBUG (1 && VGCODE_ENABLE_ET_SPE1872)
 
 #include <array>
 #include <vector>

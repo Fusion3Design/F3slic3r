@@ -65,6 +65,7 @@
 // requires VGCODE_ENABLE_ET_SPE1872 set to 1 in libvgcode (Types.hpp)
 #define ENABLE_ET_SPE1872 (1 && ENABLE_NEW_GCODE_VIEWER)
 #define ENABLE_ET_SPE1872_FIRMWARE_BUDDY (1 && ENABLE_ET_SPE1872)
+#define ENABLE_ET_SPE1872_DEBUG (1 && ENABLE_ET_SPE1872)
 
 // Enable G-Code viewer statistics imgui dialog
 #define ENABLE_GCODE_VIEWER_STATISTICS (0 && !ENABLE_NEW_GCODE_VIEWER)

@@ -166,9 +166,15 @@ public:
     // EViewType::Height
     // EViewType::Width
     // EViewType::Speed
+#if VGCODE_ENABLE_ET_SPE1872
+    // EViewType::ActualSpeed
+#endif // VGCODE_ENABLE_ET_SPE1872
     // EViewType::FanSpeed
     // EViewType::Temperature
     // EViewType::VolumetricFlowRate
+#if VGCODE_ENABLE_ET_SPE1872
+    // EViewType::ActualVolumetricFlowRate
+#endif // VGCODE_ENABLE_ET_SPE1872
     // EViewType::LayerTimeLinear
     // EViewType::LayerTimeLogarithmic
     //
@@ -180,9 +186,15 @@ public:
     // EViewType::Height
     // EViewType::Width
     // EViewType::Speed
+#if VGCODE_ENABLE_ET_SPE1872
+    // EViewType::ActualSpeed
+#endif // VGCODE_ENABLE_ET_SPE1872
     // EViewType::FanSpeed
     // EViewType::Temperature
     // EViewType::VolumetricFlowRate
+#if VGCODE_ENABLE_ET_SPE1872
+    // EViewType::ActualVolumetricFlowRate
+#endif // VGCODE_ENABLE_ET_SPE1872
     // EViewType::LayerTimeLinear
     // EViewType::LayerTimeLogarithmic
     //
