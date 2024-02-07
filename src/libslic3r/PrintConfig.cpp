@@ -1098,7 +1098,7 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("Speed used for stamping.");
     def->min = 0;
     def->mode = comExpert;
-    def->set_default_value(new ConfigOptionFloats { 0. });
+    def->set_default_value(new ConfigOptionFloats { 20. });
 
     def = this->add("filament_stamping_distance", coFloats);
     def->label = L("Stamping distance measured from the center of the cooling tube");
