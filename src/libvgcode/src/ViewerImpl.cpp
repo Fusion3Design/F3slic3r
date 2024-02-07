@@ -985,12 +985,16 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
     }
     case EViewType::VolumetricFlowRate:
     {
+#if VGCODE_ENABLE_ET_SPE1872
+        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_volumetric_rate_range.get_color_at(v.volumetric_rate());
+#else
         return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_volumetric_rate_range.get_color_at(v.volumetric_rate);
+#endif // VGCODE_ENABLE_ET_SPE1872
     }
 #if VGCODE_ENABLE_ET_SPE1872
     case EViewType::ActualVolumetricFlowRate:
     {
-        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_actual_volumetric_rate_range.get_color_at(v.actual_volumetric_rate);
+        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_actual_volumetric_rate_range.get_color_at(v.actual_volumetric_rate());
     }
 #endif // VGCODE_ENABLE_ET_SPE1872
     case EViewType::LayerTimeLinear:
@@ -1302,9 +1306,11 @@ void ViewerImpl::update_color_ranges()
             m_height_range.update(round_to_bin(v.height));
             if (!v.is_custom_gcode() || m_settings.extrusion_roles_visibility.at(EGCodeExtrusionRole::Custom)) {
                 m_width_range.update(round_to_bin(v.width));
-                m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate));
 #if VGCODE_ENABLE_ET_SPE1872
-                m_actual_volumetric_rate_range.update(round_to_bin(v.actual_volumetric_rate));
+                m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate()));
+                m_actual_volumetric_rate_range.update(round_to_bin(v.actual_volumetric_rate()));
+#else
+                m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate));
 #endif // VGCODE_ENABLE_ET_SPE1872
             }
             m_fan_speed_range.update(v.fan_speed);

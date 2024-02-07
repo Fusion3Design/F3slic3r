@@ -1148,102 +1148,102 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
     // convert data from PrusaSlicer format to libvgcode format
     libvgcode::GCodeInputData data = libvgcode::convert(gcode_result, str_tool_colors, str_color_print_colors, m_viewer);
 
-//#define ENABLE_DATA_EXPORT 1
-//#if ENABLE_DATA_EXPORT
-//    auto extrusion_role_to_string = [](libvgcode::EGCodeExtrusionRole role) {
-//      switch (role) {
-//      case libvgcode::EGCodeExtrusionRole::None: { return "EGCodeExtrusionRole::None"; }
-//      case libvgcode::EGCodeExtrusionRole::Perimeter: { return "EGCodeExtrusionRole::Perimeter"; }
-//      case libvgcode::EGCodeExtrusionRole::ExternalPerimeter: { return "EGCodeExtrusionRole::ExternalPerimeter"; }
-//      case libvgcode::EGCodeExtrusionRole::OverhangPerimeter: { return "EGCodeExtrusionRole::OverhangPerimeter"; }
-//      case libvgcode::EGCodeExtrusionRole::InternalInfill: { return "EGCodeExtrusionRole::InternalInfill"; }
-//      case libvgcode::EGCodeExtrusionRole::SolidInfill: { return "EGCodeExtrusionRole::SolidInfill"; }
-//      case libvgcode::EGCodeExtrusionRole::TopSolidInfill: { return "EGCodeExtrusionRole::TopSolidInfill"; }
-//      case libvgcode::EGCodeExtrusionRole::Ironing: { return "EGCodeExtrusionRole::Ironing"; }
-//      case libvgcode::EGCodeExtrusionRole::BridgeInfill: { return "EGCodeExtrusionRole::BridgeInfill"; }
-//      case libvgcode::EGCodeExtrusionRole::GapFill: { return "EGCodeExtrusionRole::GapFill"; }
-//      case libvgcode::EGCodeExtrusionRole::Skirt: { return "EGCodeExtrusionRole::Skirt"; }
-//      case libvgcode::EGCodeExtrusionRole::SupportMaterial: { return "EGCodeExtrusionRole::SupportMaterial"; }
-//      case libvgcode::EGCodeExtrusionRole::SupportMaterialInterface: { return "EGCodeExtrusionRole::SupportMaterialInterface"; }
-//      case libvgcode::EGCodeExtrusionRole::WipeTower: { return "EGCodeExtrusionRole::WipeTower"; }
-//      case libvgcode::EGCodeExtrusionRole::Custom: { return "EGCodeExtrusionRole::Custom"; }
-//      case libvgcode::EGCodeExtrusionRole::COUNT: { return "EGCodeExtrusionRole::COUNT"; }
-//      }
-//    };
-//
-//    auto move_type_to_string = [](libvgcode::EMoveType type) {
-//      switch (type) {
-//      case libvgcode::EMoveType::Noop: { return "EMoveType::Noop"; }
-//      case libvgcode::EMoveType::Retract: { return "EMoveType::Retract"; }
-//      case libvgcode::EMoveType::Unretract: { return "EMoveType::Unretract"; }
-//      case libvgcode::EMoveType::Seam: { return "EMoveType::Seam"; }
-//      case libvgcode::EMoveType::ToolChange: { return "EMoveType::ToolChange"; }
-//      case libvgcode::EMoveType::ColorChange: { return "EMoveType::ColorChange"; }
-//      case libvgcode::EMoveType::PausePrint: { return "EMoveType::PausePrint"; }
-//      case libvgcode::EMoveType::CustomGCode: { return "EMoveType::CustomGCode"; }
-//      case libvgcode::EMoveType::Travel: { return "EMoveType::Travel"; }
-//      case libvgcode::EMoveType::Wipe: { return "EMoveType::Wipe"; }
-//      case libvgcode::EMoveType::Extrude: { return "EMoveType::Extrude"; }
-//      case libvgcode::EMoveType::COUNT: { return "EMoveType::COUNT"; }
-//      }
-//    };
-//
-//    FilePtr out{ boost::nowide::fopen("C:/prusa/slicer/test_output/spe1872/test.data", "wb") };
-//    if (out.f != nullptr) {
-//      const size_t vertices_count = data.vertices.size();
-//      fwrite((void*)&vertices_count, 1, sizeof(size_t), out.f);
-//      for (const libvgcode::PathVertex& v : data.vertices) {
-//        fwrite((void*)&v.position[0], 1, sizeof(float), out.f);
-//        fwrite((void*)&v.position[1], 1, sizeof(float), out.f);
-//        fwrite((void*)&v.position[2], 1, sizeof(float), out.f);
-//        fwrite((void*)&v.height, 1, sizeof(float), out.f);
-//        fwrite((void*)&v.width, 1, sizeof(float), out.f);
-//        fwrite((void*)&v.feedrate, 1, sizeof(float), out.f);
-//#if ENABLE_ET_SPE1872
-//        fwrite((void*)&v.actual_feedrate, 1, sizeof(float), out.f);
-//#endif // ENABLE_ET_SPE1872
-//        fwrite((void*)&v.fan_speed, 1, sizeof(float), out.f);
-//        fwrite((void*)&v.temperature, 1, sizeof(float), out.f);
-//        fwrite((void*)&v.volumetric_rate, 1, sizeof(float), out.f);
-//#if ENABLE_ET_SPE1872
-//        fwrite((void*)&v.actual_volumetric_rate, 1, sizeof(float), out.f);
-//#endif // ENABLE_ET_SPE1872
-//        fwrite((void*)&v.role, 1, sizeof(uint8_t), out.f);
-//        fwrite((void*)&v.type, 1, sizeof(uint8_t), out.f);
-//        fwrite((void*)&v.gcode_id, 1, sizeof(uint32_t), out.f);
-//        fwrite((void*)&v.layer_id, 1, sizeof(uint32_t), out.f);
-//        fwrite((void*)&v.extruder_id, 1, sizeof(uint32_t), out.f);
-//        fwrite((void*)&v.color_id, 1, sizeof(uint32_t), out.f);
-//        fwrite((void*)&v.times[0], 1, sizeof(float), out.f);
-//        fwrite((void*)&v.times[1], 1, sizeof(float), out.f);
-//#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-//        const float weight = v.weight;
-//#else
-//        const float weight = 0.0f;
-//#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-//        fwrite((void*)&weight, 1, sizeof(float), out.f);
-//      }
-//
-//      const uint8_t spiral_vase_mode = data.spiral_vase_mode ? 1 : 0;
-//      fwrite((void*)&spiral_vase_mode, 1, sizeof(uint8_t), out.f);
-//
-//      const size_t tool_colors_count = data.tools_colors.size();
-//      fwrite((void*)&tool_colors_count, 1, sizeof(size_t), out.f);
-//      for (const libvgcode::Color& c : data.tools_colors) {
-//        fwrite((void*)&c[0], 1, sizeof(uint8_t), out.f);
-//        fwrite((void*)&c[1], 1, sizeof(uint8_t), out.f);
-//        fwrite((void*)&c[2], 1, sizeof(uint8_t), out.f);
-//      }
-//
-//      const size_t color_print_colors_count = data.color_print_colors.size();
-//      fwrite((void*)&color_print_colors_count, 1, sizeof(size_t), out.f);
-//      for (const libvgcode::Color& c : data.color_print_colors) {
-//        fwrite((void*)&c[0], 1, sizeof(uint8_t), out.f);
-//        fwrite((void*)&c[1], 1, sizeof(uint8_t), out.f);
-//        fwrite((void*)&c[2], 1, sizeof(uint8_t), out.f);
-//      }
-//    }
-//#endif // ENABLE_DATA_EXPORT
+#define ENABLE_DATA_EXPORT 1
+#if ENABLE_DATA_EXPORT
+    auto extrusion_role_to_string = [](libvgcode::EGCodeExtrusionRole role) {
+      switch (role) {
+      case libvgcode::EGCodeExtrusionRole::None: { return "EGCodeExtrusionRole::None"; }
+      case libvgcode::EGCodeExtrusionRole::Perimeter: { return "EGCodeExtrusionRole::Perimeter"; }
+      case libvgcode::EGCodeExtrusionRole::ExternalPerimeter: { return "EGCodeExtrusionRole::ExternalPerimeter"; }
+      case libvgcode::EGCodeExtrusionRole::OverhangPerimeter: { return "EGCodeExtrusionRole::OverhangPerimeter"; }
+      case libvgcode::EGCodeExtrusionRole::InternalInfill: { return "EGCodeExtrusionRole::InternalInfill"; }
+      case libvgcode::EGCodeExtrusionRole::SolidInfill: { return "EGCodeExtrusionRole::SolidInfill"; }
+      case libvgcode::EGCodeExtrusionRole::TopSolidInfill: { return "EGCodeExtrusionRole::TopSolidInfill"; }
+      case libvgcode::EGCodeExtrusionRole::Ironing: { return "EGCodeExtrusionRole::Ironing"; }
+      case libvgcode::EGCodeExtrusionRole::BridgeInfill: { return "EGCodeExtrusionRole::BridgeInfill"; }
+      case libvgcode::EGCodeExtrusionRole::GapFill: { return "EGCodeExtrusionRole::GapFill"; }
+      case libvgcode::EGCodeExtrusionRole::Skirt: { return "EGCodeExtrusionRole::Skirt"; }
+      case libvgcode::EGCodeExtrusionRole::SupportMaterial: { return "EGCodeExtrusionRole::SupportMaterial"; }
+      case libvgcode::EGCodeExtrusionRole::SupportMaterialInterface: { return "EGCodeExtrusionRole::SupportMaterialInterface"; }
+      case libvgcode::EGCodeExtrusionRole::WipeTower: { return "EGCodeExtrusionRole::WipeTower"; }
+      case libvgcode::EGCodeExtrusionRole::Custom: { return "EGCodeExtrusionRole::Custom"; }
+      case libvgcode::EGCodeExtrusionRole::COUNT: { return "EGCodeExtrusionRole::COUNT"; }
+      }
+    };
+
+    auto move_type_to_string = [](libvgcode::EMoveType type) {
+      switch (type) {
+      case libvgcode::EMoveType::Noop: { return "EMoveType::Noop"; }
+      case libvgcode::EMoveType::Retract: { return "EMoveType::Retract"; }
+      case libvgcode::EMoveType::Unretract: { return "EMoveType::Unretract"; }
+      case libvgcode::EMoveType::Seam: { return "EMoveType::Seam"; }
+      case libvgcode::EMoveType::ToolChange: { return "EMoveType::ToolChange"; }
+      case libvgcode::EMoveType::ColorChange: { return "EMoveType::ColorChange"; }
+      case libvgcode::EMoveType::PausePrint: { return "EMoveType::PausePrint"; }
+      case libvgcode::EMoveType::CustomGCode: { return "EMoveType::CustomGCode"; }
+      case libvgcode::EMoveType::Travel: { return "EMoveType::Travel"; }
+      case libvgcode::EMoveType::Wipe: { return "EMoveType::Wipe"; }
+      case libvgcode::EMoveType::Extrude: { return "EMoveType::Extrude"; }
+      case libvgcode::EMoveType::COUNT: { return "EMoveType::COUNT"; }
+      }
+    };
+
+    FilePtr out{ boost::nowide::fopen("C:/prusa/slicer/test_output/spe1872/test.data", "wb") };
+    if (out.f != nullptr) {
+      const size_t vertices_count = data.vertices.size();
+      fwrite((void*)&vertices_count, 1, sizeof(size_t), out.f);
+      for (const libvgcode::PathVertex& v : data.vertices) {
+        fwrite((void*)&v.position[0], 1, sizeof(float), out.f);
+        fwrite((void*)&v.position[1], 1, sizeof(float), out.f);
+        fwrite((void*)&v.position[2], 1, sizeof(float), out.f);
+        fwrite((void*)&v.height, 1, sizeof(float), out.f);
+        fwrite((void*)&v.width, 1, sizeof(float), out.f);
+        fwrite((void*)&v.feedrate, 1, sizeof(float), out.f);
+#if ENABLE_ET_SPE1872
+        fwrite((void*)&v.actual_feedrate, 1, sizeof(float), out.f);
+        fwrite((void*)&v.mm3_per_mm, 1, sizeof(float), out.f);
+#endif // ENABLE_ET_SPE1872
+        fwrite((void*)&v.fan_speed, 1, sizeof(float), out.f);
+        fwrite((void*)&v.temperature, 1, sizeof(float), out.f);
+#if !ENABLE_ET_SPE1872
+        fwrite((void*)&v.volumetric_rate, 1, sizeof(float), out.f);
+#endif // !ENABLE_ET_SPE1872
+        fwrite((void*)&v.role, 1, sizeof(uint8_t), out.f);
+        fwrite((void*)&v.type, 1, sizeof(uint8_t), out.f);
+        fwrite((void*)&v.gcode_id, 1, sizeof(uint32_t), out.f);
+        fwrite((void*)&v.layer_id, 1, sizeof(uint32_t), out.f);
+        fwrite((void*)&v.extruder_id, 1, sizeof(uint32_t), out.f);
+        fwrite((void*)&v.color_id, 1, sizeof(uint32_t), out.f);
+        fwrite((void*)&v.times[0], 1, sizeof(float), out.f);
+        fwrite((void*)&v.times[1], 1, sizeof(float), out.f);
+#if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+        const float weight = v.weight;
+#else
+        const float weight = 0.0f;
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+        fwrite((void*)&weight, 1, sizeof(float), out.f);
+      }
+
+      const uint8_t spiral_vase_mode = data.spiral_vase_mode ? 1 : 0;
+      fwrite((void*)&spiral_vase_mode, 1, sizeof(uint8_t), out.f);
+
+      const size_t tool_colors_count = data.tools_colors.size();
+      fwrite((void*)&tool_colors_count, 1, sizeof(size_t), out.f);
+      for (const libvgcode::Color& c : data.tools_colors) {
+        fwrite((void*)&c[0], 1, sizeof(uint8_t), out.f);
+        fwrite((void*)&c[1], 1, sizeof(uint8_t), out.f);
+        fwrite((void*)&c[2], 1, sizeof(uint8_t), out.f);
+      }
+
+      const size_t color_print_colors_count = data.color_print_colors.size();
+      fwrite((void*)&color_print_colors_count, 1, sizeof(size_t), out.f);
+      for (const libvgcode::Color& c : data.color_print_colors) {
+        fwrite((void*)&c[0], 1, sizeof(uint8_t), out.f);
+        fwrite((void*)&c[1], 1, sizeof(uint8_t), out.f);
+        fwrite((void*)&c[2], 1, sizeof(uint8_t), out.f);
+      }
+    }
+#endif // ENABLE_DATA_EXPORT
 
     // send data to the viewer
     m_viewer.reset_default_extrusion_roles_colors();
@@ -1262,7 +1262,11 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
             curr.role != libvgcode::EGCodeExtrusionRole::Custom) {
             const Vec3d curr_pos = libvgcode::convert(curr.position).cast<double>();
             const Vec3d prev_pos = libvgcode::convert(m_viewer.get_vertex_at(i - 1).position).cast<double>();
+#if ENABLE_ET_SPE1872
+            m_cog.add_segment(curr_pos, prev_pos, gcode_result.filament_densities[curr.extruder_id] * curr.mm3_per_mm * (curr_pos - prev_pos).norm());
+#else
             m_cog.add_segment(curr_pos, prev_pos, gcode_result.filament_densities[curr.extruder_id] * curr.volumetric_rate / curr.feedrate * (curr_pos - prev_pos).norm());
+#endif // ENABLE_ET_SPE1872
         }
     }
 #endif // !VGCODE_ENABLE_COG_AND_TOOL_MARKERS
