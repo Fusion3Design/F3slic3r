@@ -218,7 +218,6 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
             || opt_key == "filament_unloading_speed"
             || opt_key == "filament_unloading_speed_start"
             || opt_key == "filament_toolchange_delay"
-            || opt_key == "filament_skinnydip_extra_move"
             || opt_key == "filament_cooling_moves"
             || opt_key == "filament_skinnydip_loading_speed"
             || opt_key == "filament_skinnydip_distance"

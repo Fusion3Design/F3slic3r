@@ -645,7 +645,6 @@ void WipeTower::set_extruder(size_t idx, const PrintConfig& config)
         m_filpar[idx].cooling_final_speed     = float(config.filament_cooling_final_speed.get_at(idx));
         m_filpar[idx].filament_skinnydip_loading_speed     = float(config.filament_skinnydip_loading_speed.get_at(idx));
         m_filpar[idx].filament_skinnydip_distance          = float(config.filament_skinnydip_distance.get_at(idx));
-        m_filpar[idx].filament_skinnydip_extra_move        = float(config.filament_skinnydip_extra_move.get_at(idx));
     }
 
     m_filpar[idx].filament_area = float((M_PI/4.f) * pow(config.filament_diameter.get_at(idx), 2)); // all extruders are assumed to have the same filament diameter at this point
@@ -1045,9 +1044,6 @@ void WipeTower::toolchange_Unload(
 
                 // Retract while the print head is stationary, so if there is a blob, it is not dragged along.
                 writer.retract(skinnydip_dist_e, m_filpar[m_current_tool].unloading_speed * 60.f);
-
-                if (m_filpar[m_current_tool].filament_skinnydip_extra_move != 0.f)
-                    skinnydip_dist_e += m_filpar[m_current_tool].filament_skinnydip_extra_move;
             }
 
             if (i == number_of_cooling_moves - 1 && change_temp_later) {
