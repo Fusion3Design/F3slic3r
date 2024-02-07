@@ -944,8 +944,10 @@ void WipeTower::toolchange_Unload(
         }
     }
 
-    if (m_is_mk4mmu3)
+    if (m_is_mk4mmu3) {
         writer.switch_filament_monitoring(false);
+        writer.wait(1.5f);
+    }
     
 
     // now the ramming itself:
@@ -987,9 +989,6 @@ void WipeTower::toolchange_Unload(
               .retract(0.10f * total_retraction_distance, 0.3f * m_filpar[m_current_tool].unloading_speed * 60.f)
               .resume_preview();
     }
-
-    if (m_is_mk4mmu3)
-        writer.switch_filament_monitoring(true);
 
     const int& number_of_cooling_moves = m_filpar[m_current_tool].cooling_moves;
     const bool cooling_will_happen = m_semm && number_of_cooling_moves > 0;
@@ -1034,9 +1033,6 @@ void WipeTower::toolchange_Unload(
                 // Skinnydip turning point shall be no farther than 20mm from the current nozzle position:
                 float skinnydip_turning_point = std::clamp(old_x + 20.f * (turning_point - old_x > 0.f ? 1.f : -1.f), xl, xr);
 
-                if (m_is_mk4mmu3)
-                    writer.switch_filament_monitoring(false);
-
                 // Only last 5mm will be done with the fast x travel. The point is to spread possible blobs
                 // along the whole wipe tower.
                 if (skinnydip_dist_e > 5) {
@@ -1050,9 +1046,6 @@ void WipeTower::toolchange_Unload(
                 // Retract while the print head is stationary, so if there is a blob, it is not dragged along.
                 writer.retract(skinnydip_dist_e, m_filpar[m_current_tool].unloading_speed * 60.f);
 
-                if (m_is_mk4mmu3)
-                    writer.switch_filament_monitoring(true);
-                
                 if (m_filpar[m_current_tool].filament_skinnydip_extra_move != 0.f)
                     skinnydip_dist_e += m_filpar[m_current_tool].filament_skinnydip_extra_move;
             }
@@ -1102,6 +1095,9 @@ void WipeTower::toolchange_Change(
     // These will be substituted by the actual gcodes when the gcode is generated.
     //writer.append("[end_filament_gcode]\n");
     writer.append("[toolchange_gcode_from_wipe_tower_generator]\n");
+
+    if (m_is_mk4mmu3)
+        writer.switch_filament_monitoring(true);
 
     // Travel to where we assume we are. Custom toolchange or some special T code handling (parking extruder etc)
     // gcode could have left the extruder somewhere, we cannot just start extruding. We should also inform the
