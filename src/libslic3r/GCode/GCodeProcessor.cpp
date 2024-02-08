@@ -447,12 +447,14 @@ void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, floa
         // detect actual speed moves required to render toolpaths using actual speed
         if (mode == PrintEstimatedStatistics::ETimeMode::Normal) {
             GCodeProcessorResult::MoveVertex& curr_move = result.moves[block.move_id];
-            if (curr_move.type != EMoveType::Extrude)
-                continue;
+            if (curr_move.type != EMoveType::Extrude &&
+                curr_move.type != EMoveType::Travel &&
+                curr_move.type != EMoveType::Wipe)
+              continue;
 
             assert(curr_move.actual_feedrate == 0.0f);
             const GCodeProcessorResult::MoveVertex& prev_move = result.moves[block.move_id - 1];
-            const bool interpolate = (prev_move.type == EMoveType::Extrude);
+            const bool interpolate = (prev_move.type == curr_move.type);
 
             if (block.trapezoid.acceleration_distance() > EPSILON) {
                 const float t = block.trapezoid.accelerate_until / block.distance;

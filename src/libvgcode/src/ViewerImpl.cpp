@@ -1308,7 +1308,6 @@ void ViewerImpl::update_color_ranges()
                 m_width_range.update(round_to_bin(v.width));
 #if VGCODE_ENABLE_ET_SPE1872
                 m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate()));
-                m_actual_volumetric_rate_range.update(round_to_bin(v.actual_volumetric_rate()));
 #else
                 m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate));
 #endif // VGCODE_ENABLE_ET_SPE1872
@@ -1317,9 +1316,12 @@ void ViewerImpl::update_color_ranges()
             m_temperature_range.update(v.temperature);
         }
 #if VGCODE_ENABLE_ET_SPE1872
-        if ((v.is_travel() && m_settings.options_visibility.at(EOptionType::Travels)) || v.is_extrusion()) {
+        if ((v.is_travel() && m_settings.options_visibility.at(EOptionType::Travels)) ||
+            (v.is_wipe() && m_settings.options_visibility.at(EOptionType::Wipes)) ||
+             v.is_extrusion()) {
             m_speed_range.update(v.feedrate);
             m_actual_speed_range.update(v.actual_feedrate);
+            m_actual_volumetric_rate_range.update(round_to_bin(v.actual_volumetric_rate()));
         }
 #else
         if ((v.is_travel() && m_settings.options_visibility.at(EOptionType::Travels)) || v.is_extrusion())
