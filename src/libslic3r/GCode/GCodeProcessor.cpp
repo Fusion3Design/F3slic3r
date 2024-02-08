@@ -177,7 +177,9 @@ float GCodeProcessor::Trapezoid::cruise_distance() const
 
 void GCodeProcessor::TimeBlock::calculate_trapezoid()
 {
+#if !ENABLE_ET_SPE1872
     trapezoid.cruise_feedrate = feedrate_profile.cruise;
+#endif // !ENABLE_ET_SPE1872
 
     float accelerate_distance = std::max(0.0f, estimated_acceleration_distance(feedrate_profile.entry, feedrate_profile.cruise, acceleration));
     const float decelerate_distance = std::max(0.0f, estimated_acceleration_distance(feedrate_profile.cruise, feedrate_profile.exit, -acceleration));
@@ -191,19 +193,13 @@ void GCodeProcessor::TimeBlock::calculate_trapezoid()
         cruise_distance = 0.0f;
         trapezoid.cruise_feedrate = speed_from_distance(feedrate_profile.entry, accelerate_distance, acceleration);
     }
+#if ENABLE_ET_SPE1872
+    else
+        trapezoid.cruise_feedrate = feedrate_profile.cruise;
+#endif // ENABLE_ET_SPE1872
 
     trapezoid.accelerate_until = accelerate_distance;
     trapezoid.decelerate_after = accelerate_distance + cruise_distance;
-
-#if ENABLE_ET_SPE1872
-    const float new_exit_speed = feedrate_profile.entry +
-        acceleration * trapezoid.acceleration_time(feedrate_profile.entry, acceleration) -
-        acceleration * trapezoid.deceleration_time(distance, acceleration);
-    const float delta_exit_speed_percent = std::abs(100.0f * (new_exit_speed - feedrate_profile.exit) / feedrate_profile.exit);
-    if (delta_exit_speed_percent > 1.0f) {
-        // what to do in this case ?
-    }
-#endif // ENABLE_ET_SPE1872
 }
 
 #if !ENABLE_ET_SPE1872
@@ -381,10 +377,15 @@ static void recalculate_trapezoids(std::vector<GCodeProcessor::TimeBlock>& block
             // Recalculate if current block entry or exit junction speed has changed.
             if (curr->flags.recalculate || next->flags.recalculate) {
                 // NOTE: Entry and exit factors always > 0 by all previous logic operations.
+#if ENABLE_ET_SPE1872
+                curr->feedrate_profile.exit = next->feedrate_profile.entry;
+                curr->calculate_trapezoid();
+#else
                 GCodeProcessor::TimeBlock block = *curr;
                 block.feedrate_profile.exit = next->feedrate_profile.entry;
                 block.calculate_trapezoid();
                 curr->trapezoid = block.trapezoid;
+#endif // ENABLE_ET_SPE1872
                 curr->flags.recalculate = false; // Reset current only to ensure next trapezoid is computed
             }
         }
@@ -392,10 +393,15 @@ static void recalculate_trapezoids(std::vector<GCodeProcessor::TimeBlock>& block
 
     // Last/newest block in buffer. Always recalculated.
     if (next != nullptr) {
+#if ENABLE_ET_SPE1872
+        next->feedrate_profile.exit = next->safe_feedrate;
+        next->calculate_trapezoid();
+#else
         GCodeProcessor::TimeBlock block = *next;
         block.feedrate_profile.exit = next->safe_feedrate;
         block.calculate_trapezoid();
         next->trapezoid = block.trapezoid;
+#endif // ENABLE_ET_SPE1872
         next->flags.recalculate = false;
     }
 }
@@ -461,7 +467,7 @@ void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, floa
                 actual_speed_moves.push_back({
                     block.move_id,
                     position,
-                    block.feedrate_profile.cruise,
+                    block.trapezoid.cruise_feedrate,
                     delta_extruder,
                     feedrate,
                     width,
@@ -486,7 +492,7 @@ void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, floa
                 actual_speed_moves.push_back({
                     block.move_id,
                     position,
-                    block.feedrate_profile.cruise,
+                    block.trapezoid.cruise_feedrate,
                     delta_extruder,
                     feedrate,
                     width,
@@ -501,7 +507,7 @@ void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, floa
             actual_speed_moves.push_back({
                 block.move_id,
                 std::nullopt,
-                (is_cruise_only || !has_deceleration) ? block.feedrate_profile.cruise : block.feedrate_profile.exit,
+                (is_cruise_only || !has_deceleration) ? block.trapezoid.cruise_feedrate : block.feedrate_profile.exit,
                 std::nullopt,
                 std::nullopt,
                 std::nullopt,
