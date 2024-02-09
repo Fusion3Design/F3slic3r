@@ -453,8 +453,15 @@ void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, floa
               continue;
 
             assert(curr_move.actual_feedrate == 0.0f);
-            const GCodeProcessorResult::MoveVertex& prev_move = result.moves[block.move_id - 1];
+
+            GCodeProcessorResult::MoveVertex& prev_move = result.moves[block.move_id - 1];
             const bool interpolate = (prev_move.type == curr_move.type);
+
+            if (!interpolate &&
+                prev_move.type != EMoveType::Extrude &&
+                prev_move.type != EMoveType::Travel &&
+                prev_move.type != EMoveType::Wipe)
+                prev_move.actual_feedrate = block.feedrate_profile.entry;
 
             if (block.trapezoid.acceleration_distance() > EPSILON) {
                 const float t = block.trapezoid.accelerate_until / block.distance;
@@ -4934,6 +4941,12 @@ void GCodeProcessor::calculate_time(GCodeProcessorResult& result, size_t keep_la
             // update move actual speed
             result.moves[base_id + new_moves.size()].actual_feedrate = it->actual_feedrate;
             inserted_actual_speed_moves_count += new_moves.size();
+            // synchronize seams actual speed
+            if (base_id + new_moves.size() + 1 < result.moves.size()) {
+                GCodeProcessorResult::MoveVertex& move = result.moves[base_id + new_moves.size() + 1];
+                if (move.type == EMoveType::Seam)
+                    move.actual_feedrate = it->actual_feedrate;
+            }
             new_moves.clear();
         }
     }
