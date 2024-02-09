@@ -33,6 +33,9 @@
 #include "MsgDialog.hpp"
 #endif // ENABLE_NEW_GCODE_VIEWER
 
+#if ENABLE_ET_SPE1872_DEBUG
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif // ENABLE_ET_SPE1872_DEBUG
 #include <imgui/imgui_internal.h>
 
 #include <GL/glew.h>
@@ -50,7 +53,6 @@
 
 namespace Slic3r {
 namespace GUI {
-
 #if !ENABLE_NEW_GCODE_VIEWER
 static unsigned char buffer_id(EMoveType type) {
     return static_cast<unsigned char>(type) - static_cast<unsigned char>(EMoveType::Retract);
@@ -331,6 +333,92 @@ void GCodeViewer::SequentialRangeCap::reset() {
 }
 #endif // !ENABLE_NEW_GCODE_VIEWER
 
+#if ENABLE_ET_SPE1872_DEBUG
+void GCodeViewer::SequentialView::Marker::ActualSpeedImguiWidget::plot(const char* label, const std::array<float, 2>& frame_size)
+{
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+        return;
+
+    const ImGuiStyle& style = ImGui::GetStyle();
+    const ImGuiIO& io = ImGui::GetIO();
+    const ImGuiID id = window->GetID(label);
+
+    const ImVec2 label_size = ImGui::CalcTextSize(label, nullptr, true);
+    ImVec2 internal_frame_size(frame_size[0], frame_size[1]);
+    internal_frame_size = ImGui::CalcItemSize(internal_frame_size, ImGui::CalcItemWidth(), label_size.y + style.FramePadding.y * 2.0f);
+
+    const ImRect frame_bb(window->DC.CursorPos, window->DC.CursorPos + internal_frame_size);
+    const ImRect inner_bb(frame_bb.Min + style.FramePadding, frame_bb.Max - style.FramePadding);
+    const ImRect total_bb(frame_bb.Min, frame_bb.Max + ImVec2(label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f, 0));
+    ImGui::ItemSize(total_bb, style.FramePadding.y);
+    if (!ImGui::ItemAdd(total_bb, 0, &frame_bb))
+        return;
+
+    const bool hovered = ImGui::ItemHoverable(frame_bb, id);
+
+    ImGui::RenderFrame(frame_bb.Min, frame_bb.Max, ImGui::GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
+
+    static const int values_count_min = 2;
+    const int values_count = static_cast<int>(data.size());
+
+    const ImVec2 offset(10.0f, 0.0f);
+
+    const float size_y = y_range.second - y_range.first;
+    const float size_x = data.back().first - data.front().first;
+    if (size_x > 0.0f && values_count >= values_count_min) {
+        const float inv_scale_y = (size_y == 0.0f) ? 0.0f : 1.0f / size_y;
+        const float inv_scale_x = 1.0f / size_x;
+        const float x0 = data.front().first;
+        const float y0 = y_range.first;
+
+        const ImU32 grid_color = ImGui::GetColorU32(ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
+
+        // horizontal levels
+        for (const auto& [level, color] : levels) {
+            const float y = 1.0f - ImSaturate((level - y_range.first) * inv_scale_y);
+
+            window->DrawList->AddLine(ImLerp(inner_bb.Min, ImVec2(inner_bb.Min.x + offset.x, inner_bb.Max.y), ImVec2(0.1f, y)),
+                ImLerp(inner_bb.Min, ImVec2(inner_bb.Min.x + offset.x, inner_bb.Max.y), ImVec2(0.9f, y)), ImGuiWrapper::to_ImU32(color), 3.0f);
+
+            window->DrawList->AddLine(ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(0.0f, y)),
+                ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(1.0f, y)), grid_color);
+        }
+
+        // vertical positions
+        for (int n = 0; n < values_count - 1; ++n) {
+            const float x = ImSaturate((data[n].first - x0) * inv_scale_x);
+            window->DrawList->AddLine(ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(x, 0.0f)),
+                ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(x, 1.0f)), grid_color);
+        }
+        window->DrawList->AddLine(ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(1.0f, 0.0f)),
+            ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(1.0f, 1.0f)), grid_color);
+
+        int idx_hovered = -1;
+        // profiile
+        const ImU32 col_base = ImGui::GetColorU32(ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+        const ImU32 col_hovered = ImGui::GetColorU32(ImGuiCol_PlotLinesHovered);
+        for (int n = 0; n < values_count - 1; ++n) {
+            const ImVec2 tp1(ImSaturate((data[n].first - x0) * inv_scale_x), 1.0f - ImSaturate((data[n].second - y0) * inv_scale_y));
+            const ImVec2 tp2(ImSaturate((data[n + 1].first - x0) * inv_scale_x), 1.0f - ImSaturate((data[n + 1].second - y0) * inv_scale_y));
+            // Tooltip on hover
+            if (hovered && inner_bb.Contains(io.MousePos)) {
+                const float t = ImClamp((io.MousePos.x - inner_bb.Min.x - offset.x) / (inner_bb.Max.x - inner_bb.Min.x - offset.x), 0.0f, 0.9999f);
+                if (tp1.x < t && t < tp2.x) {
+                    idx_hovered = n;
+                    ImGui::SetTooltip("Speed (mm/s):\n%.1f - %.1f", data[n].second, data[n + 1].second);
+                }
+            }
+            window->DrawList->AddLine(ImLerp(inner_bb.Min + offset, inner_bb.Max, tp1), ImLerp(inner_bb.Min + offset, inner_bb.Max, tp2),
+                idx_hovered == n ? col_hovered : col_base, 2.0f);
+        }
+    }
+
+    if (label_size.x > 0.0f)
+        ImGui::RenderText(ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, inner_bb.Min.y), label);
+}
+#endif // ENABLE_ET_SPE1872_DEBUG
+
 void GCodeViewer::SequentialView::Marker::init()
 {
     m_model.init_from(stilized_arrow(16, 2.0f, 4.0f, 1.0f, 8.0f));
@@ -569,31 +657,31 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
 
 #if ENABLE_ET_SPE1872_DEBUG
             if (vertex.is_extrusion() || vertex.is_travel() || vertex.is_wipe()) {
-                const std::array<float, 2>& interval = viewer->get_color_range(libvgcode::EViewType::ActualSpeed).get_range();
-                const size_t vertices_count = viewer->get_vertices_count();
-                const libvgcode::PathVertex& curr_vertex = viewer->get_current_vertex();
-                const size_t curr_id = viewer->get_current_vertex_id();
-                size_t start_id = curr_id;
-                while (start_id > 0) {
-                    --start_id;
-                    if (curr_vertex.gcode_id != viewer->get_vertex_at(start_id).gcode_id)
-                        break;
-                }
-                size_t end_id = curr_id;
-                while (end_id < vertices_count - 1) {
-                    ++end_id;
-                    if (curr_vertex.gcode_id != viewer->get_vertex_at(end_id).gcode_id)
-                        break;
-                }
-                std::vector<float> actual_speed_profile;
-                for (size_t i = start_id; i < end_id; ++i) {
-                    actual_speed_profile.push_back(viewer->get_vertex_at(i).actual_feedrate);
-                }
-
                 ImGui::Spacing();
                 imgui.text(_u8L("Actual speed profile"));
                 ImGui::Separator();
-                ImGui::PlotLines("##ActualSpeedProfile", actual_speed_profile.data(), static_cast<int>(actual_speed_profile.size()), 0, nullptr, 0.0f, interval[1], { 0.0f, 150.0f });
+                m_actual_speed_imgui_widget.plot("##ActualSpeedProfile", { -1.0f, 150.0f });
+                //const std::array<float, 2>& interval = viewer->get_color_range(libvgcode::EViewType::ActualSpeed).get_range();
+                //const size_t vertices_count = viewer->get_vertices_count();
+                //const libvgcode::PathVertex& curr_vertex = viewer->get_current_vertex();
+                //const size_t curr_id = viewer->get_current_vertex_id();
+                //size_t start_id = curr_id;
+                //while (start_id > 0) {
+                //    --start_id;
+                //    if (curr_vertex.gcode_id != viewer->get_vertex_at(start_id).gcode_id)
+                //        break;
+                //}
+                //size_t end_id = curr_id;
+                //while (end_id < vertices_count - 1) {
+                //    ++end_id;
+                //    if (curr_vertex.gcode_id != viewer->get_vertex_at(end_id).gcode_id)
+                //        break;
+                //}
+                //std::vector<float> actual_speed_profile;
+                //for (size_t i = start_id; i < end_id; ++i) {
+                //    actual_speed_profile.push_back(viewer->get_vertex_at(i).actual_feedrate);
+                //}
+                //ImGui::PlotLines("##ActualSpeedProfile", actual_speed_profile.data(), static_cast<int>(actual_speed_profile.size()), 0, nullptr, 0.0f, interval[1], { 0.0f, 150.0f });
             }
 #endif // ENABLE_ET_SPE1872_DEBUG
         }
@@ -1690,6 +1778,49 @@ void GCodeViewer::update_sequential_view_current(unsigned int first, unsigned in
     m_viewer.set_view_visible_range(static_cast<uint32_t>(first), static_cast<uint32_t>(last));
     const libvgcode::Interval& enabled_range = m_viewer.get_view_enabled_range();
     wxGetApp().plater()->enable_preview_moves_slider(enabled_range[1] > enabled_range[0]);
+
+#if ENABLE_ET_SPE1872_DEBUG
+    std::vector<std::pair<float, float>> actual_speed_data;
+
+    const libvgcode::ColorRange& color_range = m_viewer.get_color_range(libvgcode::EViewType::ActualSpeed);
+    const std::array<float, 2>& interval = color_range.get_range();
+    const size_t vertices_count = m_viewer.get_vertices_count();
+    const libvgcode::PathVertex& curr_vertex = m_viewer.get_current_vertex();
+    const size_t curr_id = m_viewer.get_current_vertex_id();
+    size_t start_id = curr_id;
+    while (start_id > 0) {
+        --start_id;
+        if (curr_vertex.gcode_id != m_viewer.get_vertex_at(start_id).gcode_id)
+            break;
+    }
+    size_t end_id = curr_id;
+    while (end_id < vertices_count - 1) {
+        ++end_id;
+        if (curr_vertex.gcode_id != m_viewer.get_vertex_at(end_id).gcode_id)
+            break;
+    }
+
+    float total_len = 0.0f;
+    for (size_t i = start_id; i < end_id; ++i) {
+        const libvgcode::PathVertex& v = m_viewer.get_vertex_at(i);
+        const float len = (i > start_id) ?
+            (libvgcode::convert(v.position) - libvgcode::convert(m_viewer.get_vertex_at(i - 1).position)).norm() : 0.0f;
+        total_len += len;
+        if (i == start_id || len > 0.0f)
+            actual_speed_data.push_back(std::make_pair(total_len, v.actual_feedrate));
+    }
+
+    std::vector<std::pair<float, ColorRGBA>> levels;
+    const std::vector<float> values = color_range.get_values();
+    for (float value : values) {
+        levels.push_back(std::make_pair(value, libvgcode::convert(color_range.get_color_at(value))));
+        levels.back().second.a(0.5f);
+    }
+
+    m_sequential_view.marker.set_actual_speed_data(actual_speed_data);
+    m_sequential_view.marker.set_actual_speed_y_range(std::make_pair(interval[0], interval[1]));
+    m_sequential_view.marker.set_actual_speed_levels(levels);
+#endif // ENABLE_ET_SPE1872_DEBUG
 #else
     auto is_visible = [this](unsigned int id) {
         for (const TBuffer& buffer : m_buffers) {

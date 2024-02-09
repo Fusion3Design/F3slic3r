@@ -702,6 +702,16 @@ public:
     {
         class Marker
         {
+#if ENABLE_ET_SPE1872_DEBUG
+            struct ActualSpeedImguiWidget
+            {
+                std::pair<float, float> y_range = { 0.0f, 0.0f };
+                std::vector<std::pair<float, ColorRGBA>> levels;
+                std::vector<std::pair<float, float>> data;
+                void plot(const char* label, const std::array<float, 2>& frame_size = { 0.0f, 0.0f });
+            };
+#endif // ENABLE_ET_SPE1872_DEBUG
+
             GLModel m_model;
             Vec3f m_world_position;
             // For seams, the position of the marker is on the last endpoint of the toolpath containing it.
@@ -715,6 +725,9 @@ public:
             bool m_visible{ true };
             bool m_fixed_screen_size{ false };
             float m_scale_factor{ 1.0f };
+#if ENABLE_ET_SPE1872_DEBUG
+            ActualSpeedImguiWidget m_actual_speed_imgui_widget;
+#endif // ENABLE_ET_SPE1872_DEBUG
 
         public:
             void init();
@@ -724,6 +737,18 @@ public:
             void set_world_position(const Vec3f& position) { m_world_position = position; }
             void set_world_offset(const Vec3f& offset) { m_world_offset = offset; }
             void set_z_offset(float z_offset) { m_z_offset = z_offset; }
+
+#if ENABLE_ET_SPE1872_DEBUG
+            void set_actual_speed_y_range(const std::pair<float, float>& y_range) {
+                m_actual_speed_imgui_widget.y_range = y_range;
+            }
+            void set_actual_speed_levels(const std::vector<std::pair<float, ColorRGBA>>& levels) {
+                m_actual_speed_imgui_widget.levels = levels;
+            }
+            void set_actual_speed_data(const std::vector<std::pair<float, float>>& data) {
+                m_actual_speed_imgui_widget.data = data;
+            }
+#endif // ENABLE_ET_SPE1872_DEBUG
 
             bool is_visible() const { return m_visible; }
             void set_visible(bool visible) { m_visible = visible; }
