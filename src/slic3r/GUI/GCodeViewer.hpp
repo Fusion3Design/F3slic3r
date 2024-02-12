@@ -708,7 +708,7 @@ public:
                 std::pair<float, float> y_range = { 0.0f, 0.0f };
                 std::vector<std::pair<float, ColorRGBA>> levels;
                 std::vector<std::pair<float, float>> data;
-                void plot(const char* label, const std::array<float, 2>& frame_size = { 0.0f, 0.0f });
+                int plot(const char* label, const std::array<float, 2>& frame_size = { 0.0f, 0.0f });
             };
 #endif // ENABLE_ET_SPE1872_DEBUG
 
