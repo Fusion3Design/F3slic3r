@@ -560,7 +560,6 @@ namespace Slic3r {
 
         // handlers to parse the .rels file
         void _handle_start_relationships_element(const char* name, const char** attributes);
-        void _handle_end_relationships_element(const char* name);
         bool _handle_start_relationship(const char **attributes, unsigned int num_attributes);
 
         // handlers to parse the .model file
@@ -636,7 +635,6 @@ namespace Slic3r {
 
         // callbacks to parse the .rels file
         static void XMLCALL _handle_start_relationships_element(void *userData, const char *name, const char **attributes);
-        static void XMLCALL _handle_end_relationships_element(void* userData, const char* name);
 
         // callbacks to parse the .model file
         static void XMLCALL _handle_start_model_xml_element(void* userData, const char* name, const char** attributes);
@@ -687,6 +685,7 @@ namespace Slic3r {
         m_sla_support_points.clear();
         m_curr_metadata_name.clear();
         m_curr_characters.clear();
+        m_start_part_path = MODEL_FILE; // set default value for invalid .rel file
         clear_errors();
 
         return _load_model_from_file(filename, model, config, config_substitutions);
@@ -729,33 +728,26 @@ namespace Slic3r {
         int index = mz_zip_reader_locate_file(&archive, RELATIONSHIPS_FILE.c_str(), nullptr, 0);
         if (index < 0 || !mz_zip_reader_file_stat(&archive, index, &stat))
             return false;
-        if (!_extract_relationships_from_archive(archive, stat))
-            return false;
-
-        // we first loop the entries to read from the archive the .model file only, in order to extract the version from it
-        mz_zip_archive_file_stat start_part_stat { -1 };
+        
+        mz_zip_archive_file_stat start_part_stat{std::numeric_limits<mz_uint32>::max()};
+        m_model_path = MODEL_FILE;
+        _extract_relationships_from_archive(archive, stat);
         bool found_model = false;
+
+        // we first loop the entries to read from the .model files which are not root
         for (mz_uint i = 0; i < num_entries; ++i) {
             if (mz_zip_reader_file_stat(&archive, i, &stat)) {
                 std::string name(stat.m_filename);
                 std::replace(name.begin(), name.end(), '\\', '/');
 
                 if (boost::algorithm::iends_with(name, MODEL_EXTENSION)) {
-                    if(found_model){
-                        close_zip_reader(&archive);
-                        add_error("3mf contain multiple .model files and it is not supported yet.");
-                        return false;
+                    // valid model name -> extract model
+                    m_model_path = "/" + name;
+                    if (m_model_path == m_start_part_path) {
+                        start_part_stat = stat;
+                        continue;
                     }
-                    found_model = true;
-
-                    try
-                    {
-                        // valid model name -> extract model
-                        m_model_path = "/" + name;
-                        if (m_model_path == m_start_part_path) {
-                            start_part_stat = stat;
-                            continue;
-                        }
+                    try {
                         if (!_extract_model_from_archive(archive, stat)) {
                             close_zip_reader(&archive);
                             add_error("Archive does not contain a valid model");
@@ -768,11 +760,13 @@ namespace Slic3r {
                         close_zip_reader(&archive);
                         throw Slic3r::FileIOError(e.what());
                     }
+                    found_model = true;
                 }
             }
         }
 
-        if (start_part_stat.m_file_index >= 0) {
+        // Read root model file
+        if (start_part_stat.m_file_index < num_entries) {
             try {
                 m_model_path.clear();
                 if (!_extract_model_from_archive(archive, start_part_stat)) {
@@ -785,6 +779,7 @@ namespace Slic3r {
                 close_zip_reader(&archive);
                 throw Slic3r::FileIOError(e.what());
             }
+            found_model = true;
         }
         if (!found_model) {
             close_zip_reader(&archive);
@@ -1013,7 +1008,9 @@ namespace Slic3r {
 
     bool _3MF_Importer::_extract_relationships_from_archive(mz_zip_archive &archive, const mz_zip_archive_file_stat &stat)
     {
-        if (stat.m_uncomp_size == 0) {
+        if (stat.m_uncomp_size == 0 ||
+            stat.m_uncomp_size > 10000000 // Prevent overloading by big Relations file(>10MB). there is no reason to be soo big
+            ) {
             add_error("Found invalid size");
             return false;
         }
@@ -1027,7 +1024,7 @@ namespace Slic3r {
         }
 
         XML_SetUserData(m_xml_parser, (void *) this);
-        XML_SetElementHandler(m_xml_parser, _handle_start_relationships_element, _handle_end_relationships_element);
+        XML_SetStartElementHandler(m_xml_parser, _handle_start_relationships_element);
 
         void *parser_buffer = XML_GetBuffer(m_xml_parser, (int) stat.m_uncomp_size);
         if (parser_buffer == nullptr) {
@@ -1613,18 +1610,11 @@ namespace Slic3r {
         }
     }
 
-        void XMLCALL _3MF_Importer::_handle_start_relationships_element(void *userData, const char *name, const char **attributes)
+    void XMLCALL _3MF_Importer::_handle_start_relationships_element(void *userData, const char *name, const char **attributes)
     {
         _3MF_Importer *importer = (_3MF_Importer *) userData;
         if (importer != nullptr)
             importer->_handle_start_relationships_element(name, attributes);
-    }
-
-    void XMLCALL _3MF_Importer::_handle_end_relationships_element(void *userData, const char *name)
-    {
-        _3MF_Importer *importer = (_3MF_Importer *) userData;
-        if (importer != nullptr)
-            importer->_handle_end_relationships_element(name);
     }
 
     void _3MF_Importer::_handle_start_relationships_element(const char *name, const char **attributes)
@@ -1643,22 +1633,12 @@ namespace Slic3r {
             _stop_xml_parser();
     }
 
-    void _3MF_Importer::_handle_end_relationships_element(const char *name)
-    {
-        if (m_xml_parser == nullptr)
-            return;
-
-        bool res = true;
-
-        if (!res)
-            _stop_xml_parser();
-    }
-
     bool _3MF_Importer::_handle_start_relationship(const char **attributes, unsigned int num_attributes)
     {
-        std::string path = get_attribute_value_string(attributes, num_attributes, TARGET_ATTR);
         std::string type = get_attribute_value_string(attributes, num_attributes, RELS_TYPE_ATTR);
-        if (boost::starts_with(type, "http://schemas.microsoft.com/3dmanufacturing/") && boost::ends_with(type, "3dmodel")) {
+        // only exactly that string type mean root model file
+        if (type == "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel") {
+            std::string path = get_attribute_value_string(attributes, num_attributes, TARGET_ATTR);
             m_start_part_path = path;
         }
         return true;
@@ -2012,7 +1992,9 @@ namespace Slic3r {
 
     bool _3MF_Importer::_handle_start_component(const char** attributes, unsigned int num_attributes)
     {
-        std::string path      = get_attribute_value_string(attributes, num_attributes, PPATH_ATTR);
+        std::string path = get_attribute_value_string(attributes, num_attributes, PPATH_ATTR);
+        if (path.empty()) path = m_model_path;
+        
         int         object_id = get_attribute_value_int(attributes, num_attributes, OBJECTID_ATTR);
         Transform3d transform = get_transform_from_3mf_specs_string(get_attribute_value_string(attributes, num_attributes, TRANSFORM_ATTR));
         
@@ -2060,9 +2042,11 @@ namespace Slic3r {
 
         int object_id = get_attribute_value_int(attributes, num_attributes, OBJECTID_ATTR);
         Transform3d transform = get_transform_from_3mf_specs_string(get_attribute_value_string(attributes, num_attributes, TRANSFORM_ATTR));
+        std::string path = get_attribute_value_string(attributes, num_attributes, PPATH_ATTR);
+        if (path.empty()) path = m_model_path;
         int printable = get_attribute_value_bool(attributes, num_attributes, PRINTABLE_ATTR);
 
-        return _create_object_instance({m_model_path, object_id}, transform, printable, 1);
+        return _create_object_instance({path, object_id}, transform, printable, 1);
     }
 
     bool _3MF_Importer::_handle_end_item()
