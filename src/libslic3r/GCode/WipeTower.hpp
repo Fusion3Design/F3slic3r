@@ -342,10 +342,6 @@ private:
 		return layer_height * ( m_perimeter_width - layer_height * (1.f-float(M_PI)/4.f)) / filament_area();
 	}
 
-	// Calculates length of extrusion line to extrude given volume
-	float volume_to_length(float volume, float line_width, float layer_height) const {
-		return std::max(0.f, volume / (layer_height * (line_width - layer_height * (1.f - float(M_PI) / 4.f))));
-	}
 
 	// Calculates depth for all layers and propagates them downwards
 	void plan_tower();
@@ -363,19 +359,19 @@ private:
             float ramming_depth;
             float first_wipe_line;
             float wipe_volume;
+			float wipe_volume_total;
             ToolChange(size_t old, size_t newtool, float depth=0.f, float ramming_depth=0.f, float fwl=0.f, float wv=0.f)
-            : old_tool{old}, new_tool{newtool}, required_depth{depth}, ramming_depth{ramming_depth}, first_wipe_line{fwl}, wipe_volume{wv} {}
+            : old_tool{old}, new_tool{newtool}, required_depth{depth}, ramming_depth{ramming_depth}, first_wipe_line{fwl}, wipe_volume{wv}, wipe_volume_total{wv} {}
 		};
 		float z;		// z position of the layer
 		float height;	// layer height
 		float depth;	// depth of the layer based on all layers above
-		float extra_spacing;
 		float toolchanges_depth() const { float sum = 0.f; for (const auto &a : tool_changes) sum += a.required_depth; return sum; }
 
 		std::vector<ToolChange> tool_changes;
 
 		WipeTowerInfo(float z_par, float layer_height_par)
-			: z{z_par}, height{layer_height_par}, depth{0}, extra_spacing{1.f} {}
+			: z{z_par}, height{layer_height_par}, depth{0} {}
 	};
 
 	std::vector<WipeTowerInfo> m_plan; 	// Stores information about all layers and toolchanges for the future wipe tower (filled by plan_toolchange(...))
