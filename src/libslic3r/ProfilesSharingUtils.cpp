@@ -8,8 +8,8 @@
 #include "PrintConfig.hpp"
 #include "PresetBundle.hpp"
 #include "Utils/DirectoriesUtils.hpp"
+#include "Utils/JsonUtils.hpp"
 
-#include <boost/property_tree/json_parser.hpp>
 #include <boost/log/trivial.hpp>
 
 namespace Slic3r {
@@ -116,9 +116,7 @@ static std::string get_printer_profiles(const VendorProfile* vendor_profile,
                 data_node.add_child("printer_profiles", printer_profiles_node);
 
                 // Serialize the tree into JSON and return it.
-                std::stringstream ss;
-                pt::write_json(ss, data_node);
-                return ss.str();
+                return write_json_with_post_process(data_node);
             }
     }
 
@@ -161,10 +159,14 @@ static bool is_compatible_preset(const Preset& printer_preset, const PrinterAttr
             printer_preset.config.opt_string("printer_variant") == attr.variant_name;
 }
 
-static void add_profile_node(pt::ptree& printer_profiles_node, const std::string& preset_name)
+static void add_profile_node(pt::ptree& printer_profiles_node, const std::string& preset_name, const int extruders_cnt)
 {
     pt::ptree profile_node;
-    profile_node.put("", preset_name);
+
+    profile_node.put("name", preset_name);
+    if (extruders_cnt > 0)
+        profile_node.put("extruders_cnt", extruders_cnt);
+
     printer_profiles_node.push_back(std::make_pair("", profile_node));
 }
 
@@ -178,13 +180,16 @@ static void get_printer_profiles_node(pt::ptree& printer_profiles_node,
 
     for (const Preset& printer_preset : printer_presets) {
 
+        int extruders_cnt = printer_preset.printer_technology() == ptSLA ? 0 :
+                            printer_preset.config.option<ConfigOptionFloats>("nozzle_diameter")->values.size();
+
         if (printer_preset.is_user()) {
             const Preset* parent_preset = printer_presets.get_preset_parent(printer_preset);
             if (parent_preset && printer_preset.is_visible && is_compatible_preset(*parent_preset, attr))
-                add_profile_node(user_printer_profiles_node, printer_preset.name);
+                add_profile_node(user_printer_profiles_node, printer_preset.name, extruders_cnt);
         }
         else if (printer_preset.is_visible && is_compatible_preset(printer_preset, attr))
-            add_profile_node(printer_profiles_node, printer_preset.name);
+            add_profile_node(printer_profiles_node, printer_preset.name, extruders_cnt);
     }
 }
 
@@ -266,9 +271,7 @@ std::string get_json_printer_models(PrinterTechnology printer_technology)
     root.add_child("printer_models", vendor_node);
 
     // Serialize the tree into JSON and return it.
-    std::stringstream ss;
-    pt::write_json(ss, root);
-    return ss.str();
+    return write_json_with_post_process(root);
 }
 
 static std::string get_installed_print_and_filament_profiles(const PresetBundle* preset_bundle, const Preset* printer_preset)
@@ -335,9 +338,7 @@ static std::string get_installed_print_and_filament_profiles(const PresetBundle*
         tree.add_child("user_print_profiles", user_print_profiles);
 
     // Serialize the tree into JSON and return it.
-    std::stringstream ss;
-    pt::write_json(ss, tree);
-    return ss.str();
+    return write_json_with_post_process(tree);
 }
 
 std::string get_json_print_filament_profiles(const std::string& printer_profile)

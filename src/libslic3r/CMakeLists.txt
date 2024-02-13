@@ -512,6 +512,8 @@ set(SLIC3R_SOURCES
     ProfilesSharingUtils.cpp
     Utils/DirectoriesUtils.hpp
     Utils/DirectoriesUtils.cpp
+    Utils/JsonUtils.hpp
+    Utils/JsonUtils.cpp
 )
 
 if (APPLE)
