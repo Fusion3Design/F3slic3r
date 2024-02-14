@@ -3268,7 +3268,11 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
     arc.end = Vec3d(end_position[X], end_position[Y], end_position[Z]);
 
     // radii
+#if ENABLE_ET_SPE1872_FIRMWARE_G2G3
+    if (std::abs(arc.end_radius() - arc.start_radius()) > 0.001) {
+#else
     if (std::abs(arc.end_radius() - arc.start_radius()) > EPSILON) {
+#endif // ENABLE_ET_SPE1872_FIRMWARE_G2G3
         // what to do ???
     }
 
@@ -3356,8 +3360,14 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
     const double z_per_segment = arc.delta_z() * inv_segment;
     const double extruder_per_segment = (extrusion.has_value()) ? *extrusion * inv_segment : 0.0;
 
+#if ENABLE_ET_SPE1872_FIRMWARE_G2G3
+    const double sq_theta_per_segment = sqr(theta_per_segment);
+    const double cos_T = 1.0 - 0.5 * sq_theta_per_segment;
+    const double sin_T = theta_per_segment - sq_theta_per_segment * theta_per_segment / 6.0f;
+#else
     const double cos_T = 1.0 - 0.5 * sqr(theta_per_segment); // Small angle approximation
     const double sin_T = theta_per_segment;
+#endif // ENABLE_ET_SPE1872_FIRMWARE_G2G3
 
     AxisCoords prev_target = m_start_position;
     AxisCoords arc_target;
@@ -3370,9 +3380,27 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
 
     static const size_t N_ARC_CORRECTION = 25;
     Vec3d curr_rel_arc_start = arc.relative_start();
+#if ENABLE_ET_SPE1872_FIRMWARE_G2G3
+    size_t count = N_ARC_CORRECTION;
+#else
     size_t count = 0;
+#endif // ENABLE_ET_SPE1872_FIRMWARE_G2G3
 
     for (size_t i = 1; i < segments; ++i) {
+#if ENABLE_ET_SPE1872_FIRMWARE_G2G3
+        if (count-- == 0) {
+            const double cos_Ti = ::cos(i * theta_per_segment);
+            const double sin_Ti = ::sin(i * theta_per_segment);
+            curr_rel_arc_start.x() = -double(rel_center.x()) * cos_Ti + double(rel_center.y()) * sin_Ti;
+            curr_rel_arc_start.y() = -double(rel_center.x()) * sin_Ti - double(rel_center.y()) * cos_Ti;
+            count = N_ARC_CORRECTION;
+        }
+        else {
+            const float r_axisi = curr_rel_arc_start.x() * sin_T + curr_rel_arc_start.y() * cos_T;
+            curr_rel_arc_start.x() = curr_rel_arc_start.x() * cos_T - curr_rel_arc_start.y() * sin_T;
+            curr_rel_arc_start.y() = r_axisi;
+        }
+#else
         if (count < N_ARC_CORRECTION) {
             // Apply vector rotation matrix 
             const float r_axisi = curr_rel_arc_start.x() * sin_T + curr_rel_arc_start.y() * cos_T;
@@ -3389,6 +3417,7 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
             curr_rel_arc_start.y() = -double(rel_center.x()) * sin_Ti - double(rel_center.y()) * cos_Ti;
             count = 0;
         }
+#endif // ENABLE_ET_SPE1872_FIRMWARE_G2G3
 
         // Update arc_target location
         arc_target[X] = arc.center.x() + curr_rel_arc_start.x();
