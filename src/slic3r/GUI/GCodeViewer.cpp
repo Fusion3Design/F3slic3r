@@ -334,7 +334,7 @@ void GCodeViewer::SequentialRangeCap::reset() {
 #endif // !ENABLE_NEW_GCODE_VIEWER
 
 #if ENABLE_ET_SPE1872_DEBUG
-int GCodeViewer::SequentialView::Marker::ActualSpeedImguiWidget::plot(const char* label, const std::array<float, 2>& frame_size)
+int GCodeViewer::SequentialView::ActualSpeedImguiWidget::plot(const char* label, const std::array<float, 2>& frame_size)
 {
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     if (window->SkipItems)
@@ -366,14 +366,15 @@ int GCodeViewer::SequentialView::Marker::ActualSpeedImguiWidget::plot(const char
     const ImVec2 offset(10.0f, 0.0f);
 
     const float size_y = y_range.second - y_range.first;
-    const float size_x = data.back().first - data.front().first;
+    const float size_x = data.back().pos - data.front().pos;
     if (size_x > 0.0f && values_count >= values_count_min) {
         const float inv_scale_y = (size_y == 0.0f) ? 0.0f : 1.0f / size_y;
         const float inv_scale_x = 1.0f / size_x;
-        const float x0 = data.front().first;
+        const float x0 = data.front().pos;
         const float y0 = y_range.first;
 
-        const ImU32 grid_color = ImGui::GetColorU32(ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
+        const ImU32 grid_main_color = ImGui::GetColorU32(ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
+        const ImU32 grid_secondary_color = ImGui::GetColorU32(ImVec4(0.0f, 0.0f, 0.5f, 0.5f));
 
         // horizontal levels
         for (const auto& [level, color] : levels) {
@@ -383,24 +384,24 @@ int GCodeViewer::SequentialView::Marker::ActualSpeedImguiWidget::plot(const char
                 ImLerp(inner_bb.Min, ImVec2(inner_bb.Min.x + offset.x, inner_bb.Max.y), ImVec2(0.9f, y)), ImGuiWrapper::to_ImU32(color), 3.0f);
 
             window->DrawList->AddLine(ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(0.0f, y)),
-                ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(1.0f, y)), grid_color);
+                ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(1.0f, y)), grid_main_color);
         }
 
         // vertical positions
         for (int n = 0; n < values_count - 1; ++n) {
-            const float x = ImSaturate((data[n].first - x0) * inv_scale_x);
+            const float x = ImSaturate((data[n].pos - x0) * inv_scale_x);
             window->DrawList->AddLine(ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(x, 0.0f)),
-                ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(x, 1.0f)), grid_color);
+                ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(x, 1.0f)), data[n].internal ? grid_secondary_color : grid_main_color);
         }
         window->DrawList->AddLine(ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(1.0f, 0.0f)),
-            ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(1.0f, 1.0f)), grid_color);
+            ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(1.0f, 1.0f)), grid_main_color);
 
         // profiile
         const ImU32 col_base = ImGui::GetColorU32(ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
         const ImU32 col_hovered = ImGui::GetColorU32(ImGuiCol_PlotLinesHovered);
         for (int n = 0; n < values_count - 1; ++n) {
-            const ImVec2 tp1(ImSaturate((data[n].first - x0) * inv_scale_x), 1.0f - ImSaturate((data[n].second - y0) * inv_scale_y));
-            const ImVec2 tp2(ImSaturate((data[n + 1].first - x0) * inv_scale_x), 1.0f - ImSaturate((data[n + 1].second - y0) * inv_scale_y));
+            const ImVec2 tp1(ImSaturate((data[n].pos - x0) * inv_scale_x), 1.0f - ImSaturate((data[n].speed - y0) * inv_scale_y));
+            const ImVec2 tp2(ImSaturate((data[n + 1].pos - x0) * inv_scale_x), 1.0f - ImSaturate((data[n + 1].speed - y0) * inv_scale_y));
             // Tooltip on hover
             if (hovered && inner_bb.Contains(io.MousePos)) {
                 const float t = ImClamp((io.MousePos.x - inner_bb.Min.x - offset.x) / (inner_bb.Max.x - inner_bb.Min.x - offset.x), 0.0f, 0.9999f);
@@ -670,29 +671,41 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                 ImGui::Separator();
                 const int hover_id = m_actual_speed_imgui_widget.plot("##ActualSpeedProfile", { -1.0f, 150.0f });
                 if (table_shown) {
+                    static float table_wnd_height = 0.0f;
                     const ImVec2 wnd_size = ImGui::GetWindowSize();
                     imgui.set_next_window_pos(ImGui::GetWindowPos().x + wnd_size.x, static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.0f, 1.0f);
                     ImGui::SetNextWindowSizeConstraints({ 0.0f, 0.0f }, { -1.0f, wnd_size.y });
-                    imgui.begin(std::string("ToolPositionTable"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar |
+                    imgui.begin(std::string("ToolPositionTableWnd"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar |
                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
-                    if (ImGui::BeginTable("Table", 2, ImGuiTableFlags_Borders)) {
+                    if (ImGui::BeginTable("ToolPositionTable", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY)) {
                         char buff[1024];
+                        ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
                         ImGui::TableSetupColumn("Position (mm)");
                         ImGui::TableSetupColumn("Speed (mm/s)");
                         ImGui::TableHeadersRow();
                         int counter = 0;
-                        for (const auto& [pos, speed] : m_actual_speed_imgui_widget.data) {
+                        for (const ActualSpeedImguiWidget::Item& item : m_actual_speed_imgui_widget.data) {
                             const bool highlight = hover_id >= 0 && (counter == hover_id || counter == hover_id + 1);
+                            if (highlight && counter == hover_id)
+                                ImGui::SetScrollHereY();
                             ImGui::TableNextRow();
+                            const ImU32 row_bg_color = ImGui::GetColorU32(item.internal ? ImVec4(0.0f, 0.0f, 0.5f, 0.25f) : ImVec4(0.5f, 0.5f, 0.5f, 0.25f));
+                            ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, row_bg_color);
                             ImGui::TableSetColumnIndex(0);
-                            sprintf(buff, "%.3f", pos);
+                            sprintf(buff, "%.3f", item.pos);
                             imgui.text_colored(highlight ? ImGuiWrapper::COL_ORANGE_LIGHT : ImGuiWrapper::to_ImVec4(ColorRGBA::WHITE()), buff);
                             ImGui::TableSetColumnIndex(1);
-                            sprintf(buff, "%.1f", speed);
+                            sprintf(buff, "%.1f", item.speed);
                             imgui.text_colored(highlight ? ImGuiWrapper::COL_ORANGE_LIGHT : ImGuiWrapper::to_ImVec4(ColorRGBA::WHITE()), buff);
                             ++counter;
                         }
                         ImGui::EndTable();
+                    }
+                    const float curr_table_wnd_height = ImGui::GetWindowHeight();
+                    if (table_wnd_height != curr_table_wnd_height) {
+                        table_wnd_height = curr_table_wnd_height;
+                        // require extra frame to hide the table scroll bar (bug in imgui)
+                        imgui.set_requires_extra_frame();
                     }
                     imgui.end();
                 }
@@ -1801,7 +1814,7 @@ void GCodeViewer::update_sequential_view_current(unsigned int first, unsigned in
             const libvgcode::ColorRange& color_range = m_viewer.get_color_range(libvgcode::EViewType::ActualSpeed);
             const std::array<float, 2>& interval = color_range.get_range();
             const size_t vertices_count = m_viewer.get_vertices_count();
-            std::vector<std::pair<float, float>> actual_speed_data;
+            std::vector<SequentialView::ActualSpeedImguiWidget::Item> actual_speed_data;
             // collect vertices sharing the same gcode_id
             const size_t curr_id = m_viewer.get_current_vertex_id();
             size_t start_id = curr_id;
@@ -1829,7 +1842,7 @@ void GCodeViewer::update_sequential_view_current(unsigned int first, unsigned in
                     (libvgcode::convert(v.position) - libvgcode::convert(m_viewer.get_vertex_at(i - 1).position)).norm() : 0.0f;
                 total_len += len;
                 if (i == start_id || len > EPSILON)
-                    actual_speed_data.push_back(std::make_pair(total_len, v.actual_feedrate));
+                    actual_speed_data.push_back({ total_len, v.actual_feedrate, v.times[0] == 0.0f });
             }
 
             std::vector<std::pair<float, ColorRGBA>> levels;

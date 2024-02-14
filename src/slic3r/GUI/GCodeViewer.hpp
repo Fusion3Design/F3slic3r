@@ -700,18 +700,24 @@ class GCodeViewer
 public:
     struct SequentialView
     {
-        class Marker
-        {
 #if ENABLE_ET_SPE1872_DEBUG
-            struct ActualSpeedImguiWidget
+        struct ActualSpeedImguiWidget
+        {
+            std::pair<float, float> y_range = { 0.0f, 0.0f };
+            std::vector<std::pair<float, ColorRGBA>> levels;
+            struct Item
             {
-                std::pair<float, float> y_range = { 0.0f, 0.0f };
-                std::vector<std::pair<float, ColorRGBA>> levels;
-                std::vector<std::pair<float, float>> data;
-                int plot(const char* label, const std::array<float, 2>& frame_size = { 0.0f, 0.0f });
+              float pos{ 0.0f };
+              float speed{ 0.0f };
+              bool internal{ false };
             };
+            std::vector<Item> data;
+            int plot(const char* label, const std::array<float, 2>& frame_size = { 0.0f, 0.0f });
+        };
 #endif // ENABLE_ET_SPE1872_DEBUG
 
+        class Marker
+        {
             GLModel m_model;
             Vec3f m_world_position;
             // For seams, the position of the marker is on the last endpoint of the toolpath containing it.
@@ -745,7 +751,7 @@ public:
             void set_actual_speed_levels(const std::vector<std::pair<float, ColorRGBA>>& levels) {
                 m_actual_speed_imgui_widget.levels = levels;
             }
-            void set_actual_speed_data(const std::vector<std::pair<float, float>>& data) {
+            void set_actual_speed_data(const std::vector<ActualSpeedImguiWidget::Item>& data) {
                 m_actual_speed_imgui_widget.data = data;
             }
 #endif // ENABLE_ET_SPE1872_DEBUG
