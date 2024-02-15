@@ -3341,99 +3341,173 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
           process_G1(g1_axes, g1_feedrate, G1DiscretizationOrigin::G2G3, remaining_internal_g1_lines);
     };
 
-    // calculate arc segments
-    // reference:
-    // Prusa-Firmware\Firmware\motion_control.cpp - mc_arc()
-    // https://github.com/prusa3d/Prusa-Firmware/blob/MK3/Firmware/motion_control.cpp
+#if ENABLE_ET_SPE1872_FIRMWARE_BUDDY_G2G3
+    if (m_flavor == gcfMarlinFirmware) {
+        // calculate arc segments
+        // reference:
+        // Prusa-Firmware-Buddy\lib\Marlin\Marlin\src\gcode\motion\G2_G3.cpp - plan_arc()
+        // https://github.com/prusa3d/Prusa-Firmware-Buddy-Private/blob/private/lib/Marlin/Marlin/src/gcode/motion/G2_G3.cpp
 
-    // segments count
+        static const float MAX_ARC_DEVIATION = 0.02f;
+        static const float MIN_ARC_SEGMENTS_PER_SEC = 50;
+        static const float MIN_ARC_SEGMENT_MM = 0.1f;
+        static const float MAX_ARC_SEGMENT_MM = 2.0f;
+        const float feedrate_mm_s = feedrate.has_value() ? *feedrate : m_feedrate;
+        const float radius_mm = rel_center.norm();
+        const float segment_mm = std::clamp(std::min(std::sqrt(8.0f * radius_mm * MAX_ARC_DEVIATION), feedrate_mm_s * (1.0f / MIN_ARC_SEGMENTS_PER_SEC)), MIN_ARC_SEGMENT_MM, MAX_ARC_SEGMENT_MM);
+        const float flat_mm = radius_mm * std::abs(arc.angle);
+        const size_t segments = std::max<size_t>(flat_mm / segment_mm + 0.8f, 1);
+
+        AxisCoords prev_target = m_start_position;
+
+        if (segments > 1) {
+            const float inv_segments = 1.0f / static_cast<float>(segments);
+            const float theta_per_segment = static_cast<float>(arc.angle) * inv_segments;
+            const float cos_T = cos(theta_per_segment);
+            const float sin_T = sin(theta_per_segment);
+            const float z_per_segment = arc.delta_z() * inv_segments;
+            const float extruder_per_segment = (extrusion.has_value()) ? *extrusion * inv_segments : 0.0f;
+
+            static const size_t N_ARC_CORRECTION = 25;
+            size_t arc_recalc_count = N_ARC_CORRECTION;
+
+            Vec2f rvec(-rel_center.x(), -rel_center.y());
+            AxisCoords arc_target = { 0.0f, 0.0f, m_start_position[Z], m_start_position[E] };
+            for (size_t i = 1; i < segments; ++i) {
+                if (--arc_recalc_count) {
+                    // Apply vector rotation matrix to previous rvec.a / 1
+                    const float r_new_Y = rvec.x() * sin_T + rvec.y() * cos_T;
+                    rvec.x() = rvec.x() * cos_T - rvec.y() * sin_T;
+                    rvec.y() = r_new_Y;
+                }
+                else {
+                    arc_recalc_count = N_ARC_CORRECTION;
+                    // Arc correction to radius vector. Computed only every N_ARC_CORRECTION increments.
+                    // Compute exact location by applying transformation matrix from initial radius vector(=-offset).
+                    // To reduce stuttering, the sin and cos could be computed at different times.
+                    // For now, compute both at the same time.
+                    const float Ti = i * theta_per_segment;
+                    const float cos_Ti = cos(Ti);
+                    const float sin_Ti = sin(Ti);
+                    rvec.x() = -rel_center.x() * cos_Ti + rel_center.y() * sin_Ti;
+                    rvec.y() = -rel_center.x() * sin_Ti - rel_center.y() * cos_Ti;
+                }
+
+                // Update arc_target location
+                arc_target[X] = arc.center.x() + rvec.x();
+                arc_target[Y] = arc.center.y() + rvec.y();
+                arc_target[Z] += z_per_segment;
+                arc_target[E] += extruder_per_segment;
+
+                m_start_position = m_end_position; // this is required because we are skipping the call to process_gcode_line()
+                internal_only_g1_line(adjust_target(arc_target, prev_target), z_per_segment != 0.0, (i == 1) ? feedrate : std::nullopt,
+                    extrusion, segments - i);
+                prev_target = arc_target;
+            }
+        }
+
+        // Ensure last segment arrives at target location.
+        m_start_position = m_end_position; // this is required because we are skipping the call to process_gcode_line()
+        internal_only_g1_line(adjust_target(end_position, prev_target), arc.delta_z() != 0.0, (segments == 1) ? feedrate : std::nullopt, extrusion);
+    }
+    else {
+#endif // ENABLE_ET_SPE1872_FIRMWARE_BUDDY_G2G3
+        // calculate arc segments
+        // reference:
+        // Prusa-Firmware\Firmware\motion_control.cpp - mc_arc()
+        // https://github.com/prusa3d/Prusa-Firmware/blob/MK3/Firmware/motion_control.cpp
+
+        // segments count
 #if 0
-    static const double MM_PER_ARC_SEGMENT = 1.0;
-    const size_t segments = std::max<size_t>(std::floor(travel_length / MM_PER_ARC_SEGMENT), 1);
+        static const double MM_PER_ARC_SEGMENT = 1.0;
+        const size_t segments = std::max<size_t>(std::floor(travel_length / MM_PER_ARC_SEGMENT), 1);
 #else
-    static const double gcode_arc_tolerance = 0.0125;
-    const size_t segments = Geometry::ArcWelder::arc_discretization_steps(arc.start_radius(), std::abs(arc.angle), gcode_arc_tolerance);
+        static const double gcode_arc_tolerance = 0.0125;
+        const size_t segments = Geometry::ArcWelder::arc_discretization_steps(arc.start_radius(), std::abs(arc.angle), gcode_arc_tolerance);
 #endif
 
-    const double inv_segment = 1.0 / double(segments);
-    const double theta_per_segment = arc.angle  * inv_segment;
-    const double z_per_segment = arc.delta_z() * inv_segment;
-    const double extruder_per_segment = (extrusion.has_value()) ? *extrusion * inv_segment : 0.0;
+        const double inv_segment = 1.0 / double(segments);
+        const double theta_per_segment = arc.angle * inv_segment;
+        const double z_per_segment = arc.delta_z() * inv_segment;
+        const double extruder_per_segment = (extrusion.has_value()) ? *extrusion * inv_segment : 0.0;
 
 #if ENABLE_ET_SPE1872_FIRMWARE_G2G3
-    const double sq_theta_per_segment = sqr(theta_per_segment);
-    const double cos_T = 1.0 - 0.5 * sq_theta_per_segment;
-    const double sin_T = theta_per_segment - sq_theta_per_segment * theta_per_segment / 6.0f;
+        const double sq_theta_per_segment = sqr(theta_per_segment);
+        const double cos_T = 1.0 - 0.5 * sq_theta_per_segment;
+        const double sin_T = theta_per_segment - sq_theta_per_segment * theta_per_segment / 6.0f;
 #else
-    const double cos_T = 1.0 - 0.5 * sqr(theta_per_segment); // Small angle approximation
-    const double sin_T = theta_per_segment;
+        const double cos_T = 1.0 - 0.5 * sqr(theta_per_segment); // Small angle approximation
+        const double sin_T = theta_per_segment;
 #endif // ENABLE_ET_SPE1872_FIRMWARE_G2G3
 
-    AxisCoords prev_target = m_start_position;
-    AxisCoords arc_target;
+        AxisCoords prev_target = m_start_position;
+        AxisCoords arc_target;
 
-    // Initialize the linear axis
-    arc_target[Z] = m_start_position[Z];
+        // Initialize the linear axis
+        arc_target[Z] = m_start_position[Z];
 
-    // Initialize the extruder axis
-    arc_target[E] = m_start_position[E];
+        // Initialize the extruder axis
+        arc_target[E] = m_start_position[E];
 
-    static const size_t N_ARC_CORRECTION = 25;
-    Vec3d curr_rel_arc_start = arc.relative_start();
+        static const size_t N_ARC_CORRECTION = 25;
+        Vec3d curr_rel_arc_start = arc.relative_start();
 #if ENABLE_ET_SPE1872_FIRMWARE_G2G3
-    size_t count = N_ARC_CORRECTION;
+        size_t count = N_ARC_CORRECTION;
 #else
-    size_t count = 0;
+        size_t count = 0;
 #endif // ENABLE_ET_SPE1872_FIRMWARE_G2G3
 
-    for (size_t i = 1; i < segments; ++i) {
+        for (size_t i = 1; i < segments; ++i) {
 #if ENABLE_ET_SPE1872_FIRMWARE_G2G3
-        if (count-- == 0) {
-            const double cos_Ti = ::cos(i * theta_per_segment);
-            const double sin_Ti = ::sin(i * theta_per_segment);
-            curr_rel_arc_start.x() = -double(rel_center.x()) * cos_Ti + double(rel_center.y()) * sin_Ti;
-            curr_rel_arc_start.y() = -double(rel_center.x()) * sin_Ti - double(rel_center.y()) * cos_Ti;
-            count = N_ARC_CORRECTION;
-        }
-        else {
-            const float r_axisi = curr_rel_arc_start.x() * sin_T + curr_rel_arc_start.y() * cos_T;
-            curr_rel_arc_start.x() = curr_rel_arc_start.x() * cos_T - curr_rel_arc_start.y() * sin_T;
-            curr_rel_arc_start.y() = r_axisi;
-        }
+            if (count-- == 0) {
+                const double cos_Ti = ::cos(i * theta_per_segment);
+                const double sin_Ti = ::sin(i * theta_per_segment);
+                curr_rel_arc_start.x() = -double(rel_center.x()) * cos_Ti + double(rel_center.y()) * sin_Ti;
+                curr_rel_arc_start.y() = -double(rel_center.x()) * sin_Ti - double(rel_center.y()) * cos_Ti;
+                count = N_ARC_CORRECTION;
+            }
+            else {
+                const float r_axisi = curr_rel_arc_start.x() * sin_T + curr_rel_arc_start.y() * cos_T;
+                curr_rel_arc_start.x() = curr_rel_arc_start.x() * cos_T - curr_rel_arc_start.y() * sin_T;
+                curr_rel_arc_start.y() = r_axisi;
+            }
 #else
-        if (count < N_ARC_CORRECTION) {
-            // Apply vector rotation matrix 
-            const float r_axisi = curr_rel_arc_start.x() * sin_T + curr_rel_arc_start.y() * cos_T;
-            curr_rel_arc_start.x() = curr_rel_arc_start.x() * cos_T - curr_rel_arc_start.y() * sin_T;
-            curr_rel_arc_start.y() = r_axisi;
-            ++count;
-        }
-        else {
-            // Arc correction to radius vector. Computed only every N_ARC_CORRECTION increments.
-            // Compute exact location by applying transformation matrix from initial radius vector(=-offset).
-            const double cos_Ti = ::cos(i * theta_per_segment);
-            const double sin_Ti = ::sin(i * theta_per_segment);
-            curr_rel_arc_start.x() = -double(rel_center.x()) * cos_Ti + double(rel_center.y()) * sin_Ti;
-            curr_rel_arc_start.y() = -double(rel_center.x()) * sin_Ti - double(rel_center.y()) * cos_Ti;
-            count = 0;
-        }
+            if (count < N_ARC_CORRECTION) {
+                // Apply vector rotation matrix 
+                const float r_axisi = curr_rel_arc_start.x() * sin_T + curr_rel_arc_start.y() * cos_T;
+                curr_rel_arc_start.x() = curr_rel_arc_start.x() * cos_T - curr_rel_arc_start.y() * sin_T;
+                curr_rel_arc_start.y() = r_axisi;
+                ++count;
+            }
+            else {
+                // Arc correction to radius vector. Computed only every N_ARC_CORRECTION increments.
+                // Compute exact location by applying transformation matrix from initial radius vector(=-offset).
+                const double cos_Ti = ::cos(i * theta_per_segment);
+                const double sin_Ti = ::sin(i * theta_per_segment);
+                curr_rel_arc_start.x() = -double(rel_center.x()) * cos_Ti + double(rel_center.y()) * sin_Ti;
+                curr_rel_arc_start.y() = -double(rel_center.x()) * sin_Ti - double(rel_center.y()) * cos_Ti;
+                count = 0;
+            }
 #endif // ENABLE_ET_SPE1872_FIRMWARE_G2G3
 
-        // Update arc_target location
-        arc_target[X] = arc.center.x() + curr_rel_arc_start.x();
-        arc_target[Y] = arc.center.y() + curr_rel_arc_start.y();
-        arc_target[Z] += z_per_segment;
-        arc_target[E] += extruder_per_segment;
+            // Update arc_target location
+            arc_target[X] = arc.center.x() + curr_rel_arc_start.x();
+            arc_target[Y] = arc.center.y() + curr_rel_arc_start.y();
+            arc_target[Z] += z_per_segment;
+            arc_target[E] += extruder_per_segment;
 
+            m_start_position = m_end_position; // this is required because we are skipping the call to process_gcode_line()
+            internal_only_g1_line(adjust_target(arc_target, prev_target), z_per_segment != 0.0, (i == 1) ? feedrate : std::nullopt,
+                extrusion, segments - i);
+            prev_target = arc_target;
+        }
+
+        // Ensure last segment arrives at target location.
         m_start_position = m_end_position; // this is required because we are skipping the call to process_gcode_line()
-        internal_only_g1_line(adjust_target(arc_target, prev_target), z_per_segment != 0.0, (i == 1) ? feedrate : std::nullopt,
-            extrusion, segments - i);
-        prev_target = arc_target;
+        internal_only_g1_line(adjust_target(end_position, prev_target), arc.delta_z() != 0.0, (segments == 1) ? feedrate : std::nullopt, extrusion);
+#if ENABLE_ET_SPE1872_FIRMWARE_BUDDY_G2G3
     }
-
-    // Ensure last segment arrives at target location.
-    m_start_position = m_end_position; // this is required because we are skipping the call to process_gcode_line()
-    internal_only_g1_line(adjust_target(end_position, prev_target), arc.delta_z() != 0.0, (segments == 1) ? feedrate : std::nullopt, extrusion);
+#endif // ENABLE_ET_SPE1872_FIRMWARE_BUDDY_G2G3
 }
 
 void GCodeProcessor::process_G10(const GCodeReader::GCodeLine& line)
