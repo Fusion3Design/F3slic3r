@@ -61,13 +61,10 @@
 #define ENABLE_BINARIZED_GCODE_DEBUG_WINDOW 0
 
 #define ENABLE_NEW_GCODE_VIEWER 1
-#define ENABLE_NEW_GCODE_VIEWER_DEBUG (1 && ENABLE_NEW_GCODE_VIEWER)
-// requires VGCODE_ENABLE_ET_SPE1872 set to 1 in libvgcode (Types.hpp)
-#define ENABLE_ET_SPE1872 (1 && ENABLE_NEW_GCODE_VIEWER)
-#define ENABLE_ET_SPE1872_FIRMWARE_BUDDY (1 && ENABLE_ET_SPE1872)
-#define ENABLE_ET_SPE1872_FIRMWARE_BUDDY_G2G3 (1 && ENABLE_ET_SPE1872_FIRMWARE_BUDDY)
-#define ENABLE_ET_SPE1872_FIRMWARE_G2G3 (1 && ENABLE_ET_SPE1872)
-#define ENABLE_ET_SPE1872_DEBUG (1 && ENABLE_ET_SPE1872)
+// Enable imgui debug dialog for new gcode viewer (using libvgcode)
+#define ENABLE_NEW_GCODE_VIEWER_DEBUG (0 && ENABLE_NEW_GCODE_VIEWER)
+// Enable extension of tool position imgui dialog to show actual speed profile
+#define ENABLE_ACTUAL_SPEED_DEBUG 1
 
 // Enable G-Code viewer statistics imgui dialog
 #define ENABLE_GCODE_VIEWER_STATISTICS (0 && !ENABLE_NEW_GCODE_VIEWER)

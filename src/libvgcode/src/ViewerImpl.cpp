@@ -948,13 +948,8 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
     if (v.type == EMoveType::Noop)
         return DUMMY_COLOR;
 
-#if VGCODE_ENABLE_ET_SPE1872
     if ((v.is_wipe() && m_settings.view_type != EViewType::ActualSpeed) || v.is_option())
         return get_option_color(move_type_to_option(v.type));
-#else
-    if (v.is_wipe() || v.is_option())
-        return get_option_color(move_type_to_option(v.type));
-#endif // VGCODE_ENABLE_ET_SPE1872
 
     switch (m_settings.view_type)
     {
@@ -974,12 +969,10 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
     {
         return m_speed_range.get_color_at(v.feedrate);
     }
-#if VGCODE_ENABLE_ET_SPE1872
     case EViewType::ActualSpeed:
     {
         return m_actual_speed_range.get_color_at(v.actual_feedrate);
     }
-#endif // VGCODE_ENABLE_ET_SPE1872
     case EViewType::FanSpeed:
     {
         return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_fan_speed_range.get_color_at(v.fan_speed);
@@ -990,18 +983,12 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
     }
     case EViewType::VolumetricFlowRate:
     {
-#if VGCODE_ENABLE_ET_SPE1872
         return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_volumetric_rate_range.get_color_at(v.volumetric_rate());
-#else
-        return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_volumetric_rate_range.get_color_at(v.volumetric_rate);
-#endif // VGCODE_ENABLE_ET_SPE1872
     }
-#if VGCODE_ENABLE_ET_SPE1872
     case EViewType::ActualVolumetricFlowRate:
     {
         return v.is_travel() ? get_option_color(move_type_to_option(v.type)) : m_actual_volumetric_rate_range.get_color_at(v.actual_volumetric_rate());
     }
-#endif // VGCODE_ENABLE_ET_SPE1872
     case EViewType::LayerTimeLinear:
     {
         return v.is_travel() ? get_option_color(move_type_to_option(v.type)) :
@@ -1087,15 +1074,11 @@ const ColorRange& ViewerImpl::get_color_range(EViewType type) const
     case EViewType::Height:                   { return m_height_range; }
     case EViewType::Width:                    { return m_width_range; }
     case EViewType::Speed:                    { return m_speed_range; }
-#if VGCODE_ENABLE_ET_SPE1872
     case EViewType::ActualSpeed:              { return m_actual_speed_range; }
-#endif // VGCODE_ENABLE_ET_SPE1872
     case EViewType::FanSpeed:                 { return m_fan_speed_range; }
     case EViewType::Temperature:              { return m_temperature_range; }
     case EViewType::VolumetricFlowRate:       { return m_volumetric_rate_range; }
-#if VGCODE_ENABLE_ET_SPE1872
     case EViewType::ActualVolumetricFlowRate: { return m_actual_volumetric_rate_range; }
-#endif // VGCODE_ENABLE_ET_SPE1872
     case EViewType::LayerTimeLinear:          { return m_layer_time_range[0]; }
     case EViewType::LayerTimeLogarithmic:     { return m_layer_time_range[1]; }
     default:                                  { return ColorRange::DUMMY_COLOR_RANGE; }
@@ -1109,15 +1092,11 @@ void ViewerImpl::set_color_range_palette(EViewType type, const Palette& palette)
     case EViewType::Height:                   { m_height_range.set_palette(palette); }
     case EViewType::Width:                    { m_width_range.set_palette(palette); }
     case EViewType::Speed:                    { m_speed_range.set_palette(palette); }
-#if VGCODE_ENABLE_ET_SPE1872
     case EViewType::ActualSpeed:              { m_actual_speed_range.set_palette(palette); }
-#endif // VGCODE_ENABLE_ET_SPE1872
     case EViewType::FanSpeed:                 { m_fan_speed_range.set_palette(palette); }
     case EViewType::Temperature:              { m_temperature_range.set_palette(palette); }
     case EViewType::VolumetricFlowRate:       { m_volumetric_rate_range.set_palette(palette); }
-#if VGCODE_ENABLE_ET_SPE1872
     case EViewType::ActualVolumetricFlowRate: { m_actual_volumetric_rate_range.set_palette(palette); }
-#endif // VGCODE_ENABLE_ET_SPE1872
     case EViewType::LayerTimeLinear:          { m_layer_time_range[0].set_palette(palette); }
     case EViewType::LayerTimeLogarithmic:     { m_layer_time_range[1].set_palette(palette); }
     default:                                  { break; }
@@ -1150,15 +1129,11 @@ size_t ViewerImpl::get_used_cpu_memory() const
     ret += m_height_range.size_in_bytes_cpu();
     ret += m_width_range.size_in_bytes_cpu();
     ret += m_speed_range.size_in_bytes_cpu();
-#if VGCODE_ENABLE_ET_SPE1872
     ret += m_actual_speed_range.size_in_bytes_cpu();
-#endif // VGCODE_ENABLE_ET_SPE1872
     ret += m_fan_speed_range.size_in_bytes_cpu();
     ret += m_temperature_range.size_in_bytes_cpu();
     ret += m_volumetric_rate_range.size_in_bytes_cpu();
-#if VGCODE_ENABLE_ET_SPE1872
     ret += m_actual_volumetric_rate_range.size_in_bytes_cpu();
-#endif // VGCODE_ENABLE_ET_SPE1872
     for (size_t i = 0; i < COLOR_RANGE_TYPES_COUNT; ++i) {
         ret += m_layer_time_range[i].size_in_bytes_cpu();
     }
@@ -1293,15 +1268,11 @@ void ViewerImpl::update_color_ranges()
     m_width_range.reset();
     m_height_range.reset();
     m_speed_range.reset();
-#if VGCODE_ENABLE_ET_SPE1872
     m_actual_speed_range.reset();
-#endif // VGCODE_ENABLE_ET_SPE1872
     m_fan_speed_range.reset();
     m_temperature_range.reset();
     m_volumetric_rate_range.reset();
-#if VGCODE_ENABLE_ET_SPE1872
     m_actual_volumetric_rate_range.reset();
-#endif // VGCODE_ENABLE_ET_SPE1872
     m_layer_time_range[0].reset(); // ColorRange::EType::Linear
     m_layer_time_range[1].reset(); // ColorRange::EType::Logarithmic
 
@@ -1311,16 +1282,11 @@ void ViewerImpl::update_color_ranges()
             m_height_range.update(round_to_bin(v.height));
             if (!v.is_custom_gcode() || m_settings.extrusion_roles_visibility.at(EGCodeExtrusionRole::Custom)) {
                 m_width_range.update(round_to_bin(v.width));
-#if VGCODE_ENABLE_ET_SPE1872
                 m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate()));
-#else
-                m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate));
-#endif // VGCODE_ENABLE_ET_SPE1872
             }
             m_fan_speed_range.update(v.fan_speed);
             m_temperature_range.update(v.temperature);
         }
-#if VGCODE_ENABLE_ET_SPE1872
         if ((v.is_travel() && m_settings.options_visibility.at(EOptionType::Travels)) ||
             (v.is_wipe() && m_settings.options_visibility.at(EOptionType::Wipes)) ||
              v.is_extrusion()) {
@@ -1328,10 +1294,6 @@ void ViewerImpl::update_color_ranges()
             m_actual_speed_range.update(v.actual_feedrate);
             m_actual_volumetric_rate_range.update(round_to_bin(v.actual_volumetric_rate()));
         }
-#else
-        if ((v.is_travel() && m_settings.options_visibility.at(EOptionType::Travels)) || v.is_extrusion())
-            m_speed_range.update(v.feedrate);
-#endif // VGCODE_ENABLE_ET_SPE1872
     }
 
     const std::vector<float> times = m_layers.get_times(m_settings.time_mode);

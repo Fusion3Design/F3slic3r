@@ -700,7 +700,7 @@ class GCodeViewer
 public:
     struct SequentialView
     {
-#if ENABLE_ET_SPE1872_DEBUG
+#if ENABLE_ACTUAL_SPEED_DEBUG
         struct ActualSpeedImguiWidget
         {
             std::pair<float, float> y_range = { 0.0f, 0.0f };
@@ -714,7 +714,7 @@ public:
             std::vector<Item> data;
             int plot(const char* label, const std::array<float, 2>& frame_size = { 0.0f, 0.0f });
         };
-#endif // ENABLE_ET_SPE1872_DEBUG
+#endif // ENABLE_ACTUAL_SPEED_DEBUG
 
         class Marker
         {
@@ -731,9 +731,9 @@ public:
             bool m_visible{ true };
             bool m_fixed_screen_size{ false };
             float m_scale_factor{ 1.0f };
-#if ENABLE_ET_SPE1872_DEBUG
+#if ENABLE_ACTUAL_SPEED_DEBUG
             ActualSpeedImguiWidget m_actual_speed_imgui_widget;
-#endif // ENABLE_ET_SPE1872_DEBUG
+#endif // ENABLE_ACTUAL_SPEED_DEBUG
 
         public:
             void init();
@@ -744,7 +744,7 @@ public:
             void set_world_offset(const Vec3f& offset) { m_world_offset = offset; }
             void set_z_offset(float z_offset) { m_z_offset = z_offset; }
 
-#if ENABLE_ET_SPE1872_DEBUG
+#if ENABLE_ACTUAL_SPEED_DEBUG
             void set_actual_speed_y_range(const std::pair<float, float>& y_range) {
                 m_actual_speed_imgui_widget.y_range = y_range;
             }
@@ -754,7 +754,7 @@ public:
             void set_actual_speed_data(const std::vector<ActualSpeedImguiWidget::Item>& data) {
                 m_actual_speed_imgui_widget.data = data;
             }
-#endif // ENABLE_ET_SPE1872_DEBUG
+#endif // ENABLE_ACTUAL_SPEED_DEBUG
 
             bool is_visible() const { return m_visible; }
             void set_visible(bool visible) { m_visible = visible; }

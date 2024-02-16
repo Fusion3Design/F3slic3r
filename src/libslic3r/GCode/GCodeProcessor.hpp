@@ -140,9 +140,9 @@ namespace Slic3r {
             Vec3f position{ Vec3f::Zero() }; // mm
             float delta_extruder{ 0.0f }; // mm
             float feedrate{ 0.0f }; // mm/s
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
             float actual_feedrate{ 0.0f }; // mm/s
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
             float width{ 0.0f }; // mm
             float height{ 0.0f }; // mm
             float mm3_per_mm{ 0.0f };
@@ -157,9 +157,9 @@ namespace Slic3r {
             bool internal_only{ false };
 
             float volumetric_rate() const { return feedrate * mm3_per_mm; }
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
             float actual_volumetric_rate() const { return actual_feedrate * mm3_per_mm; }
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
         };
 
         std::string filename;
@@ -286,20 +286,18 @@ namespace Slic3r {
             float cruise_feedrate{ 0.0f }; // mm/sec
 
             float acceleration_time(float entry_feedrate, float acceleration) const;
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
             float cruise_time() const { return (cruise_feedrate != 0.0f) ? cruise_distance() / cruise_feedrate : 0.0f; }
-#else
-            float cruise_time() const;
-#endif // ENABLE_ET_SPE1872
             float deceleration_time(float distance, float acceleration) const;
-#if ENABLE_ET_SPE1872
             float acceleration_distance() const { return accelerate_until; }
             float cruise_distance() const { return decelerate_after - accelerate_until; }
             float deceleration_distance(float distance) const { return distance - decelerate_after; }
             bool is_cruise_only(float distance) const { return std::abs(cruise_distance() - distance) < EPSILON; }
 #else
+            float cruise_time() const;
+            float deceleration_time(float distance, float acceleration) const;
             float cruise_distance() const;
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
         };
 
         struct TimeBlock
@@ -329,14 +327,14 @@ namespace Slic3r {
             // Calculates this block's trapezoid
             void calculate_trapezoid();
 
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
             float time() const {
                 return trapezoid.acceleration_time(feedrate_profile.entry, acceleration) +
                        trapezoid.cruise_time() + trapezoid.deceleration_time(distance, acceleration);
             }
 #else
             float time() const;
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
         };
 
     private:
@@ -368,7 +366,7 @@ namespace Slic3r {
                 float elapsed_time;
             };
 
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
             struct ActualSpeedMove
             {
                 unsigned int move_id{ 0 };
@@ -382,7 +380,7 @@ namespace Slic3r {
                 std::optional<float> fan_speed;
                 std::optional<float> temperature;
             };
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
 
             bool enabled;
             float acceleration; // mm/s^2
@@ -414,22 +412,17 @@ namespace Slic3r {
             std::vector<G1LinesCacheItem> g1_times_cache;
 #if ENABLE_NEW_GCODE_VIEWER
             float first_layer_time;
+            std::vector<ActualSpeedMove> actual_speed_moves;
 #else
             std::array<float, static_cast<size_t>(EMoveType::Count)> moves_time;
             std::array<float, static_cast<size_t>(GCodeExtrusionRole::Count)> roles_time;
             std::vector<float> layers_time;
 #endif // ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_ET_SPE1872
-            std::vector<ActualSpeedMove> actual_speed_moves;
-#endif // ENABLE_ET_SPE1872
 
             void reset();
 
             // Simulates firmware st_synchronize() call
 #if ENABLE_NEW_GCODE_VIEWER
-#if !ENABLE_ET_SPE1872
-            void simulate_st_synchronize(GCodeProcessorResult& result, PrintEstimatedStatistics::ETimeMode mode, float additional_time = 0.0f);
-#endif // !ENABLE_ET_SPE1872
             void calculate_time(GCodeProcessorResult& result, PrintEstimatedStatistics::ETimeMode mode, size_t keep_last_n_blocks = 0, float additional_time = 0.0f);
 #else
             void simulate_st_synchronize(float additional_time = 0.0f);
@@ -930,9 +923,9 @@ namespace Slic3r {
         void process_custom_gcode_time(CustomGCode::Type code);
         void process_filaments(CustomGCode::Type code);
 
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
         void calculate_time(GCodeProcessorResult& result, size_t keep_last_n_blocks = 0, float additional_time = 0.0f);
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
 
         // Simulates firmware st_synchronize() call
         void simulate_st_synchronize(float additional_time = 0.0f);

@@ -6,8 +6,6 @@
 #define VGCODE_TYPES_HPP
 
 #define VGCODE_ENABLE_COG_AND_TOOL_MARKERS 0
-#define VGCODE_ENABLE_ET_SPE1872 1
-#define VGCODE_ENABLE_ET_SPE1872_DEBUG (1 && VGCODE_ENABLE_ET_SPE1872)
 
 #include <array>
 #include <vector>
@@ -85,15 +83,11 @@ enum class EViewType : uint8_t
     Height,
     Width,
     Speed,
-#if VGCODE_ENABLE_ET_SPE1872
     ActualSpeed,
-#endif // VGCODE_ENABLE_ET_SPE1872
     FanSpeed,
     Temperature,
     VolumetricFlowRate,
-#if VGCODE_ENABLE_ET_SPE1872
     ActualVolumetricFlowRate,
-#endif // VGCODE_ENABLE_ET_SPE1872
     LayerTimeLinear,
     LayerTimeLogarithmic,
     Tool,

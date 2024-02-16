@@ -145,41 +145,41 @@ void GCodeProcessor::CpColor::reset()
 
 float GCodeProcessor::Trapezoid::acceleration_time(float entry_feedrate, float acceleration) const
 {
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
     return acceleration_time_from_distance(entry_feedrate, acceleration_distance(), acceleration);
 #else
     return acceleration_time_from_distance(entry_feedrate, accelerate_until, acceleration);
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
 }
 
-#if !ENABLE_ET_SPE1872
+#if !ENABLE_NEW_GCODE_VIEWER
 float GCodeProcessor::Trapezoid::cruise_time() const
 {
     return (cruise_feedrate != 0.0f) ? cruise_distance() / cruise_feedrate : 0.0f;
 }
-#endif // !ENABLE_ET_SPE1872
+#endif // !ENABLE_NEW_GCODE_VIEWER
 
 float GCodeProcessor::Trapezoid::deceleration_time(float distance, float acceleration) const
 {
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
     return acceleration_time_from_distance(cruise_feedrate, deceleration_distance(distance), -acceleration);
 #else
     return acceleration_time_from_distance(cruise_feedrate, distance - decelerate_after, -acceleration);
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
 }
 
-#if !ENABLE_ET_SPE1872
+#if !ENABLE_NEW_GCODE_VIEWER
 float GCodeProcessor::Trapezoid::cruise_distance() const
 {
     return decelerate_after - accelerate_until;
 }
-#endif // !ENABLE_ET_SPE1872
+#endif // !ENABLE_NEW_GCODE_VIEWER
 
 void GCodeProcessor::TimeBlock::calculate_trapezoid()
 {
-#if !ENABLE_ET_SPE1872
+#if !ENABLE_NEW_GCODE_VIEWER
     trapezoid.cruise_feedrate = feedrate_profile.cruise;
-#endif // !ENABLE_ET_SPE1872
+#endif // !ENABLE_NEW_GCODE_VIEWER
 
     float accelerate_distance = std::max(0.0f, estimated_acceleration_distance(feedrate_profile.entry, feedrate_profile.cruise, acceleration));
     const float decelerate_distance = std::max(0.0f, estimated_acceleration_distance(feedrate_profile.cruise, feedrate_profile.exit, -acceleration));
@@ -193,23 +193,23 @@ void GCodeProcessor::TimeBlock::calculate_trapezoid()
         cruise_distance = 0.0f;
         trapezoid.cruise_feedrate = speed_from_distance(feedrate_profile.entry, accelerate_distance, acceleration);
     }
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
     else
         trapezoid.cruise_feedrate = feedrate_profile.cruise;
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
 
     trapezoid.accelerate_until = accelerate_distance;
     trapezoid.decelerate_after = accelerate_distance + cruise_distance;
 }
 
-#if !ENABLE_ET_SPE1872
+#if !ENABLE_NEW_GCODE_VIEWER
 float GCodeProcessor::TimeBlock::time() const
 {
     return trapezoid.acceleration_time(feedrate_profile.entry, acceleration) +
         trapezoid.cruise_time() +
         trapezoid.deceleration_time(distance, acceleration);
 }
-#endif // !ENABLE_ET_SPE1872
+#endif // !ENABLE_NEW_GCODE_VIEWER
 
 void GCodeProcessor::TimeMachine::State::reset()
 {
@@ -255,17 +255,7 @@ void GCodeProcessor::TimeMachine::reset()
 #endif // ENABLE_NEW_GCODE_VIEWER
 }
 
-#if ENABLE_NEW_GCODE_VIEWER
-#if !ENABLE_ET_SPE1872
-void GCodeProcessor::TimeMachine::simulate_st_synchronize(GCodeProcessorResult& result, PrintEstimatedStatistics::ETimeMode mode, float additional_time)
-{
-    if (!enabled)
-        return;
-
-    calculate_time(result, mode, 0, additional_time);
-}
-#endif // !ENABLE_ET_SPE1872
-#else
+#if !ENABLE_NEW_GCODE_VIEWER
 void GCodeProcessor::TimeMachine::simulate_st_synchronize(float additional_time)
 {
     if (!enabled)
@@ -273,11 +263,11 @@ void GCodeProcessor::TimeMachine::simulate_st_synchronize(float additional_time)
 
     calculate_time(0, additional_time);
 }
-#endif // ENABLE_NEW_GCODE_VIEWER
+#endif // !ENABLE_NEW_GCODE_VIEWER
 
 static void planner_forward_pass_kernel(const GCodeProcessor::TimeBlock& prev, GCodeProcessor::TimeBlock& curr)
 {
-#if ENABLE_ET_SPE1872_FIRMWARE_BUDDY
+#if ENABLE_NEW_GCODE_VIEWER
     //
     // C:\prusa\firmware\Prusa-Firmware-Buddy\lib\Marlin\Marlin\src\module\planner.cpp
     // Line 954
@@ -312,12 +302,12 @@ static void planner_forward_pass_kernel(const GCodeProcessor::TimeBlock& prev, G
             }
         }
     }
-#endif // ENABLE_ET_SPE1872_FIRMWARE_BUDDY
+#endif // ENABLE_NEW_GCODE_VIEWER
 }
 
 static void planner_reverse_pass_kernel(GCodeProcessor::TimeBlock& curr, const GCodeProcessor::TimeBlock& next)
 {
-#if ENABLE_ET_SPE1872_FIRMWARE_BUDDY
+#if ENABLE_NEW_GCODE_VIEWER
     //
     // C:\prusa\firmware\Prusa-Firmware-Buddy\lib\Marlin\Marlin\src\module\planner.cpp
     // Line 857
@@ -359,7 +349,7 @@ static void planner_reverse_pass_kernel(GCodeProcessor::TimeBlock& curr, const G
 
         curr.flags.recalculate = true;
     }
-#endif // ENABLE_ET_SPE1872_FIRMWARE_BUDDY
+#endif // ENABLE_NEW_GCODE_VIEWER
 }
 
 static void recalculate_trapezoids(std::vector<GCodeProcessor::TimeBlock>& blocks)
@@ -377,7 +367,7 @@ static void recalculate_trapezoids(std::vector<GCodeProcessor::TimeBlock>& block
             // Recalculate if current block entry or exit junction speed has changed.
             if (curr->flags.recalculate || next->flags.recalculate) {
                 // NOTE: Entry and exit factors always > 0 by all previous logic operations.
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
                 curr->feedrate_profile.exit = next->feedrate_profile.entry;
                 curr->calculate_trapezoid();
 #else
@@ -385,7 +375,7 @@ static void recalculate_trapezoids(std::vector<GCodeProcessor::TimeBlock>& block
                 block.feedrate_profile.exit = next->feedrate_profile.entry;
                 block.calculate_trapezoid();
                 curr->trapezoid = block.trapezoid;
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
                 curr->flags.recalculate = false; // Reset current only to ensure next trapezoid is computed
             }
         }
@@ -393,7 +383,7 @@ static void recalculate_trapezoids(std::vector<GCodeProcessor::TimeBlock>& block
 
     // Last/newest block in buffer. Always recalculated.
     if (next != nullptr) {
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
         next->feedrate_profile.exit = next->safe_feedrate;
         next->calculate_trapezoid();
 #else
@@ -401,7 +391,7 @@ static void recalculate_trapezoids(std::vector<GCodeProcessor::TimeBlock>& block
         block.feedrate_profile.exit = next->safe_feedrate;
         block.calculate_trapezoid();
         next->trapezoid = block.trapezoid;
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
         next->flags.recalculate = false;
     }
 }
@@ -443,7 +433,6 @@ void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, floa
         if (block.layer_id == 1)
             first_layer_time += block_time;
 
-#if ENABLE_ET_SPE1872
         // detect actual speed moves required to render toolpaths using actual speed
         if (mode == PrintEstimatedStatistics::ETimeMode::Normal) {
             GCodeProcessorResult::MoveVertex& curr_move = result.moves[block.move_id];
@@ -531,7 +520,6 @@ void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, floa
                 std::nullopt
             });
         }
-#endif // ENABLE_ET_SPE1872
 #else
         if (block.move_type == EMoveType::Travel)
             travel_time += block_time;
@@ -1557,21 +1545,17 @@ void GCodeProcessor::finalize(bool perform_post_process)
         }
     }
 
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
     calculate_time(m_result);
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
 
     // process the time blocks
     for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
         TimeMachine& machine = m_time_processor.machines[i];
         TimeMachine::CustomGCodeTime& gcode_time = machine.gcode_time;
-#if ENABLE_NEW_GCODE_VIEWER
-#if !ENABLE_ET_SPE1872
-        machine.calculate_time(m_result, static_cast<PrintEstimatedStatistics::ETimeMode>(i));
-#endif // !ENABLE_ET_SPE1872
-#else
+#if !ENABLE_NEW_GCODE_VIEWER
         machine.calculate_time();
-#endif // ENABLE_NEW_GCODE_VIEWER
+#endif // !ENABLE_NEW_GCODE_VIEWER
         if (gcode_time.needed && gcode_time.cache != 0.0f)
             gcode_time.times.push_back({ CustomGCode::ColorChange, gcode_time.cache });
     }
@@ -3119,20 +3103,16 @@ void GCodeProcessor::process_G1(const std::array<std::optional<double>, 4>& axes
 
         blocks.push_back(block);
 
-#if !ENABLE_ET_SPE1872
+#if !ENABLE_NEW_GCODE_VIEWER
         if (blocks.size() > TimeProcessor::Planner::refresh_threshold)
-#if ENABLE_NEW_GCODE_VIEWER
-              machine.calculate_time(m_result, static_cast<PrintEstimatedStatistics::ETimeMode>(i), TimeProcessor::Planner::queue_size);
-#else
             machine.calculate_time(TimeProcessor::Planner::queue_size);
-#endif // ENABLE_NEW_GCODE_VIEWER
-#endif // !ENABLE_ET_SPE1872
+#endif // !ENABLE_NEW_GCODE_VIEWER
     }
 
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
     if (m_time_processor.machines[0].blocks.size() > TimeProcessor::Planner::refresh_threshold)
         calculate_time(m_result, TimeProcessor::Planner::queue_size);
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
 
     if (m_seams_detector.is_active()) {
         // check for seam starting vertex
@@ -3268,11 +3248,11 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
     arc.end = Vec3d(end_position[X], end_position[Y], end_position[Z]);
 
     // radii
-#if ENABLE_ET_SPE1872_FIRMWARE_G2G3
+#if ENABLE_NEW_GCODE_VIEWER
     if (std::abs(arc.end_radius() - arc.start_radius()) > 0.001) {
 #else
     if (std::abs(arc.end_radius() - arc.start_radius()) > EPSILON) {
-#endif // ENABLE_ET_SPE1872_FIRMWARE_G2G3
+#endif // ENABLE_NEW_GCODE_VIEWER
         // what to do ???
     }
 
@@ -3341,7 +3321,7 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
           process_G1(g1_axes, g1_feedrate, G1DiscretizationOrigin::G2G3, remaining_internal_g1_lines);
     };
 
-#if ENABLE_ET_SPE1872_FIRMWARE_BUDDY_G2G3
+#if ENABLE_NEW_GCODE_VIEWER
     if (m_flavor == gcfMarlinFirmware) {
         // calculate arc segments
         // reference:
@@ -3411,7 +3391,7 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
         internal_only_g1_line(adjust_target(end_position, prev_target), arc.delta_z() != 0.0, (segments == 1) ? feedrate : std::nullopt, extrusion);
     }
     else {
-#endif // ENABLE_ET_SPE1872_FIRMWARE_BUDDY_G2G3
+#endif // ENABLE_NEW_GCODE_VIEWER
         // calculate arc segments
         // reference:
         // Prusa-Firmware\Firmware\motion_control.cpp - mc_arc()
@@ -3431,14 +3411,14 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
         const double z_per_segment = arc.delta_z() * inv_segment;
         const double extruder_per_segment = (extrusion.has_value()) ? *extrusion * inv_segment : 0.0;
 
-#if ENABLE_ET_SPE1872_FIRMWARE_G2G3
+#if ENABLE_NEW_GCODE_VIEWER
         const double sq_theta_per_segment = sqr(theta_per_segment);
         const double cos_T = 1.0 - 0.5 * sq_theta_per_segment;
         const double sin_T = theta_per_segment - sq_theta_per_segment * theta_per_segment / 6.0f;
 #else
         const double cos_T = 1.0 - 0.5 * sqr(theta_per_segment); // Small angle approximation
         const double sin_T = theta_per_segment;
-#endif // ENABLE_ET_SPE1872_FIRMWARE_G2G3
+#endif // ENABLE_NEW_GCODE_VIEWER
 
         AxisCoords prev_target = m_start_position;
         AxisCoords arc_target;
@@ -3451,14 +3431,14 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
 
         static const size_t N_ARC_CORRECTION = 25;
         Vec3d curr_rel_arc_start = arc.relative_start();
-#if ENABLE_ET_SPE1872_FIRMWARE_G2G3
+#if ENABLE_NEW_GCODE_VIEWER
         size_t count = N_ARC_CORRECTION;
 #else
         size_t count = 0;
-#endif // ENABLE_ET_SPE1872_FIRMWARE_G2G3
+#endif // ENABLE_NEW_GCODE_VIEWER
 
         for (size_t i = 1; i < segments; ++i) {
-#if ENABLE_ET_SPE1872_FIRMWARE_G2G3
+#if ENABLE_NEW_GCODE_VIEWER
             if (count-- == 0) {
                 const double cos_Ti = ::cos(i * theta_per_segment);
                 const double sin_Ti = ::sin(i * theta_per_segment);
@@ -3488,7 +3468,7 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
                 curr_rel_arc_start.y() = -double(rel_center.x()) * sin_Ti - double(rel_center.y()) * cos_Ti;
                 count = 0;
             }
-#endif // ENABLE_ET_SPE1872_FIRMWARE_G2G3
+#endif // ENABLE_NEW_GCODE_VIEWER
 
             // Update arc_target location
             arc_target[X] = arc.center.x() + curr_rel_arc_start.x();
@@ -3505,9 +3485,9 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
         // Ensure last segment arrives at target location.
         m_start_position = m_end_position; // this is required because we are skipping the call to process_gcode_line()
         internal_only_g1_line(adjust_target(end_position, prev_target), arc.delta_z() != 0.0, (segments == 1) ? feedrate : std::nullopt, extrusion);
-#if ENABLE_ET_SPE1872_FIRMWARE_BUDDY_G2G3
+#if ENABLE_NEW_GCODE_VIEWER
     }
-#endif // ENABLE_ET_SPE1872_FIRMWARE_BUDDY_G2G3
+#endif // ENABLE_NEW_GCODE_VIEWER
 }
 
 void GCodeProcessor::process_G10(const GCodeReader::GCodeLine& line)
@@ -4278,13 +4258,13 @@ void GCodeProcessor::post_process()
                 ++m_times_cache_id;
             }
 
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
             if (it == m_machine.g1_times_cache.end() || it->id > g1_lines_counter)
                 return ret;
 #else
             if (it->id > g1_lines_counter)
                 return ret;
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
 
             // search for internal G1 lines
             if (GCodeReader::GCodeLine::cmd_is(line, "G2") || GCodeReader::GCodeLine::cmd_is(line, "G3")) {
@@ -4813,9 +4793,9 @@ void GCodeProcessor::store_move_vertex(EMoveType type, bool internal_only)
         Vec3f(m_end_position[X], m_end_position[Y], m_end_position[Z] - m_z_offset) + m_extruder_offsets[m_extruder_id],
         static_cast<float>(m_end_position[E] - m_start_position[E]),
         m_feedrate,
-#if ENABLE_ET_SPE1872
-        0.0f,
-#endif // ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
+        0.0f, // actual feedrate
+#endif // ENABLE_NEW_GCODE_VIEWER
         m_width,
         m_height,
         m_mm3_per_mm,
@@ -4970,11 +4950,11 @@ float GCodeProcessor::get_filament_unload_time(size_t extruder_id)
 
 void GCodeProcessor::process_custom_gcode_time(CustomGCode::Type code)
 {
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
     //FIXME this simulates st_synchronize! is it correct?
     // The estimated time may be longer than the real print time.
     simulate_st_synchronize();
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
     for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
         TimeMachine& machine = m_time_processor.machines[i];
         if (!machine.enabled)
@@ -4982,15 +4962,11 @@ void GCodeProcessor::process_custom_gcode_time(CustomGCode::Type code)
 
         TimeMachine::CustomGCodeTime& gcode_time = machine.gcode_time;
         gcode_time.needed = true;
+#if !ENABLE_NEW_GCODE_VIEWER
         //FIXME this simulates st_synchronize! is it correct?
         // The estimated time may be longer than the real print time.
-#if ENABLE_NEW_GCODE_VIEWER
-#if !ENABLE_ET_SPE1872
-        machine.simulate_st_synchronize(m_result, static_cast<PrintEstimatedStatistics::ETimeMode>(i));
-#endif // !ENABLE_ET_SPE1872
-#else
         machine.simulate_st_synchronize();
-#endif // ENABLE_NEW_GCODE_VIEWER
+#endif // !ENABLE_NEW_GCODE_VIEWER
         if (gcode_time.cache != 0.0f) {
             gcode_time.times.push_back({ code, gcode_time.cache });
             gcode_time.cache = 0.0f;
@@ -5007,7 +4983,7 @@ void GCodeProcessor::process_filaments(CustomGCode::Type code)
         m_used_filaments.process_extruder_cache(m_extruder_id);
 }
 
-#if ENABLE_ET_SPE1872
+#if ENABLE_NEW_GCODE_VIEWER
 void GCodeProcessor::calculate_time(GCodeProcessorResult& result, size_t keep_last_n_blocks, float additional_time)
 {
     // calculate times
@@ -5067,9 +5043,7 @@ void GCodeProcessor::calculate_time(GCodeProcessorResult& result, size_t keep_la
         }
     }
 }
-#endif // ENABLE_ET_SPE1872
 
-#if ENABLE_ET_SPE1872
 void GCodeProcessor::simulate_st_synchronize(float additional_time)
 {
     calculate_time(m_result, 0, additional_time);
@@ -5078,14 +5052,10 @@ void GCodeProcessor::simulate_st_synchronize(float additional_time)
 void GCodeProcessor::simulate_st_synchronize(float additional_time)
 {
     for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
-#if ENABLE_NEW_GCODE_VIEWER
-        m_time_processor.machines[i].simulate_st_synchronize(m_result, static_cast<PrintEstimatedStatistics::ETimeMode>(i), additional_time);
-#else
         m_time_processor.machines[i].simulate_st_synchronize(additional_time);
-#endif // ENABLE_NEW_GCODE_VIEWER
     }
 }
-#endif // ENABLE_ET_SPE1872
+#endif // ENABLE_NEW_GCODE_VIEWER
 
 void GCodeProcessor::update_estimated_statistics()
 {
