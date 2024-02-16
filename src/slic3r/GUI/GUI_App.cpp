@@ -2987,13 +2987,7 @@ void GUI_App::MacOpenFiles(const wxArrayString &fileNames)
 
 void GUI_App::MacOpenURL(const wxString& url)
 {
-    if (app_config && !app_config->get_bool("downloader_url_registered"))
-    {
-        notification_manager()->push_notification(NotificationType::URLNotRegistered);
-        BOOST_LOG_TRIVIAL(error) << "Recieved command to open URL, but it is not allowed in app configuration. URL: " << url;
-        return;
-    }
-    start_download(boost::nowide::narrow(url));
+    start_download(into_u8(url));
 }
 
 #endif /* __APPLE */
@@ -3558,6 +3552,16 @@ void GUI_App::start_download(std::string url)
         BOOST_LOG_TRIVIAL(error) << "Could not start URL download: plater is nullptr.";
         return; 
     }
+
+    #if defined(__APPLE__) || (defined(__linux__) && !defined(SLIC3R_DESKTOP_INTEGRATION))
+    if (app_config && !app_config->get_bool("downloader_url_registered"))
+    {
+        notification_manager()->push_notification(NotificationType::URLNotRegistered);
+        BOOST_LOG_TRIVIAL(error) << "Received command to open URL, but it is not allowed in app configuration. URL: " << url;
+        return;
+    }
+    #endif //defined(__APPLE__) || (defined(__linux__) && !defined(SLIC3R_DESKTOP_INTEGRATION))
+
     //lets always init so if the download dest folder was changed, new dest is used 
         boost::filesystem::path dest_folder(app_config->get("url_downloader_dest"));
         if (dest_folder.empty() || !boost::filesystem::is_directory(dest_folder)) {
@@ -3565,7 +3569,7 @@ void GUI_App::start_download(std::string url)
             BOOST_LOG_TRIVIAL(error) << msg;
             show_error(nullptr, msg);
             return;
-        } 
+        }
     m_downloader->init(dest_folder);
     m_downloader->start_download(url);
 }
