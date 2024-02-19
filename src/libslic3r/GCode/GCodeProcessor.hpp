@@ -55,26 +55,11 @@ namespace Slic3r {
         {
             float time;
             std::vector<std::pair<CustomGCode::Type, std::pair<float, float>>> custom_gcode_times;
-#if !ENABLE_NEW_GCODE_VIEWER
-            float travel_time;
-            std::vector<std::pair<EMoveType, float>> moves_times;
-            std::vector<std::pair<GCodeExtrusionRole, float>> roles_times;
-            std::vector<float> layers_times;
-#endif // !ENABLE_NEW_GCODE_VIEWER
 
             void reset() {
                 time = 0.0f;
                 custom_gcode_times.clear();
                 custom_gcode_times.shrink_to_fit();
-#if !ENABLE_NEW_GCODE_VIEWER
-                travel_time = 0.0f;
-                moves_times.clear();
-                moves_times.shrink_to_fit();
-                roles_times.clear();
-                roles_times.shrink_to_fit();
-                layers_times.clear();
-                layers_times.shrink_to_fit();
-#endif // !ENABLE_NEW_GCODE_VIEWER
             }
         };
 
@@ -140,26 +125,18 @@ namespace Slic3r {
             Vec3f position{ Vec3f::Zero() }; // mm
             float delta_extruder{ 0.0f }; // mm
             float feedrate{ 0.0f }; // mm/s
-#if ENABLE_NEW_GCODE_VIEWER
             float actual_feedrate{ 0.0f }; // mm/s
-#endif // ENABLE_NEW_GCODE_VIEWER
             float width{ 0.0f }; // mm
             float height{ 0.0f }; // mm
             float mm3_per_mm{ 0.0f };
             float fan_speed{ 0.0f }; // percentage
             float temperature{ 0.0f }; // Celsius degrees
-#if ENABLE_NEW_GCODE_VIEWER
             std::array<float, static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count)> time{ 0.0f, 0.0f }; // s
             unsigned int layer_id{ 0 };
-#else
-            float time{ 0.0f }; // s
-#endif // ENABLE_NEW_GCODE_VIEWER
             bool internal_only{ false };
 
             float volumetric_rate() const { return feedrate * mm3_per_mm; }
-#if ENABLE_NEW_GCODE_VIEWER
             float actual_volumetric_rate() const { return actual_feedrate * mm3_per_mm; }
-#endif // ENABLE_NEW_GCODE_VIEWER
         };
 
         std::string filename;
@@ -183,19 +160,10 @@ namespace Slic3r {
 
         PrintEstimatedStatistics print_statistics;
         std::vector<CustomGCode::Item> custom_gcode_per_print_z;
-#if ENABLE_NEW_GCODE_VIEWER
         bool spiral_vase_mode;
-#else
-        std::vector<std::pair<float, std::pair<size_t, size_t>>> spiral_vase_layers;
-#endif // ENABLE_NEW_GCODE_VIEWER
 
         ConflictResultOpt conflict_result;
 
-#if !ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_GCODE_VIEWER_STATISTICS
-        int64_t time{ 0 };
-#endif // ENABLE_GCODE_VIEWER_STATISTICS
-#endif // !ENABLE_NEW_GCODE_VIEWER
         void reset();
     };
 
@@ -286,18 +254,12 @@ namespace Slic3r {
             float cruise_feedrate{ 0.0f }; // mm/sec
 
             float acceleration_time(float entry_feedrate, float acceleration) const;
-#if ENABLE_NEW_GCODE_VIEWER
             float cruise_time() const { return (cruise_feedrate != 0.0f) ? cruise_distance() / cruise_feedrate : 0.0f; }
             float deceleration_time(float distance, float acceleration) const;
             float acceleration_distance() const { return accelerate_until; }
             float cruise_distance() const { return decelerate_after - accelerate_until; }
             float deceleration_distance(float distance) const { return distance - decelerate_after; }
             bool is_cruise_only(float distance) const { return std::abs(cruise_distance() - distance) < EPSILON; }
-#else
-            float cruise_time() const;
-            float deceleration_time(float distance, float acceleration) const;
-            float cruise_distance() const;
-#endif // ENABLE_NEW_GCODE_VIEWER
         };
 
         struct TimeBlock
@@ -310,9 +272,7 @@ namespace Slic3r {
 
             EMoveType move_type{ EMoveType::Noop };
             GCodeExtrusionRole role{ GCodeExtrusionRole::None };
-#if ENABLE_NEW_GCODE_VIEWER
             unsigned int move_id{ 0 };
-#endif // ENABLE_NEW_GCODE_VIEWER
             unsigned int g1_line_id{ 0 };
             unsigned int remaining_internal_g1_lines;
             unsigned int layer_id{ 0 };
@@ -327,14 +287,10 @@ namespace Slic3r {
             // Calculates this block's trapezoid
             void calculate_trapezoid();
 
-#if ENABLE_NEW_GCODE_VIEWER
             float time() const {
                 return trapezoid.acceleration_time(feedrate_profile.entry, acceleration) +
                        trapezoid.cruise_time() + trapezoid.deceleration_time(distance, acceleration);
             }
-#else
-            float time() const;
-#endif // ENABLE_NEW_GCODE_VIEWER
         };
 
     private:
@@ -366,7 +322,6 @@ namespace Slic3r {
                 float elapsed_time;
             };
 
-#if ENABLE_NEW_GCODE_VIEWER
             struct ActualSpeedMove
             {
                 unsigned int move_id{ 0 };
@@ -380,7 +335,6 @@ namespace Slic3r {
                 std::optional<float> fan_speed;
                 std::optional<float> temperature;
             };
-#endif // ENABLE_NEW_GCODE_VIEWER
 
             bool enabled;
             float acceleration; // mm/s^2
@@ -394,9 +348,6 @@ namespace Slic3r {
             float max_travel_acceleration; // mm/s^2
             float extrude_factor_override_percentage;
             float time; // s
-#if !ENABLE_NEW_GCODE_VIEWER
-            float travel_time; // s
-#endif // !ENABLE_NEW_GCODE_VIEWER
             struct StopTime
             {
                 unsigned int g1_line_id;
@@ -410,24 +361,12 @@ namespace Slic3r {
             CustomGCodeTime gcode_time;
             std::vector<TimeBlock> blocks;
             std::vector<G1LinesCacheItem> g1_times_cache;
-#if ENABLE_NEW_GCODE_VIEWER
             float first_layer_time;
             std::vector<ActualSpeedMove> actual_speed_moves;
-#else
-            std::array<float, static_cast<size_t>(EMoveType::Count)> moves_time;
-            std::array<float, static_cast<size_t>(GCodeExtrusionRole::Count)> roles_time;
-            std::vector<float> layers_time;
-#endif // ENABLE_NEW_GCODE_VIEWER
 
             void reset();
 
-            // Simulates firmware st_synchronize() call
-#if ENABLE_NEW_GCODE_VIEWER
             void calculate_time(GCodeProcessorResult& result, PrintEstimatedStatistics::ETimeMode mode, size_t keep_last_n_blocks = 0, float additional_time = 0.0f);
-#else
-            void simulate_st_synchronize(float additional_time = 0.0f);
-            void calculate_time(size_t keep_last_n_blocks = 0, float additional_time = 0.0f);
-#endif // ENABLE_NEW_GCODE_VIEWER
         };
 
         struct TimeProcessor
@@ -671,12 +610,6 @@ namespace Slic3r {
         SeamsDetector m_seams_detector;
         OptionsZCorrector m_options_z_corrector;
         size_t m_last_default_color_id;
-#if !ENABLE_NEW_GCODE_VIEWER
-        bool m_spiral_vase_active;
-#if ENABLE_GCODE_VIEWER_STATISTICS
-        std::chrono::time_point<std::chrono::high_resolution_clock> m_start_time;
-#endif // ENABLE_GCODE_VIEWER_STATISTICS
-#endif // !ENABLE_NEW_GCODE_VIEWER
         float m_kissslicer_toolchange_time_correction;
         bool m_single_extruder_multi_material;
 
@@ -746,19 +679,9 @@ namespace Slic3r {
 
         float get_time(PrintEstimatedStatistics::ETimeMode mode) const;
         std::string get_time_dhm(PrintEstimatedStatistics::ETimeMode mode) const;
-#if !ENABLE_NEW_GCODE_VIEWER
-        float get_travel_time(PrintEstimatedStatistics::ETimeMode mode) const;
-        std::string get_travel_time_dhm(PrintEstimatedStatistics::ETimeMode mode) const;
-#endif // !ENABLE_NEW_GCODE_VIEWER
         std::vector<std::pair<CustomGCode::Type, std::pair<float, float>>> get_custom_gcode_times(PrintEstimatedStatistics::ETimeMode mode, bool include_remaining) const;
 
-#if ENABLE_NEW_GCODE_VIEWER
         float get_first_layer_time(PrintEstimatedStatistics::ETimeMode mode) const;
-#else
-        std::vector<std::pair<EMoveType, float>> get_moves_time(PrintEstimatedStatistics::ETimeMode mode) const;
-        std::vector<std::pair<GCodeExtrusionRole, float>> get_roles_time(PrintEstimatedStatistics::ETimeMode mode) const;
-        std::vector<float> get_layers_time(PrintEstimatedStatistics::ETimeMode mode) const;
-#endif // ENABLE_NEW_GCODE_VIEWER
 
     private:
         void apply_config(const DynamicPrintConfig& config);
@@ -923,9 +846,7 @@ namespace Slic3r {
         void process_custom_gcode_time(CustomGCode::Type code);
         void process_filaments(CustomGCode::Type code);
 
-#if ENABLE_NEW_GCODE_VIEWER
         void calculate_time(GCodeProcessorResult& result, size_t keep_last_n_blocks = 0, float additional_time = 0.0f);
-#endif // ENABLE_NEW_GCODE_VIEWER
 
         // Simulates firmware st_synchronize() call
         void simulate_st_synchronize(float additional_time = 0.0f);

@@ -145,42 +145,16 @@ void GCodeProcessor::CpColor::reset()
 
 float GCodeProcessor::Trapezoid::acceleration_time(float entry_feedrate, float acceleration) const
 {
-#if ENABLE_NEW_GCODE_VIEWER
     return acceleration_time_from_distance(entry_feedrate, acceleration_distance(), acceleration);
-#else
-    return acceleration_time_from_distance(entry_feedrate, accelerate_until, acceleration);
-#endif // ENABLE_NEW_GCODE_VIEWER
 }
-
-#if !ENABLE_NEW_GCODE_VIEWER
-float GCodeProcessor::Trapezoid::cruise_time() const
-{
-    return (cruise_feedrate != 0.0f) ? cruise_distance() / cruise_feedrate : 0.0f;
-}
-#endif // !ENABLE_NEW_GCODE_VIEWER
 
 float GCodeProcessor::Trapezoid::deceleration_time(float distance, float acceleration) const
 {
-#if ENABLE_NEW_GCODE_VIEWER
     return acceleration_time_from_distance(cruise_feedrate, deceleration_distance(distance), -acceleration);
-#else
-    return acceleration_time_from_distance(cruise_feedrate, distance - decelerate_after, -acceleration);
-#endif // ENABLE_NEW_GCODE_VIEWER
 }
-
-#if !ENABLE_NEW_GCODE_VIEWER
-float GCodeProcessor::Trapezoid::cruise_distance() const
-{
-    return decelerate_after - accelerate_until;
-}
-#endif // !ENABLE_NEW_GCODE_VIEWER
 
 void GCodeProcessor::TimeBlock::calculate_trapezoid()
 {
-#if !ENABLE_NEW_GCODE_VIEWER
-    trapezoid.cruise_feedrate = feedrate_profile.cruise;
-#endif // !ENABLE_NEW_GCODE_VIEWER
-
     float accelerate_distance = std::max(0.0f, estimated_acceleration_distance(feedrate_profile.entry, feedrate_profile.cruise, acceleration));
     const float decelerate_distance = std::max(0.0f, estimated_acceleration_distance(feedrate_profile.cruise, feedrate_profile.exit, -acceleration));
     float cruise_distance = distance - accelerate_distance - decelerate_distance;
@@ -193,23 +167,12 @@ void GCodeProcessor::TimeBlock::calculate_trapezoid()
         cruise_distance = 0.0f;
         trapezoid.cruise_feedrate = speed_from_distance(feedrate_profile.entry, accelerate_distance, acceleration);
     }
-#if ENABLE_NEW_GCODE_VIEWER
     else
         trapezoid.cruise_feedrate = feedrate_profile.cruise;
-#endif // ENABLE_NEW_GCODE_VIEWER
 
     trapezoid.accelerate_until = accelerate_distance;
     trapezoid.decelerate_after = accelerate_distance + cruise_distance;
 }
-
-#if !ENABLE_NEW_GCODE_VIEWER
-float GCodeProcessor::TimeBlock::time() const
-{
-    return trapezoid.acceleration_time(feedrate_profile.entry, acceleration) +
-        trapezoid.cruise_time() +
-        trapezoid.deceleration_time(distance, acceleration);
-}
-#endif // !ENABLE_NEW_GCODE_VIEWER
 
 void GCodeProcessor::TimeMachine::State::reset()
 {
@@ -237,37 +200,17 @@ void GCodeProcessor::TimeMachine::reset()
     max_travel_acceleration = 0.0f;
     extrude_factor_override_percentage = 1.0f;
     time = 0.0f;
-#if !ENABLE_NEW_GCODE_VIEWER
-    travel_time = 0.0f;
-#endif // !ENABLE_NEW_GCODE_VIEWER
     stop_times = std::vector<StopTime>();
     curr.reset();
     prev.reset();
     gcode_time.reset();
     blocks = std::vector<TimeBlock>();
     g1_times_cache = std::vector<G1LinesCacheItem>();
-#if ENABLE_NEW_GCODE_VIEWER
     first_layer_time = 0.0f;
-#else
-    std::fill(moves_time.begin(), moves_time.end(), 0.0f);
-    std::fill(roles_time.begin(), roles_time.end(), 0.0f);
-    layers_time = std::vector<float>();
-#endif // ENABLE_NEW_GCODE_VIEWER
 }
-
-#if !ENABLE_NEW_GCODE_VIEWER
-void GCodeProcessor::TimeMachine::simulate_st_synchronize(float additional_time)
-{
-    if (!enabled)
-        return;
-
-    calculate_time(0, additional_time);
-}
-#endif // !ENABLE_NEW_GCODE_VIEWER
 
 static void planner_forward_pass_kernel(const GCodeProcessor::TimeBlock& prev, GCodeProcessor::TimeBlock& curr)
 {
-#if ENABLE_NEW_GCODE_VIEWER
     //
     // C:\prusa\firmware\Prusa-Firmware-Buddy\lib\Marlin\Marlin\src\module\planner.cpp
     // Line 954
@@ -286,28 +229,10 @@ static void planner_forward_pass_kernel(const GCodeProcessor::TimeBlock& prev, G
             curr.flags.recalculate = true;
         }
     }
-#else
-    // If the previous block is an acceleration block, but it is not long enough to complete the
-    // full speed change within the block, we need to adjust the entry speed accordingly. Entry
-    // speeds have already been reset, maximized, and reverse planned by reverse planner.
-    // If nominal length is true, max junction speed is guaranteed to be reached. No need to recheck.
-    if (!prev.flags.nominal_length) {
-        if (prev.feedrate_profile.entry < curr.feedrate_profile.entry) {
-            const float entry_speed = std::min(curr.feedrate_profile.entry, max_allowable_speed(-prev.acceleration, prev.feedrate_profile.entry, prev.distance));
-
-            // Check for junction speed change
-            if (curr.feedrate_profile.entry != entry_speed) {
-                curr.feedrate_profile.entry = entry_speed;
-                curr.flags.recalculate = true;
-            }
-        }
-    }
-#endif // ENABLE_NEW_GCODE_VIEWER
 }
 
 static void planner_reverse_pass_kernel(GCodeProcessor::TimeBlock& curr, const GCodeProcessor::TimeBlock& next)
 {
-#if ENABLE_NEW_GCODE_VIEWER
     //
     // C:\prusa\firmware\Prusa-Firmware-Buddy\lib\Marlin\Marlin\src\module\planner.cpp
     // Line 857
@@ -335,21 +260,6 @@ static void planner_reverse_pass_kernel(GCodeProcessor::TimeBlock& curr, const G
             curr.flags.recalculate = true;
         }
     }
-#else
-    // If entry speed is already at the maximum entry speed, no need to recheck. Block is cruising.
-    // If not, block in state of acceleration or deceleration. Reset entry speed to maximum and
-    // check for maximum allowable speed reductions to ensure maximum possible planned speed.
-    if (curr.feedrate_profile.entry != curr.max_entry_speed) {
-        // If nominal length true, max junction speed is guaranteed to be reached. Only compute
-        // for max allowable speed if block is decelerating and nominal length is false.
-        if (!curr.flags.nominal_length && curr.max_entry_speed > next.feedrate_profile.entry)
-            curr.feedrate_profile.entry = std::min(curr.max_entry_speed, max_allowable_speed(-curr.acceleration, next.feedrate_profile.entry, curr.distance));
-        else
-            curr.feedrate_profile.entry = curr.max_entry_speed;
-
-        curr.flags.recalculate = true;
-    }
-#endif // ENABLE_NEW_GCODE_VIEWER
 }
 
 static void recalculate_trapezoids(std::vector<GCodeProcessor::TimeBlock>& blocks)
@@ -367,15 +277,8 @@ static void recalculate_trapezoids(std::vector<GCodeProcessor::TimeBlock>& block
             // Recalculate if current block entry or exit junction speed has changed.
             if (curr->flags.recalculate || next->flags.recalculate) {
                 // NOTE: Entry and exit factors always > 0 by all previous logic operations.
-#if ENABLE_NEW_GCODE_VIEWER
                 curr->feedrate_profile.exit = next->feedrate_profile.entry;
                 curr->calculate_trapezoid();
-#else
-                GCodeProcessor::TimeBlock block = *curr;
-                block.feedrate_profile.exit = next->feedrate_profile.entry;
-                block.calculate_trapezoid();
-                curr->trapezoid = block.trapezoid;
-#endif // ENABLE_NEW_GCODE_VIEWER
                 curr->flags.recalculate = false; // Reset current only to ensure next trapezoid is computed
             }
         }
@@ -383,24 +286,13 @@ static void recalculate_trapezoids(std::vector<GCodeProcessor::TimeBlock>& block
 
     // Last/newest block in buffer. Always recalculated.
     if (next != nullptr) {
-#if ENABLE_NEW_GCODE_VIEWER
         next->feedrate_profile.exit = next->safe_feedrate;
         next->calculate_trapezoid();
-#else
-        GCodeProcessor::TimeBlock block = *next;
-        block.feedrate_profile.exit = next->safe_feedrate;
-        block.calculate_trapezoid();
-        next->trapezoid = block.trapezoid;
-#endif // ENABLE_NEW_GCODE_VIEWER
         next->flags.recalculate = false;
     }
 }
 
-#if ENABLE_NEW_GCODE_VIEWER
 void GCodeProcessor::TimeMachine::calculate_time(GCodeProcessorResult& result, PrintEstimatedStatistics::ETimeMode mode, size_t keep_last_n_blocks, float additional_time)
-#else
-void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, float additional_time)
-#endif // ENABLE_NEW_GCODE_VIEWER
 {
     if (!enabled || blocks.size() < 2)
         return;
@@ -427,7 +319,6 @@ void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, floa
             block_time += additional_time;
 
         time += block_time;
-#if ENABLE_NEW_GCODE_VIEWER
         result.moves[block.move_id].time[static_cast<size_t>(mode)] = block_time;
         gcode_time.cache += block_time;
         if (block.layer_id == 1)
@@ -520,22 +411,6 @@ void GCodeProcessor::TimeMachine::calculate_time(size_t keep_last_n_blocks, floa
                 std::nullopt
             });
         }
-#else
-        if (block.move_type == EMoveType::Travel)
-            travel_time += block_time;
-        else
-            roles_time[static_cast<size_t>(block.role)] += block_time;
-        gcode_time.cache += block_time;
-        moves_time[static_cast<size_t>(block.move_type)] += block_time;
-        if (block.layer_id >= layers_time.size()) {
-            const size_t curr_size = layers_time.size();
-            layers_time.resize(block.layer_id);
-            for (size_t i = curr_size; i < layers_time.size(); ++i) {
-                layers_time[i] = 0.0f;
-            }
-        }
-        layers_time[block.layer_id - 1] += block_time;
-#endif // ENABLE_NEW_GCODE_VIEWER
         g1_times_cache.push_back({ block.g1_line_id, block.remaining_internal_g1_lines, time });
         // update times for remaining time to printer stop placeholders
         auto it_stop_time = std::lower_bound(stop_times.begin(), stop_times.end(), block.g1_line_id,
@@ -644,7 +519,6 @@ void GCodeProcessor::UsedFilaments::process_caches(const GCodeProcessor* process
     process_role_cache(processor);
 }
 
-#if ENABLE_NEW_GCODE_VIEWER
 void GCodeProcessorResult::reset() {
     is_binary_file = false;
     moves.clear();
@@ -663,46 +537,6 @@ void GCodeProcessorResult::reset() {
     spiral_vase_mode = false;
     conflict_result = std::nullopt;
 }
-#else
-#if ENABLE_GCODE_VIEWER_STATISTICS
-void GCodeProcessorResult::reset() {
-    moves = std::vector<GCodeProcessorResult::MoveVertex>();
-    bed_shape = Pointfs();
-    max_print_height = 0.0f;
-    z_offset = 0.0f;
-    settings_ids.reset();
-    extruders_count = 0;
-    backtrace_enabled = false;
-    extruder_colors = std::vector<std::string>();
-    filament_diameters = std::vector<float>(MIN_EXTRUDERS_COUNT, DEFAULT_FILAMENT_DIAMETER);
-    filament_densities = std::vector<float>(MIN_EXTRUDERS_COUNT, DEFAULT_FILAMENT_DENSITY);
-    filament_cost = std::vector<float>(MIN_EXTRUDERS_COUNT, DEFAULT_FILAMENT_COST);
-    custom_gcode_per_print_z = std::vector<CustomGCode::Item>();
-    spiral_vase_layers = std::vector<std::pair<float, std::pair<size_t, size_t>>>();
-    conflict_result = std::nullopt;
-    time = 0;
-}
-#else
-void GCodeProcessorResult::reset() {
-    is_binary_file = false;
-    moves.clear();
-    lines_ends.clear();
-    bed_shape = Pointfs();
-    max_print_height = 0.0f;
-    z_offset = 0.0f;
-    settings_ids.reset();
-    extruders_count = 0;
-    backtrace_enabled = false;
-    extruder_colors = std::vector<std::string>();
-    filament_diameters = std::vector<float>(MIN_EXTRUDERS_COUNT, DEFAULT_FILAMENT_DIAMETER);
-    filament_densities = std::vector<float>(MIN_EXTRUDERS_COUNT, DEFAULT_FILAMENT_DENSITY);
-    filament_cost = std::vector<float>(MIN_EXTRUDERS_COUNT, DEFAULT_FILAMENT_COST);
-    custom_gcode_per_print_z = std::vector<CustomGCode::Item>();
-    spiral_vase_layers = std::vector<std::pair<float, std::pair<size_t, size_t>>>();
-    conflict_result = std::nullopt;
-}
-#endif // ENABLE_GCODE_VIEWER_STATISTICS
-#endif // ENABLE_NEW_GCODE_VIEWER
 
 const std::vector<std::pair<GCodeProcessor::EProducer, std::string>> GCodeProcessor::Producers = {
     { EProducer::PrusaSlicer, "generated by PrusaSlicer" },
@@ -883,11 +717,7 @@ for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::
 
     const ConfigOptionBool* spiral_vase = config.option<ConfigOptionBool>("spiral_vase");
     if (spiral_vase != nullptr)
-#if ENABLE_NEW_GCODE_VIEWER
         m_result.spiral_vase_mode = spiral_vase->value;
-#else
-        m_spiral_vase_active = spiral_vase->value;
-#endif // ENABLE_NEW_GCODE_VIEWER
 
     const ConfigOptionFloat* z_offset = config.option<ConfigOptionFloat>("z_offset");
     if (z_offset != nullptr)
@@ -1169,11 +999,7 @@ void GCodeProcessor::apply_config(const DynamicPrintConfig& config)
 
     const ConfigOptionBool* spiral_vase = config.option<ConfigOptionBool>("spiral_vase");
     if (spiral_vase != nullptr)
-#if ENABLE_NEW_GCODE_VIEWER
         m_result.spiral_vase_mode = spiral_vase->value;
-#else
-        m_spiral_vase_active = spiral_vase->value;
-#endif // ENABLE_NEW_GCODE_VIEWER
 
     const ConfigOptionFloat* z_offset = config.option<ConfigOptionFloat>("z_offset");
     if (z_offset != nullptr)
@@ -1244,9 +1070,6 @@ void GCodeProcessor::reset()
 
     m_options_z_corrector.reset();
 
-#if !ENABLE_NEW_GCODE_VIEWER
-    m_spiral_vase_active = false;
-#endif // !ENABLE_NEW_GCODE_VIEWER
     m_kissslicer_toolchange_time_correction = 0.0f;
 
     m_single_extruder_multi_material = false;
@@ -1290,12 +1113,6 @@ void GCodeProcessor::process_file(const std::string& filename, std::function<voi
 void GCodeProcessor::process_ascii_file(const std::string& filename, std::function<void()> cancel_callback)
 {
     CNumericLocalesSetter locales_setter;
-
-#if !ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_GCODE_VIEWER_STATISTICS
-    m_start_time = std::chrono::high_resolution_clock::now();
-#endif // ENABLE_GCODE_VIEWER_STATISTICS
-#endif // !ENABLE_NEW_GCODE_VIEWER
 
     // pre-processing
     // parse the gcode file to detect its producer
@@ -1370,12 +1187,6 @@ static void update_lines_ends_and_out_file_pos(const std::string& out_string, st
 
 void GCodeProcessor::process_binary_file(const std::string& filename, std::function<void()> cancel_callback)
 {
-#if !ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_GCODE_VIEWER_STATISTICS
-    m_start_time = std::chrono::high_resolution_clock::now();
-#endif // ENABLE_GCODE_VIEWER_STATISTICS
-#endif // !ENABLE_NEW_GCODE_VIEWER
-
     FilePtr file{ boost::nowide::fopen(filename.c_str(), "rb") };
     if (file.f == nullptr)
         throw Slic3r::RuntimeError(format("Error opening file %1%", filename));
@@ -1514,12 +1325,6 @@ void GCodeProcessor::initialize(const std::string& filename)
 {
     assert(is_decimal_separator_point());
 
-#if !ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_GCODE_VIEWER_STATISTICS
-    m_start_time = std::chrono::high_resolution_clock::now();
-#endif // ENABLE_GCODE_VIEWER_STATISTICS
-#endif // !ENABLE_NEW_GCODE_VIEWER
-
     // process gcode
     m_result.filename = filename;
     m_result.id = ++s_result_id;
@@ -1545,17 +1350,12 @@ void GCodeProcessor::finalize(bool perform_post_process)
         }
     }
 
-#if ENABLE_NEW_GCODE_VIEWER
     calculate_time(m_result);
-#endif // ENABLE_NEW_GCODE_VIEWER
 
     // process the time blocks
     for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
         TimeMachine& machine = m_time_processor.machines[i];
         TimeMachine::CustomGCodeTime& gcode_time = machine.gcode_time;
-#if !ENABLE_NEW_GCODE_VIEWER
-        machine.calculate_time();
-#endif // !ENABLE_NEW_GCODE_VIEWER
         if (gcode_time.needed && gcode_time.cache != 0.0f)
             gcode_time.times.push_back({ CustomGCode::ColorChange, gcode_time.cache });
     }
@@ -1573,11 +1373,6 @@ void GCodeProcessor::finalize(bool perform_post_process)
 
     if (perform_post_process)
         post_process();
-#if !ENABLE_NEW_GCODE_VIEWER
-#if ENABLE_GCODE_VIEWER_STATISTICS
-    m_result.time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - m_start_time).count();
-#endif // ENABLE_GCODE_VIEWER_STATISTICS
-#endif // !ENABLE_NEW_GCODE_VIEWER
 }
 
 float GCodeProcessor::get_time(PrintEstimatedStatistics::ETimeMode mode) const
@@ -1589,18 +1384,6 @@ std::string GCodeProcessor::get_time_dhm(PrintEstimatedStatistics::ETimeMode mod
 {
     return (mode < PrintEstimatedStatistics::ETimeMode::Count) ? short_time(get_time_dhms(m_time_processor.machines[static_cast<size_t>(mode)].time)) : std::string("N/A");
 }
-
-#if !ENABLE_NEW_GCODE_VIEWER
-float GCodeProcessor::get_travel_time(PrintEstimatedStatistics::ETimeMode mode) const
-{
-    return (mode < PrintEstimatedStatistics::ETimeMode::Count) ? m_time_processor.machines[static_cast<size_t>(mode)].travel_time : 0.0f;
-}
-
-std::string GCodeProcessor::get_travel_time_dhm(PrintEstimatedStatistics::ETimeMode mode) const
-{
-    return (mode < PrintEstimatedStatistics::ETimeMode::Count) ? short_time(get_time_dhms(m_time_processor.machines[static_cast<size_t>(mode)].travel_time)) : std::string("N/A");
-}
-#endif // !ENABLE_NEW_GCODE_VIEWER
 
 std::vector<std::pair<CustomGCode::Type, std::pair<float, float>>> GCodeProcessor::get_custom_gcode_times(PrintEstimatedStatistics::ETimeMode mode, bool include_remaining) const
 {
@@ -1616,34 +1399,6 @@ std::vector<std::pair<CustomGCode::Type, std::pair<float, float>>> GCodeProcesso
     }
     return ret;
 }
-
-#if !ENABLE_NEW_GCODE_VIEWER
-std::vector<std::pair<EMoveType, float>> GCodeProcessor::get_moves_time(PrintEstimatedStatistics::ETimeMode mode) const
-{
-    std::vector<std::pair<EMoveType, float>> ret;
-    if (mode < PrintEstimatedStatistics::ETimeMode::Count) {
-        for (size_t i = 0; i < m_time_processor.machines[static_cast<size_t>(mode)].moves_time.size(); ++i) {
-            float time = m_time_processor.machines[static_cast<size_t>(mode)].moves_time[i];
-            if (time > 0.0f)
-                ret.push_back({ static_cast<EMoveType>(i), time });
-        }
-    }
-    return ret;
-}
-
-std::vector<std::pair<GCodeExtrusionRole, float>> GCodeProcessor::get_roles_time(PrintEstimatedStatistics::ETimeMode mode) const
-{
-    std::vector<std::pair<GCodeExtrusionRole, float>> ret;
-    if (mode < PrintEstimatedStatistics::ETimeMode::Count) {
-        for (size_t i = 0; i < m_time_processor.machines[static_cast<size_t>(mode)].roles_time.size(); ++i) {
-            float time = m_time_processor.machines[static_cast<size_t>(mode)].roles_time[i];
-            if (time > 0.0f)
-                ret.push_back({ static_cast<GCodeExtrusionRole>(i), time });
-        }
-    }
-    return ret;
-}
-#endif // !ENABLE_NEW_GCODE_VIEWER
 
 ConfigSubstitutions load_from_superslicer_gcode_file(const std::string& filename, DynamicPrintConfig& config, ForwardCompatibilitySubstitutionRule compatibility_rule)
 {
@@ -1754,19 +1509,10 @@ void GCodeProcessor::apply_config_kissslicer(const std::string& filename)
     m_parser.reset();
 }
 
-#if ENABLE_NEW_GCODE_VIEWER
 float GCodeProcessor::get_first_layer_time(PrintEstimatedStatistics::ETimeMode mode) const
 {
     return (mode < PrintEstimatedStatistics::ETimeMode::Count) ? m_time_processor.machines[static_cast<size_t>(mode)].first_layer_time : 0.0f;
 }
-#else
-std::vector<float> GCodeProcessor::get_layers_time(PrintEstimatedStatistics::ETimeMode mode) const
-{
-    return (mode < PrintEstimatedStatistics::ETimeMode::Count) ?
-        m_time_processor.machines[static_cast<size_t>(mode)].layers_time :
-        std::vector<float>();
-}
-#endif // ENABLE_NEW_GCODE_VIEWER
 
 void GCodeProcessor::apply_config_simplify3d(const std::string& filename)
 {
@@ -2240,20 +1986,6 @@ void GCodeProcessor::process_tags(const std::string_view comment, bool producers
     // layer change tag
     if (comment == reserved_tag(ETags::Layer_Change)) {
         ++m_layer_id;
-#if !ENABLE_NEW_GCODE_VIEWER
-        if (m_spiral_vase_active) {
-            if (m_result.moves.empty() || m_result.spiral_vase_layers.empty())
-                // add a placeholder for layer height. the actual value will be set inside process_G1() method
-                m_result.spiral_vase_layers.push_back({ FLT_MAX, { 0, 0 } });
-            else {
-                const size_t move_id = m_result.moves.size() - 1;
-                if (!m_result.spiral_vase_layers.empty())
-                    m_result.spiral_vase_layers.back().second.second = move_id;
-                // add a placeholder for layer height. the actual value will be set inside process_G1() method
-                m_result.spiral_vase_layers.push_back({ FLT_MAX, { move_id, move_id } });
-            }
-        }
-#endif // !ENABLE_NEW_GCODE_VIEWER
         return;
     }
 
@@ -2973,9 +2705,7 @@ void GCodeProcessor::process_G1(const std::array<std::optional<double>, 4>& axes
         block.role = m_extrusion_role;
         block.distance = distance;
         block.g1_line_id = m_g1_line_id;
-#if ENABLE_NEW_GCODE_VIEWER
         block.move_id = static_cast<unsigned int>(m_result.moves.size());
-#endif // ENABLE_NEW_GCODE_VIEWER
         block.remaining_internal_g1_lines = remaining_internal_g1_lines.has_value() ? *remaining_internal_g1_lines : 0;
         block.layer_id = std::max<unsigned int>(1, m_layer_id);
 
@@ -3102,17 +2832,10 @@ void GCodeProcessor::process_G1(const std::array<std::optional<double>, 4>& axes
         prev = curr;
 
         blocks.push_back(block);
-
-#if !ENABLE_NEW_GCODE_VIEWER
-        if (blocks.size() > TimeProcessor::Planner::refresh_threshold)
-            machine.calculate_time(TimeProcessor::Planner::queue_size);
-#endif // !ENABLE_NEW_GCODE_VIEWER
     }
 
-#if ENABLE_NEW_GCODE_VIEWER
     if (m_time_processor.machines[0].blocks.size() > TimeProcessor::Planner::refresh_threshold)
         calculate_time(m_result, TimeProcessor::Planner::queue_size);
-#endif // ENABLE_NEW_GCODE_VIEWER
 
     if (m_seams_detector.is_active()) {
         // check for seam starting vertex
@@ -3142,16 +2865,6 @@ void GCodeProcessor::process_G1(const std::array<std::optional<double>, 4>& axes
         m_seams_detector.activate(true);
         m_seams_detector.set_first_vertex(m_result.moves.back().position - m_extruder_offsets[m_extruder_id]);
     }
-
-#if !ENABLE_NEW_GCODE_VIEWER
-    if (m_spiral_vase_active && !m_result.spiral_vase_layers.empty()) {
-        if (m_result.spiral_vase_layers.back().first == FLT_MAX && delta_pos[Z] >= 0.0)
-            // replace layer height placeholder with correct value
-            m_result.spiral_vase_layers.back().first = static_cast<float>(m_end_position[Z]);
-        if (!m_result.moves.empty())
-            m_result.spiral_vase_layers.back().second.second = m_result.moves.size() - 1;
-    }
-#endif // !ENABLE_NEW_GCODE_VIEWER
 
     // store move
     store_move_vertex(type, origin == G1DiscretizationOrigin::G2G3);
@@ -3248,11 +2961,7 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
     arc.end = Vec3d(end_position[X], end_position[Y], end_position[Z]);
 
     // radii
-#if ENABLE_NEW_GCODE_VIEWER
     if (std::abs(arc.end_radius() - arc.start_radius()) > 0.001) {
-#else
-    if (std::abs(arc.end_radius() - arc.start_radius()) > EPSILON) {
-#endif // ENABLE_NEW_GCODE_VIEWER
         // what to do ???
     }
 
@@ -3321,7 +3030,6 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
           process_G1(g1_axes, g1_feedrate, G1DiscretizationOrigin::G2G3, remaining_internal_g1_lines);
     };
 
-#if ENABLE_NEW_GCODE_VIEWER
     if (m_flavor == gcfMarlinFirmware) {
         // calculate arc segments
         // reference:
@@ -3391,7 +3099,6 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
         internal_only_g1_line(adjust_target(end_position, prev_target), arc.delta_z() != 0.0, (segments == 1) ? feedrate : std::nullopt, extrusion);
     }
     else {
-#endif // ENABLE_NEW_GCODE_VIEWER
         // calculate arc segments
         // reference:
         // Prusa-Firmware\Firmware\motion_control.cpp - mc_arc()
@@ -3410,15 +3117,9 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
         const double theta_per_segment = arc.angle * inv_segment;
         const double z_per_segment = arc.delta_z() * inv_segment;
         const double extruder_per_segment = (extrusion.has_value()) ? *extrusion * inv_segment : 0.0;
-
-#if ENABLE_NEW_GCODE_VIEWER
         const double sq_theta_per_segment = sqr(theta_per_segment);
         const double cos_T = 1.0 - 0.5 * sq_theta_per_segment;
         const double sin_T = theta_per_segment - sq_theta_per_segment * theta_per_segment / 6.0f;
-#else
-        const double cos_T = 1.0 - 0.5 * sqr(theta_per_segment); // Small angle approximation
-        const double sin_T = theta_per_segment;
-#endif // ENABLE_NEW_GCODE_VIEWER
 
         AxisCoords prev_target = m_start_position;
         AxisCoords arc_target;
@@ -3431,14 +3132,9 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
 
         static const size_t N_ARC_CORRECTION = 25;
         Vec3d curr_rel_arc_start = arc.relative_start();
-#if ENABLE_NEW_GCODE_VIEWER
         size_t count = N_ARC_CORRECTION;
-#else
-        size_t count = 0;
-#endif // ENABLE_NEW_GCODE_VIEWER
 
         for (size_t i = 1; i < segments; ++i) {
-#if ENABLE_NEW_GCODE_VIEWER
             if (count-- == 0) {
                 const double cos_Ti = ::cos(i * theta_per_segment);
                 const double sin_Ti = ::sin(i * theta_per_segment);
@@ -3451,24 +3147,6 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
                 curr_rel_arc_start.x() = curr_rel_arc_start.x() * cos_T - curr_rel_arc_start.y() * sin_T;
                 curr_rel_arc_start.y() = r_axisi;
             }
-#else
-            if (count < N_ARC_CORRECTION) {
-                // Apply vector rotation matrix 
-                const float r_axisi = curr_rel_arc_start.x() * sin_T + curr_rel_arc_start.y() * cos_T;
-                curr_rel_arc_start.x() = curr_rel_arc_start.x() * cos_T - curr_rel_arc_start.y() * sin_T;
-                curr_rel_arc_start.y() = r_axisi;
-                ++count;
-            }
-            else {
-                // Arc correction to radius vector. Computed only every N_ARC_CORRECTION increments.
-                // Compute exact location by applying transformation matrix from initial radius vector(=-offset).
-                const double cos_Ti = ::cos(i * theta_per_segment);
-                const double sin_Ti = ::sin(i * theta_per_segment);
-                curr_rel_arc_start.x() = -double(rel_center.x()) * cos_Ti + double(rel_center.y()) * sin_Ti;
-                curr_rel_arc_start.y() = -double(rel_center.x()) * sin_Ti - double(rel_center.y()) * cos_Ti;
-                count = 0;
-            }
-#endif // ENABLE_NEW_GCODE_VIEWER
 
             // Update arc_target location
             arc_target[X] = arc.center.x() + curr_rel_arc_start.x();
@@ -3485,9 +3163,7 @@ void GCodeProcessor::process_G2_G3(const GCodeReader::GCodeLine& line, bool cloc
         // Ensure last segment arrives at target location.
         m_start_position = m_end_position; // this is required because we are skipping the call to process_gcode_line()
         internal_only_g1_line(adjust_target(end_position, prev_target), arc.delta_z() != 0.0, (segments == 1) ? feedrate : std::nullopt, extrusion);
-#if ENABLE_NEW_GCODE_VIEWER
     }
-#endif // ENABLE_NEW_GCODE_VIEWER
 }
 
 void GCodeProcessor::process_G10(const GCodeReader::GCodeLine& line)
@@ -4097,11 +3773,7 @@ void GCodeProcessor::post_process()
                 char buf[128];
                 sprintf(buf, "(%s mode)", (mode == PrintEstimatedStatistics::ETimeMode::Normal) ? "normal" : "silent");
                 binary_data.print_metadata.raw_data.emplace_back("estimated printing time " + std::string(buf), get_time_dhms(machine.time));
-#if ENABLE_NEW_GCODE_VIEWER
                 binary_data.print_metadata.raw_data.emplace_back("estimated first layer printing time " + std::string(buf), get_time_dhms(machine.first_layer_time));
-#else
-                binary_data.print_metadata.raw_data.emplace_back("estimated first layer printing time " + std::string(buf), get_time_dhms(machine.layers_time.empty() ? 0.f : machine.layers_time.front()));
-#endif // ENABLE_NEW_GCODE_VIEWER
                 binary_data.printer_metadata.raw_data.emplace_back("estimated printing time " + std::string(buf), get_time_dhms(machine.time));
             }
         }
@@ -4258,13 +3930,8 @@ void GCodeProcessor::post_process()
                 ++m_times_cache_id;
             }
 
-#if ENABLE_NEW_GCODE_VIEWER
             if (it == m_machine.g1_times_cache.end() || it->id > g1_lines_counter)
                 return ret;
-#else
-            if (it->id > g1_lines_counter)
-                return ret;
-#endif // ENABLE_NEW_GCODE_VIEWER
 
             // search for internal G1 lines
             if (GCodeReader::GCodeLine::cmd_is(line, "G2") || GCodeReader::GCodeLine::cmd_is(line, "G3")) {
@@ -4486,15 +4153,9 @@ void GCodeProcessor::post_process()
                     PrintEstimatedStatistics::ETimeMode mode = static_cast<PrintEstimatedStatistics::ETimeMode>(i);
                     if (mode == PrintEstimatedStatistics::ETimeMode::Normal || machine.enabled) {
                         char buf[128];
-#if ENABLE_NEW_GCODE_VIEWER
                         sprintf(buf, "; estimated first layer printing time (%s mode) = %s\n",
                             (mode == PrintEstimatedStatistics::ETimeMode::Normal) ? "normal" : "silent",
                             get_time_dhms(machine.first_layer_time).c_str());
-#else
-                        sprintf(buf, "; estimated first layer printing time (%s mode) = %s\n",
-                            (mode == PrintEstimatedStatistics::ETimeMode::Normal) ? "normal" : "silent",
-                            get_time_dhms(machine.layers_time.empty() ? 0.f : machine.layers_time.front()).c_str());
-#endif // ENABLE_NEW_GCODE_VIEWER
                         export_lines.append_line(buf);
                         processed = true;
                     }
@@ -4793,20 +4454,14 @@ void GCodeProcessor::store_move_vertex(EMoveType type, bool internal_only)
         Vec3f(m_end_position[X], m_end_position[Y], m_end_position[Z] - m_z_offset) + m_extruder_offsets[m_extruder_id],
         static_cast<float>(m_end_position[E] - m_start_position[E]),
         m_feedrate,
-#if ENABLE_NEW_GCODE_VIEWER
         0.0f, // actual feedrate
-#endif // ENABLE_NEW_GCODE_VIEWER
         m_width,
         m_height,
         m_mm3_per_mm,
         m_fan_speed,
         m_extruder_temps[m_extruder_id],
-#if ENABLE_NEW_GCODE_VIEWER
-        { 0.0f, 0.0f },
+        { 0.0f, 0.0f }, // time
         std::max<unsigned int>(1, m_layer_id) - 1,
-#else
-        static_cast<float>(m_result.moves.size()),
-#endif // ENABLE_NEW_GCODE_VIEWER
         internal_only
     });
 
@@ -4950,11 +4605,9 @@ float GCodeProcessor::get_filament_unload_time(size_t extruder_id)
 
 void GCodeProcessor::process_custom_gcode_time(CustomGCode::Type code)
 {
-#if ENABLE_NEW_GCODE_VIEWER
     //FIXME this simulates st_synchronize! is it correct?
     // The estimated time may be longer than the real print time.
     simulate_st_synchronize();
-#endif // ENABLE_NEW_GCODE_VIEWER
     for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
         TimeMachine& machine = m_time_processor.machines[i];
         if (!machine.enabled)
@@ -4962,11 +4615,6 @@ void GCodeProcessor::process_custom_gcode_time(CustomGCode::Type code)
 
         TimeMachine::CustomGCodeTime& gcode_time = machine.gcode_time;
         gcode_time.needed = true;
-#if !ENABLE_NEW_GCODE_VIEWER
-        //FIXME this simulates st_synchronize! is it correct?
-        // The estimated time may be longer than the real print time.
-        machine.simulate_st_synchronize();
-#endif // !ENABLE_NEW_GCODE_VIEWER
         if (gcode_time.cache != 0.0f) {
             gcode_time.times.push_back({ code, gcode_time.cache });
             gcode_time.cache = 0.0f;
@@ -4983,7 +4631,6 @@ void GCodeProcessor::process_filaments(CustomGCode::Type code)
         m_used_filaments.process_extruder_cache(m_extruder_id);
 }
 
-#if ENABLE_NEW_GCODE_VIEWER
 void GCodeProcessor::calculate_time(GCodeProcessorResult& result, size_t keep_last_n_blocks, float additional_time)
 {
     // calculate times
@@ -5048,14 +4695,6 @@ void GCodeProcessor::simulate_st_synchronize(float additional_time)
 {
     calculate_time(m_result, 0, additional_time);
 }
-#else
-void GCodeProcessor::simulate_st_synchronize(float additional_time)
-{
-    for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
-        m_time_processor.machines[i].simulate_st_synchronize(additional_time);
-    }
-}
-#endif // ENABLE_NEW_GCODE_VIEWER
 
 void GCodeProcessor::update_estimated_statistics()
 {
@@ -5063,12 +4702,6 @@ void GCodeProcessor::update_estimated_statistics()
         PrintEstimatedStatistics::Mode& data = m_result.print_statistics.modes[static_cast<size_t>(mode)];
         data.time = get_time(mode);
         data.custom_gcode_times = get_custom_gcode_times(mode, true);
-#if !ENABLE_NEW_GCODE_VIEWER
-        data.travel_time = get_travel_time(mode);
-        data.moves_times = get_moves_time(mode);
-        data.roles_times = get_roles_time(mode);
-        data.layers_times = get_layers_time(mode);
-#endif // !ENABLE_NEW_GCODE_VIEWER
     };
 
     update_mode(PrintEstimatedStatistics::ETimeMode::Normal);

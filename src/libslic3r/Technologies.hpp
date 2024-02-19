@@ -60,13 +60,9 @@
 // Enable imgui dialog which allows to set the parameters used to export binarized gcode
 #define ENABLE_BINARIZED_GCODE_DEBUG_WINDOW 0
 
-#define ENABLE_NEW_GCODE_VIEWER 1
 // Enable imgui debug dialog for new gcode viewer (using libvgcode)
-#define ENABLE_NEW_GCODE_VIEWER_DEBUG (0 && ENABLE_NEW_GCODE_VIEWER)
+#define ENABLE_NEW_GCODE_VIEWER_DEBUG 0
 // Enable extension of tool position imgui dialog to show actual speed profile
 #define ENABLE_ACTUAL_SPEED_DEBUG 1
-
-// Enable G-Code viewer statistics imgui dialog
-#define ENABLE_GCODE_VIEWER_STATISTICS (0 && !ENABLE_NEW_GCODE_VIEWER)
 
 #endif // _prusaslicer_technologies_h_

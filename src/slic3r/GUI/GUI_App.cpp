@@ -2653,7 +2653,7 @@ void GUI_App::open_preferences(const std::string& highlight_option /*= std::stri
         recreate_GUI(_L("Restart application") + dots);
 
     if (mainframe->preferences_dialog->seq_top_layer_only_changed())
-        this->plater_->refresh_print();
+        this->plater_->reload_print();
 
 #ifdef _WIN32
     if (is_editor()) {

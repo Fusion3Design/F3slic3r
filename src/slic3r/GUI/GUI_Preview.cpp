@@ -228,11 +228,7 @@ bool Preview::init(wxWindow* parent, Bed3D& bed, Model* model)
     m_canvas->set_config(m_config);
     m_canvas->set_model(model);
     m_canvas->set_process(m_process);
-#if ENABLE_NEW_GCODE_VIEWER
     m_canvas->show_legend(true);
-#else
-    m_canvas->enable_legend_texture(true);
-#endif // ENABLE_NEW_GCODE_VIEWER
     m_canvas->enable_dynamic_background(true);
 
     m_layers_slider_sizer = create_layers_slider_sizer();
@@ -318,7 +314,6 @@ void Preview::load_print(bool keep_z_range)
     Layout();
 }
 
-#if ENABLE_NEW_GCODE_VIEWER
 void Preview::reload_print()
 {
     if (!IsShown())
@@ -326,44 +321,6 @@ void Preview::reload_print()
 
     m_loaded = false;
     load_print();
-}
-#else
-void Preview::reload_print(bool keep_volumes)
-{
-#ifdef __linux__
-    // We are getting mysterious crashes on Linux in gtk due to OpenGL context activation GH #1874 #1955.
-    // So we are applying a workaround here: a delayed release of OpenGL vertex buffers.
-    if (!IsShown())
-    {
-        m_volumes_cleanup_required = !keep_volumes;
-        return;
-    }
-#endif /* __linux__ */
-    if (
-#ifdef __linux__
-        m_volumes_cleanup_required || 
-#endif /* __linux__ */
-        !keep_volumes)
-    {
-        m_canvas->reset_volumes();
-        m_loaded = false;
-#ifdef __linux__
-        m_volumes_cleanup_required = false;
-#endif /* __linux__ */
-    }
-
-    load_print();
-}
-#endif // ENABLE_NEW_GCODE_VIEWER
-
-void Preview::refresh_print()
-{
-    m_loaded = false;
-
-    if (!IsShown())
-        return;
-
-    load_print(true);
 }
 
 void Preview::msw_rescale()
@@ -376,7 +333,7 @@ void Preview::msw_rescale()
     get_canvas3d()->msw_rescale();
 
     // rescale legend
-    refresh_print();
+    reload_print();
 }
 
 void Preview::sys_color_changed()
@@ -461,11 +418,7 @@ wxBoxSizer* Preview::create_layers_slider_sizer()
         m_schedule_background_process();
 
         m_keep_current_preview_type = false;
-#if ENABLE_NEW_GCODE_VIEWER
         reload_print();
-#else
-        reload_print(false);
-#endif // ENABLE_NEW_GCODE_VIEWER
     });
 
     return sizer;
@@ -539,11 +492,7 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
         ticks_info_from_model = plater->model().custom_gcode_per_print_z;
     else {
         ticks_info_from_model.mode = CustomGCode::Mode::SingleExtruder;
-#if ENABLE_NEW_GCODE_VIEWER
         ticks_info_from_model.gcodes = m_gcode_result->custom_gcode_per_print_z;
-#else
-        ticks_info_from_model.gcodes = m_canvas->get_custom_gcode_per_print_z();
-#endif // ENABLE_NEW_GCODE_VIEWER
     }
     check_layers_slider_values(ticks_info_from_model.gcodes, layers_z);
 
@@ -575,14 +524,8 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
     m_layers_slider->SetDrawMode(sla_print_technology, sequential_print);
     if (sla_print_technology)
         m_layers_slider->SetLayersTimes(plater->sla_print().print_statistics().layers_times);
-    else {
-        auto print_mode_stat = m_gcode_result->print_statistics.modes.front();
-#if ENABLE_NEW_GCODE_VIEWER
-        m_layers_slider->SetLayersTimes(m_canvas->get_gcode_layers_times_cache(), print_mode_stat.time);
-#else
-        m_layers_slider->SetLayersTimes(print_mode_stat.layers_times, print_mode_stat.time);
-#endif // ENABLE_NEW_GCODE_VIEWER
-    }
+    else
+        m_layers_slider->SetLayersTimes(m_canvas->get_gcode_layers_times_cache(), m_gcode_result->print_statistics.modes.front().time);
 
     // check if ticks_info_from_model contains ColorChange g-code
     bool color_change_already_exists = false;
@@ -742,13 +685,8 @@ void Preview::update_layers_slider_from_canvas(wxKeyEvent& event)
         event.Skip();
 }
 
-#if ENABLE_NEW_GCODE_VIEWER
 void Preview::update_moves_slider(std::optional<int> visible_range_min, std::optional<int> visible_range_max)
-#else
-void Preview::update_moves_slider()
-#endif // ENABLE_NEW_GCODE_VIEWER
 {
-#if ENABLE_NEW_GCODE_VIEWER
     if (m_gcode_result->moves.empty())
         return;
 
@@ -800,41 +738,6 @@ void Preview::update_moves_slider()
     m_moves_slider->SetSliderAlternateValues(alternate_values);
     m_moves_slider->SetMaxValue(static_cast<int>(values.size()) - 1);
     m_moves_slider->SetSelectionSpan(span_min_id, span_max_id);
-#else
-    const GCodeViewer::SequentialView& view = m_canvas->get_gcode_sequential_view();
-    // this should not be needed, but it is here to try to prevent rambling crashes on Mac Asan
-    if (view.endpoints.last < view.endpoints.first)
-        return;
-
-    assert(view.endpoints.first <= view.current.first && view.current.first <= view.endpoints.last);
-    assert(view.endpoints.first <= view.current.last && view.current.last <= view.endpoints.last);
-
-    std::vector<double> values;
-    values.reserve(view.endpoints.last - view.endpoints.first + 1);
-    std::vector<double> alternate_values;
-    alternate_values.reserve(view.endpoints.last - view.endpoints.first + 1);
-    unsigned int last_gcode_id = view.gcode_ids[view.endpoints.first];
-    for (unsigned int i = view.endpoints.first; i <= view.endpoints.last; ++i) {
-        if (i > view.endpoints.first) {
-            // skip consecutive moves with same gcode id (resulting from processing G2 and G3 lines)
-            if (last_gcode_id == view.gcode_ids[i]) {
-                values.back() = static_cast<double>(i + 1);
-                alternate_values.back() = static_cast<double>(view.gcode_ids[i]);
-                continue;
-            }
-            else
-                last_gcode_id = view.gcode_ids[i];
-        }
-
-        values.emplace_back(static_cast<double>(i + 1));
-        alternate_values.emplace_back(static_cast<double>(view.gcode_ids[i]));
-    }
-
-    m_moves_slider->SetSliderValues(values);
-    m_moves_slider->SetSliderAlternateValues(alternate_values);
-    m_moves_slider->SetMaxValue(int(values.size()) - 1);
-    m_moves_slider->SetSelectionSpan(values.front() - 1 - view.endpoints.first, values.back() - 1 - view.endpoints.first);
-#endif // ENABLE_NEW_GCODE_VIEWER
 }
 
 void Preview::enable_moves_slider(bool enable)
@@ -876,9 +779,7 @@ void Preview::load_print_as_fff(bool keep_z_range)
     }
 
     if (wxGetApp().is_editor() && !has_layers) {
-#if ENABLE_NEW_GCODE_VIEWER
         m_canvas->reset_gcode_layers_times_cache();
-#endif // ENABLE_NEW_GCODE_VIEWER
         hide_layers_slider();
         m_left_sizer->Hide(m_bottom_toolbar_panel);
         m_left_sizer->Layout();
@@ -887,7 +788,6 @@ void Preview::load_print_as_fff(bool keep_z_range)
         return;
     }
 
-#if ENABLE_NEW_GCODE_VIEWER
     libvgcode::EViewType gcode_view_type = m_canvas->get_gcode_view_type();
     const bool gcode_preview_data_valid = !m_gcode_result->moves.empty();
     const bool is_pregcode_preview = !gcode_preview_data_valid && wxGetApp().is_editor();
@@ -900,44 +800,16 @@ void Preview::load_print_as_fff(bool keep_z_range)
         color_print_colors = wxGetApp().plater()->get_colors_for_color_print(m_gcode_result);
         color_print_colors.push_back("#808080"); // gray color for pause print or custom G-code 
     }
-#else
-    GCodeViewer::EViewType gcode_view_type = m_canvas->get_gcode_view_preview_type();
-    const bool gcode_preview_data_valid = !m_gcode_result->moves.empty();
-
-    // Collect colors per extruder.
-    std::vector<std::string> colors;
-    std::vector<CustomGCode::Item> color_print_values = {};
-    if (gcode_view_type == GCodeViewer::EViewType::ColorPrint) {
-        colors = wxGetApp().plater()->get_colors_for_color_print(m_gcode_result);
-
-        if (!gcode_preview_data_valid) {
-            if (wxGetApp().is_editor())
-                color_print_values = wxGetApp().plater()->model().custom_gcode_per_print_z.gcodes;
-            else
-                color_print_values = m_canvas->get_custom_gcode_per_print_z();
-            colors.push_back("#808080"); // gray color for pause print or custom G-code 
-        }
-    }
-    else if (gcode_preview_data_valid || gcode_view_type == GCodeViewer::EViewType::Tool) {
-        colors = wxGetApp().plater()->get_extruder_colors_from_plater_config(m_gcode_result);
-        color_print_values.clear();
-    }
-#endif // ENABLE_NEW_GCODE_VIEWER
 
     std::vector<double> zs;
 
     if (IsShown()) {
         m_canvas->set_selected_extruder(0);
         if (gcode_preview_data_valid) {
-#if ENABLE_NEW_GCODE_VIEWER
             // Load the real G-code preview.
             m_canvas->load_gcode_preview(*m_gcode_result, tool_colors, color_print_colors);
             // the view type may have been changed by the call m_canvas->load_gcode_preview()
             gcode_view_type = m_canvas->get_gcode_view_type();
-#else
-            // Load the real G-code preview.
-            m_canvas->load_gcode_preview(*m_gcode_result, colors);
-#endif // ENABLE_NEW_GCODE_VIEWER
             m_left_sizer->Layout();
             Refresh();
             zs = m_canvas->get_gcode_layers_zs();
@@ -945,26 +817,16 @@ void Preview::load_print_as_fff(bool keep_z_range)
                 m_left_sizer->Show(m_bottom_toolbar_panel);
             m_loaded = true;
         }
-#if ENABLE_NEW_GCODE_VIEWER
         else if (is_pregcode_preview) {
             // Load the initial preview based on slices, not the final G-code.
             m_canvas->load_preview(tool_colors, color_print_colors, color_print_values);
             // the view type has been changed by the call m_canvas->load_gcode_preview()
             if (gcode_view_type == libvgcode::EViewType::ColorPrint && !color_print_values.empty())
                 m_canvas->set_gcode_view_type(gcode_view_type);
-#else
-        else if (wxGetApp().is_editor()) {
-            // Load the initial preview based on slices, not the final G-code.
-            m_canvas->load_preview(colors, color_print_values);
-#endif // ENABLE_NEW_GCODE_VIEWER
             m_left_sizer->Hide(m_bottom_toolbar_panel);
             m_left_sizer->Layout();
             Refresh();
-#if ENABLE_NEW_GCODE_VIEWER
             zs = m_canvas->get_gcode_layers_zs();
-#else
-            zs = m_canvas->get_volumes_print_zs(true);
-#endif // ENABLE_NEW_GCODE_VIEWER
         }
         else {
             m_left_sizer->Hide(m_bottom_toolbar_panel);
@@ -975,38 +837,20 @@ void Preview::load_print_as_fff(bool keep_z_range)
         if (!zs.empty() && !m_keep_current_preview_type) {
             const unsigned int number_extruders = wxGetApp().is_editor() ?
                 (unsigned int)print->extruders().size() : m_canvas->get_gcode_extruders_count();
-#if ENABLE_NEW_GCODE_VIEWER
             const bool contains_color_gcodes = std::any_of(std::begin(color_print_values), std::end(color_print_values),
                 [](auto const& item) { return item.type == CustomGCode::Type::ColorChange; });
             const libvgcode::EViewType choice = contains_color_gcodes ?
                 libvgcode::EViewType::ColorPrint :
                 (number_extruders > 1) ? libvgcode::EViewType::Tool : libvgcode::EViewType::FeatureType;
-#else
-            const std::vector<Item> gcodes = wxGetApp().is_editor() ?
-                wxGetApp().plater()->model().custom_gcode_per_print_z.gcodes :
-                m_canvas->get_custom_gcode_per_print_z();
-            const bool contains_color_gcodes = std::any_of(std::begin(gcodes), std::end(gcodes),
-                [](auto const& item) { return item.type == CustomGCode::Type::ColorChange || item.type == CustomGCode::Type::ToolChange; });
-            const GCodeViewer::EViewType choice = contains_color_gcodes ?
-                GCodeViewer::EViewType::ColorPrint :
-                (number_extruders > 1) ? GCodeViewer::EViewType::Tool : GCodeViewer::EViewType::FeatureType;
-#endif // ENABLE_NEW_GCODE_VIEWER
             if (choice != gcode_view_type) {
-#if ENABLE_NEW_GCODE_VIEWER
                 const bool gcode_view_type_cache_load = m_canvas->is_gcode_view_type_cache_load_enabled();
                 if (gcode_view_type_cache_load)
                     m_canvas->enable_gcode_view_type_cache_load(false);
                 m_canvas->set_gcode_view_type(choice);
                 if (gcode_view_type_cache_load)
                     m_canvas->enable_gcode_view_type_cache_load(true);
-#else
-                m_canvas->set_gcode_view_preview_type(choice);
-#endif // ENABLE_NEW_GCODE_VIEWER
                 if (wxGetApp().is_gcode_viewer())
                     m_keep_current_preview_type = true;
-#if !ENABLE_NEW_GCODE_VIEWER
-                refresh_print();
-#endif // !ENABLE_NEW_GCODE_VIEWER
             }
         }
 
@@ -1080,12 +924,8 @@ void Preview::on_layers_slider_scroll_changed(wxCommandEvent& event)
 void Preview::on_moves_slider_scroll_changed(wxCommandEvent& event)
 {
     m_canvas->update_gcode_sequential_view_current(static_cast<unsigned int>(m_moves_slider->GetLowerValueD() - 1.0), static_cast<unsigned int>(m_moves_slider->GetHigherValueD() - 1.0));
-#if ENABLE_NEW_GCODE_VIEWER
     m_canvas->set_as_dirty();
     m_canvas->request_extra_frame();
-#else
-    m_canvas->render();
-#endif // ENABLE_NEW_GCODE_VIEWER
 }
 
 } // namespace GUI

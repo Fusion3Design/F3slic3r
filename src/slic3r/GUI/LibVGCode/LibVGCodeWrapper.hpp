@@ -5,7 +5,6 @@
 #ifndef slic3r_LibVGCodeWrapper_hpp_
 #define slic3r_LibVGCodeWrapper_hpp_
 
-#if ENABLE_NEW_GCODE_VIEWER
 #include "libslic3r/Color.hpp"
 #include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "slic3r/GUI/GUI_Preview.hpp"
@@ -67,7 +66,5 @@ extern GCodeInputData convert(const Slic3r::Print& print, const std::vector<std:
     size_t extruders_count);
 
 } // namespace libvgcode
-
-#endif // ENABLE_NEW_GCODE_VIEWER
 
 #endif // slic3r_LibVGCodeWrapper_hpp_

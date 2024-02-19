@@ -1083,7 +1083,6 @@ std::string format_memsize_MB(size_t n)
     return out + "MB";
 }
 
-#if ENABLE_NEW_GCODE_VIEWER
 std::string format_memsize(size_t bytes, unsigned int decimals)
 {
 		static constexpr const float kb = 1024.0f;
@@ -1119,7 +1118,6 @@ std::string format_memsize(size_t bytes, unsigned int decimals)
 				return std::to_string(bytes) + " bytes (" + std::string(buf) + "TB)";
 		}
 }
-#endif // ENABLE_NEW_GCODE_VIEWER
 
 // Returns platform-specific string to be used as log output or parsed in SysInfoDialog.
 // The latter parses the string with (semi)colons as separators, it should look about as

@@ -5,7 +5,6 @@
 #include "libslic3r/libslic3r.h"
 #include "LibVGCodeWrapper.hpp"
 
-#if ENABLE_NEW_GCODE_VIEWER
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Color.hpp"
 
@@ -771,4 +770,3 @@ GCodeInputData convert(const Slic3r::Print& print, const std::vector<std::string
 
 } // namespace libvgcode
 
-#endif // ENABLE_NEW_GCODE_VIEWER
