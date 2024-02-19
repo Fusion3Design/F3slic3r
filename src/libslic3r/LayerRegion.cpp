@@ -279,7 +279,7 @@ void detect_bridge_directions(
                 unsigned end_index{};
                 for (const ExpansionZone& expansion_zone: expansion_zones) {
                     end_index += expansion_zone.expolygons.size();
-                    if (last_anchor_id < end_index) {
+                    if (last_anchor_id < static_cast<int64_t>(end_index)) {
                         append(anchor_areas, to_polygons(expansion_zone.expolygons[last_anchor_id - start_index]));
                         break;
                     }

@@ -17,7 +17,6 @@
 #include "Flow.hpp"
 #include "SurfaceCollection.hpp"
 #include "ExtrusionEntityCollection.hpp"
-#include "IndexRange.hpp"
 #include "LayerRegion.hpp"
 
 #include <boost/container/small_vector.hpp>

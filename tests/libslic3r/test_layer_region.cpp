@@ -73,9 +73,9 @@ struct LayerRegionFixture {
 };
 
 TEST_CASE_METHOD(LayerRegionFixture, "test the surface expansion", "[LayerRegion]") {
-    float custom_angle = 1.234;
+    const double custom_angle{1.234f};
 
-    Surfaces result{expand_merge_surfaces(
+    const Surfaces result{expand_merge_surfaces(
         surfaces, stBottomBridge,
         expansion_zones,
         closing_radius,

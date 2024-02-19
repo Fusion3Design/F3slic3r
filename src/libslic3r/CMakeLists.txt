@@ -221,7 +221,6 @@ set(SLIC3R_SOURCES
     JumpPointSearch.cpp
     JumpPointSearch.hpp
     KDTreeIndirect.hpp
-    IndexRange.hpp
     Layer.cpp
     Layer.hpp
     LayerRegion.hpp
