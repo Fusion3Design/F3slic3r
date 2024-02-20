@@ -391,4 +391,133 @@ bool load_full_print_config(const std::string& print_preset_name, const std::str
     return !is_failed;
 }
 
+// Helper function for load full config from installed presets by profile names
+std::string load_full_print_config(const std::string& print_preset_name, 
+                                   const std::vector<std::string>& material_preset_names_in, 
+                                   const std::string& printer_preset_name,
+                                   DynamicPrintConfig& config,
+                                   PrinterTechnology printer_technology)
+{
+    // check entered profile names
+
+    if (print_preset_name.empty() ||
+        material_preset_names_in.empty() ||
+        printer_preset_name.empty())
+        return "Request is not completed. All of Print/Material/Printer profiles have to be entered";
+
+    // check preset bundle
+
+    PresetBundle preset_bundle;
+    if (!load_preset_bundle_from_datadir(preset_bundle))
+        return Slic3r::format("Failed to load data from the datadir '%1%'.", data_dir());
+
+    // check existance of required profiles
+
+    std::string errors;
+
+    const Preset* printer_preset = preset_bundle.printers.find_preset(printer_preset_name);
+    if (!printer_preset)
+        errors += "\n" + Slic3r::format("Printer profile '%1%' wasn't found.", printer_preset_name);
+    else if (printer_technology == ptUnknown)
+        printer_technology = printer_preset->printer_technology();
+    else if (printer_technology != printer_preset->printer_technology())
+        errors += "\n" + std::string("Printer technology of the selected printer preset is differs with required printer technology");
+
+    PresetCollection& print_presets = printer_technology == ptFFF ? preset_bundle.prints    : preset_bundle.sla_prints;
+
+    const Preset* print_preset = print_presets.find_preset(print_preset_name);
+    if (!print_preset)
+        errors += "\n" + Slic3r::format("Print profile '%1%' wasn't found.", print_preset_name);
+
+    PresetCollection& material_presets = printer_technology == ptFFF ? preset_bundle.filaments : preset_bundle.sla_materials;
+
+    auto check_material = [&material_presets] (const std::string& name, std::string& errors) -> void {
+        const Preset* material_preset = material_presets.find_preset(name);
+        if (!material_preset)
+            errors += "\n" + Slic3r::format("Material profile '%1%' wasn't found.", name);
+    };
+
+    check_material(material_preset_names_in.front(), errors);
+    if (material_preset_names_in.size() > 1) {
+        for (int idx = 1; idx < material_preset_names_in.size(); idx++) {
+            if (material_preset_names_in[idx] != material_preset_names_in.front())
+                check_material(material_preset_names_in[idx], errors);
+        }
+    }
+
+    if (!errors.empty())
+        return errors;
+
+    // check and update list of material presets
+
+    std::vector<std::string> material_preset_names = material_preset_names_in;
+
+    if (printer_technology == ptSLA && material_preset_names.size() > 1) {
+        BOOST_LOG_TRIVIAL(warning) << "Note: More than one sla material profiles were entered. Extras material profiles will be ignored.";
+        material_preset_names.resize(1);
+    }
+
+    if (printer_technology == ptFFF) {
+        const int extruders_count = static_cast<const ConfigOptionFloats*>(printer_preset->config.option("nozzle_diameter"))->values.size();
+        if (extruders_count > material_preset_names.size()) {
+            BOOST_LOG_TRIVIAL(warning) << "Note: Less than needed filament profiles were entered. Missed filament profiles will be filled with first material.";
+            material_preset_names.reserve(extruders_count);
+            for (int i = extruders_count - material_preset_names.size(); i > 0; i--)
+                material_preset_names.push_back(material_preset_names.front());
+        }
+        else if (extruders_count < material_preset_names.size()) {
+            BOOST_LOG_TRIVIAL(warning) << "Note: More than needed filament profiles were entered. Extras filament profiles will be ignored.";
+            material_preset_names.resize(extruders_count);
+        }
+    }
+
+    // check profiles compatibility
+
+    const PresetWithVendorProfile printer_preset_with_vendor_profile = preset_bundle.printers.get_preset_with_vendor_profile(*printer_preset);
+    const PresetWithVendorProfile print_preset_with_vendor_profile   = print_presets.get_preset_with_vendor_profile(*print_preset);
+
+    if (!is_compatible_with_printer(print_preset_with_vendor_profile, printer_preset_with_vendor_profile))
+        errors += "\n" + Slic3r::format("Print profile '%1%' is not compatible with printer profile %2%.", print_preset_name, printer_preset_name);
+
+    auto check_material_preset_compatibility = [&material_presets, printer_preset_name, print_preset_name, printer_preset_with_vendor_profile, print_preset_with_vendor_profile]
+                                         (const std::string& name, std::string& errors) -> void {
+        const Preset* material_preset = material_presets.find_preset(name);
+        const PresetWithVendorProfile material_preset_with_vendor_profile = material_presets.get_preset_with_vendor_profile(*material_preset);
+
+        if (!is_compatible_with_printer(material_preset_with_vendor_profile, printer_preset_with_vendor_profile))
+            errors += "\n" + Slic3r::format("Material profile '%1%' is not compatible with printer profile %2%.", name, printer_preset_name);
+
+        if (!is_compatible_with_print(material_preset_with_vendor_profile, print_preset_with_vendor_profile, printer_preset_with_vendor_profile))
+            errors += "\n" + Slic3r::format("Material profile '%1%' is not compatible with print profile %2%.", name, print_preset_name);
+    };
+
+    check_material_preset_compatibility(material_preset_names.front(), errors);
+    if (material_preset_names.size() > 1) {
+        for (int idx = 1; idx < material_preset_names.size(); idx++) {
+            if (material_preset_names[idx] != material_preset_names.front())
+                check_material_preset_compatibility(material_preset_names[idx], errors);
+        }
+    }
+
+    if (!errors.empty())
+        return errors;
+
+    // get full print configuration
+
+    preset_bundle.printers.select_preset_by_name(printer_preset_name, true);
+    print_presets.select_preset_by_name(print_preset_name, true);
+    if (printer_technology == ptSLA)
+        material_presets.select_preset_by_name(material_preset_names.front(), true);
+    else if (printer_technology == ptFFF) {
+        auto& extruders_filaments = preset_bundle.extruders_filaments;
+        extruders_filaments.clear();
+        for (size_t i = 0; i < material_preset_names.size(); ++i)
+            extruders_filaments.emplace_back(ExtruderFilaments(&preset_bundle.filaments, i, material_preset_names[i]));
+    }
+
+    config = preset_bundle.full_config();
+
+    return "";
+}
+
 } // namespace Slic3r

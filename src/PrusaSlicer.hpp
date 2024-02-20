@@ -42,6 +42,8 @@ private:
     bool has_print_action() const { return m_config.opt_bool("export_gcode") || m_config.opt_bool("export_sla"); }
 
     bool processed_profiles_sharing();
+
+    bool check_and_load_input_profiles(PrinterTechnology& printer_technology);
     
     std::string output_filepath(const Model &model, IO::ExportFormat format) const;
 };

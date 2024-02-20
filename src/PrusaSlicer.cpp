@@ -173,6 +173,13 @@ int CLI::run(int argc, char **argv)
         m_print_config.apply(config);
     }
 
+    bool has_config_from_profiles = m_profiles_sharing.empty() && 
+                                    (!m_config.opt_string("print-profile").empty()                              ||
+                                     !m_config.option<ConfigOptionStrings>("material-profile")->values.empty()  ||
+                                     !m_config.opt_string("printer-profile").empty()                        );
+    if (has_config_from_profiles && !check_and_load_input_profiles(printer_technology))
+        return 1;
+
 #ifdef SLIC3R_GUI
 #if ENABLE_GL_CORE_PROFILE
     std::pair<int, int> opengl_version = { 0, 0 };
@@ -264,6 +271,9 @@ int CLI::run(int argc, char **argv)
             }
             Model model;
             try {
+                if (has_config_from_profiles)
+                    model = Model::read_from_file(file, nullptr, nullptr, Model::LoadAttribute::AddDefaultInstances);
+                else {
                 // When loading an AMF or 3MF, config is imported as well, including the printer technology.
                 DynamicPrintConfig config;
                 ConfigSubstitutionContext config_substitutions(config_substitution_rule);
@@ -285,6 +295,7 @@ int CLI::run(int argc, char **argv)
                 // config is applied to m_print_config before the current m_config values.
                 config += std::move(m_print_config);
                 m_print_config = std::move(config);
+                }
             }
             catch (std::exception& e) {
                 boost::nowide::cerr << file << ": " << e.what() << std::endl;
@@ -1044,6 +1055,33 @@ bool CLI::processed_profiles_sharing()
 
         boost::nowide::cout << "Output for your request is written into " << file << std::endl;
     }
+
+    return true;
+}
+
+bool CLI::check_and_load_input_profiles(PrinterTechnology& printer_technology)
+{
+    Slic3r::DynamicPrintConfig config = {};
+    std::string ret = Slic3r::load_full_print_config(m_config.opt_string("print-profile"), 
+                                                     m_config.option<ConfigOptionStrings>("material-profile")->values,
+                                                     m_config.opt_string("printer-profile"), 
+                                                     config, printer_technology);
+    if (!ret.empty()) {
+        boost::nowide::cerr << ret << std::endl;
+        return false;
+    }
+
+    config.normalize_fdm();
+
+    PrinterTechnology other_printer_technology = get_printer_technology(config);
+    if (printer_technology == ptUnknown)
+        printer_technology = other_printer_technology;
+    else if (printer_technology != other_printer_technology && other_printer_technology != ptUnknown) {
+        boost::nowide::cerr << "Mixing configurations for FFF and SLA technologies" << std::endl;
+        return false;
+    }
+
+    m_print_config.apply(config);
 
     return true;
 }

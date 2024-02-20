@@ -5119,6 +5119,22 @@ CLIMiscConfigDef::CLIMiscConfigDef()
     def->tooltip = L("Render with a software renderer. The bundled MESA software renderer is loaded instead of the default OpenGL driver.");
     def->min = 0;
 #endif /* _MSC_VER */
+
+    def = this->add("printer-profile", coString);
+    def->label = ("Printer preset name");
+    def->tooltip = ("Name of the printer preset used for slicing.");
+    def->set_default_value(new ConfigOptionString());
+
+    def = this->add("print-profile", coString);
+    def->label = ("Print preset name");
+    def->tooltip = ("Name of the print preset used for slicing.");
+    def->set_default_value(new ConfigOptionString());
+
+    def = this->add("material-profile", coStrings);
+    def->label = ("Material preset name(s)");
+    def->tooltip = ("Name(s) of the material preset(s) used for slicing.\n"
+                    "Could be filaments or sla_material preset name(s) depending on printer tochnology");
+    def->set_default_value(new ConfigOptionStrings());
 }
 
 CLIProfilesSharingConfigDef::CLIProfilesSharingConfigDef()
@@ -5151,11 +5167,6 @@ CLIProfilesSharingConfigDef::CLIProfilesSharingConfigDef()
                    "Note:\n"
                    "To print out JSON into file use 'output' option.\n"
                    "To specify configuration folder use 'datadir' option.");
-
-    def = this->add("printer-profile", coString);
-    def->label = ("Printer preset name");
-    def->tooltip = ("Name of the printer preset used for slicing.");
-    def->set_default_value(new ConfigOptionString());
 }
 
 const CLIActionsConfigDef    cli_actions_config_def;
