@@ -195,15 +195,14 @@ void TopBarItemsCtrl::UpdateAccountMenu(bool avatar/* = false*/)
         m_login_menu_item->SetBitmap(user_account->is_logged() ? *get_bmp_bundle("logout", 16) : *get_bmp_bundle("login", 16));
     }
 
-    const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymus");
+    const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymous");
     if (m_user_menu_item)
         m_user_menu_item->SetItemLabel(user_name);
    
     m_account_btn->SetLabel(user_name);
     if (avatar) {
         if (user_account->is_logged()) {
-            const std::string filename = "prusaslicer-avatar-" + wxGetApp().get_instance_hash_string() + ".png";
-             boost::filesystem::path path = boost::filesystem::path(wxStandardPaths::Get().GetTempDir().utf8_str().data()) / filename;
+            boost::filesystem::path path = user_account->get_avatar_path(true);
             ScalableBitmap new_logo(this, path, m_account_btn->GetBitmapSize());
             if (new_logo.IsOk())
                 m_account_btn->SetBitmap_(new_logo);
@@ -292,8 +291,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     // create Account menu
     CreateAccountMenu();
 
-//    m_account_btn = new ButtonWithPopup(this, "user", 35);
-    m_account_btn = new ButtonWithPopup(this, _L("Anonymus"), "user");
+    m_account_btn = new ButtonWithPopup(this, _L("Anonymous"), "user");
     right_sizer->Add(m_account_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT | wxLEFT, m_btn_margin);
     
     m_account_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {

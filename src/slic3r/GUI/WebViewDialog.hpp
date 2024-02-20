@@ -43,7 +43,6 @@ public:
 
     void on_show(wxShowEvent& evt);
     virtual void on_script_message(wxWebViewEvent& evt);
-    void on_loaded(wxWebViewEvent& evt);
 
     void on_idle(wxIdleEvent& evt);
     void on_url(wxCommandEvent& evt);
@@ -106,16 +105,33 @@ protected:
     //DECLARE_EVENT_TABLE()
 };
 
-class ConnectWebViewPanel : public WebViewPanel
+class ConnectRequestHandler
+{
+public:
+    ConnectRequestHandler();
+    ~ConnectRequestHandler();
+
+    void handle_message(const std::string& message);
+protected:
+    // action callbacs stored in m_actions
+    virtual void on_request_access_token();
+    virtual void on_request_language_action();
+    virtual void on_request_session_id_action();
+    virtual void on_request_update_selected_printer_action() = 0;
+    virtual void run_script_bridge(const wxString& script) = 0;
+
+    std::map<std::string, std::function<void(void)>> m_actions;
+    std::string m_message_data;
+};
+
+class ConnectWebViewPanel : public WebViewPanel, public ConnectRequestHandler
 {
 public:
     ConnectWebViewPanel(wxWindow* parent);
     void on_script_message(wxWebViewEvent& evt) override;
-
-    void connect_set_access_token();
-    void connect_set_language();
-private:
-    std::map<std::string, std::function<void(void)>> m_actions;
+protected:
+    void on_request_update_selected_printer_action() override;
+    void run_script_bridge(const wxString& script) override {run_script(script); }
 };
 
 class PrinterWebViewPanel : public WebViewPanel
@@ -153,12 +169,15 @@ protected:
     wxWebView* m_browser;
 };
 
-class PrinterPickWebViewDialog : public WebViewDialog
+class PrinterPickWebViewDialog : public WebViewDialog, public ConnectRequestHandler
 {
 public:
     PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val);
     void on_show(wxShowEvent& evt) override;
     void on_script_message(wxWebViewEvent& evt) override;
+protected:
+    void on_request_update_selected_printer_action() override;
+    void run_script_bridge(const wxString& script) override { run_script(script); }
 private:
     std::string& m_ret_val;
 };

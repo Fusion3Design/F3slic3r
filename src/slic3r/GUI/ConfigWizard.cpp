@@ -588,7 +588,7 @@ PageWelcome::PageWelcome(ConfigWizard *parent)
 {
     welcome_text->Hide();
     cbox_reset->Hide();
-    cbox_integrate->Hide();    
+    cbox_integrate->Hide();
 }
 
 void PageWelcome::set_run_reason(ConfigWizard::RunReason run_reason)

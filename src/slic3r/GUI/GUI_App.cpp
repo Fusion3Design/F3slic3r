@@ -101,6 +101,7 @@
 #include "UserAccount.hpp"
 #include "MediaControlPanel.hpp"
 #include "WebViewDialog.hpp"
+#include "LoginDialog.hpp"
 
 #include "BitmapCache.hpp"
 //#include "Notebook.hpp"
@@ -3150,6 +3151,15 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
 {
     wxCHECK_MSG(mainframe != nullptr, false, "Internal error: Main frame not created / null");
 
+    if (!plater()->get_user_account()->is_logged()) {
+        m_login_dialog = std::make_unique<LoginDialog>(mainframe, plater()->get_user_account());
+        m_login_dialog->ShowModal();
+        mainframe->RemoveChild(m_login_dialog.get());
+        m_login_dialog->Destroy();
+        // Destructor does not call Destroy
+        m_login_dialog.reset();
+    }
+
     if (reason == ConfigWizard::RR_USER) {
         // Cancel sync before starting wizard to prevent two downloads at same time
         preset_updater->cancel_sync();
@@ -3177,6 +3187,14 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
     }
 
     return res;
+}
+
+void GUI_App::update_login_dialog()
+{
+    if (!m_login_dialog) {
+        return;
+    }
+    m_login_dialog->update_account();
 }
 
 void GUI_App::show_desktop_integration_dialog()
@@ -3665,14 +3683,14 @@ bool GUI_App::select_printer_from_connect(const Preset* preset)
     return is_installed;
 }
 
-void GUI_App::handle_web_request(std::string cmd) 
+void GUI_App::handle_connect_request_printer_pick(std::string msg) 
 {
-    BOOST_LOG_TRIVIAL(error) << "Handling web request: " << cmd;
+    BOOST_LOG_TRIVIAL(error) << "Handling web request: " << msg;
     // return to plater
     this->mainframe->select_tab(size_t(0));
     // parse message
-    std::string model_name = plater()->get_user_account()->get_model_from_json(cmd);
-    std::string nozzle = plater()->get_user_account()->get_nozzle_from_json(cmd);
+    std::string model_name = plater()->get_user_account()->get_model_from_json(msg);
+    std::string nozzle = plater()->get_user_account()->get_nozzle_from_json(msg);
     assert(!model_name.empty());
     if (model_name.empty())
         return;

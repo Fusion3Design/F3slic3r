@@ -301,6 +301,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/Downloader.hpp
     GUI/DownloaderFileGet.cpp
     GUI/DownloaderFileGet.hpp
+    GUI/LoginDialog.cpp
+    GUI/LoginDialog.hpp
     Utils/AppUpdater.cpp
     Utils/AppUpdater.hpp
     Utils/Http.cpp

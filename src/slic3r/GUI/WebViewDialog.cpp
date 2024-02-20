@@ -79,7 +79,7 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
 #endif
 
     // Create the webview
-    m_browser = WebView::CreateWebView(this, m_default_url);
+    m_browser = WebView::CreateWebView(this, /*m_default_url*/ wxString::Format("file://%s/web/connection_failed.html", from_u8(resources_dir())));
     if (m_browser == nullptr) {
         wxLogError("Could not init m_browser");
         return;
@@ -439,38 +439,34 @@ SourceViewDialog::SourceViewDialog(wxWindow* parent, wxString source) :
     SetSizer(sizer);
 }
 
-ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
-    : WebViewPanel(parent, L"https://dev.connect.prusa3d.com/connect-slicer-app/printer-list")
+ConnectRequestHandler::ConnectRequestHandler()
 {
-    m_actions["requestAccessToken"] = std::bind(&ConnectWebViewPanel::connect_set_access_token, this);
-    m_actions["requestLanguage"] = std::bind(&ConnectWebViewPanel::connect_set_language, this);
+    m_actions["REQUEST_ACCESS_TOKEN"] = std::bind(&ConnectRequestHandler::on_request_access_token, this);
+    m_actions["REQUEST_LANGUAGE"] = std::bind(&ConnectRequestHandler::on_request_language_action, this);
+    m_actions["REQUEST_SESSION_ID"] = std::bind(&ConnectRequestHandler::on_request_session_id_action, this);
+    m_actions["UPDATE_SELECTED_PRINTER"] = std::bind(&ConnectRequestHandler::on_request_update_selected_printer_action, this);
 }
-
-void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
+ConnectRequestHandler::~ConnectRequestHandler()
 {
-    BOOST_LOG_TRIVIAL(info) << "recieved message from _prusaConnect" << evt.GetString();
+}
+void ConnectRequestHandler::handle_message(const std::string& message)
+{
     // read msg and choose action
-    /*
-    {"type":"request","detail":{"action":"requestAccessToken"}}
-    */
+   /*
+   v0:
+   {"type":"request","detail":{"action":"requestAccessToken"}}
+   v1:
+   {"action":"REQUEST_ACCESS_TOKEN"}
+   */
     std::string action_string;
+    m_message_data = message;
     try {
-        std::stringstream ss(into_u8(evt.GetString()));
+        std::stringstream ss(m_message_data);
         pt::ptree ptree;
         pt::read_json(ss, ptree);
-        std::string type_string;
-        if (const auto type = ptree.get_optional<std::string>("type"); type) {
-            type_string = *type;
-        }
-        assert(!type_string.empty());
-        if (type_string == "request") {
-            for (const auto& section : ptree) {
-                if (section.first == "detail") {
-                    if (const auto action = section.second.get_optional<std::string>("action"); action) {
-                        action_string = *action;
-                    }
-                }
-            }
+        // v1:
+        if (const auto action = ptree.get_optional<std::string>("action"); action) {
+            action_string = *action;
         }
     }
     catch (const std::exception& e) {
@@ -479,31 +475,53 @@ void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
     }
 
     if (action_string.empty()) {
-        BOOST_LOG_TRIVIAL(error) << "Recieved invalid message from _prusaConnect (missing action). Message: " << evt.GetString();
+        BOOST_LOG_TRIVIAL(error) << "Recieved invalid message from _prusaConnect (missing action). Message: " << message;
         return;
     }
     assert(m_actions.find(action_string) != m_actions.end()); // this assert means there is a action that has no handling.
     if (m_actions.find(action_string) != m_actions.end()) {
         m_actions[action_string]();
     }
-
-    //wxGetApp().handle_web_request(evt.GetString().ToUTF8().data());
 }
-
-
-void ConnectWebViewPanel::connect_set_access_token()
+void ConnectRequestHandler::on_request_access_token()
 {
     std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
-    wxString script = GUI::format_wxstr("window._prusaConnect.setAccessToken(\'%1%\')", token);
-    run_script(script);
+    wxString script = GUI::format_wxstr("window._prusaConnect_v1.setAccessToken(\'%1%\')", token);
+    run_script_bridge(script);
 }
-void ConnectWebViewPanel::connect_set_language()
+void ConnectRequestHandler::on_request_language_action()
 {
     // TODO: 
-    std::string lang = "en";
-    wxString script = GUI::format_wxstr("window._prusaConnect.setAccessToken(\'en\')", lang);
-    run_script(script);
+   //std::string lang = "en";
+   //wxString script = GUI::format_wxstr("window._prusaConnect_v1.setAccessToken(\'en\')", lang);
+   //run_script(script);
 }
+void ConnectRequestHandler::on_request_session_id_action()
+{
+    /*
+   std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
+   wxString script = GUI::format_wxstr("window._prusaConnect_v1.setAccessToken(\'%1%\')", token);
+   run_script(script);
+   */
+}
+
+ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
+    : WebViewPanel(parent, L"https://dev.connect.prusa3d.com/connect-slicer-app/printer-list")
+{  
+}
+
+void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
+{
+    BOOST_LOG_TRIVIAL(error) << "recieved message from PrusaConnect FE: " << evt.GetString();
+    handle_message(into_u8(evt.GetString()));
+}
+
+void ConnectWebViewPanel::on_request_update_selected_printer_action()
+{
+    assert(!m_message_data.empty());
+    wxGetApp().handle_connect_request_printer_pick(m_message_data);
+}
+
 
 PrinterWebViewPanel::PrinterWebViewPanel(wxWindow* parent, const wxString& default_url)
     : WebViewPanel(parent, default_url)
@@ -605,13 +623,14 @@ void WebViewDialog::run_script(const wxString& javascript)
 {
     if (!m_browser) 
         return;
-    //bool res = WebView::run_script(m_browser, javascript);
+    bool res = WebView::run_script(m_browser, javascript);
 }
 
 
 
 PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val)
-    : WebViewDialog(parent, L"https://dev.connect.prusa3d.com/prusa-slicer/printers")
+    // : WebViewDialog(parent, L"https://dev.connect.prusa3d.com/prusa-slicer/printers")
+    : WebViewDialog(parent, L"https://dev.connect.prusa3d.com/connect-slicer-app/printer-list")
     , m_ret_val(ret_val)
 {
 }
@@ -626,7 +645,12 @@ void PrinterPickWebViewDialog::on_show(wxShowEvent& evt)
 }
 void PrinterPickWebViewDialog::on_script_message(wxWebViewEvent& evt)
 {
-    m_ret_val = evt.GetString().ToUTF8().data();
+    handle_message(into_u8(evt.GetString()));
+}
+
+void PrinterPickWebViewDialog::on_request_update_selected_printer_action()
+{
+    m_ret_val = m_message_data;
     this->EndModal(wxID_OK);
 }
 

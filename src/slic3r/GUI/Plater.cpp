@@ -270,7 +270,7 @@ struct Plater::priv
     std::unique_ptr<UserAccount> user_account;
 
     ProjectDirtyStateManager dirty_state;
-
+     
     BackgroundSlicingProcess    background_process;
     bool suppressed_backround_processing_update { false };
 
@@ -614,7 +614,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         }))
     , sidebar(new Sidebar(q))
     , notification_manager(std::make_unique<NotificationManager>(q))
-    , user_account(std::make_unique<UserAccount>(q, wxGetApp().app_config))
+    , user_account(std::make_unique<UserAccount>(q, wxGetApp().app_config, wxGetApp().get_instance_hash_string()))
     , m_worker{q, std::make_unique<NotificationProgressIndicator>(notification_manager.get()), "ui_worker"}
     , m_sla_import_dlg{new SLAImportDialog{q}}
     , delayed_scene_refresh(false)
@@ -892,6 +892,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         this->main_frame->refresh_account_menu(true);
         // Update sidebar printer status
         sidebar->update_printer_presets_combobox();
+        this->main_frame->refresh_account_menu();
+        wxGetApp().update_login_dialog();
     });
 
     this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
@@ -905,6 +907,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->main_frame->add_connect_webview_tab();
             // Update User name in TopBar
             this->main_frame->refresh_account_menu();
+            wxGetApp().update_login_dialog();
         } else {
             // data were corrupt and username was not retrieved
             // procced as if EVT_UA_RESET was recieved
@@ -955,13 +958,13 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         }
     });
     this->q->Bind(EVT_UA_AVATAR_SUCCESS, [this](UserAccountSuccessEvent& evt) {
-       const std::string filename = "prusaslicer-avatar-" + wxGetApp().get_instance_hash_string() + ".png";
-       const boost::filesystem::path png_path = boost::filesystem::path(wxStandardPaths::Get().GetTempDir().utf8_str().data()) / filename;
+       boost::filesystem::path path = user_account->get_avatar_path(true);
        FILE* file; 
-       file = fopen(png_path.string().c_str(), "wb");
+       file = fopen(path.string().c_str(), "wb");
        fwrite(evt.data.c_str(), 1, evt.data.size(), file);
        fclose(file);
        this->main_frame->refresh_account_menu(true);
+       wxGetApp().update_login_dialog();
     });
 
 	wxGetApp().other_instance_message_handler()->init(this->q);

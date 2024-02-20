@@ -27,7 +27,7 @@ typedef std::map<std::string, std::vector<size_t>> ConnectPrinterStateMap;
 // All incoming data shoud be stored in UserAccount.
 class UserAccount {
 public:
-    UserAccount(wxEvtHandler* evt_handler, Slic3r::AppConfig* app_config);
+    UserAccount(wxEvtHandler* evt_handler, Slic3r::AppConfig* app_config, const std::string& instance_hash);
     ~UserAccount();
 
     bool is_logged();
@@ -59,6 +59,7 @@ public:
     const ConnectPrinterStateMap& get_printer_state_map() const { return m_printer_map; }
     const std::map<std::string, std::string> get_user_data() const { return m_user_data; }
     std::string get_connect_address() const { return "https://dev.connect.prusa3d.com"; }
+    boost::filesystem::path get_avatar_path(bool logged) const;
 
     // standalone utility methods
     std::string get_model_from_json(const std::string& message) const;
@@ -67,6 +68,7 @@ public:
 private:
     void set_username(const std::string& username);
    
+    std::string m_instance_hash; // used in avatar path
 
     std::unique_ptr<Slic3r::GUI::UserAccountCommunication> m_communication;
     

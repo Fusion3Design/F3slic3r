@@ -59,7 +59,7 @@ class NotificationManager;
 class Downloader;
 struct GUI_InitParams;
 class GalleryDialog;
-
+class LoginDialog;
 
 
 enum FileType
@@ -373,6 +373,7 @@ public:
     void            open_web_page_localized(const std::string &http_address);
     bool            may_switch_to_SLA_preset(const wxString& caption);
     bool            run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage start_page = ConfigWizard::SP_WELCOME);
+    void            update_login_dialog();
     void            show_desktop_integration_dialog();
     void            show_downloader_registration_dialog();
 
@@ -410,7 +411,7 @@ public:
     void            request_user_login(int online_login) {}
     void            request_user_logout() {}
     int             request_user_unbind(std::string dev_id) { return 0; }
-    void            handle_web_request(std::string cmd);
+    void            handle_connect_request_printer_pick(std::string cmd);
     void            show_printer_webview_tab(bool show, const DynamicPrintConfig& dpc = {});
     // return true if preset vas invisible and we have to installed it to make it selectable
     bool            select_printer_from_connect(const Preset* printer_preset);
@@ -447,6 +448,8 @@ private:
     // change to vector of items when adding more items that require update
     //wxMenuItem*    m_login_config_menu_item { nullptr };
     std::map< ConfigMenuIDs, wxMenuItem*> m_config_menu_updatable_items;
+
+    std::unique_ptr<LoginDialog> m_login_dialog;
 };
 
 DECLARE_APP(GUI_App)

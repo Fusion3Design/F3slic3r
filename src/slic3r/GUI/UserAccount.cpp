@@ -2,6 +2,8 @@
 
 #include "format.hpp"
 
+#include "libslic3r/Utils.hpp"
+
 #include <boost/regex.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -12,8 +14,9 @@ namespace pt = boost::property_tree;
 namespace Slic3r {
 namespace GUI {
 
-UserAccount::UserAccount(wxEvtHandler* evt_handler, AppConfig* app_config)
+UserAccount::UserAccount(wxEvtHandler* evt_handler, AppConfig* app_config, const std::string& instance_hash)
     : m_communication(std::make_unique<UserAccountCommunication>(evt_handler, app_config))
+    , m_instance_hash(instance_hash)
 {}
 
 UserAccount::~UserAccount()
@@ -62,6 +65,16 @@ void UserAccount::do_logout()
 std::string UserAccount::get_access_token()
 {
     return m_communication->get_access_token();
+}
+
+boost::filesystem::path UserAccount::get_avatar_path(bool logged) const
+{
+    if (logged) {
+        const std::string filename = "prusaslicer-avatar-" + m_instance_hash + ".png";
+        return boost::filesystem::path(wxStandardPaths::Get().GetTempDir().utf8_str().data()) / filename;
+    } else {
+        return  boost::filesystem::path(resources_dir()) / "icons" / "user.svg";
+    }
 }
 
 #if 0
