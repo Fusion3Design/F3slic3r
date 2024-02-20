@@ -2169,6 +2169,7 @@ bool Plater::priv::replace_volume_with_stl(int object_idx, int volume_idx, const
 
     // update new name in ObjectList
     sidebar->obj_list()->update_name_in_list(object_idx, volume_idx);
+    sidebar->obj_list()->update_item_error_icon(object_idx, volume_idx);
 
     sla::reproject_points_and_holes(old_model_object);
 
