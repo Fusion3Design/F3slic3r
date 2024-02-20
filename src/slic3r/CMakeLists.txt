@@ -335,6 +335,8 @@ set(SLIC3R_GUI_SOURCES
     Utils/WxFontUtils.hpp
     Utils/WifiScanner.hpp
     Utils/WifiScanner.cpp
+    Utils/ProfilesSharingUtils.hpp
+    Utils/ProfilesSharingUtils.cpp
 )
 
 find_package(NanoSVG REQUIRED)

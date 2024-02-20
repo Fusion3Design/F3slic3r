@@ -2191,7 +2191,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Printer type");
     def->tooltip = L("Type of the printer.");
     def->set_default_value(new ConfigOptionString());
-    def->cli = ConfigOptionDef::nocli;
+//    def->cli = ConfigOptionDef::nocli;
 
     def = this->add("printer_notes", coString);
     def->label = L("Printer notes");
@@ -2212,7 +2212,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Printer variant");
     def->tooltip = L("Name of the printer variant. For example, the printer variants may be differentiated by a nozzle diameter.");
     def->set_default_value(new ConfigOptionString());
-    def->cli = ConfigOptionDef::nocli;
+//    def->cli = ConfigOptionDef::nocli;
 
     def = this->add("print_settings_id", coString);
     def->set_default_value(new ConfigOptionString(""));
@@ -5121,15 +5121,50 @@ CLIMiscConfigDef::CLIMiscConfigDef()
 #endif /* _MSC_VER */
 }
 
+CLIProfilesSharingConfigDef::CLIProfilesSharingConfigDef()
+{
+    ConfigOptionDef* def;
+
+    def = this->add("query-printer-models", coBool);
+    def->label = L("Get list of printer models");
+    def->tooltip = L("Get available printer models into JSON.\n"
+                   "Note:\nTo print printer models for required technology use 'printer-technology' option. By default printer_technology is FFF.\n"
+                   "To print out JSON into file use 'output' option.\n"
+                   "To specify configuration folder use 'datadir' option. Otherwise all known vendors will be loaded and processed.");
+
+
+    def = this->add("query-printer-profiles", coBool);
+    def->label = L("Get list of printer profiles in respect to selected printer model and printer variant");
+    def->tooltip = L("Get list of printer profiles in respect to selected 'printer-model' and 'printer-variant' into JSON.\n"
+                   "Note:\n"
+                   "To print out JSON into file use 'output' option.\n"
+                   "To specify configuration folder use 'datadir' option. Otherwise all known vendors will be loaded and processed.");
+
+
+    def = this->add("query-print-filament-profiles", coBool);
+    def->label = L("Get list of prints and filaments profiles in respect to selected printer profile");
+    def->tooltip = L("Get list of prints and filaments profiles in respect to selected 'printer-profile' into JSON.\n"
+                   "Note:\n"
+                   "To print out JSON into file use 'output' option.\n"
+                   "To specify configuration folder use 'datadir' option. Otherwise all known vendors will be loaded and processed.");
+
+    def = this->add("printer-profile", coString);
+    def->label = L("Printer preset name");
+    def->tooltip = L("Name of the printer preset used for slicing.");
+    def->set_default_value(new ConfigOptionString());
+}
+
 const CLIActionsConfigDef    cli_actions_config_def;
 const CLITransformConfigDef  cli_transform_config_def;
 const CLIMiscConfigDef       cli_misc_config_def;
+const CLIProfilesSharingConfigDef   cli_profiles_sharing_config_def;
 
 DynamicPrintAndCLIConfig::PrintAndCLIConfigDef DynamicPrintAndCLIConfig::s_def;
 
 void DynamicPrintAndCLIConfig::handle_legacy(t_config_option_key &opt_key, std::string &value) const
 {
     if (cli_actions_config_def  .options.find(opt_key) == cli_actions_config_def  .options.end() &&
+        cli_profiles_sharing_config_def.options.find(opt_key) == cli_profiles_sharing_config_def.options.end() &&
         cli_transform_config_def.options.find(opt_key) == cli_transform_config_def.options.end() &&
         cli_misc_config_def     .options.find(opt_key) == cli_misc_config_def     .options.end()) {
         PrintConfigDef::handle_legacy(opt_key, value);
