@@ -59,7 +59,7 @@
 #define ENABLE_BINARIZED_GCODE_DEBUG_WINDOW 0
 
 // Enable imgui debug dialog for new gcode viewer (using libvgcode)
-#define ENABLE_NEW_GCODE_VIEWER_DEBUG 1
+#define ENABLE_NEW_GCODE_VIEWER_DEBUG 0
 // Enable extension of tool position imgui dialog to show actual speed profile
 #define ENABLE_ACTUAL_SPEED_DEBUG 1
 
