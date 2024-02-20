@@ -199,7 +199,7 @@ static void add_printer_models(pt::ptree& vendor_node,
                                const PrinterPresetCollection& printer_presets)
 {
     for (const auto& printer_model : vendor_profile->models) {
-        if (printer_technology != ptAny && printer_model.technology != printer_technology)
+        if (printer_technology != ptUnknown && printer_model.technology != printer_technology)
             continue;
 
         pt::ptree variants_node;

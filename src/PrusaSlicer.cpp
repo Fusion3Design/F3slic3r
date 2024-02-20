@@ -992,7 +992,7 @@ bool CLI::processed_profiles_sharing()
         if (query_options.find(opt_key) != query_options.end())
             continue;
         if (opt_key == "query-printer-models") {
-            ret = Slic3r::get_json_printer_models(Preset::printer_technology(m_config));
+            ret = Slic3r::get_json_printer_models(get_printer_technology(m_config));
         }
 /*
         else if (opt_key == "query-printer-profiles") {
