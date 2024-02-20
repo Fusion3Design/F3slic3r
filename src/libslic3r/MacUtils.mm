@@ -1,10 +1,8 @@
-#import "ProfilesSharingUtils.hpp"
+#import "Utils/DirectoriesUtils.hpp"
 
 #import <Foundation/Foundation.h>
 
-namespace Slic3r {
-
-// ProfilesSharingUtils.hpp
+// Utils/DirectoriesUtils.hpp
 std::string GetDataDir()
 {
 	NSURL* url = [[NSFileManager defaultManager] URLForDirectory:NSApplicationSupportDirectory
@@ -14,4 +12,3 @@ std::string GetDataDir()
 	return std::string([(CFStringRef)url.path UTF8String]);
 }
 
-}
