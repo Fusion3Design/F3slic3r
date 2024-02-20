@@ -296,6 +296,12 @@ int CLI::run(int argc, char **argv)
                 config += std::move(m_print_config);
                 m_print_config = std::move(config);
                 }
+
+                // If model for slicing is loaded from 3mf file, then its geometry has to be used and arrange couldn't be apply for this model.
+                if ((boost::algorithm::iends_with(file, ".3mf") || boost::algorithm::iends_with(file, ".zip")) && !m_config.opt_bool("dont_arrange")) {
+                    //So, check a state of "dont_arrange" parameter and set it to true, if its value is false.
+                    m_config.set_key_value("dont_arrange", new ConfigOptionBool(true));
+                }
             }
             catch (std::exception& e) {
                 boost::nowide::cerr << file << ": " << e.what() << std::endl;
