@@ -84,10 +84,6 @@ bgcode::binarize::BinarizerConfig GCodeProcessor::s_binarizer_config{
     bgcode::core::EChecksumType::CRC32
 };
 
-#if ENABLE_GCODE_VIEWER_DATA_CHECKING
-const std::string GCodeProcessor::Mm3_Per_Mm_Tag = "MM3_PER_MM:";
-#endif // ENABLE_GCODE_VIEWER_DATA_CHECKING
-
 static void set_option_value(ConfigOptionFloats& option, size_t id, float value)
 {
     if (id < option.values.size())
@@ -1073,12 +1069,6 @@ void GCodeProcessor::reset()
     m_kissslicer_toolchange_time_correction = 0.0f;
 
     m_single_extruder_multi_material = false;
-
-#if ENABLE_GCODE_VIEWER_DATA_CHECKING
-    m_mm3_per_mm_compare.reset();
-    m_height_compare.reset();
-    m_width_compare.reset();
-#endif // ENABLE_GCODE_VIEWER_DATA_CHECKING
 }
 
 static inline const char* skip_whitespaces(const char *begin, const char *end) {
@@ -1363,13 +1353,6 @@ void GCodeProcessor::finalize(bool perform_post_process)
     m_used_filaments.process_caches(this);
 
     update_estimated_statistics();
-
-#if ENABLE_GCODE_VIEWER_DATA_CHECKING
-    std::cout << "\n";
-    m_mm3_per_mm_compare.output();
-    m_height_compare.output();
-    m_width_compare.output();
-#endif // ENABLE_GCODE_VIEWER_DATA_CHECKING
 
     if (perform_post_process)
         post_process();
@@ -1988,15 +1971,6 @@ void GCodeProcessor::process_tags(const std::string_view comment, bool producers
         ++m_layer_id;
         return;
     }
-
-#if ENABLE_GCODE_VIEWER_DATA_CHECKING
-    // mm3_per_mm print tag
-    if (boost::starts_with(comment, Mm3_Per_Mm_Tag)) {
-        if (! parse_number(comment.substr(Mm3_Per_Mm_Tag.size()), m_mm3_per_mm_compare.last_tag_value))
-            BOOST_LOG_TRIVIAL(error) << "GCodeProcessor encountered an invalid value for Mm3_Per_Mm (" << comment << ").";
-        return;
-    }
-#endif // ENABLE_GCODE_VIEWER_DATA_CHECKING
 }
 
 bool GCodeProcessor::process_producers_tags(const std::string_view comment)
@@ -2619,9 +2593,6 @@ void GCodeProcessor::process_G1(const std::array<std::optional<double>, 4>& axes
 
         // volume extruded filament / tool displacement = area toolpath cross section
         m_mm3_per_mm = area_toolpath_cross_section;
-#if ENABLE_GCODE_VIEWER_DATA_CHECKING
-        m_mm3_per_mm_compare.update(area_toolpath_cross_section, m_extrusion_role);
-#endif // ENABLE_GCODE_VIEWER_DATA_CHECKING
 
         if (m_forced_height > 0.0f)
             // use height coming from the gcode tags
@@ -2646,10 +2617,6 @@ void GCodeProcessor::process_G1(const std::array<std::optional<double>, 4>& axes
             m_extruded_last_z = m_end_position[Z];
         m_options_z_corrector.update(m_height);
 
-#if ENABLE_GCODE_VIEWER_DATA_CHECKING
-        m_height_compare.update(m_height, m_extrusion_role);
-#endif // ENABLE_GCODE_VIEWER_DATA_CHECKING
-
         if (m_forced_width > 0.0f)
             // use width coming from the gcode tags
             m_width = m_forced_width;
@@ -2668,10 +2635,6 @@ void GCodeProcessor::process_G1(const std::array<std::optional<double>, 4>& axes
 
         // clamp width to avoid artifacts which may arise from wrong values of m_height
         m_width = std::min(m_width, std::max(2.0f, 4.0f * m_height));
-
-#if ENABLE_GCODE_VIEWER_DATA_CHECKING
-        m_width_compare.update(m_width, m_extrusion_role);
-#endif // ENABLE_GCODE_VIEWER_DATA_CHECKING
     }
 
     // time estimate section

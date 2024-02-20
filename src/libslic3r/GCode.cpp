@@ -570,9 +570,6 @@ GCodeGenerator::GCodeGenerator(const Print* print) :
     m_volumetric_speed(0),
     m_last_extrusion_role(GCodeExtrusionRole::None),
     m_last_width(0.0f),
-#if ENABLE_GCODE_VIEWER_DATA_CHECKING
-    m_last_mm3_per_mm(0.0),
-#endif // ENABLE_GCODE_VIEWER_DATA_CHECKING
     m_brim_done(false),
     m_second_layer_things_done(false),
     m_silent_time_estimator_enabled(false),
@@ -961,9 +958,6 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     m_last_layer_z = 0.f;
     m_max_layer_z  = 0.f;
     m_last_width = 0.f;
-#if ENABLE_GCODE_VIEWER_DATA_CHECKING
-    m_last_mm3_per_mm = 0.;
-#endif // ENABLE_GCODE_VIEWER_DATA_CHECKING
 
     // How many times will be change_layer() called?gcode.cpp
     // change_layer() in turn increments the progress bar status.
@@ -3268,14 +3262,6 @@ std::string GCodeGenerator::_extrude(
         gcode += std::string(";") + GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Width)
                + float_to_string_decimal_point(m_last_width) + "\n";
     }
-
-#if ENABLE_GCODE_VIEWER_DATA_CHECKING
-    if (last_was_wipe_tower || (m_last_mm3_per_mm != path_attr.mm3_per_mm)) {
-        m_last_mm3_per_mm = path_attr.mm3_per_mm;
-        gcode += std::string(";") + GCodeProcessor::Mm3_Per_Mm_Tag
-            + float_to_string_decimal_point(m_last_mm3_per_mm) + "\n";
-    }
-#endif // ENABLE_GCODE_VIEWER_DATA_CHECKING
 
     if (last_was_wipe_tower || std::abs(m_last_height - path_attr.height) > EPSILON) {
         m_last_height = path_attr.height;

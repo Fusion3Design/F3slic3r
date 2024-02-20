@@ -24,8 +24,6 @@
 #define DISABLE_INSTANCES_SYNCH 0
 // Use wxDataViewRender instead of wxDataViewCustomRenderer
 #define ENABLE_NONCUSTOM_DATA_VIEW_RENDERING 0
-// Enable G-Code viewer comparison between toolpaths height and width detected from gcode and calculated at gcode generation 
-#define ENABLE_GCODE_VIEWER_DATA_CHECKING 0
 // Enable project dirty state manager debug window
 #define ENABLE_PROJECT_DIRTY_STATE_DEBUG_WINDOW 0
 // Disable using instanced models to render options in gcode preview
@@ -61,7 +59,7 @@
 #define ENABLE_BINARIZED_GCODE_DEBUG_WINDOW 0
 
 // Enable imgui debug dialog for new gcode viewer (using libvgcode)
-#define ENABLE_NEW_GCODE_VIEWER_DEBUG 0
+#define ENABLE_NEW_GCODE_VIEWER_DEBUG 1
 // Enable extension of tool position imgui dialog to show actual speed profile
 #define ENABLE_ACTUAL_SPEED_DEBUG 1
 
