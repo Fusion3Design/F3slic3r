@@ -225,9 +225,11 @@ void OptionsGroup::change_opt_value(DynamicPrintConfig& config, const t_config_o
             ConfigOptionBools* vec_new = new ConfigOptionBools{ boost::any_cast<unsigned char>(value) != 0 };
             config.option<ConfigOptionBools>(opt_key)->set_at(vec_new, opt_index, 0);
             break; }
-        case coInt:
-            config.set_key_value(opt_key, new ConfigOptionInt(boost::any_cast<int>(value)));
-            break;
+        case coInt: {
+			//config.set_key_value(opt_key, new ConfigOptionInt(boost::any_cast<int>(value)));
+			int& val_new = config.opt_int(opt_key);
+			val_new = boost::any_cast<int>(value);
+		}
         case coInts: {
             ConfigOptionInts* vec_new = new ConfigOptionInts{ boost::any_cast<int>(value) };
             config.option<ConfigOptionInts>(opt_key)->set_at(vec_new, opt_index, 0);
@@ -989,6 +991,16 @@ boost::any ConfigOptionsGroup::get_config_value(const DynamicPrintConfig& config
     {
         switch (opt->type)
         {
+        case coFloat:
+            if (config.option(opt_key)->is_nil())
+                ret = _L("N/A");
+            else
+                ret = double_to_string(config.option<ConfigOptionFloatNullable>(opt_key)->value);
+
+            break;
+        case coInt:
+            ret = config.option<ConfigOptionIntNullable>(opt_key)->value;
+            break;
         case coPercents:
         case coFloats: {
             if (config.option(opt_key)->is_nil())

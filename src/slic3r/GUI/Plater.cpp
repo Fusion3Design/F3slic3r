@@ -1103,6 +1103,8 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                         config.apply(loaded_printer_technology == ptFFF ?
                             static_cast<const ConfigBase&>(FullPrintConfig::defaults()) :
                             static_cast<const ConfigBase&>(SLAFullPrintConfig::defaults()));
+                        // Set all the nullable values in defaults to nils.
+                        config.null_nullables();
                         // and place the loaded config over the base.
                         config += std::move(config_loaded);
                     }
@@ -2155,7 +2157,7 @@ bool Plater::priv::replace_volume_with_stl(int object_idx, int volume_idx, const
         // We need to make sure that the painted data point to existing triangles.
         new_volume->supported_facets.assign(old_volume->supported_facets);
         new_volume->seam_facets.assign(old_volume->seam_facets);
-        new_volume->mmu_segmentation_facets.assign(old_volume->mmu_segmentation_facets);
+        new_volume->mm_segmentation_facets.assign(old_volume->mm_segmentation_facets);
     }
     std::swap(old_model_object->volumes[volume_idx], old_model_object->volumes.back());
     old_model_object->delete_volume(old_model_object->volumes.size() - 1);
@@ -6223,10 +6225,10 @@ void Plater::clear_before_change_mesh(int obj_idx, const std::string &notificati
     // may be different and they would make no sense.
     bool paint_removed = false;
     for (ModelVolume* mv : mo->volumes) {
-        paint_removed |= ! mv->supported_facets.empty() || ! mv->seam_facets.empty() || ! mv->mmu_segmentation_facets.empty();
+        paint_removed |= ! mv->supported_facets.empty() || ! mv->seam_facets.empty() || ! mv->mm_segmentation_facets.empty();
         mv->supported_facets.reset();
         mv->seam_facets.reset();
-        mv->mmu_segmentation_facets.reset();
+        mv->mm_segmentation_facets.reset();
     }
     if (paint_removed) {
         // snapshot_time is captured by copy so the lambda knows where to undo/redo to.
