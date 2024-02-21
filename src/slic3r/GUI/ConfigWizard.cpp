@@ -1733,6 +1733,37 @@ PageVendors::PageVendors(ConfigWizard *parent)
 
         auto *cbox = new wxCheckBox(this, wxID_ANY, vendor->name);
         cbox->Bind(wxEVT_CHECKBOX, [=](wxCommandEvent &event) {
+            if (cbox->IsChecked()) {
+                wxString    user_presets_list{ wxString() };
+                int         user_presets_cnt { 0 };
+                
+                // Check if some of preset doesn't exist as a user_preset
+                // to avoid rewrite those user_presets by new installed system presets
+                const PresetCollection& presets = wizard_p()->bundles.at(vendor->id).preset_bundle.get()->printers;
+                for (const Preset& preset : presets)
+                    if (!preset.is_default && boost::filesystem::exists(preset.file)) {
+                        user_presets_list += " * " + from_u8(preset.name) + "\n";
+                        user_presets_cnt++;
+                    }
+
+                if (!user_presets_list.IsEmpty()) {
+                    wxString message = format_wxstr(_L_PLURAL("Following user preset has a same name as one of added system presets from '%1%' vendor:\n"
+                                                              "%2%Please note that this user preset will be rewrite by system preset.\n\n"
+                                                              "Do you still wish to add presets from '%1%'?",
+                                                              "Following user presets have same names as some of added system presets from '%1%' vendor:\n"
+                                                              "%2%Please note that these user presets will be rewrite by system presets.\n\n"
+                                                              "Do you still wish to add presets from '%1%'?",
+                                                    user_presets_cnt), vendor->name, user_presets_list);
+
+                    MessageDialog msg(this->GetParent(), message, _L("Notice"), wxYES_NO);
+                    if (msg.ShowModal() == wxID_NO) {
+                        // uncheck checked ckeckbox
+                        cbox->SetValue(false);
+                        return;
+                    }
+                }
+            }
+
             wizard_p()->on_3rdparty_install(vendor, cbox->IsChecked());
         });
 
