@@ -111,7 +111,37 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObject
     }
 }
 
+bool LabelObjects::update(const PrintInstance &instance) {
+    if (this->last_operation_instance == &instance) {
+        return false;
+    }
+    this->last_operation_instance = &instance;
+    return true;
+}
 
+std::string LabelObjects::maybe_start_instance() {
+    if (current_instance == nullptr && last_operation_instance != nullptr) {
+        current_instance = last_operation_instance;
+        return this->start_object(*current_instance, LabelObjects::IncludeName::No);
+    }
+    return "";
+}
+
+std::string LabelObjects::maybe_stop_instance() {
+    if (current_instance != nullptr) {
+        const std::string result{this->stop_object(*current_instance)};
+        current_instance = nullptr;
+        return result;
+    }
+    return "";
+}
+
+std::string LabelObjects::maybe_change_instance() {
+    if (last_operation_instance != current_instance) {
+        return this->maybe_stop_instance() + this->maybe_start_instance();
+    }
+    return "";
+}
 
 std::string LabelObjects::all_objects_header() const
 {

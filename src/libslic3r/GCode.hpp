@@ -319,7 +319,8 @@ private:
     std::string     extrude_support(const ExtrusionEntityReferences &support_fills, const GCode::SmoothPathCache &smooth_path_cache);
     std::string generate_travel_gcode(
         const Points3& travel,
-        const std::string& comment
+        const std::string& comment,
+        const std::string& insert_before_end
     );
     Polyline generate_travel_xy_path(
         const Point& start,
@@ -331,10 +332,11 @@ private:
         const Point &start_point,
         const Point &end_point,
         ExtrusionRole role,
-        const std::string &comment
+        const std::string &comment,
+        const std::string &gcode_to_insert
     );
 
-    std::string travel_to_first_position(const Vec3crd& point, const double from_z);
+    std::string travel_to_first_position(const Vec3crd& point, const double from_z, const std::string& gcode_to_insert);
 
     bool            needs_retraction(const Polyline &travel, ExtrusionRole role = ExtrusionRole::None);
 
@@ -444,9 +446,6 @@ private:
     bool                                m_second_layer_things_done;
     // G-code that is due to be written before the next extrusion
     std::string                         m_pending_pre_extrusion_gcode;
-    // Pointer to currently exporting PrintObject and instance index.
-    GCode::PrintObjectInstance          m_current_instance;
-
     bool                                m_silent_time_estimator_enabled;
 
     // Processor
