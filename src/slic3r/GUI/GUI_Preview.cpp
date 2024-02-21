@@ -838,7 +838,7 @@ void Preview::load_print_as_fff(bool keep_z_range)
             const unsigned int number_extruders = wxGetApp().is_editor() ?
                 (unsigned int)print->extruders().size() : m_canvas->get_gcode_extruders_count();
             const bool contains_color_gcodes = std::any_of(std::begin(color_print_values), std::end(color_print_values),
-                [](auto const& item) { return item.type == CustomGCode::Type::ColorChange; });
+                [](auto const& item) { return item.type == CustomGCode::Type::ColorChange || item.type == CustomGCode::Type::ToolChange; });
             const libvgcode::EViewType choice = contains_color_gcodes ?
                 libvgcode::EViewType::ColorPrint :
                 (number_extruders > 1) ? libvgcode::EViewType::Tool : libvgcode::EViewType::FeatureType;
