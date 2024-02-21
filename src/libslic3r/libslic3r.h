@@ -15,6 +15,11 @@
 #define _libslic3r_h_
 
 #include "libslic3r_version.h"
+
+//#define SLIC3R_APP_FULL_NAME SLIC3R_APP_NAME
+#define SLIC3R_APP_FULL_NAME SLIC3R_APP_NAME "-alpha"
+//#define SLIC3R_APP_FULL_NAME SLIC3R_APP_NAME "-beta"
+
 #define GCODEVIEWER_APP_NAME "PrusaSlicer G-code Viewer"
 #define GCODEVIEWER_APP_KEY  "PrusaSlicerGcodeViewer"
 

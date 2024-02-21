@@ -3,15 +3,109 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "ProfilesSharingUtils.hpp"
-#include "libslic3r/utils.hpp"
-
+#include "libslic3r/Utils.hpp"
 #include "slic3r/GUI/ConfigWizard_private.hpp"
 #include "slic3r/GUI/format.hpp"
 
 #include <boost/property_tree/json_parser.hpp>
 
+#if defined(_WIN32)
+
+#include <shlobj.h>
+
+static std::string GetDataDir()
+{
+    HRESULT hr = E_FAIL;
+
+    std::wstring buffer;
+    buffer.resize(MAX_PATH);
+
+    hr = ::SHGetFolderPath
+    (
+        NULL,               // parent window, not used
+        CSIDL_APPDATA,
+        NULL,               // access token (current user)
+        SHGFP_TYPE_CURRENT, // current path, not just default value
+        (LPWSTR)buffer.data()
+    );
+
+    // somewhat incredibly, the error code in the Unicode version is
+    // different from the one in ASCII version for this function
+#if wxUSE_UNICODE
+    if (hr == E_FAIL)
+#else
+    if (hr == S_FALSE)
+#endif
+    {
+        // directory doesn't exist, maybe we can get its default value?
+        hr = ::SHGetFolderPath
+        (
+            NULL,
+            CSIDL_APPDATA,
+            NULL,
+            SHGFP_TYPE_DEFAULT,
+            (LPWSTR)buffer.data()
+        );
+    }
+
+    for (int i=0; i< MAX_PATH; i++)
+        if (buffer.data()[i] == '\0') {
+            buffer.resize(i);
+            break;
+        }
+
+    return  boost::nowide::narrow(buffer);
+}
+
+#elif defined(__linux__)
+
+#include <stdlib.h>
+#include <pwd.h>
+
+static std::string GetDataDir()
+{
+    std::string dir;
+
+    char* ptr;
+    if ((ptr = getenv("XDG_CONFIG_HOME")))
+        dir = std::string(ptr);
+    else {
+        if ((ptr = getenv("HOME")))
+            dir = std::string(ptr);
+        else {
+            struct passwd* who = (struct passwd*)NULL;
+            if ((ptr = getenv("USER")) || (ptr = getenv("LOGNAME")))
+                who = getpwnam(ptr);
+            // make sure the user exists!
+            if (!who)
+                who = getpwuid(getuid());
+
+            dir = std::string(who ? who->pw_dir : 0);
+        }
+        dir += "/.config";
+    }
+
+    if (dir.empty())
+        printf("GetDataDir() > unsupported file layout \n");
+
+    return dir;
+}
+
+#endif
+
 namespace Slic3r {
 
+static bool is_datadir()
+{
+    if (!data_dir().empty())
+        return true;
+
+    const std::string config_dir = GetDataDir();
+    const std::string data_dir = (boost::filesystem::path(config_dir) / SLIC3R_APP_FULL_NAME).make_preferred().string();
+
+    set_data_dir(data_dir);
+    return true;
+}
 namespace pt = boost::property_tree;
 
 using namespace GUI;
@@ -127,6 +221,9 @@ static bool load_preset_bandle_from_datadir(PresetBundle& preset_bundle)
 
 std::string get_json_printer_models(PrinterTechnology printer_technology)
 {
+    if (!is_datadir())
+        return "";
+
     // Build a property tree with all the information.
     pt::ptree root;
 
@@ -208,6 +305,9 @@ static std::string get_printer_profiles(const VendorProfile* vendor_profile,
 
 std::string get_json_printer_profiles(const std::string& printer_model_name, const std::string& printer_variant)
 {
+    if (!is_datadir())
+        return "";
+
     PrinterAttr printer_attr({printer_model_name, printer_variant});
 
     if (data_dir().empty()) {
@@ -308,6 +408,9 @@ static std::string get_installed_print_and_filament_profiles(const PresetBundle*
 
 std::string get_json_print_filament_profiles(const std::string& printer_profile)
 {
+    if (!is_datadir())
+        return "";
+
     if (data_dir().empty()) {
         printf("Loading of all known vendors .");
         BundleMap bundles = BundleMap::load();
