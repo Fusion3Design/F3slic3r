@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(libvgcode)
 
-add_library(libvgcode STATIC
+set(LIBVGCODE_SOURCES
 	# API
 	include/ColorPrint.hpp
     include/ColorRange.hpp
@@ -49,6 +49,14 @@ add_library(libvgcode STATIC
 	glad/include/KHR/khrplatform.h
 	glad/src/glad.c
 )
+
+add_library(libvgcode STATIC ${LIBVGCODE_SOURCES})
+
+foreach(_source IN ITEMS ${LIBVGCODE_SOURCES})
+    get_filename_component(_source_path "${_source}" PATH)
+    string(REPLACE "/" "\\" _group_path "${_source_path}")
+    source_group("${_group_path}" FILES "${_source}")
+endforeach()
 
 # glad includes
 include_directories(glad/include)
