@@ -14,6 +14,13 @@
 #include <libvgcode/include/GCodeInputData.hpp>
 #include <libvgcode/include/ColorRange.hpp>
 
+static_assert(VGCODE_ENABLE_OPENGL_ES == ENABLE_OPENGL_ES,
+#if ENABLE_OPENGL_ES
+    "VGCODE_ENABLE_OPENGL_ES must be set to 1");
+#else
+    "VGCODE_ENABLE_OPENGL_ES must be set to 0");
+#endif // ENABLE_OPENGL_ES
+
 namespace Slic3r {
 class Print;
 } // namespace Slic3r

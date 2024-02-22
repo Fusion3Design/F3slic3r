@@ -597,7 +597,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
         // create and fill height, width and angles buffer
         glsafe(glGenBuffers(1, &m_heights_widths_angles_buf_id));
         glsafe(glBindBuffer(GL_TEXTURE_BUFFER, m_heights_widths_angles_buf_id));
-        glsafe(glBufferData(GL_TEXTURE_BUFFER, heights_widths_angles.size() * sizeof(Vec3), heights_widths_angles.data(), GL_STATIC_DRAW));
+        glsafe(glBufferData(GL_TEXTURE_BUFFER, heights_widths_angles.size() * sizeof(Vec3), heights_widths_angles.data(), GL_DYNAMIC_DRAW));
         glsafe(glGenTextures(1, &m_heights_widths_angles_tex_id));
         glsafe(glBindTexture(GL_TEXTURE_BUFFER, m_heights_widths_angles_tex_id));
 
@@ -1310,6 +1310,20 @@ void ViewerImpl::update_heights_widths()
         return;
 
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, m_heights_widths_angles_buf_id));
+#if VGCODE_ENABLE_OPENGL_ES
+    for (size_t i = 0; i < m_vertices.size(); ++i) {
+        const PathVertex& v = m_vertices[i];
+        const size_t offset = i * sizeof(Vec3);
+        if (v.is_travel()) {
+            const std::array<float, 2> radii = { m_travels_radius, m_travels_radius };
+            glsafe(glBufferSubData(GL_TEXTURE_BUFFER, offset, radii.size() * sizeof(float), radii.data()));
+        }
+        else if (v.is_wipe()) {
+            const std::array<float, 2> radii = { m_wipes_radius, m_wipes_radius };
+            glsafe(glBufferSubData(GL_TEXTURE_BUFFER, offset, radii.size() * sizeof(float), radii.data()));
+        }
+    }
+#else
     Vec3* buffer = static_cast<Vec3*>(glMapBuffer(GL_TEXTURE_BUFFER, GL_WRITE_ONLY));
     glcheck();
 
@@ -1326,6 +1340,7 @@ void ViewerImpl::update_heights_widths()
     }
 
     glsafe(glUnmapBuffer(GL_TEXTURE_BUFFER));
+#endif // VGCODE_ENABLE_OPENGL_ES
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
 }
 
