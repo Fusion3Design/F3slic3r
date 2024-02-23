@@ -3884,7 +3884,9 @@ void PrintConfigDef::init_sla_params()
 
     def = this->add("area_fill", coFloat);
     def->label = L("Area fill");
-    def->tooltip = L("The percentage of the bed area. \nIf the print area exceeds the specified value, \nthen a slow tilt will be used, otherwise - a fast tilt");
+    def->tooltip = L("The percentage of the bed area.\nIf the area of a particular layer is smaller than 'area_fill', "
+                     "then 'Below area fill' parameters are used to determine the layer separation (tearing) procedure. "
+                     "Otherwise 'Above area fill parameters are used.");
     def->sidetext = L("%");
     def->min = 0;
     def->mode = comExpert;
@@ -4408,7 +4410,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("delay_before_exposure_ms", coFloats);
     def->full_label = L("Delay before exposure");
-    def->tooltip = L("Delay time before exposure");
+    def->tooltip = L("Delay before exposure after previous layer separation.");
     def->sidetext = L("s");
     def->min = 0;
     def->max = 30;
@@ -4417,7 +4419,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("delay_after_exposure_ms", coFloats);
     def->full_label = L("Delay after exposure");
-    def->tooltip = L("Delay time after exposure");
+    def->tooltip = L("Delay after exposure before layer separation.");
     def->sidetext = L("s");
     def->min = 0;
     def->max = 30;
@@ -4426,7 +4428,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tower_hop_height_nm", coInts);
     def->full_label = L("Tower hop height");
-    def->tooltip = L("Tower hop height");
+    def->tooltip = L("The height of the tower raise.");
     def->sidetext = L("mm");
     def->min = 0;
     def->max = 100;
@@ -4436,7 +4438,7 @@ void PrintConfigDef::init_sla_tilt_params()
     //ysFIXME
     def = this->add("tower_profile", coEnums); 
     def->full_label = L("Tower profile");
-    def->tooltip = L("Tower profile");
+    def->tooltip = L("Tower profile used for tower raise.");
     def->mode = comExpert;
     def->set_enum<TiltProfiles>({
         { "homingFast",     L("Homing Fast"),   },
@@ -4452,7 +4454,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tilt_down_initial_profile", coEnums); 
     def->full_label = L("Tilt down initial profile");
-    def->tooltip = L("Tilt down initial profile");
+    def->tooltip = L("Tilt profile used for an initial portion of tilt down move.");
     def->mode = comExpert;
     def->set_enum<TiltProfiles>({
         { "homingFast",     L("Homing Fast"),   },
@@ -4468,7 +4470,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tilt_down_finish_profile", coEnums); 
     def->full_label = L("Tilt down finish profile");
-    def->tooltip = L("Tilt down finish profile");
+    def->tooltip = L("Tilt profile used for the rest of the tilt down move.");
     def->mode = comExpert;
     def->set_enum<TiltProfiles>({
         { "homingFast",     L("Homing Fast"),   },
@@ -4484,7 +4486,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tilt_up_initial_profile", coEnums); 
     def->full_label = L("Tilt up initial profile");
-    def->tooltip = L("Tilt up initial profile");
+    def->tooltip = L("Tilt profile used for an initial portion of tilt up move.");
     def->mode = comExpert;
     def->set_enum<TiltProfiles>({
         { "homingFast",     L("Homing Fast"),   },
@@ -4500,7 +4502,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tilt_up_finish_profile", coEnums); 
     def->full_label = L("Tilt up finish profile");
-    def->tooltip = L("Tilt up finish profile");
+    def->tooltip = L("Tilt profile used for the rest of the tilt-up.");
     def->mode = comExpert;
     def->set_enum<TiltProfiles>({
         { "homingFast",     L("Homing Fast"),   },
@@ -4516,13 +4518,13 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("use_tilt", coBools);
     def->full_label = L("Use tilt");
-    def->tooltip = L("Use tilt");
+    def->tooltip = L("If enabled, tilt is used for layer separation. Otherwise, all the parameters below are ignored.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBools({ true, true }));
 
     def = this->add("tilt_down_offset_steps", coInts);
     def->full_label = L("Tilt down offset steps");
-    def->tooltip = L("Tilt down offset steps");
+    def->tooltip = L("Number of steps to move down from the calibrated (horizontal) position with 'tilt_down_initial_profile'.");
     def->sidetext = L("μ-steps");
     def->min = 0;
     def->max = 10000;
@@ -4531,7 +4533,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tilt_down_offset_delay_ms", coFloats);
     def->full_label = L("Tilt down offset delay");
-    def->tooltip = L("Tilt down offset delay");
+    def->tooltip = L("Delay after the tilt reaches 'tilt_down_offset_steps' position.");
     def->sidetext = L("s");
     def->min = 0;
     def->max = 20;
@@ -4540,7 +4542,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tilt_down_cycles", coInts);
     def->full_label = L("Tilt down cycles");
-    def->tooltip = L("Tilt down cycles");
+    def->tooltip = L("Number of cycles to split the rest of the tilt down move.");
     def->min = 0;
     def->max = 10;
     def->mode = comExpert;
@@ -4548,7 +4550,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tilt_down_delay_ms", coFloats);
     def->full_label = L("Tilt down delay");
-    def->tooltip = L("Tilt down delay");
+    def->tooltip = L("The delay between tilt-down cycles.");
     def->sidetext = L("s");
     def->min = 0;
     def->max = 20;
@@ -4557,7 +4559,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tilt_up_offset_steps", coInts);
     def->full_label = L("Tilt up offset steps");
-    def->tooltip = L("Tilt up offset steps");
+    def->tooltip = L("Move tilt up to calibrated (horizontal) position minus this offset.");
     def->sidetext = L("μ-steps");
     def->min = 0;
     def->max = 10000;
@@ -4566,7 +4568,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tilt_up_offset_delay_ms", coFloats);
     def->full_label = L("Tilt up offset delay");
-    def->tooltip = L("Tilt up offset delay");
+    def->tooltip = L("Delay after the tilt reaches 'tilt_up_offset_steps' position.");
     def->sidetext = L("s");
     def->min = 0;
     def->max = 20;
@@ -4575,7 +4577,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tilt_up_cycles", coInts);
     def->full_label = L("Tilt up cycles");
-    def->tooltip = L("Tilt up cycles");
+    def->tooltip = L("Number of cycles to split the rest of the tilt-up.");
     def->min = 0;
     def->max = 10;
     def->mode = comExpert;
@@ -4583,7 +4585,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tilt_up_delay_ms", coFloats);
     def->full_label = L("Tilt up delay");
-    def->tooltip = L("Tilt up delay");
+    def->tooltip = L("The delay between tilt-up cycles.");
     def->sidetext = L("s");
     def->min = 0;
     def->max = 20;
@@ -4592,7 +4594,8 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("moves_time_ms", coFloats);
     def->full_label = L("Moves time");
-    def->tooltip = L("Moves time");
+    def->tooltip = L("Measured time of this layer separation procedure. This parameter will "
+                     "be deprecated and tilt times will be automatically calculated.");
     def->sidetext = L("s");
     def->min = 0;
     def->max = 60;
