@@ -2507,7 +2507,7 @@ void GCodeGenerator::process_layer_single_object(
 {
     bool     first     = true;
     // Delay layer initialization as many layers may not print with all extruders.
-    auto init_layer_delayed = [this, &print_instance, &layer_to_print, &first, &gcode]() {
+    auto init_layer_delayed = [this, &print_instance, &layer_to_print, &first]() {
         if (first) {
             first = false;
             const PrintObject &print_object = print_instance.print_object;
@@ -3123,16 +3123,18 @@ std::string GCodeGenerator::_extrude(
     std::string gcode;
     const std::string_view description_bridge = path_attr.role.is_bridge() ? " (bridge)"sv : ""sv;
 
+    const std::string instance_change_gcode{this->m_label_objects.maybe_change_instance()};
+    std::string travel_instance_change_gcode = m_writer.multiple_extruders ? "" : instance_change_gcode;
     if (!m_current_layer_first_position) {
         const Vec3crd point = to_3d(path.front().point, scaled(this->m_last_layer_z));
-        gcode += this->travel_to_first_position(point, unscaled(point.z()), this->m_label_objects.maybe_change_instance());
+        gcode += this->travel_to_first_position(point, unscaled(point.z()), travel_instance_change_gcode);
     } else {
         // go to first point of extrusion path
         if (!this->last_position) {
             const double z = this->m_last_layer_z;
             const std::string comment{"move to print after unknown position"};
             gcode += this->retract_and_wipe();
-            gcode += m_label_objects.maybe_change_instance();
+            gcode += travel_instance_change_gcode;
             gcode += this->m_writer.travel_to_xy(this->point_to_gcode(path.front().point), comment);
             gcode += this->m_writer.get_travel_to_z_gcode(z, comment);
         } else if ( this->last_position != path.front().point) {
@@ -3140,8 +3142,10 @@ std::string GCodeGenerator::_extrude(
             comment += description;
             comment += description_bridge;
             comment += " point";
-            const std::string travel_gcode{this->travel_to(*this->last_position, path.front().point, path_attr.role, comment, this->m_label_objects.maybe_change_instance())};
+            const std::string travel_gcode{this->travel_to(*this->last_position, path.front().point, path_attr.role, comment, travel_instance_change_gcode)};
             gcode += travel_gcode;
+        } else {
+            travel_instance_change_gcode = "";
         }
     }
 
@@ -3151,6 +3155,9 @@ std::string GCodeGenerator::_extrude(
     } else {
         this->m_already_unretracted = true;
         gcode += "FIRST_UNRETRACT" + this->unretract();
+    }
+    if (travel_instance_change_gcode.empty()) {
+        gcode += instance_change_gcode;
     }
 
     if (!m_pending_pre_extrusion_gcode.empty()) {
@@ -3601,10 +3608,10 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
         return gcode;
     }
 
-    // prepend retraction on the current extruder
-    std::string gcode = this->retract_and_wipe(true);
+    std::string gcode{this->m_label_objects.maybe_stop_instance()};
 
-    gcode += this->m_label_objects.maybe_stop_instance();
+    // prepend retraction on the current extruder
+    gcode += this->retract_and_wipe(true);
 
     // Always reset the extrusion path, even if the tool change retract is set to zero.
     m_wipe.reset_path();

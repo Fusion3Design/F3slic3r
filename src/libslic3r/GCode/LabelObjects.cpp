@@ -56,7 +56,7 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObject
     for (const PrintObject* po : objects)
         for (const PrintInstance& pi : po->instances())
             model_object_to_print_instances[pi.model_instance->get_object()].emplace_back(&pi);
-    
+
     // Now go through the map, assign a unique_id to each of the PrintInstances and get the indices of the
     // respective ModelObject and ModelInstance so we can use them in the tags. This will maintain
     // indices even in case that some instances are rotated (those end up in different PrintObjects)
