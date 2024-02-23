@@ -24,6 +24,13 @@ using namespace Slic3r::GUI;
 
 TopBarItemsCtrl::Button::Button(wxWindow* parent, const wxString& label, const std::string& icon_name, const int px_cnt)
 :ScalableButton(parent, wxID_ANY, icon_name, label, wxDefaultSize, wxDefaultPosition, wxNO_BORDER, px_cnt)
+#ifdef _WIN32
+,m_background_color(wxGetApp().get_window_default_clr())
+#else
+,m_background_color(wxTransparentColor)
+#endif
+,m_foreground_color(wxGetApp().get_label_clr_default())
+,m_bmp_bundle(icon_name.empty() ? wxBitmapBundle() : *get_bmp_bundle(icon_name, px_cnt))
 {
     int btn_margin = em_unit(this);
     int x, y;
@@ -31,57 +38,48 @@ TopBarItemsCtrl::Button::Button(wxWindow* parent, const wxString& label, const s
     wxSize size(x + 4 * btn_margin, y + int(1.5 * btn_margin));
     if (icon_name.empty())
         this->SetMinSize(size);
+#ifdef _WIN32
     else if (label.IsEmpty()) {
-#ifdef __APPLE__
-        this->SetMinSize(wxSize(px_cnt, px_cnt));
-#else
         const int btn_side = px_cnt + btn_margin;
         this->SetMinSize(wxSize(btn_side, btn_side));
-#endif
     }
     else
         this->SetMinSize(wxSize(-1, size.y));
+#else
+    else if (label.IsEmpty())
+        this->SetMinSize(wxSize(px_cnt, px_cnt));
+    else 
+        this->SetMinSize(wxSize(size.x + px_cnt, size.y));
+#endif
 
     //button events
     Bind(wxEVT_SET_FOCUS,    [this](wxFocusEvent& event) { set_hovered(true ); event.Skip(); });
     Bind(wxEVT_KILL_FOCUS,   [this](wxFocusEvent& event) { set_hovered(false); event.Skip(); });
     Bind(wxEVT_ENTER_WINDOW, [this](wxMouseEvent& event) { set_hovered(true ); event.Skip(); });
     Bind(wxEVT_LEAVE_WINDOW, [this](wxMouseEvent& event) { set_hovered(false); event.Skip(); });
+
+    Bind(wxEVT_PAINT,        [this](wxPaintEvent&) { render(); });
 }
 
 void TopBarItemsCtrl::Button::set_selected(bool selected)
 {
     m_is_selected = selected;
 
+    m_foreground_color = m_is_selected ? wxGetApp().get_window_default_clr(): wxGetApp().get_label_clr_default() ;
+    m_background_color = m_is_selected ? wxGetApp().get_label_clr_default() : 
 #ifdef _WIN32
-    this->SetBackgroundColour(m_is_selected ? wxGetApp().get_label_clr_default() : wxGetApp().get_window_default_clr());
-    this->SetForegroundColour(m_is_selected ? wxGetApp().get_window_default_clr(): wxGetApp().get_label_clr_default() );
+                                         wxGetApp().get_window_default_clr();
 #else
-    this->SetBackgroundColour(m_is_selected ? wxGetApp().get_highlight_default_clr() : wxTransparentColor);
+                                         wxTransparentColor;
 #endif
 
-    return;
+#ifdef __linux__
+    this->SetBackgroundColour(m_background_color);
+    this->SetForegroundColour(m_foreground_color);
 
-    // #ysFIXME delete after testing on Linux
-    if (m_is_selected) {
-#ifdef __APPLE__
-        this->SetBackgroundColour(wxGetApp().get_highlight_default_clr());
-#else
-        this->SetBackgroundColour(wxGetApp().get_label_clr_default());
-        this->SetForegroundColour(wxGetApp().get_window_default_clr());
-#endif
-    }
-    else {
-#ifdef _WIN32
-        this->SetBackgroundColour(wxGetApp().get_window_default_clr());
-#else
-        this->SetBackgroundColour(wxTransparentColor);
-#endif
-
-#ifndef __APPLE__
-        this->SetForegroundColour(wxGetApp().get_label_clr_default());
-#endif
-    }
+    this->Refresh();
+    this->Update();
+#endif // __linux__
 }
 
 void TopBarItemsCtrl::Button::set_hovered(bool hovered)
@@ -94,18 +92,80 @@ void TopBarItemsCtrl::Button::set_hovered(bool hovered)
     this->GetParent()->Refresh(); // force redraw a background of the selected mode button
 #endif /* no _WIN32 */
 
-    const wxColour& color = hovered       ? wxGetApp().get_color_selected_btn_bg() :
-#ifdef _WIN32
+    m_background_color =    hovered       ? wxGetApp().get_color_selected_btn_bg() :
                             m_is_selected ? wxGetApp().get_label_clr_default()       :
+#ifdef _WIN32
                                             wxGetApp().get_window_default_clr();
 #else
-                            m_is_selected ? wxGetApp().get_highlight_default_clr():
                                             wxTransparentColor;
 #endif
-    this->SetBackgroundColour(color);
+
+#ifdef __linux__
+    this->SetBackgroundColour(m_background_color);
+#endif // __linux__
 
     this->Refresh();
     this->Update();
+}
+
+void TopBarItemsCtrl::Button::render()
+{
+    const wxRect rc(GetSize());
+    wxPaintDC dc(this);
+
+#ifdef _WIN32
+    // Draw default background
+
+    dc.SetPen(wxGetApp().get_window_default_clr());
+    dc.SetBrush(wxGetApp().get_window_default_clr());
+    dc.DrawRectangle(rc);
+#endif
+
+    int em = em_unit(this);
+
+    // Draw def rect with rounded corners
+
+    dc.SetPen(m_background_color);
+    dc.SetBrush(m_background_color);
+    dc.DrawRoundedRectangle(rc, int(0.4* em));
+
+    wxPoint pt = { 0, 0 };
+
+    if (m_bmp_bundle.IsOk()) {
+        wxSize szIcon = get_preferred_size(m_bmp_bundle, this);
+        pt.x = em;
+        pt.y = (rc.height - szIcon.y) / 2;
+#ifdef __WXGTK3__
+        dc.DrawBitmap(m_bmp_bundle.GetBitmap(szIcon), pt);
+#else
+        dc.DrawBitmap(m_bmp_bundle.GetBitmapFor(this), pt);
+#endif
+        pt.x += szIcon.x;
+    }
+
+    // Draw text
+
+    wxString text = GetLabelText();
+    if (!text.IsEmpty()) {
+        wxSize labelSize = dc.GetTextExtent(text);
+        if (labelSize.x > rc.width)
+            text = wxControl::Ellipsize(text, dc, wxELLIPSIZE_END, rc.width);
+        pt.x += (rc.width - pt.x - labelSize.x) / 2;
+        pt.y = (rc.height - labelSize.y) / 2;
+
+        dc.SetTextForeground(m_foreground_color);
+        dc.SetFont(GetFont());
+        dc.DrawText(text, pt);
+    }
+}
+
+void TopBarItemsCtrl::Button::sys_color_changed()
+{
+    ScalableButton::sys_color_changed();
+#ifdef _WIN32
+    m_background_color = wxGetApp().get_window_default_clr();
+#endif
+    m_foreground_color = wxGetApp().get_label_clr_default();
 }
 
 TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const wxString& label, const std::string& icon_name)
@@ -200,6 +260,7 @@ void TopBarItemsCtrl::UpdateAccountMenu(bool avatar/* = false*/)
         m_user_menu_item->SetItemLabel(user_name);
    
     m_account_btn->SetLabel(user_name);
+#ifdef __linux__
     if (avatar) {
         if (user_account->is_logged()) {
             boost::filesystem::path path = user_account->get_avatar_path(true);
@@ -213,6 +274,21 @@ void TopBarItemsCtrl::UpdateAccountMenu(bool avatar/* = false*/)
             m_account_btn->SetBitmap_("user");
         }
     }
+#else
+    if (avatar) {
+        if (user_account->is_logged()) {
+            boost::filesystem::path path = user_account->get_avatar_path(true);
+            ScalableBitmap new_logo(this, path, m_account_btn->GetBitmapSize());
+            if (new_logo.IsOk())
+                m_account_btn->SetBitmapBundle(new_logo.bmp());
+            else
+                m_account_btn->SetBitmapBundle(*get_bmp_bundle("user"));
+        }
+        else {
+            m_account_btn->SetBitmapBundle(*get_bmp_bundle("user"));
+        }
+    }
+#endif
     m_account_btn->Refresh();
 }
 
@@ -313,34 +389,23 @@ void TopBarItemsCtrl::OnPaint(wxPaintEvent&)
 {
     wxGetApp().UpdateDarkUI(this);
     m_search->Refresh();
-    return;
-    const wxSize sz = GetSize();
-    wxPaintDC dc(this);
-
-    if (m_selection < 0 || m_selection >= (int)m_pageButtons.size())
-        return;
-
-    const wxColour& btn_marker_color = wxGetApp().get_highlight_default_clr();
-
-    // Draw orange bottom line
-
-    dc.SetPen(btn_marker_color);
-    dc.SetBrush(btn_marker_color);
-    dc.DrawRectangle(1, sz.y - m_line_margin, sz.x, m_line_margin);
 }
 
 void TopBarItemsCtrl::UpdateMode()
 {
     auto mode = wxGetApp().get_mode();
 
-    auto m_bmp = *get_bmp_bundle("mode", 16, -1, wxGetApp().get_mode_btn_color(mode));
+    wxBitmapBundle bmp = *get_bmp_bundle("mode", 16, -1, wxGetApp().get_mode_btn_color(mode));
+#ifdef __linux__
+    m_workspace_btn->SetBitmap(bmp);
+    m_workspace_btn->SetBitmapCurrent(bmp);
+    m_workspace_btn->SetBitmapPressed(bmp);
+#else
+    m_workspace_btn->SetBitmapBundle(bmp);
+#endif
 
-    m_workspace_btn->SetBitmap(m_bmp);
-    m_workspace_btn->SetBitmapCurrent(m_bmp);
-    m_workspace_btn->SetBitmapPressed(m_bmp);
     m_workspace_btn->SetLabel(get_workspace_name(mode));
 
-    m_workspace_btn->SetBitmapMargins(int(0.5 * em_unit(this)), 0);
     this->Layout();
 }
 

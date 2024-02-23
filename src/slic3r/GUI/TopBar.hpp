@@ -17,7 +17,11 @@ class TopBarItemsCtrl : public wxControl
 {
     class Button : public ScalableButton
     {
-        bool    m_is_selected{ false };
+        bool        m_is_selected{ false };
+        wxColour    m_background_color;
+        wxColour    m_foreground_color;
+        wxBitmapBundle  m_bmp_bundle = wxBitmapBundle();
+
     public:
         Button() {};
         Button( wxWindow*           parent,
@@ -29,6 +33,10 @@ class TopBarItemsCtrl : public wxControl
 
         void set_selected(bool selected);
         void set_hovered (bool hovered);
+        void render();
+
+        void sys_color_changed() override;
+        void SetBitmapBundle(wxBitmapBundle bmp_bundle) { m_bmp_bundle = bmp_bundle; }
     };
 
     class ButtonWithPopup : public Button
