@@ -2,6 +2,8 @@
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
+
+#include "../include/Types.hpp"
 #include "OpenGLUtils.hpp"
 
 #include <iostream>
@@ -36,17 +38,17 @@ void glAssertRecentCallImpl(const char* file_name, unsigned int line, const char
 
 static const char* OPENGL_ES_PREFIXES[] = { "OpenGL ES-CM ", "OpenGL ES-CL ", "OpenGL ES ", nullptr };
 
+bool OpenGLWrapper::s_valid_context = false;
+
 bool OpenGLWrapper::load_opengl(const std::string& context_version)
 {
-    m_valid_context = false;
-    m_opengl_es = false;
+    s_valid_context = false;
 
     const char* version = context_version.c_str();
     for (int i = 0; OPENGL_ES_PREFIXES[i] != nullptr; ++i) {
         const size_t length = strlen(OPENGL_ES_PREFIXES[i]);
         if (strncmp(version, OPENGL_ES_PREFIXES[i], length) == 0) {
             version += length;
-            m_opengl_es = true;
             break;
         }
     }
@@ -61,13 +63,21 @@ bool OpenGLWrapper::load_opengl(const std::string& context_version)
     if (res != 2)
         return false;
 
-    m_valid_context = m_opengl_es ? major > 2 || (major == 2 && minor >= 0) : major > 3 || (major == 3 && minor >= 2);
+#if VGCODE_ENABLE_OPENGL_ES
+    s_valid_context = major > 3 || (major == 3 && minor >= 0);
+#else
+    s_valid_context = major > 3 || (major == 3 && minor >= 2);
+#endif // VGCODE_ENABLE_OPENGL_ES
 
     const int glad_res = gladLoadGL();
     if (glad_res == 0)
         return false;
 
-    return m_valid_context;
+    return s_valid_context;
+}
+
+void  OpenGLWrapper::unload_opengl()
+{
 }
 
 } // namespace libvgcode

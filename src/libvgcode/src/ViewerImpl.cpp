@@ -321,22 +321,24 @@ void ViewerImpl::init(const std::string& opengl_context_version)
     if (m_initialized)
         return;
 
-    OpenGLWrapper opengl_wrapper;
-    if (!opengl_wrapper.load_opengl(opengl_context_version)) {
-        if (opengl_wrapper.is_valid_context())
+    if (!OpenGLWrapper::load_opengl(opengl_context_version)) {
+        if (OpenGLWrapper::is_valid_context())
             throw std::runtime_error("LibVGCode was unable to initialize the GLAD library.\n");
         else {
-            if (opengl_wrapper.is_opengl_es())
-                throw std::runtime_error("LibVGCode requires an OpenGL ES context based on OpenGL ES 2.0 or higher.\n");
-            else
-                throw std::runtime_error("LibVGCode requires an OpenGL context based on OpenGL 3.2 or higher.\n");
+#if VGCODE_ENABLE_OPENGL_ES
+            throw std::runtime_error("LibVGCode requires an OpenGL ES context based on OpenGL ES 3.0 or higher.\n");
+#else
+            throw std::runtime_error("LibVGCode requires an OpenGL context based on OpenGL 3.2 or higher.\n");
+#endif // VGCODE_ENABLE_OPENGL_ES
         }
     }
 
     // segments shader
-    m_segments_shader_id = opengl_wrapper.is_opengl_es() ?
-        init_shader("segments", Segments_Vertex_Shader_ES, Segments_Fragment_Shader_ES) :
-        init_shader("segments", Segments_Vertex_Shader, Segments_Fragment_Shader);
+#if VGCODE_ENABLE_OPENGL_ES
+    m_segments_shader_id = init_shader("segments", Segments_Vertex_Shader_ES, Segments_Fragment_Shader_ES);
+#else
+    m_segments_shader_id = init_shader("segments", Segments_Vertex_Shader, Segments_Fragment_Shader);
+#endif // VGCODE_ENABLE_OPENGL_ES
 
     m_uni_segments_view_matrix_id            = glGetUniformLocation(m_segments_shader_id, "view_matrix");
     m_uni_segments_projection_matrix_id      = glGetUniformLocation(m_segments_shader_id, "projection_matrix");
@@ -357,9 +359,11 @@ void ViewerImpl::init(const std::string& opengl_context_version)
     m_segment_template.init();
 
     // options shader
-    m_options_shader_id = opengl_wrapper.is_opengl_es() ?
-        init_shader("options", Options_Vertex_Shader_ES, Options_Fragment_Shader_ES) :
-        init_shader("options", Options_Vertex_Shader, Options_Fragment_Shader);
+#if VGCODE_ENABLE_OPENGL_ES
+    m_options_shader_id = init_shader("options", Options_Vertex_Shader_ES, Options_Fragment_Shader_ES);
+#else
+    m_options_shader_id = init_shader("options", Options_Vertex_Shader, Options_Fragment_Shader);
+#endif // VGCODE_ENABLE_OPENGL_ES
 
     m_uni_options_view_matrix_id            = glGetUniformLocation(m_options_shader_id, "view_matrix");
     m_uni_options_projection_matrix_id      = glGetUniformLocation(m_options_shader_id, "projection_matrix");
@@ -379,9 +383,11 @@ void ViewerImpl::init(const std::string& opengl_context_version)
 
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     // cog marker shader
-    m_cog_marker_shader_id = opengl_wrapper.is_opengl_es() ?
-        init_shader("cog_marker", Cog_Marker_Vertex_Shader_ES, Cog_Marker_Fragment_Shader_ES) :
-        init_shader("cog_marker", Cog_Marker_Vertex_Shader, Cog_Marker_Fragment_Shader);
+#if VGCODE_ENABLE_OPENGL_ES
+    m_cog_marker_shader_id = init_shader("cog_marker", Cog_Marker_Vertex_Shader_ES, Cog_Marker_Fragment_Shader_ES);
+#else
+    m_cog_marker_shader_id = init_shader("cog_marker", Cog_Marker_Vertex_Shader, Cog_Marker_Fragment_Shader);
+#endif // VGCODE_ENABLE_OPENGL_ES
 
     m_uni_cog_marker_world_center_position = glGetUniformLocation(m_cog_marker_shader_id, "world_center_position");
     m_uni_cog_marker_scale_factor          = glGetUniformLocation(m_cog_marker_shader_id, "scale_factor");
@@ -396,9 +402,11 @@ void ViewerImpl::init(const std::string& opengl_context_version)
     m_cog_marker.init(32, 1.0f);
 
     // tool marker shader
-    m_tool_marker_shader_id = opengl_wrapper.is_opengl_es() ?
-        init_shader("tool_marker", Tool_Marker_Vertex_Shader_ES, Tool_Marker_Fragment_Shader_ES) :
-        init_shader("tool_marker", Tool_Marker_Vertex_Shader, Tool_Marker_Fragment_Shader);
+#if VGCODE_ENABLE_OPENGL_ES
+    m_tool_marker_shader_id = init_shader("tool_marker", Tool_Marker_Vertex_Shader_ES, Tool_Marker_Fragment_Shader_ES);
+#else
+    m_tool_marker_shader_id = init_shader("tool_marker", Tool_Marker_Vertex_Shader, Tool_Marker_Fragment_Shader);
+#endif // VGCODE_ENABLE_OPENGL_ES
 
     m_uni_tool_marker_world_origin      = glGetUniformLocation(m_tool_marker_shader_id, "world_origin");
     m_uni_tool_marker_scale_factor      = glGetUniformLocation(m_tool_marker_shader_id, "scale_factor");
@@ -437,6 +445,7 @@ void ViewerImpl::shutdown()
         m_segments_shader_id = 0;
     }
     m_initialized = false;
+    OpenGLWrapper::unload_opengl();
 }
 
 void ViewerImpl::reset()
@@ -576,8 +585,8 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
             position[2] -= 0.5f * v.height;
         positions.emplace_back(position);
 
-        const float angle = std::atan2(prev_line[0] * this_line[1] - prev_line[1] * this_line[0], dot(prev_line, this_line));
-        heights_widths_angles.push_back({ v.height, v.width, angle });
+        heights_widths_angles.push_back({ v.height, v.width,
+            std::atan2(prev_line[0] * this_line[1] - prev_line[1] * this_line[0], dot(prev_line, this_line)) });
     }
 
     m_positions_tex_size = positions.size() * sizeof(Vec3);

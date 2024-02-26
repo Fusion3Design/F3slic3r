@@ -29,13 +29,12 @@ inline void glAssertRecentCall() { }
 class OpenGLWrapper
 {
 public:
-    bool load_opengl(const std::string& context_version);
-    bool is_valid_context() { return m_valid_context; }
-    bool is_opengl_es()     { return m_opengl_es; }
+    static bool load_opengl(const std::string& context_version);
+    static void unload_opengl();
+    static bool is_valid_context() { return s_valid_context; }
 
 private:
-    bool m_valid_context{ false };
-    bool m_opengl_es{ false };
+    static bool s_valid_context;
 };
 
 } // namespace libvgcode
