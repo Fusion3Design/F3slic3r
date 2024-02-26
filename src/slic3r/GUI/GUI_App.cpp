@@ -1410,6 +1410,8 @@ bool GUI_App::on_init_inner()
 
     update_mode(); // update view mode after fix of the object_list size
 
+    show_printer_webview_tab();
+
 #ifdef __APPLE__
     other_instance_message_handler()->bring_instance_forward();
 #endif //__APPLE__
@@ -3707,25 +3709,27 @@ void GUI_App::handle_connect_request_printer_pick(std::string msg)
     this->plater()->get_notification_manager()->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);    
 }
 
-void GUI_App::show_printer_webview_tab(bool show, const DynamicPrintConfig& dpc/* = {}*/)
+void GUI_App::show_printer_webview_tab()
 {
-    if (!show) {
+    //bool show, const DynamicPrintConfig& dpc
+
+    if (DynamicPrintConfig* dpc = preset_bundle->physical_printers.get_selected_printer_config(); dpc == nullptr) {
         this->mainframe->select_tab(size_t(0));
         mainframe->remove_printer_webview_tab();
     } else {
-        std::string url = dpc.opt_string("print_host");
+        std::string url = dpc->opt_string("print_host");
         
         if (url.find("http://") != 0 && url.find("https://") != 0) {
             url = "http://" + url;
         }
 
         // set password / api key
-        if (dynamic_cast<const ConfigOptionEnum<AuthorizationType>*>(dpc.option("printhost_authorization_type"))->value == AuthorizationType::atKeyPassword) {
-            mainframe->set_printer_webview_api_key(dpc.opt_string("printhost_apikey"));
+        if (dynamic_cast<const ConfigOptionEnum<AuthorizationType>*>(dpc->option("printhost_authorization_type"))->value == AuthorizationType::atKeyPassword) {
+            mainframe->set_printer_webview_api_key(dpc->opt_string("printhost_apikey"));
         }
 #if 0 // The user password authentication is not working in prusa link as of now.
         else {
-            mainframe->set_printer_webview_credentials(dpc.opt_string("printhost_user"), dpc.opt_string("printhost_password"));
+            mainframe->set_printer_webview_credentials(dpc->opt_string("printhost_user"), dpc->opt_string("printhost_password"));
         }
 #endif // 0       
         // add printer or change url
