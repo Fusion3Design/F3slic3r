@@ -341,10 +341,10 @@ void ViewerImpl::init(const std::string& opengl_context_version)
     m_uni_segments_view_matrix_id            = glGetUniformLocation(m_segments_shader_id, "view_matrix");
     m_uni_segments_projection_matrix_id      = glGetUniformLocation(m_segments_shader_id, "projection_matrix");
     m_uni_segments_camera_position_id        = glGetUniformLocation(m_segments_shader_id, "camera_position");
-    m_uni_segments_positions_tex_id          = glGetUniformLocation(m_segments_shader_id, "positionsTex");
-    m_uni_segments_height_width_angle_tex_id = glGetUniformLocation(m_segments_shader_id, "heightWidthAngleTex");
-    m_uni_segments_colors_tex_id             = glGetUniformLocation(m_segments_shader_id, "colorsTex");
-    m_uni_segments_segment_index_tex_id      = glGetUniformLocation(m_segments_shader_id, "segmentIndexTex");
+    m_uni_segments_positions_tex_id          = glGetUniformLocation(m_segments_shader_id, "position_tex");
+    m_uni_segments_height_width_angle_tex_id = glGetUniformLocation(m_segments_shader_id, "height_width_angle_tex");
+    m_uni_segments_colors_tex_id             = glGetUniformLocation(m_segments_shader_id, "color_tex");
+    m_uni_segments_segment_index_tex_id      = glGetUniformLocation(m_segments_shader_id, "segment_index_tex");
     glcheck();
     assert(m_uni_segments_view_matrix_id != -1 &&
            m_uni_segments_projection_matrix_id != -1 &&
@@ -363,10 +363,10 @@ void ViewerImpl::init(const std::string& opengl_context_version)
 
     m_uni_options_view_matrix_id            = glGetUniformLocation(m_options_shader_id, "view_matrix");
     m_uni_options_projection_matrix_id      = glGetUniformLocation(m_options_shader_id, "projection_matrix");
-    m_uni_options_positions_tex_id          = glGetUniformLocation(m_options_shader_id, "positionsTex");
-    m_uni_options_height_width_angle_tex_id = glGetUniformLocation(m_options_shader_id, "heightWidthAngleTex");
-    m_uni_options_colors_tex_id             = glGetUniformLocation(m_options_shader_id, "colorsTex");
-    m_uni_options_segment_index_tex_id      = glGetUniformLocation(m_options_shader_id, "segmentIndexTex");
+    m_uni_options_positions_tex_id          = glGetUniformLocation(m_options_shader_id, "position_tex");
+    m_uni_options_height_width_angle_tex_id = glGetUniformLocation(m_options_shader_id, "height_width_angle_tex");
+    m_uni_options_colors_tex_id             = glGetUniformLocation(m_options_shader_id, "color_tex");
+    m_uni_options_segment_index_tex_id      = glGetUniformLocation(m_options_shader_id, "segment_index_tex");
     glcheck();
     assert(m_uni_options_view_matrix_id != -1 &&
            m_uni_options_projection_matrix_id != -1 &&
