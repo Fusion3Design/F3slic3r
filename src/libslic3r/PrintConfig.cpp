@@ -257,6 +257,13 @@ static t_config_enum_values s_keys_map_PerimeterGeneratorType {
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(PerimeterGeneratorType)
 
+static t_config_enum_values s_keys_map_TopOnePerimeterType {
+    { "none",    int(TopOnePerimeterType::None) },
+    { "top",     int(TopOnePerimeterType::TopSurfaces) },
+    { "topmost", int(TopOnePerimeterType::TopmostOnly) }
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TopOnePerimeterType)
+
 static void assign_printer_technology_to_unknown(t_optiondef_map &options, PrinterTechnology printer_technology)
 {
     for (std::pair<const t_config_option_key, ConfigOptionDef> &kvp : options)
@@ -568,6 +575,25 @@ void PrintConfigDef::init_fff_params()
     def->max = 2;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(1));
+
+    def = this->add("top_one_perimeter_type", coEnum);
+    def->label = L("Only one perimeter type");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("Use only one perimeter on flat top surface, to give more space to the top infill pattern. Could be applied on topmost surface or all top surface.");
+    def->mode = comExpert;
+    def->set_enum<TopOnePerimeterType>({
+        { "none",    L("None surfaces") },
+        { "top",     L("All top surfaces") },
+        { "topmost", L("Topmost surface only") }
+    });
+    def->set_default_value(new ConfigOptionEnum<TopOnePerimeterType>(TopOnePerimeterType::None));
+
+    def = this->add("only_one_perimeter_first_layer", coBool);
+    def->label = L("Only one perimeter on first layer");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("Use only one perimeter on the first layer of model.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(false));
 
     def = this->add("bridge_speed", coFloat);
     def->label = L("Bridges");

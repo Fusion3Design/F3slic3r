@@ -1467,6 +1467,10 @@ void TabPrint::build()
         optgroup->append_single_option_line("fuzzy_skin_thickness", category_path + "fuzzy-skin-thickness");
         optgroup->append_single_option_line("fuzzy_skin_point_dist", category_path + "fuzzy-skin-point-distance");
 
+        optgroup = page->new_optgroup(L("Only one perimeter"));
+        optgroup->append_single_option_line("top_one_perimeter_type", category_path + "top-one-perimeter-type");
+        optgroup->append_single_option_line("only_one_perimeter_first_layer", category_path + "only-one-perimeter-first-layer");
+
     page = add_options_page(L("Infill"), "infill");
         category_path = "infill_42#";
         optgroup = page->new_optgroup(L("Infill"));
