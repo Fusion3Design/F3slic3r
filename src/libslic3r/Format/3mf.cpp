@@ -1000,8 +1000,12 @@ namespace Slic3r {
             }
         }
 
-//        // fixes the min z of the model if negative
-//        model.adjust_min_z();
+        // We support our 3mf contains only configuration without mesh,
+        // others MUST contain mesh (triangles and vertices).
+        if (!m_prusaslicer_generator_version.has_value() && model.objects.empty()) {
+            const std::string msg = (boost::format(_u8L("3mf File (\"%1%\") do not contain valid mesh.")) % filename).str();
+            throw Slic3r::RuntimeError(msg);
+        }
 
         return true;
     }
