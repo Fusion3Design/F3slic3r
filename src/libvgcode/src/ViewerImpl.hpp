@@ -342,28 +342,48 @@ private:
     //
     // OpenGL buffers to store positions
     //
+#if VGCODE_ENABLE_OPENGL_ES
+    unsigned int m_positions_tex_id{ 0 };
+#else
     unsigned int m_positions_buf_id{ 0 };
     unsigned int m_positions_tex_id{ 0 };
+#endif // VGCODE_ENABLE_OPENGL_ES
     //
     // OpenGL buffers to store heights, widths and angles
     //
+#if VGCODE_ENABLE_OPENGL_ES
+    unsigned int m_heights_widths_angles_tex_id{ 0 };
+#else
     unsigned int m_heights_widths_angles_buf_id{ 0 };
     unsigned int m_heights_widths_angles_tex_id{ 0 };
+#endif // VGCODE_ENABLE_OPENGL_ES
     //
     // OpenGL buffers to store colors
     //
+#if VGCODE_ENABLE_OPENGL_ES
+    unsigned int m_colors_tex_id{ 0 };
+#else
     unsigned int m_colors_buf_id{ 0 };
     unsigned int m_colors_tex_id{ 0 };
+#endif // VGCODE_ENABLE_OPENGL_ES
     //
     // OpenGL buffers to store enabled segments
     //
+#if VGCODE_ENABLE_OPENGL_ES
+    unsigned int m_enabled_segments_tex_id{ 0 };
+#else
     unsigned int m_enabled_segments_buf_id{ 0 };
     unsigned int m_enabled_segments_tex_id{ 0 };
+#endif // VGCODE_ENABLE_OPENGL_ES
     //
     // OpenGL buffers to store enabled options
     //
+#if VGCODE_ENABLE_OPENGL_ES
+    unsigned int m_enabled_options_tex_id{ 0 };
+#else
     unsigned int m_enabled_options_buf_id{ 0 };
     unsigned int m_enabled_options_tex_id{ 0 };
+#endif // VGCODE_ENABLE_OPENGL_ES
     //
     // Caches for size of data sent to gpu, in bytes
     //

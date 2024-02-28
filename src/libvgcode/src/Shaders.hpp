@@ -132,7 +132,7 @@ static const char* Segments_Vertex_Shader =
 "  }\n"
 "  vec3 eye_position = (view_matrix * vec4(pos, 1.0)).xyz;\n"
 "  vec3 eye_normal = (view_matrix * vec4(normalize(pos - endpoint_pos), 0.0)).xyz;\n"
-"  vec3 color_base = decode_color(texelFetch(color_tex, id).x);\n"
+"  vec3 color_base = decode_color(texelFetch(color_tex, id).r);\n"
 "  color = color_base * lighting(eye_position, eye_normal);\n"
 "  gl_Position = projection_matrix * vec4(eye_position, 1.0);\n"
 "}\n";
@@ -190,7 +190,7 @@ static const char* Options_Vertex_Shader =
 "    0.0, 0.0, height_width.x);\n"
 "  vec3 eye_position = (view_matrix * vec4(scale_matrix * in_position + offset, 1.0)).xyz;\n"
 "  vec3 eye_normal = (view_matrix * vec4(in_normal, 0.0)).xyz;\n"
-"  vec3 color_base = decode_color(texelFetch(color_tex, id).x);\n"
+"  vec3 color_base = decode_color(texelFetch(color_tex, id).r);\n"
 "  color = color_base * lighting(eye_position, eye_normal);\n"
 "  gl_Position = projection_matrix * vec4(eye_position, 1.0);\n"
 "}\n";

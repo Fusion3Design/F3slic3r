@@ -1715,7 +1715,6 @@ void GCodeViewer::render_toolpaths()
 
         if (ImGui::BeginTable("Data", 2)) {
 
-/*
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "# vertices");
@@ -1723,7 +1722,6 @@ void GCodeViewer::render_toolpaths()
             imgui.text(std::to_string(m_viewer.get_vertices_count()));
 
             ImGui::Separator();
-*/
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -1737,7 +1735,6 @@ void GCodeViewer::render_toolpaths()
             ImGui::TableSetColumnIndex(1);
             imgui.text(format_memsize(m_viewer.get_used_gpu_memory()));
 
-/*
             ImGui::Separator();
 
             ImGui::TableNextRow();
@@ -1794,61 +1791,61 @@ void GCodeViewer::render_toolpaths()
             add_range_property_row("layer time logarithmic range", m_viewer.get_color_range(libvgcode::EViewType::LayerTimeLogarithmic).get_range());
 
             ImGui::EndTable();
+        }
 
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-            ImGui::Separator();
+        ImGui::Separator();
 
-            if (ImGui::BeginTable("Cog", 2)) {
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Cog marker scale factor");
-                ImGui::TableSetColumnIndex(1);
-                imgui.text(std::to_string(get_cog_marker_scale_factor()));
+        if (ImGui::BeginTable("Cog", 2)) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Cog marker scale factor");
+            ImGui::TableSetColumnIndex(1);
+            imgui.text(std::to_string(get_cog_marker_scale_factor()));
 
-                ImGui::EndTable();
-            }
-
-            ImGui::Separator();
-
-            if (ImGui::BeginTable("Tool", 2)) {
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker scale factor");
-                ImGui::TableSetColumnIndex(1);
-                imgui.text(std::to_string(m_viewer.get_tool_marker_scale_factor()));
-
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker z offset");
-                ImGui::TableSetColumnIndex(1);
-                float tool_z_offset = m_viewer.get_tool_marker_offset_z();
-                if (imgui.slider_float("##ToolZOffset", &tool_z_offset, 0.0f, 1.0f))
-                    m_viewer.set_tool_marker_offset_z(tool_z_offset);
-
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker color");
-                ImGui::TableSetColumnIndex(1);
-                const libvgcode::Color& color = m_viewer.get_tool_marker_color();
-                std::array<float, 3> c = { static_cast<float>(color[0]) / 255.0f, static_cast<float>(color[1]) / 255.0f, static_cast<float>(color[2]) / 255.0f };
-                if (ImGui::ColorPicker3("##ToolColor", c.data())) {
-                    m_viewer.set_tool_marker_color({ static_cast<uint8_t>(c[0] * 255.0f),
-                                                     static_cast<uint8_t>(c[1] * 255.0f),
-                                                     static_cast<uint8_t>(c[2] * 255.0f) });
-                }
-
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker alpha");
-                ImGui::TableSetColumnIndex(1);
-                float tool_alpha = m_viewer.get_tool_marker_alpha();
-                if (imgui.slider_float("##ToolAlpha", &tool_alpha, 0.25f, 0.75f))
-                    m_viewer.set_tool_marker_alpha(tool_alpha);
-
-                ImGui::EndTable();
-            }
-#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+            ImGui::EndTable();
         }
+
+        ImGui::Separator();
+
+        if (ImGui::BeginTable("Tool", 2)) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker scale factor");
+            ImGui::TableSetColumnIndex(1);
+            imgui.text(std::to_string(m_viewer.get_tool_marker_scale_factor()));
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker z offset");
+            ImGui::TableSetColumnIndex(1);
+            float tool_z_offset = m_viewer.get_tool_marker_offset_z();
+            if (imgui.slider_float("##ToolZOffset", &tool_z_offset, 0.0f, 1.0f))
+                m_viewer.set_tool_marker_offset_z(tool_z_offset);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker color");
+            ImGui::TableSetColumnIndex(1);
+            const libvgcode::Color& color = m_viewer.get_tool_marker_color();
+            std::array<float, 3> c = { static_cast<float>(color[0]) / 255.0f, static_cast<float>(color[1]) / 255.0f, static_cast<float>(color[2]) / 255.0f };
+            if (ImGui::ColorPicker3("##ToolColor", c.data())) {
+                m_viewer.set_tool_marker_color({ static_cast<uint8_t>(c[0] * 255.0f),
+                                                  static_cast<uint8_t>(c[1] * 255.0f),
+                                                  static_cast<uint8_t>(c[2] * 255.0f) });
+            }
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker alpha");
+            ImGui::TableSetColumnIndex(1);
+            float tool_alpha = m_viewer.get_tool_marker_alpha();
+            if (imgui.slider_float("##ToolAlpha", &tool_alpha, 0.25f, 0.75f))
+                m_viewer.set_tool_marker_alpha(tool_alpha);
+
+            ImGui::EndTable();
+        }
+#endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
         ImGui::Separator();
         if (ImGui::BeginTable("Radii", 2)) {
@@ -1870,8 +1867,6 @@ void GCodeViewer::render_toolpaths()
             ImGui::SetNextItemWidth(200.0f);
             if (imgui.slider_float("##WipesRadius", &wipes_radius, 0.05f, 0.5f))
                 m_viewer.set_wipes_radius(wipes_radius);
-
-*/
 
             ImGui::EndTable();
         }
