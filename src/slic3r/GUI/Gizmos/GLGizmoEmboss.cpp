@@ -2058,7 +2058,7 @@ void GLGizmoEmboss::draw_style_add_button()
     ImGui::SameLine();
     if (draw_button(m_icons, IconType::add, !can_add)) {
         if (!m_style_manager.exist_stored_style()) {
-            m_style_manager.store_styles_to_app_config(wxGetApp().app_config);
+            m_style_manager.store_styles_to_app_config();
         } else {
             ImGui::OpenPopup(popup_id);
         }
@@ -2124,7 +2124,7 @@ void GLGizmoEmboss::draw_delete_style_button() {
             break;
         }
         if (exist_change)
-            m_style_manager.store_styles_to_app_config(wxGetApp().app_config);
+            m_style_manager.store_styles_to_app_config(false);
     }
 
     if (ImGui::IsItemHovered()) {
