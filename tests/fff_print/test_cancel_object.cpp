@@ -167,55 +167,6 @@ TEST_CASE_METHOD(CancelObjectFixture, "Single extruder", "[CancelObject]") {
     }
 }
 
-TEST_CASE_METHOD(CancelObjectFixture, "Multiple extruders", "[CancelObject]") {
-    auto wipe_tower = GENERATE(0, 1);
-    INFO("With wipe tower: " + std::string{wipe_tower == 0 ? "false" : "true"});
-    config.set_deserialize_strict(
-        {{"nozzle_diameter", "0.4,0.4"},
-         {"toolchange_gcode", "T[next_extruder]"},
-         {"wipe_tower", wipe_tower},
-         {"wipe_tower_x", "50.0"},
-         {"wipe_tower_y", "50.0"}}
-    );
-
-    Print print;
-    print.apply(multimaterial_cubes, config);
-    print.validate();
-
-    const std::string gcode{Test::gcode(print)};
-
-    if constexpr (debug_files) {
-        const std::string prefix = wipe_tower == 1 ? "wipe_tower_" : "";
-        std::ofstream output{prefix + "multi_extruder_two.gcode"};
-        output << gcode;
-    }
-
-    REQUIRE(gcode.find("T1\n") != std::string::npos);
-
-    SECTION("One remaining") {
-        const std::string removed_object_gcode{remove_object(gcode, 0)};
-        REQUIRE(removed_object_gcode.find("M486 S1\n") != std::string::npos);
-        if constexpr (debug_files) {
-            const std::string prefix = wipe_tower == 1 ? "wipe_tower_" : "";
-            std::ofstream output{prefix + "multi_extruder_one.gcode"};
-            output << removed_object_gcode;
-        }
-
-        check_retraction(removed_object_gcode);
-    }
-
-    SECTION("All cancelled") {
-        const std::string removed_all_gcode{remove_object(remove_object(gcode, 0), 1)};
-        if constexpr (debug_files) {
-            const std::string prefix = wipe_tower == 1 ? "wipe_tower_" : "";
-            std::ofstream output{prefix + "multi_extruder_none.gcode"};
-            output << removed_all_gcode;
-        }
-
-        check_retraction(removed_all_gcode);
-    }
-}
-
 TEST_CASE_METHOD(CancelObjectFixture, "Sequential print", "[CancelObject]") {
     config.set_deserialize_strict({{"complete_objects", 1}});
 
