@@ -138,11 +138,13 @@ void Chart::mouse_moved(wxMouseEvent& event) {
     int delta_x = pos.x - m_previous_mouse.x;
     int delta_y = pos.y - m_previous_mouse.y;
 
+    double new_y = m_dragged->get_pos().m_y - double(delta_y) / m_rect.GetHeight() * visible_area.m_height;
+
     if (m_uniform)
         for (ButtonToDrag& b : m_buttons)
-            b.move(fixed_x?0:double(delta_x)/m_rect.GetWidth() * visible_area.m_width, m_dragged->get_pos().m_y - b.get_pos().m_y + -double(delta_y)/m_rect.GetHeight() * visible_area.m_height); 
+            b.move(fixed_x?0:double(delta_x)/m_rect.GetWidth() * visible_area.m_width, new_y - b.get_pos().m_y); 
     else
-        m_dragged->move(fixed_x?0:double(delta_x)/m_rect.GetWidth() * visible_area.m_width, -double(delta_y)/m_rect.GetHeight() * visible_area.m_height); 
+        m_dragged->move(fixed_x?0:double(delta_x)/m_rect.GetWidth() * visible_area.m_width, new_y - m_dragged->get_pos().m_y); 
 
     m_previous_mouse = pos;
     recalculate_line();
