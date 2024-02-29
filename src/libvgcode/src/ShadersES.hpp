@@ -12,6 +12,7 @@ namespace libvgcode {
 
 static const char* Segments_Vertex_Shader_ES =
 "#version 300 es\n"
+"precision lowp usampler2D;\n"
 "#define POINTY_CAPS\n"
 "#define FIX_TWISTING\n"
 "const vec3  light_top_dir = vec3(-0.4574957, 0.4574957, 0.7624929);\n"
@@ -156,6 +157,7 @@ static const char* Segments_Fragment_Shader_ES =
 
 static const char* Options_Vertex_Shader_ES =
 "#version 300 es\n"
+"precision lowp usampler2D;\n"
 "const vec3  light_top_dir = vec3(-0.4574957, 0.4574957, 0.7624929);\n"
 "const float light_top_diffuse = 0.6 * 0.8;\n"
 "const float light_top_specular = 0.6 * 0.125;\n"
