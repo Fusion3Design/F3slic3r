@@ -229,6 +229,7 @@ void OptionsGroup::change_opt_value(DynamicPrintConfig& config, const t_config_o
 			//config.set_key_value(opt_key, new ConfigOptionInt(boost::any_cast<int>(value)));
 			int& val_new = config.opt_int(opt_key);
 			val_new = boost::any_cast<int>(value);
+            break;
 		}
         case coInts: {
             ConfigOptionInts* vec_new = new ConfigOptionInts{ boost::any_cast<int>(value) };
