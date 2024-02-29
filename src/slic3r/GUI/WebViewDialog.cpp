@@ -536,8 +536,10 @@ void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
 
 void ConnectWebViewPanel::on_request_update_selected_printer_action()
 {
+    /*
     assert(!m_message_data.empty());
     wxGetApp().handle_connect_request_printer_pick(m_message_data);
+    */
 }
 
 

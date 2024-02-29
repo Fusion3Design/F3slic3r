@@ -30,7 +30,6 @@ wxDEFINE_EVENT(EVT_UA_RESET, UserAccountFailEvent);
 wxDEFINE_EVENT(EVT_UA_FAIL, UserAccountFailEvent);
 #endif // 0
 
-
 void UserActionPost::perform(/*UNUSED*/ wxEvtHandler* evt_handler, /*UNUSED*/ const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
 {
     std::string url = m_url;
@@ -77,11 +76,12 @@ void UserAccountSession::process_action_queue()
     if (!m_proccessing_enabled)
         return;
     if (m_priority_action_queue.empty() && m_action_queue.empty()) {
-        // update printers on every periodic wakeup call
-        if (m_polling_enabled)
+        // update printers periodically
+        if (m_polling_enabled) {
             enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTERS, nullptr, nullptr, {});
-        else 
+        } else {
             return;
+        }
     }
     // priority queue works even when tokens are empty or broken
     while (!m_priority_action_queue.empty()) {

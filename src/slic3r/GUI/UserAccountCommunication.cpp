@@ -154,7 +154,8 @@ UserAccountCommunication::UserAccountCommunication(wxEvtHandler* evt_handler, Ap
         do_login();
 }
 
-UserAccountCommunication::~UserAccountCommunication() {
+UserAccountCommunication::~UserAccountCommunication() 
+{
     if (m_thread.joinable()) {
         // Stop the worker thread, if running.
         {
@@ -343,15 +344,15 @@ void UserAccountCommunication::init_session_thread()
 {
     m_thread = std::thread([this]() {
         for (;;) {
-            // Wait for 1 second 
-            // Cancellable.
+            // Wait for 5 seconds or wakeup call
             {
-                std::unique_lock<std::mutex> lck(m_thread_stop_mutex);
-                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(1), [this] { return m_thread_stop; });
+                std::unique_lock<std::mutex> lck(m_thread_stop_mutex);      
+                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(5), [this] { return m_thread_stop || m_thread_wakeup; });
             }
             if (m_thread_stop)
                 // Stop the worker thread.
                 break;
+            m_thread_wakeup = false;
             {
                 std::lock_guard<std::mutex> lock(m_session_mutex);
                 m_session->process_action_queue();
@@ -362,12 +363,12 @@ void UserAccountCommunication::init_session_thread()
 
 void UserAccountCommunication::wakeup_session_thread()
 {
+    {
+        std::lock_guard<std::mutex> lck(m_thread_stop_mutex);
+        m_thread_wakeup = true;
+    }
     m_thread_stop_condition.notify_all();
 }
-
-
-
-
 
 std::string CodeChalengeGenerator::generate_chalenge(const std::string& verifier)
 {

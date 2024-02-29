@@ -70,6 +70,7 @@ private:
     std::mutex                              m_thread_stop_mutex;
     std::condition_variable                 m_thread_stop_condition;
     bool                                    m_thread_stop { false };
+    bool                                    m_thread_wakeup{ false };
     std::string                             m_code_verifier;
     wxEvtHandler*                           m_evt_handler;
     AppConfig*                              m_app_config;
