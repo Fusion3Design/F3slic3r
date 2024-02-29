@@ -143,6 +143,10 @@ std::string LabelObjects::maybe_change_instance() {
     return "";
 }
 
+bool LabelObjects::has_active_instance() {
+    return this->current_instance != nullptr;
+}
+
 std::string LabelObjects::all_objects_header() const
 {
     if (m_label_objects_style == LabelObjectsStyle::Disabled)

@@ -31,6 +31,8 @@ public:
 
     std::string maybe_change_instance();
 
+    bool has_active_instance();
+
 private:
     struct LabelData
     {

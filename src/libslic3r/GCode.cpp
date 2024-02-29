@@ -2181,6 +2181,12 @@ LayerResult GCodeGenerator::process_layer(
     // Either printing all copies of all objects, or just a single copy of a single object.
     assert(single_object_instance_idx == size_t(-1) || layers.size() == 1);
 
+    const std::vector<InstanceToPrint> instances_to_print{sort_print_object_instances(layers, ordering, single_object_instance_idx)};
+    const PrintInstance* first_instance{instances_to_print.empty() ? nullptr : &instances_to_print.front().print_object.instances()[instances_to_print.front().instance_id]};
+    if (first_instance != nullptr) {
+        m_label_objects.update(*first_instance);
+    }
+
     // First object, support and raft layer, if available.
     const Layer         *object_layer  = nullptr;
     const SupportLayer  *support_layer = nullptr;
@@ -2382,8 +2388,6 @@ LayerResult GCodeGenerator::process_layer(
             // Allow a straight travel move to the first object point.
             m_avoid_crossing_perimeters.disable_once();
         }
-
-        std::vector<InstanceToPrint> instances_to_print = sort_print_object_instances(layers, ordering, single_object_instance_idx);
 
         // We are almost ready to print. However, we must go through all the objects twice to print the the overridden extrusions first (infill/perimeter wiping feature):
         bool is_anything_overridden = layer_tools.wiping_extrusions().is_anything_overridden();
@@ -2785,6 +2789,10 @@ std::string GCodeGenerator::change_layer(
         // Increment a progress bar indicator.
         gcode += m_writer.update_progress(++ m_layer_index, m_layer_count);
 
+    if (m_writer.multiple_extruders) {
+        gcode += m_label_objects.maybe_change_instance();
+    }
+
     if (!EXTRUDER_CONFIG(travel_ramping_lift) && EXTRUDER_CONFIG(retract_layer_change)) {
         gcode += this->retract_and_wipe();
     } else if (EXTRUDER_CONFIG(travel_ramping_lift) && !vase_mode){
@@ -3123,7 +3131,17 @@ std::string GCodeGenerator::_extrude(
     std::string gcode;
     const std::string_view description_bridge = path_attr.role.is_bridge() ? " (bridge)"sv : ""sv;
 
-    const std::string instance_change_gcode{this->m_label_objects.maybe_change_instance()};
+    const bool has_active_instance{m_label_objects.has_active_instance()};
+    if (m_writer.multiple_extruders && has_active_instance) {
+        gcode += m_label_objects.maybe_change_instance();
+    }
+
+    std::string instance_change_gcode{this->m_label_objects.maybe_change_instance()};
+    const std::string delayed_instance_change_gcode{instance_change_gcode};
+    if (m_writer.multiple_extruders) {
+        instance_change_gcode = "";
+    }
+
     if (!m_current_layer_first_position) {
         const Vec3crd point = to_3d(path.front().point, scaled(this->m_last_layer_z));
         gcode += this->travel_to_first_position(point, unscaled(point.z()), instance_change_gcode);
@@ -3152,6 +3170,10 @@ std::string GCodeGenerator::_extrude(
     } else {
         this->m_already_unretracted = true;
         gcode += "FIRST_UNRETRACT" + this->unretract();
+    }
+
+    if (m_writer.multiple_extruders && !has_active_instance) {
+        gcode += delayed_instance_change_gcode;
     }
 
     if (!m_pending_pre_extrusion_gcode.empty()) {

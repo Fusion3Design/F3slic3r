@@ -58,23 +58,22 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
                                          || will_go_down);       // don't dig into the print
     if (should_travel_to_tower) {
         const Point xy_point = wipe_tower_point_to_object_point(gcodegen, start_pos);
+        gcode += gcodegen.m_label_objects.maybe_stop_instance();
         gcode += gcodegen.retract_and_wipe();
         gcodegen.m_avoid_crossing_perimeters.use_external_mp_once();
         const std::string comment{"Travel to a Wipe Tower"};
         if (gcodegen.m_current_layer_first_position) {
             if (gcodegen.last_position) {
                 gcode += gcodegen.travel_to(
-                    *gcodegen.last_position, xy_point, ExtrusionRole::Mixed, comment,
-                    gcodegen.m_label_objects.maybe_stop_instance()
+                    *gcodegen.last_position, xy_point, ExtrusionRole::Mixed, comment, ""
                 );
             } else {
-                gcode += gcodegen.m_label_objects.maybe_stop_instance();
                 gcode += gcodegen.writer().travel_to_xy(gcodegen.point_to_gcode(xy_point), comment);
                 gcode += gcodegen.writer().get_travel_to_z_gcode(z, comment);
             }
         } else {
             const Vec3crd point = to_3d(xy_point, scaled(z));
-            gcode += gcodegen.travel_to_first_position(point, current_z, gcodegen.m_label_objects.maybe_stop_instance());
+            gcode += gcodegen.travel_to_first_position(point, current_z, "");
         }
         gcode += gcodegen.unretract();
     } else {
