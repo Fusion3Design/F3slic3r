@@ -39,6 +39,9 @@ void glAssertRecentCallImpl(const char* file_name, unsigned int line, const char
 static const char* OPENGL_ES_PREFIXES[] = { "OpenGL ES-CM ", "OpenGL ES-CL ", "OpenGL ES ", nullptr };
 
 bool OpenGLWrapper::s_valid_context = false;
+#if VGCODE_ENABLE_OPENGL_ES
+int OpenGLWrapper::s_max_texture_size = 0;
+#endif // VGCODE_ENABLE_OPENGL_ES
 
 bool OpenGLWrapper::load_opengl(const std::string& context_version)
 {
@@ -72,6 +75,10 @@ bool OpenGLWrapper::load_opengl(const std::string& context_version)
     const int glad_res = gladLoadGL();
     if (glad_res == 0)
         return false;
+
+#if VGCODE_ENABLE_OPENGL_ES
+    glsafe(glGetIntegerv(GL_MAX_TEXTURE_SIZE, &s_max_texture_size));
+#endif // VGCODE_ENABLE_OPENGL_ES
 
     return s_valid_context;
 }

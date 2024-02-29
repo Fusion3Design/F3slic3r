@@ -271,14 +271,6 @@ private:
     //
     BitSet<> m_valid_lines_bitset;
     //
-    // Count of enabled segments
-    //
-    size_t m_enabled_segments_count{ 0 };
-    //
-    // Count of enabled options
-    //
-    size_t m_enabled_options_count{ 0 };
-    //
     // Variables used for toolpaths coloring
     //
     ColorRange m_height_range;
@@ -339,51 +331,107 @@ private:
     int m_uni_tool_marker_projection_matrix{ -1 };
     int m_uni_tool_marker_color_base{ -1 };
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+
+#if VGCODE_ENABLE_OPENGL_ES
+    class TextureData
+    {
+    public:
+        void init(size_t vertices_count);
+        void set_positions(const std::vector<Vec3>& positions);
+        void set_heights_widths_angles(const std::vector<Vec3>& heights_widths_angles);
+        void set_colors(const std::vector<float>& colors);
+        void set_enabled_segments(const std::vector<uint32_t>& enabled_segments);
+        void set_enabled_options(const std::vector<uint32_t>& enabled_options);
+        void reset();
+        size_t get_count() const { return m_count; }
+        unsigned int get_positions_tex_id(size_t id) const;
+        unsigned int get_heights_widths_angles_tex_id(size_t id) const;
+        unsigned int get_colors_tex_id(size_t id) const;
+        std::pair<unsigned int, size_t> get_enabled_segments_tex_id(size_t id) const;
+        std::pair<unsigned int, size_t> get_enabled_options_tex_id(size_t id) const;
+
+        size_t get_used_gpu_memory() const;
+
+    private:
+        //
+        // Texture width
+        //
+        size_t m_width{ 0 };
+        //
+        // Texture height
+        //
+        size_t m_height{ 0 };
+        //
+        // Count of textures
+        //
+        size_t m_count{ 0 };
+        //
+        // Caches for size of data sent to gpu, in bytes
+        //
+        size_t m_positions_size{ 0 };
+        size_t m_height_width_angle_size{ 0 };
+        size_t m_colors_size{ 0 };
+        size_t m_enabled_segments_size{ 0 };
+        size_t m_enabled_options_size{ 0 };
+
+        struct TexIds
+        {
+            //
+            // OpenGL texture to store positions
+            //
+            unsigned int positions{ 0 };
+            //
+            // OpenGL texture to store heights, widths and angles
+            //
+            unsigned int heights_widths_angles{ 0 };
+            //
+            // OpenGL texture to store colors
+            //
+            unsigned int colors{ 0 };
+            //
+            // OpenGL texture to store enabled segments
+            //
+            std::pair<unsigned int, size_t> enabled_segments{ 0, 0 };
+            //
+            // OpenGL texture to store enabled options
+            //
+            std::pair<unsigned int, size_t> enabled_options{ 0, 0 };
+        };
+
+        std::vector<TexIds> m_tex_ids;
+
+        size_t max_texture_capacity() const { return m_width * m_height; }
+    };
+
+    TextureData m_texture_data;
+#else
     //
     // OpenGL buffers to store positions
     //
-#if VGCODE_ENABLE_OPENGL_ES
-    unsigned int m_positions_tex_id{ 0 };
-#else
     unsigned int m_positions_buf_id{ 0 };
     unsigned int m_positions_tex_id{ 0 };
-#endif // VGCODE_ENABLE_OPENGL_ES
     //
     // OpenGL buffers to store heights, widths and angles
     //
-#if VGCODE_ENABLE_OPENGL_ES
-    unsigned int m_heights_widths_angles_tex_id{ 0 };
-#else
     unsigned int m_heights_widths_angles_buf_id{ 0 };
     unsigned int m_heights_widths_angles_tex_id{ 0 };
-#endif // VGCODE_ENABLE_OPENGL_ES
     //
     // OpenGL buffers to store colors
     //
-#if VGCODE_ENABLE_OPENGL_ES
-    unsigned int m_colors_tex_id{ 0 };
-#else
     unsigned int m_colors_buf_id{ 0 };
     unsigned int m_colors_tex_id{ 0 };
-#endif // VGCODE_ENABLE_OPENGL_ES
     //
     // OpenGL buffers to store enabled segments
     //
-#if VGCODE_ENABLE_OPENGL_ES
-    unsigned int m_enabled_segments_tex_id{ 0 };
-#else
     unsigned int m_enabled_segments_buf_id{ 0 };
     unsigned int m_enabled_segments_tex_id{ 0 };
-#endif // VGCODE_ENABLE_OPENGL_ES
+    size_t m_enabled_segments_count{ 0 };
     //
     // OpenGL buffers to store enabled options
     //
-#if VGCODE_ENABLE_OPENGL_ES
-    unsigned int m_enabled_options_tex_id{ 0 };
-#else
     unsigned int m_enabled_options_buf_id{ 0 };
     unsigned int m_enabled_options_tex_id{ 0 };
-#endif // VGCODE_ENABLE_OPENGL_ES
+    size_t m_enabled_options_count{ 0 };
     //
     // Caches for size of data sent to gpu, in bytes
     //
@@ -392,6 +440,7 @@ private:
     size_t m_colors_tex_size{ 0 };
     size_t m_enabled_segments_tex_size{ 0 };
     size_t m_enabled_options_tex_size{ 0 };
+#endif // VGCODE_ENABLE_OPENGL_ES
 
     void update_view_full_range();
     void update_color_ranges();
