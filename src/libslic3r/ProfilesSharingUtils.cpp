@@ -179,16 +179,17 @@ static void get_printer_profiles_node(pt::ptree& printer_profiles_node,
     user_printer_profiles_node.clear();
 
     for (const Preset& printer_preset : printer_presets) {
-
+        if (!printer_preset.is_visible)
+            continue;
         int extruders_cnt = printer_preset.printer_technology() == ptSLA ? 0 :
                             printer_preset.config.option<ConfigOptionFloats>("nozzle_diameter")->values.size();
 
         if (printer_preset.is_user()) {
             const Preset* parent_preset = printer_presets.get_preset_parent(printer_preset);
-            if (parent_preset && printer_preset.is_visible && is_compatible_preset(*parent_preset, attr))
+            if (parent_preset && is_compatible_preset(*parent_preset, attr))
                 add_profile_node(user_printer_profiles_node, printer_preset.name, extruders_cnt);
         }
-        else if (printer_preset.is_visible && is_compatible_preset(printer_preset, attr))
+        else if (is_compatible_preset(printer_preset, attr))
             add_profile_node(printer_profiles_node, printer_preset.name, extruders_cnt);
     }
 }
@@ -255,6 +256,38 @@ static void add_printer_models(pt::ptree& vendor_node,
     }
 }
 
+static void add_undef_printer_models(pt::ptree& vendor_node,
+                                     PrinterTechnology printer_technology,
+                                     const PrinterPresetCollection& printer_presets)
+{
+    for (auto pt : { ptFFF, ptSLA }) {
+        if (printer_technology != ptUnknown && printer_technology != pt)
+            continue;
+
+        pt::ptree printer_profiles_node;
+        for (const Preset& preset : printer_presets) {
+            if (!preset.is_visible || preset.printer_technology() != pt ||
+                preset.vendor || printer_presets.get_preset_parent(preset))
+                continue;
+
+            int extruders_cnt = preset.printer_technology() == ptSLA ? 0 :
+                preset.config.option<ConfigOptionFloats>("nozzle_diameter")->values.size();
+            add_profile_node(printer_profiles_node, preset.name, extruders_cnt);
+        }
+
+        if (!printer_profiles_node.empty()) {
+            pt::ptree data_node;
+            data_node.put("id", "");
+            data_node.put("technology", pt == ptFFF ? "FFF" : "SLA");
+            data_node.add_child("printer_profiles", printer_profiles_node);
+            data_node.put("vendor_name", "");
+            data_node.put("vendor_id", "");
+
+            vendor_node.push_back(std::make_pair("", data_node));
+        }
+    }
+}
+
 std::string get_json_printer_models(PrinterTechnology printer_technology)
 {
     PresetBundle preset_bundle;
@@ -266,6 +299,9 @@ std::string get_json_printer_models(PrinterTechnology printer_technology)
     const VendorMap& vendors_map = preset_bundle.vendors;
     for (const auto& [vendor_id, vendor] : vendors_map)
         add_printer_models(vendor_node, &vendor, printer_technology, preset_bundle.printers);
+
+    // add printers with no vendor information
+    add_undef_printer_models(vendor_node, printer_technology, preset_bundle.printers);
 
     pt::ptree root;
     root.add_child("printer_models", vendor_node);
