@@ -2106,7 +2106,7 @@ void TabFilament::update_extruder_combobox()
 
         // To avoid inconsistance between value of active_extruder in FilamentTab and TabPresetComboBox,
         // which can causes a crash on switch preset from MM printer to SM printer
-        m_presets_choice->set_active_extruder(m_active_extruder);
+        m_presets_choice->set_extruder_idx(m_active_extruder);
     }
 
     m_extruders_cb->SetSelection(m_active_extruder);
@@ -2120,11 +2120,11 @@ bool TabFilament::set_active_extruder(int new_selected_extruder)
 
     const int old_extruder_id = m_active_extruder;
     m_active_extruder = new_selected_extruder;
-    m_presets_choice->set_active_extruder(m_active_extruder);
+    m_presets_choice->set_extruder_idx(m_active_extruder);
 
     if (!select_preset(m_preset_bundle->extruders_filaments[m_active_extruder].get_selected_preset_name())) {
         m_active_extruder = old_extruder_id;
-        m_presets_choice->set_active_extruder(m_active_extruder);
+        m_presets_choice->set_extruder_idx(m_active_extruder);
         m_extruders_cb->SetSelection(m_active_extruder);
         return false;
     }
@@ -2471,7 +2471,7 @@ void TabFilament::load_current_preset()
         }
         assert(m_active_extruder >= 0);
 
-        m_presets_choice->set_active_extruder(m_active_extruder);
+        m_presets_choice->set_extruder_idx(m_active_extruder);
         if (m_active_extruder != m_extruders_cb->GetSelection())
             m_extruders_cb->Select(m_active_extruder);
     }
@@ -2483,7 +2483,7 @@ void TabFilament::load_current_preset()
 
         // To avoid inconsistance between value of active_extruder in FilamentTab and TabPresetComboBox,
         // which can causes a crash on switch preset from MM printer to SM printer
-        m_presets_choice->set_active_extruder(m_active_extruder);
+        m_presets_choice->set_extruder_idx(m_active_extruder);
     }
 
     Tab::load_current_preset();

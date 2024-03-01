@@ -83,9 +83,32 @@ PresetComboBox::PresetComboBox(wxWindow* parent, Preset::Type preset_type, const
     BitmapComboBox(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, size, 0, nullptr, wxCB_READONLY),
     m_type(preset_type),
     m_last_selected(wxNOT_FOUND),
-    m_em_unit(em_unit(this)),
-    m_preset_bundle(preset_bundle ? preset_bundle : wxGetApp().preset_bundle)
+    m_em_unit(em_unit(this))
 {
+    init_from_bundle(preset_bundle);
+    
+    m_bitmapCompatible   = get_bmp_bundle("flag_green");
+    m_bitmapIncompatible = get_bmp_bundle("flag_red");
+
+    // parameters for an icon's drawing
+    fill_width_height();
+
+    Bind(wxEVT_MOUSEWHEEL, [this](wxMouseEvent& e) {
+        if (m_suppress_change)
+            e.StopPropagation();
+        else
+            e.Skip();
+    });
+    Bind(wxEVT_COMBOBOX_DROPDOWN, [this](wxCommandEvent&) { m_suppress_change = false; });
+    Bind(wxEVT_COMBOBOX_CLOSEUP,  [this](wxCommandEvent&) { m_suppress_change = true;  });
+
+    Bind(wxEVT_COMBOBOX, &PresetComboBox::OnSelect, this);
+}
+
+void PresetComboBox::init_from_bundle(PresetBundle* preset_bundle)
+{
+    m_preset_bundle = preset_bundle ? preset_bundle : wxGetApp().preset_bundle;
+
     switch (m_type)
     {
     case Preset::TYPE_PRINT: {
@@ -115,23 +138,6 @@ PresetComboBox::PresetComboBox(wxWindow* parent, Preset::Type preset_type, const
     }
     default: break;
     }
-
-    m_bitmapCompatible   = get_bmp_bundle("flag_green");
-    m_bitmapIncompatible = get_bmp_bundle("flag_red");
-
-    // parameters for an icon's drawing
-    fill_width_height();
-
-    Bind(wxEVT_MOUSEWHEEL, [this](wxMouseEvent& e) {
-        if (m_suppress_change)
-            e.StopPropagation();
-        else
-            e.Skip();
-    });
-    Bind(wxEVT_COMBOBOX_DROPDOWN, [this](wxCommandEvent&) { m_suppress_change = false; });
-    Bind(wxEVT_COMBOBOX_CLOSEUP,  [this](wxCommandEvent&) { m_suppress_change = true;  });
-
-    Bind(wxEVT_COMBOBOX, &PresetComboBox::OnSelect, this);
 }
 
 void PresetComboBox::OnSelect(wxCommandEvent& evt)
@@ -247,11 +253,14 @@ static wxString get_preset_name_with_suffix(const Preset & preset)
     return from_u8(preset.name + Preset::suffix_modified());
 }
 
+// ysToDo : Add separator for "Templates" presets
 void PresetComboBox::update(std::string select_preset_name)
 {
     Freeze();
     Clear();
     invalidate_selection();
+
+    const ExtruderFilaments* extruder_filaments = m_preset_bundle->extruders_filaments.empty() ? nullptr : &m_preset_bundle->extruders_filaments[m_extruder_idx];
 
     const std::deque<Preset>& presets = m_collection->get_presets();
 
@@ -272,7 +281,9 @@ void PresetComboBox::update(std::string select_preset_name)
     for (size_t i = presets.front().is_visible ? 0 : m_collection->num_default_presets(); i < presets.size(); ++i)
     {
         const Preset& preset = presets[i];
-        if (!m_show_all && (!preset.is_visible || !preset.is_compatible))
+        const bool is_compatible = m_type == Preset::TYPE_FILAMENT && extruder_filaments ? extruder_filaments->filament(i).is_compatible : preset.is_compatible;
+
+        if (!m_show_all && (!preset.is_visible || !is_compatible))
             continue;
 
         // marker used for disable incompatible printer models for the selected physical printer
@@ -288,7 +299,7 @@ void PresetComboBox::update(std::string select_preset_name)
         }
         std::string main_icon_name = m_type == Preset::TYPE_PRINTER && preset.printer_technology() == ptSLA ? "sla_printer" : m_main_bitmap_name;
 
-        auto bmp = get_bmp(bitmap_key, main_icon_name, "lock_closed", is_enabled, preset.is_compatible, preset.is_system || preset.is_default);
+        auto bmp = get_bmp(bitmap_key, main_icon_name, "lock_closed", is_enabled, is_compatible, preset.is_system || preset.is_default);
         assert(bmp);
 
         if (!is_enabled) {
@@ -439,7 +450,10 @@ void PresetComboBox::update()
 
 void PresetComboBox::update_from_bundle()
 {
-    this->update(m_collection->get_selected_preset().name);
+    if (m_collection->type() == Preset::TYPE_FILAMENT && !m_preset_bundle->extruders_filaments.empty())
+        this->update(m_preset_bundle->extruders_filaments[m_extruder_idx].get_selected_preset_name());
+    else
+        this->update(m_collection->get_selected_preset().name);
 }
 
 void PresetComboBox::msw_rescale()
@@ -1270,7 +1284,7 @@ void TabPresetComboBox::update()
     Clear();
     invalidate_selection();
 
-    const ExtruderFilaments& extruder_filaments = m_preset_bundle->extruders_filaments[m_active_extruder_idx];
+    const ExtruderFilaments& extruder_filaments = m_preset_bundle->extruders_filaments[m_extruder_idx];
 
     const std::deque<Preset>& presets = m_collection->get_presets();
     
