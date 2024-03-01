@@ -26,9 +26,12 @@ void glAssertRecentCallImpl(const char* file_name, unsigned int line, const char
     case GL_INVALID_VALUE:     { sErr = "Invalid Value"; break; }
     // be aware that GL_INVALID_OPERATION is generated if glGetError is executed between the execution of glBegin / glEnd 
     case GL_INVALID_OPERATION: { sErr = "Invalid Operation"; break; }
+    case GL_OUT_OF_MEMORY:     { sErr = "Out Of Memory"; break; }
+    case GL_INVALID_FRAMEBUFFER_OPERATION: { sErr = "Invalid framebuffer operation"; break; }
+#if !VGCODE_ENABLE_OPENGL_ES
     case GL_STACK_OVERFLOW:    { sErr = "Stack Overflow"; break; }
     case GL_STACK_UNDERFLOW:   { sErr = "Stack Underflow"; break; }
-    case GL_OUT_OF_MEMORY:     { sErr = "Out Of Memory"; break; }
+#endif // !VGCODE_ENABLE_OPENGL_ES
     default:                   { sErr = "Unknown"; break; }
     }
     std::cout << "OpenGL error in " << file_name << ":" << line << ", function " << function_name << "() : " << (int)err << " - " << sErr << "\n";
