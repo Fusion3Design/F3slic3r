@@ -89,6 +89,8 @@ Tab::Tab(wxBookCtrlBase* parent, const wxString& title, Preset::Type type) :
     wxGetApp().UpdateDarkUI(this);
 #elif __WXOSX__
     SetBackgroundColour(parent->GetBackgroundColour());
+#elif __WXGTK3__
+    SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
 #endif
 
     m_compatible_printers.type			= Preset::TYPE_PRINTER;
