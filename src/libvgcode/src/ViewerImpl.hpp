@@ -344,12 +344,13 @@ private:
         void set_enabled_options(const std::vector<uint32_t>& enabled_options);
         void reset();
         size_t get_count() const { return m_count; }
-        unsigned int get_positions_tex_id(size_t id) const;
-        unsigned int get_heights_widths_angles_tex_id(size_t id) const;
-        unsigned int get_colors_tex_id(size_t id) const;
+        std::pair<unsigned int, size_t> get_positions_tex_id(size_t id) const;
+        std::pair<unsigned int, size_t> get_heights_widths_angles_tex_id(size_t id) const;
+        std::pair<unsigned int, size_t> get_colors_tex_id(size_t id) const;
         std::pair<unsigned int, size_t> get_enabled_segments_tex_id(size_t id) const;
         std::pair<unsigned int, size_t> get_enabled_options_tex_id(size_t id) const;
 
+        size_t max_texture_capacity() const { return m_width * m_height; }
         size_t get_used_gpu_memory() const;
 
     private:
@@ -379,15 +380,15 @@ private:
             //
             // OpenGL texture to store positions
             //
-            unsigned int positions{ 0 };
+            std::pair<unsigned int, size_t> positions{ 0, 0 };
             //
             // OpenGL texture to store heights, widths and angles
             //
-            unsigned int heights_widths_angles{ 0 };
+            std::pair<unsigned int, size_t> heights_widths_angles{ 0, 0 };
             //
             // OpenGL texture to store colors
             //
-            unsigned int colors{ 0 };
+            std::pair<unsigned int, size_t> colors{ 0, 0 };
             //
             // OpenGL texture to store enabled segments
             //
@@ -399,8 +400,6 @@ private:
         };
 
         std::vector<TexIds> m_tex_ids;
-
-        size_t max_texture_capacity() const { return m_width * m_height; }
     };
 
     TextureData m_texture_data;

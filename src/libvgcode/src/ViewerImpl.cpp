@@ -349,7 +349,8 @@ void ViewerImpl::TextureData::set_positions(const std::vector<Vec3>& positions)
         return;
 
     for (TexIds& ids : m_tex_ids) {
-        delete_textures(ids.positions);
+        delete_textures(ids.positions.first);
+        ids.positions.second = 0;
     }
 
     m_positions_size = 0;
@@ -370,20 +371,21 @@ void ViewerImpl::TextureData::set_positions(const std::vector<Vec3>& positions)
         const auto [w, h] = width_height(std::min(remaining, tex_capacity));
         const size_t offset = i * tex_capacity;
 
-        glsafe(glGenTextures(1, &m_tex_ids[i].positions));
-        glsafe(glBindTexture(GL_TEXTURE_2D, m_tex_ids[i].positions));
+        glsafe(glGenTextures(1, &m_tex_ids[i].positions.first));
+        glsafe(glBindTexture(GL_TEXTURE_2D, m_tex_ids[i].positions.first));
         if (remaining >= tex_capacity) {
             glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RGB, GL_FLOAT, &positions[offset]));
-            m_positions_size += w * h * sizeof(Vec3);
+            m_tex_ids[i].positions.second = w * h;
         }
         else {
             // the last row is only partially fitted with data, send it separately
             glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RGB, GL_FLOAT, nullptr));
             glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h - 1), GL_RGB, GL_FLOAT, &positions[offset]));
             glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<GLsizei>(h - 1), static_cast<GLsizei>(remaining % w), 1, GL_RGB, GL_FLOAT, &positions[offset + w * (h - 1)]));
-            m_positions_size += (w * (h - 1) + remaining % w) * sizeof(Vec3);
+            m_tex_ids[i].positions.second = w * (h - 1) + remaining % w;
         }
         glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
+        m_positions_size += m_tex_ids[i].positions.second * sizeof(Vec3);
 
         remaining = (remaining > tex_capacity) ? remaining - tex_capacity: 0;
     }
@@ -398,7 +400,8 @@ void ViewerImpl::TextureData::set_heights_widths_angles(const std::vector<Vec3>&
         return;
 
     for (TexIds& ids : m_tex_ids) {
-        delete_textures(ids.heights_widths_angles);
+        delete_textures(ids.heights_widths_angles.first);
+        ids.heights_widths_angles.second = 0;
     }
 
     m_height_width_angle_size = 0;
@@ -419,20 +422,21 @@ void ViewerImpl::TextureData::set_heights_widths_angles(const std::vector<Vec3>&
         const auto [w, h] = width_height(std::min(remaining, tex_capacity));
         const size_t offset = i * tex_capacity;
 
-        glsafe(glGenTextures(1, &m_tex_ids[i].heights_widths_angles));
-        glsafe(glBindTexture(GL_TEXTURE_2D, m_tex_ids[i].heights_widths_angles));
+        glsafe(glGenTextures(1, &m_tex_ids[i].heights_widths_angles.first));
+        glsafe(glBindTexture(GL_TEXTURE_2D, m_tex_ids[i].heights_widths_angles.first));
         if (remaining >= tex_capacity) {
             glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RGB, GL_FLOAT, &heights_widths_angles[offset]));
-            m_height_width_angle_size += w * h * sizeof(Vec3);
+            m_tex_ids[i].heights_widths_angles.second = w * h;
         }
         else {
             // the last row is only partially fitted with data, send it separately
             glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RGB, GL_FLOAT, nullptr));
             glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h - 1), GL_RGB, GL_FLOAT, &heights_widths_angles[offset]));
             glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<GLsizei>(h - 1), static_cast<GLsizei>(remaining % w), 1, GL_RGB, GL_FLOAT, &heights_widths_angles[offset + w * (h - 1)]));
-            m_height_width_angle_size += (w * (h - 1) + remaining % w) * sizeof(Vec3);
+            m_tex_ids[i].heights_widths_angles.second = w * (h - 1) + remaining % w;
         }
         glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
+        m_height_width_angle_size += m_tex_ids[i].heights_widths_angles.second * sizeof(Vec3);
 
         remaining = (remaining > tex_capacity) ? remaining - tex_capacity : 0;
     }
@@ -447,7 +451,8 @@ void ViewerImpl::TextureData::set_colors(const std::vector<float>& colors)
         return;
 
     for (TexIds& ids : m_tex_ids) {
-        delete_textures(ids.colors);
+        delete_textures(ids.colors.first);
+        ids.colors.second = 0;
     }
 
     m_colors_size = 0;
@@ -468,28 +473,27 @@ void ViewerImpl::TextureData::set_colors(const std::vector<float>& colors)
         const auto [w, h] = width_height(std::min(remaining, tex_capacity));
         const size_t offset = i * tex_capacity;
 
-        glsafe(glGenTextures(1, &m_tex_ids[i].colors));
-        glsafe(glBindTexture(GL_TEXTURE_2D, m_tex_ids[i].colors));
+        glsafe(glGenTextures(1, &m_tex_ids[i].colors.first));
+        glsafe(glBindTexture(GL_TEXTURE_2D, m_tex_ids[i].colors.first));
         if (remaining >= tex_capacity) {
             glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RED, GL_FLOAT, &colors[offset]));
-            m_colors_size += w * h * sizeof(float);
+            m_tex_ids[i].colors.second = w * h;
         }
         else {
             // the last row is only partially fitted with data, send it separately
             glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RED, GL_FLOAT, nullptr));
             glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h - 1), GL_RED, GL_FLOAT, &colors[offset]));
             glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<GLsizei>(h - 1), static_cast<GLsizei>(remaining % w), 1, GL_RED, GL_FLOAT, &colors[offset + w * (h - 1)]));
-            m_colors_size += (w * (h - 1) + remaining % w) * sizeof(float);
+            m_tex_ids[i].colors.second = w * (h - 1) + remaining % w;
         }
         glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
+        m_colors_size += m_tex_ids[i].colors.second * sizeof(float);
 
         remaining = (remaining > tex_capacity) ? remaining - tex_capacity : 0;
     }
 
     glsafe(glBindTexture(GL_TEXTURE_2D, curr_bound_texture));
     glsafe(glPixelStorei(GL_UNPACK_ALIGNMENT, curr_unpack_alignment));
-
-    m_colors_size = colors.size() * sizeof(float);
 }
 
 void ViewerImpl::TextureData::set_enabled_segments(const std::vector<uint32_t>& enabled_segments)
@@ -629,9 +633,9 @@ void ViewerImpl::TextureData::reset()
     for (TexIds& ids : m_tex_ids) {
         delete_textures(ids.enabled_options.first);
         delete_textures(ids.enabled_segments.first);
-        delete_textures(ids.colors);
-        delete_textures(ids.heights_widths_angles);
-        delete_textures(ids.positions);
+        delete_textures(ids.colors.first);
+        delete_textures(ids.heights_widths_angles.first);
+        delete_textures(ids.positions.first);
     }
     m_tex_ids.clear();
 
@@ -646,19 +650,19 @@ void ViewerImpl::TextureData::reset()
     m_enabled_options_size = 0;
 }
 
-unsigned int ViewerImpl::TextureData::get_positions_tex_id(size_t id) const
+std::pair<unsigned int, size_t> ViewerImpl::TextureData::get_positions_tex_id(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].positions;
 }
 
-unsigned int ViewerImpl::TextureData::get_heights_widths_angles_tex_id(size_t id) const
+std::pair<unsigned int, size_t> ViewerImpl::TextureData::get_heights_widths_angles_tex_id(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].heights_widths_angles;
 }
 
-unsigned int ViewerImpl::TextureData::get_colors_tex_id(size_t id) const
+std::pair<unsigned int, size_t> ViewerImpl::TextureData::get_colors_tex_id(size_t id) const
 {
     assert(id < m_tex_ids.size());
     return m_tex_ids[id].colors;
@@ -1718,21 +1722,46 @@ void ViewerImpl::update_color_ranges()
 void ViewerImpl::update_heights_widths()
 {
 #if VGCODE_ENABLE_OPENGL_ES
+    int curr_bound_texture = 0;
+    glsafe(glGetIntegerv(GL_TEXTURE_BINDING_2D, &curr_bound_texture));
+    int curr_unpack_alignment = 0;
+    glsafe(glGetIntegerv(GL_UNPACK_ALIGNMENT, &curr_unpack_alignment));
 
-    // TODO: Fix for plain textures
+    glsafe(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
 
-    //for (size_t i = 0; i < m_vertices.size(); ++i) {
-    //    const PathVertex& v = m_vertices[i];
-    //    const size_t offset = i * sizeof(Vec3);
-    //    if (v.is_travel()) {
-    //        const std::array<float, 2> radii = { m_travels_radius, m_travels_radius };
-    //        glsafe(glBufferSubData(GL_TEXTURE_BUFFER, offset, radii.size() * sizeof(float), radii.data()));
-    //    }
-    //    else if (v.is_wipe()) {
-    //        const std::array<float, 2> radii = { m_wipes_radius, m_wipes_radius };
-    //        glsafe(glBufferSubData(GL_TEXTURE_BUFFER, offset, radii.size() * sizeof(float), radii.data()));
-    //    }
-    //}
+    const size_t tex_capacity = m_texture_data.max_texture_capacity();
+    for (size_t i = 0; i < m_texture_data.get_count(); ++i) {
+        const auto [id, count] = m_texture_data.get_heights_widths_angles_tex_id(i);
+
+        std::vector<Vec3> data(m_texture_data.max_texture_capacity());
+        glsafe(glBindTexture(GL_TEXTURE_2D, id));
+        glsafe(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, data.data()));
+
+        const size_t base_id = i * tex_capacity;
+        for (size_t j = 0; j < count; ++j) {
+            const PathVertex& v = m_vertices[base_id + j];
+            if (v.is_travel()) {
+                data[j][0] = m_travels_radius; 
+                data[j][1] = m_travels_radius;
+            }
+            else if (v.is_wipe()) {
+                data[j][0] = m_wipes_radius;
+                data[j][1] = m_wipes_radius;
+            }
+        }
+
+        const auto [w, h] = width_height(count);
+        if (count == tex_capacity)
+            glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h), GL_RGB, GL_FLOAT, data.data()));
+        else {
+            // the last row is only partially fitted with data, send it separately
+            glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h - 1), GL_RGB, GL_FLOAT, data.data()));
+            glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<GLsizei>(h - 1), static_cast<GLsizei>(count % w), 1, GL_RGB, GL_FLOAT, &data[w * (h - 1)]));
+        }
+    }
+
+    glsafe(glBindTexture(GL_TEXTURE_2D, curr_bound_texture));
+    glsafe(glPixelStorei(GL_UNPACK_ALIGNMENT, curr_unpack_alignment));
 #else
     if (m_heights_widths_angles_buf_id == 0)
         return;
@@ -1788,13 +1817,15 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
     glsafe(glGetIntegerv(GL_TEXTURE_BINDING_2D, &curr_bound_texture));
 
     for (size_t i = 0; i < m_texture_data.get_count(); ++i) {
-        glsafe(glActiveTexture(GL_TEXTURE0));
-        glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_positions_tex_id(i)));
-        glsafe(glActiveTexture(GL_TEXTURE1));
-        glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_heights_widths_angles_tex_id(i)));
-        glsafe(glActiveTexture(GL_TEXTURE2));
-        glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_colors_tex_id(i)));
         const auto [id, count] = m_texture_data.get_enabled_segments_tex_id(i);
+        if (count == 0)
+            continue;
+        glsafe(glActiveTexture(GL_TEXTURE0));
+        glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_positions_tex_id(i).first));
+        glsafe(glActiveTexture(GL_TEXTURE1));
+        glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_heights_widths_angles_tex_id(i).first));
+        glsafe(glActiveTexture(GL_TEXTURE2));
+        glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_colors_tex_id(i).first));
         glsafe(glActiveTexture(GL_TEXTURE3));
         glsafe(glBindTexture(GL_TEXTURE_2D, id));
         m_segment_template.render(count);
@@ -1859,13 +1890,15 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
     glsafe(glGetIntegerv(GL_TEXTURE_BINDING_2D, &curr_bound_texture));
 
     for (size_t i = 0; i < m_texture_data.get_count(); ++i) {
-        glsafe(glActiveTexture(GL_TEXTURE0));
-        glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_positions_tex_id(i)));
-        glsafe(glActiveTexture(GL_TEXTURE1));
-        glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_heights_widths_angles_tex_id(i)));
-        glsafe(glActiveTexture(GL_TEXTURE2));
-        glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_colors_tex_id(i)));
         const auto [id, count] = m_texture_data.get_enabled_options_tex_id(i);
+        if (count == 0)
+            continue;
+        glsafe(glActiveTexture(GL_TEXTURE0));
+        glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_positions_tex_id(i).first));
+        glsafe(glActiveTexture(GL_TEXTURE1));
+        glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_heights_widths_angles_tex_id(i).first));
+        glsafe(glActiveTexture(GL_TEXTURE2));
+        glsafe(glBindTexture(GL_TEXTURE_2D, m_texture_data.get_colors_tex_id(i).first));
         glsafe(glActiveTexture(GL_TEXTURE3));
         glsafe(glBindTexture(GL_TEXTURE_2D, id));
         m_option_template.render(count);
