@@ -253,7 +253,6 @@ static wxString get_preset_name_with_suffix(const Preset & preset)
     return from_u8(preset.name + Preset::suffix_modified());
 }
 
-// ysToDo : Add separator for "Templates" presets
 void PresetComboBox::update(std::string select_preset_name)
 {
     Freeze();
@@ -273,6 +272,9 @@ void PresetComboBox::update(std::string select_preset_name)
     std::vector<PresetData> system_presets;
     std::vector<PresetData> nonsys_presets;
     std::vector<PresetData> incomp_presets;
+    std::vector<PresetData> template_presets;
+
+    const bool allow_templates = !wxGetApp().app_config->get_bool("no_templates");
 
     wxString selected = "";
     if (!presets.front().is_visible)
@@ -309,13 +311,24 @@ void PresetComboBox::update(std::string select_preset_name)
         }
         else if (preset.is_default || preset.is_system)
         {
-            system_presets.push_back({get_preset_name(preset), get_preset_name(preset).Lower(), bmp, is_enabled});
+            if (preset.vendor && preset.vendor->templates_profile) {
+                if (allow_templates)
+                    template_presets.push_back({ get_preset_name(preset), get_preset_name(preset).Lower(), bmp, is_enabled });
+            }
+            else {
+                system_presets.push_back({ get_preset_name(preset), get_preset_name(preset).Lower(), bmp, is_enabled });
+            }
             if (preset.name == select_preset_name)
                 selected = preset.name;
 
             if (preset.is_dirty && m_show_modif_preset_separately) {
                 wxString preset_name = get_preset_name_with_suffix(preset);
-                system_presets.push_back({preset_name, preset_name.Lower(), bmp, is_enabled});
+                if (preset.vendor && preset.vendor->templates_profile) {
+                    if (allow_templates)
+                        template_presets.push_back({ get_preset_name(preset), get_preset_name(preset).Lower(), bmp, is_enabled });
+                }
+                else
+                    system_presets.push_back({preset_name, preset_name.Lower(), bmp, is_enabled});
                 if (into_u8(preset_name) == select_preset_name)
                     selected = preset_name;
             }
@@ -363,6 +376,22 @@ void PresetComboBox::update(std::string select_preset_name)
             validate_selection(it->name == selected);
         }
     }
+
+    if (!template_presets.empty())
+    {
+        std::sort(template_presets.begin(), template_presets.end(), [](const PresetData& a, const PresetData& b) {
+            return a.lower_name < b.lower_name;
+            });
+
+        set_label_marker(Append(separator(L("Template presets")), wxNullBitmap));
+        for (std::vector<PresetData>::iterator it = template_presets.begin(); it != template_presets.end(); ++it) {
+            int item_id = Append(it->name, *it->bitmap);
+            if (!it->enabled)
+                set_label_marker(item_id, LABEL_ITEM_DISABLED);
+            validate_selection(it->name == selected);
+        }
+    }
+
     if (!incomp_presets.empty())
     {
         std::sort(incomp_presets.begin(), incomp_presets.end(), [](const PresetData& a, const PresetData& b) {
