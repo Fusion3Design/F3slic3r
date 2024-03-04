@@ -281,7 +281,7 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
 
     if (wxGetApp().is_editor()) {
         // jump to found option from SearchDialog
-        Bind(wxCUSTOMEVT_JUMP_TO_OPTION, [this](wxCommandEvent& evt) { wxGetApp().jump_to_option(evt.GetInt()); });
+        Bind(wxCUSTOMEVT_JUMP_TO_OPTION, [](wxCommandEvent& evt) { wxGetApp().jump_to_option(evt.GetInt()); });
     }
 }
 
