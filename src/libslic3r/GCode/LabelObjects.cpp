@@ -138,7 +138,10 @@ std::string LabelObjects::maybe_stop_instance() {
 
 std::string LabelObjects::maybe_change_instance() {
     if (last_operation_instance != current_instance) {
-        return this->maybe_stop_instance() + this->maybe_start_instance();
+        const std::string stop_instance_gcode{this->maybe_stop_instance()};
+        // Be carefull with refactoring: this->maybe_stop_instance() + this->maybe_start_instance()
+        // may not be evaluated in order. The order is indeed undefined!
+        return stop_instance_gcode + this->maybe_start_instance();
     }
     return "";
 }
