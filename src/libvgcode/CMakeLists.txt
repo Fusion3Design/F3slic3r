@@ -44,19 +44,25 @@ set(LIBVGCODE_SOURCES
 	src/ViewerImpl.cpp
 	src/ViewRange.hpp
 	src/ViewRange.cpp
-	# glad
-	glad/include/glad/glad.h
+	# glad OpenGL
+	glad/include/glad/gl.h
 	glad/include/KHR/khrplatform.h
-	glad/src/glad.c
+	glad/src/gl.c
+#    # glad OpenGL ES
+#    glad/include/glad/gles2.h
+#    glad/include/KHR/khrplatform.h
+#    glad/src/gles2.c
 )
 
 add_library(libvgcode STATIC ${LIBVGCODE_SOURCES})
 
+if (WIN32)
 foreach(_source IN ITEMS ${LIBVGCODE_SOURCES})
     get_filename_component(_source_path "${_source}" PATH)
     string(REPLACE "/" "\\" _group_path "${_source_path}")
     source_group("${_group_path}" FILES "${_source}")
 endforeach()
+endif()
 
 # glad includes
 include_directories(glad/include)

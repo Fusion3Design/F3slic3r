@@ -71,11 +71,12 @@ bool OpenGLWrapper::load_opengl(const std::string& context_version)
 
 #if VGCODE_ENABLE_OPENGL_ES
     s_valid_context = major > 3 || (major == 3 && minor >= 0);
+    const int glad_res = gladLoaderLoadGLES2();
 #else
     s_valid_context = major > 3 || (major == 3 && minor >= 2);
+    const int glad_res = gladLoaderLoadGL();
 #endif // VGCODE_ENABLE_OPENGL_ES
 
-    const int glad_res = gladLoadGL();
     if (glad_res == 0)
         return false;
 

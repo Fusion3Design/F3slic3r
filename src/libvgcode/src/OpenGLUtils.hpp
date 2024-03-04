@@ -6,7 +6,11 @@
 #define VGCODE_OPENGLUTILS_HPP
 
 // OpenGL loader
-#include "../glad/include/glad/glad.h"
+#if VGCODE_ENABLE_OPENGL_ES
+#include "../glad/include/glad/gles2.h"
+#else
+#include "../glad/include/glad/gl.h"
+#endif // VGCODE_ENABLE_OPENGL_ES
 
 #include <string>
 
