@@ -18,6 +18,7 @@ enum class ConnectPrinterState {
     CONNECT_PRINTER_IDLE,
     CONNECT_PRINTER_FINISHED,
     CONNECT_PRINTER_READY, //?
+    CONNECT_PRINTER_ATTENTION,
     CONNECT_PRINTER_STATE_COUNT
 };
 
@@ -40,9 +41,13 @@ public:
 #if 0
     void enqueue_user_id_action();
     void enqueue_connect_dummy_action();
+    void enqueue_connect_user_data_action();
 #endif
     void enqueue_connect_printers_action();
     void enqueue_avatar_action();
+
+    // Clears all data and connections, called on logout or EVT_UA_RESET
+    void clear();
 
     // Functions called from UI where events emmited from UserAccountSession are binded
     // Returns bool if data were correctly proccessed
@@ -50,21 +55,20 @@ public:
     bool on_user_id_success(const std::string data, std::string& out_username);
     // Called on EVT_UA_FAIL, triggers test after several calls
     void on_communication_fail();
-    // Clears all data and connections, called on logout or EVT_UA_RESET
-    void clear();
-    bool on_connect_printers_success(const std::string data, AppConfig* app_config, bool& out_printers_changed);
+    bool on_connect_printers_success(const std::string& data, AppConfig* app_config, bool& out_printers_changed);
 
     std::string get_username() const { return m_username; }
     std::string get_access_token();
     const ConnectPrinterStateMap& get_printer_state_map() const { return m_printer_map; }
-    const std::map<std::string, std::string> get_user_data() const { return m_user_data; }
-    std::string get_connect_address() const { return "https://dev.connect.prusa3d.com"; }
     boost::filesystem::path get_avatar_path(bool logged) const;
 
     // standalone utility methods
     std::string get_model_from_json(const std::string& message) const;
     std::string get_nozzle_from_json(const std::string& message) const;
-    std::string get_apikey_from_json(const std::string& message) const;
+    //std::string get_apikey_from_json(const std::string& message) const;
+    std::string get_keyword_from_json(const std::string& json, const std::string& keyword) const;
+
+    const std::map<std::string, ConnectPrinterState>& get_printer_state_table() const { return printer_state_table; }
 private:
     void set_username(const std::string& username);
    
@@ -73,7 +77,7 @@ private:
     std::unique_ptr<Slic3r::GUI::UserAccountCommunication> m_communication;
     
     ConnectPrinterStateMap              m_printer_map;
-    std::map<std::string, std::string>  m_user_data;
+    std::map<std::string, std::string>  m_account_user_data;
     std::string                         m_username;
     size_t                              m_fail_counter { 0 };
 
@@ -116,6 +120,7 @@ private:
         {"IDLE"     , ConnectPrinterState::CONNECT_PRINTER_IDLE},
         {"FINISHED" , ConnectPrinterState::CONNECT_PRINTER_FINISHED},
         {"READY"    , ConnectPrinterState::CONNECT_PRINTER_READY},
+        {"ATTENTION", ConnectPrinterState::CONNECT_PRINTER_ATTENTION},
     };
 };
 }} // namespace slic3r::GUI

@@ -276,7 +276,6 @@ void UserAccountCommunication::enqueue_user_id_action()
     }
     wakeup_session_thread();
 }
-
 void UserAccountCommunication::enqueue_connect_dummy_action()
 {
     {
@@ -286,6 +285,18 @@ void UserAccountCommunication::enqueue_connect_dummy_action()
             return;
         }
         m_session->enqueue_action(UserAccountActionID::CONNECT_DUMMY, nullptr, nullptr, {});
+    }
+    wakeup_session_thread();
+}
+void UserAccountCommunication::enqueue_connect_user_data_action()
+{
+    {
+        std::lock_guard<std::mutex> lock(m_session_mutex);
+        if (!m_session->is_initialized()) {
+            BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
+            return;
+        }
+        m_session->enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_USER_DATA, nullptr, nullptr, {});
     }
     wakeup_session_thread();
 }

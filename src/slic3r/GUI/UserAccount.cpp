@@ -31,7 +31,7 @@ void UserAccount::set_username(const std::string& username)
 void UserAccount::clear()
 {
     m_username = {};
-    m_user_data.clear();
+    m_account_user_data.clear();
     m_printer_map.clear();
     m_communication->do_clear();
 }
@@ -86,6 +86,10 @@ void UserAccount::enqueue_connect_dummy_action()
 {
     m_communication->enqueue_connect_dummy_action();
 }
+void UserAccount::enqueue_connect_user_data_action()
+{
+    m_communication->enqueue_connect_user_data_action();
+}
 #endif
 
 void UserAccount::enqueue_connect_printers_action()
@@ -94,7 +98,7 @@ void UserAccount::enqueue_connect_printers_action()
 }
 void UserAccount::enqueue_avatar_action()
 {
-    m_communication->enqueue_avatar_action(m_user_data["avatar"]);
+    m_communication->enqueue_avatar_action(m_account_user_data["avatar"]);
 }
 
 bool UserAccount::on_login_code_recieved(const std::string& url_message)
@@ -114,24 +118,24 @@ bool UserAccount::on_user_id_success(const std::string data, std::string& out_us
         BOOST_LOG_TRIVIAL(error) << "UserIDUserAction Could not parse server response.";
         return false;
     }
-    m_user_data.clear();
+    m_account_user_data.clear();
     for (const auto& section : ptree) {
         const auto opt = ptree.get_optional<std::string>(section.first);
         if (opt) {
             BOOST_LOG_TRIVIAL(debug) << static_cast<std::string>(section.first) << "    " << *opt;
-            m_user_data[section.first] = *opt;
+            m_account_user_data[section.first] = *opt;
         }
        
     }
-    if (m_user_data.find("public_username") == m_user_data.end()) {
+    if (m_account_user_data.find("public_username") == m_account_user_data.end()) {
         BOOST_LOG_TRIVIAL(error) << "User ID message from PrusaAuth did not contain public_username. Login failed. Message data: " << data;
         return false;
     }
-    std::string public_username = m_user_data["public_username"];
+    std::string public_username = m_account_user_data["public_username"];
     set_username(public_username);
     out_username = public_username;
     // equeue GET with avatar url
-    if (m_user_data.find("avatar") != m_user_data.end()) {
+    if (m_account_user_data.find("avatar") != m_account_user_data.end()) {
         enqueue_avatar_action();
     }
     else {
@@ -168,7 +172,7 @@ namespace {
     }
 }
 
-bool UserAccount::on_connect_printers_success(const std::string data, AppConfig* app_config, bool& out_printers_changed)
+bool UserAccount::on_connect_printers_success(const std::string& data, AppConfig* app_config, bool& out_printers_changed)
 {
     BOOST_LOG_TRIVIAL(debug) << "PrusaConnect printers message: " << data;
     pt::ptree ptree;
@@ -280,15 +284,15 @@ std::string UserAccount::get_nozzle_from_json(const std::string& message) const
     return out;
 }
 
-std::string UserAccount::get_apikey_from_json(const std::string& message) const
+std::string UserAccount::get_keyword_from_json(const std::string& json, const std::string& keyword) const
 {
     std::string out;
     try {
-        std::stringstream ss(message);
+        std::stringstream ss(json);
         pt::ptree ptree;
         pt::read_json(ss, ptree);
 
-        out = parse_tree_for_param(ptree, "prusaconnect_api_key");
+        out = parse_tree_for_param(ptree, keyword);
         //assert(!out.empty());
     }
     catch (const std::exception& e) {

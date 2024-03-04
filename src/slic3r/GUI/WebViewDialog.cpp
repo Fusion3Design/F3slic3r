@@ -442,9 +442,11 @@ SourceViewDialog::SourceViewDialog(wxWindow* parent, wxString source) :
 ConnectRequestHandler::ConnectRequestHandler()
 {
     m_actions["REQUEST_ACCESS_TOKEN"] = std::bind(&ConnectRequestHandler::on_request_access_token, this);
+    m_actions["REQUEST_CONFIG"] = std::bind(&ConnectRequestHandler::on_request_config, this);
     m_actions["REQUEST_LANGUAGE"] = std::bind(&ConnectRequestHandler::on_request_language_action, this);
     m_actions["REQUEST_SESSION_ID"] = std::bind(&ConnectRequestHandler::on_request_session_id_action, this);
     m_actions["UPDATE_SELECTED_PRINTER"] = std::bind(&ConnectRequestHandler::on_request_update_selected_printer_action, this);
+
 }
 ConnectRequestHandler::~ConnectRequestHandler()
 {
@@ -489,8 +491,23 @@ void ConnectRequestHandler::on_request_access_token()
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.setAccessToken(\'%1%\')", token);
     run_script_bridge(script);
 }
+
+void ConnectRequestHandler::on_request_config()
+{
+    /*
+    accessToken?: string;
+    clientVersion?: string;
+    language?: ConnectLanguage;
+    sessionId?: string;
+    */
+    const std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
+    const std::string init_options = GUI::format("{\"accessToken\": \"%1%\" }", token);
+    wxString script = GUI::format_wxstr("window._prusaConnect_v1.init(%1%)", init_options);
+    run_script_bridge(script);
+}
 void ConnectRequestHandler::on_request_language_action()
 {
+   assert(true);
     // TODO: 
    //std::string lang = "en";
    //wxString script = GUI::format_wxstr("window._prusaConnect_v1.setAccessToken(\'en\')", lang);
@@ -498,6 +515,7 @@ void ConnectRequestHandler::on_request_language_action()
 }
 void ConnectRequestHandler::on_request_session_id_action()
 {
+    assert(true);
     /*
    std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
    wxString script = GUI::format_wxstr("window._prusaConnect_v1.setAccessToken(\'%1%\')", token);
@@ -506,7 +524,7 @@ void ConnectRequestHandler::on_request_session_id_action()
 }
 
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
-    : WebViewPanel(parent, L"https://dev.connect.prusa3d.com/connect-slicer-app/printer-list")
+    : WebViewPanel(parent, L"https://dev.connect.prusa3d.com/connect-slicer-app/")
 {  
 }
 

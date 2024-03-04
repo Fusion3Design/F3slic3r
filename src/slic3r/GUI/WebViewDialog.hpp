@@ -115,6 +115,7 @@ public:
 protected:
     // action callbacs stored in m_actions
     virtual void on_request_access_token();
+    virtual void on_request_config();
     virtual void on_request_language_action();
     virtual void on_request_session_id_action();
     virtual void on_request_update_selected_printer_action() = 0;

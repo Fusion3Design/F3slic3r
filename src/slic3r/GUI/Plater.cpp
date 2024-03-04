@@ -892,8 +892,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         this->main_frame->refresh_account_menu(true);
         // Update sidebar printer status
         sidebar->update_printer_presets_combobox();
-        this->main_frame->refresh_account_menu();
         wxGetApp().update_login_dialog();
+        this->show_action_buttons(this->ready_to_slice);
     });
 
     this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
@@ -908,6 +908,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             // Update User name in TopBar
             this->main_frame->refresh_account_menu();
             wxGetApp().update_login_dialog();
+            this->show_action_buttons(this->ready_to_slice);
         } else {
             // data were corrupt and username was not retrieved
             // procced as if EVT_UA_RESET was recieved
@@ -917,7 +918,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Failed to connect to Prusa Account."));
             this->main_frame->remove_connect_webview_tab();
             // Update User name in TopBar
-            this->main_frame->refresh_account_menu();
+            this->main_frame->refresh_account_menu(true);
             // Update sidebar printer status
             sidebar->update_printer_presets_combobox();
         }
@@ -930,7 +931,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Failed to connect to Prusa Account."));
         this->main_frame->remove_connect_webview_tab();
         // Update User name in TopBar
-        this->main_frame->refresh_account_menu();
+        this->main_frame->refresh_account_menu(true);
         // Update sidebar printer status
         sidebar->update_printer_presets_combobox();
     });
@@ -943,6 +944,10 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     this->q->Bind(EVT_UA_SUCCESS, [this](UserAccountSuccessEvent& evt) {
         this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
         this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, evt.data);
+    });
+    this->q->Bind(EVT_UA_CONNECT_USER_DATA_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+        BOOST_LOG_TRIVIAL(error) << evt.data;
+        user_account->on_connect_user_data_success(evt.data);
     });
 #endif // 0
     this->q->Bind(EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, [this](UserAccountSuccessEvent& evt) {
@@ -965,7 +970,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
        fclose(file);
        this->main_frame->refresh_account_menu(true);
        wxGetApp().update_login_dialog();
-    });
+    }); 
 
 	wxGetApp().other_instance_message_handler()->init(this->q);
 
@@ -5852,15 +5857,17 @@ void Plater::connect_gcode()
         return;
     }
     if (dialog_msg.empty())  {
+        show_error(this, _L("Failed to select a printer. PrusaConnect did not return a value."));
         return;
     }
-    BOOST_LOG_TRIVIAL(error) << dialog_msg;
+    BOOST_LOG_TRIVIAL(debug) << "Message from Printer pick webview: " << dialog_msg;
 
     std::string model_name = p->user_account->get_model_from_json(dialog_msg);
     std::string nozzle = p->user_account->get_nozzle_from_json(dialog_msg);
     assert(!model_name.empty());
-    PresetBundle* preset_bundle = wxGetApp().preset_bundle;
+    PresetBundle* preset_bundle = wxGetApp().preset_bundle; 
     const Preset* preset = preset_bundle->printers.find_system_preset_by_model_and_variant(model_name, nozzle);
+    // TODO: preset check
 
     // if selected (in connect) preset is not visible, make it visible and selected 
     if (!preset->is_visible) {
@@ -5875,8 +5882,7 @@ void Plater::connect_gcode()
     }
 
     // if selected (in connect) preset is not selected in slicer, select it
-    if (preset_bundle->printers.get_selected_preset_name() != preset->name)
-    {
+    if (preset_bundle->printers.get_selected_preset_name() != preset->name) {
         size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(preset->name);
         assert(preset_id != size_t(-1));
         preset_bundle->printers.select_preset(preset_id);
@@ -5887,21 +5893,45 @@ void Plater::connect_gcode()
         return;
     }
 
-    // TODO: break if printer not ready
-
-    // get api key from dialog_msg and upload the file
-    std::string api_key = p->user_account->get_apikey_from_json(dialog_msg);
-    if (api_key.empty())
-    {
+    const std::string connect_state = p->user_account->get_keyword_from_json(dialog_msg, "connect_state");
+    const std::string printer_state = p->user_account->get_keyword_from_json(dialog_msg, "printer_state");
+    const std::map<std::string, ConnectPrinterState>& printer_state_table = p->user_account->get_printer_state_table();
+    const auto state = printer_state_table.find(connect_state);
+    assert(state != printer_state_table.end());
+    // TODO: all states that does not allow to upload 
+    if (state->second == ConnectPrinterState::CONNECT_PRINTER_OFFLINE) {
+        show_error(this, _L("Failed to select a printer. Chosen printer is in offline state."));
         return;
     }
-    std::string connect_address = p->user_account->get_connect_address();
 
+    
+    const std::string uuid = p->user_account->get_keyword_from_json(dialog_msg, "uuid");
+    const std::string team_id = p->user_account->get_keyword_from_json(dialog_msg, "team_id");
+    if (uuid.empty() || team_id.empty()) {
+        show_error(this, _L("Failed to select a printer. Missing data (uuid and team id) for chosen printer."));
+        return;
+    }
     PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *preset);
-    ph_printer.config.opt_string("printhost_apikey") = api_key;
-    ph_printer.config.opt_string("print_host") = connect_address;
-    ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnect));
+    ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnectNew));
+    // use existing structures to pass data
+    ph_printer.config.opt_string("printhost_apikey") = team_id;
+    ph_printer.config.opt_string("print_host") = uuid;
     DynamicPrintConfig* physical_printer_config = &ph_printer.config;
+    
+    
+    // Old PrusaConnect - requires prusaconnect_api_key in
+    //std::string api_key = p->user_account->get_keyword_from_json(dialog_msg, "prusaconnect_api_key"); 
+    //if (api_key.empty()) {
+    //    // TODO error dialog
+    //    return;
+    //}
+    //const std::string connect_address = "https://dev.connect.prusa3d.com";
+
+    //PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *preset);
+    //ph_printer.config.opt_string("printhost_apikey") = api_key;
+    //ph_printer.config.opt_string("print_host") = connect_address;
+    //ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnect));
+    //DynamicPrintConfig* physical_printer_config = &ph_printer.config;
 
     send_gcode_inner(physical_printer_config);
 }

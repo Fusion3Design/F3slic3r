@@ -852,8 +852,9 @@ void MainFrame::create_preset_tabs()
 
 void MainFrame::add_connect_webview_tab()
 {
-    assert(!m_connect_webview_added);
-    // parameters of InsertPage (to prevent ambigous overloaded function)
+    if (m_connect_webview_added) {
+        return;
+    }    // parameters of InsertPage (to prevent ambigous overloaded function)
         // insert to positon 4, if physical printer is already added, it moves to 5
     // order of tabs: Plater - Print Settings - Filaments - Printers - Prusa Connect - Prusa Link
     size_t n = 4;
@@ -867,7 +868,9 @@ void MainFrame::add_connect_webview_tab()
 }
 void MainFrame::remove_connect_webview_tab()
 {
-    assert(m_connect_webview_added);
+    if (!m_connect_webview_added) {
+        return;
+    }
     // connect tab should always be at position 4
     if (m_tabpanel->GetSelection() == 4)
         m_tabpanel->SetSelection(0);
@@ -877,7 +880,10 @@ void MainFrame::remove_connect_webview_tab()
 
 void MainFrame::add_printer_webview_tab(const wxString& url)
 {
-    assert(!m_printer_webview_added);
+    if (m_printer_webview_added) {
+        set_printer_webview_tab_url(url);
+        return;
+    }
     m_printer_webview_added = true;
     // add as the last (rightmost) panel
     dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_printer_webview, L"Physical Printer", "", false);
@@ -886,7 +892,9 @@ void MainFrame::add_printer_webview_tab(const wxString& url)
 }
 void MainFrame::remove_printer_webview_tab()
 {
-    assert(m_printer_webview_added);
+    if (!m_printer_webview_added) {
+        return;
+    }
     m_printer_webview_added = false;
     m_printer_webview->Hide();
     // always remove the last tab
@@ -894,7 +902,10 @@ void MainFrame::remove_printer_webview_tab()
 }
 void MainFrame::set_printer_webview_tab_url(const wxString& url)
 {
-    assert(m_printer_webview_added);
+    if (!m_printer_webview_added) {
+        add_printer_webview_tab(url);
+        return;
+    }
     m_printer_webview->clear();
     m_printer_webview->set_default_url(url);
     if (m_tabpanel->GetSelection() == m_tabpanel->GetPageCount() - 1) {

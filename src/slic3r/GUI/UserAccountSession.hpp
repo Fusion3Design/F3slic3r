@@ -24,6 +24,10 @@ wxDECLARE_EVENT(EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, UserAccountSuccessEvent);
 wxDECLARE_EVENT(EVT_UA_AVATAR_SUCCESS, UserAccountSuccessEvent);
 wxDECLARE_EVENT(EVT_UA_FAIL, UserAccountFailEvent); // Soft fail - clears only after some number of fails
 wxDECLARE_EVENT(EVT_UA_RESET, UserAccountFailEvent); // Hard fail - clears all
+#if 0
+wxDECLARE_EVENT(EVT_UA_CONNECT_USER_DATA_SUCCESS, UserAccountSuccessEvent);
+#endif // 0
+
 
 typedef std::function<void(const std::string& body)> UserActionSuccessFn;
 typedef std::function<void(const std::string& body)> UserActionFailFn;
@@ -39,6 +43,7 @@ enum class UserAccountActionID {
     USER_ACCOUNT_ACTION_CONNECT_PRINTERS,
     USER_ACCOUNT_ACTION_AVATAR,
 #if 0
+    USER_ACCOUNT_ACTION_CONNECT_USER_DATA,
     USER_ACCOUNT_ACTION_CONNECT_DUMMY,
 #endif // 0
 
@@ -115,6 +120,7 @@ public:
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTERS] = std::make_unique<UserActionGetWithEvent>("CONNECT_PRINTERS", "https://dev.connect.prusa3d.com/slicer/printers", EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, EVT_UA_FAIL);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_AVATAR] = std::make_unique<UserActionGetWithEvent>("AVATAR", "https://test-media.printables.com/media/", EVT_UA_AVATAR_SUCCESS, EVT_UA_FAIL);
 #if 0
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_USER_DATA] = std::make_unique<UserActionGetWithEvent>("CONNECT_USER_DATA", "https://dev.connect.prusa3d.com/app/login", EVT_UA_CONNECT_USER_DATA_SUCCESS, EVT_UA_FAIL);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_DUMMY] = std::make_unique<UserActionGetWithEvent>("CONNECT_DUMMY", "https://dev.connect.prusa3d.com/slicer/dummy", EVT_UA_SUCCESS, EVT_UA_FAIL);
 #endif // 0
 
@@ -130,6 +136,7 @@ public:
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTERS].reset(nullptr);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_AVATAR].reset(nullptr);
 #if 0
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_USER_DATA].reset(nullptr);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_DUMMY].reset(nullptr);
 #endif // 0
 
