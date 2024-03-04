@@ -2852,7 +2852,7 @@ void GCodeGenerator::encode_full_config(const Print& print, std::vector<std::pai
     };
     config.reserve(config.size() + cfg.keys().size());
     for (const std::string& key : cfg.keys()) {
-        if (!is_banned(key) && !cfg.option(key)->is_nil())
+        if (!is_banned(key))
             config.emplace_back(key, cfg.opt_serialize(key));
     }
     config.shrink_to_fit();
