@@ -171,40 +171,12 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, const std::ve
         ret.color_print_colors.emplace_back(convert(color));
     }
 
-    const float travels_radius = viewer.get_travels_radius();
-    const float wipes_radius = viewer.get_wipes_radius();
-
     const std::vector<Slic3r::GCodeProcessorResult::MoveVertex>& moves = result.moves;
     ret.vertices.reserve(2 * moves.size());
     for (size_t i = 1; i < moves.size(); ++i) {
         const Slic3r::GCodeProcessorResult::MoveVertex& curr = moves[i];
         const Slic3r::GCodeProcessorResult::MoveVertex& prev = moves[i - 1];
         const EMoveType curr_type = convert(curr.type);
-
-        float width;
-        float height;
-        switch (curr_type)
-        {
-        case EMoveType::Travel:
-        {
-            width  = travels_radius;
-            height = travels_radius;
-            break;
-        }
-        case EMoveType::Wipe:
-        {
-            width  = wipes_radius;
-            height = wipes_radius;
-            break;
-        }
-        default:
-        {
-            width  = curr.width;
-            height = curr.height;
-            break;
-        }
-        }
-
         const EOptionType option_type = move_type_to_option(curr_type);
         if (option_type == EOptionType::COUNT || option_type == EOptionType::Travels || option_type == EOptionType::Wipes) {
             if (ret.vertices.empty() || prev.type != curr.type || prev.extrusion_role != curr.extrusion_role) {
@@ -212,12 +184,12 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, const std::ve
                 // equal to the current one with the exception of the position, which should match the previous move position,
                 // and the times, which are set to zero
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-                const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, prev.actual_feedrate,
+                const libvgcode::PathVertex vertex = { convert(prev.position), curr.height, curr.width, curr.feedrate, prev.actual_feedrate,
                     curr.mm3_per_mm, curr.fan_speed, curr.temperature, 0.0f, convert(curr.extrusion_role), curr_type,
                     static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
                     static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
 #else
-                const libvgcode::PathVertex vertex = { convert(prev.position), height, width, curr.feedrate, prev.actual_feedrate,
+              const libvgcode::PathVertex vertex = { convert(prev.position), curr.height, curr.width, curr.feedrate, prev.actual_feedrate,
                     curr.mm3_per_mm, curr.fan_speed, curr.temperature, convert(curr.extrusion_role), curr_type,
                     static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
                     static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), { 0.0f, 0.0f } };
@@ -227,13 +199,13 @@ GCodeInputData convert(const Slic3r::GCodeProcessorResult& result, const std::ve
         }
 
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-        const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.actual_feedrate,
+        const libvgcode::PathVertex vertex = { convert(curr.position), curr.height, curr.width, curr.feedrate, curr.actual_feedrate,
             curr.mm3_per_mm, curr.fan_speed, curr.temperature,
             result.filament_densities[curr.extruder_id] * curr.mm3_per_mm * (curr.position - prev.position).norm(),
             convert(curr.extrusion_role), curr_type, static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
             static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };
 #else
-        const libvgcode::PathVertex vertex = { convert(curr.position), height, width, curr.feedrate, curr.actual_feedrate,
+        const libvgcode::PathVertex vertex = { convert(curr.position), curr.height, curr.width, curr.feedrate, curr.actual_feedrate,
             curr.mm3_per_mm, curr.fan_speed, curr.temperature, convert(curr.extrusion_role), curr_type,
             static_cast<uint32_t>(curr.gcode_id), static_cast<uint32_t>(curr.layer_id),
             static_cast<uint8_t>(curr.extruder_id), static_cast<uint8_t>(curr.cp_color_id), curr.time };

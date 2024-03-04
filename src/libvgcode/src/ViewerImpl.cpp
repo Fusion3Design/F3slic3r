@@ -864,8 +864,75 @@ void ViewerImpl::reset()
 #endif // VGCODE_ENABLE_OPENGL_ES
 }
 
+static void extract_pos_and_or_hwa(const std::vector<PathVertex>& vertices, float travels_radius, float wipes_radius, BitSet<>& valid_lines_bitset,
+    std::vector<Vec3>* positions = nullptr, std::vector<Vec3>* heights_widths_angles = nullptr, bool update_bitset = false) {
+    static constexpr const Vec3 ZERO = { 0.0f, 0.0f, 0.0f };
+    if (positions == nullptr && heights_widths_angles == nullptr)
+        return;
+    if (vertices.empty())
+        return;
+    if (travels_radius <= 0.0f || wipes_radius <= 0.0f)
+        return;
+
+    if (positions != nullptr)
+        positions->reserve(vertices.size());
+    if (heights_widths_angles != nullptr)
+        heights_widths_angles->reserve(vertices.size());
+    for (size_t i = 0; i < vertices.size(); ++i) {
+        const PathVertex& v = vertices[i];
+        const EMoveType move_type = v.type;
+        const bool prev_line_valid = i > 0 && valid_lines_bitset[i - 1];
+        const Vec3 prev_line = prev_line_valid ? v.position - vertices[i - 1].position : ZERO;
+        const bool this_line_valid = i + 1 < vertices.size() &&
+                                     vertices[i + 1].position != v.position &&
+                                     vertices[i + 1].type == move_type &&
+                                     move_type != EMoveType::Seam;
+        const Vec3 this_line = this_line_valid ? vertices[i + 1].position - v.position : ZERO;
+
+        if (this_line_valid) {
+            // there is a valid path between point i and i+1.
+        }
+        else {
+            // the connection is invalid, there should be no line rendered, ever
+            if (update_bitset)
+                valid_lines_bitset.reset(i);
+        }
+        
+        if (positions != nullptr) {
+            Vec3 position = v.position;
+            if (move_type == EMoveType::Extrude)
+                // push down extrusion vertices by half height to render them at the right z
+                position[2] -= 0.5f * v.height;
+            positions->emplace_back(position);
+        }
+
+        if (heights_widths_angles != nullptr) {
+            float height = 0.0f;
+            float width = 0.0f;
+            if (v.is_travel()) {
+                height = travels_radius;
+                width  = travels_radius;
+            }
+            else if (v.is_wipe()) {
+                height = wipes_radius;
+                width  = wipes_radius;
+            }
+            else {
+                height = v.height;
+                width = v.width;
+            }
+
+            heights_widths_angles->push_back({ height, width,
+                std::atan2(prev_line[0] * this_line[1] - prev_line[1] * this_line[0], dot(prev_line, this_line)) });
+        }
+    }
+}
+
 void ViewerImpl::load(GCodeInputData&& gcode_data)
 {
+    if (!m_initialized)
+        return;
+
     if (gcode_data.vertices.empty())
         return;
 
@@ -935,41 +1002,12 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     if (m_settings.time_mode != ETimeMode::Normal && m_total_time[static_cast<size_t>(m_settings.time_mode)] == 0.0f)
         m_settings.time_mode = ETimeMode::Normal;
 
-    static constexpr const Vec3 ZERO = { 0.0f, 0.0f, 0.0f };
-
     // buffers to send to gpu
     std::vector<Vec3> positions;
     std::vector<Vec3> heights_widths_angles;
     positions.reserve(m_vertices.size());
     heights_widths_angles.reserve(m_vertices.size());
-    for (size_t i = 0; i < m_vertices.size(); ++i) {
-        const PathVertex& v = m_vertices[i];
-        const EMoveType move_type = v.type;
-        const bool prev_line_valid = i > 0 && m_valid_lines_bitset[i - 1];
-        const Vec3 prev_line = prev_line_valid ? v.position - m_vertices[i - 1].position : ZERO;
-        const bool this_line_valid = i + 1 < m_vertices.size() &&
-                                     m_vertices[i + 1].position != v.position &&
-                                     m_vertices[i + 1].type == move_type &&
-                                     move_type != EMoveType::Seam;
-        const Vec3 this_line = this_line_valid ? m_vertices[i + 1].position - v.position : ZERO;
-
-        if (this_line_valid) {
-            // there is a valid path between point i and i+1.
-        }
-        else {
-            // the connection is invalid, there should be no line rendered, ever
-            m_valid_lines_bitset.reset(i);
-        }
-
-        Vec3 position = v.position;
-        if (move_type == EMoveType::Extrude)
-            // push down extrusion vertices by half height to render them at the right z
-            position[2] -= 0.5f * v.height;
-        positions.emplace_back(position);
-
-        heights_widths_angles.push_back({ v.height, v.width,
-            std::atan2(prev_line[0] * this_line[1] - prev_line[1] * this_line[0], dot(prev_line, this_line)) });
-    }
+    extract_pos_and_or_hwa(m_vertices, m_travels_radius, m_wipes_radius, m_valid_lines_bitset, &positions, &heights_widths_angles, true);
 
     if (!positions.empty()) {
 #if VGCODE_ENABLE_OPENGL_ES
@@ -1722,46 +1760,10 @@ void ViewerImpl::update_color_ranges()
 void ViewerImpl::update_heights_widths()
 {
 #if VGCODE_ENABLE_OPENGL_ES
-    int curr_bound_texture = 0;
-    glsafe(glGetIntegerv(GL_TEXTURE_BINDING_2D, &curr_bound_texture));
-    int curr_unpack_alignment = 0;
-    glsafe(glGetIntegerv(GL_UNPACK_ALIGNMENT, &curr_unpack_alignment));
-
-    glsafe(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-
-    const size_t tex_capacity = m_texture_data.max_texture_capacity();
-    for (size_t i = 0; i < m_texture_data.get_count(); ++i) {
-        const auto [id, count] = m_texture_data.get_heights_widths_angles_tex_id(i);
-
-        std::vector<Vec3> data(m_texture_data.max_texture_capacity());
-        glsafe(glBindTexture(GL_TEXTURE_2D, id));
-        glsafe(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, data.data()));
-
-        const size_t base_id = i * tex_capacity;
-        for (size_t j = 0; j < count; ++j) {
-            const PathVertex& v = m_vertices[base_id + j];
-            if (v.is_travel()) {
-                data[j][0] = m_travels_radius; 
-                data[j][1] = m_travels_radius;
-            }
-            else if (v.is_wipe()) {
-                data[j][0] = m_wipes_radius;
-                data[j][1] = m_wipes_radius;
-            }
-        }
-
-        const auto [w, h] = width_height(count);
-        if (count == tex_capacity)
-            glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h), GL_RGB, GL_FLOAT, data.data()));
-        else {
-            // the last row is only partially fitted with data, send it separately
-            glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, static_cast<GLsizei>(w), static_cast<GLsizei>(h - 1), GL_RGB, GL_FLOAT, data.data()));
-            glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<GLsizei>(h - 1), static_cast<GLsizei>(count % w), 1, GL_RGB, GL_FLOAT, &data[w * (h - 1)]));
-        }
-    }
-
-    glsafe(glBindTexture(GL_TEXTURE_2D, curr_bound_texture));
-    glsafe(glPixelStorei(GL_UNPACK_ALIGNMENT, curr_unpack_alignment));
+    std::vector<Vec3> heights_widths_angles;
+    heights_widths_angles.reserve(m_vertices.size());
+    extract_pos_and_or_hwa(m_vertices, m_travels_radius, m_wipes_radius, m_valid_lines_bitset, nullptr, &heights_widths_angles);
+    m_texture_data.set_heights_widths_angles(heights_widths_angles);
 #else
     if (m_heights_widths_angles_buf_id == 0)
         return;
