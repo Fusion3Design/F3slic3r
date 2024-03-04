@@ -38,7 +38,7 @@ struct BitSet
     bool set(size_t index) {
         const auto [block_idx, bit_idx] = get_coords(index);
         const T mask = (T(1) << bit_idx);
-        bool flip = mask xor blocks[block_idx];
+        bool flip = mask ^ blocks[block_idx];
         blocks[block_idx] |= mask;
         return flip;
     }
@@ -47,7 +47,7 @@ struct BitSet
     bool reset(size_t index) {
         const auto [block_idx, bit_idx] = get_coords(index);
         const T mask = (T(1) << bit_idx);
-        const bool flip = mask xor blocks[block_idx];
+        const bool flip = mask ^ blocks[block_idx];
         blocks[block_idx] &= (~mask);
         return flip;
     }
@@ -72,7 +72,7 @@ struct BitSet
         const auto [block_idx, bit_idx] = get_coords(index);
         const T mask = static_cast<T>(1) << bit_idx;
         const T oldval = blocks[block_idx].fetch_or(mask, std::memory_order_relaxed);
-        return oldval xor (oldval or mask);
+        return oldval ^ (oldval or mask);
     }
 
     // Atomic reset operation (enabled only for atomic types), return true if bit changed
@@ -81,7 +81,7 @@ struct BitSet
         const auto [block_idx, bit_idx] = get_coords(index);
         const T mask = ~(static_cast<T>(1) << bit_idx);
         const T oldval = blocks[block_idx].fetch_and(mask, std::memory_order_relaxed);
-        return oldval xor (oldval and mask);
+        return oldval ^ (oldval and mask);
     }
 
     std::pair<size_t, size_t> get_coords(size_t index) const {
