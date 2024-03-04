@@ -44,10 +44,10 @@ set(LIBVGCODE_SOURCES
 	src/ViewerImpl.cpp
 	src/ViewRange.hpp
 	src/ViewRange.cpp
-	# glad OpenGL
-	glad/include/glad/gl.h
-	glad/include/KHR/khrplatform.h
-	glad/src/gl.c
+    # glad OpenGL
+    glad/include/glad/gl.h
+    glad/include/KHR/khrplatform.h
+    glad/src/gl.c
 #    # glad OpenGL ES
 #    glad/include/glad/gles2.h
 #    glad/include/KHR/khrplatform.h
