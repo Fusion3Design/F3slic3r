@@ -2181,12 +2181,6 @@ LayerResult GCodeGenerator::process_layer(
     // Either printing all copies of all objects, or just a single copy of a single object.
     assert(single_object_instance_idx == size_t(-1) || layers.size() == 1);
 
-    const std::vector<InstanceToPrint> instances_to_print{sort_print_object_instances(layers, ordering, single_object_instance_idx)};
-    const PrintInstance* first_instance{instances_to_print.empty() ? nullptr : &instances_to_print.front().print_object.instances()[instances_to_print.front().instance_id]};
-    if (first_instance != nullptr) {
-        m_label_objects.update(*first_instance);
-    }
-
     // First object, support and raft layer, if available.
     const Layer         *object_layer  = nullptr;
     const SupportLayer  *support_layer = nullptr;
@@ -2211,6 +2205,11 @@ LayerResult GCodeGenerator::process_layer(
     coordf_t             print_z       = layer.print_z + m_config.z_offset.value;
     bool                 first_layer   = layer.id() == 0;
     unsigned int         first_extruder_id = layer_tools.extruders.front();
+
+    const std::vector<InstanceToPrint> instances_to_print{sort_print_object_instances(layers, ordering, single_object_instance_idx)};
+    const PrintInstance* first_instance{instances_to_print.empty() ? nullptr : &instances_to_print.front().print_object.instances()[instances_to_print.front().instance_id]};
+    m_label_objects.update(first_instance);
+
 
     // Initialize config with the 1st object to be printed at this layer.
     m_config.apply(layer.object()->config(), true);
@@ -2358,6 +2357,9 @@ LayerResult GCodeGenerator::process_layer(
         }
 
         if (auto loops_it = skirt_loops_per_extruder.find(extruder_id); loops_it != skirt_loops_per_extruder.end()) {
+            gcode += this->m_label_objects.maybe_stop_instance();
+            this->m_label_objects.update(nullptr);
+
             const std::pair<size_t, size_t> loops = loops_it->second;
             this->set_origin(0., 0.);
             m_avoid_crossing_perimeters.use_external_mp();
@@ -2379,6 +2381,9 @@ LayerResult GCodeGenerator::process_layer(
 
         // Extrude brim with the extruder of the 1st region.
         if (! m_brim_done) {
+            gcode += this->m_label_objects.maybe_stop_instance();
+            this->m_label_objects.update(nullptr);
+
             this->set_origin(0., 0.);
             m_avoid_crossing_perimeters.use_external_mp();
             for (const ExtrusionEntity *ee : print.brim().entities)
@@ -2388,6 +2393,7 @@ LayerResult GCodeGenerator::process_layer(
             // Allow a straight travel move to the first object point.
             m_avoid_crossing_perimeters.disable_once();
         }
+        this->m_label_objects.update(first_instance);
 
         // We are almost ready to print. However, we must go through all the objects twice to print the the overridden extrusions first (infill/perimeter wiping feature):
         bool is_anything_overridden = layer_tools.wiping_extrusions().is_anything_overridden();
@@ -2523,7 +2529,7 @@ void GCodeGenerator::process_layer_single_object(
             // When starting a new object, use the external motion planner for the first travel move.
             const Point &offset = print_object.instances()[print_instance.instance_id].shift;
 
-            const bool updated{m_label_objects.update(print_instance.print_object.instances()[print_instance.instance_id])};
+            const bool updated{m_label_objects.update(&print_instance.print_object.instances()[print_instance.instance_id])};
             if (updated)
                 m_avoid_crossing_perimeters.use_external_mp_once();
             this->set_origin(unscale(offset));

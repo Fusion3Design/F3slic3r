@@ -23,7 +23,7 @@ public:
     std::string all_objects_header() const;
     std::string all_objects_header_singleline_json() const;
 
-    bool update(const PrintInstance &instance);
+    bool update(const PrintInstance *instance);
 
     std::string maybe_start_instance();
 

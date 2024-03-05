@@ -111,11 +111,11 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObject
     }
 }
 
-bool LabelObjects::update(const PrintInstance &instance) {
-    if (this->last_operation_instance == &instance) {
+bool LabelObjects::update(const PrintInstance *instance) {
+    if (this->last_operation_instance == instance) {
         return false;
     }
-    this->last_operation_instance = &instance;
+    this->last_operation_instance = instance;
     return true;
 }
 
