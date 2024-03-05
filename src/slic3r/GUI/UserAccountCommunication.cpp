@@ -201,6 +201,14 @@ std::string UserAccountCommunication::get_access_token()
     }
 }
 
+std::string UserAccountCommunication::get_shared_session_key()
+{
+    {
+        std::lock_guard<std::mutex> lock(m_session_mutex);
+        return m_session->get_shared_session_key();
+    }
+}
+
 void UserAccountCommunication::set_polling_enabled(bool enabled)
 {
     {

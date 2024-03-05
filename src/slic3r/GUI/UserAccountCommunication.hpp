@@ -60,6 +60,7 @@ public:
 
     std::string get_username() const { return m_username; }
     std::string get_access_token();
+    std::string get_shared_session_key();
 
     void set_polling_enabled(bool enabled);
 

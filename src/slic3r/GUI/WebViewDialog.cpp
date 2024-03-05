@@ -500,8 +500,10 @@ void ConnectRequestHandler::on_request_config()
     language?: ConnectLanguage;
     sessionId?: string;
     */
-    const std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
-    const std::string init_options = GUI::format("{\"accessToken\": \"%1%\" }", token);
+    //const std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
+    //const std::string init_options = GUI::format("{\"accessToken\": \"%1%\" }", token);
+    const std::string token = wxGetApp().plater()->get_user_account()->get_shared_session_key();
+    const std::string init_options = GUI::format("{\"sessionId\": \"%1%\" }", token);
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.init(%1%)", init_options);
     run_script_bridge(script);
 }

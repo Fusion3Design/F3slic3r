@@ -67,6 +67,11 @@ std::string UserAccount::get_access_token()
     return m_communication->get_access_token();
 }
 
+std::string UserAccount::get_shared_session_key()
+{
+    return m_communication->get_shared_session_key();
+}
+
 boost::filesystem::path UserAccount::get_avatar_path(bool logged) const
 {
     if (logged) {

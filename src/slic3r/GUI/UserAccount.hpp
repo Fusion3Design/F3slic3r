@@ -59,6 +59,7 @@ public:
 
     std::string get_username() const { return m_username; }
     std::string get_access_token();
+    std::string get_shared_session_key();
     const ConnectPrinterStateMap& get_printer_state_map() const { return m_printer_map; }
     boost::filesystem::path get_avatar_path(bool logged) const;
 
