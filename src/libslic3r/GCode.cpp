@@ -2891,7 +2891,7 @@ std::string GCodeGenerator::extrude_loop(const ExtrusionLoop &loop_src, const GC
 
     if (m_wipe.enabled()) {
         // Wipe will hide the seam.
-        m_wipe.set_path(std::move(smooth_path), false);
+        m_wipe.set_path(std::move(smooth_path));
     } else if (loop_src.paths.back().role().is_external_perimeter() && m_layer != nullptr && m_config.perimeters.value > 1) {
         // Only wipe inside if the wipe along the perimeter is disabled.
         // Make a little move inwards before leaving loop.
@@ -2939,7 +2939,7 @@ std::string GCodeGenerator::extrude_skirt(
 
     if (m_wipe.enabled())
         // Wipe will hide the seam.
-        m_wipe.set_path(std::move(smooth_path), false);
+        m_wipe.set_path(std::move(smooth_path));
 
     return gcode;
 }
@@ -2958,7 +2958,10 @@ std::string GCodeGenerator::extrude_multi_path(const ExtrusionMultiPath &multipa
     std::string gcode;
     for (GCode::SmoothPathElement &el : smooth_path)
         gcode += this->_extrude(el.path_attributes, el.path, description, speed);
-    m_wipe.set_path(std::move(smooth_path), true);
+
+    GCode::reverse(smooth_path);
+    m_wipe.set_path(std::move(smooth_path));
+
     // reset acceleration
     gcode += m_writer.set_print_acceleration((unsigned int)floor(m_config.default_acceleration.value + 0.5));
     return gcode;
