@@ -1276,6 +1276,8 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
             m_second_layer_things_done = false;
             prev_object = &object;
         }
+
+        file.write(m_label_objects.maybe_stop_instance());
     } else {
         // Sort layers by Z.
         // All extrusion moves with the same top layer height are extruded uninterrupted.
@@ -2357,7 +2359,9 @@ LayerResult GCodeGenerator::process_layer(
         }
 
         if (auto loops_it = skirt_loops_per_extruder.find(extruder_id); loops_it != skirt_loops_per_extruder.end()) {
-            gcode += this->m_label_objects.maybe_stop_instance();
+            if (!this->m_config.complete_objects.value) {
+                gcode += this->m_label_objects.maybe_stop_instance();
+            }
             this->m_label_objects.update(nullptr);
 
             const std::pair<size_t, size_t> loops = loops_it->second;
@@ -2381,7 +2385,10 @@ LayerResult GCodeGenerator::process_layer(
 
         // Extrude brim with the extruder of the 1st region.
         if (! m_brim_done) {
-            gcode += this->m_label_objects.maybe_stop_instance();
+
+            if (!this->m_config.complete_objects.value) {
+                gcode += this->m_label_objects.maybe_stop_instance();
+            }
             this->m_label_objects.update(nullptr);
 
             this->set_origin(0., 0.);
@@ -3630,7 +3637,10 @@ std::string GCodeGenerator::set_extruder(unsigned int extruder_id, double print_
         return gcode;
     }
 
-    std::string gcode{this->m_label_objects.maybe_stop_instance()};
+    std::string gcode{};
+    if (!this->m_config.complete_objects.value) {
+        gcode += this->m_label_objects.maybe_stop_instance();
+    }
 
     // prepend retraction on the current extruder
     gcode += this->retract_and_wipe(true);
