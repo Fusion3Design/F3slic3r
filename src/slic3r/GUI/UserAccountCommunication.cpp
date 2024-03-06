@@ -1,5 +1,6 @@
 #include "UserAccountCommunication.hpp"
 #include "GUI_App.hpp"
+#include "GUI.hpp"
 #include "format.hpp"
 #include "../Utils/Http.hpp"
 #include "slic3r/GUI/I18N.hpp"

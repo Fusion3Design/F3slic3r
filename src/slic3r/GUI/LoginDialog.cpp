@@ -1,6 +1,8 @@
 #include "LoginDialog.hpp"
 
 #include "GUI_App.hpp"
+#include "wxExtensions.hpp"
+#include "GUI.hpp"
 #include "I18N.hpp"
 #include "format.hpp"
 
