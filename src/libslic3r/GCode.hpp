@@ -320,7 +320,7 @@ private:
     std::string generate_travel_gcode(
         const Points3& travel,
         const std::string& comment,
-        const std::string& insert_before_end
+        const std::function<std::string()>& insert_gcode
     );
     Polyline generate_travel_xy_path(
         const Point& start,
@@ -333,10 +333,10 @@ private:
         const Point &end_point,
         ExtrusionRole role,
         const std::string &comment,
-        const std::string &gcode_to_insert
+        const std::function<std::string()>& insert_gcode
     );
 
-    std::string travel_to_first_position(const Vec3crd& point, const double from_z, const std::string& gcode_to_insert);
+    std::string travel_to_first_position(const Vec3crd& point, const double from_z, const std::function<std::string()>& insert_gcode);
 
     bool            needs_retraction(const Polyline &travel, ExtrusionRole role = ExtrusionRole::None);
 

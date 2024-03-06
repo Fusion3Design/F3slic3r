@@ -65,7 +65,7 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
         if (gcodegen.m_current_layer_first_position) {
             if (gcodegen.last_position) {
                 gcode += gcodegen.travel_to(
-                    *gcodegen.last_position, xy_point, ExtrusionRole::Mixed, comment, ""
+                    *gcodegen.last_position, xy_point, ExtrusionRole::Mixed, comment, [](){return "";}
                 );
             } else {
                 gcode += gcodegen.writer().travel_to_xy(gcodegen.point_to_gcode(xy_point), comment);
@@ -73,7 +73,7 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
             }
         } else {
             const Vec3crd point = to_3d(xy_point, scaled(z));
-            gcode += gcodegen.travel_to_first_position(point, current_z, "");
+            gcode += gcodegen.travel_to_first_position(point, current_z, [](){return "";});
         }
         gcode += gcodegen.unretract();
     } else {
@@ -269,7 +269,7 @@ std::string WipeTowerIntegration::finalize(GCodeGenerator &gcodegen)
     if (std::abs(gcodegen.writer().get_position().z() - m_final_purge.print_z) > EPSILON)
         gcode += gcodegen.generate_travel_gcode(
             {{gcodegen.last_position->x(), gcodegen.last_position->y(), scaled(m_final_purge.print_z)}},
-            "move to safe place for purging", ""
+            "move to safe place for purging", [](){return "";}
         );
     gcode += append_tcr(gcodegen, m_final_purge, -1);
     return gcode;
