@@ -340,7 +340,7 @@ private:
 
     bool            needs_retraction(const Polyline &travel, ExtrusionRole role = ExtrusionRole::None);
 
-    std::string     retract_and_wipe(bool toolchange = false);
+    std::string     retract_and_wipe(bool toolchange = false, bool reset_e = true);
     std::string     unretract() { return m_writer.unretract(); }
     std::string     set_extruder(unsigned int extruder_id, double print_z);
     bool line_distancer_is_required(const std::vector<unsigned int>& extruder_ids);

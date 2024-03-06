@@ -2816,8 +2816,9 @@ std::string GCodeGenerator::change_layer(
             std::optional{to_3d(this->point_to_gcode(*this->last_position), previous_layer_z)} :
             std::nullopt;
         gcode += GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Layer_Change_Retraction_Start);
-        gcode += this->retract_and_wipe();
+        gcode += this->retract_and_wipe(false, false);
         gcode += GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Layer_Change_Retraction_End);
+        gcode += m_writer.reset_e();
     }
 
     Vec3d new_position = this->writer().get_position();
@@ -3589,7 +3590,7 @@ std::string GCodeGenerator::travel_to(
     return wipe_retract_gcode + generate_travel_gcode(travel, comment, insert_gcode);
 }
 
-std::string GCodeGenerator::retract_and_wipe(bool toolchange)
+std::string GCodeGenerator::retract_and_wipe(bool toolchange, bool reset_e)
 {
     std::string gcode;
 
@@ -3607,7 +3608,10 @@ std::string GCodeGenerator::retract_and_wipe(bool toolchange)
         methods even if we performed wipe, since this will ensure the entire retraction
         length is honored in case wipe path was too short.  */
     gcode += toolchange ? m_writer.retract_for_toolchange() : m_writer.retract();
-    gcode += m_writer.reset_e();
+
+    if (reset_e) {
+        gcode += m_writer.reset_e();
+    }
 
     return gcode;
 }
