@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <functional>
+#include <boost/filesystem.hpp>
 
 
 #ifndef __linux__

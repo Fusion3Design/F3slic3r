@@ -7,6 +7,8 @@
 
 #include <wx/button.h>
 #include <wx/textctrl.h>
+#include <wx/stattext.h>
+#include <wx/statbmp.h>
 
 namespace Slic3r {
 namespace GUI {

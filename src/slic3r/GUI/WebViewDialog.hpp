@@ -24,7 +24,7 @@
 #include <wx/tbarbase.h>
 #include "wx/textctrl.h"
 #include <wx/timer.h>
-
+#include <map>
 
 namespace Slic3r {
 namespace GUI {

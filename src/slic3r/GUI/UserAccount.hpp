@@ -6,6 +6,7 @@
 
 #include <string>
 #include <memory>
+#include <boost/filesystem.hpp>
 
 namespace Slic3r{
 namespace GUI{

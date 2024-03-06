@@ -9,6 +9,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/log/trivial.hpp>
 
+#include <wx/stdpaths.h>
+
 namespace pt = boost::property_tree;
 
 namespace Slic3r {

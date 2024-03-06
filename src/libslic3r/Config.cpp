@@ -39,6 +39,7 @@
 #include <boost/nowide/cstdlib.hpp>
 #include <boost/nowide/iostream.hpp>
 #include <boost/nowide/fstream.hpp>
+#include <boost/nowide/cstdio.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/format.hpp>
 #include <string.h>
