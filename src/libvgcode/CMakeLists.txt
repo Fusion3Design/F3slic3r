@@ -1,5 +1,23 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.13)
 project(libvgcode)
+
+# glad library
+if (EMSCRIPTEN)
+    set(GLAD_SOURCES
+#        glad/include/glad/egl.h
+        glad/include/glad/gles2.h
+#        glad/include/EGL/eglplatform.h
+        glad/include/KHR/khrplatform.h
+        glad/src/gles2.c
+#        glad/src/egl.c
+    )
+else ()
+    set(GLAD_SOURCES
+        glad/include/glad/gl.h
+        glad/include/KHR/khrplatform.h
+        glad/src/gl.c
+    )
+endif ()
 
 set(LIBVGCODE_SOURCES
 	# API
@@ -44,25 +62,18 @@ set(LIBVGCODE_SOURCES
 	src/ViewerImpl.cpp
 	src/ViewRange.hpp
 	src/ViewRange.cpp
-    # glad OpenGL
-    glad/include/glad/gl.h
-    glad/include/KHR/khrplatform.h
-    glad/src/gl.c
-#    # glad OpenGL ES
-#    glad/include/glad/gles2.h
-#    glad/include/KHR/khrplatform.h
-#    glad/src/gles2.c
+	${GLAD_SOURCES}
 )
 
 add_library(libvgcode STATIC ${LIBVGCODE_SOURCES})
 
 if (WIN32)
-foreach(_source IN ITEMS ${LIBVGCODE_SOURCES})
-    get_filename_component(_source_path "${_source}" PATH)
-    string(REPLACE "/" "\\" _group_path "${_source_path}")
-    source_group("${_group_path}" FILES "${_source}")
-endforeach()
-endif()
+    foreach(_source IN ITEMS ${LIBVGCODE_SOURCES})
+        get_filename_component(_source_path "${_source}" PATH)
+        string(REPLACE "/" "\\" _group_path "${_source_path}")
+        source_group("${_group_path}" FILES "${_source}")
+    endforeach()
+endif ()
 
 # glad includes
 include_directories(glad/include)
