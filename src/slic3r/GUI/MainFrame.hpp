@@ -27,6 +27,7 @@
 #include "GUI_Utils.hpp"
 #include "Event.hpp"
 #include "UnsavedChangesDialog.hpp"
+#include "Search.hpp"
 
 class wxBookCtrlBase;
 class wxProgressDialog;
@@ -93,6 +94,7 @@ class MainFrame : public DPIFrame
     wxSizer*    m_main_sizer{ nullptr };
 
     size_t      m_last_selected_tab;
+    Search::OptionsSearcher m_searcher;
 
     std::string     get_base_name(const wxString &full_name, const char *extension = nullptr) const;
     std::string     get_dir_name(const wxString &full_name) const;

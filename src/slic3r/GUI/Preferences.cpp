@@ -20,6 +20,7 @@
 #include "OG_CustomCtrl.hpp"
 #include "GLCanvas3D.hpp"
 #include "ConfigWizard.hpp"
+#include "Search.hpp"
 
 #include "Widgets/SpinInput.hpp"
 

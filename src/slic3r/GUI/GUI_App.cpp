@@ -1099,7 +1099,7 @@ void GUI_App::check_and_update_searcher(ConfigOptionMode mode /*= comExpert*/)
         if (tab->supports_printer_technology(print_tech))
             search_inputs.emplace_back(Search::InputInfo{ tab->get_config(), tab->type() });
 
-    m_searcher.check_and_update(print_tech, mode, search_inputs);
+    m_searcher->check_and_update(print_tech, mode, search_inputs);
 }
 
 void GUI_App::jump_to_option(const std::string& opt_key, Preset::Type type, const std::wstring& category)
@@ -1109,7 +1109,7 @@ void GUI_App::jump_to_option(const std::string& opt_key, Preset::Type type, cons
 
 void GUI_App::jump_to_option(size_t selected)
 {
-    const Search::Option& opt = m_searcher.get_option(selected);
+    const Search::Option& opt = m_searcher->get_option(selected);
     if (opt.type == Preset::TYPE_PREFERENCES)
         open_preferences(opt.opt_key(), into_u8(opt.group));
     else
@@ -1128,12 +1128,12 @@ void GUI_App::jump_to_option(const std::string& composite_key)
 
             // Regularly searcher is sorted in respect to the options labels,
             // so resort searcher before get an option
-            m_searcher.sort_options_by_key();
-            const Search::Option& opt = m_searcher.get_option(opt_key, tab->type());
+            m_searcher->sort_options_by_key();
+            const Search::Option& opt = m_searcher->get_option(opt_key, tab->type());
             tab->activate_option(opt_key, into_u8(opt.category));
 
             // Revert sort of searcher back
-            m_searcher.sort_options_by_label();
+            m_searcher->sort_options_by_label();
             break;
         }
     }
@@ -1142,7 +1142,7 @@ void GUI_App::jump_to_option(const std::string& composite_key)
 void GUI_App::show_search_dialog()
 {
     check_and_update_searcher(get_mode());
-    m_searcher.show_dialog();
+    m_searcher->show_dialog();
 }
 
 static int get_app_font_pt_size(const AppConfig* app_config)

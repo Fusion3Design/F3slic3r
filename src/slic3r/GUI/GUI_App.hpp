@@ -12,7 +12,7 @@
 #include "ConfigWizard.hpp"
 #include "OpenGLManager.hpp"
 #include "libslic3r/Preset.hpp"
-#include "Search.hpp"
+#include "I18N.hpp"
 
 #include <wx/app.h>
 #include <wx/colour.h>
@@ -39,6 +39,10 @@ class ModelObject;
 class PrintHostJobQueue;
 class Model;
 class AppUpdater;
+
+namespace Search {
+    class OptionsSearcher;
+}
 
 namespace GUI{
 
@@ -176,7 +180,7 @@ private:
     std::string m_instance_hash_string;
 	size_t m_instance_hash_int;
 
-    Search::OptionsSearcher m_searcher;
+    Search::OptionsSearcher* m_searcher{ nullptr };
 
 public:
     bool            OnInit() override;
@@ -191,7 +195,8 @@ public:
     bool is_recreating_gui() const { return m_is_recreating_gui; }
     std::string logo_name() const { return is_editor() ? "PrusaSlicer" : "PrusaSlicer-gcodeviewer"; }
 
-    Search::OptionsSearcher& searcher() noexcept { return m_searcher; }
+    Search::OptionsSearcher& searcher() noexcept { return *m_searcher; }
+    void                     set_searcher(Search::OptionsSearcher* searcher) { m_searcher = searcher; }
     void                     check_and_update_searcher(ConfigOptionMode mode = comExpert);
     void                     jump_to_option(size_t selected);
     void                     jump_to_option(const std::string& opt_key, Preset::Type type, const std::wstring& category);

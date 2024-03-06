@@ -166,6 +166,8 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
     // Load the icon either from the exe, or from the ico file.
     SetIcon(main_frame_icon(wxGetApp().get_app_mode()));
 
+    wxGetApp().set_searcher(&m_searcher);
+
     // initialize tabpanel and menubar
     init_tabpanel();
     if (wxGetApp().is_gcode_viewer())
