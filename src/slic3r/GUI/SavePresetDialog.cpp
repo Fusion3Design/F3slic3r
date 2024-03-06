@@ -273,8 +273,6 @@ void SavePresetDialog::Item::update_valid_bmp()
 
 void SavePresetDialog::Item::accept()
 {
-    if (m_valid_type == ValidationType::Warning)
-        m_presets->delete_preset(m_preset_name);
 }
 
 void SavePresetDialog::Item::Enable(bool enable /*= true*/)
