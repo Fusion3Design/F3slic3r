@@ -2806,7 +2806,7 @@ std::string GCodeGenerator::change_layer(
         gcode += m_writer.update_progress(++ m_layer_index, m_layer_count);
 
     if (m_writer.multiple_extruders) {
-        gcode += m_label_objects.maybe_change_instance();
+        gcode += m_label_objects.maybe_change_instance(m_writer);
     }
 
     if (!EXTRUDER_CONFIG(travel_ramping_lift) && EXTRUDER_CONFIG(retract_layer_change)) {
@@ -3149,13 +3149,13 @@ std::string GCodeGenerator::_extrude(
 
     const bool has_active_instance{m_label_objects.has_active_instance()};
     if (m_writer.multiple_extruders && has_active_instance) {
-        gcode += m_label_objects.maybe_change_instance();
+        gcode += m_label_objects.maybe_change_instance(m_writer);
     }
 
     if (!m_current_layer_first_position) {
         const Vec3crd point = to_3d(path.front().point, scaled(this->m_last_layer_z));
         gcode += this->travel_to_first_position(point, unscaled(point.z()), [&](){
-            return m_writer.multiple_extruders ? "" : m_label_objects.maybe_change_instance();
+            return m_writer.multiple_extruders ? "" : m_label_objects.maybe_change_instance(m_writer);
         });
     } else {
         // go to first point of extrusion path
@@ -3163,7 +3163,7 @@ std::string GCodeGenerator::_extrude(
             const double z = this->m_last_layer_z;
             const std::string comment{"move to print after unknown position"};
             gcode += this->retract_and_wipe();
-            gcode += m_writer.multiple_extruders ? "" : m_label_objects.maybe_change_instance();
+            gcode += m_writer.multiple_extruders ? "" : m_label_objects.maybe_change_instance(m_writer);
             gcode += this->m_writer.travel_to_xy(this->point_to_gcode(path.front().point), comment);
             gcode += this->m_writer.get_travel_to_z_gcode(z, comment);
         } else if ( this->last_position != path.front().point) {
@@ -3172,7 +3172,7 @@ std::string GCodeGenerator::_extrude(
             comment += description_bridge;
             comment += " point";
             const std::string travel_gcode{this->travel_to(*this->last_position, path.front().point, path_attr.role, comment, [&](){
-                return m_writer.multiple_extruders ? "" : m_label_objects.maybe_change_instance();
+                return m_writer.multiple_extruders ? "" : m_label_objects.maybe_change_instance(m_writer);
             })};
             gcode += travel_gcode;
         }
@@ -3187,7 +3187,7 @@ std::string GCodeGenerator::_extrude(
     }
 
     if (m_writer.multiple_extruders && !has_active_instance) {
-        gcode += m_label_objects.maybe_change_instance();
+        gcode += m_label_objects.maybe_change_instance(m_writer);
     }
 
     if (!m_pending_pre_extrusion_gcode.empty()) {

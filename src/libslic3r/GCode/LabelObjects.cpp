@@ -1,6 +1,7 @@
 #include "LabelObjects.hpp"
 
 #include "ClipperUtils.hpp"
+#include "GCode/GCodeWriter.hpp"
 #include "Model.hpp"
 #include "Print.hpp"
 #include "TriangleMeshSlicer.hpp"
@@ -119,10 +120,13 @@ bool LabelObjects::update(const PrintInstance *instance) {
     return true;
 }
 
-std::string LabelObjects::maybe_start_instance() {
+std::string LabelObjects::maybe_start_instance(GCodeWriter& writer) {
     if (current_instance == nullptr && last_operation_instance != nullptr) {
         current_instance = last_operation_instance;
-        return this->start_object(*current_instance, LabelObjects::IncludeName::No);
+
+        std::string result{this->start_object(*current_instance, LabelObjects::IncludeName::No)};
+        result += writer.reset_e(true);
+        return result;
     }
     return "";
 }
@@ -136,12 +140,12 @@ std::string LabelObjects::maybe_stop_instance() {
     return "";
 }
 
-std::string LabelObjects::maybe_change_instance() {
+std::string LabelObjects::maybe_change_instance(GCodeWriter& writer) {
     if (last_operation_instance != current_instance) {
         const std::string stop_instance_gcode{this->maybe_stop_instance()};
         // Be carefull with refactoring: this->maybe_stop_instance() + this->maybe_start_instance()
         // may not be evaluated in order. The order is indeed undefined!
-        return stop_instance_gcode + this->maybe_start_instance();
+        return stop_instance_gcode + this->maybe_start_instance(writer);
     }
     return "";
 }

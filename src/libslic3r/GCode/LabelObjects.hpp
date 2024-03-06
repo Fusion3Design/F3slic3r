@@ -12,7 +12,7 @@ enum GCodeFlavor : unsigned char;
 enum class LabelObjectsStyle;
 struct PrintInstance;
 class Print;
-
+class GCodeWriter;
 
 namespace GCode {
 
@@ -25,11 +25,11 @@ public:
 
     bool update(const PrintInstance *instance);
 
-    std::string maybe_start_instance();
+    std::string maybe_start_instance(GCodeWriter& writer);
 
     std::string maybe_stop_instance();
 
-    std::string maybe_change_instance();
+    std::string maybe_change_instance(GCodeWriter& writer);
 
     bool has_active_instance();
 
