@@ -373,6 +373,9 @@ void ViewerImpl::TextureData::set_positions(const std::vector<Vec3>& positions)
 
         glsafe(glGenTextures(1, &m_tex_ids[i].positions.first));
         glsafe(glBindTexture(GL_TEXTURE_2D, m_tex_ids[i].positions.first));
+        glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+        glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+        glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
         if (remaining >= tex_capacity) {
             glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RGB, GL_FLOAT, &positions[offset]));
             m_tex_ids[i].positions.second = w * h;
@@ -384,7 +387,6 @@ void ViewerImpl::TextureData::set_positions(const std::vector<Vec3>& positions)
             glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<GLsizei>(h - 1), static_cast<GLsizei>(remaining % w), 1, GL_RGB, GL_FLOAT, &positions[offset + w * (h - 1)]));
             m_tex_ids[i].positions.second = w * (h - 1) + remaining % w;
         }
-        glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
         m_positions_size += m_tex_ids[i].positions.second * sizeof(Vec3);
 
         remaining = (remaining > tex_capacity) ? remaining - tex_capacity: 0;
@@ -424,6 +426,9 @@ void ViewerImpl::TextureData::set_heights_widths_angles(const std::vector<Vec3>&
 
         glsafe(glGenTextures(1, &m_tex_ids[i].heights_widths_angles.first));
         glsafe(glBindTexture(GL_TEXTURE_2D, m_tex_ids[i].heights_widths_angles.first));
+        glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+        glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+        glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
         if (remaining >= tex_capacity) {
             glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RGB, GL_FLOAT, &heights_widths_angles[offset]));
             m_tex_ids[i].heights_widths_angles.second = w * h;
@@ -435,7 +440,6 @@ void ViewerImpl::TextureData::set_heights_widths_angles(const std::vector<Vec3>&
             glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<GLsizei>(h - 1), static_cast<GLsizei>(remaining % w), 1, GL_RGB, GL_FLOAT, &heights_widths_angles[offset + w * (h - 1)]));
             m_tex_ids[i].heights_widths_angles.second = w * (h - 1) + remaining % w;
         }
-        glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
         m_height_width_angle_size += m_tex_ids[i].heights_widths_angles.second * sizeof(Vec3);
 
         remaining = (remaining > tex_capacity) ? remaining - tex_capacity : 0;
@@ -475,6 +479,9 @@ void ViewerImpl::TextureData::set_colors(const std::vector<float>& colors)
 
         glsafe(glGenTextures(1, &m_tex_ids[i].colors.first));
         glsafe(glBindTexture(GL_TEXTURE_2D, m_tex_ids[i].colors.first));
+        glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+        glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+        glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
         if (remaining >= tex_capacity) {
             glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RED, GL_FLOAT, &colors[offset]));
             m_tex_ids[i].colors.second = w * h;
@@ -486,7 +493,6 @@ void ViewerImpl::TextureData::set_colors(const std::vector<float>& colors)
             glsafe(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, static_cast<GLsizei>(h - 1), static_cast<GLsizei>(remaining % w), 1, GL_RED, GL_FLOAT, &colors[offset + w * (h - 1)]));
             m_tex_ids[i].colors.second = w * (h - 1) + remaining % w;
         }
-        glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
         m_colors_size += m_tex_ids[i].colors.second * sizeof(float);
 
         remaining = (remaining > tex_capacity) ? remaining - tex_capacity : 0;
@@ -531,6 +537,9 @@ void ViewerImpl::TextureData::set_enabled_segments(const std::vector<uint32_t>& 
 
             glsafe(glGenTextures(1, &m_tex_ids[curr_tex_id].enabled_segments.first));
             glsafe(glBindTexture(GL_TEXTURE_2D, m_tex_ids[curr_tex_id].enabled_segments.first));
+            glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+            glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+            glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
             if (curr_segments.size() == tex_capacity) {
                 glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RED_INTEGER, GL_UNSIGNED_INT, curr_segments.data()));
                 m_tex_ids[curr_tex_id].enabled_segments.second = w * h;
@@ -548,7 +557,6 @@ void ViewerImpl::TextureData::set_enabled_segments(const std::vector<uint32_t>& 
                     m_tex_ids[curr_tex_id].enabled_segments.second = w * (h - 1) + curr_segments.size() % w;
                 }
             }
-            glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
             m_enabled_segments_size += m_tex_ids[curr_tex_id].enabled_segments.second * sizeof(uint32_t);
             if (new_tex) {
                 curr_segments.clear();
@@ -597,6 +605,9 @@ void ViewerImpl::TextureData::set_enabled_options(const std::vector<uint32_t>& e
 
             glsafe(glGenTextures(1, &m_tex_ids[curr_tex_id].enabled_options.first));
             glsafe(glBindTexture(GL_TEXTURE_2D, m_tex_ids[curr_tex_id].enabled_options.first));
+            glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+            glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+            glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
             if (curr_options.size() == tex_capacity) {
                 glsafe(glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0, GL_RED_INTEGER, GL_UNSIGNED_INT, curr_options.data()));
                 m_tex_ids[curr_tex_id].enabled_options.second = w * h;
@@ -614,7 +625,6 @@ void ViewerImpl::TextureData::set_enabled_options(const std::vector<uint32_t>& e
                     m_tex_ids[curr_tex_id].enabled_options.second = w * (h - 1) + curr_options.size() % w;
                 }
             }
-            glsafe(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0));
             m_enabled_options_size += m_tex_ids[curr_tex_id].enabled_options.second * sizeof(uint32_t);
             if (new_tex) {
                 curr_options.clear();
