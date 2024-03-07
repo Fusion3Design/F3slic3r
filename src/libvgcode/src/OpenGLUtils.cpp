@@ -87,7 +87,7 @@ bool OpenGLWrapper::load_opengl(const std::string& context_version)
     return s_valid_context;
 }
 
-void  OpenGLWrapper::unload_opengl()
+void OpenGLWrapper::unload_opengl()
 {
 #if VGCODE_ENABLE_OPENGL_ES
     gladLoaderUnloadGLES2();

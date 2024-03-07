@@ -350,6 +350,9 @@ private:
         std::pair<unsigned int, size_t> get_enabled_segments_tex_id(size_t id) const;
         std::pair<unsigned int, size_t> get_enabled_options_tex_id(size_t id) const;
 
+        size_t get_enabled_segments_count() const;
+        size_t get_enabled_options_count() const;
+
         size_t max_texture_capacity() const { return m_width * m_height; }
         size_t get_used_gpu_memory() const;
 

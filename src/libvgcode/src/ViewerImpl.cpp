@@ -680,6 +680,24 @@ std::pair<unsigned int, size_t> ViewerImpl::TextureData::get_enabled_options_tex
     return m_tex_ids[id].enabled_options;
 }
 
+size_t ViewerImpl::TextureData::get_enabled_segments_count() const
+{
+    size_t ret = 0;
+    for (size_t i = 0; i < m_count; ++i) {
+        ret += m_tex_ids[i].enabled_segments.second;
+    }
+    return ret;
+}
+
+size_t ViewerImpl::TextureData::get_enabled_options_count() const
+{
+    size_t ret = 0;
+    for (size_t i = 0; i < m_count; ++i) {
+        ret += m_tex_ids[i].enabled_options.second;
+    }
+    return ret;
+}
+
 size_t ViewerImpl::TextureData::get_used_gpu_memory() const
 {
     size_t ret = 0;
@@ -1795,6 +1813,13 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
     if (m_segments_shader_id == 0)
         return;
 
+#if VGCODE_ENABLE_OPENGL_ES
+    if (m_texture_data.get_enabled_segments_count() == 0)
+#else
+    if (m_enabled_segments_count == 0)
+#endif // VGCODE_ENABLE_OPENGL_ES
+        return;
+
     int curr_active_texture = 0;
     glsafe(glGetIntegerv(GL_ACTIVE_TEXTURE, &curr_active_texture));
     int curr_shader;
@@ -1867,6 +1892,13 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
 void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
 {
     if (m_options_shader_id == 0)
+        return;
+
+#if VGCODE_ENABLE_OPENGL_ES
+    if (m_texture_data.get_enabled_options_count() == 0)
+#else
+    if (m_enabled_options_count == 0)
+#endif // VGCODE_ENABLE_OPENGL_ES
         return;
 
     int curr_active_texture = 0;
