@@ -153,6 +153,8 @@ namespace ImGui
     const wchar_t PlugMarker               = 0x1C;
     const wchar_t DowelMarker              = 0x1D;
     const wchar_t SnapMarker               = 0x1E;
+    const wchar_t Lock                     = 0x1F;
+    const wchar_t Unlock                   = 0x17;
     const wchar_t HorizontalHide           = 0xB1;
     const wchar_t HorizontalShow           = 0xB2;
     // Do not forget use following letters only in wstring

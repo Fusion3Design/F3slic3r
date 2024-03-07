@@ -303,7 +303,7 @@ public:
     void show_cog_icon_context_menu();
     void auto_color_change();
 
-    void imgui_render(GUI::GLCanvas3D& canvas);
+    bool imgui_render(GUI::GLCanvas3D& canvas);
 
 protected:
 
@@ -476,6 +476,25 @@ private:
         size_t count() { return max_values.size(); }
         bool can_draw() { return m_parent != nullptr; }
     } m_ruler;
+
+    // ImGuiDS
+    float       m_scale{ 1.0 };
+    bool        m_can_change_color{ true };
+    bool        m_show_menu{ false };
+    float       get_pos_from_value(int v_min, int v_max, int value, const ImRect& rect);
+
+    void        draw_background(const ImRect& groove);
+    void        draw_colored_band(const ImRect& groove, const ImRect& slideable_region);
+    void        draw_label(std::string label, const ImRect& handle, const ImVec2& handle_center, bool is_horizontal = false);
+    void        draw_ticks(const ImRect& slideable_region);
+    void        render_menu();
+    bool        render_button(const wchar_t btn_icon, const std::string& label_id, FocusedItem focus);
+    bool        horizontal_slider(const char* str_id, int* v, int v_min, int v_max, const ImVec2& pos, const ImVec2& size, float scale = 1.0);
+    bool        vertical_slider(const char* str_id, int* higher_value, int* lower_value,
+                                std::string& higher_label, std::string& lower_label,
+                                int v_min, int v_max, const ImVec2& pos, const ImVec2& size,
+                                SelectedSlider& selection, bool one_layer_flag = false, float scale = 1.0f);
+
 };
 
 } // DoubleSlider;

@@ -22,6 +22,7 @@ struct OptionViewParameters;
 class wxString;
 class wxMouseEvent;
 class wxKeyEvent;
+struct ImRect;
 
 struct IMGUI_API ImGuiWindow;
 
@@ -153,6 +154,11 @@ namespace ImGuiPSWrap
     ColorRGBA   from_ImU32(const ImU32& color);
     ColorRGBA   from_ImVec4(const ImVec4& color);
 }
+bool slider_behavior(ImGuiID id, const ImRect& region, const ImS32 v_min, const ImS32 v_max, ImS32* out_value, ImRect* out_handle, ImGuiSliderFlags flags = 0, const int fixed_value = -1, const ImVec4& fixed_rect = ImVec4());
+
+bool begin_menu(const char* label, bool enabled = true);
+void end_menu();
+bool menu_item_with_icon(const char* label, const char* shortcut, ImVec2 icon_size = ImVec2(0, 0), ImU32 icon_color = 0, bool selected = false, bool enabled = true);
 
 } // namespace GUI
 } // namespace Slic3r

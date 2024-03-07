@@ -352,6 +352,8 @@ void Preview::render_imgui_double_slider(GLCanvas3D& canvas)
 {
     if (m_layers_slider && m_layers_slider->IsShown())
         m_layers_slider->imgui_render(canvas);
+    if (m_moves_slider && m_moves_slider->IsShown())
+        m_moves_slider->imgui_render(canvas);
 }
 
 void Preview::jump_layers_slider(wxKeyEvent& evt)

@@ -296,6 +296,20 @@ bool combo(const std::string& label, const std::vector<std::string>& options, in
     return res;
 }
 
+void draw_hexagon(const ImVec2& center, float radius, ImU32 col, float start_angle)
+{
+    if ((col & IM_COL32_A_MASK) == 0)
+        return;
+
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+
+    float a_min = start_angle;
+    float a_max = start_angle + 2.f * IM_PI;
+
+    window->DrawList->PathArcTo(center, radius, a_min, a_max, 6);
+    window->DrawList->PathFillConvex(col);
+}
+
 // Scroll up for one item 
 void scroll_up()
 {
