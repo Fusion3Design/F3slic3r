@@ -5,7 +5,6 @@
 #ifndef VGCODE_GCODEINPUTDATA_HPP
 #define VGCODE_GCODEINPUTDATA_HPP
 
-#include "Types.hpp"
 #include "PathVertex.hpp"
 
 namespace libvgcode {

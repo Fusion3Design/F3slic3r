@@ -4,12 +4,9 @@ project(libvgcode)
 # glad library
 if (EMSCRIPTEN)
     set(GLAD_SOURCES
-#        glad/include/glad/egl.h
         glad/include/glad/gles2.h
-#        glad/include/EGL/eglplatform.h
         glad/include/KHR/khrplatform.h
         glad/src/gles2.c
-#        glad/src/egl.c
     )
 else ()
     set(GLAD_SOURCES
@@ -66,6 +63,10 @@ set(LIBVGCODE_SOURCES
 )
 
 add_library(libvgcode STATIC ${LIBVGCODE_SOURCES})
+
+if (EMSCRIPTEN)
+    add_compile_definitions(ENABLE_OPENGL_ES)
+endif()
 
 if (WIN32)
     foreach(_source IN ITEMS ${LIBVGCODE_SOURCES})

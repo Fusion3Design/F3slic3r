@@ -3,7 +3,6 @@
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
 
-#include "../include/Types.hpp"
 #include "OpenGLUtils.hpp"
 
 #include <iostream>
@@ -28,10 +27,10 @@ void glAssertRecentCallImpl(const char* file_name, unsigned int line, const char
     case GL_INVALID_OPERATION: { sErr = "Invalid Operation"; break; }
     case GL_OUT_OF_MEMORY:     { sErr = "Out Of Memory"; break; }
     case GL_INVALID_FRAMEBUFFER_OPERATION: { sErr = "Invalid framebuffer operation"; break; }
-#if !VGCODE_ENABLE_OPENGL_ES
+#if !defined(ENABLE_OPENGL_ES)
     case GL_STACK_OVERFLOW:    { sErr = "Stack Overflow"; break; }
     case GL_STACK_UNDERFLOW:   { sErr = "Stack Underflow"; break; }
-#endif // !VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
     default:                   { sErr = "Unknown"; break; }
     }
     std::cout << "OpenGL error in " << file_name << ":" << line << ", function " << function_name << "() : " << (int)err << " - " << sErr << "\n";
@@ -42,9 +41,9 @@ void glAssertRecentCallImpl(const char* file_name, unsigned int line, const char
 static const char* OPENGL_ES_PREFIXES[] = { "OpenGL ES-CM ", "OpenGL ES-CL ", "OpenGL ES ", nullptr };
 
 bool OpenGLWrapper::s_valid_context = false;
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
 int OpenGLWrapper::s_max_texture_size = 0;
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
 bool OpenGLWrapper::load_opengl(const std::string& context_version)
 {
@@ -69,31 +68,31 @@ bool OpenGLWrapper::load_opengl(const std::string& context_version)
     if (res != 2)
         return false;
 
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     s_valid_context = major > 3 || (major == 3 && minor >= 0);
     const int glad_res = gladLoaderLoadGLES2();
 #else
     s_valid_context = major > 3 || (major == 3 && minor >= 2);
     const int glad_res = gladLoaderLoadGL();
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     if (glad_res == 0)
         return false;
 
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     glsafe(glGetIntegerv(GL_MAX_TEXTURE_SIZE, &s_max_texture_size));
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     return s_valid_context;
 }
 
 void OpenGLWrapper::unload_opengl()
 {
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     gladLoaderUnloadGLES2();
 #else
     gladLoaderUnloadGL();
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 }
 
 } // namespace libvgcode

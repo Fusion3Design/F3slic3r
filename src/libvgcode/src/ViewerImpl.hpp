@@ -332,7 +332,7 @@ private:
     int m_uni_tool_marker_color_base{ -1 };
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     class TextureData
     {
     public:
@@ -442,7 +442,7 @@ private:
     size_t m_colors_tex_size{ 0 };
     size_t m_enabled_segments_tex_size{ 0 };
     size_t m_enabled_options_tex_size{ 0 };
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     void update_view_full_range();
     void update_color_ranges();

@@ -6,11 +6,11 @@
 #define VGCODE_OPENGLUTILS_HPP
 
 // OpenGL loader
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
 #include "../glad/include/glad/gles2.h"
 #else
 #include "../glad/include/glad/gl.h"
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
 #include <string>
 
@@ -36,15 +36,15 @@ public:
     static bool load_opengl(const std::string& context_version);
     static void unload_opengl();
     static bool is_valid_context() { return s_valid_context; }
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     static size_t max_texture_size() { return static_cast<size_t>(s_max_texture_size); }
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
 private:
     static bool s_valid_context;
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     static int s_max_texture_size;
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 };
 
 } // namespace libvgcode

@@ -2,7 +2,6 @@
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
-#include "../include/Types.hpp"
 #include "SegmentTemplate.hpp"
 #include "OpenGLUtils.hpp"
 
@@ -46,11 +45,11 @@ void SegmentTemplate::init()
     glsafe(glBindBuffer(GL_ARRAY_BUFFER, m_vbo_id));
     glsafe(glBufferData(GL_ARRAY_BUFFER, VERTEX_DATA.size() * sizeof(uint8_t), VERTEX_DATA.data(), GL_STATIC_DRAW));
     glsafe(glEnableVertexAttribArray(0));
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     glsafe(glVertexAttribPointer(0, 1, GL_UNSIGNED_BYTE, GL_FALSE, 0, (const void*)0));
 #else
     glsafe(glVertexAttribIPointer(0, 1, GL_UNSIGNED_BYTE, 0, (const void*)0));
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     glsafe(glBindBuffer(GL_ARRAY_BUFFER, curr_array_buffer));
     glsafe(glBindVertexArray(curr_vertex_array));

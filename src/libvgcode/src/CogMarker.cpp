@@ -2,6 +2,8 @@
 ///|/
 ///|/ libvgcode is released under the terms of the AGPLv3 or higher
 ///|/
+// needed for tech VGCODE_ENABLE_COG_AND_TOOL_MARKERS
+#include "../include/Types.hpp"
 #include "CogMarker.hpp"
 #include "OpenGLUtils.hpp"
 #include "Utils.hpp"

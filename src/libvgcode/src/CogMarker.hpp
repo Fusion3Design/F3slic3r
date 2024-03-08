@@ -5,8 +5,6 @@
 #ifndef VGCODE_COGMARKER_HPP
 #define VGCODE_COGMARKER_HPP
 
-#include "../include/Types.hpp"
-
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
 namespace libvgcode {

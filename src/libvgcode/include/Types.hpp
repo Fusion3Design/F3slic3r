@@ -5,8 +5,6 @@
 #ifndef VGCODE_TYPES_HPP
 #define VGCODE_TYPES_HPP
 
-#define VGCODE_ENABLE_OPENGL_ES 0
-
 #define VGCODE_ENABLE_COG_AND_TOOL_MARKERS 0
 
 #include <array>

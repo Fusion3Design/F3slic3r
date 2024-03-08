@@ -310,7 +310,7 @@ static const std::map<EOptionType, Color> DEFAULT_OPTIONS_COLORS{ {
     { EOptionType::CustomGCodes,  { 226, 210,  67 } }
 } };
 
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
 static std::pair<size_t, size_t> width_height(size_t count)
 {
     std::pair<size_t, size_t> ret;
@@ -718,7 +718,7 @@ size_t ViewerImpl::TextureData::get_used_gpu_memory() const
     ret += m_enabled_options_size;
     return ret;
 }
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
 ViewerImpl::ViewerImpl()
 {
@@ -735,20 +735,20 @@ void ViewerImpl::init(const std::string& opengl_context_version)
         if (OpenGLWrapper::is_valid_context())
             throw std::runtime_error("LibVGCode was unable to initialize the GLAD library.\n");
         else {
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
             throw std::runtime_error("LibVGCode requires an OpenGL ES context based on OpenGL ES 3.0 or higher.\n");
 #else
             throw std::runtime_error("LibVGCode requires an OpenGL context based on OpenGL 3.2 or higher.\n");
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
         }
     }
 
     // segments shader
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     m_segments_shader_id = init_shader("segments", Segments_Vertex_Shader_ES, Segments_Fragment_Shader_ES);
 #else
     m_segments_shader_id = init_shader("segments", Segments_Vertex_Shader, Segments_Fragment_Shader);
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     m_uni_segments_view_matrix_id            = glGetUniformLocation(m_segments_shader_id, "view_matrix");
     m_uni_segments_projection_matrix_id      = glGetUniformLocation(m_segments_shader_id, "projection_matrix");
@@ -769,11 +769,11 @@ void ViewerImpl::init(const std::string& opengl_context_version)
     m_segment_template.init();
 
     // options shader
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     m_options_shader_id = init_shader("options", Options_Vertex_Shader_ES, Options_Fragment_Shader_ES);
 #else
     m_options_shader_id = init_shader("options", Options_Vertex_Shader, Options_Fragment_Shader);
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     m_uni_options_view_matrix_id            = glGetUniformLocation(m_options_shader_id, "view_matrix");
     m_uni_options_projection_matrix_id      = glGetUniformLocation(m_options_shader_id, "projection_matrix");
@@ -793,11 +793,11 @@ void ViewerImpl::init(const std::string& opengl_context_version)
 
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     // cog marker shader
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     m_cog_marker_shader_id = init_shader("cog_marker", Cog_Marker_Vertex_Shader_ES, Cog_Marker_Fragment_Shader_ES);
 #else
     m_cog_marker_shader_id = init_shader("cog_marker", Cog_Marker_Vertex_Shader, Cog_Marker_Fragment_Shader);
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     m_uni_cog_marker_world_center_position = glGetUniformLocation(m_cog_marker_shader_id, "world_center_position");
     m_uni_cog_marker_scale_factor          = glGetUniformLocation(m_cog_marker_shader_id, "scale_factor");
@@ -812,11 +812,11 @@ void ViewerImpl::init(const std::string& opengl_context_version)
     m_cog_marker.init(32, 1.0f);
 
     // tool marker shader
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     m_tool_marker_shader_id = init_shader("tool_marker", Tool_Marker_Vertex_Shader_ES, Tool_Marker_Fragment_Shader_ES);
 #else
     m_tool_marker_shader_id = init_shader("tool_marker", Tool_Marker_Vertex_Shader, Tool_Marker_Fragment_Shader);
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     m_uni_tool_marker_world_origin      = glGetUniformLocation(m_tool_marker_shader_id, "world_origin");
     m_uni_tool_marker_scale_factor      = glGetUniformLocation(m_tool_marker_shader_id, "scale_factor");
@@ -873,7 +873,7 @@ void ViewerImpl::reset()
     m_cog_marker.reset();
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     m_texture_data.reset();
 #else
     m_enabled_segments_count = 0;
@@ -889,7 +889,7 @@ void ViewerImpl::reset()
     delete_buffers(m_heights_widths_angles_buf_id);
     delete_textures(m_positions_tex_id);
     delete_buffers(m_positions_buf_id);
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 }
 
 static void extract_pos_and_or_hwa(const std::vector<PathVertex>& vertices, float travels_radius, float wipes_radius, BitSet<>& valid_lines_bitset,
@@ -1038,7 +1038,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     extract_pos_and_or_hwa(m_vertices, m_travels_radius, m_wipes_radius, m_valid_lines_bitset, &positions, &heights_widths_angles, true);
 
     if (!positions.empty()) {
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
         m_texture_data.init(positions.size());
         // create and fill position textures
         m_texture_data.set_positions(positions);
@@ -1085,7 +1085,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
 
         glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
         glsafe(glBindTexture(GL_TEXTURE_BUFFER, old_bound_texture));
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
     }
 
     update_view_full_range();
@@ -1152,7 +1152,7 @@ void ViewerImpl::update_enabled_entities()
             enabled_segments.push_back(static_cast<uint32_t>(i));
     }
 
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     m_texture_data.set_enabled_segments(enabled_segments);
     m_texture_data.set_enabled_options(enabled_options);
 #else
@@ -1179,7 +1179,7 @@ void ViewerImpl::update_enabled_entities()
         glsafe(glBufferData(GL_TEXTURE_BUFFER, 0, nullptr, GL_STATIC_DRAW));
 
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     m_settings.update_enabled_entities = false;
 }
@@ -1194,10 +1194,10 @@ static float encode_color(const Color& color) {
 
 void ViewerImpl::update_colors()
 {
-#if !VGCODE_ENABLE_OPENGL_ES
+#if !defined(ENABLE_OPENGL_ES)
     if (m_colors_buf_id == 0)
         return;
-#endif // !VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     if (!m_used_extruders.empty()) {
         // ensure that the number of defined tool colors matches the max id of the used extruders 
@@ -1221,7 +1221,7 @@ void ViewerImpl::update_colors()
             encode_color(DUMMY_COLOR) : encode_color(get_vertex_color(m_vertices[i]));
     }
 
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     if (!colors.empty())
         // update gpu buffer for colors
         m_texture_data.set_colors(colors);
@@ -1232,7 +1232,7 @@ void ViewerImpl::update_colors()
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, m_colors_buf_id));
     glsafe(glBufferData(GL_TEXTURE_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW));
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     m_settings.update_colors = false;
 }
@@ -1628,7 +1628,7 @@ size_t ViewerImpl::get_used_gpu_memory() const
     ret += m_tool_marker.size_in_bytes_gpu();
     ret += m_cog_marker.size_in_bytes_gpu();
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     ret += m_texture_data.get_used_gpu_memory();
 #else
     ret += m_positions_tex_size;
@@ -1636,7 +1636,7 @@ size_t ViewerImpl::get_used_gpu_memory() const
     ret += m_colors_tex_size;
     ret += m_enabled_segments_tex_size;
     ret += m_enabled_options_tex_size;
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
     return ret;
 }
 
@@ -1787,7 +1787,7 @@ void ViewerImpl::update_color_ranges()
 
 void ViewerImpl::update_heights_widths()
 {
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     std::vector<Vec3> heights_widths_angles;
     heights_widths_angles.reserve(m_vertices.size());
     extract_pos_and_or_hwa(m_vertices, m_travels_radius, m_wipes_radius, m_valid_lines_bitset, nullptr, &heights_widths_angles);
@@ -1815,7 +1815,7 @@ void ViewerImpl::update_heights_widths()
 
     glsafe(glUnmapBuffer(GL_TEXTURE_BUFFER));
     glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 }
 
 void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projection_matrix, const Vec3& camera_position)
@@ -1823,11 +1823,11 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
     if (m_segments_shader_id == 0)
         return;
 
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     if (m_texture_data.get_enabled_segments_count() == 0)
 #else
     if (m_enabled_segments_count == 0)
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
         return;
 
     int curr_active_texture = 0;
@@ -1849,7 +1849,7 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
 
     glsafe(glDisable(GL_CULL_FACE));
 
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     int curr_bound_texture = 0;
     glsafe(glGetIntegerv(GL_TEXTURE_BINDING_2D, &curr_bound_texture));
 
@@ -1885,17 +1885,17 @@ void ViewerImpl::render_segments(const Mat4x4& view_matrix, const Mat4x4& projec
     glsafe(glTexBuffer(GL_TEXTURE_BUFFER, GL_R32UI, m_enabled_segments_buf_id));
 
     m_segment_template.render(m_enabled_segments_count);
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     if (curr_cull_face)
         glsafe(glEnable(GL_CULL_FACE));
 
     glsafe(glUseProgram(curr_shader));
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     glsafe(glBindTexture(GL_TEXTURE_2D, curr_bound_texture));
 #else
     glsafe(glBindTexture(GL_TEXTURE_BUFFER, curr_bound_texture));
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
     glsafe(glActiveTexture(curr_active_texture));
 }
 
@@ -1904,11 +1904,11 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
     if (m_options_shader_id == 0)
         return;
 
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     if (m_texture_data.get_enabled_options_count() == 0)
 #else
     if (m_enabled_options_count == 0)
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
         return;
 
     int curr_active_texture = 0;
@@ -1929,7 +1929,7 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
 
     glsafe(glEnable(GL_CULL_FACE));
 
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     int curr_bound_texture = 0;
     glsafe(glGetIntegerv(GL_TEXTURE_BINDING_2D, &curr_bound_texture));
 
@@ -1965,17 +1965,17 @@ void ViewerImpl::render_options(const Mat4x4& view_matrix, const Mat4x4& project
     glsafe(glTexBuffer(GL_TEXTURE_BUFFER, GL_R32UI, m_enabled_options_buf_id));
 
     m_option_template.render(m_enabled_options_count);
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
 
     if (!curr_cull_face)
         glsafe(glDisable(GL_CULL_FACE));
 
     glsafe(glUseProgram(curr_shader));
-#if VGCODE_ENABLE_OPENGL_ES
+#ifdef ENABLE_OPENGL_ES
     glsafe(glBindTexture(GL_TEXTURE_2D, curr_bound_texture));
 #else
     glsafe(glBindTexture(GL_TEXTURE_BUFFER, curr_bound_texture));
-#endif // VGCODE_ENABLE_OPENGL_ES
+#endif // ENABLE_OPENGL_ES
     glsafe(glActiveTexture(curr_active_texture));
 }
 
