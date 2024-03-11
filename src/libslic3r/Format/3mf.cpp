@@ -1003,7 +1003,7 @@ namespace Slic3r {
         // We support our 3mf contains only configuration without mesh,
         // others MUST contain mesh (triangles and vertices).
         if (!m_prusaslicer_generator_version.has_value() && model.objects.empty()) {
-            const std::string msg = (boost::format(_u8L("3mf File (\"%1%\") do not contain valid mesh.")) % filename).str();
+            const std::string msg = (boost::format(_u8L("The 3MF file does not contain a valid mesh.\n\n\"%1%\"")) % filename).str();
             throw Slic3r::RuntimeError(msg);
         }
 

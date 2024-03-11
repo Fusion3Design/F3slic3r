@@ -3359,7 +3359,8 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("wipe_tower_extra_flow", coPercent);
     def->label = L("Extra flow for purging");
-    def->tooltip = L("");
+    def->tooltip = L("Extra flow used for the purging lines on the wipe tower. This makes the purging lines thicker or narrower "
+                     "than they normally would be. The spacing is adjusted automatically.");
     def->sidetext = L("%");
     def->mode = comExpert;
     def->min = 100.;
