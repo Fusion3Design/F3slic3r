@@ -2,7 +2,9 @@
 #define slic3r_GCode_LabelObjects_hpp_
 
 #include <string>
-#include <unordered_map>
+#include <vector>
+
+#include "libslic3r/Print.hpp"
 
 namespace Slic3r {
 
@@ -21,20 +23,24 @@ public:
         No,
         Yes
     };
-    void init(const Print& print);
+    void init(const SpanOfConstPtrs<PrintObject>& objects, LabelObjectsStyle label_object_style, GCodeFlavor gcode_flavor);
     std::string all_objects_header() const;
+    std::string all_objects_header_singleline_json() const;
     std::string start_object(const PrintInstance& print_instance, IncludeName include_name) const;
     std::string stop_object(const PrintInstance& print_instance) const;
 
 private:
     struct LabelData {
+        const PrintInstance* pi;
         std::string name;
+        std::string center;
+        std::string polygon;        
         int unique_id;
     };
 
     LabelObjectsStyle m_label_objects_style;
     GCodeFlavor       m_flavor;
-    std::unordered_map<const PrintInstance*, LabelData> m_label_data;
+    std::vector<LabelData> m_label_data;
 
 };
 
