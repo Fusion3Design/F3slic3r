@@ -3314,8 +3314,8 @@ void PrintConfigDef::init_fff_params()
                                                     140., 140., 140., 140.,   0. });
 
     def = this->add("wiping_volumes_use_custom_matrix", coBool);
-    def->label = L("");
-    def->tooltip = L("");
+    def->label = "";
+    def->tooltip = "";
     def->set_default_value(new ConfigOptionBool{ false });
 
     def = this->add("wipe_tower_x", coFloat);
