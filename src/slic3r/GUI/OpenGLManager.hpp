@@ -10,9 +10,9 @@
 class wxWindow;
 class wxGLCanvas;
 class wxGLContext;
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 class wxGLAttributes;
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 
 namespace Slic3r {
 namespace GUI {
@@ -60,11 +60,11 @@ public:
 
         bool is_mesa() const;
         bool is_es() const {
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
             return true;
 #else
             return false;
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
         }
 
         int get_max_tex_size() const;
@@ -146,11 +146,11 @@ public:
 
 private:
 #if !ENABLE_OPENGL_AUTO_AA_SAMPLES
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
     static void detect_multisample(const wxGLAttributes& attribList);
 #else
     static void detect_multisample(int* attribList);
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 #endif // !ENABLE_OPENGL_AUTO_AA_SAMPLES
 };
 

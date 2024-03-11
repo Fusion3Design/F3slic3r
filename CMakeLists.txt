@@ -41,7 +41,11 @@ option(SLIC3R_MSVC_COMPILE_PARALLEL "Compile on Visual Studio in parallel" 1)
 option(SLIC3R_MSVC_PDB          "Generate PDB files on MSVC in Release mode" 1)
 option(SLIC3R_ASAN              "Enable ASan on Clang and GCC" 0)
 option(SLIC3R_UBSAN             "Enable UBSan on Clang and GCC" 0)
-option(SLIC3R_ENABLE_FORMAT_STEP "Enable compilation of STEP file support" 1)
+option(SLIC3R_ENABLE_FORMAT_STEP "Enable compilation of STEP file support" ON)
+
+# SLIC3R_OPENGL_ES can be enabled only if SLIC3R_GUI is enabled.
+CMAKE_DEPENDENT_OPTION(SLIC3R_OPENGL_ES "Compile PrusaSlicer targeting OpenGL ES" OFF "SLIC3R_GUI" OFF)
+
 # If SLIC3R_FHS is 1 -> SLIC3R_DESKTOP_INTEGRATION is always 0, otherwise variable.
 CMAKE_DEPENDENT_OPTION(SLIC3R_DESKTOP_INTEGRATION "Allow perfoming desktop integration during runtime" 1 "NOT SLIC3R_FHS" 0)
 
@@ -97,6 +101,10 @@ endforeach()
 if (SLIC3R_GUI)
     add_definitions(-DSLIC3R_GUI)
 endif ()
+
+if (SLIC3R_OPENGL_ES)
+    add_definitions(-DSLIC3R_OPENGL_ES)
+endif()
 
 if(SLIC3R_DESKTOP_INTEGRATION)
     add_definitions(-DSLIC3R_DESKTOP_INTEGRATION)

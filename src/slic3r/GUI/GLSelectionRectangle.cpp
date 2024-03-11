@@ -84,7 +84,7 @@ namespace GUI {
 
         glsafe(::glDisable(GL_DEPTH_TEST));
 
-#if !ENABLE_OPENGL_ES
+#if !SLIC3R_OPENGL_ES
 #if ENABLE_GL_CORE_PROFILE
         if (!core_profile) {
 #endif // ENABLE_GL_CORE_PROFILE
@@ -94,15 +94,15 @@ namespace GUI {
 #if ENABLE_GL_CORE_PROFILE
         }
 #endif // ENABLE_GL_CORE_PROFILE
-#endif // !ENABLE_OPENGL_ES
+#endif // !SLIC3R_OPENGL_ES
 
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
         GLShaderProgram* shader = wxGetApp().get_shader("dashed_lines");
 #elif ENABLE_GL_CORE_PROFILE
         GLShaderProgram* shader = core_profile ? wxGetApp().get_shader("dashed_thick_lines") : wxGetApp().get_shader("flat");
 #else
         GLShaderProgram* shader = wxGetApp().get_shader("flat");
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
         if (shader != nullptr) {
             shader->start_using();
 
@@ -112,7 +112,7 @@ namespace GUI {
                 m_rectangle.reset();
 
                 GLModel::Geometry init_data;
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
                 init_data.format = { GLModel::Geometry::EPrimitiveType::Lines, GLModel::Geometry::EVertexLayout::P4 };
                 init_data.reserve_vertices(5);
                 init_data.reserve_indices(8);
@@ -120,10 +120,10 @@ namespace GUI {
                 init_data.format = { GLModel::Geometry::EPrimitiveType::LineLoop, GLModel::Geometry::EVertexLayout::P2 };
                 init_data.reserve_vertices(4);
                 init_data.reserve_indices(4);
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 
                 // vertices
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
                 const float width = right - left;
                 const float height = top - bottom;
                 float perimeter = 0.0f;
@@ -154,14 +154,14 @@ namespace GUI {
                 init_data.add_index(1);
                 init_data.add_index(2);
                 init_data.add_index(3);
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 
                 m_rectangle.init_from(std::move(init_data));
             }
 
             shader->set_uniform("view_model_matrix", Transform3d::Identity());
             shader->set_uniform("projection_matrix", Transform3d::Identity());
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
             shader->set_uniform("dash_size", 0.01f);
             shader->set_uniform("gap_size", 0.0075f);
 #elif ENABLE_GL_CORE_PROFILE
@@ -172,19 +172,19 @@ namespace GUI {
             shader->set_uniform("dash_size", 0.01f);
             shader->set_uniform("gap_size", 0.0075f);
             }
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
 
             m_rectangle.set_color(ColorRGBA((m_state == EState::Select) ? 0.3f : 1.0f, (m_state == EState::Select) ? 1.0f : 0.3f, 0.3f, 1.0f));
             m_rectangle.render();
             shader->stop_using();
         }
 
-#if !ENABLE_OPENGL_ES
+#if !SLIC3R_OPENGL_ES
 #if ENABLE_GL_CORE_PROFILE
         if (!core_profile)
 #endif // ENABLE_GL_CORE_PROFILE
         glsafe(::glPopAttrib());
-#endif // !ENABLE_OPENGL_ES
+#endif // !SLIC3R_OPENGL_ES
     }
 
 } // namespace GUI

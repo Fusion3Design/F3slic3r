@@ -108,7 +108,6 @@ void GLModel::Geometry::add_vertex(const Vec3f& position, const Vec3f& normal, c
     vertices.emplace_back(tex_coord.y());
 }
 
-#if ENABLE_OPENGL_ES
 void GLModel::Geometry::add_vertex(const Vec3f& position, const Vec3f& normal, const Vec3f& extra)
 {
     assert(format.vertex_layout == EVertexLayout::P3N3E3);
@@ -122,7 +121,6 @@ void GLModel::Geometry::add_vertex(const Vec3f& position, const Vec3f& normal, c
     vertices.emplace_back(extra.y());
     vertices.emplace_back(extra.z());
 }
-#endif // ENABLE_OPENGL_ES
 
 void GLModel::Geometry::add_vertex(const Vec4f& position)
 {
@@ -279,9 +277,7 @@ size_t GLModel::Geometry::vertex_stride_floats(const Format& format)
     case EVertexLayout::P3T2:   { return 5; }
     case EVertexLayout::P3N3:   { return 6; }
     case EVertexLayout::P3N3T2: { return 8; }
-#if ENABLE_OPENGL_ES
     case EVertexLayout::P3N3E3: { return 9; }
-#endif // ENABLE_OPENGL_ES
     case EVertexLayout::P4:     { return 4; }
     default:                    { assert(false); return 0; }
     };
@@ -296,12 +292,8 @@ size_t GLModel::Geometry::position_stride_floats(const Format& format)
     case EVertexLayout::P3:
     case EVertexLayout::P3T2:
     case EVertexLayout::P3N3:
-#if ENABLE_OPENGL_ES
     case EVertexLayout::P3N3T2:
     case EVertexLayout::P3N3E3: { return 3; }
-#else
-    case EVertexLayout::P3N3T2: { return 3; }
-#endif // ENABLE_OPENGL_ES
     case EVertexLayout::P4:     { return 4; }
     default:                    { assert(false); return 0; }
     };
@@ -317,9 +309,7 @@ size_t GLModel::Geometry::position_offset_floats(const Format& format)
     case EVertexLayout::P3T2:
     case EVertexLayout::P3N3:
     case EVertexLayout::P3N3T2:
-#if ENABLE_OPENGL_ES
     case EVertexLayout::P3N3E3:
-#endif // ENABLE_OPENGL_ES
     case EVertexLayout::P4:   { return 0; }
     default:                  { assert(false); return 0; }
     };
@@ -330,12 +320,8 @@ size_t GLModel::Geometry::normal_stride_floats(const Format& format)
     switch (format.vertex_layout)
     {
     case EVertexLayout::P3N3:
-#if ENABLE_OPENGL_ES
     case EVertexLayout::P3N3T2:
     case EVertexLayout::P3N3E3: { return 3; }
-#else
-    case EVertexLayout::P3N3T2: { return 3; }
-#endif // ENABLE_OPENGL_ES
     default:                    { assert(false); return 0; }
     };
 }
@@ -345,12 +331,8 @@ size_t GLModel::Geometry::normal_offset_floats(const Format& format)
     switch (format.vertex_layout)
     {
     case EVertexLayout::P3N3:
-#if ENABLE_OPENGL_ES
     case EVertexLayout::P3N3T2:
     case EVertexLayout::P3N3E3: { return 3; }
-#else
-    case EVertexLayout::P3N3T2: { return 3; }
-#endif // ENABLE_OPENGL_ES
     default:                    { assert(false); return 0; }
     };
 }
@@ -377,7 +359,6 @@ size_t GLModel::Geometry::tex_coord_offset_floats(const Format& format)
     };
 }
 
-#if ENABLE_OPENGL_ES
 size_t GLModel::Geometry::extra_stride_floats(const Format& format)
 {
     switch (format.vertex_layout)
@@ -395,7 +376,6 @@ size_t GLModel::Geometry::extra_offset_floats(const Format& format)
     default:                    { assert(false); return 0; }
     };
 }
-#endif // ENABLE_OPENGL_ES
 
 size_t GLModel::Geometry::index_stride_bytes(const Geometry& data)
 {
@@ -418,9 +398,7 @@ bool GLModel::Geometry::has_position(const Format& format)
     case EVertexLayout::P3T2:
     case EVertexLayout::P3N3:
     case EVertexLayout::P3N3T2:
-#if ENABLE_OPENGL_ES
     case EVertexLayout::P3N3E3:
-#endif // ENABLE_OPENGL_ES
     case EVertexLayout::P4:   { return true; }
     default:                  { assert(false); return false; }
     };
@@ -436,12 +414,8 @@ bool GLModel::Geometry::has_normal(const Format& format)
     case EVertexLayout::P3T2:
     case EVertexLayout::P4:     { return false; }
     case EVertexLayout::P3N3:
-#if ENABLE_OPENGL_ES
     case EVertexLayout::P3N3T2:
     case EVertexLayout::P3N3E3: { return true; }
-#else
-    case EVertexLayout::P3N3T2: { return true; }
-#endif // ENABLE_OPENGL_ES
     default:                    { assert(false); return false; }
     };
 }
@@ -456,15 +430,12 @@ bool GLModel::Geometry::has_tex_coord(const Format& format)
     case EVertexLayout::P2:
     case EVertexLayout::P3:
     case EVertexLayout::P3N3:
-#if ENABLE_OPENGL_ES
     case EVertexLayout::P3N3E3:
-#endif // ENABLE_OPENGL_ES
     case EVertexLayout::P4:     { return false; }
     default:                    { assert(false); return false; }
     };
 }
 
-#if ENABLE_OPENGL_ES
 bool GLModel::Geometry::has_extra(const Format& format)
 {
     switch (format.vertex_layout)
@@ -480,7 +451,6 @@ bool GLModel::Geometry::has_extra(const Format& format)
     default:                    { assert(false); return false; }
     };
 }
-#endif // ENABLE_OPENGL_ES
 
 #if ENABLE_GLMODEL_STATISTICS
 GLModel::Statistics GLModel::s_statistics;
@@ -788,9 +758,7 @@ void GLModel::render(const std::pair<size_t, size_t>& range)
     const bool position = Geometry::has_position(data.format);
     const bool normal = Geometry::has_normal(data.format);
     const bool tex_coord = Geometry::has_tex_coord(data.format);
-#if ENABLE_OPENGL_ES
     const bool extra = Geometry::has_extra(data.format);
-#endif // ENABLE_OPENGL_ES
 
 #if ENABLE_GL_CORE_PROFILE
     if (OpenGLManager::get_gl_info().is_version_greater_or_equal_to(3, 0))
@@ -802,9 +770,7 @@ void GLModel::render(const std::pair<size_t, size_t>& range)
     int position_id  = -1;
     int normal_id    = -1;
     int tex_coord_id = -1;
-#if ENABLE_OPENGL_ES
     int extra_id     = -1;
-#endif // ENABLE_OPENGL_ES
 
     if (position) {
         position_id = shader->get_attrib_location("v_position");
@@ -827,7 +793,6 @@ void GLModel::render(const std::pair<size_t, size_t>& range)
             glsafe(::glEnableVertexAttribArray(tex_coord_id));
         }
     }
-#if ENABLE_OPENGL_ES
     if (extra) {
         extra_id = shader->get_attrib_location("v_extra");
         if (extra_id != -1) {
@@ -835,7 +800,6 @@ void GLModel::render(const std::pair<size_t, size_t>& range)
             glsafe(::glEnableVertexAttribArray(extra_id));
         }
     }
-#endif // ENABLE_OPENGL_ES
 
     shader->set_uniform("uniform_color", data.color);
 
@@ -848,10 +812,8 @@ void GLModel::render(const std::pair<size_t, size_t>& range)
     glsafe(::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 #endif // !ENABLE_GL_CORE_PROFILE
 
-#if ENABLE_OPENGL_ES
     if (extra_id != -1)
         glsafe(::glDisableVertexAttribArray(extra_id));
-#endif // ENABLE_OPENGL_ES
     if (tex_coord_id != -1)
         glsafe(::glDisableVertexAttribArray(tex_coord_id));
     if (normal_id != -1)

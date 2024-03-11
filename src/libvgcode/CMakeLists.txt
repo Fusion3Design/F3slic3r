@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(libvgcode)
 
 # glad library
-if (EMSCRIPTEN)
+if (EMSCRIPTEN OR SLIC3R_OPENGL_ES)
     set(GLAD_SOURCES
         glad/include/glad/gles2.h
         glad/include/KHR/khrplatform.h
@@ -64,7 +64,7 @@ set(LIBVGCODE_SOURCES
 
 add_library(libvgcode STATIC ${LIBVGCODE_SOURCES})
 
-if (EMSCRIPTEN)
+if (EMSCRIPTEN OR SLIC3R_OPENGL_ES)
     add_compile_definitions(ENABLE_OPENGL_ES)
 endif()
 

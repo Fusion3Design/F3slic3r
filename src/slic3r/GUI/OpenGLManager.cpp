@@ -150,16 +150,16 @@ static Semver parse_version_string(const std::string& version)
     if (tokens.empty())
         return Semver::invalid();
 
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
     const std::string version_container = (tokens.size() > 1 && boost::istarts_with(tokens[1], "ES")) ? tokens[2] : tokens[0];
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
 
     std::vector<std::string> numbers;
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
     boost::split(numbers, version_container, boost::is_any_of("."), boost::token_compress_on);
 #else
     boost::split(numbers, tokens[0], boost::is_any_of("."), boost::token_compress_on);
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
 
     unsigned int gl_major = 0;
     unsigned int gl_minor = 0;
@@ -348,10 +348,10 @@ static void CustomGLDebugOutput(GLenum source, GLenum type, unsigned int id, GLe
 bool OpenGLManager::init_gl()
 {
     if (!m_gl_initialized) {
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
-        glewExperimental = true;
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
-        GLenum err = glewInit();
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
+      glewExperimental = true;
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
+      GLenum err = glewInit();
         if (err != GLEW_OK) {
             BOOST_LOG_TRIVIAL(error) << "Unable to init glew library: " << glewGetErrorString(err);
             return false;
@@ -378,18 +378,18 @@ bool OpenGLManager::init_gl()
         else
             s_framebuffers_type = EFramebufferType::Unknown;
 
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
         bool valid_version = s_gl_info.is_version_greater_or_equal_to(2, 0);
 #elif ENABLE_GL_CORE_PROFILE
         const bool valid_version = s_gl_info.is_version_greater_or_equal_to(3, 2);
 #else
         bool valid_version = s_gl_info.is_version_greater_or_equal_to(2, 0);
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
 
         if (!valid_version) {
             // Complain about the OpenGL version.
             wxString message = format_wxstr(
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
                 _L("PrusaSlicer requires OpenGL ES 2.0 capable graphics driver to run correctly, \n"
                    "while OpenGL version %s, render %s, vendor %s was detected."), s_gl_info.get_version_string(), s_gl_info.get_renderer(), s_gl_info.get_vendor());
 #elif ENABLE_GL_CORE_PROFILE
@@ -398,7 +398,7 @@ bool OpenGLManager::init_gl()
 #else
                 _L("PrusaSlicer requires OpenGL 2.0 capable graphics driver to run correctly, \n"
                    "while OpenGL version %s, render %s, vendor %s was detected."), s_gl_info.get_version_string(), s_gl_info.get_renderer(), s_gl_info.get_vendor());
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
             message += "\n";
           	message += _L("You may need to update your graphics card driver.");
 #ifdef _WIN32
@@ -457,7 +457,7 @@ wxGLContext* OpenGLManager::init_glcontext(wxGLCanvas& canvas)
 #endif // ENABLE_GL_CORE_PROFILE
 {
     if (m_context == nullptr) {
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
         wxGLContextAttrs attrs;
         attrs.PlatformDefaults().ES2().MajorVersion(2).EndList();
         m_context = new wxGLContext(&canvas, nullptr, &attrs);
@@ -533,7 +533,7 @@ wxGLContext* OpenGLManager::init_glcontext(wxGLCanvas& canvas)
         }
 #else
         m_context = new wxGLContext(&canvas);
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
 
 #ifdef __APPLE__ 
         // Part of hack to remove crash when closing the application on OSX 10.9.5 when building against newer wxWidgets
@@ -551,7 +551,7 @@ wxGLCanvas* OpenGLManager::create_wxglcanvas(wxWindow& parent, bool enable_auto_
 wxGLCanvas* OpenGLManager::create_wxglcanvas(wxWindow& parent)
 #endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 {
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
     wxGLAttributes attribList;
 #if ENABLE_OPENGL_AUTO_AA_SAMPLES
     s_multisample = EMultisampleState::Disabled;
@@ -590,7 +590,7 @@ wxGLCanvas* OpenGLManager::create_wxglcanvas(wxWindow& parent)
     	WX_GL_SAMPLES, 			4,
     	0
     };
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 
 #if ENABLE_OPENGL_AUTO_AA_SAMPLES
     if (s_multisample != EMultisampleState::Enabled)
@@ -600,7 +600,7 @@ wxGLCanvas* OpenGLManager::create_wxglcanvas(wxWindow& parent)
 
     if (!can_multisample())
 #endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
     {
         attribList.Reset();
         attribList.PlatformDefaults().RGBA().DoubleBuffer().MinRGBA(8, 8, 8, 8).Depth(24).EndList();
@@ -615,15 +615,15 @@ wxGLCanvas* OpenGLManager::create_wxglcanvas(wxWindow& parent)
         attribList[12] = 0;
 
     return new wxGLCanvas(&parent, wxID_ANY, attribList, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS);
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 }
 
 #if !ENABLE_OPENGL_AUTO_AA_SAMPLES
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 void OpenGLManager::detect_multisample(const wxGLAttributes& attribList)
 #else
 void OpenGLManager::detect_multisample(int* attribList)
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 {
     int wxVersion = wxMAJOR_VERSION * 10000 + wxMINOR_VERSION * 100 + wxRELEASE_NUMBER;
     bool enable_multisample = wxVersion >= 30003;

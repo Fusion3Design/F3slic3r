@@ -493,7 +493,7 @@ int GLVolumeCollection::load_object_volume(
     return int(this->volumes.size() - 1);
 }
 
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
 int GLVolumeCollection::load_wipe_tower_preview(
     float pos_x, float pos_y, float width, float depth, const std::vector<std::pair<float, float>>& z_and_depth_pairs, float height, float cone_angle,
     float rotation_angle, bool size_unknown, float brim_width, TriangleMesh* out_mesh)
@@ -501,7 +501,7 @@ int GLVolumeCollection::load_wipe_tower_preview(
 int GLVolumeCollection::load_wipe_tower_preview(
     float pos_x, float pos_y, float width, float depth, const std::vector<std::pair<float, float>>& z_and_depth_pairs, float height, float cone_angle,
     float rotation_angle, bool size_unknown, float brim_width)
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
 {
     if (height == 0.0f)
         height = 0.1f;
@@ -588,10 +588,10 @@ int GLVolumeCollection::load_wipe_tower_preview(
 
     volumes.emplace_back(new GLVolume(color));
     GLVolume& v = *volumes.back();
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
     if (out_mesh != nullptr)
         *out_mesh = mesh;
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
     v.model.init_from(mesh);
     v.model.set_color(color);
     v.mesh_raycaster = std::make_unique<GUI::MeshRaycaster>(std::make_shared<const TriangleMesh>(mesh));

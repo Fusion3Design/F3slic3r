@@ -1358,11 +1358,11 @@ bool GLCanvas3D::init()
         return false;
 
     glsafe(::glClearColor(1.0f, 1.0f, 1.0f, 1.0f));
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
     glsafe(::glClearDepthf(1.0f));
 #else
     glsafe(::glClearDepth(1.0f));
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
 
     glsafe(::glDepthFunc(GL_LESS));
 
@@ -2210,9 +2210,9 @@ void GLCanvas3D::reload_scene(bool refresh_immediately, bool force_full_scene_re
             if (volume->is_wipe_tower) {
                 // There is only one wipe tower.
                 assert(volume_idx_wipe_tower_old == -1);
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
                 m_wipe_tower_mesh.clear();
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
                 volume_idx_wipe_tower_old = (int)volume_id;
             }
             if (!m_reload_delayed) {
@@ -2394,15 +2394,15 @@ void GLCanvas3D::reload_scene(bool refresh_immediately, bool force_full_scene_re
             const double height = height_real < 0.f ? std::max(m_model->max_z(), 10.0) : height_real;
 
             if (depth != 0.) {
-    #if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
                 int volume_idx_wipe_tower_new = m_volumes.load_wipe_tower_preview(
                     x, y, w, depth, z_and_depth_pairs, (float)height, ca, a, !print->is_step_done(psWipeTower),
                     bw, &m_wipe_tower_mesh);
-    #else
+#else
                 int volume_idx_wipe_tower_new = m_volumes.load_wipe_tower_preview(
                     x, y, w, depth, z_and_depth_pairs, (float)height, ca, a, !print->is_step_done(psWipeTower),
                     bw);
-    #endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
                 if (volume_idx_wipe_tower_old != -1)
                     map_glvolume_old_to_new[volume_idx_wipe_tower_old] = volume_idx_wipe_tower_new;
             }
@@ -5590,11 +5590,11 @@ void GLCanvas3D::_rectangular_selection_picking_pass()
                 glsafe(::glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, render_tex, 0));
                 glsafe(::glGenRenderbuffers(1, &render_depth));
                 glsafe(::glBindRenderbuffer(GL_RENDERBUFFER, render_depth));
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
                 glsafe(::glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height));
 #else
                 glsafe(::glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height));
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
                 glsafe(::glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render_depth));
             }
             else {

@@ -158,12 +158,12 @@ void GLGizmoPainterBase::render_cursor_circle()
     const float cnv_inv_height = 1.0f / cnv_height;
 
     const Vec2d center = m_parent.get_local_mouse_position();
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
     const float zoom = float(wxGetApp().plater()->get_camera().get_zoom());
     const float radius = m_cursor_radius * zoom;
 #else
     const float radius = m_cursor_radius * float(wxGetApp().plater()->get_camera().get_zoom());
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 
 #if ENABLE_GL_CORE_PROFILE
     if (!OpenGLManager::get_gl_info().is_core_profile())
@@ -171,13 +171,13 @@ void GLGizmoPainterBase::render_cursor_circle()
         glsafe(::glLineWidth(1.5f));
     glsafe(::glDisable(GL_DEPTH_TEST));
 
-#if !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
+#if !ENABLE_GL_CORE_PROFILE && !SLIC3R_OPENGL_ES
     glsafe(::glPushAttrib(GL_ENABLE_BIT));
     glsafe(::glLineStipple(4, 0xAAAA));
     glsafe(::glEnable(GL_LINE_STIPPLE));
-#endif // !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
+#endif // !ENABLE_GL_CORE_PROFILE && !SLIC3R_OPENGL_ES
 
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
     if (!m_circle.is_initialized() || std::abs(m_old_cursor_radius - radius) > EPSILON) {
         m_old_cursor_radius = radius;
         m_circle.reset();
@@ -186,10 +186,10 @@ void GLGizmoPainterBase::render_cursor_circle()
         m_old_cursor_radius = radius;
         m_old_center = center;
         m_circle.reset();
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 
         GLModel::Geometry init_data;
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
         const unsigned int StepsCount = (unsigned int)(2 * (4 + int(252 * (zoom - 1.0f) / (250.0f - 1.0f))));
         const float StepSize = 2.0f * float(PI) / float(StepsCount);
         init_data.format = { GLModel::Geometry::EPrimitiveType::Lines, GLModel::Geometry::EVertexLayout::P2 };
@@ -197,14 +197,14 @@ void GLGizmoPainterBase::render_cursor_circle()
         static const unsigned int StepsCount = 32;
         static const float StepSize = 2.0f * float(PI) / float(StepsCount);
         init_data.format = { GLModel::Geometry::EPrimitiveType::LineLoop, GLModel::Geometry::EVertexLayout::P2 };
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
         init_data.color  = { 0.0f, 1.0f, 0.3f, 1.0f };
         init_data.reserve_vertices(StepsCount);
         init_data.reserve_indices(StepsCount);
 
         // vertices + indices
         for (unsigned int i = 0; i < StepsCount; ++i) {
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
             if (i % 2 != 0) continue;
 
             const float angle_i = float(i) * StepSize;
@@ -221,7 +221,7 @@ void GLGizmoPainterBase::render_cursor_circle()
             init_data.add_vertex(Vec2f(2.0f * ((center.x() + ::cos(angle) * radius) * cnv_inv_width - 0.5f),
                                        -2.0f * ((center.y() + ::sin(angle) * radius) * cnv_inv_height - 0.5f)));
             init_data.add_index(i);
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
         }
 
         m_circle.init_from(std::move(init_data));
@@ -234,13 +234,13 @@ void GLGizmoPainterBase::render_cursor_circle()
 #endif // ENABLE_GL_CORE_PROFILE
     if (shader != nullptr) {
         shader->start_using();
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
         const Transform3d view_model_matrix = Geometry::translation_transform(Vec3d(2.0f * (center.x() * cnv_inv_width - 0.5f), -2.0f * (center.y() * cnv_inv_height - 0.5f), 0.0)) *
             Geometry::scale_transform(Vec3d(2.0f * radius * cnv_inv_width, 2.0f * radius * cnv_inv_height, 1.0f));
         shader->set_uniform("view_model_matrix", view_model_matrix);
 #else
         shader->set_uniform("view_model_matrix", Transform3d::Identity());
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
         shader->set_uniform("projection_matrix", Transform3d::Identity());
 #if ENABLE_GL_CORE_PROFILE
         const std::array<int, 4>& viewport = wxGetApp().plater()->get_camera().get_viewport();
@@ -252,9 +252,9 @@ void GLGizmoPainterBase::render_cursor_circle()
         shader->stop_using();
     }
 
-#if !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
+#if !ENABLE_GL_CORE_PROFILE && !SLIC3R_OPENGL_ES
     glsafe(::glPopAttrib());
-#endif // !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
+#endif // !ENABLE_GL_CORE_PROFILE && !SLIC3R_OPENGL_ES
     glsafe(::glEnable(GL_DEPTH_TEST));
 }
 
