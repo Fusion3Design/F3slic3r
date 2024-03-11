@@ -1144,6 +1144,22 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats { 3.4 });
 
+    def = this->add("filament_loading_purge_multiplier", coPercents);
+    def->label = L("loading purge multiplier");
+    def->tooltip = L("");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionPercents { 100 });
+
+    def = this->add("filament_unloading_purge_multiplier", coPercents);
+    def->label = L("unloading purge multiplier");
+    def->tooltip = L("");
+    def->sidetext = L("%");
+    def->min = 0;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionPercents { 100 });
+
     def = this->add("filament_load_time", coFloats);
     def->label = L("Filament load time");
     def->tooltip = L("Time for the printer firmware (or the Multi Material Unit 2.0) to load a new filament during a tool change (when executing the T code). This time is added to the total print time by the G-code time estimator.");
@@ -2135,6 +2151,20 @@ void PrintConfigDef::init_fff_params()
     def->sidetext = L("mm");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(-2.));
+
+    def = this->add("multimaterial_purging_for_unload", coFloat);
+    def->label = L("unloading");
+    def->tooltip = L("");
+    def->sidetext = L("mm krychlovy");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(70));
+
+    def = this->add("multimaterial_purging_for_load", coFloat);
+    def->label = L("loading");
+    def->tooltip = L("");
+    def->sidetext = L("mm krychlovy");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(70));
 
     def = this->add("perimeter_acceleration", coFloat);
     def->label = L("Perimeters");
