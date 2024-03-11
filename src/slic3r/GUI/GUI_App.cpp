@@ -63,6 +63,7 @@
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/Color.hpp"
 #include "libslic3r/Format/SLAArchiveFormatRegistry.hpp"
+#include "libslic3r/Utils/DirectoriesUtils.hpp"
 
 #include "GUI.hpp"
 #include "GUI_Utils.hpp"
@@ -412,20 +413,14 @@ bool static check_old_linux_datadir(const wxString& app_name) {
     // To be precise, the datadir should exist, it is created when single instance
     // lock happens. Instead of checking for existence, check the contents.
 
-    namespace fs = boost::filesystem;
-
     std::string new_path = Slic3r::data_dir();
 
-    wxString dir;
-    if (! wxGetEnv(wxS("XDG_CONFIG_HOME"), &dir) || dir.empty() )
-        dir = wxFileName::GetHomeDir() + wxS("/.config");
-    std::string default_path = (dir + "/" + app_name).ToUTF8().data();
-
-    if (new_path != default_path) {
-        // This happens when the user specifies a custom --datadir.
-        // Do not show anything in that case.
+    // If the config folder is redefined - do not check
+    // This happens when the user specifies a custom --datadir.
+    if (new_path != get_default_datadir())
         return true;
-    }
+
+    namespace fs = boost::filesystem;
 
     fs::path data_dir = fs::path(new_path);
     if (! fs::is_directory(data_dir))
@@ -922,34 +917,7 @@ static boost::optional<Semver> parse_semver_from_ini(std::string path)
 
 void GUI_App::init_app_config()
 {
-	// Profiles for the alpha are stored into the PrusaSlicer-alpha directory to not mix with the current release.
-
-//  SetAppName(SLIC3R_APP_KEY);
-	SetAppName(SLIC3R_APP_KEY "-alpha");
-//  SetAppName(SLIC3R_APP_KEY "-beta");
-
-
-//	SetAppDisplayName(SLIC3R_APP_NAME);
-
-	// Set the Slic3r data directory at the Slic3r XS module.
-	// Unix: ~/ .Slic3rP
-	// Windows : "C:\Users\username\AppData\Roaming\Slic3r" or "C:\Documents and Settings\username\Application Data\Slic3r"
-	// Mac : "~/Library/Application Support/Slic3r"
-
-    if (data_dir().empty()) {
-        #ifndef __linux__
-            set_data_dir(wxStandardPaths::Get().GetUserDataDir().ToUTF8().data());
-        #else
-            // Since version 2.3, config dir on Linux is in ${XDG_CONFIG_HOME}.
-            // https://github.com/prusa3d/PrusaSlicer/issues/2911
-            wxString dir;
-            if (! wxGetEnv(wxS("XDG_CONFIG_HOME"), &dir) || dir.empty() )
-                dir = wxFileName::GetHomeDir() + wxS("/.config");
-            set_data_dir((dir + "/" + GetAppName()).ToUTF8().data());
-        #endif
-    } else {
-        m_datadir_redefined = true;
-    }
+	SetAppName(SLIC3R_APP_FULL_NAME);
 
 	if (!app_config)
         app_config = new AppConfig(is_editor() ? AppConfig::EAppMode::Editor : AppConfig::EAppMode::GCodeViewer);
@@ -981,7 +949,7 @@ std::string GUI_App::check_older_app_config(Semver current_version, bool backup)
     std::string older_data_dir_path;
 
     // If the config folder is redefined - do not check
-    if (m_datadir_redefined)
+    if (data_dir() != get_default_datadir())
         return {};
 
     // find other version app config (alpha / beta / release)

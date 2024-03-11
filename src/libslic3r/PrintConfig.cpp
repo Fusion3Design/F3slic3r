@@ -2191,7 +2191,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Printer type");
     def->tooltip = L("Type of the printer.");
     def->set_default_value(new ConfigOptionString());
-    def->cli = ConfigOptionDef::nocli;
+//    def->cli = ConfigOptionDef::nocli;
 
     def = this->add("printer_notes", coString);
     def->label = L("Printer notes");
@@ -2212,7 +2212,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Printer variant");
     def->tooltip = L("Name of the printer variant. For example, the printer variants may be differentiated by a nozzle diameter.");
     def->set_default_value(new ConfigOptionString());
-    def->cli = ConfigOptionDef::nocli;
+//    def->cli = ConfigOptionDef::nocli;
 
     def = this->add("print_settings_id", coString);
     def->set_default_value(new ConfigOptionString(""));
@@ -5119,17 +5119,67 @@ CLIMiscConfigDef::CLIMiscConfigDef()
     def->tooltip = L("Render with a software renderer. The bundled MESA software renderer is loaded instead of the default OpenGL driver.");
     def->min = 0;
 #endif /* _MSC_VER */
+
+    def = this->add("printer-profile", coString);
+    def->label = ("Printer preset name");
+    def->tooltip = ("Name of the printer preset used for slicing.");
+    def->set_default_value(new ConfigOptionString());
+
+    def = this->add("print-profile", coString);
+    def->label = ("Print preset name");
+    def->tooltip = ("Name of the print preset used for slicing.");
+    def->set_default_value(new ConfigOptionString());
+
+    def = this->add("material-profile", coStrings);
+    def->label = ("Material preset name(s)");
+    def->tooltip = ("Name(s) of the material preset(s) used for slicing.\n"
+                    "Could be filaments or sla_material preset name(s) depending on printer tochnology");
+    def->set_default_value(new ConfigOptionStrings());
+}
+
+CLIProfilesSharingConfigDef::CLIProfilesSharingConfigDef()
+{
+    ConfigOptionDef* def;
+
+    // Information from this def will be used just for console output.
+    // So, don't use L marker to label and tooltips values to avoid extract those phrases to translation.
+
+    def = this->add("query-printer-models", coBool);
+    def->label = ("Get list of printer models");
+    def->tooltip = ("Get list of installed printer models into JSON.\n"
+                   "Note:\n"
+                   "To print printer models for required technology use 'printer-technology' option with value FFF or SLA. By default printer_technology is FFF.\n"
+                   "To print out JSON into file use 'output' option.\n"
+                   "To specify configuration folder use 'datadir' option.");
+
+/*
+    def = this->add("query-printer-profiles", coBool);
+    def->label = ("Get list of printer profiles for the selected printer model and printer variant");
+    def->tooltip = ("Get list of printer profiles for the selected 'printer-model' and 'printer-variant' into JSON.\n"
+                   "Note:\n"
+                   "To print out JSON into file use 'output' option.\n"
+                   "To specify configuration folder use 'datadir' option.");
+*/
+
+    def = this->add("query-print-filament-profiles", coBool);
+    def->label = ("Get list of print profiles and filament profiles for the selected printer profile");
+    def->tooltip = ("Get list of print profiles and filament profiles for the selected 'printer-profile' into JSON.\n"
+                   "Note:\n"
+                   "To print out JSON into file use 'output' option.\n"
+                   "To specify configuration folder use 'datadir' option.");
 }
 
 const CLIActionsConfigDef    cli_actions_config_def;
 const CLITransformConfigDef  cli_transform_config_def;
 const CLIMiscConfigDef       cli_misc_config_def;
+const CLIProfilesSharingConfigDef   cli_profiles_sharing_config_def;
 
 DynamicPrintAndCLIConfig::PrintAndCLIConfigDef DynamicPrintAndCLIConfig::s_def;
 
 void DynamicPrintAndCLIConfig::handle_legacy(t_config_option_key &opt_key, std::string &value) const
 {
     if (cli_actions_config_def  .options.find(opt_key) == cli_actions_config_def  .options.end() &&
+        cli_profiles_sharing_config_def.options.find(opt_key) == cli_profiles_sharing_config_def.options.end() &&
         cli_transform_config_def.options.find(opt_key) == cli_transform_config_def.options.end() &&
         cli_misc_config_def     .options.find(opt_key) == cli_misc_config_def     .options.end()) {
         PrintConfigDef::handle_legacy(opt_key, value);

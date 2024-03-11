@@ -1211,6 +1211,12 @@ public:
     CLIMiscConfigDef();
 };
 
+class CLIProfilesSharingConfigDef : public ConfigDef
+{
+public:
+    CLIProfilesSharingConfigDef();
+};
+
 typedef std::string t_custom_gcode_key;
 // This map containes list of specific placeholders for each custom G-code, if any exist
 const std::map<t_custom_gcode_key, t_config_option_keys>& custom_gcode_specific_placeholders();
@@ -1282,6 +1288,9 @@ extern const CLITransformConfigDef  cli_transform_config_def;
 // This class defines all command line options that are not actions or transforms.
 extern const CLIMiscConfigDef       cli_misc_config_def;
 
+// This class defines the command line options representing profiles sharing commands.
+extern const CLIProfilesSharingConfigDef  cli_profiles_sharing_config_def;
+
 class DynamicPrintAndCLIConfig : public DynamicPrintConfig
 {
 public:
@@ -1306,6 +1315,7 @@ private:
             this->options.insert(cli_actions_config_def.options.begin(), cli_actions_config_def.options.end());
             this->options.insert(cli_transform_config_def.options.begin(), cli_transform_config_def.options.end());
             this->options.insert(cli_misc_config_def.options.begin(), cli_misc_config_def.options.end());
+            this->options.insert(cli_profiles_sharing_config_def.options.begin(), cli_profiles_sharing_config_def.options.end());
             for (const auto &kvp : this->options)
                 this->by_serialization_key_ordinal[kvp.second.serialization_key_ordinal] = &kvp.second;
         }

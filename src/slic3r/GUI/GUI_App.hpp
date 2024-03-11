@@ -418,7 +418,6 @@ private:
     // inititate read of version file online in separate thread
     void            app_version_check(bool from_user);
 
-    bool                    m_datadir_redefined { false }; 
     bool                    m_wifi_config_dialog_shown { false };
 };
 
