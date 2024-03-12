@@ -1247,6 +1247,9 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
                 m_enable_cooling_markers = false; // we're not filtering these moves through CoolingBuffer
                 m_avoid_crossing_perimeters.use_external_mp_once();
                 file.write(this->retract_and_wipe());
+                file.write(m_label_objects.maybe_stop_instance());
+                const double last_z{this->writer().get_position().z()};
+                file.write(this->writer().get_travel_to_z_gcode(last_z, "ensure z position"));
                 file.write(this->travel_to(*this->last_position, Point(0, 0), ExtrusionRole::None, "move to origin position for next object", ""));
                 m_enable_cooling_markers = true;
                 // Disable motion planner when traveling to first object point.
