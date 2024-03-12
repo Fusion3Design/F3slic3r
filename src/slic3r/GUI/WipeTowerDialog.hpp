@@ -51,7 +51,8 @@ private:
 
 class WipingPanel : public wxPanel {
 public:
-    WipingPanel(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours, wxButton* widget_button);
+    WipingPanel(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours,
+                const std::vector<double>& filament_purging_multipliers, double printer_purging_volume, wxButton* widget_button);
     std::vector<float> read_matrix_values();
 	void format_sizer(wxSizer* sizer, wxPanel* page, wxGridSizer* grid_sizer, const wxString& table_title, int table_lshift=0);
         
@@ -64,6 +65,8 @@ private:
     wxBoxSizer* m_sizer_advanced = nullptr;
     wxGridSizer* m_gridsizer_advanced = nullptr;
     wxButton* m_widget_button     = nullptr;
+    double              m_printer_purging_volume;
+    std::vector<double> m_filament_purging_multipliers; // In percents !
 };
 
 
@@ -72,16 +75,20 @@ private:
 
 class WipingDialog : public wxDialog {
 public:
-    WipingDialog(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours);
+    WipingDialog(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours,
+                 double printer_purging_volume, const std::vector<double>& filament_purging_multipliers);
     std::vector<float> get_matrix() const    { return m_output_matrix; }
 
 
 private:
-    WipingPanel*  m_panel_wiping  = nullptr;
+    bool should_start_as_default() const;
+    void enable_or_disable_panel();
+
+    WipingPanel*       m_panel_wiping  = nullptr;
     std::vector<float> m_output_matrix;
-    wxRadioButton* m_radio_button1 = nullptr;
-    wxRadioButton* m_radio_button2 = nullptr;
-    wxButton* m_widget_button     = nullptr;
+    wxRadioButton*     m_radio_button1 = nullptr;
+    wxRadioButton*     m_radio_button2 = nullptr;
+    wxButton*          m_widget_button = nullptr;
 };
 
 #endif  // _WIPE_TOWER_DIALOG_H_

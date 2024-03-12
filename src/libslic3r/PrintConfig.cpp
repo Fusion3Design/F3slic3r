@@ -2149,7 +2149,7 @@ void PrintConfigDef::init_fff_params()
     def->tooltip = L("");
     def->sidetext = L("mm³");
     def->mode = comAdvanced;
-    def->set_default_value(new ConfigOptionFloat(70));
+    def->set_default_value(new ConfigOptionFloat(140.));
 
     def = this->add("perimeter_acceleration", coFloat);
     def->label = L("Perimeters");

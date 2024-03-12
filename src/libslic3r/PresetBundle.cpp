@@ -1710,6 +1710,8 @@ std::pair<PresetsConfigSubstitutions, size_t> PresetBundle::load_configbundle(
     return std::make_pair(std::move(substitutions), presets_loaded + ph_printers_loaded);
 }
 
+
+
 void PresetBundle::update_multi_material_filament_presets()
 {
     if (printers.get_edited_preset().printer_technology() != ptFFF)
@@ -1733,17 +1735,21 @@ void PresetBundle::update_multi_material_filament_presets()
     std::vector<double> old_matrix = this->project_config.option<ConfigOptionFloats>("wiping_volumes_matrix")->values;
     size_t old_number_of_extruders = size_t(std::sqrt(old_matrix.size())+EPSILON);
     if (num_extruders != old_number_of_extruders) {
-        const double default_purge = static_cast<const ConfigOptionFloat*>(printers.get_edited_preset().config.option("multimaterial_purging"))->value;
+
+        // Extract the relevant config options, even values from possibly modified presets.
+        const double default_purge = static_cast<const ConfigOptionFloat*>(this->printers.get_edited_preset().config.option("multimaterial_purging"))->value;
+        const std::vector<double> filament_purging_multipliers = get_config_options_for_current_filaments<ConfigOptionPercents>("filament_purge_multiplier");
 
         std::vector<double> new_matrix;
-        for (unsigned int i=0;i<num_extruders;++i)
+        for (unsigned int i=0;i<num_extruders;++i) {
             for (unsigned int j=0;j<num_extruders;++j) {
                 // append the value for this pair from the old matrix (if it's there):
                 if (i<old_number_of_extruders && j<old_number_of_extruders)
                     new_matrix.push_back(old_matrix[i*old_number_of_extruders + j]);
                 else
-                    new_matrix.push_back( i==j ? 0. : default_purge);
+                    new_matrix.push_back( i==j ? 0. : default_purge * filament_purging_multipliers[j] / 100.);
             }
+        }
 		this->project_config.option<ConfigOptionFloats>("wiping_volumes_matrix")->values = new_matrix;
     }
 }

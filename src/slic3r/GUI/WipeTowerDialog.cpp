@@ -189,8 +189,9 @@ std::string RammingPanel::get_parameters()
 
 
 // Parent dialog for purging volume adjustments - it fathers WipingPanel widget (that contains all controls) and a button.
-WipingDialog::WipingDialog(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours)
-: wxDialog(parent, wxID_ANY, _(L("Wipe tower - Purging volume adjustment")), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE/* | wxRESIZE_BORDER*/)
+WipingDialog::WipingDialog(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours,
+                           double printer_purging_volume, const std::vector<double>& filament_purging_multipliers)
+    : wxDialog(parent, wxID_ANY, _(L("Wipe tower - Purging volume adjustment")), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE/* | wxRESIZE_BORDER*/)
 {
     SetFont(wxGetApp().normal_font());
     update_ui(this);
@@ -202,7 +203,7 @@ WipingDialog::WipingDialog(wxWindow* parent, const std::vector<float>& matrix, c
     m_radio_button2 = new wxRadioButton(this, wxID_ANY, _L("Custom project-specific settings"));
     auto stb        = new wxStaticBox(this, wxID_ANY, wxEmptyString);
 
-     m_panel_wiping  = new WipingPanel(this,matrix, extruder_colours, m_widget_button);
+     m_panel_wiping  = new WipingPanel(this, matrix, extruder_colours, filament_purging_multipliers, printer_purging_volume, m_widget_button);
 
     update_ui(m_radio_button1);
     update_ui(m_radio_button2);
@@ -247,11 +248,14 @@ WipingDialog::WipingDialog(wxWindow* parent, const std::vector<float>& matrix, c
         EndModal(wxID_OK);
         },wxID_OK);
 
-    this->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent& evt) {
-        wxRadioButton* rdb = dynamic_cast<wxRadioButton*>(FindWindowById(evt.GetId()));
-        m_widget_button->Enable(rdb == m_radio_button2);
-        m_panel_wiping->Enable(rdb == m_radio_button2);
+    this->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent&) {
+        enable_or_disable_panel();
     });
+
+    const bool start_default = should_start_as_default();
+    m_radio_button1->SetValue(start_default);
+    m_radio_button2->SetValue(! start_default);
+    enable_or_disable_panel();
 
     this->Show();
 
@@ -267,11 +271,24 @@ void WipingPanel::format_sizer(wxSizer* sizer, wxPanel* page, wxGridSizer* grid_
 }
 
 
-WipingPanel::WipingPanel(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours, wxButton* widget_button)
+WipingPanel::WipingPanel(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours,
+                         const std::vector<double>& filament_purging_multipliers, double printer_purging_volume, wxButton* widget_button)
 : wxPanel(parent,wxID_ANY, wxDefaultPosition, wxDefaultSize/*,wxBORDER_RAISED*/)
 {
+    m_filament_purging_multipliers = filament_purging_multipliers;
+    m_printer_purging_volume = printer_purging_volume;
     m_widget_button = widget_button;    // pointer to the button in parent dialog
-    m_widget_button->Bind(wxEVT_BUTTON,[this](wxCommandEvent&){ });
+    m_widget_button->Bind(wxEVT_BUTTON,[this](wxCommandEvent&){
+        // Set the matrix to defaults.
+        for (size_t i = 0; i < m_number_of_extruders; ++i) {
+            for (size_t j = 0; j < m_number_of_extruders; ++j) {
+                if (i != j) {
+                    double def_val = m_printer_purging_volume * m_filament_purging_multipliers[j] / 100.;
+                    edit_boxes[j][i]->SetValue(wxString("") << int(def_val));
+                }
+            }
+        }
+    });
 
     m_number_of_extruders = (int)(sqrt(matrix.size())+0.001);
 
@@ -374,4 +391,19 @@ std::vector<float> WipingPanel::read_matrix_values() {
         }
     }
     return output;
+}
+
+
+
+bool WipingDialog::should_start_as_default() const
+{
+    return true;
+}
+
+
+void WipingDialog::enable_or_disable_panel()
+{
+    bool enable = m_radio_button2->GetValue();
+    m_widget_button->Enable(enable);
+    m_panel_wiping->Enable(enable);
 }

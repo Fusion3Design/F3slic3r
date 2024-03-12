@@ -518,12 +518,16 @@ FreqChangedParams::FreqChangedParams(wxWindow* parent) :
         sizer->Add(m_wiping_dialog_button, 0, wxALIGN_CENTER_VERTICAL);
         m_wiping_dialog_button->Bind(wxEVT_BUTTON, ([parent](wxCommandEvent& e)
         {
-            auto &project_config = wxGetApp().preset_bundle->project_config;
+            PresetBundle* preset_bundle = wxGetApp().preset_bundle;
+            DynamicPrintConfig& project_config = preset_bundle->project_config;
             const std::vector<double> &init_matrix = (project_config.option<ConfigOptionFloats>("wiping_volumes_matrix"))->values;
-
             const std::vector<std::string> extruder_colours = wxGetApp().plater()->get_extruder_colors_from_plater_config();
 
-            WipingDialog dlg(parent, cast<float>(init_matrix), extruder_colours);
+            // Extract the relevant config options, even values from possibly modified presets.
+            const double default_purge = static_cast<const ConfigOptionFloat*>(preset_bundle->printers.get_edited_preset().config.option("multimaterial_purging"))->value;
+            std::vector<double> filament_purging_multipliers = preset_bundle->get_config_options_for_current_filaments<ConfigOptionPercents>("filament_purge_multiplier");
+
+            WipingDialog dlg(parent, cast<float>(init_matrix), extruder_colours, default_purge, filament_purging_multipliers);
 
             if (dlg.ShowModal() == wxID_OK) {
                 std::vector<float> matrix = dlg.get_matrix();
