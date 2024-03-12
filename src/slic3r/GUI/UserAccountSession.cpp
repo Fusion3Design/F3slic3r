@@ -78,7 +78,7 @@ void UserAccountSession::process_action_queue()
     if (m_priority_action_queue.empty() && m_action_queue.empty()) {
         // update printers periodically
         if (m_polling_enabled) {
-            enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTERS, nullptr, nullptr, {});
+            enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_STATUS, nullptr, nullptr, {});
         } else {
             return;
         }

@@ -192,41 +192,54 @@ bool UserAccount::on_connect_printers_success(const std::string& data, AppConfig
         return false;
     }
     // fill m_printer_map with data from ptree
-    // tree string is in format {"printers": [{..}, {..}]}
+    // tree string is in format {"result": [{"printer_type": "1.2.3", "states": [{"printer_state": "OFFLINE", "count": 1}, ...]}, {..}]}
 
     ConnectPrinterStateMap new_printer_map;
 
-    assert(ptree.front().first == "printers");
+    assert(ptree.front().first == "result");
     for (const auto& printer_tree : ptree.front().second) {
+        // printer_tree is {"printer_type": "1.2.3", "states": [..]}
         std::string name;
         ConnectPrinterState state;
-        std::string type_string = parse_tree_for_param(printer_tree.second, "printer_type");
-        std::string state_string = parse_tree_for_param(printer_tree.second, "connect_state");
 
-        assert(!type_string.empty());
-        assert(!state_string.empty());
-        if (type_string.empty() || state_string.empty())
+        const auto type_opt = printer_tree.second.get_optional<std::string>("printer_type");
+        if (!type_opt) {
             continue;
-        // name of printer needs to be taken from translate table, if missing
-        if (auto pair = printer_type_and_name_table.find(type_string); pair != printer_type_and_name_table.end()) {
+        }
+
+        if (auto pair = printer_type_and_name_table.find(*type_opt); pair != printer_type_and_name_table.end()) {
             name = pair->second;
-        } else {
+        }
+        else {
             assert(true); // On this assert, printer_type_and_name_table needs to be updated with type_string and correct printer name
             continue;
         }
-        // translate state string to enum value
-        if (auto pair = printer_state_table.find(state_string); pair != printer_state_table.end()) {
-            state = pair->second;
-        } else {
-            assert(true); // On this assert, printer_state_table and ConnectPrinterState needs to be updated
-            continue;
+        // printer should not appear twice
+        assert(new_printer_map.find(name) == new_printer_map.end());
+        // prepare all states on 0
+        new_printer_map[name].reserve(static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT));
+        for (size_t i = 0; i < static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT); i++) {
+            new_printer_map[name].push_back(0);
         }
-        if (auto counter = new_printer_map.find(name); counter != new_printer_map.end()) {
-            new_printer_map[name][static_cast<size_t>(state)]++;
-        }  else {
-            new_printer_map[name].reserve(static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT));
-            for (size_t i = 0; i < static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT); i++) {
-                new_printer_map[name].push_back(i == static_cast<size_t>(state) ? 1 : 0);
+
+        for (const auto& section : printer_tree.second) {
+            // section is "printer_type": "1.2.3" OR "states": [..]}
+            if (section.first == "states") {
+                for (const auto& subsection : section.second) {
+                    // subsection is {"printer_state": "OFFLINE", "count": 1}
+                    const auto state_opt = subsection.second.get_optional<std::string>("printer_state");
+                    const auto count_opt = subsection.second.get_optional<int>("count");
+                    if (!state_opt || ! count_opt) {
+                        continue;
+                    }
+                    if (auto pair = printer_state_table.find(*state_opt); pair != printer_state_table.end()) {
+                        state = pair->second;
+                    } else {
+                        assert(true); // On this assert, printer_state_table needs to be updated with *state_opt and correct ConnectPrinterState
+                        continue;
+                    }
+                    new_printer_map[name][static_cast<size_t>(state)] = *count_opt;
+                }
             }
         }
     }

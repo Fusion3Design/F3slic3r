@@ -40,9 +40,10 @@ enum class UserAccountActionID {
     USER_ACCOUNT_ACTION_USER_ID,
     USER_ACCOUNT_ACTION_TEST_ACCESS_TOKEN,
     USER_ACCOUNT_ACTION_TEST_CONNECTION,
-    USER_ACCOUNT_ACTION_CONNECT_PRINTERS,
+    USER_ACCOUNT_ACTION_CONNECT_STATUS, // status of all printers
     USER_ACCOUNT_ACTION_AVATAR,
 #if 0
+    USER_ACCOUNT_ACTION_CONNECT_PRINTERS, // all info about all printers
     USER_ACCOUNT_ACTION_CONNECT_USER_DATA,
     USER_ACCOUNT_ACTION_CONNECT_DUMMY,
 #endif // 0
@@ -117,11 +118,12 @@ public:
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_USER_ID] = std::make_unique<UserActionGetWithEvent>("USER_ID", "https://test-account.prusa3d.com/api/v1/me/", EVT_UA_ID_USER_SUCCESS, EVT_UA_RESET);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_TEST_ACCESS_TOKEN] = std::make_unique<UserActionGetWithEvent>("TEST_ACCESS_TOKEN", "https://test-account.prusa3d.com/api/v1/me/", EVT_UA_ID_USER_SUCCESS, EVT_UA_FAIL);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_TEST_CONNECTION] = std::make_unique<UserActionGetWithEvent>("TEST_CONNECTION", "https://test-account.prusa3d.com/api/v1/me/", wxEVT_NULL, EVT_UA_RESET);
-        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTERS] = std::make_unique<UserActionGetWithEvent>("CONNECT_PRINTERS", "https://dev.connect.prusa3d.com/slicer/printers", EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, EVT_UA_FAIL);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_STATUS] = std::make_unique<UserActionGetWithEvent>("CONNECT_STATUS", "https://dev.connect.prusa3d.com/slicer/status", EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, EVT_UA_FAIL);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_AVATAR] = std::make_unique<UserActionGetWithEvent>("AVATAR", "https://test-media.printables.com/media/", EVT_UA_AVATAR_SUCCESS, EVT_UA_FAIL);
 #if 0
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_USER_DATA] = std::make_unique<UserActionGetWithEvent>("CONNECT_USER_DATA", "https://dev.connect.prusa3d.com/app/login", EVT_UA_CONNECT_USER_DATA_SUCCESS, EVT_UA_FAIL);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_DUMMY] = std::make_unique<UserActionGetWithEvent>("CONNECT_DUMMY", "https://dev.connect.prusa3d.com/slicer/dummy", EVT_UA_SUCCESS, EVT_UA_FAIL);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTERS] = std::make_unique<UserActionGetWithEvent>("CONNECT_PRINTERS", "https://dev.connect.prusa3d.com/slicer/printers", EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, EVT_UA_FAIL);
 #endif // 0
 
     }
@@ -133,11 +135,13 @@ public:
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_USER_ID].reset(nullptr);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_TEST_ACCESS_TOKEN].reset(nullptr);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_TEST_CONNECTION].reset(nullptr);
-        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTERS].reset(nullptr);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_STATUS].reset(nullptr);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_AVATAR].reset(nullptr);
 #if 0
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_USER_DATA].reset(nullptr);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_DUMMY].reset(nullptr);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTERS].reset(nullptr);
+
 #endif // 0
 
     }
