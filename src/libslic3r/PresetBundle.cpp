@@ -1733,8 +1733,7 @@ void PresetBundle::update_multi_material_filament_presets()
     std::vector<double> old_matrix = this->project_config.option<ConfigOptionFloats>("wiping_volumes_matrix")->values;
     size_t old_number_of_extruders = size_t(std::sqrt(old_matrix.size())+EPSILON);
     if (num_extruders != old_number_of_extruders) {
-        const double default_loading_purge   = static_cast<const ConfigOptionFloat*>(printers.get_edited_preset().config.option("multimaterial_purging_for_load"))->value;
-        const double default_unloading_purge = static_cast<const ConfigOptionFloat*>(printers.get_edited_preset().config.option("multimaterial_purging_for_unload"))->value;
+        const double default_purge = static_cast<const ConfigOptionFloat*>(printers.get_edited_preset().config.option("multimaterial_purging"))->value;
 
         std::vector<double> new_matrix;
         for (unsigned int i=0;i<num_extruders;++i)
@@ -1743,7 +1742,7 @@ void PresetBundle::update_multi_material_filament_presets()
                 if (i<old_number_of_extruders && j<old_number_of_extruders)
                     new_matrix.push_back(old_matrix[i*old_number_of_extruders + j]);
                 else
-                    new_matrix.push_back( i==j ? 0. : default_loading_purge + default_unloading_purge);
+                    new_matrix.push_back( i==j ? 0. : default_purge);
             }
 		this->project_config.option<ConfigOptionFloats>("wiping_volumes_matrix")->values = new_matrix;
     }
