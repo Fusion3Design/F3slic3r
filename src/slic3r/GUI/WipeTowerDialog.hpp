@@ -51,26 +51,16 @@ private:
 
 class WipingPanel : public wxPanel {
 public:
-    WipingPanel(wxWindow* parent, const std::vector<float>& matrix, const std::vector<float>& extruders, const std::vector<std::string>& extruder_colours, wxButton* widget_button);
+    WipingPanel(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours, wxButton* widget_button);
     std::vector<float> read_matrix_values();
-    std::vector<float> read_extruders_values();
-    void toggle_advanced(bool user_action = false);
 	void format_sizer(wxSizer* sizer, wxPanel* page, wxGridSizer* grid_sizer, const wxString& info, const wxString& table_title, int table_lshift=0);
         
-private:
-    void fill_in_matrix();
-    bool advanced_matches_simple();
-        
-    std::vector<::SpinInput*> m_old;
-    std::vector<::SpinInput*> m_new;
+private:        
     std::vector<std::vector<wxTextCtrl*>> edit_boxes;
     std::vector<wxColour> m_colours;
     unsigned int m_number_of_extruders  = 0;
-    bool m_advanced                     = false;
-	wxPanel*	m_page_simple = nullptr;
-	wxPanel*	m_page_advanced = nullptr;
+    wxPanel*	m_page_advanced = nullptr;
     wxBoxSizer*	m_sizer = nullptr;
-    wxBoxSizer* m_sizer_simple = nullptr;
     wxBoxSizer* m_sizer_advanced = nullptr;
     wxGridSizer* m_gridsizer_advanced = nullptr;
     wxButton* m_widget_button     = nullptr;
@@ -82,15 +72,13 @@ private:
 
 class WipingDialog : public wxDialog {
 public:
-    WipingDialog(wxWindow* parent, const std::vector<float>& matrix, const std::vector<float>& extruders, const std::vector<std::string>& extruder_colours);
+    WipingDialog(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours);
     std::vector<float> get_matrix() const    { return m_output_matrix; }
-    std::vector<float> get_extruders() const { return m_output_extruders; }
 
 
 private:
     WipingPanel*  m_panel_wiping  = nullptr;
     std::vector<float> m_output_matrix;
-    std::vector<float> m_output_extruders;
 };
 
 #endif  // _WIPE_TOWER_DIALOG_H_

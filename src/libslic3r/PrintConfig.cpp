@@ -3315,13 +3315,6 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 
-    def = this->add("wiping_volumes_extruders", coFloats);
-    def->label = L("Purging volumes - load/unload volumes");
-    def->tooltip = L("This vector saves required volumes to change from/to each tool used on the "
-                     "wipe tower. These values are used to simplify creation of the full purging "
-                     "volumes below.");
-    def->set_default_value(new ConfigOptionFloats { 70., 70., 70., 70., 70., 70., 70., 70., 70., 70.  });
-
     def = this->add("wiping_volumes_matrix", coFloats);
     def->label = L("Purging volumes - matrix");
     def->tooltip = L("This matrix describes volumes (in cubic milimetres) required to purge the"
@@ -4415,7 +4408,8 @@ static std::set<std::string> PrintConfigDef_ignore = {
     "ensure_vertical_shell_thickness",
     // Disabled in 2.6.0-alpha6, this option is problematic
     "infill_only_where_needed",
-    "gcode_binary" // Introduced in 2.7.0-alpha1, removed in 2.7.1 (replaced by binary_gcode).
+    "gcode_binary", // Introduced in 2.7.0-alpha1, removed in 2.7.1 (replaced by binary_gcode).
+    "wiping_volumes_extruders" // Removed in 2.7.3-alpha1.
 };
 
 void PrintConfigDef::handle_legacy(t_config_option_key &opt_key, std::string &value)
