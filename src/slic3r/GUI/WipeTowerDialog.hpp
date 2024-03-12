@@ -53,7 +53,7 @@ class WipingPanel : public wxPanel {
 public:
     WipingPanel(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours, wxButton* widget_button);
     std::vector<float> read_matrix_values();
-	void format_sizer(wxSizer* sizer, wxPanel* page, wxGridSizer* grid_sizer, const wxString& info, const wxString& table_title, int table_lshift=0);
+	void format_sizer(wxSizer* sizer, wxPanel* page, wxGridSizer* grid_sizer, const wxString& table_title, int table_lshift=0);
         
 private:        
     std::vector<std::vector<wxTextCtrl*>> edit_boxes;
@@ -79,6 +79,9 @@ public:
 private:
     WipingPanel*  m_panel_wiping  = nullptr;
     std::vector<float> m_output_matrix;
+    wxRadioButton* m_radio_button1 = nullptr;
+    wxRadioButton* m_radio_button2 = nullptr;
+    wxButton* m_widget_button     = nullptr;
 };
 
 #endif  // _WIPE_TOWER_DIALOG_H_

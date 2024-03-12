@@ -194,19 +194,42 @@ WipingDialog::WipingDialog(wxWindow* parent, const std::vector<float>& matrix, c
 {
     SetFont(wxGetApp().normal_font());
     update_ui(this);
-    auto widget_button = new wxButton(this,wxID_ANY,"-",wxPoint(0,0),wxDefaultSize);
-    update_ui(widget_button);
-    wxGetApp().SetWindowVariantForButton(widget_button);
-    m_panel_wiping  = new WipingPanel(this,matrix, extruder_colours, widget_button);
+    m_widget_button = new wxButton(this,wxID_ANY,_L("Set default values"), wxPoint(0, 0), wxDefaultSize);
+    update_ui(m_widget_button);
+    wxGetApp().SetWindowVariantForButton(m_widget_button);
 
-    auto main_sizer = new wxBoxSizer(wxVERTICAL);
+    m_radio_button1 = new wxRadioButton(this, wxID_ANY, _L("Default from configuration"));
+    m_radio_button2 = new wxRadioButton(this, wxID_ANY, _L("Custom project-specific settings"));
+    auto stb        = new wxStaticBox(this, wxID_ANY, wxEmptyString);
+
+     m_panel_wiping  = new WipingPanel(this,matrix, extruder_colours, m_widget_button);
+
+    update_ui(m_radio_button1);
+    update_ui(m_radio_button2);
+    update_ui(stb);
+
+
+
+    wxString info = _(L("Here you can adjust required purging volume (mm³) for any given pair of tools."));
+    wxSize text_size = GetTextExtent(info);
+    auto info_str = new wxStaticText(this, wxID_ANY, info ,wxDefaultPosition, wxDefaultSize);
 
 	// set min sizer width according to extruders count
-	const auto sizer_width = (int)((sqrt(matrix.size()) + 2.8)*ITEM_WIDTH());
+	const auto sizer_width = (int)((std::sqrt(matrix.size()) + 2.8)*ITEM_WIDTH());
+    auto main_sizer = new wxBoxSizer(wxVERTICAL);
 	main_sizer->SetMinSize(wxSize(sizer_width, -1));
 
-    main_sizer->Add(m_panel_wiping, 0, wxEXPAND | wxALL, 5);
-	main_sizer->Add(widget_button, 0, wxALIGN_CENTER_HORIZONTAL | wxCENTER | wxBOTTOM, 5);
+    main_sizer->Add(info_str, 0, wxALL, 10);
+    main_sizer->Add(m_radio_button1, 0, wxALL, 10);
+    main_sizer->Add(m_radio_button2, 0, wxALL, 10);
+
+    auto stb_sizer = new wxStaticBoxSizer(stb, wxVERTICAL);
+    stb_sizer->Add(m_panel_wiping, 0, wxEXPAND | wxALL, 5);
+    stb_sizer->Add(m_widget_button, 0, wxALIGN_CENTER_HORIZONTAL | wxCENTER | wxBOTTOM, 5);
+
+    main_sizer->Add(stb_sizer, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, 20);
+
+
     auto buttons = CreateStdDialogButtonSizer(wxOK | wxCANCEL);
     wxGetApp().SetWindowVariantForButton(buttons->GetAffirmativeButton());
     wxGetApp().SetWindowVariantForButton(buttons->GetCancelButton());
@@ -224,19 +247,22 @@ WipingDialog::WipingDialog(wxWindow* parent, const std::vector<float>& matrix, c
         EndModal(wxID_OK);
         },wxID_OK);
 
+    this->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent& evt) {
+        wxRadioButton* rdb = dynamic_cast<wxRadioButton*>(FindWindowById(evt.GetId()));
+        m_widget_button->Enable(rdb == m_radio_button2);
+        m_panel_wiping->Enable(rdb == m_radio_button2);
+    });
+
     this->Show();
+
 }
 
 // This function allows to "play" with sizrs parameters (like align or border)
-void WipingPanel::format_sizer(wxSizer* sizer, wxPanel* page, wxGridSizer* grid_sizer, const wxString& info, const wxString& table_title, int table_lshift/*=0*/)
+void WipingPanel::format_sizer(wxSizer* sizer, wxPanel* page, wxGridSizer* grid_sizer, const wxString& table_title, int table_lshift/*=0*/)
 {
-    wxSize text_size = GetTextExtent(info);
-    auto info_str = new wxStaticText(page, wxID_ANY, info ,wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER);
-    info_str->Wrap(int(0.6*text_size.x));
-	sizer->Add( info_str, 0, wxEXPAND);
 	auto table_sizer = new wxBoxSizer(wxVERTICAL);
 	sizer->Add(table_sizer, 0, wxALIGN_CENTER | wxCENTER, table_lshift);
-	table_sizer->Add(new wxStaticText(page, wxID_ANY, table_title), 0, wxALIGN_CENTER | wxTOP, 50);
+	table_sizer->Add(new wxStaticText(page, wxID_ANY, table_title), 0, wxALIGN_CENTER | wxTOP, 10);
 	table_sizer->Add(grid_sizer, 0, wxALIGN_CENTER | wxTOP, 10);
 }
 
@@ -255,7 +281,6 @@ WipingPanel::WipingPanel(wxWindow* parent, const std::vector<float>& matrix, con
         m_colours.push_back(wxColor(rgb.r_uchar(), rgb.g_uchar(), rgb.b_uchar()));
     }
 
-	// Create two switched panels with their own sizers
     m_sizer_advanced        = new wxBoxSizer(wxVERTICAL);
 	m_page_advanced			= new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
 	m_page_advanced->SetSizer(m_sizer_advanced);
@@ -314,9 +339,7 @@ WipingPanel::WipingPanel(wxWindow* parent, const std::vector<float>& matrix, con
     }
 
 	// collect and format sizer
-	format_sizer(m_sizer_advanced, m_page_advanced, m_gridsizer_advanced,
-		_(L("Here you can adjust required purging volume (mm³) for any given pair of tools.")),
-		_(L("Extruder changed to")));
+	format_sizer(m_sizer_advanced, m_page_advanced, m_gridsizer_advanced, _(L("Extruder changed to")));
 
 
 	m_sizer = new wxBoxSizer(wxVERTICAL);
