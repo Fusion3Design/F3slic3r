@@ -147,10 +147,10 @@ void GLVolume::NonManifoldEdges::render()
 {
     update();
 
-#if ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
     if (!GUI::OpenGLManager::get_gl_info().is_core_profile())
-#endif // ENABLE_GL_CORE_PROFILE
         glsafe(::glLineWidth(2.0f));
+#endif // !SLIC3R_OPENGL_ES
 
     GLShaderProgram* shader = GUI::wxGetApp().get_current_shader();
     if (shader == nullptr)
@@ -159,12 +159,16 @@ void GLVolume::NonManifoldEdges::render()
     const GUI::Camera& camera = GUI::wxGetApp().plater()->get_camera();
     shader->set_uniform("view_model_matrix", camera.get_view_matrix() * m_parent.world_matrix());
     shader->set_uniform("projection_matrix", camera.get_projection_matrix());
-#if ENABLE_GL_CORE_PROFILE
-    const std::array<int, 4>& viewport = camera.get_viewport();
-    shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
-    shader->set_uniform("width", 0.5f);
-    shader->set_uniform("gap_size", 0.0f);
-#endif // ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
+    if (GUI::OpenGLManager::get_gl_info().is_core_profile()) {
+#endif // !SLIC3R_OPENGL_ES
+        const std::array<int, 4>& viewport = camera.get_viewport();
+        shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
+        shader->set_uniform("width", 0.5f);
+        shader->set_uniform("gap_size", 0.0f);
+#if !SLIC3R_OPENGL_ES
+    }
+#endif // !SLIC3R_OPENGL_ES
     m_model.set_color(complementary(m_parent.render_color));
     m_model.render();
 }
@@ -749,11 +753,11 @@ void GLVolumeCollection::render(GLVolumeCollection::ERenderType type, bool disab
         return;
 
     GLShaderProgram* sink_shader  = GUI::wxGetApp().get_shader("flat");
-#if ENABLE_GL_CORE_PROFILE
-    GLShaderProgram* edges_shader = GUI::OpenGLManager::get_gl_info().is_core_profile() ? GUI::wxGetApp().get_shader("dashed_thick_lines") : GUI::wxGetApp().get_shader("flat");
+#if SLIC3R_OPENGL_ES
+    GLShaderProgram* edges_shader = GUI::wxGetApp().get_shader("dashed_lines");
 #else
-    GLShaderProgram* edges_shader = GUI::wxGetApp().get_shader("flat");
-#endif // ENABLE_GL_CORE_PROFILE
+    GLShaderProgram* edges_shader = GUI::OpenGLManager::get_gl_info().is_core_profile() ? GUI::wxGetApp().get_shader("dashed_thick_lines") : GUI::wxGetApp().get_shader("flat");
+#endif // SLIC3R_OPENGL_ES
 
     if (type == ERenderType::Transparent) {
         glsafe(::glEnable(GL_BLEND));

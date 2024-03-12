@@ -47,9 +47,6 @@
 // Enable smoothing of objects normals
 #define ENABLE_SMOOTH_NORMALS 0
 
-// Enable OpenGL core profile context (tested against Mesa 20.1.8 on Windows)
-#define ENABLE_GL_CORE_PROFILE (1 && !SLIC3R_OPENGL_ES)
-
 // Enable automatic detection of highest number of samples supported for OpenGL antialising
 #define ENABLE_OPENGL_AUTO_AA_SAMPLES 1
 

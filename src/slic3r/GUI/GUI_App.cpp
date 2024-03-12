@@ -887,12 +887,12 @@ std::string GUI_App::get_gl_info(bool for_github)
 
 wxGLContext* GUI_App::init_glcontext(wxGLCanvas& canvas)
 {
-#if ENABLE_GL_CORE_PROFILE
+#if SLIC3R_OPENGL_ES
+    return m_opengl_mgr.init_glcontext(canvas);
+#else
     return m_opengl_mgr.init_glcontext(canvas, init_params != nullptr ? init_params->opengl_version : std::make_pair(0, 0),
         init_params != nullptr ? init_params->opengl_compatibiity_profile : false, init_params != nullptr ? init_params->opengl_debug : false);
-#else
-    return m_opengl_mgr.init_glcontext(canvas);
-#endif // ENABLE_GL_CORE_PROFILE
+#endif // SLIC3R_OPENGL_ES
 }
 
 bool GUI_App::init_opengl()

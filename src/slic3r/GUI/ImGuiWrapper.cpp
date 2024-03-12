@@ -1919,14 +1919,15 @@ void ImGuiWrapper::render_draw_data(ImDrawData *draw_data)
 
     shader->start_using();
 
-#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
     // Backup GL state
     GLenum last_active_texture;       glsafe(::glGetIntegerv(GL_ACTIVE_TEXTURE, (GLint*)&last_active_texture));
     GLuint last_program;              glsafe(::glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)&last_program));
     GLuint last_texture;              glsafe(::glGetIntegerv(GL_TEXTURE_BINDING_2D, (GLint*)&last_texture));
     GLuint last_array_buffer;         glsafe(::glGetIntegerv(GL_ARRAY_BUFFER_BINDING, (GLint*)&last_array_buffer));
     GLuint last_vertex_array_object = 0;
-    if (OpenGLManager::get_gl_info().is_version_greater_or_equal_to(3, 0))
+#if !SLIC3R_OPENGL_ES
+    if (OpenGLManager::get_gl_info().is_core_profile())
+#endif // !SLIC3R_OPENGL_ES
         glsafe(::glGetIntegerv(GL_VERTEX_ARRAY_BINDING, (GLint*)&last_vertex_array_object));
     GLint last_viewport[4];           glsafe(::glGetIntegerv(GL_VIEWPORT, last_viewport));
     GLint last_scissor_box[4];        glsafe(::glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box));
@@ -1951,25 +1952,6 @@ void ImGuiWrapper::render_draw_data(ImDrawData *draw_data)
     glsafe(::glDisable(GL_DEPTH_TEST));
     glsafe(::glDisable(GL_STENCIL_TEST));
     glsafe(::glEnable(GL_SCISSOR_TEST));
-#else
-    // We are using the OpenGL fixed pipeline to make the example code simpler to read!
-    // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, vertex/texcoord/color pointers, polygon fill.
-    GLint last_texture;          glsafe(::glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture));
-    GLint last_polygon_mode[2];  glsafe(::glGetIntegerv(GL_POLYGON_MODE, last_polygon_mode));
-    GLint last_viewport[4];      glsafe(::glGetIntegerv(GL_VIEWPORT, last_viewport));
-    GLint last_scissor_box[4];   glsafe(::glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box));
-    GLint last_texture_env_mode; glsafe(::glGetTexEnviv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, &last_texture_env_mode));
-    glsafe(::glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT));
-    glsafe(::glEnable(GL_BLEND));
-    glsafe(::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-    glsafe(::glDisable(GL_CULL_FACE));
-    glsafe(::glDisable(GL_DEPTH_TEST));
-    glsafe(::glDisable(GL_STENCIL_TEST));
-    glsafe(::glEnable(GL_SCISSOR_TEST));
-    glsafe(::glEnable(GL_TEXTURE_2D));
-    glsafe(::glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
-    glsafe(::glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE));
-#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 
     // Setup viewport, orthographic projection matrix
     // Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
@@ -2001,13 +1983,15 @@ void ImGuiWrapper::render_draw_data(ImDrawData *draw_data)
         const GLsizeiptr vtx_buffer_size = (GLsizeiptr)cmd_list->VtxBuffer.Size * (int)sizeof(ImDrawVert);
         const GLsizeiptr idx_buffer_size = (GLsizeiptr)cmd_list->IdxBuffer.Size * (int)sizeof(ImDrawIdx);
 
-#if ENABLE_GL_CORE_PROFILE
         GLuint vao_id = 0;
-        if (OpenGLManager::get_gl_info().is_version_greater_or_equal_to(3, 0)) {
+#if !SLIC3R_OPENGL_ES
+        if (OpenGLManager::get_gl_info().is_core_profile()) {
+#endif // !SLIC3R_OPENGL_ES
             glsafe(::glGenVertexArrays(1, &vao_id));
             glsafe(::glBindVertexArray(vao_id));
+#if !SLIC3R_OPENGL_ES
         }
-#endif // ENABLE_GL_CORE_PROFILE
+#endif // !SLIC3R_OPENGL_ES
 
         GLuint vbo_id;
         glsafe(::glGenBuffers(1, &vbo_id));
@@ -2069,17 +2053,22 @@ void ImGuiWrapper::render_draw_data(ImDrawData *draw_data)
 
         glsafe(::glDeleteBuffers(1, &ibo_id));
         glsafe(::glDeleteBuffers(1, &vbo_id));
-#if ENABLE_GL_CORE_PROFILE
-        if (vao_id > 0)
-        glsafe(::glDeleteVertexArrays(1, &vao_id));
-#endif // ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
+        if (OpenGLManager::get_gl_info().is_core_profile()) {
+#endif // !SLIC3R_OPENGL_ES
+            if (vao_id > 0)
+                glsafe(::glDeleteVertexArrays(1, &vao_id));
+#if !SLIC3R_OPENGL_ES
+        }
+#endif // !SLIC3R_OPENGL_ES
     }
 
-#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
     // Restore modified GL state
     glsafe(::glBindTexture(GL_TEXTURE_2D, last_texture));
     glsafe(::glActiveTexture(last_active_texture));
-    if (OpenGLManager::get_gl_info().is_version_greater_or_equal_to(3, 0))
+#if !SLIC3R_OPENGL_ES
+    if (OpenGLManager::get_gl_info().is_core_profile())
+#endif // !SLIC3R_OPENGL_ES
         glsafe(::glBindVertexArray(last_vertex_array_object));
     glsafe(::glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer));
     glsafe(::glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha));
@@ -2091,16 +2080,6 @@ void ImGuiWrapper::render_draw_data(ImDrawData *draw_data)
     if (last_enable_scissor_test) glsafe(::glEnable(GL_SCISSOR_TEST)); else glsafe(::glDisable(GL_SCISSOR_TEST));
     glsafe(::glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]));
     glsafe(::glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]));
-#else
-    // Restore modified state
-    glsafe(::glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, last_texture_env_mode));
-    glsafe(::glBindTexture(GL_TEXTURE_2D, (GLuint)last_texture));
-    glsafe(::glPopAttrib());
-    glsafe(::glPolygonMode(GL_FRONT, (GLenum)last_polygon_mode[0]);
-    glsafe(::glPolygonMode(GL_BACK, (GLenum)last_polygon_mode[1])));
-    glsafe(::glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]));
-    glsafe(::glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]));
-#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 
     shader->stop_using();
 

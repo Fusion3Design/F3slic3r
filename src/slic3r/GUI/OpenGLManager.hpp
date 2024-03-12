@@ -10,9 +10,7 @@
 class wxWindow;
 class wxGLCanvas;
 class wxGLContext;
-#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 class wxGLAttributes;
-#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 
 namespace Slic3r {
 namespace GUI {
@@ -77,9 +75,9 @@ public:
         // Otherwise HTML formatted for the system info dialog.
         std::string to_string(bool for_github) const;
 
-#if ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
         std::vector<std::string> get_extensions_list() const;
-#endif // ENABLE_GL_CORE_PROFILE
+#endif // !SLIC3R_OPENGL_ES
 
     private:
         void detect() const;
@@ -123,11 +121,11 @@ public:
     ~OpenGLManager();
 
     bool init_gl();
-#if ENABLE_GL_CORE_PROFILE
-    wxGLContext* init_glcontext(wxGLCanvas& canvas, const std::pair<int, int>& required_opengl_version, bool enable_compatibility_profile, bool enable_debug);
-#else
+#if SLIC3R_OPENGL_ES
     wxGLContext* init_glcontext(wxGLCanvas& canvas);
-#endif // ENABLE_GL_CORE_PROFILE
+#else
+    wxGLContext* init_glcontext(wxGLCanvas& canvas, const std::pair<int, int>& required_opengl_version, bool enable_compatibility_profile, bool enable_debug);
+#endif // SLIC3R_OPENGL_ES
 
     GLShaderProgram* get_shader(const std::string& shader_name) { return m_shaders_manager.get_shader(shader_name); }
     GLShaderProgram* get_current_shader() { return m_shaders_manager.get_current_shader(); }
@@ -146,11 +144,7 @@ public:
 
 private:
 #if !ENABLE_OPENGL_AUTO_AA_SAMPLES
-#if ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
     static void detect_multisample(const wxGLAttributes& attribList);
-#else
-    static void detect_multisample(int* attribList);
-#endif // ENABLE_GL_CORE_PROFILE || SLIC3R_OPENGL_ES
 #endif // !ENABLE_OPENGL_AUTO_AA_SAMPLES
 };
 

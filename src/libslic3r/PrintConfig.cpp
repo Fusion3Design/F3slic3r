@@ -4923,7 +4923,7 @@ CLIActionsConfigDef::CLIActionsConfigDef()
     def->set_default_value(new ConfigOptionBool(false));
 #endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 
-#if ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
     def = this->add("opengl-version", coString);
     def->label = L("OpenGL version");
     def->tooltip = L("Select a specific version of OpenGL");
@@ -4941,7 +4941,7 @@ CLIActionsConfigDef::CLIActionsConfigDef()
     def->tooltip = L("Activate OpenGL debug output on graphic cards which support it (OpenGL 4.3 or higher)");
     def->cli = "opengl-debug";
     def->set_default_value(new ConfigOptionBool(false));
-#endif // ENABLE_GL_CORE_PROFILE
+#endif // !SLIC3R_OPENGL_ES
 
     def = this->add("slice", coBool);
     def->label = L("Slice");

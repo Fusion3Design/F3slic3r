@@ -7,9 +7,9 @@
 #include "GLShadersManager.hpp"
 #include "3DScene.hpp"
 #include "GUI_App.hpp"
-#if ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
 #include "OpenGLManager.hpp"
-#endif // ENABLE_GL_CORE_PROFILE
+#endif // !SLIC3R_OPENGL_ES
 
 #include <cassert>
 #include <algorithm>
@@ -60,7 +60,7 @@ std::pair<bool, std::string> GLShadersManager::init()
 #if SLIC3R_OPENGL_ES
     // used to render dashed lines
     valid &= append_shader("dashed_lines", { prefix + "dashed_lines.vs", prefix + "dashed_lines.fs" });
-#elif ENABLE_GL_CORE_PROFILE
+#else
     if (GUI::OpenGLManager::get_gl_info().is_core_profile())
         // used to render thick and/or dashed lines
         valid &= append_shader("dashed_thick_lines", { prefix + "dashed_thick_lines.vs", prefix + "dashed_thick_lines.fs", prefix + "dashed_thick_lines.gs" });

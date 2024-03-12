@@ -465,21 +465,25 @@ void GLCanvas3D::LayersEditing::render_profile(const GLCanvas3D& canvas)
         m_profile.profile.init_from(std::move(init_data));
     }
 
-#if ENABLE_GL_CORE_PROFILE
-    GLShaderProgram* shader = OpenGLManager::get_gl_info().is_core_profile() ? wxGetApp().get_shader("dashed_thick_lines") : wxGetApp().get_shader("flat");
+#if SLIC3R_OPENGL_ES
+    GLShaderProgram* shader = wxGetApp().get_shader("dashed_lines");
 #else
-    GLShaderProgram* shader = wxGetApp().get_shader("flat");
-#endif // ENABLE_GL_CORE_PROFILE
+    GLShaderProgram* shader = OpenGLManager::get_gl_info().is_core_profile() ? wxGetApp().get_shader("dashed_thick_lines") : wxGetApp().get_shader("flat");
+#endif // SLIC3R_OPENGL_ES
     if (shader != nullptr) {
         shader->start_using();
         shader->set_uniform("view_model_matrix", Transform3d::Identity());
         shader->set_uniform("projection_matrix", Transform3d::Identity());
-#if ENABLE_GL_CORE_PROFILE
-        const std::array<int, 4>& viewport = wxGetApp().plater()->get_camera().get_viewport();
-        shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
-        shader->set_uniform("width", 0.25f);
-        shader->set_uniform("gap_size", 0.0f);
-#endif // ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
+        if (OpenGLManager::get_gl_info().is_core_profile()) {
+#endif // !SLIC3R_OPENGL_ES
+            const std::array<int, 4>& viewport = wxGetApp().plater()->get_camera().get_viewport();
+            shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
+            shader->set_uniform("width", 0.25f);
+            shader->set_uniform("gap_size", 0.0f);
+#if !SLIC3R_OPENGL_ES
+        }
+#endif // !SLIC3R_OPENGL_ES
         m_profile.baseline.render();
         m_profile.profile.render();
         shader->stop_using();
@@ -955,11 +959,16 @@ void GLCanvas3D::SequentialPrintClearance::render()
     if (!m_evaluating && !m_dragging)
         m_fill.render();
 
-#if ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
     if (OpenGLManager::get_gl_info().is_core_profile()) {
+#endif // !SLIC3R_OPENGL_ES
         shader->stop_using();
 
+#if SLIC3R_OPENGL_ES
+        shader = wxGetApp().get_shader("dashed_lines");
+#else
         shader = wxGetApp().get_shader("dashed_thick_lines");
+#endif // SLIC3R_OPENGL_ES
         if (shader == nullptr)
             return;
 
@@ -969,10 +978,11 @@ void GLCanvas3D::SequentialPrintClearance::render()
         shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
         shader->set_uniform("width", 1.0f);
         shader->set_uniform("gap_size", 0.0f);
+#if !SLIC3R_OPENGL_ES
     }
     else
-#endif // ENABLE_GL_CORE_PROFILE
         glsafe(::glLineWidth(2.0f));
+#endif // !SLIC3R_OPENGL_ES
 
     for (const auto& [id, trafo] : m_instances) {
         shader->set_uniform("view_model_matrix", camera.get_view_matrix() * trafo);
@@ -6172,10 +6182,10 @@ void GLCanvas3D::_render_camera_target()
     static const float half_length = 5.0f;
 
     glsafe(::glDisable(GL_DEPTH_TEST));
-#if ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
     if (!OpenGLManager::get_gl_info().is_core_profile())
-#endif // ENABLE_GL_CORE_PROFILE
         glsafe(::glLineWidth(2.0f));
+#endif // !SLIC3R_OPENGL_ES
 
     const Vec3f& target = wxGetApp().plater()->get_camera().get_target().cast<float>();
     m_camera_target.target = target.cast<double>();
@@ -6211,22 +6221,26 @@ void GLCanvas3D::_render_camera_target()
         }
     }
 
-#if ENABLE_GL_CORE_PROFILE
-    GLShaderProgram* shader = OpenGLManager::get_gl_info().is_core_profile() ? wxGetApp().get_shader("dashed_thick_lines") : wxGetApp().get_shader("flat");
+#if SLIC3R_OPENGL_ES
+    GLShaderProgram* shader = wxGetApp().get_shader("dashed_lines");
 #else
-    GLShaderProgram* shader = wxGetApp().get_shader("flat");
-#endif // ENABLE_GL_CORE_PROFILE
+    GLShaderProgram* shader = OpenGLManager::get_gl_info().is_core_profile() ? wxGetApp().get_shader("dashed_thick_lines") : wxGetApp().get_shader("flat");
+#endif // SLIC3R_OPENGL_ES
     if (shader != nullptr) {
         shader->start_using();
         const Camera& camera = wxGetApp().plater()->get_camera();
         shader->set_uniform("view_model_matrix", camera.get_view_matrix() * Geometry::translation_transform(m_camera_target.target));
         shader->set_uniform("projection_matrix", camera.get_projection_matrix());
-#if ENABLE_GL_CORE_PROFILE
-        const std::array<int, 4>& viewport = camera.get_viewport();
-        shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
-        shader->set_uniform("width", 0.5f);
-        shader->set_uniform("gap_size", 0.0f);
-#endif // ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
+        if (OpenGLManager::get_gl_info().is_core_profile()) {
+#endif // !SLIC3R_OPENGL_ES
+            const std::array<int, 4>& viewport = camera.get_viewport();
+            shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
+            shader->set_uniform("width", 0.5f);
+            shader->set_uniform("gap_size", 0.0f);
+#if !SLIC3R_OPENGL_ES
+        }
+#endif // !SLIC3R_OPENGL_ES
         for (int i = 0; i < 3; ++i) {
             m_camera_target.axis[i].render();
         }
