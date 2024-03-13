@@ -110,7 +110,7 @@ struct PrintObjectInstance
     int                instance_idx = -1;
 
     bool operator==(const PrintObjectInstance &other) const {return print_object == other.print_object && instance_idx == other.instance_idx; }
-    bool operator!=(const PrintObjectInstance &other) const { return *this == other; }
+    bool operator!=(const PrintObjectInstance &other) const { return !(*this == other); }
 };
 
 } // namespace GCode
@@ -226,8 +226,16 @@ private:
     static ObjectsLayerToPrint         		                     collect_layers_to_print(const PrintObject &object);
     static std::vector<std::pair<coordf_t, ObjectsLayerToPrint>> collect_layers_to_print(const Print &print);
 
+    Polyline get_layer_change_xy_path(const Vec3d &from, const Vec3d &to);
+
+    std::string get_ramping_layer_change_gcode(const Vec3d &from, const Vec3d &to, const unsigned extruder_id);
+
     /** @brief Generates ramping travel gcode for layer change. */
-    std::string get_layer_change_gcode(const Vec3d& from, const Vec3d& to, const unsigned extruder_id);
+    std::string generate_ramping_layer_change_gcode(
+        const Polyline &xy_path,
+        const double initial_elevation,
+        const GCode::Impl::Travels::ElevatedTravelParams &elevation_params
+    ) const;
 
     LayerResult process_layer(
         const Print                     &print,
@@ -336,7 +344,7 @@ private:
         const std::function<std::string()>& insert_gcode
     );
 
-    std::string travel_to_first_position(const Vec3crd& point, const double from_z, const std::function<std::string()>& insert_gcode);
+    std::string travel_to_first_position(const Vec3crd& point, const double from_z, const ExtrusionRole role, const std::function<std::string()>& insert_gcode);
 
     bool            needs_retraction(const Polyline &travel, ExtrusionRole role = ExtrusionRole::None);
 
@@ -431,6 +439,9 @@ private:
     // This needs to be populated during the layer processing!
     std::optional<Vec3d>                m_current_layer_first_position;
     std::optional<unsigned>             m_layer_change_extruder_id;
+    bool                                m_layer_change_used_external_mp{false};
+    const Layer*                        m_layer_change_layer{nullptr};
+    std::optional<Vec2d>                m_layer_change_origin;
     bool                                m_already_unretracted{false};
     std::unique_ptr<CoolingBuffer>      m_cooling_buffer;
     std::unique_ptr<SpiralVase>         m_spiral_vase;
@@ -446,6 +457,9 @@ private:
     bool                                m_second_layer_things_done;
     // G-code that is due to be written before the next extrusion
     std::string                         m_pending_pre_extrusion_gcode;
+    // Pointer to currently exporting PrintObject and instance index.
+    GCode::PrintObjectInstance          m_current_instance;
+
     bool                                m_silent_time_estimator_enabled;
 
     // Processor

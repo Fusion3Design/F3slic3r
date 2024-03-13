@@ -60,7 +60,7 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
         const Point xy_point = wipe_tower_point_to_object_point(gcodegen, start_pos);
         gcode += gcodegen.m_label_objects.maybe_stop_instance();
         gcode += gcodegen.retract_and_wipe();
-        gcodegen.m_avoid_crossing_perimeters.use_external_mp_once();
+        gcodegen.m_avoid_crossing_perimeters.use_external_mp_once = true;
         const std::string comment{"Travel to a Wipe Tower"};
         if (gcodegen.m_current_layer_first_position) {
             if (gcodegen.last_position) {
@@ -73,7 +73,7 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
             }
         } else {
             const Vec3crd point = to_3d(xy_point, scaled(z));
-            gcode += gcodegen.travel_to_first_position(point, current_z, [](){return "";});
+            gcode += gcodegen.travel_to_first_position(point, current_z, ExtrusionRole::Mixed, [](){return "";});
         }
         gcode += gcodegen.unretract();
     } else {
@@ -140,7 +140,7 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
     }
 
     // Let the planner know we are traveling between objects.
-    gcodegen.m_avoid_crossing_perimeters.use_external_mp_once();
+    gcodegen.m_avoid_crossing_perimeters.use_external_mp_once = true;
     return gcode;
 }
 

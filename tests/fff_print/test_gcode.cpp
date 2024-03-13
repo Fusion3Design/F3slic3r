@@ -145,6 +145,12 @@ TEST_CASE("Extrusion, travels, temeperatures", "[GCode]") {
     Model model;
     Test::init_print({TestMesh::cube_20x20x20}, print, model, config, false, 2);
     std::string gcode = Test::gcode(print);
+
+    if constexpr (debug_files) {
+        std::ofstream gcode_file{"sequential_print.gcode"};
+        gcode_file << gcode;
+    }
+
     parser.parse_buffer(gcode, [&] (Slic3r::GCodeReader &self, const Slic3r::GCodeReader::GCodeLine &line) {
         INFO("Unexpected E argument");
         CHECK(!line.has_e());
