@@ -1,0 +1,489 @@
+///|/ Copyright (c) Prusa Research 2020 - 2023 Oleksandra Iushchenko @YuSanka, Vojtěch Bubník @bubnikv, Tomáš Mészáros @tamasmeszaros, Lukáš Matěna @lukasmatena, Enrico Turri @enricoturri1966
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
+
+#include "ImGuiDoubleSlider.hpp"
+
+namespace Slic3r {
+namespace GUI {
+
+const ImU32 tooltip_bg_clr  = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_GREY_LIGHT);
+const ImU32 thumb_bg_clr    = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_ORANGE_LIGHT);
+const ImU32 groove_bg_clr   = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_WINDOW_BACKGROUND);
+const ImU32 border_clr      = IM_COL32(255, 255, 255, 255);
+
+static bool behavior(ImGuiID id, const ImRect& region, 
+                     const ImS32 v_min, const ImS32 v_max, 
+                     ImS32* out_value, ImRect* out_thumb, 
+                     ImGuiSliderFlags flags = 0,
+                     bool change_on_mouse_move = false,
+                     const int fixed_value = -1, 
+                     const ImVec4& fixed_rect = ImVec4())
+{
+    ImGuiContext& context = *GImGui;
+
+    const ImGuiAxis axis = (flags & ImGuiSliderFlags_Vertical) ? ImGuiAxis_Y : ImGuiAxis_X;
+
+    const ImVec2 thumb_sz = out_thumb->GetSize();
+    ImS32 v_range = (v_min < v_max ? v_max - v_min : v_min - v_max);
+    const float region_usable_sz = (region.Max[axis] - region.Min[axis]);
+    const float region_usable_pos_min = region.Min[axis];
+    const float region_usable_pos_max = region.Max[axis];
+
+    const float mouse_abs_pos = context.IO.MousePos[axis];
+    float mouse_pos_ratio = (region_usable_sz > 0.0f) ? ImClamp((mouse_abs_pos - region_usable_pos_min) / region_usable_sz, 0.0f, 1.0f) : 0.0f;
+    if (axis == ImGuiAxis_Y)
+        mouse_pos_ratio = 1.0f - mouse_pos_ratio;
+
+    // Process interacting with the slider
+    ImS32 v_new = *out_value;
+    bool value_changed = false;
+    // wheel behavior
+    ImRect mouse_wheel_responsive_region;
+    if (axis == ImGuiAxis_X)
+        mouse_wheel_responsive_region = ImRect(region.Min - ImVec2(thumb_sz.x / 2, 0), region.Max + ImVec2(thumb_sz.x / 2, 0));
+    if (axis == ImGuiAxis_Y)
+        mouse_wheel_responsive_region = ImRect(region.Min - ImVec2(0, thumb_sz.y), region.Max + ImVec2(0, thumb_sz.y));
+    if (ImGui::ItemHoverable(mouse_wheel_responsive_region, id)) {
+        if (change_on_mouse_move)
+            v_new = v_min + (ImS32)(v_range * mouse_pos_ratio + 0.5f);
+        else 
+            v_new = ImClamp(*out_value + (ImS32)(context.IO.MouseWheel/* * accer*/), v_min, v_max);
+    }
+
+    // drag behavior
+    if (context.ActiveId == id)
+    {
+        if (context.ActiveIdSource == ImGuiInputSource_Mouse)
+        {
+            if (context.IO.MouseReleased[0])
+                ImGui::ClearActiveID();
+            if (context.IO.MouseDown[0])
+                v_new = v_min + (ImS32)(v_range * mouse_pos_ratio + 0.5f);
+        }
+    }
+    // click in fixed_rect behavior
+    if (ImGui::ItemHoverable(fixed_rect, id) && context.IO.MouseReleased[0])
+    {
+        v_new = fixed_value;
+    }
+
+    // apply result, output value
+    if (*out_value != v_new)
+    {
+        *out_value = v_new;
+        value_changed = true;
+    }
+
+    // Output thumb position so it can be displayed by the caller
+    const ImS32 v_clamped = (v_min < v_max) ? ImClamp(*out_value, v_min, v_max) : ImClamp(*out_value, v_max, v_min);
+    float thumb_pos_ratio = v_range != 0 ? ((float)(v_clamped - v_min) / (float)v_range) : 0.0f;
+    thumb_pos_ratio = axis == ImGuiAxis_Y ? 1.0f - thumb_pos_ratio : thumb_pos_ratio;
+    const float thumb_pos = region_usable_pos_min + (region_usable_pos_max - region_usable_pos_min) * thumb_pos_ratio;
+
+    ImVec2 new_thumb_center = axis == ImGuiAxis_Y ? ImVec2(out_thumb->GetCenter().x, thumb_pos) : ImVec2(thumb_pos, out_thumb->GetCenter().y);
+    *out_thumb = ImRect(new_thumb_center - thumb_sz * 0.5f, new_thumb_center + thumb_sz * 0.5f);
+
+    return value_changed;
+}
+
+ImRect ImGuiControl::DrawOptions::groove(const ImVec2& pos, const ImVec2& size, bool is_horizontal)
+{
+    ImVec2 groove_start =   is_horizontal ?
+                            ImVec2(pos.x + thumb_dummy_sz().x, pos.y + size.y - groove_sz().y - dummy_sz().y) :
+                            ImVec2(pos.x + size.x - groove_sz().x - dummy_sz().x, pos.y + text_dummy_sz().y);
+    ImVec2 groove_size  =   is_horizontal ?
+                            ImVec2(size.x - 2 * thumb_dummy_sz().x - text_dummy_sz().x, groove_sz().y) :
+                            ImVec2(groove_sz().x, size.y - 2 * text_dummy_sz().y);
+
+    return ImRect(groove_start, groove_start + groove_size);
+}
+
+ImRect ImGuiControl::DrawOptions::draggable_region(const ImRect& groove, bool is_horizontal)
+{
+    ImRect draggable_region =   is_horizontal ?
+                                ImRect(groove.Min.x, groove.GetCenter().y, groove.Max.x, groove.GetCenter().y) :
+                                ImRect(groove.GetCenter().x, groove.Min.y, groove.GetCenter().x, groove.Max.y);
+    draggable_region.Expand(is_horizontal ? 
+                            ImVec2(/*thumb_radius()*/0, draggable_region_sz().y) : 
+                            ImVec2(draggable_region_sz().x, 0));
+
+    return draggable_region;
+}
+
+ImRect ImGuiControl::DrawOptions::slider_line(const ImRect& draggable_region, const ImVec2& h_thumb_center, const ImVec2& l_thumb_center, bool is_horizontal)
+{
+    ImVec2 mid = draggable_region.GetCenter();
+
+    ImRect scroll_line =    is_horizontal ?
+                            ImRect(ImVec2(l_thumb_center.x, mid.y - groove_sz().y / 2), ImVec2(h_thumb_center.x, mid.y + groove_sz().y / 2)) :
+                            ImRect(ImVec2(mid.x - groove_sz().x / 2, h_thumb_center.y), ImVec2(mid.x + groove_sz().x / 2, l_thumb_center.y));
+
+    return scroll_line;
+}
+
+ImGuiControl::ImGuiControl( int lowerValue,
+                            int higherValue,
+                            int minValue,
+                            int maxValue,
+                            ImVec2 pos,
+                            ImVec2 size,
+                            long style,
+                            std::string name,
+                            bool use_lower_thumb) :
+    m_selection(ssUndef),
+    m_pos(pos),
+    m_size(size),
+    m_name(name),
+    m_lower_value(lowerValue), 
+    m_higher_value (higherValue), 
+    m_min_value(minValue), 
+    m_max_value(maxValue),
+    m_style(style == wxSL_HORIZONTAL || style == wxSL_VERTICAL ? style: wxSL_HORIZONTAL),
+    m_draw_lower_thumb(use_lower_thumb)
+    //,m_extra_style(style == wxSL_VERTICAL ? wxSL_AUTOTICKS | wxSL_VALUE_LABEL : 0)
+{
+}
+
+int ImGuiControl::GetActiveValue() const
+{
+    return m_selection == ssLower  ? m_lower_value : 
+           m_selection == ssHigher ? m_higher_value : -1;
+}
+
+void ImGuiControl::SetLowerValue(const int lower_val)
+{
+    m_selection = ssLower;
+    m_lower_value = lower_val;
+}
+
+void ImGuiControl::SetHigherValue(const int higher_val)
+{
+    m_selection = ssHigher;
+    m_higher_value = higher_val;
+}
+
+void ImGuiControl::SetSelectionSpan(const int lower_val, const int higher_val)
+{
+    m_lower_value  = std::max(lower_val, m_min_value);
+    m_higher_value = std::max(std::min(higher_val, m_max_value), m_lower_value);
+}
+
+void ImGuiControl::SetMaxValue(const int max_value)
+{
+    m_max_value = max_value;
+}
+
+void ImGuiControl::SetSliderValues(const std::vector<double>& values)
+{
+    m_values = values;
+}
+
+std::string ImGuiControl::get_label(int pos) const
+{
+    if (m_cb_get_label)
+        return m_cb_get_label(pos);
+
+    const size_t value = pos;
+
+    if (m_label_koef == 1.0 && m_values.empty())
+        return std::to_string(static_cast<unsigned long>(value));
+    if (value >= m_values.size())
+        return "ErrVal";
+
+    return m_values.empty() ?
+           to_string_with_precision(m_label_koef * value) :
+           to_string_with_precision(m_values[value]);
+}
+
+float ImGuiControl::get_pos_from_value(int v_min, int v_max, int value, const ImRect& rect) 
+{
+    float pos_ratio = (v_max - v_min) != 0 ? ((float)(value - v_min) / (float)(v_max - v_min)) : 0.0f;
+    float thumb_pos;
+    if (is_horizontal()) {
+        thumb_pos = rect.Min.x + (rect.Max.x - rect.Min.x) * pos_ratio;
+    }
+    else {
+        pos_ratio = 1.0f - pos_ratio;
+        thumb_pos = rect.Min.y + (rect.Max.y - rect.Min.y) * pos_ratio;
+    }
+    return thumb_pos;
+}
+
+void ImGuiControl::draw_scroll_line(const ImRect& scroll_line, const ImRect& slideable_region)
+{
+    if (m_cb_draw_scroll_line)
+        m_cb_draw_scroll_line(scroll_line, slideable_region);
+    else
+        ImGui::RenderFrame(scroll_line.Min, scroll_line.Max, thumb_bg_clr, false, m_draw_opts.rounding());
+}
+
+void ImGuiControl::draw_background(const ImRect& groove)
+{
+    ImVec2 groove_padding = (is_horizontal() ? ImVec2(2.0f, 2.0f) : ImVec2(3.0f, 4.0f)) * m_draw_opts.scale;
+
+    ImRect bg_rect = groove;
+    bg_rect.Expand(groove_padding);
+
+    // draw bg of slider
+    ImGui::RenderFrame(bg_rect.Min, bg_rect.Max, border_clr, false, 0.5 * bg_rect.GetWidth());
+    // draw bg of scroll
+    ImGui::RenderFrame(groove.Min, groove.Max, groove_bg_clr, false, 0.5 * groove.GetWidth());
+}
+
+void ImGuiControl::draw_label(std::string label, const ImRect& thumb)
+{
+    const ImVec2 thumb_center   = thumb.GetCenter();
+    ImVec2 text_padding         = m_draw_opts.text_padding();
+    float  rounding             = m_draw_opts.rounding();
+    ImVec2 triangle_offsets[3]  = { ImVec2(2.0f, 0.0f) * m_draw_opts.scale, ImVec2(0.0f, 8.0f) * m_draw_opts.scale, ImVec2(9.0f, 0.0f) * m_draw_opts.scale };
+
+    ImVec2 text_content_size    = ImGui::CalcTextSize(label.c_str());
+    ImVec2 text_size    = text_content_size + text_padding * 2;
+    ImVec2 text_start   = is_horizontal() ?
+                        ImVec2(thumb.Max.x + triangle_offsets[2].x, thumb_center.y - text_size.y) : 
+                        ImVec2(thumb.Min.x - text_size.x - triangle_offsets[2].x, thumb_center.y - text_size.y) ;
+    ImRect text_rect(text_start, text_start + text_size);
+
+    ImVec2 pos_1 = is_horizontal() ?
+                   ImVec2(text_rect.Min.x + triangle_offsets[0].x, text_rect.Max.y - triangle_offsets[0].y) :
+                   text_rect.Max - triangle_offsets[0];
+    ImVec2 pos_2 = is_horizontal() ? pos_1 - triangle_offsets[2] : pos_1 - triangle_offsets[1];
+    ImVec2 pos_3 = is_horizontal() ? pos_1 - triangle_offsets[1] : pos_1 + triangle_offsets[2];
+
+    ImGui::RenderFrame(text_rect.Min, text_rect.Max, tooltip_bg_clr, true, rounding);
+    ImGui::GetCurrentWindow()->DrawList->AddTriangleFilled(pos_1, pos_2, pos_3, tooltip_bg_clr);
+    ImGui::RenderText(text_start + text_padding, label.c_str());
+};
+
+void ImGuiControl::draw_thumb(const ImVec2& center, bool mark/* = false*/)
+{
+    const float line_width  = 2.0f * m_draw_opts.scale;
+    const float line_offset = 9.0f * m_draw_opts.scale;
+    const float radius      = m_draw_opts.thumb_radius();
+
+    const float hexagon_angle = is_horizontal() ? 0.f : IM_PI * 0.5f;
+
+    ImGuiPureWrap::draw_hexagon(center, radius,              border_clr, hexagon_angle);
+    ImGuiPureWrap::draw_hexagon(center, radius - line_width, thumb_bg_clr,        hexagon_angle);
+
+    if (mark) {
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
+        window->DrawList->AddLine(center + ImVec2(-line_offset, 0.0f), center + ImVec2(line_offset, 0.0f), border_clr, line_width);
+        window->DrawList->AddLine(center + ImVec2(0.0f, -line_offset), center + ImVec2(0.0f, line_offset), border_clr, line_width);
+    }
+}
+
+void ImGuiControl::apply_regions(int higher_value, int lower_value, const ImRect& draggable_region)
+{
+    ImVec2  mid             = draggable_region.GetCenter();
+    float   thumb_radius    = m_draw_opts.thumb_radius();
+
+    // set slideable region
+    m_regions.higher_slideable_region = is_horizontal() ? 
+                                        ImRect(draggable_region.Min + ImVec2(m_draw_lower_thumb ? thumb_radius : 0, 0), draggable_region.Max) :
+                                        ImRect(draggable_region.Min, draggable_region.Max - ImVec2(0, m_combine_thumbs ? 0 : thumb_radius));
+    m_regions.lower_slideable_region  = is_horizontal() ? 
+                                        ImRect(draggable_region.Min, draggable_region.Max - ImVec2(thumb_radius, 0)) : 
+                                        ImRect(draggable_region.Min + ImVec2(0, thumb_radius), draggable_region.Max);
+
+    // initialize the thumbs.
+    float higher_thumb_pos = get_pos_from_value(m_min_value, m_max_value, higher_value, m_regions.higher_slideable_region);
+    m_regions.higher_thumb =    is_horizontal() ? 
+                                ImRect(higher_thumb_pos - thumb_radius, mid.y - thumb_radius, higher_thumb_pos + thumb_radius, mid.y + thumb_radius) : 
+                                ImRect(mid.x - thumb_radius, higher_thumb_pos - thumb_radius, mid.x + thumb_radius, higher_thumb_pos + thumb_radius);
+
+    float  lower_thumb_pos = get_pos_from_value(m_min_value, m_max_value, lower_value, m_regions.lower_slideable_region);
+    m_regions.lower_thumb  =    is_horizontal() ? 
+                                ImRect(lower_thumb_pos - thumb_radius, mid.y - thumb_radius, lower_thumb_pos + thumb_radius, mid.y + thumb_radius) :
+                                ImRect(mid.x - thumb_radius, lower_thumb_pos - thumb_radius, mid.x + thumb_radius, lower_thumb_pos + thumb_radius);
+}
+
+void ImGuiControl::check_thumbs(int* higher_value, int* lower_value)
+{
+    if (!m_draw_lower_thumb || m_combine_thumbs)
+        return;
+
+    const ImVec2 higher_thumb_center = m_regions.higher_thumb.GetCenter();
+    const ImVec2 lower_thumb_center  = m_regions.lower_thumb.GetCenter();
+    const float thumb_radius             = m_draw_opts.thumb_radius();
+
+    const float higher_thumb_center_pos = is_horizontal() ? higher_thumb_center.x : higher_thumb_center.y;
+    const float lower_thumb_center_pos  = is_horizontal() ? lower_thumb_center.x  : lower_thumb_center.y;
+
+    if (is_horizontal()) {
+        if (lower_thumb_center_pos + thumb_radius > higher_thumb_center_pos) { 
+            if (m_selection == ssHigher) {
+                m_regions.lower_thumb = m_regions.higher_thumb;
+                m_regions.higher_thumb.TranslateX(thumb_radius);
+                *lower_value = *higher_value;
+            }
+            else {
+                m_regions.higher_thumb = m_regions.lower_thumb;
+                m_regions.lower_thumb.TranslateX(-thumb_radius);
+                *higher_value = *lower_value;
+            }
+        }
+    }
+    else {
+        if (higher_thumb_center_pos + thumb_radius > lower_thumb_center_pos) {
+            if (m_selection == ssHigher) {
+                m_regions.lower_thumb = m_regions.higher_thumb;
+                m_regions.lower_thumb.TranslateY(thumb_radius);
+                *lower_value = *higher_value;
+            }        
+            else {
+                m_regions.higher_thumb = m_regions.lower_thumb;
+                m_regions.lower_thumb.TranslateY(-thumb_radius);
+                *higher_value = *lower_value;
+            }
+        }
+    }
+}
+
+bool ImGuiControl::draw_slider( int* higher_value, int* lower_value, 
+                                std::string& higher_label, std::string& lower_label, 
+                                const ImVec2& pos, const ImVec2& size, float scale)
+{
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    if (window->SkipItems)
+        return false;
+
+    ImGuiContext& context = *GImGui;
+    const ImGuiID id = window->GetID(m_name.c_str());
+
+    const ImRect draw_region(pos, pos + size);
+    ImGui::ItemSize(draw_region);
+
+    // calc slider groove size
+    ImRect groove = m_draw_opts.groove(pos, size, is_horizontal());
+
+    // set active(draggable) region.
+    ImRect draggable_region = m_draw_opts.draggable_region(groove, is_horizontal());
+
+    if (ImGui::ItemHoverable(draggable_region, id) && context.IO.MouseDown[0]) {
+        ImGui::SetActiveID(id, window);
+        ImGui::SetFocusID(id, window);
+        ImGui::FocusWindow(window);
+    }
+    
+    // set slideable region and thumbs.
+    apply_regions(*higher_value, *lower_value, draggable_region);
+
+    // Processing interacting
+
+    if (ImGui::ItemHoverable(m_regions.higher_thumb, id) && context.IO.MouseClicked[0])
+        m_selection = ssHigher;
+
+    if (m_draw_lower_thumb && !m_combine_thumbs &&
+        ImGui::ItemHoverable(m_regions.lower_thumb, id) && context.IO.MouseClicked[0])
+        m_selection = ssLower;
+
+    // update thumb position and value
+    bool value_changed = false;
+    if (m_selection == ssHigher)
+        value_changed = behavior(id, m_regions.higher_slideable_region, m_min_value, m_max_value,
+                                 higher_value, &m_regions.higher_thumb, is_horizontal() ? 0: ImGuiSliderFlags_Vertical);
+    else if (m_draw_lower_thumb && !m_combine_thumbs)
+        value_changed = behavior(id, m_regions.lower_slideable_region, m_min_value, m_max_value,
+                                 lower_value, &m_regions.lower_thumb, is_horizontal() ? 0: ImGuiSliderFlags_Vertical);
+
+    bool show_move_label = false;
+    ImRect mouse_pos_rc = m_regions.higher_thumb;
+    if (!value_changed && ImGui::ItemHoverable(draw_region, id)) {
+        behavior(id, draggable_region, m_min_value, m_max_value,
+                 &m_mouse_pos_value, &mouse_pos_rc, is_horizontal() ? 0 : ImGuiSliderFlags_Vertical, true);
+        show_move_label = true;
+    }
+
+    // check thumbs values and correct them if needed
+    check_thumbs(higher_value, lower_value);
+
+    // detect right click on thumb
+    if (ImGui::ItemHoverable(m_selection == ssHigher ? m_regions.higher_thumb : m_regions.lower_thumb, id) && context.IO.MouseClicked[1])
+        m_rclick_on_selected_thumb = true;
+    if ((!ImGui::ItemHoverable(m_selection == ssHigher ? m_regions.higher_thumb : m_regions.lower_thumb, id) && context.IO.MouseClicked[1]) ||
+        context.IO.MouseClicked[0])
+        m_rclick_on_selected_thumb = false;
+
+    ImVec2 higher_thumb_center = m_regions.higher_thumb.GetCenter();
+    ImVec2 lower_thumb_center  = m_regions.lower_thumb.GetCenter();
+
+    ImRect scroll_line = m_draw_opts.slider_line(draggable_region, higher_thumb_center, lower_thumb_center, is_horizontal());
+
+    // draw background
+    draw_background(groove);
+    // draw scroll line
+    draw_scroll_line(m_combine_thumbs ? groove : scroll_line, groove);
+
+    // draw thumbs with label
+    // select and mark higher thumb by default
+    draw_thumb(higher_thumb_center, m_selection != ssLower && m_draw_lower_thumb);
+    draw_label(higher_label, m_regions.higher_thumb);
+
+    if (m_draw_lower_thumb && !m_combine_thumbs) {
+        draw_thumb(lower_thumb_center, m_selection == ssLower);
+        draw_label(lower_label, m_regions.lower_thumb);
+    }
+
+    // draw label on mouse move
+    if (show_move_label)
+        draw_label(get_label_on_move(m_mouse_pos_value), mouse_pos_rc);
+
+    return value_changed;
+}
+
+bool ImGuiControl::render(SelectedSlider& selection)
+{
+    bool result = false;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_WindowBorderSize, 0);
+    ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+    ImGui::PushStyleColor(ImGuiCol_::ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_Text));
+
+    int windows_flag =    ImGuiWindowFlags_NoTitleBar
+                        | ImGuiWindowFlags_NoCollapse
+                        | ImGuiWindowFlags_NoMove
+                        | ImGuiWindowFlags_NoResize
+                        | ImGuiWindowFlags_NoScrollbar
+                        | ImGuiWindowFlags_NoScrollWithMouse;
+
+    ImGuiPureWrap::set_next_window_pos(m_pos.x, m_pos.y, ImGuiCond_Always);
+    ImGuiPureWrap::begin(m_name, windows_flag);
+
+    float scale = 1.f;
+
+    int         higher_value        = m_higher_value;
+    int         lower_value         = m_lower_value;
+    std::string higher_label        = get_label(m_higher_value);
+    std::string lower_label         = get_label(m_lower_value);
+    int         temp_higher_value   = m_higher_value;
+    int         temp_lower_value    = m_lower_value;
+
+    if (draw_slider(&higher_value, &lower_value, higher_label, lower_label, m_pos, m_size, scale)) {
+        if (temp_higher_value != higher_value)
+            SetHigherValue(higher_value);
+        if (temp_lower_value != lower_value)
+            SetLowerValue(lower_value);
+        result = true;
+    }
+    selection = m_selection;
+
+    ImGuiPureWrap::end();
+
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(3);
+
+    return result;
+}
+
+//} // DoubleSlider
+
+} // GUI
+
+} // Slic3r
+

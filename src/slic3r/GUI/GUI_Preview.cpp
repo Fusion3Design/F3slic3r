@@ -241,7 +241,7 @@ bool Preview::init(wxWindow* parent, Bed3D& bed, Model* model)
     wxBoxSizer* right_sizer = new wxBoxSizer(wxVERTICAL);
     right_sizer->Add(m_layers_slider_sizer, 1, wxEXPAND, 0);
 
-    m_moves_slider = new DoubleSlider::Control(m_bottom_toolbar_panel, wxID_ANY, 0, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL);
+    m_moves_slider = new DoubleSlider::Control(m_bottom_toolbar_panel, wxID_ANY, 0, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL, "moves_slider");
     m_moves_slider->SetDrawMode(DoubleSlider::dmSequentialGCodeView);
 
     wxBoxSizer* bottom_toolbar_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -352,7 +352,7 @@ void Preview::render_imgui_double_slider(GLCanvas3D& canvas)
 {
     if (m_layers_slider && m_layers_slider->IsShown())
         m_layers_slider->imgui_render(canvas);
-    if (m_moves_slider && m_moves_slider->IsShown())
+    if (m_moves_slider && m_moves_slider->IsShown() && m_bottom_toolbar_panel->IsShown())
         m_moves_slider->imgui_render(canvas);
 }
 
@@ -403,7 +403,7 @@ void Preview::on_size(wxSizeEvent& evt)
 wxBoxSizer* Preview::create_layers_slider_sizer()
 {
     wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
-    m_layers_slider = new DoubleSlider::Control(this, wxID_ANY, 0, 0, 0, 100);
+    m_layers_slider = new DoubleSlider::Control(this, wxID_ANY, 0, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxVERTICAL, "layers_slider");
 
     m_layers_slider->SetDrawMode(wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA,
         wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_bool("complete_objects"));

@@ -9,6 +9,8 @@
 #include "wxExtensions.hpp"
 #include "GLCanvas3D.hpp"
 
+#include "ImGuiDoubleSlider.hpp"
+
 #include <wx/window.h>
 #include <wx/control.h>
 #include <wx/dc.h>
@@ -27,6 +29,8 @@ class Layer;
 
 namespace DoubleSlider {
 
+using namespace GUI;
+
 /* For exporting GCode in GCodeWriter is used XYZF_NUM(val) = PRECISION(val, 3) for XYZ values. 
  * So, let use same value as a permissible error for layer height.
  */
@@ -43,13 +47,13 @@ bool check_color_change(const PrintObject* object, size_t frst_layer_id, size_t 
 
 // custom message the slider sends to its parent to notify a tick-change:
 wxDECLARE_EVENT(wxCUSTOMEVT_TICKSCHANGED, wxEvent);
-
+/*
 enum SelectedSlider {
     ssUndef,
     ssLower,
     ssHigher
 };
-
+*/
 enum FocusedItem {
     fiNone,
     fiRevertIcon,
@@ -218,7 +222,7 @@ public:
         const wxPoint& pos = wxDefaultPosition,
         const wxSize& size = wxDefaultSize,
         long style = wxSL_VERTICAL,
-        const wxValidator& val = wxDefaultValidator,
+//        const wxValidator& val = wxDefaultValidator,
         const wxString& name = wxEmptyString);
     ~Control() {}
 
@@ -483,17 +487,14 @@ private:
     bool        m_show_menu{ false };
     float       get_pos_from_value(int v_min, int v_max, int value, const ImRect& rect);
 
-    void        draw_background(const ImRect& groove);
     void        draw_colored_band(const ImRect& groove, const ImRect& slideable_region);
-    void        draw_label(std::string label, const ImRect& handle, const ImVec2& handle_center, bool is_horizontal = false);
     void        draw_ticks(const ImRect& slideable_region);
     void        render_menu();
     bool        render_button(const wchar_t btn_icon, const std::string& label_id, FocusedItem focus);
-    bool        horizontal_slider(const char* str_id, int* v, int v_min, int v_max, const ImVec2& pos, const ImVec2& size, float scale = 1.0);
-    bool        vertical_slider(const char* str_id, int* higher_value, int* lower_value,
-                                std::string& higher_label, std::string& lower_label,
-                                int v_min, int v_max, const ImVec2& pos, const ImVec2& size,
-                                SelectedSlider& selection, bool one_layer_flag = false, float scale = 1.0f);
+
+
+
+    GUI::ImGuiControl imgui_ctrl;
 
 };
 
