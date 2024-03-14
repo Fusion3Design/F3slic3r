@@ -149,7 +149,7 @@ TEST_CASE("Extrusion, travels, temeperatures", "[GCode]") {
         INFO("Unexpected E argument");
         CHECK(!line.has_e());
 
-        if (line.has_z()) {
+        if (line.has_z() && std::abs(line.dist_Z(self)) > 0) {
             z_moves.emplace_back(line.z());
         }
         if (line.has_x() || line.has_y()) {

@@ -1,6 +1,7 @@
 #include "LabelObjects.hpp"
 
 #include "ClipperUtils.hpp"
+#include "GCode/GCodeWriter.hpp"
 #include "Model.hpp"
 #include "Print.hpp"
 #include "TriangleMeshSlicer.hpp"
@@ -56,7 +57,7 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObject
     for (const PrintObject* po : objects)
         for (const PrintInstance& pi : po->instances())
             model_object_to_print_instances[pi.model_instance->get_object()].emplace_back(&pi);
-    
+
     // Now go through the map, assign a unique_id to each of the PrintInstances and get the indices of the
     // respective ModelObject and ModelInstance so we can use them in the tags. This will maintain
     // indices even in case that some instances are rotated (those end up in different PrintObjects)
@@ -111,7 +112,47 @@ void LabelObjects::init(const SpanOfConstPtrs<PrintObject>& objects, LabelObject
     }
 }
 
+bool LabelObjects::update(const PrintInstance *instance) {
+    if (this->last_operation_instance == instance) {
+        return false;
+    }
+    this->last_operation_instance = instance;
+    return true;
+}
 
+std::string LabelObjects::maybe_start_instance(GCodeWriter& writer) {
+    if (current_instance == nullptr && last_operation_instance != nullptr) {
+        current_instance = last_operation_instance;
+
+        std::string result{this->start_object(*current_instance, LabelObjects::IncludeName::No)};
+        result += writer.reset_e(true);
+        return result;
+    }
+    return "";
+}
+
+std::string LabelObjects::maybe_stop_instance() {
+    if (current_instance != nullptr) {
+        const std::string result{this->stop_object(*current_instance)};
+        current_instance = nullptr;
+        return result;
+    }
+    return "";
+}
+
+std::string LabelObjects::maybe_change_instance(GCodeWriter& writer) {
+    if (last_operation_instance != current_instance) {
+        const std::string stop_instance_gcode{this->maybe_stop_instance()};
+        // Be carefull with refactoring: this->maybe_stop_instance() + this->maybe_start_instance()
+        // may not be evaluated in order. The order is indeed undefined!
+        return stop_instance_gcode + this->maybe_start_instance(writer);
+    }
+    return "";
+}
+
+bool LabelObjects::has_active_instance() {
+    return this->current_instance != nullptr;
+}
 
 std::string LabelObjects::all_objects_header() const
 {
