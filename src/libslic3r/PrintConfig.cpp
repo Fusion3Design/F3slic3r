@@ -3310,6 +3310,11 @@ void PrintConfigDef::init_fff_params()
                                                     140., 140., 140.,   0., 140.,
                                                     140., 140., 140., 140.,   0. });
 
+    def = this->add("wiping_volumes_use_custom_matrix", coBool);
+    def->label = L("");
+    def->tooltip = L("");
+    def->set_default_value(new ConfigOptionBool{ false });
+
     def = this->add("wipe_tower_x", coFloat);
     def->label = L("Position X");
     def->tooltip = L("X coordinate of the left front corner of a wipe tower");
@@ -4525,6 +4530,26 @@ void PrintConfigDef::handle_legacy_composite(DynamicPrintConfig &config)
 
             config.set_key_value("thumbnails", new ConfigOptionString(thumbnails_str));
         }
+    }
+
+    if (config.has("wiping_volumes_matrix") && !config.has("wiping_volumes_use_custom_matrix")) {
+        // This is apparently some pre-2.7.3 config, where the wiping_volumes_matrix was always used.
+        // The 2.7.3 introduced an option to use defaults derived from config. In case the matrix
+        // contains only default values, switch it to default behaviour. The default values
+        // were zeros on the diagonal and 140 otherwise.
+        std::vector<double> matrix = config.opt<ConfigOptionFloats>("wiping_volumes_matrix")->values;
+        int num_of_extruders = int(std::sqrt(matrix.size()) + 0.5);
+        int i = -1;
+        bool custom = false;
+        for (int j = 0; j < int(matrix.size()); ++j) {
+            if (j % num_of_extruders == 0)
+                ++i;
+            if (i != j % num_of_extruders && !is_approx(matrix[j], 140.)) {
+                custom = true;
+                break;
+            }
+        }
+        config.set_key_value("wiping_volumes_use_custom_matrix", new ConfigOptionBool(custom));
     }
 }
 

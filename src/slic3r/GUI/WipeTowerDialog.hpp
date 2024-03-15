@@ -76,12 +76,12 @@ private:
 class WipingDialog : public wxDialog {
 public:
     WipingDialog(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours,
-                 double printer_purging_volume, const std::vector<double>& filament_purging_multipliers);
+                 double printer_purging_volume, const std::vector<double>& filament_purging_multipliers, bool use_custom_matrix);
     std::vector<float> get_matrix() const    { return m_output_matrix; }
+    bool get_use_custom_matrix() const       { return m_radio_button2->GetValue(); }
 
 
 private:
-    bool should_start_as_default() const;
     void enable_or_disable_panel();
 
     WipingPanel*       m_panel_wiping  = nullptr;

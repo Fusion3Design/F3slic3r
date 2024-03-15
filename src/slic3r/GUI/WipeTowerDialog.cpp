@@ -190,7 +190,7 @@ std::string RammingPanel::get_parameters()
 
 // Parent dialog for purging volume adjustments - it fathers WipingPanel widget (that contains all controls) and a button.
 WipingDialog::WipingDialog(wxWindow* parent, const std::vector<float>& matrix, const std::vector<std::string>& extruder_colours,
-                           double printer_purging_volume, const std::vector<double>& filament_purging_multipliers)
+                           double printer_purging_volume, const std::vector<double>& filament_purging_multipliers, bool use_custom_matrix)
     : wxDialog(parent, wxID_ANY, _(L("Wipe tower - Purging volume adjustment")), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE/* | wxRESIZE_BORDER*/)
 {
     SetFont(wxGetApp().normal_font());
@@ -252,9 +252,8 @@ WipingDialog::WipingDialog(wxWindow* parent, const std::vector<float>& matrix, c
         enable_or_disable_panel();
     });
 
-    const bool start_default = should_start_as_default();
-    m_radio_button1->SetValue(start_default);
-    m_radio_button2->SetValue(! start_default);
+    m_radio_button1->SetValue(! use_custom_matrix);
+    m_radio_button2->SetValue(use_custom_matrix);
     enable_or_disable_panel();
 
     this->Show();
@@ -391,13 +390,6 @@ std::vector<float> WipingPanel::read_matrix_values() {
         }
     }
     return output;
-}
-
-
-
-bool WipingDialog::should_start_as_default() const
-{
-    return true;
 }
 
 
