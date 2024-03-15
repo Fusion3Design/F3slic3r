@@ -6633,6 +6633,20 @@ bool Plater::set_printer_technology(PrinterTechnology printer_technology)
     return ret;
 }
 
+void Plater::clear_before_change_volume(ModelVolume &mv, const std::string &notification_msg) {
+    // When we change the geometry of the volume, we remove any custom supports/seams/multi-material painting.
+    if (const bool paint_removed = !mv.supported_facets.empty() || !mv.seam_facets.empty() || !mv.mm_segmentation_facets.empty(); paint_removed) {
+        mv.supported_facets.reset();
+        mv.seam_facets.reset();
+        mv.mm_segmentation_facets.reset();
+
+        get_notification_manager()->push_notification(
+                NotificationType::CustomSupportsAndSeamRemovedAfterRepair,
+                NotificationManager::NotificationLevel::PrintInfoNotificationLevel,
+                notification_msg);
+    }
+}
+
 void Plater::clear_before_change_mesh(int obj_idx, const std::string &notification_msg)
 {
     ModelObject* mo = model().objects[obj_idx];

@@ -1338,6 +1338,14 @@ bool GLGizmoEmboss::process(bool make_snapshot)
     if (!start_update_volume(std::move(data), *m_volume, selection, m_raycast_manager))
         return false;
 
+    wxGetApp().plater()->clear_before_change_volume(*m_volume, _u8L("Custom supports, seams and multimaterial painting were "
+                                                                    "removed after embossed text changed."));
+
+    // When we changed geometry and removed custom supports, seams, and multimaterial painting
+    // we have to update info about the object to remove information about custom supports,
+    // seams, and multimaterial painting from the right panel.
+    wxGetApp().obj_list()->update_info_items(selection.get_object_idx());
+
     // notification is removed befor object is changed by job
     remove_notification_not_valid_font();
     return true;
