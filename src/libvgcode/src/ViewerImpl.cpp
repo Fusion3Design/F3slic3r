@@ -1668,7 +1668,7 @@ void ViewerImpl::update_view_full_range()
     }
 
     // If the first vertex is an extrusion, add an extra step to properly detect the first segment
-    if (first_it != m_vertices.begin() && first_it->type == EMoveType::Extrude)
+    if (first_it != m_vertices.begin() && first_it != m_vertices.end() && first_it->type == EMoveType::Extrude)
         --first_it;
 
     if (first_it == m_vertices.end())
