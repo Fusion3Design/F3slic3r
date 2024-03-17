@@ -381,6 +381,7 @@ private:
     int         m_higher_value;
 
     bool        m_render_as_disabled{ false };
+    bool        m_allow_editing{ true };
 
     ScalableBitmap    m_bmp_thumb_higher;
     ScalableBitmap    m_bmp_thumb_lower;
@@ -490,7 +491,7 @@ private:
     void        draw_colored_band(const ImRect& groove, const ImRect& slideable_region);
     void        draw_ticks(const ImRect& slideable_region);
     void        render_menu();
-    bool        render_button(const wchar_t btn_icon, const std::string& label_id, FocusedItem focus);
+    bool        render_button(const wchar_t btn_icon, const wchar_t btn_icon_hovered, const std::string& label_id, const ImVec2& pos, FocusedItem focus, int tick = -1);
 
 
 

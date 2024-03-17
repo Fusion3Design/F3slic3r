@@ -52,6 +52,8 @@ constexpr double min_delta_area = scale_(scale_(25));  // equal to 25 mm2
 constexpr double miscalculation = scale_(scale_(1));   // equal to 1 mm2
 
 static const float  LEFT_MARGIN             = 13.0f + 100.0f;  // avoid thumbnail toolbar
+static const float  BTN_SZ                  = 24.f;
+
 static const ImVec2 ONE_LAYER_OFFSET        = ImVec2(41.0f, /*44*/33.0f);
 static const ImVec2 HORIZONTAL_SLIDER_SIZE  = ImVec2(764.0f, 90.0f);//764 = 680 + handle_dummy_width * 2 + text_right_dummy
 static const ImVec2 VERTICAL_SLIDER_SIZE    = ImVec2(105.0f, 748.0f);//748 = 680 + text_dummy_height * 2
@@ -91,6 +93,7 @@ Control::Control( wxWindow *parent,
     m_min_value(minValue), 
     m_max_value(maxValue),
     m_style(style == wxSL_HORIZONTAL || style == wxSL_VERTICAL ? style: wxSL_HORIZONTAL),
+    m_allow_editing(wxGetApp().is_editor()),
     m_extra_style(style == wxSL_VERTICAL ? wxSL_AUTOTICKS | wxSL_VALUE_LABEL : 0)
 {
 #ifdef __WXOSX__ 
@@ -171,8 +174,10 @@ Control::Control( wxWindow *parent,
 
     imgui_ctrl.set_get_label_cb([this](int pos) {return into_u8(get_label(pos)); });
 
-    if (!is_horizontal())
+    if (!is_horizontal()) {
         imgui_ctrl.set_get_label_on_move_cb([this](int pos) {return into_u8(get_label(pos, ltEstimatedTime)); });
+        imgui_ctrl.set_extra_draw_cb([this](const ImRect& draw_rc) {return draw_ticks(draw_rc); });
+    }
 
 }
 
@@ -613,7 +618,8 @@ float Control::get_pos_from_value(int v_min, int v_max, int value, const ImRect&
     return handle_pos;
 }
 
-void Control::draw_ticks(const ImRect& slideable_region) {
+void Control::draw_ticks(const ImRect& slideable_region)
+{
     //if(m_draw_mode != dmRegular)
     //    return;
     //if (m_ticks.empty() || m_mode == MultiExtruder)
@@ -623,22 +629,22 @@ void Control::draw_ticks(const ImRect& slideable_region) {
 
     ImGuiContext& context = *GImGui;
 
-    ImVec2 tick_box = ImVec2(46.0f, 16.0f) * m_scale;
-    ImVec2 tick_offset = ImVec2(19.0f, 11.0f) * m_scale;
-    float  tick_width = 1.0f * m_scale;
-    ImVec2 icon_offset = ImVec2(13.0f, 7.0f) * m_scale;
-    ImVec2 icon_size = ImVec2(14.0f, 14.0f) * m_scale;
+    const ImVec2 tick_border = ImVec2(23.0f, 2.0f) * m_scale;
+    // distance form center         begin  end 
+    const ImVec2 tick_size   = ImVec2(19.0f, 11.0f) * m_scale;
+    const float  tick_width  = 1.0f * m_scale;
+    const float  icon_side   = wxGetApp().imgui()->GetTextureCustomRect(ImGui::PausePrint)->Height;
+    const float  icon_offset = 0.5f * icon_side;;
 
-    const ImU32 tick_clr            = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_ORANGE_DARK); //IM_COL32(144, 144, 144, 255);
-    const ImU32 tick_hover_box_clr  = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_WINDOW_BACKGROUND); //IM_COL32(219, 253, 231, 255);
-    const ImU32 delete_btn_clr      = IM_COL32(144, 144, 144, 255);
+    const ImU32 tick_clr         = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_ORANGE_DARK);
+    const ImU32 tick_hovered_clr = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_WINDOW_BACKGROUND);
 
     auto get_tick_pos = [this, slideable_region](int tick)
-        {
-            int v_min = GetMinValue();
-            int v_max = GetMaxValue();
-            return get_pos_from_value(v_min, v_max, tick, slideable_region);
-        };
+    {
+        int v_min = GetMinValue();
+        int v_max = GetMaxValue();
+        return get_pos_from_value(v_min, v_max, tick, slideable_region);
+    };
 
     std::set<TickCode>::const_iterator tick_it = m_ticks.ticks.begin();
     while (tick_it != m_ticks.ticks.end())
@@ -646,17 +652,19 @@ void Control::draw_ticks(const ImRect& slideable_region) {
         float tick_pos = get_tick_pos(tick_it->tick);
 
         //draw tick hover box when hovered
-        ImRect tick_hover_box = ImRect(slideable_region.GetCenter().x - tick_box.x / 2, tick_pos - tick_box.y / 2, slideable_region.GetCenter().x + tick_box.x / 2,
-            tick_pos + tick_box.y / 2);
+        ImRect tick_hover_box = ImRect(slideable_region.GetCenter().x - tick_border.x, tick_pos - tick_border.y, 
+                                       slideable_region.GetCenter().x + tick_border.x, tick_pos + tick_border.y - tick_width);
 
-        if (ImGui::IsMouseHoveringRect(tick_hover_box.Min, tick_hover_box.Max))
-        {
-            ImGui::RenderFrame(tick_hover_box.Min, tick_hover_box.Max, tick_hover_box_clr, false);
-            if (context.IO.MouseClicked[0]) {
-            }
+        if (ImGui::IsMouseHoveringRect(tick_hover_box.Min, tick_hover_box.Max)) {
+            ImGui::RenderFrame(tick_hover_box.Min, tick_hover_box.Max, tick_hovered_clr, false);
+            break;
         }
         ++tick_it;
     }
+     
+    auto active_tick_it = m_selection == ssHigher ? m_ticks.ticks.find(TickCode{ this->GetHigherValue() }) :
+                          m_selection == ssLower  ? m_ticks.ticks.find(TickCode{ this->GetLowerValue()  }) :
+                          m_ticks.ticks.end();
 
     tick_it = m_ticks.ticks.begin();
     while (tick_it != m_ticks.ticks.end())
@@ -664,42 +672,43 @@ void Control::draw_ticks(const ImRect& slideable_region) {
         float tick_pos = get_tick_pos(tick_it->tick);
 
         //draw ticks
-        ImRect tick_left = ImRect(slideable_region.GetCenter().x - tick_offset.x, tick_pos - tick_width, slideable_region.GetCenter().x - tick_offset.y, tick_pos);
-        ImRect tick_right = ImRect(slideable_region.GetCenter().x + tick_offset.y, tick_pos - tick_width, slideable_region.GetCenter().x + tick_offset.x, tick_pos);
+        ImRect tick_left    = ImRect(slideable_region.GetCenter().x - tick_size.x, tick_pos - tick_width, slideable_region.GetCenter().x - tick_size.y, tick_pos);
+        ImRect tick_right   = ImRect(slideable_region.GetCenter().x + tick_size.y, tick_pos - tick_width, slideable_region.GetCenter().x + tick_size.x, tick_pos);
         ImGui::RenderFrame(tick_left.Min, tick_left.Max, tick_clr, false);
         ImGui::RenderFrame(tick_right.Min, tick_right.Max, tick_clr, false);
 
-        //draw pause icon
-        if (tick_it->type == PausePrint) {
-            //ImTextureID pause_icon_id = m_pause_icon_id;
-            ImVec2      icon_pos = ImVec2(slideable_region.GetCenter().x + icon_offset.x, tick_pos - icon_offset.y);
-            //button_with_pos(pause_icon_id, icon_size, icon_pos);
-            if (ImGui::IsMouseHoveringRect(icon_pos, icon_pos + icon_size)) {
-                if (context.IO.MouseClicked[0])
-                    int a = 0;
-            }
-        }
-        ++tick_it;
-    }
+        ImVec2      icon_pos    = ImVec2(tick_right.Max.x + icon_offset, tick_pos - icon_offset);
+        std::string btn_label   = "tick " + std::to_string(tick_it->tick);
 
-    tick_it = m_selection == ssHigher ? m_ticks.ticks.find(TickCode{ this->GetHigherValue() }) :
-              m_selection == ssLower ? m_ticks.ticks.find(TickCode{ this->GetLowerValue() }) :
-              m_ticks.ticks.end();
-    if (tick_it != m_ticks.ticks.end()) {
-        // draw delete icon
-        //ImTextureID delete_icon_id = m_delete_icon_id;
-        ImVec2      icon_pos = ImVec2(slideable_region.GetCenter().x + icon_offset.x, get_tick_pos(tick_it->tick) - icon_offset.y);
- //!       button_with_pos(m_delete_icon_id, icon_size, icon_pos);
-        if (ImGui::IsMouseHoveringRect(icon_pos, icon_pos + icon_size)) {
-            if (context.IO.MouseClicked[0]) {
-                // delete tick
+        //draw tick icon-buttons
+        bool activate_this_tick = false;
+        if (tick_it == active_tick_it && m_allow_editing) {
+            // delete tick
+            if (render_button(ImGui::RemoveTick, ImGui::RemoveTickHovered, btn_label, icon_pos, m_selection == ssHigher ? fiHigherThumb : fiLowerThumb, tick_it->tick)) {
                 Type type = tick_it->type;
                 m_ticks.ticks.erase(tick_it);
                 post_ticks_changed_event(type);
+                break;
             }
+        }        
+        else if (m_draw_mode != dmRegular)// if we have non-regular draw mode, all ticks should be marked with error icon
+            activate_this_tick = render_button(ImGui::ErrorTick, ImGui::ErrorTickHovered, btn_label, icon_pos, fiActionIcon, tick_it->tick);
+        else if (tick_it->type == ColorChange || tick_it->type == ToolChange) {
+            if (m_ticks.is_conflict_tick(*tick_it, m_mode, m_only_extruder, m_values[tick_it->tick]))
+                activate_this_tick = render_button(ImGui::ErrorTick, ImGui::ErrorTickHovered, btn_label, icon_pos, fiActionIcon, tick_it->tick);
         }
-    }
+        else if (tick_it->type == PausePrint)
+            activate_this_tick = render_button(ImGui::PausePrint, ImGui::PausePrintHovered, btn_label, icon_pos, fiActionIcon, tick_it->tick);
+        else
+            activate_this_tick = render_button(ImGui::EditGCode, ImGui::EditGCodeHovered, btn_label, icon_pos, fiActionIcon, tick_it->tick);
 
+        if (activate_this_tick) {
+            m_selection == ssHigher ? SetHigherValue(tick_it->tick) : SetLowerValue(tick_it->tick);
+            break;
+        }
+
+        ++tick_it;
+    }
 }
 
 inline int hex_to_int(const char c)
@@ -802,7 +811,7 @@ void Control::render_menu()
     std::vector<std::string> colors = wxGetApp().plater()->get_extruder_colors_from_plater_config();
     int extruder_num = colors.size();
 
-    if (m_show_menu) {
+    if (imgui_ctrl.is_rclick_on_thumb()) {
         ImGui::OpenPopup("slider_menu_popup");
     }
 
@@ -815,13 +824,14 @@ void Control::render_menu()
         else
         {
             if (menu_item_with_icon(_u8L("Add Color Change").c_str(), "")) {
+                UseDefaultColors(false);
                 add_code_as_tick(ColorChange);
             }
             if (menu_item_with_icon(_u8L("Add Pause").c_str(), "")) {
                 add_code_as_tick(PausePrint);
             }
             if (menu_item_with_icon(_u8L("Add Custom G-code").c_str(), "")) {
-
+                add_code_as_tick(Custom);
             }
             if (!gcode(Template).empty()) {
                 if (menu_item_with_icon(_u8L("Add Custom Template").c_str(), "")) {
@@ -852,30 +862,39 @@ void Control::render_menu()
     ImGui::PopStyleVar(3);
 }
 
-bool Control::render_button(const wchar_t btn_icon, const std::string& label_id, FocusedItem focus)
+bool Control::render_button(const wchar_t btn_icon, const wchar_t btn_icon_hovered, const std::string& label_id, const ImVec2& pos, FocusedItem focus, int tick /*= -1*/)
 {
-    const ImGuiStyle& style = ImGui::GetStyle();
+    float scale = (float)wxGetApp().em_unit() / 10.0f;
 
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 1, style.ItemSpacing.y });
+    ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_WindowBorderSize, 0);
+    ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-    const ImVec4 col = { 0.25f, 0.25f, 0.25f, 0.0f };
-    ImGui::PushStyleColor(ImGuiCol_Button,          col);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,   col);
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive,    col);
+    ImGui::PushStyleColor(ImGuiCol_::ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_Text));
 
-    std::string btn_label;
-    btn_label += btn_icon;
-    const bool ret = ImGui::Button((btn_label + "##" + label_id).c_str(), ImVec2(16*m_scale, 0));
+    int windows_flag =    ImGuiWindowFlags_NoTitleBar
+                        | ImGuiWindowFlags_NoCollapse
+                        | ImGuiWindowFlags_NoMove
+                        | ImGuiWindowFlags_NoResize
+                        | ImGuiWindowFlags_NoScrollbar
+                        | ImGuiWindowFlags_NoScrollWithMouse;
 
-    ImGui::PopStyleColor(3);
+    auto m_imgui = wxGetApp().imgui();
+    ImGuiPureWrap::set_next_window_pos(pos.x, pos.y, ImGuiCond_Always);
+    std::string win_name = label_id + "##btn_win";
+    ImGuiPureWrap::begin(win_name, windows_flag);
 
-    if (ImGui::IsItemHovered()) {
-        m_focus = focus;
-        std::string tooltip = into_u8(get_tooltip());
-        ImGuiPureWrap::tooltip(tooltip.c_str(), ImGui::GetFontSize() * 20.0f);
-    }
+    ImGuiContext& g = *GImGui;
 
-    ImGui::PopStyleVar();
+    std::string tooltip = m_allow_editing ? into_u8(get_tooltip(tick)) : "";
+    ImGui::SetCursorPos(ImVec2(0, 0));
+    const bool ret = m_imgui->image_button(g.HoveredWindow == g.CurrentWindow ? btn_icon_hovered : btn_icon, tooltip, false);
+
+    ImGuiPureWrap::end();
+
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(3);
 
     return ret;
 }
@@ -902,7 +921,9 @@ bool Control::imgui_render(GUI::GLCanvas3D& canvas)
         imgui_ctrl.ShowLabelOnMouseMove(false);
     }
     else {
-        pos.x = canvas_width - VERTICAL_SLIDER_SIZE.x * scale;
+        const float tick_icon_side = wxGetApp().imgui()->GetTextureCustomRect(ImGui::PausePrint)->Height;
+
+        pos.x = canvas_width - VERTICAL_SLIDER_SIZE.x * scale - tick_icon_side;
         pos.y = ONE_LAYER_OFFSET.y;
         size = ImVec2(VERTICAL_SLIDER_SIZE.x * scale, canvas_height - 4 * pos.y);
         imgui_ctrl.ShowLabelOnMouseMove(true);
@@ -912,9 +933,28 @@ bool Control::imgui_render(GUI::GLCanvas3D& canvas)
     imgui_ctrl.SetSize(size);
     imgui_ctrl.SetScale(scale);
 
+    const float btn_sz = BTN_SZ*scale;
+    ImVec2 btn_pos = ImVec2(pos.x + 2.7 * btn_sz, pos.y - 0.5 * btn_sz);
+
+    if (!is_horizontal() && !m_ticks.empty() && m_allow_editing &&
+        render_button(ImGui::DSRevert, ImGui::DSRevertHovered, "revert", btn_pos, fiRevertIcon))
+        discard_all_thicks();
+
     if (imgui_ctrl.render(m_selection))
         SetSelectionSpan(m_is_one_layer ? imgui_ctrl.GetHigherValue() : imgui_ctrl.GetLowerValue(), imgui_ctrl.GetHigherValue());
 
+    if (!is_horizontal()) {
+        btn_pos.y += 0.5 * btn_sz + size.y;
+        if (render_button(is_one_layer() ? ImGui::Lock : ImGui::Unlock, is_one_layer() ? ImGui::LockHovered : ImGui::UnlockHovered, "one_layer", btn_pos, fiOneLayerIcon))
+            switch_one_layer_mode();
+
+        btn_pos.y += btn_sz;
+        if (render_button(ImGui::DSSettings, ImGui::DSSettingsHovered, "settings", btn_pos, fiCogIcon))
+            show_cog_icon_context_menu();
+
+        if (m_allow_editing)
+            render_menu();
+    }
     return result;
 }
 
@@ -1739,9 +1779,11 @@ int Control::get_tick_near_point(const wxPoint& pt)
 void Control::ChangeOneLayerLock()
 {
     m_is_one_layer = !m_is_one_layer;
-    imgui_ctrl.CombineThumbs(m_is_one_layer);
+    imgui_ctrl.CombineThumbs(m_is_one_layer); 
+    if (!m_selection || m_is_one_layer)
+        m_selection = ssHigher;
     m_selection == ssLower ? correct_lower_value() : correct_higher_value();
-    if (!m_selection) m_selection = ssHigher;
+ //   if (!m_selection) m_selection = ssHigher;
 
     Refresh();
     Update();
@@ -2829,8 +2871,10 @@ void Control::switch_one_layer_mode()
         SetLowerValue(m_min_value);
         SetHigherValue(m_max_value);
     }
+    if (!m_selection || m_is_one_layer)
+        m_selection = ssHigher;
     m_selection == ssLower ? correct_lower_value() : correct_higher_value();
-    if (m_selection == ssUndef) m_selection = ssHigher;
+//    if (m_selection == ssUndef) m_selection = ssHigher;
 }
 
 // discard all custom changes on DoubleSlider

@@ -95,7 +95,7 @@ ImRect ImGuiControl::DrawOptions::groove(const ImVec2& pos, const ImVec2& size, 
                             ImVec2(pos.x + size.x - groove_sz().x - dummy_sz().x, pos.y + text_dummy_sz().y);
     ImVec2 groove_size  =   is_horizontal ?
                             ImVec2(size.x - 2 * thumb_dummy_sz().x - text_dummy_sz().x, groove_sz().y) :
-                            ImVec2(groove_sz().x, size.y - 2 * text_dummy_sz().y);
+                            ImVec2(groove_sz().x, size.y - 1.6 * text_dummy_sz().y);
 
     return ImRect(groove_start, groove_start + groove_size);
 }
@@ -180,6 +180,13 @@ void ImGuiControl::SetSliderValues(const std::vector<double>& values)
     m_values = values;
 }
 
+void ImGuiControl::CombineThumbs(bool combine)
+{ 
+    m_combine_thumbs = combine; 
+    if (combine)
+        m_selection = ssHigher; 
+}
+
 std::string ImGuiControl::get_label(int pos) const
 {
     if (m_cb_get_label)
@@ -219,9 +226,14 @@ void ImGuiControl::draw_scroll_line(const ImRect& scroll_line, const ImRect& sli
         ImGui::RenderFrame(scroll_line.Min, scroll_line.Max, thumb_bg_clr, false, m_draw_opts.rounding());
 }
 
-void ImGuiControl::draw_background(const ImRect& groove)
+void ImGuiControl::draw_background(const ImRect& slideable_region)
 {
-    ImVec2 groove_padding = (is_horizontal() ? ImVec2(2.0f, 2.0f) : ImVec2(3.0f, 4.0f)) * m_draw_opts.scale;
+    ImVec2  groove_sz       = m_draw_opts.groove_sz() * 0.55f;
+    auto    groove_center   = slideable_region.GetCenter();
+    ImRect  groove          = is_horizontal() ?
+                              ImRect(slideable_region.Min.x, groove_center.y - groove_sz.y, slideable_region.Max.x, groove_center.y + groove_sz.y) :
+                              ImRect(groove_center.x - groove_sz.x, slideable_region.Min.y, groove_center.x + groove_sz.x, slideable_region.Max.y);
+    ImVec2  groove_padding  = (is_horizontal() ? ImVec2(2.0f, 2.0f) : ImVec2(3.0f, 4.0f)) * m_draw_opts.scale;
 
     ImRect bg_rect = groove;
     bg_rect.Expand(groove_padding);
@@ -300,7 +312,7 @@ void ImGuiControl::apply_regions(int higher_value, int lower_value, const ImRect
                                 ImRect(mid.x - thumb_radius, lower_thumb_pos - thumb_radius, mid.x + thumb_radius, lower_thumb_pos + thumb_radius);
 }
 
-void ImGuiControl::check_thumbs(int* higher_value, int* lower_value)
+void ImGuiControl::check_and_correct_thumbs(int* higher_value, int* lower_value)
 {
     if (!m_draw_lower_thumb || m_combine_thumbs)
         return;
@@ -353,13 +365,13 @@ bool ImGuiControl::draw_slider( int* higher_value, int* lower_value,
     ImGuiContext& context = *GImGui;
     const ImGuiID id = window->GetID(m_name.c_str());
 
-    const ImRect draw_region(pos, pos + size);
-    ImGui::ItemSize(draw_region);
+    const ImRect item_size(pos, pos + size);
+    ImGui::ItemSize(item_size);
 
-    // calc slider groove size
+    // get slider groove size
     ImRect groove = m_draw_opts.groove(pos, size, is_horizontal());
 
-    // set active(draggable) region.
+    // get active(draggable) region.
     ImRect draggable_region = m_draw_opts.draggable_region(groove, is_horizontal());
 
     if (ImGui::ItemHoverable(draggable_region, id) && context.IO.MouseDown[0]) {
@@ -368,8 +380,12 @@ bool ImGuiControl::draw_slider( int* higher_value, int* lower_value,
         ImGui::FocusWindow(window);
     }
     
-    // set slideable region and thumbs.
+    // set slideable regions and thumbs.
     apply_regions(*higher_value, *lower_value, draggable_region);
+
+    // select and mark higher thumb by default
+    if (m_selection == ssUndef)
+        m_selection = ssHigher;
 
     // Processing interacting
 
@@ -382,44 +398,53 @@ bool ImGuiControl::draw_slider( int* higher_value, int* lower_value,
 
     // update thumb position and value
     bool value_changed = false;
-    if (m_selection == ssHigher)
+    if (m_selection == ssHigher) {
         value_changed = behavior(id, m_regions.higher_slideable_region, m_min_value, m_max_value,
                                  higher_value, &m_regions.higher_thumb, is_horizontal() ? 0: ImGuiSliderFlags_Vertical);
-    else if (m_draw_lower_thumb && !m_combine_thumbs)
+    }
+    else if (m_draw_lower_thumb && !m_combine_thumbs) {
         value_changed = behavior(id, m_regions.lower_slideable_region, m_min_value, m_max_value,
                                  lower_value, &m_regions.lower_thumb, is_horizontal() ? 0: ImGuiSliderFlags_Vertical);
+    }
+
+    // check thumbs values and correct them if needed
+    check_and_correct_thumbs(higher_value, lower_value);
+
+    const ImRect& slideable_region  = m_selection == ssHigher ? m_regions.higher_slideable_region : m_regions.lower_slideable_region;
+    const ImRect& active_thumb      = m_selection == ssHigher ? m_regions.higher_thumb            : m_regions.lower_thumb;
 
     bool show_move_label = false;
-    ImRect mouse_pos_rc = m_regions.higher_thumb;
-    if (!value_changed && ImGui::ItemHoverable(draw_region, id)) {
-        behavior(id, draggable_region, m_min_value, m_max_value,
+    ImRect mouse_pos_rc = active_thumb;
+    if (!value_changed && ImGui::ItemHoverable(item_size, id) && !ImGui::IsMouseDragging(0)) {
+        behavior(id, slideable_region, m_min_value, m_max_value,
                  &m_mouse_pos_value, &mouse_pos_rc, is_horizontal() ? 0 : ImGuiSliderFlags_Vertical, true);
         show_move_label = true;
     }
 
-    // check thumbs values and correct them if needed
-    check_thumbs(higher_value, lower_value);
-
-    // detect right click on thumb
-    if (ImGui::ItemHoverable(m_selection == ssHigher ? m_regions.higher_thumb : m_regions.lower_thumb, id) && context.IO.MouseClicked[1])
+    // detect right click on selected thumb
+    if (ImGui::ItemHoverable(active_thumb, id) && context.IO.MouseClicked[1])
         m_rclick_on_selected_thumb = true;
-    if ((!ImGui::ItemHoverable(m_selection == ssHigher ? m_regions.higher_thumb : m_regions.lower_thumb, id) && context.IO.MouseClicked[1]) ||
+    if ((!ImGui::ItemHoverable(active_thumb, id) && context.IO.MouseClicked[1]) ||
         context.IO.MouseClicked[0])
         m_rclick_on_selected_thumb = false;
+
+    // render slider
 
     ImVec2 higher_thumb_center = m_regions.higher_thumb.GetCenter();
     ImVec2 lower_thumb_center  = m_regions.lower_thumb.GetCenter();
 
-    ImRect scroll_line = m_draw_opts.slider_line(draggable_region, higher_thumb_center, lower_thumb_center, is_horizontal());
+    ImRect scroll_line = m_draw_opts.slider_line(slideable_region, higher_thumb_center, lower_thumb_center, is_horizontal());
+
+    if (m_cb_extra_draw)
+        m_cb_extra_draw(slideable_region);
 
     // draw background
-    draw_background(groove);
+    draw_background(slideable_region);
     // draw scroll line
-    draw_scroll_line(m_combine_thumbs ? groove : scroll_line, groove);
+    draw_scroll_line(m_combine_thumbs ? groove : scroll_line, slideable_region);
 
     // draw thumbs with label
-    // select and mark higher thumb by default
-    draw_thumb(higher_thumb_center, m_selection != ssLower && m_draw_lower_thumb);
+    draw_thumb(higher_thumb_center, m_selection == ssHigher && m_draw_lower_thumb);
     draw_label(higher_label, m_regions.higher_thumb);
 
     if (m_draw_lower_thumb && !m_combine_thumbs) {
