@@ -266,7 +266,7 @@ void WipingPanel::format_sizer(wxSizer* sizer, wxPanel* page, wxGridSizer* grid_
 	auto table_sizer = new wxBoxSizer(wxVERTICAL);
 	sizer->Add(table_sizer, 0, wxALIGN_CENTER | wxCENTER, table_lshift);
 	table_sizer->Add(new wxStaticText(page, wxID_ANY, table_title), 0, wxALIGN_CENTER | wxTOP, 10);
-	table_sizer->Add(grid_sizer, 0, wxALIGN_CENTER | wxTOP, 10);
+	table_sizer->Add(grid_sizer, 0, wxALIGN_CENTER | wxTOP | wxLEFT, 15);
 }
 
 
@@ -371,8 +371,24 @@ WipingPanel::WipingPanel(wxWindow* parent, const std::vector<float>& matrix, con
                                               int text_width = 0;
                                               int text_height = 0;
                                               dc.GetTextExtent(label,&text_width,&text_height);
+
                                               int xpos = m_gridsizer_advanced->GetPosition().x;
-                                              dc.DrawRotatedText(label,xpos-text_height,y_pos + text_width/2.f,90);
+                                              if (!m_page_advanced->IsEnabled()) {
+                                                  dc.SetTextForeground(wxSystemSettings::GetColour(
+#if defined (__linux__) && defined (__WXGTK2__)
+                                                      wxSYS_COLOUR_BTNTEXT
+#else 
+                                                      wxSYS_COLOUR_GRAYTEXT
+#endif 
+                                                      ));
+                                                  dc.DrawRotatedText(label, xpos - text_height, y_pos + text_width / 2.f, 90);
+#ifdef _WIN32
+                                                  dc.SetTextForeground(wxSystemSettings::GetColour(wxSYS_COLOUR_3DLIGHT));
+                                                  dc.DrawRotatedText(label, xpos - text_height-1, y_pos + text_width / 2.f+1, 90);
+#endif
+                                              }
+                                              else
+                                                  dc.DrawRotatedText(label, xpos - text_height, y_pos + text_width / 2.f, 90);
     });
 }
 
@@ -398,4 +414,5 @@ void WipingDialog::enable_or_disable_panel()
     bool enable = m_radio_button2->GetValue();
     m_widget_button->Enable(enable);
     m_panel_wiping->Enable(enable);
+    m_panel_wiping->Refresh();
 }
