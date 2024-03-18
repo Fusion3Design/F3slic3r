@@ -1510,8 +1510,19 @@ std::vector<std::vector<float>> WipeTower::extract_wipe_volumes(const PrintConfi
     // Extract purging volumes for each extruder pair:
     std::vector<std::vector<float>> wipe_volumes;
     const unsigned int number_of_extruders = (unsigned int)(sqrt(wiping_matrix.size())+EPSILON);
-    for (unsigned int i = 0; i<number_of_extruders; ++i)
+    for (size_t i = 0; i<number_of_extruders; ++i)
         wipe_volumes.push_back(std::vector<float>(wiping_matrix.begin()+i*number_of_extruders, wiping_matrix.begin()+(i+1)*number_of_extruders));
+
+    // For SEMM printers, the project can be configured to use defaults from configuration,
+    // in which case the custom matrix shall be ignored. We will overwrite the values.
+    if (config.single_extruder_multi_material && ! config.wiping_volumes_use_custom_matrix) {
+        for (size_t i = 0; i < number_of_extruders; ++i) {
+            for (size_t j = 0; j < number_of_extruders; ++j) {
+                if (i != j)
+                wipe_volumes[i][j] = (i == j ? 0.f : config.multimaterial_purging.value * config.filament_purge_multiplier.get_at(j) / 100.f);
+            }
+        }
+    }
 
     // Also include filament_minimal_purge_on_wipe_tower. This is needed for the preview.
     for (unsigned int i = 0; i<number_of_extruders; ++i)
