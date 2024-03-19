@@ -8,6 +8,7 @@
 #include "slic3r/GUI/Plater.hpp"
 #include "libslic3r_version.h"
 #include "libslic3r/Utils.hpp"
+#include "libslic3r/libslic3r.h"
 #include "slic3r/GUI/UserAccount.hpp"
 #include "slic3r/GUI/format.hpp"
 
@@ -497,15 +498,19 @@ void ConnectRequestHandler::on_request_config()
     /*
     accessToken?: string;
     clientVersion?: string;
+    colorMode?: "LIGHT" | "DARK";
     language?: ConnectLanguage;
     sessionId?: string;
     */
-    //const std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
-    //const std::string init_options = GUI::format("{\"accessToken\": \"%1%\" }", token);
-    const std::string token = wxGetApp().plater()->get_user_account()->get_shared_session_key();
-    const std::string init_options = GUI::format("{\"sessionId\": \"%1%\" }", token);
+    
+    const std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
+    //const std::string sesh = wxGetApp().plater()->get_user_account()->get_shared_session_key();
+    const std::string dark_mode = wxGetApp().dark_mode() ? "DARK" : "LIGHT";
+    const wxString language = GUI::wxGetApp().current_language_code();
+    const std::string init_options = GUI::format("{\"accessToken\": \"%1%\" , \"clientVersion\": \"%2%\", \"colorMode\": \"%3%\", \"language\": \"%4%\"}", token, SLIC3R_VERSION, dark_mode, language);
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.init(%1%)", init_options);
     run_script_bridge(script);
+    
 }
 void ConnectRequestHandler::on_request_language_action()
 {
@@ -538,10 +543,8 @@ void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
 
 void ConnectWebViewPanel::on_request_update_selected_printer_action()
 {
-    /*
     assert(!m_message_data.empty());
     wxGetApp().handle_connect_request_printer_pick(m_message_data);
-    */
 }
 
 
@@ -613,14 +616,9 @@ void PrinterWebViewPanel::send_credentials()
 }
 
 
-WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url)
-    : wxDialog(parent, wxID_ANY, "Webview Dialog", wxDefaultPosition, wxSize(1366, 768)/* wxSize(100 * wxGetApp().em_unit(), 100 * wxGetApp().em_unit())*/)
+WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size)
+    : wxDialog(parent, wxID_ANY, dialog_name, wxDefaultPosition, size, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
-    ////std::string strlang = wxGetApp().app_config->get("language");
-    ////if (strlang != "")
-    ////    url = wxString::Format("file://%s/web/homepage/index.html?lang=%s", from_u8(resources_dir()), strlang);
-    ////m_bbl_user_agent = wxString::Format("BBL-Slicer/v%s", SLIC3R_VERSION);
-
     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
 
     // Create the webview
@@ -648,22 +646,23 @@ void WebViewDialog::run_script(const wxString& javascript)
     bool res = WebView::run_script(m_browser, javascript);
 }
 
-
-
 PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val)
-    // : WebViewDialog(parent, L"https://dev.connect.prusa3d.com/prusa-slicer/printers")
-    : WebViewDialog(parent, L"https://dev.connect.prusa3d.com/connect-slicer-app/printer-list")
+    : WebViewDialog(parent, L"https://dev.connect.prusa3d.com/connect-slicer-app/printer-list", _L("Choose a printer"), wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit())))
     , m_ret_val(ret_val)
 {
+    m_actions["WEBAPP_READY"] = std::bind(&PrinterPickWebViewDialog::request_compatible_printers, this);
+    Centre();
 }
 void PrinterPickWebViewDialog::on_show(wxShowEvent& evt)
 {
+    /*
     if (evt.IsShown()) {
         std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
         wxString script = GUI::format_wxstr("window.setAccessToken(\'%1%\')", token);
         // TODO: should this be happening every OnShow?
         run_script(script);
     }
+    */
 }
 void PrinterPickWebViewDialog::on_script_message(wxWebViewEvent& evt)
 {
@@ -674,6 +673,32 @@ void PrinterPickWebViewDialog::on_request_update_selected_printer_action()
 {
     m_ret_val = m_message_data;
     this->EndModal(wxID_OK);
+}
+
+void PrinterPickWebViewDialog::request_compatible_printers()
+{
+    //PrinterParams: {
+    //material: Material;
+    //nozzleDiameter: number;
+    //printerType: string;
+    //}
+    const Preset& selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
+    const Preset& selected_filament = wxGetApp().preset_bundle->filaments.get_selected_preset();
+    const std::string nozzle_diameter_serialized = dynamic_cast<const ConfigOptionFloats*>(selected_printer.config.option("nozzle_diameter"))->serialize();
+    const std::string filament_type_serialized = selected_filament.config.option("filament_type")->serialize();
+    const std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
+    const std::string printer_type = wxGetApp().plater()->get_user_account()->get_printer_type_from_name(printer_model_serialized);
+
+    assert(!filament_type_serialized.empty() && !nozzle_diameter_serialized.empty() && !printer_type.empty());
+    const std::string request = GUI::format(
+        "{"
+        "\"material\": \"%1%\", "
+        "\"nozzleDiameter\": %2%, "
+        "\"printerType\": \"%3%\" "
+        "}", filament_type_serialized, nozzle_diameter_serialized, printer_type);
+    
+    wxString script = GUI::format_wxstr("window._prusaConnect_v1.requestCompatiblePrinter(%1%)", request);
+    run_script(script);
 }
 
 } // GUI

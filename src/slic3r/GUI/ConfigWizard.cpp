@@ -2885,7 +2885,6 @@ bool ConfigWizard::priv::check_and_install_missing_materials(Technology technolo
 
     const auto ask_and_select_default_materials = [this](const wxString &message, const std::set<const VendorProfile::PrinterModel*> &printer_models, Technology technology)
     {
-        //wxMessageDialog msg(q, message, _L("Notice"), wxYES_NO);
         MessageDialog msg(q, message, _L("Notice"), wxYES_NO);
         if (msg.ShowModal() == wxID_YES)
             select_default_materials_for_printer_models(technology, printer_models);

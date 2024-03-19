@@ -5862,35 +5862,54 @@ void Plater::connect_gcode()
     }
     BOOST_LOG_TRIVIAL(debug) << "Message from Printer pick webview: " << dialog_msg;
 
-    std::string model_name = p->user_account->get_model_from_json(dialog_msg);
-    std::string nozzle = p->user_account->get_nozzle_from_json(dialog_msg);
-    assert(!model_name.empty());
+    std::string connect_printer_model = p->user_account->get_model_from_json(dialog_msg);
+    std::string connect_nozzle = p->user_account->get_nozzle_from_json(dialog_msg);
+    std::string connect_filament = p->user_account->get_keyword_from_json(dialog_msg, "filament_type");
+    assert(!connect_printer_model.empty());
     PresetBundle* preset_bundle = wxGetApp().preset_bundle; 
-    const Preset* preset = preset_bundle->printers.find_system_preset_by_model_and_variant(model_name, nozzle);
-    // TODO: preset check
+    const Preset* selected_printer_preset = &preset_bundle->printers.get_selected_preset();
+    const Preset* selected_filament_preset = &preset_bundle->filaments.get_selected_preset();
+    const std::string selected_nozzle_serialized = dynamic_cast<const ConfigOptionFloats*>(selected_printer_preset->config.option("nozzle_diameter"))->serialize();
+    const std::string selected_filament_serialized = selected_filament_preset ->config.option("filament_type")->serialize();
+    const std::string selected_printer_model_serialized = selected_printer_preset->config.option("printer_model")->serialize();
+    
+    const Preset* connect_printer_preset = preset_bundle->printers.find_system_preset_by_model_and_variant(connect_printer_model, connect_nozzle);
 
-    // if selected (in connect) preset is not visible, make it visible and selected 
-    if (!preset->is_visible) {
-        size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(preset->name);
-        assert(preset_id != size_t(-1));
-        preset_bundle->printers.select_preset(preset_id);
-        wxGetApp().get_tab(Preset::Type::TYPE_PRINTER)->select_preset(preset->name);
-        p->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
-        p->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, format(_u8L("Changed Printer to %1%."), preset->name));
-        select_view_3D("3D");
-        return;
-    }
-
-    // if selected (in connect) preset is not selected in slicer, select it
-    if (preset_bundle->printers.get_selected_preset_name() != preset->name) {
-        size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(preset->name);
-        assert(preset_id != size_t(-1));
-        preset_bundle->printers.select_preset(preset_id);
-        wxGetApp().get_tab(Preset::Type::TYPE_PRINTER)->select_preset(preset->name);
-        p->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
-        p->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, format(_u8L("Changed Printer to %1%."), preset->name));
-        select_view_3D("3D");
-        return;
+    if (connect_printer_model != selected_printer_model_serialized || (!connect_nozzle.empty() && connect_nozzle != selected_nozzle_serialized) || (!connect_filament.empty() && connect_filament != selected_filament_serialized)) {
+        wxString line1 = _L("The printer profile you've selected for upload is not fully compatible with profiles selected for slicing.");
+        wxString line2 = GUI::format_wxstr(_L("PrusaSlicer Profile: %1%, filament: %3%"), selected_printer_preset->name, selected_nozzle_serialized, selected_filament_serialized);
+        wxString line3 = GUI::format_wxstr(_L("Selected Printer: %1%, filament: %3%"), connect_printer_preset->name, connect_nozzle, connect_filament);
+        wxString line4 =_L("Choose YES to continue upload, choose NO to switch selected printer in PrusaSlicer.");
+        wxString message = GUI::format_wxstr("%1%\n\n%2%\n%3%\n\n%4%", line1, line2, line3, line4);
+        MessageDialog msg_dialog(this, message, _L("Do you wish to upload?"), wxYES_NO);
+        auto modal_res = msg_dialog.ShowModal();
+        if (modal_res == wxID_NO) {
+            // if selected (in connect) preset is not visible, make it visible and selected 
+            if (!connect_printer_preset->is_visible) {
+                size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(connect_printer_preset->name);
+                assert(preset_id != size_t(-1));
+                preset_bundle->printers.select_preset(preset_id);
+                wxGetApp().get_tab(Preset::Type::TYPE_PRINTER)->select_preset(connect_printer_preset->name);
+                p->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
+                p->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, format(_u8L("Changed Printer to %1%."), connect_printer_preset->name));
+                select_view_3D("3D");
+            }
+            // if selected (in connect) preset is not selected in slicer, select it
+            if (preset_bundle->printers.get_selected_preset_name() != connect_printer_preset->name) {
+                size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(connect_printer_preset->name);
+                assert(preset_id != size_t(-1));
+                preset_bundle->printers.select_preset(preset_id);
+                wxGetApp().get_tab(Preset::Type::TYPE_PRINTER)->select_preset(connect_printer_preset->name);
+                p->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
+                p->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, format(_u8L("Changed Printer to %1%."), connect_printer_preset->name));
+                select_view_3D("3D");                
+            }
+            // TODO: select filament
+            return;
+        } else if (modal_res != wxID_YES) {
+            // exit dialog without selecting yes / no
+            return;
+        }
     }
 
     const std::string connect_state = p->user_account->get_keyword_from_json(dialog_msg, "connect_state");
@@ -5904,34 +5923,18 @@ void Plater::connect_gcode()
         return;
     }
 
-    
     const std::string uuid = p->user_account->get_keyword_from_json(dialog_msg, "uuid");
     const std::string team_id = p->user_account->get_keyword_from_json(dialog_msg, "team_id");
     if (uuid.empty() || team_id.empty()) {
         show_error(this, _L("Failed to select a printer. Missing data (uuid and team id) for chosen printer."));
         return;
     }
-    PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *preset);
+    PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *connect_printer_preset);
     ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnectNew));
     // use existing structures to pass data
     ph_printer.config.opt_string("printhost_apikey") = team_id;
     ph_printer.config.opt_string("print_host") = uuid;
     DynamicPrintConfig* physical_printer_config = &ph_printer.config;
-    
-    
-    // Old PrusaConnect - requires prusaconnect_api_key in
-    //std::string api_key = p->user_account->get_keyword_from_json(dialog_msg, "prusaconnect_api_key"); 
-    //if (api_key.empty()) {
-    //    // TODO error dialog
-    //    return;
-    //}
-    //const std::string connect_address = "https://dev.connect.prusa3d.com";
-
-    //PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *preset);
-    //ph_printer.config.opt_string("printhost_apikey") = api_key;
-    //ph_printer.config.opt_string("print_host") = connect_address;
-    //ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnect));
-    //DynamicPrintConfig* physical_printer_config = &ph_printer.config;
 
     send_gcode_inner(physical_printer_config);
 }

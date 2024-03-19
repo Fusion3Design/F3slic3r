@@ -865,8 +865,11 @@ static PrinterStatesCount get_printe_states_count(const std::vector<size_t>& sta
         if (state == ConnectPrinterState::CONNECT_PRINTER_OFFLINE)
             states_cnt.offline_cnt += states[i];
         else if (state == ConnectPrinterState::CONNECT_PRINTER_PAUSED ||
-            state == ConnectPrinterState::CONNECT_PRINTER_STOPED ||
-            state == ConnectPrinterState::CONNECT_PRINTER_PRINTING)
+            state == ConnectPrinterState::CONNECT_PRINTER_STOPPED ||
+            state == ConnectPrinterState::CONNECT_PRINTER_PRINTING ||
+            state == ConnectPrinterState::CONNECT_PRINTER_BUSY ||
+            state == ConnectPrinterState::CONNECT_PRINTER_ATTENTION ||
+            state == ConnectPrinterState::CONNECT_PRINTER_ERROR)
             states_cnt.busy_cnt += states[i];
         else
             states_cnt.available_cnt += states[i];

@@ -123,6 +123,7 @@ protected:
 
     std::map<std::string, std::function<void(void)>> m_actions;
     std::string m_message_data;
+
 };
 
 class ConnectWebViewPanel : public WebViewPanel, public ConnectRequestHandler
@@ -158,7 +159,7 @@ private:
 class WebViewDialog : public wxDialog
 {
 public:
-    WebViewDialog(wxWindow* parent, const wxString& url);
+    WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size);
     virtual ~WebViewDialog();
 
     virtual void on_show(wxShowEvent& evt) = 0;
@@ -180,6 +181,7 @@ protected:
     void on_request_update_selected_printer_action() override;
     void run_script_bridge(const wxString& script) override { run_script(script); }
 private:
+    void request_compatible_printers();
     std::string& m_ret_val;
 };
 

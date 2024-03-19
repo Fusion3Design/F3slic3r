@@ -320,5 +320,16 @@ std::string UserAccount::get_keyword_from_json(const std::string& json, const st
     }
     return out;
 }
+std::string UserAccount::get_printer_type_from_name(const std::string& printer_name) const
+{
+    
+    for (const auto& pair : printer_type_and_name_table) {
+        if (pair.second == printer_name) {
+            return pair.first;
+        }
+    }
+    assert(true); // This assert means printer_type_and_name_table needs a update
+    return {};
+}
 
 }} // namespace slic3r::GUI

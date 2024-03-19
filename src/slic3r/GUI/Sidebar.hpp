@@ -78,9 +78,9 @@ class Sidebar : public wxPanel
 
     wxButton*       m_btn_export_gcode          { nullptr };
     wxButton*       m_btn_reslice               { nullptr };
+    wxButton*       m_btn_connect_gcode         { nullptr };
     ScalableButton* m_btn_send_gcode            { nullptr };
     ScalableButton* m_btn_export_gcode_removable{ nullptr }; //exports to removable drives (appears only if removable drive is connected)
-    ScalableButton* m_btn_connect_gcode         { nullptr };
 
     std::unique_ptr<FreqChangedParams>  m_frequently_changed_parameters;
     std::unique_ptr<ObjectManipulation> m_object_manipulation;

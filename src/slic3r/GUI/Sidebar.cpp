@@ -476,7 +476,6 @@ Sidebar::Sidebar(Plater *parent)
 
     init_scalable_btn(&m_btn_send_gcode   , "export_gcode", _L("Send to printer") + " " +GUI::shortkey_ctrl_prefix() + "Shift+G");
 	init_scalable_btn(&m_btn_export_gcode_removable, "export_to_sd", _L("Export to SD card / Flash drive") + " " + GUI::shortkey_ctrl_prefix() + "U");
-    init_scalable_btn(&m_btn_connect_gcode, "connect_gcode", _L("Send to Connect") + " " + GUI::shortkey_ctrl_prefix() + "Shift+G");
 
     // regular buttons "Slice now" and "Export G-code" 
 
@@ -495,6 +494,7 @@ Sidebar::Sidebar(Plater *parent)
 
     init_btn(&m_btn_export_gcode, _L("Export G-code") + dots , scaled_height);
     init_btn(&m_btn_reslice     , _L("Slice now")            , scaled_height);
+    init_btn(&m_btn_connect_gcode, _L("Send to Connect"), scaled_height);
 
     enable_buttons(false);
 
@@ -502,9 +502,9 @@ Sidebar::Sidebar(Plater *parent)
 
     auto* complect_btns_sizer = new wxBoxSizer(wxHORIZONTAL);
     complect_btns_sizer->Add(m_btn_export_gcode, 1, wxEXPAND);
+    complect_btns_sizer->Add(m_btn_connect_gcode, 1, wxLEFT, margin_5);
     complect_btns_sizer->Add(m_btn_send_gcode, 0, wxLEFT, margin_5);
 	complect_btns_sizer->Add(m_btn_export_gcode_removable, 0, wxLEFT, margin_5);
-    complect_btns_sizer->Add(m_btn_connect_gcode, 0, wxLEFT, margin_5);
 
     btns_sizer->Add(m_btn_reslice, 0, wxEXPAND | wxTOP, margin_5);
     btns_sizer->Add(complect_btns_sizer, 0, wxEXPAND | wxTOP, margin_5);
@@ -778,7 +778,7 @@ void Sidebar::sys_color_changed()
         wxGetApp().UpdateDarkUI(win);
     for (wxWindow* win : std::vector<wxWindow*>{ m_scrolled_panel, m_presets_panel })
         wxGetApp().UpdateAllStaticTextDarkUI(win);
-    for (wxWindow* btn : std::vector<wxWindow*>{ m_btn_reslice, m_btn_export_gcode })
+    for (wxWindow* btn : std::vector<wxWindow*>{ m_btn_reslice, m_btn_export_gcode, m_btn_connect_gcode })
         wxGetApp().UpdateDarkUI(btn, true);
 
     m_frequently_changed_parameters->sys_color_changed();
@@ -800,7 +800,6 @@ void Sidebar::sys_color_changed()
     // btn...->msw_rescale() updates icon on button, so use it
     m_btn_send_gcode            ->sys_color_changed();
     m_btn_export_gcode_removable->sys_color_changed();
-    m_btn_connect_gcode         ->sys_color_changed();
 
     m_scrolled_panel->Layout();
     m_scrolled_panel->Refresh();

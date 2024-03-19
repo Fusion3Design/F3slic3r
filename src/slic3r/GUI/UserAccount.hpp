@@ -15,11 +15,13 @@ enum class ConnectPrinterState {
     CONNECT_PRINTER_OFFLINE,
     CONNECT_PRINTER_PRINTING,
     CONNECT_PRINTER_PAUSED,//?
-    CONNECT_PRINTER_STOPED,//?
+    CONNECT_PRINTER_STOPPED,//?
     CONNECT_PRINTER_IDLE,
     CONNECT_PRINTER_FINISHED,
     CONNECT_PRINTER_READY, //?
     CONNECT_PRINTER_ATTENTION,
+    CONNECT_PRINTER_BUSY,
+    CONNECT_PRINTER_ERROR,
     CONNECT_PRINTER_STATE_COUNT
 };
 
@@ -71,6 +73,8 @@ public:
     std::string get_keyword_from_json(const std::string& json, const std::string& keyword) const;
 
     const std::map<std::string, ConnectPrinterState>& get_printer_state_table() const { return printer_state_table; }
+
+    std::string get_printer_type_from_name(const std::string& printer_name) const;
 private:
     void set_username(const std::string& username);
    
@@ -118,11 +122,12 @@ private:
         {"OFFLINE"  , ConnectPrinterState::CONNECT_PRINTER_OFFLINE},
         {"PRINTING" , ConnectPrinterState::CONNECT_PRINTER_PRINTING},
         {"PAUSED"   , ConnectPrinterState::CONNECT_PRINTER_PAUSED},
-        {"STOPED"   , ConnectPrinterState::CONNECT_PRINTER_STOPED},
+        {"STOPPED"  , ConnectPrinterState::CONNECT_PRINTER_STOPPED},
         {"IDLE"     , ConnectPrinterState::CONNECT_PRINTER_IDLE},
         {"FINISHED" , ConnectPrinterState::CONNECT_PRINTER_FINISHED},
         {"READY"    , ConnectPrinterState::CONNECT_PRINTER_READY},
         {"ATTENTION", ConnectPrinterState::CONNECT_PRINTER_ATTENTION},
+        {"BUSY"     , ConnectPrinterState::CONNECT_PRINTER_BUSY},
     };
 };
 }} // namespace slic3r::GUI
