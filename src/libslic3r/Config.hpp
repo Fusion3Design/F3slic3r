@@ -324,6 +324,7 @@ typedef const ConfigOption* ConfigOptionConstPtr;
 template<class T, class En = void> struct NilValueTempl
 {
     using NilType = T;
+    static_assert(always_false<T>::value, "Type has no well defined nil value");
 };
 
 template<class T> struct NilValueTempl<T, std::enable_if_t<std::is_integral_v<T>, void>> {
@@ -332,6 +333,14 @@ template<class T> struct NilValueTempl<T, std::enable_if_t<std::is_integral_v<T>
 };
 
 template<> struct NilValueTempl<bool> : public NilValueTempl<int>{};
+
+// For enums the nil is the max value of the underlying type.
+template<class T>
+struct NilValueTempl<T, std::enable_if_t<std::is_enum_v<T>, void>>
+{
+    using NilType = T;
+    static constexpr auto value = static_cast<T>(std::numeric_limits<std::underlying_type_t<T>>::max());
+};
 
 template<class T> struct NilValueTempl<T, std::enable_if_t<std::is_floating_point_v<T>, void>> {
     using NilType = T;
@@ -366,7 +375,7 @@ public:
     T value;
     explicit ConfigOptionSingle(T value) : value(std::move(value)) {}
     operator T() const { return this->value; }
-
+    
     void set(const ConfigOption *rhs) override
     {
         if (rhs->type() != this->type())
@@ -431,8 +440,7 @@ public:
 
     bool nullable() const override { return NULLABLE; }
 
-    template<bool IsNullable = NULLABLE, typename std::enable_if_t<IsNullable, bool> = true>
-    static constexpr NilType<T> nil_value() { return NilType<T>(); }
+    static constexpr NilType<T> nil_value() { return NilValue<T>(); }
 
     // A scalar is nil, or all values of a vector are nil.
     bool is_nil() const override
@@ -709,7 +717,7 @@ public:
         std::istringstream iss(str);
 
         if (str == "nil") {
-            if constexpr (NULLABLE)
+            if (NULLABLE)
                 this->value = this->nil_value();
             else
                 throw ConfigurationError("Deserializing nil into a non-nullable object");
@@ -882,8 +890,7 @@ public:
     std::string serialize() const override 
     {
         std::ostringstream ss;
-
-        if (this->value == std::numeric_limits<int>::max()) {
+        if (this->value == this->nil_value()) {
             if (NULLABLE)
                 ss << "nil";
             else
@@ -900,7 +907,7 @@ public:
         std::istringstream iss(str);
 
         if (str == "nil") {
-            if constexpr (NULLABLE)
+            if (NULLABLE)
                 this->value = this->nil_value();
             else
                 throw ConfigurationError("Deserializing nil into a non-nullable object");
