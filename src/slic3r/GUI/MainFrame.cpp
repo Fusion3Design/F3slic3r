@@ -2042,6 +2042,8 @@ void MainFrame::select_tab(Tab* tab)
 
 void MainFrame::select_tab(size_t tab/* = size_t(-1)*/)
 {
+    if (!wxGetApp().is_editor())
+        return;
     bool tabpanel_was_hidden = false;
 
     // Controls on page are created on active page of active tab now.
