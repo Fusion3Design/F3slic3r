@@ -901,6 +901,31 @@ static inline GCode::SmoothPathCache smooth_path_interpolate_global(const Print&
     return out;
 }
 
+static inline bool is_mk2_or_mk3(const std::string &printer_model) {
+    if (boost::starts_with(printer_model, "MK2")) {
+        return true;
+    } else if (boost::starts_with(printer_model, "MK3") && (printer_model.size() <= 3 || printer_model[3] != '.')) {
+        // Ignore MK3.5 and MK3.9.
+        return true;
+    }
+
+    return false;
+}
+
+static inline std::optional<std::string> find_M84(const std::string &gcode) {
+    std::istringstream gcode_is(gcode);
+    std::string gcode_line;
+    while (std::getline(gcode_is, gcode_line)) {
+        boost::trim(gcode_line);
+
+        if (gcode_line == "M84" || boost::starts_with(gcode_line, "M84 ") || boost::starts_with(gcode_line, "M84;")) {
+            return gcode_line;
+        }
+    }
+
+    return std::nullopt;
+}
+
 void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, ThumbnailsGeneratorCallback thumbnail_cb)
 {
     const bool export_to_binary_gcode = print.full_print_config().option<ConfigOptionBool>("binary_gcode")->value;
@@ -1433,6 +1458,11 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
             if (!full_config.empty())
                 file.write(full_config);
             file.write("; prusaslicer_config = end\n");
+        }
+
+        if (std::optional<std::string> line_M84 = find_M84(print.config().end_gcode);
+            is_mk2_or_mk3(print.config().printer_model) && line_M84.has_value()) {
+            file.writeln(*line_M84);
         }
     }
     print.throw_if_canceled();
