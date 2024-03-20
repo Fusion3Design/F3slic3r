@@ -1,4 +1,5 @@
 min_slic3r_version = 2.5.0
+1.0.9 Fix layer height on EDGE FINE preset. Was 0.2 should be 0.1.
 1.0.8 Reduce bridging fan speed to eliminate spurious heater faults on all profiles; F410 Armadillo profile; Various changes & bugfixes
 1.0.7 Create F400 machine & profiles, profile cleanup, many updates to F410 & EDGE profiles, create new F410 profiles
 1.0.6 Create F400 machine & profiles, profile cleanup, many updates to F410 & EDGE profiles, create new F410 profiles
