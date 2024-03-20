@@ -1145,8 +1145,10 @@ void PrintConfigDef::init_fff_params()
     def->set_default_value(new ConfigOptionFloats { 3.4 });
 
     def = this->add("filament_purge_multiplier", coPercents);
-    def->label = L("Purge multiplier");
-    def->tooltip = L("");
+    def->label = L("Purge volume multiplier");
+    def->tooltip = L("Purging volume on the wipe tower is determined by 'multimaterial_purging' in Printer Settings. "
+                     "This option allows to modify the volume on filament level. "
+                     "Note that the project can override this by setting project-specific values.");
     def->sidetext = L("%");
     def->min = 0;
     def->mode = comExpert;
@@ -2146,7 +2148,8 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("multimaterial_purging", coFloat);
     def->label = L("Purging volume");
-    def->tooltip = L("");
+    def->tooltip = L("Determines purging volume on the wipe tower. This can be modified in Filament Settings "
+                     "('filament_purge_multiplier') or overridden using project-specific settings.");
     def->sidetext = L("mm³");
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(140.));

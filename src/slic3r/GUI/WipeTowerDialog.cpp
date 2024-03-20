@@ -195,41 +195,45 @@ WipingDialog::WipingDialog(wxWindow* parent, const std::vector<float>& matrix, c
 {
     SetFont(wxGetApp().normal_font());
     update_ui(this);
-    m_widget_button = new wxButton(this,wxID_ANY,_L("Set default values"), wxPoint(0, 0), wxDefaultSize);
+    m_widget_button = new wxButton(this,wxID_ANY,_L("Set values from configuration"), wxPoint(0, 0), wxDefaultSize);
     update_ui(m_widget_button);
     wxGetApp().SetWindowVariantForButton(m_widget_button);
 
-    m_radio_button1 = new wxRadioButton(this, wxID_ANY, _L("Default from configuration"));
-    m_radio_button2 = new wxRadioButton(this, wxID_ANY, _L("Custom project-specific settings"));
-    auto stb        = new wxStaticBox(this, wxID_ANY, wxEmptyString);
+    m_radio_button1 = new wxRadioButton(this, wxID_ANY, _L("Use values from configuration"));
+    m_radio_button2 = new wxRadioButton(this, wxID_ANY, _L("Use custom project-specific settings"));
+    auto stb1        = new wxStaticBox(this, wxID_ANY, wxEmptyString);
+    auto stb2        = new wxStaticBox(this, wxID_ANY, wxEmptyString);
 
      m_panel_wiping  = new WipingPanel(this, matrix, extruder_colours, filament_purging_multipliers, printer_purging_volume, m_widget_button);
 
     update_ui(m_radio_button1);
     update_ui(m_radio_button2);
-    update_ui(stb);
+    update_ui(stb1);
+    update_ui(stb2);
 
-
-
-    wxString info = _(L("Here you can adjust required purging volume (mm³) for any given pair of tools."));
-    wxSize text_size = GetTextExtent(info);
-    auto info_str = new wxStaticText(this, wxID_ANY, info ,wxDefaultPosition, wxDefaultSize);
+    auto heading_text = new wxStaticText(this, wxID_ANY, _L("The project uses single-extruder multimaterial printer with the wipe tower.\nThe volume of material used for purging can be configured here.") ,wxDefaultPosition, wxDefaultSize);
+    m_info_text1   = new wxStaticText(this, wxID_ANY, _L("Options 'multimaterial_purging' and 'filament_purge_multiplier' will be used.") ,wxDefaultPosition, wxDefaultSize);
 
 	// set min sizer width according to extruders count
 	const auto sizer_width = (int)((std::sqrt(matrix.size()) + 2.8)*ITEM_WIDTH());
     auto main_sizer = new wxBoxSizer(wxVERTICAL);
 	main_sizer->SetMinSize(wxSize(sizer_width, -1));
 
-    main_sizer->Add(info_str, 0, wxALL, 10);
+    main_sizer->Add(heading_text, 0, wxALL, 10);
+
     main_sizer->Add(m_radio_button1, 0, wxALL, 10);
+    auto stb_sizer1 = new wxStaticBoxSizer(stb1, wxHORIZONTAL);
+    stb_sizer1->Add(m_info_text1, 0, wxALIGN_CENTER_HORIZONTAL, 0);
+    main_sizer->Add(stb_sizer1, 0, wxALIGN_CENTER_HORIZONTAL, 0);
+
+    auto t = new wxStaticText(this, wxID_ANY, _L("(all values in mm³)"), wxDefaultPosition, wxDefaultSize);
+
     main_sizer->Add(m_radio_button2, 0, wxALL, 10);
-
-    auto stb_sizer = new wxStaticBoxSizer(stb, wxVERTICAL);
-    stb_sizer->Add(m_panel_wiping, 0, wxEXPAND | wxALL, 5);
-    stb_sizer->Add(m_widget_button, 0, wxALIGN_CENTER_HORIZONTAL | wxCENTER | wxBOTTOM, 5);
-
-    main_sizer->Add(stb_sizer, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, 20);
-
+    auto stb_sizer2 = new wxStaticBoxSizer(stb2, wxVERTICAL);
+    stb_sizer2->Add(m_panel_wiping, 0, wxEXPAND | wxALL, 5);
+    stb_sizer2->Add(t, 0, wxALIGN_CENTER_HORIZONTAL | wxCENTER | wxBOTTOM, 0);
+    stb_sizer2->Add(m_widget_button, 0, wxALIGN_CENTER_HORIZONTAL | wxTOP, 5);
+    main_sizer->Add(stb_sizer2, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, 20);
 
     auto buttons = CreateStdDialogButtonSizer(wxOK | wxCANCEL);
     wxGetApp().SetWindowVariantForButton(buttons->GetAffirmativeButton());
@@ -359,7 +363,7 @@ WipingPanel::WipingPanel(wxWindow* parent, const std::vector<float>& matrix, con
 
 
 	m_sizer = new wxBoxSizer(wxVERTICAL);
-	m_sizer->Add(m_page_advanced, 0, wxEXPAND | wxALL, 25);
+	m_sizer->Add(m_page_advanced, 0, wxEXPAND | wxALL, 5);
 
 	m_sizer->SetSizeHints(this);
 	SetSizer(m_sizer);
@@ -412,6 +416,7 @@ std::vector<float> WipingPanel::read_matrix_values() {
 void WipingDialog::enable_or_disable_panel()
 {
     bool enable = m_radio_button2->GetValue();
+    m_info_text1->Enable(! enable);
     m_widget_button->Enable(enable);
     m_panel_wiping->Enable(enable);
     m_panel_wiping->Refresh();

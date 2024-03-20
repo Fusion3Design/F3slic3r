@@ -1558,8 +1558,8 @@ void WipeTower::plan_toolchange(float z_par, float layer_height_par, unsigned in
     if (old_tool == new_tool)	// new layer without toolchanges - we are done
         return;
 
-	// this is an actual toolchange - let's calculate depth to reserve on the wipe tower
-	float width = m_wipe_tower_width - 3*m_perimeter_width; 
+    // this is an actual toolchange - let's calculate depth to reserve on the wipe tower
+    float width = m_wipe_tower_width - 3*m_perimeter_width; 
 	float length_to_extrude = volume_to_length(0.25f * std::accumulate(m_filpar[old_tool].ramming_speed.begin(), m_filpar[old_tool].ramming_speed.end(), 0.f),
 										m_perimeter_width * m_filpar[old_tool].ramming_line_width_multiplicator,
 										layer_height_par);

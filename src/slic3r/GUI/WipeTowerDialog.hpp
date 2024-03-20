@@ -89,6 +89,7 @@ private:
     wxRadioButton*     m_radio_button1 = nullptr;
     wxRadioButton*     m_radio_button2 = nullptr;
     wxButton*          m_widget_button = nullptr;
+    wxStaticText*      m_info_text1    = nullptr;
 };
 
 #endif  // _WIPE_TOWER_DIALOG_H_
