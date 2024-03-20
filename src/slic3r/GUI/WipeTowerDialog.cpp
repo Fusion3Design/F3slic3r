@@ -223,17 +223,17 @@ WipingDialog::WipingDialog(wxWindow* parent, const std::vector<float>& matrix, c
 
     main_sizer->Add(m_radio_button1, 0, wxALL, 10);
     auto stb_sizer1 = new wxStaticBoxSizer(stb1, wxHORIZONTAL);
-    stb_sizer1->Add(m_info_text1, 0, wxALIGN_CENTER_HORIZONTAL, 0);
-    main_sizer->Add(stb_sizer1, 0, wxALIGN_CENTER_HORIZONTAL, 0);
+    stb_sizer1->Add(m_info_text1, 0, wxALIGN_CENTER_HORIZONTAL | wxALL, 5);
+    main_sizer->Add(stb_sizer1, 0, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxLEFT | wxRIGHT, 20);
 
     auto t = new wxStaticText(this, wxID_ANY, _L("(all values in mm³)"), wxDefaultPosition, wxDefaultSize);
 
     main_sizer->Add(m_radio_button2, 0, wxALL, 10);
     auto stb_sizer2 = new wxStaticBoxSizer(stb2, wxVERTICAL);
     stb_sizer2->Add(m_panel_wiping, 0, wxEXPAND | wxALL, 5);
-    stb_sizer2->Add(t, 0, wxALIGN_CENTER_HORIZONTAL | wxCENTER | wxBOTTOM, 0);
-    stb_sizer2->Add(m_widget_button, 0, wxALIGN_CENTER_HORIZONTAL | wxTOP, 5);
-    main_sizer->Add(stb_sizer2, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, 20);
+    stb_sizer2->Add(t, 0, wxALIGN_CENTER_HORIZONTAL | wxCENTER | wxBOTTOM, 5);
+    stb_sizer2->Add(m_widget_button, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, 10);
+    main_sizer->Add(stb_sizer2, 0, wxALIGN_CENTER_HORIZONTAL | wxEXPAND | wxBOTTOM | wxLEFT | wxRIGHT, 20);
 
     auto buttons = CreateStdDialogButtonSizer(wxOK | wxCANCEL);
     wxGetApp().SetWindowVariantForButton(buttons->GetAffirmativeButton());
