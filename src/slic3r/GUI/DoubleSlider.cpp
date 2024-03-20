@@ -51,12 +51,9 @@ namespace DoubleSlider {
 constexpr double min_delta_area = scale_(scale_(25));  // equal to 25 mm2
 constexpr double miscalculation = scale_(scale_(1));   // equal to 1 mm2
 
-static const float  LEFT_MARGIN             = 13.0f + 100.0f;  // avoid thumbnail toolbar
-static const float  BTN_SZ                  = 24.f;
-
-static const ImVec2 ONE_LAYER_OFFSET        = ImVec2(41.0f, /*44*/33.0f);
-static const ImVec2 HORIZONTAL_SLIDER_SIZE  = ImVec2(764.0f, 90.0f);//764 = 680 + handle_dummy_width * 2 + text_right_dummy
-static const ImVec2 VERTICAL_SLIDER_SIZE    = ImVec2(105.0f, 748.0f);//748 = 680 + text_dummy_height * 2
+static const float LEFT_MARGIN             = 13.0f + 100.0f;  // avoid thumbnail toolbar
+static const float HORIZONTAL_SLIDER_WIDTH = 90.0f;
+static const float VERTICAL_SLIDER_HEIGHT  = 105.0f;
 
 bool equivalent_areas(const double& bottom_area, const double& top_area)
 {
@@ -85,7 +82,6 @@ Control::Control( wxWindow *parent,
                   const wxPoint& pos,
                   const wxSize& size,
                   long style,
-//                  const wxValidator& val,
                   const wxString& name) : 
     wxControl(parent, id, pos, size, wxWANTS_CHARS | wxBORDER_NONE),
     m_lower_value(lowerValue), 
@@ -170,12 +166,13 @@ Control::Control( wxWindow *parent,
     imgui_ctrl = ImGuiControl(  lowerValue, higherValue,
                                 minValue, maxValue,
                                 ImVec2(0.f, 0.f), ImVec2(0.f, 0.f),
-                                style, into_u8(name), !is_horizontal());
+                                is_horizontal() ? 0 : ImGuiSliderFlags_Vertical,
+                                into_u8(name), !is_horizontal());
 
     imgui_ctrl.set_get_label_cb([this](int pos) {return into_u8(get_label(pos)); });
 
     if (!is_horizontal()) {
-        imgui_ctrl.set_get_label_on_move_cb([this](int pos) {return into_u8(get_label(pos, ltEstimatedTime)); });
+        imgui_ctrl.set_get_label_on_move_cb([this](int pos) { return m_extra_style & wxSL_VALUE_LABEL ? into_u8(get_label(pos, ltEstimatedTime)) : ""; });
         imgui_ctrl.set_extra_draw_cb([this](const ImRect& draw_rc) {return draw_ticks(draw_rc); });
     }
 
@@ -605,19 +602,6 @@ using namespace ImGui;
 
 // ImGuiDS
 
-float Control::get_pos_from_value(int v_min, int v_max, int value, const ImRect& rect) {
-    float pos_ratio = (v_max - v_min) != 0 ? ((float)(value - v_min) / (float)(v_max - v_min)) : 0.0f;
-    float handle_pos;
-    if (is_horizontal()) {
-        handle_pos = rect.Min.x + (rect.Max.x - rect.Min.x) * pos_ratio;
-    }
-    else {
-        pos_ratio = 1.0f - pos_ratio;
-        handle_pos = rect.Min.y + (rect.Max.y - rect.Min.y) * pos_ratio;
-    }
-    return handle_pos;
-}
-
 void Control::draw_ticks(const ImRect& slideable_region)
 {
     //if(m_draw_mode != dmRegular)
@@ -639,11 +623,8 @@ void Control::draw_ticks(const ImRect& slideable_region)
     const ImU32 tick_clr         = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_ORANGE_DARK);
     const ImU32 tick_hovered_clr = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_WINDOW_BACKGROUND);
 
-    auto get_tick_pos = [this, slideable_region](int tick)
-    {
-        int v_min = GetMinValue();
-        int v_max = GetMaxValue();
-        return get_pos_from_value(v_min, v_max, tick, slideable_region);
+    auto get_tick_pos = [this, slideable_region](int tick) {
+        return imgui_ctrl.GetPositionFromValue(tick, slideable_region);
     };
 
     std::set<TickCode>::const_iterator tick_it = m_ticks.ticks.begin();
@@ -744,15 +725,16 @@ void Control::draw_colored_band(const ImRect& groove, const ImRect& slideable_re
     ImRect main_band = ImRect(blank_rect);
     main_band.Expand(blank_padding);
 
-    auto draw_band = [](const ImU32& clr, const ImRect& band_rc)
-        {
-            ImGui::RenderFrame(band_rc.Min, band_rc.Max, clr, false, band_rc.GetWidth() * 0.5);
-            //cover round corner
-            ImGui::RenderFrame(ImVec2(band_rc.Min.x, band_rc.Max.y - band_rc.GetWidth() * 0.5), band_rc.Max, clr, false);
-        };
+    auto draw_band = [](const ImU32& clr, const ImRect& band_rc) {
+        ImGui::RenderFrame(band_rc.Min, band_rc.Max, clr, false, band_rc.GetWidth() * 0.5);
+        //cover round corner
+        ImGui::RenderFrame(ImVec2(band_rc.Min.x, band_rc.Max.y - band_rc.GetWidth() * 0.5), band_rc.Max, clr, false);
+    };
+
     auto draw_main_band = [&main_band](const ImU32& clr) {
         ImGui::RenderFrame(main_band.Min, main_band.Max, clr, false, main_band.GetWidth() * 0.5);
-        };
+    };
+
     //draw main colored band
     const int default_color_idx = m_mode == MultiAsSingle ? std::max<int>(m_only_extruder - 1, 0) : 0;
     std::array<float, 4>rgba = decode_color_to_float_array(m_extruder_colors[default_color_idx]);
@@ -764,28 +746,20 @@ void Control::draw_colored_band(const ImRect& groove, const ImRect& slideable_re
     while (tick_it != m_ticks.ticks.end())
     {
         //get position from tick
-        tick_pos = get_pos_from_value(GetMinValue(), GetMaxValue(), tick_it->tick, slideable_region);
+        tick_pos = imgui_ctrl.GetPositionFromValue(tick_it->tick, slideable_region);
 
         ImRect band_rect = ImRect(ImVec2(main_band.Min.x, std::min(tick_pos, main_band.Min.y)), 
                                   ImVec2(main_band.Max.x, std::min(tick_pos, main_band.Max.y)));
 
         if (main_band.Contains(band_rect)) {
-            //draw colored band
-            if (tick_it->type == ToolChange) {
-                if ((m_mode == SingleExtruder) || (m_mode == MultiAsSingle)) {
-                    const std::string clr_str = m_mode == SingleExtruder ? tick_it->color : get_color_for_tool_change_tick(tick_it);
-                    if (!clr_str.empty()) {
-                        std::array<float, 4>rgba = decode_color_to_float_array(clr_str);
-                        ImU32 band_clr = IM_COL32(rgba[0] * 255.0f, rgba[1] * 255.0f, rgba[2] * 255.0f, rgba[3] * 255.0f);
-                        if (tick_it->tick == 0)
-                            draw_main_band(band_clr);
-                        else
-                            draw_band(band_clr, band_rect);
-                    }
-                }
-            }
-            else if (tick_it->type == ColorChange/* && m_mode == SingleExtruder*/) {
-                const std::string clr_str = m_mode == SingleExtruder ? tick_it->color : get_color_for_tool_change_tick(tick_it);
+            if ((m_mode == SingleExtruder && tick_it->type == ColorChange) ||
+                (m_mode == MultiAsSingle && (tick_it->type == ToolChange || tick_it->type == ColorChange)))
+            {
+                const std::string clr_str = m_mode == SingleExtruder ? tick_it->color :
+                    tick_it->type == ToolChange ?
+                    get_color_for_tool_change_tick(tick_it) :
+                    get_color_for_color_change_tick(tick_it);
+
                 if (!clr_str.empty()) {
                     std::array<float, 4>rgba = decode_color_to_float_array(clr_str);
                     ImU32 band_clr = IM_COL32(rgba[0] * 255.0f, rgba[1] * 255.0f, rgba[2] * 255.0f, rgba[3] * 255.0f);
@@ -900,62 +874,67 @@ bool Control::render_button(const wchar_t btn_icon, const wchar_t btn_icon_hover
 }
 
 
-bool Control::imgui_render(GUI::GLCanvas3D& canvas)
+void Control::imgui_render(GUI::GLCanvas3D& canvas, float extra_scale/* = 0.1f*/)
 {
-    bool result = false;
-    GUI::Size         cnv_size   = canvas.get_canvas_size();
+    m_scale = extra_scale * 0.1f * wxGetApp().em_unit();
 
-    int canvas_width  = cnv_size.get_width();
-    int canvas_height = cnv_size.get_height();
+    const Size  cnv_size        = canvas.get_canvas_size();
+    const int   canvas_width    = cnv_size.get_width();
+    const int   canvas_height   = cnv_size.get_height();
 
-    float scale = (float)wxGetApp().em_unit() / 10.0f;
-
-    scale *= m_scale;
     ImVec2 pos;
     ImVec2 size;
 
+    const float action_btn_sz   = wxGetApp().imgui()->GetTextureCustomRect(ImGui::DSRevert)->Height;
+
     if (is_horizontal()) {
         pos.x = std::max(LEFT_MARGIN, 0.2f * canvas_width);
-        pos.y = canvas_height - HORIZONTAL_SLIDER_SIZE.y * scale;
-        size = ImVec2(canvas_width - 2 * pos.x, HORIZONTAL_SLIDER_SIZE.y * scale);
+        pos.y = canvas_height - HORIZONTAL_SLIDER_WIDTH * m_scale;
+        size = ImVec2(canvas_width - 2 * pos.x, HORIZONTAL_SLIDER_WIDTH * m_scale);
         imgui_ctrl.ShowLabelOnMouseMove(false);
     }
     else {
         const float tick_icon_side = wxGetApp().imgui()->GetTextureCustomRect(ImGui::PausePrint)->Height;
 
-        pos.x = canvas_width - VERTICAL_SLIDER_SIZE.x * scale - tick_icon_side;
-        pos.y = ONE_LAYER_OFFSET.y;
-        size = ImVec2(VERTICAL_SLIDER_SIZE.x * scale, canvas_height - 4 * pos.y);
+        pos.x = canvas_width - VERTICAL_SLIDER_HEIGHT * m_scale - tick_icon_side;
+        pos.y = 1.f * action_btn_sz;
+        if (m_allow_editing)
+            pos.y += 2.f;
+        size = ImVec2(VERTICAL_SLIDER_HEIGHT * m_scale, canvas_height - 4.f * action_btn_sz);
         imgui_ctrl.ShowLabelOnMouseMove(true);
     }
 
-    imgui_ctrl.SetPos(pos);
-    imgui_ctrl.SetSize(size);
-    imgui_ctrl.SetScale(scale);
+    imgui_ctrl.Init(pos, size, m_scale);
 
-    const float btn_sz = BTN_SZ*scale;
-    ImVec2 btn_pos = ImVec2(pos.x + 2.7 * btn_sz, pos.y - 0.5 * btn_sz);
+    if (imgui_ctrl.render(m_selection)) {
+        // request one more frame if value was changes with mouse wheel
+        if (GImGui->IO.MouseWheel != 0.0f)
+            wxGetApp().imgui()->set_requires_extra_frame();
 
-    if (!is_horizontal() && !m_ticks.empty() && m_allow_editing &&
-        render_button(ImGui::DSRevert, ImGui::DSRevertHovered, "revert", btn_pos, fiRevertIcon))
-        discard_all_thicks();
-
-    if (imgui_ctrl.render(m_selection))
         SetSelectionSpan(m_is_one_layer ? imgui_ctrl.GetHigherValue() : imgui_ctrl.GetLowerValue(), imgui_ctrl.GetHigherValue());
+    }
 
+    // draw action buttons
     if (!is_horizontal()) {
-        btn_pos.y += 0.5 * btn_sz + size.y;
+        const float groove_center_x = imgui_ctrl.GetGrooveRect().GetCenter().x; 
+        
+        ImVec2 btn_pos = ImVec2(groove_center_x - 0.5f * action_btn_sz, pos.y - 0.25f * action_btn_sz);
+
+        if (!m_ticks.empty() && m_allow_editing &&
+            render_button(ImGui::DSRevert, ImGui::DSRevertHovered, "revert", btn_pos, fiRevertIcon))
+            discard_all_thicks();
+
+        btn_pos.y += 0.1f * action_btn_sz + size.y;
         if (render_button(is_one_layer() ? ImGui::Lock : ImGui::Unlock, is_one_layer() ? ImGui::LockHovered : ImGui::UnlockHovered, "one_layer", btn_pos, fiOneLayerIcon))
             switch_one_layer_mode();
 
-        btn_pos.y += btn_sz;
+        btn_pos.y += 1.2f * action_btn_sz;
         if (render_button(ImGui::DSSettings, ImGui::DSSettingsHovered, "settings", btn_pos, fiCogIcon))
             show_cog_icon_context_menu();
 
         if (m_allow_editing)
             render_menu();
     }
-    return result;
 }
 
 bool Control::is_wipe_tower_layer(int tick) const
@@ -2504,7 +2483,7 @@ void Control::show_cog_icon_context_menu()
 
     append_menu_item(&menu, wxID_ANY, _L("Jump to height") + " (Shift+G)", "",
                     [this](wxCommandEvent&) { jump_to_value(); }, "", & menu);
-
+#if 0 // old code
     wxMenu* ruler_mode_menu = new wxMenu();
     if (ruler_mode_menu) {
         append_menu_check_item(ruler_mode_menu, wxID_ANY, _L("None"), _L("Hide ruler"), 
@@ -2522,7 +2501,11 @@ void Control::show_cog_icon_context_menu()
         append_submenu(&menu, ruler_mode_menu, wxID_ANY, _L("Ruler mode"), _L("Set ruler mode"), "",
             []() { return true; }, this);
     }
-
+#else
+    append_menu_check_item(&menu, wxID_ANY, _L("Show estimated print time on mouse moving"), _L("Show estimated print time on the ruler"),
+        [this](wxCommandEvent&) { m_extra_style& wxSL_VALUE_LABEL ? m_extra_style ^= wxSL_VALUE_LABEL : m_extra_style |= wxSL_VALUE_LABEL; }, &menu,
+        []() { return true; }, [this]() { return m_extra_style & wxSL_VALUE_LABEL; }, GUI::wxGetApp().plater());
+#endif
     if (m_mode == MultiAsSingle && m_draw_mode == dmRegular)
         append_menu_item(&menu, wxID_ANY, _L("Set extruder sequence for the entire print"), "",
             [this](wxCommandEvent&) { edit_extruder_sequence(); }, "", &menu);

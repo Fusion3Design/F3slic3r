@@ -222,7 +222,6 @@ public:
         const wxPoint& pos = wxDefaultPosition,
         const wxSize& size = wxDefaultSize,
         long style = wxSL_VERTICAL,
-//        const wxValidator& val = wxDefaultValidator,
         const wxString& name = wxEmptyString);
     ~Control() {}
 
@@ -307,7 +306,7 @@ public:
     void show_cog_icon_context_menu();
     void auto_color_change();
 
-    bool imgui_render(GUI::GLCanvas3D& canvas);
+    void imgui_render(GUI::GLCanvas3D& canvas, float extra_scale = 1.f);
 
 protected:
 
@@ -486,7 +485,6 @@ private:
     float       m_scale{ 1.0 };
     bool        m_can_change_color{ true };
     bool        m_show_menu{ false };
-    float       get_pos_from_value(int v_min, int v_max, int value, const ImRect& rect);
 
     void        draw_colored_band(const ImRect& groove, const ImRect& slideable_region);
     void        draw_ticks(const ImRect& slideable_region);

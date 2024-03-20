@@ -385,7 +385,7 @@ struct Plater::priv
 
     void set_current_canvas_as_dirty();
     GLCanvas3D* get_current_canvas3D();
-    void render_imgui_double_slider(GLCanvas3D& canvas);
+    void render_sliders(GLCanvas3D& canvas, float extra_scale = 0.1f);
     void unbind_canvas_event_handlers();
     void reset_canvas_volumes();
 
@@ -3190,10 +3190,10 @@ GLCanvas3D* Plater::priv::get_current_canvas3D()
     return (current_panel == view3D) ? view3D->get_canvas3d() : ((current_panel == preview) ? preview->get_canvas3d() : nullptr);
 }
 
-void Plater::priv::render_imgui_double_slider(GLCanvas3D& canvas)
+void Plater::priv::render_sliders(GLCanvas3D& canvas, float extra_scale /*= 0.1f*/)
 {
     if (current_panel == preview)
-        preview->render_imgui_double_slider(canvas);
+        preview->render_sliders(canvas, extra_scale);
 }
 
 void Plater::priv::unbind_canvas_event_handlers()
@@ -6409,9 +6409,9 @@ GLCanvas3D* Plater::get_current_canvas3D()
     return p->get_current_canvas3D();
 }
 
-void Plater::render_imgui_double_slider(GLCanvas3D& canvas)
+void Plater::render_sliders(GLCanvas3D& canvas, float extra_scale)
 {
-    p->render_imgui_double_slider(canvas);
+    p->render_sliders(canvas, extra_scale);
 }
 
 static std::string concat_strings(const std::set<std::string> &strings,

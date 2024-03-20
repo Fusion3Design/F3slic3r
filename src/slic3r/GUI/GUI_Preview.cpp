@@ -348,12 +348,12 @@ void Preview::sys_color_changed()
 }
 
 
-void Preview::render_imgui_double_slider(GLCanvas3D& canvas)
+void Preview::render_sliders(GLCanvas3D& canvas, float extra_scale/* = 0.1f*/)
 {
     if (m_layers_slider && m_layers_slider->IsShown())
-        m_layers_slider->imgui_render(canvas);
+        m_layers_slider->imgui_render(canvas, extra_scale);
     if (m_moves_slider && m_moves_slider->IsShown() && m_bottom_toolbar_panel->IsShown())
-        m_moves_slider->imgui_render(canvas);
+        m_moves_slider->imgui_render(canvas, extra_scale);
 }
 
 void Preview::jump_layers_slider(wxKeyEvent& evt)

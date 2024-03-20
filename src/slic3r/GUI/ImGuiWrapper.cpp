@@ -1145,9 +1145,10 @@ void ImGuiWrapper::init_font(bool compress)
         m_custom_glyph_rects_ids[icon.first] =
             io.Fonts->AddCustomRectFontGlyph(font, icon.first, icon_sz, icon_sz, 3.0 * font_scale + icon_sz);
     }
+    const int icon_sz_m = int(1.25 * icon_sz); // default size of medium icon is 20 px
     for (auto& icon : font_icons_medium) {
         m_custom_glyph_rects_ids[icon.first] =
-            io.Fonts->AddCustomRectFontGlyph(font, icon.first, 1.5 * icon_sz, 1.5 * icon_sz, 3.0 * font_scale + 1.5 * icon_sz);
+            io.Fonts->AddCustomRectFontGlyph(font, icon.first, icon_sz_m, icon_sz_m, 3.0 * font_scale + icon_sz_m);
     }
     for (auto& icon : font_icons_large) {
         m_custom_glyph_rects_ids[icon.first] =
@@ -1185,7 +1186,6 @@ void ImGuiWrapper::init_font(bool compress)
         load_icon_from_svg(icon, icon_sz);
     }
 
-    const int icon_sz_m = int(1.5 * icon_sz); // default size of medium icon is 24 px
     for (auto icon : font_icons_medium) {
         load_icon_from_svg(icon, icon_sz_m);
     }

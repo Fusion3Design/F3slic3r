@@ -140,7 +140,7 @@ public:
     void move_layers_slider(wxKeyEvent& evt);
     void edit_layers_slider(wxKeyEvent& evt);
 
-    void render_imgui_double_slider(GLCanvas3D& canvas);
+    void render_sliders(GLCanvas3D& canvas, float extra_scale = 0.1f);
 
     bool is_loaded() const { return m_loaded; }
 
