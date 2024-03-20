@@ -32,13 +32,6 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
         : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
         , m_default_url (default_url)
  {
-    //wxString url = "https://dev.connect.prusa3d.com/prusa-slicer/printers";
-    // https://dev.connect.prusa3d.com/connect-slicer-app/printer-list
-    //std::string strlang = wxGetApp().app_config->get("language");
-    //if (strlang != "")
-    //    url = wxString::Format("file://%s/web/homepage/index.html?lang=%s", from_u8(resources_dir()), strlang);
-    //m_bbl_user_agent = wxString::Format("BBL-Slicer/v%s", SLIC3R_VERSION);
-
     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
 #ifdef DEBUG_URL_PANEL
     // Create the button
@@ -524,7 +517,7 @@ void ConnectRequestHandler::on_request_config()
 }
 
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
-    : WebViewPanel(parent, L"https://dev.connect.prusa3d.com/connect-slicer-app/")
+    : WebViewPanel(parent, L"https://connect.prusa3d.com/connect-slicer-app/")
 {  
 }
 
@@ -655,7 +648,7 @@ void WebViewDialog::run_script(const wxString& javascript)
 }
 
 PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val)
-    : WebViewDialog(parent, L"https://dev.connect.prusa3d.com/connect-slicer-app/printer-list", _L("Choose a printer"), wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit())))
+    : WebViewDialog(parent, L"https://connect.prusa3d.com/connect-slicer-app/printer-list", _L("Choose a printer"), wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit())))
     , m_ret_val(ret_val)
 {
     Centre();

@@ -220,7 +220,7 @@ void UserAccountCommunication::set_polling_enabled(bool enabled)
 
 void UserAccountCommunication::login_redirect()
 {
-    const std::string AUTH_HOST = "https://test-account.prusa3d.com";
+    const std::string AUTH_HOST = "https://account.prusa3d.com";
     const std::string CLIENT_ID = client_id();
     const std::string REDIRECT_URI = "prusaslicer://login";
     CodeChalengeGenerator ccg;
