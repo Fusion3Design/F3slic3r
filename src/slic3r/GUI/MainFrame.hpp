@@ -43,7 +43,7 @@ class Plater;
 class MainFrame;
 class PreferencesDialog;
 class GalleryDialog;
-class WebViewPanel; 
+class ConnectWebViewPanel; 
 class PrinterWebViewPanel;
 
 enum QuickSlice
@@ -98,7 +98,7 @@ class MainFrame : public DPIFrame
     size_t      m_last_selected_tab;
     Search::OptionsSearcher m_searcher;
 
-    WebViewPanel*        m_connect_webview{ nullptr };
+    ConnectWebViewPanel* m_connect_webview{ nullptr };
     bool                 m_connect_webview_added{ false };
     PrinterWebViewPanel* m_printer_webview{ nullptr };
     bool                 m_printer_webview_added{ false };

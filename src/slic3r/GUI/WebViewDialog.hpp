@@ -72,6 +72,7 @@ public:
     wxString get_default_url() const { return m_default_url; }
     void set_default_url(const wxString& url) { m_default_url = url; }
 
+    virtual void sys_color_changed();
 protected:
 
     wxWebView* m_browser;
@@ -112,14 +113,14 @@ public:
     ~ConnectRequestHandler();
 
     void handle_message(const std::string& message);
+    void resend_config();
 protected:
     // action callbacs stored in m_actions
     virtual void on_request_access_token();
     virtual void on_request_config();
-    virtual void on_request_language_action();
-    virtual void on_request_session_id_action();
     virtual void on_request_update_selected_printer_action() = 0;
     virtual void run_script_bridge(const wxString& script) = 0;
+    virtual void request_compatible_printers() = 0;
 
     std::map<std::string, std::function<void(void)>> m_actions;
     std::string m_message_data;
@@ -131,8 +132,11 @@ class ConnectWebViewPanel : public WebViewPanel, public ConnectRequestHandler
 public:
     ConnectWebViewPanel(wxWindow* parent);
     void on_script_message(wxWebViewEvent& evt) override;
+    void logout();
+    void sys_color_changed() override;
 protected:
     void on_request_update_selected_printer_action() override;
+    void request_compatible_printers() override {}
     void run_script_bridge(const wxString& script) override {run_script(script); }
 };
 
@@ -148,6 +152,7 @@ public:
     void set_api_key(const std::string& key) { m_api_key = key; }
     void set_credentials(const std::string& usr, const std::string& psk) { m_usr = usr; m_psk = psk; }
     void clear() { m_api_key.clear(); m_usr.clear(); m_psk.clear(); m_api_key_sent = false; }
+    void sys_color_changed() override;
 private:
     std::string m_api_key;
     std::string m_usr;
@@ -179,9 +184,9 @@ public:
     void on_script_message(wxWebViewEvent& evt) override;
 protected:
     void on_request_update_selected_printer_action() override;
+    void request_compatible_printers() override;
     void run_script_bridge(const wxString& script) override { run_script(script); }
 private:
-    void request_compatible_printers();
     std::string& m_ret_val;
 };
 

@@ -878,6 +878,7 @@ void MainFrame::remove_connect_webview_tab()
         m_tabpanel->SetSelection(0);
     dynamic_cast<TopBar*>(m_tabpanel)->RemovePage(4);
     m_connect_webview_added = false;
+    m_connect_webview->logout();
 }
 
 void MainFrame::add_printer_webview_tab(const wxString& url)
@@ -1187,6 +1188,9 @@ void MainFrame::on_sys_color_changed()
     // update Tabs
     for (auto tab : wxGetApp().tabs_list)
         tab->sys_color_changed();
+
+    m_connect_webview->sys_color_changed();
+    m_printer_webview->sys_color_changed();
 
     MenuFactory::sys_color_changed(m_menubar);
 

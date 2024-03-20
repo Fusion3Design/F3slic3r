@@ -423,6 +423,12 @@ case type: \
 #endif
 }
 
+void WebViewPanel::sys_color_changed()
+{
+#ifdef _WIN32
+    wxGetApp().UpdateDarkUI(this);
+#endif
+}
 
 SourceViewDialog::SourceViewDialog(wxWindow* parent, wxString source) :
                   wxDialog(parent, wxID_ANY, "Source Code",
@@ -444,10 +450,8 @@ ConnectRequestHandler::ConnectRequestHandler()
 {
     m_actions["REQUEST_ACCESS_TOKEN"] = std::bind(&ConnectRequestHandler::on_request_access_token, this);
     m_actions["REQUEST_CONFIG"] = std::bind(&ConnectRequestHandler::on_request_config, this);
-    m_actions["REQUEST_LANGUAGE"] = std::bind(&ConnectRequestHandler::on_request_language_action, this);
-    m_actions["REQUEST_SESSION_ID"] = std::bind(&ConnectRequestHandler::on_request_session_id_action, this);
     m_actions["UPDATE_SELECTED_PRINTER"] = std::bind(&ConnectRequestHandler::on_request_update_selected_printer_action, this);
-
+    m_actions["WEBAPP_READY"] = std::bind(&ConnectRequestHandler::request_compatible_printers, this);
 }
 ConnectRequestHandler::~ConnectRequestHandler()
 {
@@ -486,6 +490,12 @@ void ConnectRequestHandler::handle_message(const std::string& message)
         m_actions[action_string]();
     }
 }
+
+void ConnectRequestHandler::resend_config()
+{
+    on_request_config();
+}
+
 void ConnectRequestHandler::on_request_access_token()
 {
     std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
@@ -512,23 +522,6 @@ void ConnectRequestHandler::on_request_config()
     run_script_bridge(script);
     
 }
-void ConnectRequestHandler::on_request_language_action()
-{
-   assert(true);
-    // TODO: 
-   //std::string lang = "en";
-   //wxString script = GUI::format_wxstr("window._prusaConnect_v1.setAccessToken(\'en\')", lang);
-   //run_script(script);
-}
-void ConnectRequestHandler::on_request_session_id_action()
-{
-    assert(true);
-    /*
-   std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
-   wxString script = GUI::format_wxstr("window._prusaConnect_v1.setAccessToken(\'%1%\')", token);
-   run_script(script);
-   */
-}
 
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
     : WebViewPanel(parent, L"https://dev.connect.prusa3d.com/connect-slicer-app/")
@@ -539,6 +532,17 @@ void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
 {
     BOOST_LOG_TRIVIAL(error) << "recieved message from PrusaConnect FE: " << evt.GetString();
     handle_message(into_u8(evt.GetString()));
+}
+
+void ConnectWebViewPanel::logout()
+{
+    wxString script = L"window._prusaConnect_v1.logout()";
+    run_script(script);
+}
+
+void ConnectWebViewPanel::sys_color_changed()
+{
+    resend_config();
 }
 
 void ConnectWebViewPanel::on_request_update_selected_printer_action()
@@ -615,6 +619,9 @@ void PrinterWebViewPanel::send_credentials()
     
 }
 
+void PrinterWebViewPanel::sys_color_changed()
+{
+}
 
 WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size)
     : wxDialog(parent, wxID_ANY, dialog_name, wxDefaultPosition, size, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
@@ -650,7 +657,6 @@ PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string
     : WebViewDialog(parent, L"https://dev.connect.prusa3d.com/connect-slicer-app/printer-list", _L("Choose a printer"), wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit())))
     , m_ret_val(ret_val)
 {
-    m_actions["WEBAPP_READY"] = std::bind(&PrinterPickWebViewDialog::request_compatible_printers, this);
     Centre();
 }
 void PrinterPickWebViewDialog::on_show(wxShowEvent& evt)
