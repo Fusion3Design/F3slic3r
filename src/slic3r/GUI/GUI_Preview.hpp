@@ -82,8 +82,6 @@ class Preview : public wxPanel
     wxGLCanvas* m_canvas_widget { nullptr };
     GLCanvas3D* m_canvas { nullptr };
     wxBoxSizer* m_left_sizer { nullptr };
-    wxBoxSizer* m_layers_slider_sizer { nullptr };
-    wxPanel* m_bottom_toolbar_panel { nullptr };
 
     DynamicPrintConfig* m_config;
     BackgroundSlicingProcess* m_process;
@@ -135,7 +133,6 @@ public:
     void reload_print();
 
     void msw_rescale();
-    void sys_color_changed();
     void jump_layers_slider(wxKeyEvent& evt);
     void move_layers_slider(wxKeyEvent& evt);
     void edit_layers_slider(wxKeyEvent& evt);
@@ -162,7 +159,7 @@ private:
     void on_size(wxSizeEvent& evt);
 
     // Create/Update/Reset double slider on 3dPreview
-    wxBoxSizer* create_layers_slider_sizer();
+    void create_layers_slider();
     void check_layers_slider_values(std::vector<CustomGCode::Item>& ticks_from_model,
         const std::vector<double>& layers_z);
     void reset_layers_slider();

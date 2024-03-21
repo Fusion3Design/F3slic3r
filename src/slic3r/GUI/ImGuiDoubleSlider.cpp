@@ -148,18 +148,22 @@ void ImGuiControl::SetLowerValue(const int lower_val)
 {
     m_selection = ssLower;
     m_lower_value = lower_val;
+    correct_lower_value();
 }
 
 void ImGuiControl::SetHigherValue(const int higher_val)
 {
     m_selection = ssHigher;
     m_higher_value = higher_val;
+    correct_higher_value();
 }
 
 void ImGuiControl::SetSelectionSpan(const int lower_val, const int higher_val)
 {
     m_lower_value  = std::max(lower_val, m_min_value);
     m_higher_value = std::max(std::min(higher_val, m_max_value), m_lower_value);
+    if (m_lower_value < m_higher_value)
+        m_combine_thumbs = false;
 }
 
 void ImGuiControl::SetMaxValue(const int max_value)
@@ -167,16 +171,61 @@ void ImGuiControl::SetMaxValue(const int max_value)
     m_max_value = max_value;
 }
 
-void ImGuiControl::SetSliderValues(const std::vector<double>& values)
+void ImGuiControl::MoveActiveThumb(int delta)
 {
-    m_values = values;
+    if (m_selection == ssUndef)
+        m_selection = ssHigher;
+
+    if (m_selection == ssLower) {
+        m_lower_value -= delta;
+        correct_lower_value();
+    }
+    else if (m_selection == ssHigher) {
+        m_higher_value -= delta;
+        correct_higher_value();
+    }
+}
+
+void ImGuiControl::correct_lower_value()
+{
+    if (m_lower_value < m_min_value)
+        m_lower_value = m_min_value;
+    else if (m_lower_value > m_max_value)
+        m_lower_value = m_max_value;
+
+    if ((m_lower_value >= m_higher_value && m_lower_value <= m_max_value) || m_combine_thumbs) {
+        m_higher_value = m_lower_value;
+    }
+}
+
+void ImGuiControl::correct_higher_value()
+{
+    if (m_higher_value > m_max_value)
+        m_higher_value = m_max_value;
+    else if (m_higher_value < m_min_value)
+        m_higher_value = m_min_value;
+
+    if ((m_higher_value <= m_lower_value && m_higher_value >= m_min_value) || m_combine_thumbs) {
+        m_lower_value = m_higher_value;
+    }
 }
 
 void ImGuiControl::CombineThumbs(bool combine)
 { 
     m_combine_thumbs = combine; 
-    if (combine)
-        m_selection = ssHigher; 
+    if (combine) {
+        m_selection = ssHigher;
+        correct_higher_value();
+    }
+    else
+        ResetValues();
+}
+
+void ImGuiControl::ResetValues()
+{
+    SetLowerValue(m_min_value);
+    SetHigherValue(m_max_value);
+    m_selection == ssLower ? correct_lower_value() : correct_higher_value();
 }
 
 std::string ImGuiControl::get_label(int pos) const
@@ -184,16 +233,10 @@ std::string ImGuiControl::get_label(int pos) const
     if (m_cb_get_label)
         return m_cb_get_label(pos);
 
-    const size_t value = pos;
-
-    if (m_label_koef == 1.0 && m_values.empty())
-        return std::to_string(static_cast<unsigned long>(value));
-    if (value >= m_values.size())
+    if (pos >= m_max_value || pos < m_min_value)
         return "ErrVal";
 
-    return m_values.empty() ?
-           to_string_with_precision(m_label_koef * value) :
-           to_string_with_precision(m_values[value]);
+    return std::to_string(pos);
 }
 
 float ImGuiControl::GetPositionFromValue(int value, const ImRect& rect) const
@@ -457,7 +500,7 @@ bool ImGuiControl::draw_slider( int* higher_value, int* lower_value,
     return value_changed;
 }
 
-bool ImGuiControl::render(SelectedSlider& selection)
+bool ImGuiControl::render()
 {
     bool result = false;
 
@@ -488,13 +531,15 @@ bool ImGuiControl::render(SelectedSlider& selection)
     int         temp_lower_value    = m_lower_value;
 
     if (draw_slider(&higher_value, &lower_value, higher_label, lower_label, m_pos, m_size, scale)) {
-        if (temp_higher_value != higher_value)
-            SetHigherValue(higher_value);
+        if (temp_higher_value != higher_value) {
+            m_higher_value = higher_value;
+            if (m_combine_thumbs)
+                m_lower_value = m_higher_value;
+        }
         if (temp_lower_value != lower_value)
-            SetLowerValue(lower_value);
+            m_lower_value = lower_value;
         result = true;
     }
-    selection = m_selection;
 
     ImGuiPureWrap::end();
 

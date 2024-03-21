@@ -231,29 +231,16 @@ bool Preview::init(wxWindow* parent, Bed3D& bed, Model* model)
     m_canvas->show_legend(true);
     m_canvas->enable_dynamic_background(true);
 
-    m_layers_slider_sizer = create_layers_slider_sizer();
-
-    wxGetApp().UpdateDarkUI(m_bottom_toolbar_panel = new wxPanel(this));
+    create_layers_slider();
 
     m_left_sizer = new wxBoxSizer(wxVERTICAL);
     m_left_sizer->Add(m_canvas_widget, 1, wxALL | wxEXPAND, 0);
 
-    wxBoxSizer* right_sizer = new wxBoxSizer(wxVERTICAL);
-    right_sizer->Add(m_layers_slider_sizer, 1, wxEXPAND, 0);
-
-    m_moves_slider = new DoubleSlider::Control(m_bottom_toolbar_panel, wxID_ANY, 0, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxSL_HORIZONTAL, "moves_slider");
+    m_moves_slider = new DoubleSlider::Control(this, 0, 0, 0, 100, wxSL_HORIZONTAL, "moves_slider");
     m_moves_slider->SetDrawMode(DoubleSlider::dmSequentialGCodeView);
-
-    wxBoxSizer* bottom_toolbar_sizer = new wxBoxSizer(wxHORIZONTAL);
-    bottom_toolbar_sizer->Add(m_moves_slider, 1, wxALL | wxEXPAND, 0);
-    m_bottom_toolbar_panel->SetSizer(bottom_toolbar_sizer);
-
-    m_left_sizer->Add(m_bottom_toolbar_panel, 0, wxALL | wxEXPAND, 0);
-    m_left_sizer->Hide(m_bottom_toolbar_panel);
 
     wxBoxSizer* main_sizer = new wxBoxSizer(wxHORIZONTAL);
     main_sizer->Add(m_left_sizer, 1, wxALL | wxEXPAND, 0);
-    main_sizer->Add(right_sizer, 0, wxALL | wxEXPAND, 0);
 
     SetSizer(main_sizer);
     SetMinSize(GetSize());
@@ -325,10 +312,6 @@ void Preview::reload_print()
 
 void Preview::msw_rescale()
 {
-    // rescale slider
-    if (m_layers_slider != nullptr) m_layers_slider->msw_rescale();
-    if (m_moves_slider != nullptr) m_moves_slider->msw_rescale();
-
     // rescale warning legend on the canvas
     get_canvas3d()->msw_rescale();
 
@@ -336,23 +319,11 @@ void Preview::msw_rescale()
     reload_print();
 }
 
-void Preview::sys_color_changed()
-{
-#ifdef _WIN32
-    wxWindowUpdateLocker noUpdates(this);
-    wxGetApp().UpdateAllStaticTextDarkUI(m_bottom_toolbar_panel);
-#endif // _WIN32
-
-    if (m_layers_slider != nullptr)
-        m_layers_slider->sys_color_changed();
-}
-
-
 void Preview::render_sliders(GLCanvas3D& canvas, float extra_scale/* = 0.1f*/)
 {
-    if (m_layers_slider && m_layers_slider->IsShown())
+    if (m_layers_slider)
         m_layers_slider->imgui_render(canvas, extra_scale);
-    if (m_moves_slider && m_moves_slider->IsShown() && m_bottom_toolbar_panel->IsShown())
+    if (m_moves_slider)
         m_moves_slider->imgui_render(canvas, extra_scale);
 }
 
@@ -390,8 +361,7 @@ void Preview::move_moves_slider(wxKeyEvent& evt)
 
 void Preview::hide_layers_slider()
 {
-    m_layers_slider_sizer->Hide((size_t)0);
-    Layout();
+    m_layers_slider->Hide();
 }
 
 void Preview::on_size(wxSizeEvent& evt)
@@ -400,16 +370,14 @@ void Preview::on_size(wxSizeEvent& evt)
     Refresh();
 }
 
-wxBoxSizer* Preview::create_layers_slider_sizer()
+void Preview::create_layers_slider()
 {
-    wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
-    m_layers_slider = new DoubleSlider::Control(this, wxID_ANY, 0, 0, 0, 100, wxDefaultPosition, wxDefaultSize, wxVERTICAL, "layers_slider");
+    m_layers_slider = new DoubleSlider::Control(this,0, 0, 0, 100, wxVERTICAL, "layers_slider");
 
     m_layers_slider->SetDrawMode(wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA,
         wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_bool("complete_objects"));
-    m_layers_slider->enable_action_icon(wxGetApp().is_editor());
 
-    sizer->Add(m_layers_slider, 0, wxEXPAND, 0);
+    m_layers_slider->enable_action_icon(wxGetApp().is_editor());
 
     // sizer, m_canvas_widget
     m_canvas_widget->Bind(wxEVT_KEY_DOWN, &Preview::update_layers_slider_from_canvas, this);
@@ -429,8 +397,6 @@ wxBoxSizer* Preview::create_layers_slider_sizer()
         m_keep_current_preview_type = false;
         reload_print();
     });
-
-    return sizer;
 }
 
 // Find an index of a value in a sorted vector, which is in <z-eps, z+eps>.
@@ -602,9 +568,7 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
                 break;
         }
     }
-
-    m_layers_slider_sizer->Show((size_t)0);
-    Layout();
+    m_layers_slider->Show();
 }
 
 void Preview::update_layers_slider_mode()
@@ -679,12 +643,10 @@ void Preview::update_layers_slider_from_canvas(wxKeyEvent& event)
     if (key == 'S' || key == 'W') {
         const int new_pos = key == 'W' ? m_layers_slider->GetHigherValue() + 1 : m_layers_slider->GetHigherValue() - 1;
         m_layers_slider->SetHigherValue(new_pos);
-        if (event.ShiftDown() || m_layers_slider->is_one_layer()) m_layers_slider->SetLowerValue(m_layers_slider->GetHigherValue());
     }
     else if (key == 'A' || key == 'D') {
         const int new_pos = key == 'D' ? m_moves_slider->GetHigherValue() + 1 : m_moves_slider->GetHigherValue() - 1;
         m_moves_slider->SetHigherValue(new_pos);
-        if (event.ShiftDown() || m_moves_slider->is_one_layer()) m_moves_slider->SetLowerValue(m_moves_slider->GetHigherValue());
     }
     else if (key == 'X')
         m_layers_slider->ChangeOneLayerLock();
@@ -790,9 +752,7 @@ void Preview::load_print_as_fff(bool keep_z_range)
     if (wxGetApp().is_editor() && !has_layers) {
         m_canvas->reset_gcode_layers_times_cache();
         hide_layers_slider();
-        m_left_sizer->Hide(m_bottom_toolbar_panel);
-        m_left_sizer->Layout();
-        Refresh();
+        m_moves_slider->Hide();
         m_canvas_widget->Refresh();
         return;
     }
@@ -819,11 +779,9 @@ void Preview::load_print_as_fff(bool keep_z_range)
             m_canvas->load_gcode_preview(*m_gcode_result, tool_colors, color_print_colors);
             // the view type may have been changed by the call m_canvas->load_gcode_preview()
             gcode_view_type = m_canvas->get_gcode_view_type();
-            m_left_sizer->Layout();
-            Refresh();
             zs = m_canvas->get_gcode_layers_zs();
             if (!zs.empty())
-                m_left_sizer->Show(m_bottom_toolbar_panel);
+                m_moves_slider->Show();
             m_loaded = true;
         }
         else if (is_pregcode_preview) {
@@ -832,15 +790,11 @@ void Preview::load_print_as_fff(bool keep_z_range)
             // the view type has been changed by the call m_canvas->load_gcode_preview()
             if (gcode_view_type == libvgcode::EViewType::ColorPrint && !color_print_values.empty())
                 m_canvas->set_gcode_view_type(gcode_view_type);
-            m_left_sizer->Hide(m_bottom_toolbar_panel);
-            m_left_sizer->Layout();
-            Refresh();
+            m_moves_slider->Hide();
             zs = m_canvas->get_gcode_layers_zs();
         }
         else {
-            m_left_sizer->Hide(m_bottom_toolbar_panel);
-            m_left_sizer->Layout();
-            Refresh();
+            m_moves_slider->Hide();
         }
 
         if (!zs.empty() && !m_keep_current_preview_type) {
@@ -902,9 +856,7 @@ void Preview::load_print_as_sla()
 
     if (IsShown()) {
         m_canvas->load_sla_preview();
-        m_left_sizer->Hide(m_bottom_toolbar_panel);
-        m_left_sizer->Layout();
-        Refresh();
+        m_moves_slider->Hide();
 
         if (n_layers > 0)
             update_layers_slider(zs);

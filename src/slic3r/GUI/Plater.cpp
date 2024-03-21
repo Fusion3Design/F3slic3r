@@ -6698,7 +6698,6 @@ void Plater::msw_rescale()
 
 void Plater::sys_color_changed()
 {
-    p->preview->sys_color_changed();
     p->sidebar->sys_color_changed();
 
     p->menus.sys_color_changed();

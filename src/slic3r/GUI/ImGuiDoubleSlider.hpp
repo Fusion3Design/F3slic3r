@@ -56,8 +56,6 @@ public:
 
     int     GetMinValue() const     { return m_min_value; }
     int     GetMaxValue() const     { return m_max_value; }
-    double  GetMinValueD()          { return m_values.empty() ? 0. : m_values[m_min_value]; }
-    double  GetMaxValueD()          { return m_values.empty() ? 0. : m_values[m_max_value]; }
     int     GetLowerValue()  const  { return m_lower_value; }
     int     GetHigherValue() const  { return m_higher_value; }
     int     GetActiveValue() const;
@@ -69,8 +67,8 @@ public:
     void    SetSelectionSpan(const int lower_val, const int higher_val);
 
     void    SetMaxValue(const int max_value);
-    void    SetSliderValues(const std::vector<double>& values);
     void    CombineThumbs(bool combine);
+    void    ResetValues();
 
     void    SetPos(ImVec2 pos)          { m_pos = pos; }
     void    SetSize(ImVec2 size)        { m_size = size; }
@@ -80,6 +78,14 @@ public:
                                           m_size = size;
                                           m_draw_opts.scale = scale;
     }
+
+    void Show(bool show)                { m_is_shown = show; }
+    void Hide()                         { m_is_shown = false; }
+    bool IsShown() const                { return m_is_shown; }
+    void MoveActiveThumb(int delta);
+    bool IsCombineThumbs() const        { return m_combine_thumbs; }
+    bool IsActiveHigherThumb() const    { return m_selection == ssHigher; }
+
     void    ShowLabelOnMouseMove(bool show = true) { m_show_move_label = show; }
     ImRect  GetGrooveRect() const       { return m_draw_opts.groove(m_pos, m_size, is_horizontal()); }
 
@@ -89,7 +95,10 @@ public:
     bool    is_full_span() const        { return this->is_lower_at_min() && this->is_higher_at_max(); }
     bool    is_rclick_on_thumb() const  { return m_rclick_on_selected_thumb; }
 
-    bool    render(SelectedSlider& selection);
+    void    correct_lower_value();
+    void    correct_higher_value();
+
+    bool    render();
     void    draw_scroll_line(const ImRect& scroll_line, const ImRect& slideable_region);
 
     std::string get_label(int pos) const;
@@ -132,6 +141,7 @@ private:
     ImVec2          m_size;
     std::string     m_name;
     ImGuiSliderFlags m_flags{ ImGuiSliderFlags_None };
+    bool            m_is_shown{ true };
 
     int         m_min_value;
     int         m_max_value;
@@ -139,13 +149,14 @@ private:
     int         m_higher_value;
     int         m_mouse_pos_value;
 
-    double      m_label_koef{ 1. };
-
     bool        m_rclick_on_selected_thumb{ false };
 
     bool        m_draw_lower_thumb{ true };
     bool        m_combine_thumbs  { false };
     bool        m_show_move_label{ false };
+
+    DrawOptions m_draw_opts;
+    Regions     m_regions;
 
     std::function<std::string(int)>                     m_cb_get_label          { nullptr };
     std::function<std::string(int)>                     m_cb_get_label_on_move  { nullptr };
@@ -163,13 +174,6 @@ private:
     bool        draw_slider(int* higher_value, int* lower_value,
                             std::string& higher_label, std::string& lower_label,
                             const ImVec2& pos, const ImVec2& size, float scale = 1.0f);
-
-protected:
-
-    std::vector<double> m_values;
-
-    DrawOptions         m_draw_opts;
-    Regions             m_regions;
 };
 
 } // GUI

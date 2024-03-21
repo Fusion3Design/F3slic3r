@@ -47,13 +47,8 @@ bool check_color_change(const PrintObject* object, size_t frst_layer_id, size_t 
 
 // custom message the slider sends to its parent to notify a tick-change:
 wxDECLARE_EVENT(wxCUSTOMEVT_TICKSCHANGED, wxEvent);
-/*
-enum SelectedSlider {
-    ssUndef,
-    ssLower,
-    ssHigher
-};
-*/
+
+
 enum FocusedItem {
     fiNone,
     fiRevertIcon,
@@ -123,8 +118,7 @@ class TickCodeInfo
     std::string pause_print_msg;
     bool        m_suppress_plus     = false;
     bool        m_suppress_minus    = false;
-    bool        m_use_default_colors= false;
-//    int         m_default_color_idx = 0;
+    bool        m_use_default_colors{ true };
 
     std::vector<std::string>* m_colors {nullptr};
 
@@ -156,6 +150,7 @@ public:
     bool suppressed_plus () { return m_suppress_plus; }
     bool suppressed_minus() { return m_suppress_minus; }
     void set_default_colors(bool default_colors_on)  { m_use_default_colors = default_colors_on; }
+    bool used_default_colors() const { return m_use_default_colors; }
 
     void set_extruder_colors(std::vector<std::string>* extruder_colors) { m_colors = extruder_colors; }
 };
@@ -214,31 +209,22 @@ class Control : public wxControl
 public:
     Control(
         wxWindow *parent,
-        wxWindowID id,
         int lowerValue,
         int higherValue,
         int minValue,
         int maxValue,
-        const wxPoint& pos = wxDefaultPosition,
-        const wxSize& size = wxDefaultSize,
         long style = wxSL_VERTICAL,
         const wxString& name = wxEmptyString);
     ~Control() {}
 
-    void    msw_rescale();
-    void    sys_color_changed();
-
-    int     GetMinValue() const { return m_min_value; }
-    int     GetMaxValue() const { return m_max_value; }
-    double  GetMinValueD() { return m_values.empty() ? 0. : m_values[m_min_value]; }
-    double  GetMaxValueD() { return m_values.empty() ? 0. : m_values[m_max_value]; }
-    int     GetLowerValue()  const { return m_lower_value; }
-    int     GetHigherValue() const { return m_higher_value; }
-    int     GetActiveValue() const;
+    int     GetMinValue()   const { return imgui_ctrl.GetMinValue(); }
+    int     GetMaxValue()   const { return imgui_ctrl.GetMaxValue(); }
+    double  GetMinValueD() { return m_values.empty() ? 0. : m_values[GetMinValue()]; }
+    double  GetMaxValueD() { return m_values.empty() ? 0. : m_values[GetMaxValue()]; }
+    int     GetLowerValue() const { return imgui_ctrl.GetLowerValue(); }
+    int     GetHigherValue()const { return imgui_ctrl.GetHigherValue(); }
     double  GetLowerValueD()  { return get_double_value(ssLower); }
     double  GetHigherValueD() { return get_double_value(ssHigher); }
-    wxSize  DoGetBestSize() const override;
-    wxSize  get_min_size()  const ;
 
     // Set low and high slider position. If the span is non-empty, disable the "one layer" mode.
     void    SetLowerValue (const int lower_val);
@@ -246,7 +232,6 @@ public:
     void    SetSelectionSpan(const int lower_val, const int higher_val);
 
     void    SetMaxValue(const int max_value);
-    void    SetKoefForLabels(const double koef)                { m_label_koef = koef; }
     void    SetSliderValues(const std::vector<double>& values);
     void    ChangeOneLayerLock();
     void    SetSliderAlternateValues(const std::vector<double>& values) { m_alternate_values = values; }
@@ -269,25 +254,15 @@ public:
     void set_render_as_disabled(bool value) { m_render_as_disabled = value; }
     bool is_rendering_as_disabled() const { return m_render_as_disabled; }
 
-    bool is_horizontal() const      { return m_style == wxSL_HORIZONTAL; }
-    bool is_one_layer() const       { return m_is_one_layer; }
-    bool is_lower_at_min() const    { return m_lower_value == m_min_value; }
-    bool is_higher_at_max() const   { return m_higher_value == m_max_value; }
-    bool is_full_span() const       { return this->is_lower_at_min() && this->is_higher_at_max(); }
+    bool is_lower_at_min() const    { return imgui_ctrl.is_lower_at_min(); }
+    bool is_higher_at_max() const   { return imgui_ctrl.is_higher_at_max(); }
 
-    void OnPaint(wxPaintEvent& ) { render(); }
-    void OnLeftDown(wxMouseEvent& event);
-    void OnMotion(wxMouseEvent& event);
-    void OnLeftUp(wxMouseEvent& event);
-    void OnEnterWin(wxMouseEvent& event) { enter_window(event, true); }
-    void OnLeaveWin(wxMouseEvent& event) { enter_window(event, false); }
-    void UseDefaultColors(bool def_colors_on)   { m_ticks.set_default_colors(def_colors_on); }
-    void OnWheel(wxMouseEvent& event);
+    void UseDefaultColors(bool def_colors_on);
     void OnKeyDown(wxKeyEvent &event);
-    void OnKeyUp(wxKeyEvent &event);
     void OnChar(wxKeyEvent &event);
-    void OnRightDown(wxMouseEvent& event);
-    void OnRightUp(wxMouseEvent& event);
+
+    bool Show(bool show = true) override { imgui_ctrl.Show(show); return true; }
+    bool Hide() { return Show(false); }
 
     void add_code_as_tick(Type type, int selected_extruder = -1);
     // add default action for tick, when press "+"
@@ -297,68 +272,28 @@ public:
     void edit_tick(int tick = -1);
     void switch_one_layer_mode();
     void discard_all_thicks();
-    void move_current_thumb_to_pos(wxPoint pos);
     void edit_extruder_sequence();
     void jump_to_value();
     void enable_action_icon(bool enable) { m_enable_action_icon = enable; }
-    void show_add_context_menu();
-    void show_edit_context_menu();
     void show_cog_icon_context_menu();
     void auto_color_change();
 
     void imgui_render(GUI::GLCanvas3D& canvas, float extra_scale = 1.f);
 
-protected:
-
-    void    render();
-    void    draw_focus_rect(wxDC& dc);
-    void    draw_action_icon(wxDC& dc, const wxPoint pt_beg, const wxPoint pt_end);
-    void    draw_scroll_line(wxDC& dc, const int lower_pos, const int higher_pos);
-    void    draw_thumb(wxDC& dc, const wxCoord& pos_coord, const SelectedSlider& selection);
-    void    draw_thumbs(wxDC& dc, const wxCoord& lower_pos, const wxCoord& higher_pos);
-    void    draw_ticks_pair(wxDC& dc, wxCoord pos, wxCoord mid, int tick_len);
-    void    draw_ticks(wxDC& dc);
-    void    draw_colored_band(wxDC& dc);
-    void    draw_ruler(wxDC& dc);
-    void    draw_one_layer_icon(wxDC& dc);
-    void    draw_revert_icon(wxDC& dc);
-    void    draw_cog_icon(wxDC &dc);
-    void    draw_thumb_item(wxDC& dc, const wxPoint& pos, const SelectedSlider& selection);
-    void    draw_info_line_with_icon(wxDC& dc, const wxPoint& pos, SelectedSlider selection);
-    void    draw_tick_on_mouse_position(wxDC &dc);
-    void    draw_tick_text(wxDC& dc, const wxPoint& pos, int tick, LabelType label_type = ltHeight, bool right_side = true) const;
-    void    draw_thumb_text(wxDC& dc, const wxPoint& pos, const SelectedSlider& selection) const;
-
-    void    update_thumb_rect(const wxCoord begin_x, const wxCoord begin_y, const SelectedSlider& selection);
-    bool    is_lower_thumb_editable();
-    bool    detect_selected_slider(const wxPoint& pt);
-    void    correct_lower_value();
-    void    correct_higher_value();
-    void    move_current_thumb(const bool condition);
-    void    enter_window(wxMouseEvent& event, const bool enter);
-    bool    is_wipe_tower_layer(int tick) const;
-
 private:
 
-    bool    is_point_in_rect(const wxPoint& pt, const wxRect& rect);
-    int     get_tick_near_point(const wxPoint& pt);
+    bool    is_lower_thumb_editable();
+    void    move_current_thumb(const bool condition);
+    bool    is_wipe_tower_layer(int tick) const;
 
-    double      get_scroll_step();
     wxString    get_label(int tick, LabelType label_type = ltHeightWithLayer) const;
-    void        get_lower_and_higher_position(int& lower_pos, int& higher_pos);
-    int         get_value_from_position(const wxCoord x, const wxCoord y);
-    int         get_value_from_position(const wxPoint pos) { return get_value_from_position(pos.x, pos.y); }
-    wxCoord     get_position_from_value(const int value);
-    wxSize      get_size() const;
-    void        get_size(int* w, int* h) const;
+
     double      get_double_value(const SelectedSlider& selection);
     int         get_tick_from_value(double value, bool force_lower_bound = false);
     wxString    get_tooltip(int tick = -1);
-    int         get_edited_tick_for_position(wxPoint pos, Type type = ColorChange);
 
     std::string get_color_for_tool_change_tick(std::set<TickCode>::const_iterator it) const;
     std::string get_color_for_color_change_tick(std::set<TickCode>::const_iterator it) const;
-    wxRect      get_colored_band_rect();
 
     // Get active extruders for tick. 
     // Means one current extruder for not existing tick OR 
@@ -373,32 +308,10 @@ private:
     void    append_add_color_change_menu_item(wxMenu*, bool switch_current_code = false);
 
     bool        is_osx { false };
-    wxFont      m_font;
-    int         m_min_value;
-    int         m_max_value;
-    int         m_lower_value;
-    int         m_higher_value;
 
     bool        m_render_as_disabled{ false };
     bool        m_allow_editing{ true };
 
-    ScalableBitmap    m_bmp_thumb_higher;
-    ScalableBitmap    m_bmp_thumb_lower;
-    ScalableBitmap    m_bmp_add_tick_on;
-    ScalableBitmap    m_bmp_add_tick_off;
-    ScalableBitmap    m_bmp_del_tick_on;
-    ScalableBitmap    m_bmp_del_tick_off;
-    ScalableBitmap    m_bmp_one_layer_lock_on;
-    ScalableBitmap    m_bmp_one_layer_lock_off;
-    ScalableBitmap    m_bmp_one_layer_unlock_on;
-    ScalableBitmap    m_bmp_one_layer_unlock_off;
-    ScalableBitmap    m_bmp_revert;
-    ScalableBitmap    m_bmp_cog;
-    SelectedSlider    m_selection;
-    bool        m_is_left_down = false;
-    bool        m_is_right_down = false;
-    bool        m_is_one_layer = false;
-    bool        m_is_focused = false;
     bool        m_force_mode_apply = true;
     bool        m_enable_action_icon = true;
     bool        m_is_wipe_tower = false; //This flag indicates that there is multiple extruder print with wipe tower
@@ -410,22 +323,8 @@ private:
 
     MouseAction m_mouse = maNone;
     FocusedItem m_focus = fiNone;
-    wxPoint     m_moving_pos = wxDefaultPosition;
 
-    wxRect      m_rect_lower_thumb;
-    wxRect      m_rect_higher_thumb;
-    wxRect      m_rect_tick_action;
-    wxRect      m_rect_one_layer_icon;
-    wxRect      m_rect_revert_icon;
-    wxRect      m_rect_cog_icon;
-    wxSize      m_thumb_size;
-    int         m_tick_icon_dim;
-    int         m_lock_icon_dim;
-    int         m_revert_icon_dim;
-    int         m_cog_icon_dim;
-    long        m_style;
-    long        m_extra_style;
-    float       m_label_koef{ 1.0 };
+    bool        m_show_estimated_times{ false };
 
     std::vector<double> m_values;
     TickCodeInfo        m_ticks;
@@ -438,63 +337,17 @@ private:
 
     ExtrudersSequence   m_extruders_sequence;
 
-// control's view variables
-    wxCoord SLIDER_MARGIN; // margin around slider
-
-    wxPen   DARK_ORANGE_PEN;
-    wxPen   ORANGE_PEN;
-    wxPen   LIGHT_ORANGE_PEN;
-
-    wxPen   DARK_GREY_PEN;
-    wxPen   GREY_PEN;
-    wxPen   LIGHT_GREY_PEN;
-
-    wxPen   FOCUS_RECT_PEN;
-    wxBrush FOCUS_RECT_BRUSH;
-
-    std::vector<wxPen*> m_line_pens;
-    std::vector<wxPen*> m_segm_pens;
-
-    class Ruler {
-        wxWindow* m_parent{nullptr}; // m_parent is nullptr for Unused ruler
-                                     // in this case we will not init/update/render it  
-        // values to check if ruler has to be updated
-        double m_min_val;
-        double m_max_val;
-        double m_scroll_step;
-        size_t m_max_values_cnt;
-        int m_DPI;
-
-    public:
-
-        double long_step;
-        double short_step;
-        std::vector<double> max_values;// max value for each object/instance in sequence print
-                                       // > 1 for sequential print
-
-        void set_parent(wxWindow* parent);
-        void update_dpi();
-        void init(const std::vector<double>& values, double scroll_step);
-        void update(const std::vector<double>& values, double scroll_step);
-        bool is_ok() { return long_step > 0 && short_step > 0; }
-        size_t count() { return max_values.size(); }
-        bool can_draw() { return m_parent != nullptr; }
-    } m_ruler;
-
     // ImGuiDS
-    float       m_scale{ 1.0 };
+    float       m_scale{ 1.f };
     bool        m_can_change_color{ true };
-    bool        m_show_menu{ false };
 
     void        draw_colored_band(const ImRect& groove, const ImRect& slideable_region);
     void        draw_ticks(const ImRect& slideable_region);
     void        render_menu();
     bool        render_button(const wchar_t btn_icon, const wchar_t btn_icon_hovered, const std::string& label_id, const ImVec2& pos, FocusedItem focus, int tick = -1);
-
-
+    void        update_callbacks();
 
     GUI::ImGuiControl imgui_ctrl;
-
 };
 
 } // DoubleSlider;
