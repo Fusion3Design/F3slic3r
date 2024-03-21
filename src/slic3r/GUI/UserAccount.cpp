@@ -206,14 +206,8 @@ bool UserAccount::on_connect_printers_success(const std::string& data, AppConfig
         if (!type_opt) {
             continue;
         }
-
-        if (auto pair = printer_type_and_name_table.find(*type_opt); pair != printer_type_and_name_table.end()) {
-            name = pair->second;
-        }
-        else {
-            assert(true); // On this assert, printer_type_and_name_table needs to be updated with type_string and correct printer name
-            continue;
-        }
+        // printer_type is actually printer_name for now
+        name = *type_opt;
         // printer should not appear twice
         assert(new_printer_map.find(name) == new_printer_map.end());
         // prepare all states on 0
