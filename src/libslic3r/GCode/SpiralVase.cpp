@@ -68,12 +68,13 @@ std::string SpiralVase::process_layer(const std::string &gcode, bool last_layer)
     // Remove layer height from initial Z.
     z -= layer_height;
 
-    // FIXME Tapering of the transition layer only works reliably with relative extruder distances.
+    // FIXME Tapering of the transition layer and smoothing only works reliably with relative extruder distances.
     // For absolute extruder distances it will be switched off.
     // Tapering the absolute extruder distances requires to process every extrusion value after the first transition
     // layer.
     const bool transition_in  = m_transition_layer && m_config.use_relative_e_distances.value;
     const bool transition_out = last_layer && m_config.use_relative_e_distances.value;
+    const bool smooth_spiral  = m_smooth_spiral && m_config.use_relative_e_distances.value;
 
     const AABBTreeLines::LinesDistancer previous_layer_distancer = get_layer_distancer(m_previous_layer);
     Vec2f                               last_point               = m_previous_layer.empty() ? Vec2f::Zero() : m_previous_layer.back();
@@ -81,7 +82,7 @@ std::string SpiralVase::process_layer(const std::string &gcode, bool last_layer)
 
     std::string        new_gcode, transition_gcode;
     std::vector<Vec2f> current_layer;
-    m_reader.parse_buffer(gcode, [z, total_layer_length, layer_height, transition_in, transition_out, smooth_spiral = m_smooth_spiral, max_xy_smoothing = m_max_xy_smoothing,
+    m_reader.parse_buffer(gcode, [z, total_layer_length, layer_height, transition_in, transition_out, smooth_spiral, max_xy_smoothing = m_max_xy_smoothing,
                                   &len, &last_point, &new_gcode, &transition_gcode, &current_layer, &previous_layer_distancer]
         (GCodeReader &reader, GCodeReader::GCodeLine line) {
         if (line.cmd_is("G1")) {
