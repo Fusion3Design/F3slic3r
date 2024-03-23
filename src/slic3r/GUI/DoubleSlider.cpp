@@ -17,16 +17,9 @@
 #include "Tab.hpp"
 #include "GUI_ObjectList.hpp"
 
-#include <wx/button.h>
 #include <wx/dialog.h>
-#include <wx/sizer.h>
-#include <wx/slider.h>
 #include <wx/menu.h>
-#include <wx/bmpcbox.h>
-#include <wx/statline.h>
-#include <wx/dcclient.h>
 #include <wx/colordlg.h>
-#include <wx/glcanvas.h>
 
 #include <cmath>
 #include <boost/algorithm/string/replace.hpp>
@@ -60,8 +53,6 @@ bool equivalent_areas(const double& bottom_area, const double& top_area)
     return fabs(bottom_area - top_area) <= miscalculation;
 }
 
-wxDEFINE_EVENT(wxCUSTOMEVT_TICKSCHANGED, wxEvent);
-
 static std::string gcode(Type type)
 {
     const PrintConfig& config = GUI::wxGetApp().plater()->fff_print().config();
@@ -73,88 +64,7 @@ static std::string gcode(Type type)
     }
 }
 
-Control::Control( wxWindow *parent,
-                  int lowerValue, 
-                  int higherValue, 
-                  int minValue, 
-                  int maxValue,
-                  long style,
-                  const wxString& name) : 
-    wxControl(parent, wxID_ANY, wxDefaultPosition, wxSize(0,0)),
-    m_allow_editing(wxGetApp().is_editor()),
-    m_show_estimated_times(style == wxSL_VERTICAL)
-{
-#ifdef __WXOSX__ 
-    is_osx = true;
-#endif //__WXOSX__
-
-    m_ticks.set_pause_print_msg(_u8L("Place bearings in slots and resume printing"));
-    m_ticks.set_extruder_colors(&m_extruder_colors);
-
-    imgui_ctrl = ImGuiControl(  lowerValue, higherValue,
-                                minValue, maxValue,
-                                ImVec2(0.f, 0.f), ImVec2(0.f, 0.f),
-                                style == wxSL_VERTICAL ? ImGuiSliderFlags_Vertical : 0,
-                                into_u8(name), style == wxSL_VERTICAL);
-
-    imgui_ctrl.set_get_label_cb([this](int pos) {return into_u8(get_label(pos)); });
-
-    if (!imgui_ctrl.is_horizontal()) {
-        imgui_ctrl.set_get_label_on_move_cb([this](int pos) { return m_show_estimated_times ? into_u8(get_label(pos, ltEstimatedTime)) : ""; });
-        imgui_ctrl.set_extra_draw_cb([this](const ImRect& draw_rc) {return draw_ticks(draw_rc); });
-    }
-
-}
-
-void Control::SetLowerValue(const int lower_val)
-{
-    imgui_ctrl.SetLowerValue(lower_val);
-
-    wxCommandEvent e(wxEVT_SCROLL_CHANGED);
-    e.SetEventObject(this);
-    ProcessWindowEvent(e);
-}
-
-void Control::SetHigherValue(const int higher_val)
-{
-    imgui_ctrl.SetHigherValue(higher_val);
-
-    wxCommandEvent e(wxEVT_SCROLL_CHANGED);
-    e.SetEventObject(this);
-    ProcessWindowEvent(e);
-}
-
-void Control::SetSelectionSpan(const int lower_val, const int higher_val)
-{
-    imgui_ctrl.SetSelectionSpan(lower_val, higher_val);
-
-    wxCommandEvent e(wxEVT_SCROLL_CHANGED);
-    e.SetEventObject(this);
-    ProcessWindowEvent(e);
-}
-
-void Control::SetMaxValue(const int max_value)
-{
-    imgui_ctrl.SetMaxValue(max_value);
-}
-
-void Control::SetSliderValues(const std::vector<double>& values)
-{
-    m_values = values;
-}
-
-double Control::get_double_value(const SelectedSlider& selection)
-{
-    if (m_values.empty() || imgui_ctrl.GetLowerValue() < 0)
-        return 0.0;
-    if (m_values.size() <= size_t(imgui_ctrl.GetHigherValue())) {
-        imgui_ctrl.correct_higher_value();
-        return m_values.back();
-    }
-    return m_values[selection == ssLower ? imgui_ctrl.GetLowerValue() : imgui_ctrl.GetHigherValue()];
-}
-
-int Control::get_tick_from_value(double value, bool force_lower_bound/* = false*/)
+int DSManagerForLayers::get_tick_from_value(double value, bool force_lower_bound/* = false*/)
 {
     std::vector<double>::iterator it;
     if (m_is_wipe_tower && !force_lower_bound)
@@ -168,7 +78,7 @@ int Control::get_tick_from_value(double value, bool force_lower_bound/* = false*
     return int(it - m_values.begin());
 }
 
-Info Control::GetTicksValues() const
+Info DSManagerForLayers::GetTicksValues() const
 {
     Info custom_gcode_per_print_z;
     std::vector<CustomGCode::Item>& values = custom_gcode_per_print_z.gcodes;
@@ -187,7 +97,7 @@ Info Control::GetTicksValues() const
     return custom_gcode_per_print_z;
 }
 
-void Control::SetTicksValues(const Info& custom_gcode_per_print_z)
+void DSManagerForLayers::SetTicksValues(const Info& custom_gcode_per_print_z)
 {
     if (m_values.empty()) {
         m_ticks.mode = m_mode;
@@ -217,7 +127,7 @@ void Control::SetTicksValues(const Info& custom_gcode_per_print_z)
         m_ticks.mode = custom_gcode_per_print_z.mode;
 }
 
-void Control::SetLayersTimes(const std::vector<float>& layers_times, float total_time)
+void DSManagerForLayers::SetLayersTimes(const std::vector<float>& layers_times, float total_time)
 { 
     m_layers_times.clear();
     if (layers_times.empty())
@@ -243,7 +153,7 @@ void Control::SetLayersTimes(const std::vector<float>& layers_times, float total
     }
 }
 
-void Control::SetLayersTimes(const std::vector<double>& layers_times)
+void DSManagerForLayers::SetLayersTimes(const std::vector<double>& layers_times)
 { 
     m_is_wipe_tower = false;
     m_layers_times = layers_times;
@@ -251,15 +161,16 @@ void Control::SetLayersTimes(const std::vector<double>& layers_times)
         m_layers_times[i] += m_layers_times[i - 1];
 }
 
-void Control::SetDrawMode(bool is_sla_print, bool is_sequential_print)
+void DSManagerForLayers::SetDrawMode(bool is_sla_print, bool is_sequential_print)
 { 
     m_draw_mode = is_sla_print          ? dmSlaPrint            : 
                   is_sequential_print   ? dmSequentialFffPrint  : 
-                                          dmRegular; 
+                                          dmRegular;
+
     update_callbacks();
 }
 
-void Control::SetModeAndOnlyExtruder(const bool is_one_extruder_printed_model, const int only_extruder)
+void DSManagerForLayers::SetModeAndOnlyExtruder(const bool is_one_extruder_printed_model, const int only_extruder)
 {
     m_mode = !is_one_extruder_printed_model ? MultiExtruder :
              only_extruder < 0              ? SingleExtruder :
@@ -274,28 +185,21 @@ void Control::SetModeAndOnlyExtruder(const bool is_one_extruder_printed_model, c
     m_is_wipe_tower = m_mode != SingleExtruder;
 }
 
-void Control::SetExtruderColors( const std::vector<std::string>& extruder_colors)
+void DSManagerForLayers::SetExtruderColors( const std::vector<std::string>& extruder_colors)
 {
     m_extruder_colors = extruder_colors;
 }
 
-bool Control::IsNewPrint()
+bool DSManagerForLayers::IsNewPrint(const std::string& idxs)
 {
-    if (GUI::wxGetApp().plater()->printer_technology() == ptSLA)
-        return false;
-    const Print& print = GUI::wxGetApp().plater()->fff_print();
-    std::string idxs;
-    for (auto object : print.objects())
-        idxs += std::to_string(object->id().id) + "_";
-
-    if (idxs == m_print_obj_idxs)
+    if (idxs == "sla" || idxs == m_print_obj_idxs)
         return false;
 
     m_print_obj_idxs = idxs;
     return true;
 }
 
-void Control::update_callbacks()
+void DSManagerForLayers::update_callbacks()
 {
     if (m_ticks.empty() || m_draw_mode == dmSequentialFffPrint)
         imgui_ctrl.set_draw_scroll_line_cb(nullptr);
@@ -305,7 +209,7 @@ void Control::update_callbacks()
 
 using namespace ImGui;
 
-void Control::draw_ticks(const ImRect& slideable_region)
+void DSManagerForLayers::draw_ticks(const ImRect& slideable_region)
 {
     //if(m_draw_mode != dmRegular)
     //    return;
@@ -414,7 +318,7 @@ static std::array<float, 4> decode_color_to_float_array(const std::string color)
     return ret;
 }
 
-void Control::draw_colored_band(const ImRect& groove, const ImRect& slideable_region)
+void DSManagerForLayers::draw_colored_band(const ImRect& groove, const ImRect& slideable_region)
 {
     if (m_ticks.empty() || m_draw_mode == dmSequentialFffPrint)
         return;
@@ -476,7 +380,7 @@ void Control::draw_colored_band(const ImRect& groove, const ImRect& slideable_re
     }
 }
 
-void Control::render_menu()
+void DSManagerForLayers::render_menu()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f) * m_scale);
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 4.0f * m_scale);
@@ -538,7 +442,7 @@ void Control::render_menu()
     ImGui::PopStyleVar(3);
 }
 
-bool Control::render_button(const wchar_t btn_icon, const wchar_t btn_icon_hovered, const std::string& label_id, const ImVec2& pos, FocusedItem focus, int tick /*= -1*/)
+bool DSManagerForLayers::render_button(const wchar_t btn_icon, const wchar_t btn_icon_hovered, const std::string& label_id, const ImVec2& pos, FocusedItem focus, int tick /*= -1*/)
 {
     float scale = (float)wxGetApp().em_unit() / 10.0f;
 
@@ -576,85 +480,76 @@ bool Control::render_button(const wchar_t btn_icon, const wchar_t btn_icon_hover
     return ret;
 }
 
-void Control::imgui_render(GUI::GLCanvas3D& canvas, float extra_scale/* = 0.1f*/)
+void DSManagerForGcode::imgui_render(const int canvas_width, const int canvas_height, float extra_scale/* = 0.1f*/)
 {
     if (!imgui_ctrl.IsShown())
         return;
     m_scale = extra_scale * 0.1f * wxGetApp().em_unit();
 
-    const Size  cnv_size        = canvas.get_canvas_size();
-    const int   canvas_width    = cnv_size.get_width();
-    const int   canvas_height   = cnv_size.get_height();
+    ImVec2 pos  = ImVec2{std::max(LEFT_MARGIN, 0.2f * canvas_width), canvas_height - HORIZONTAL_SLIDER_WIDTH * m_scale};
+    ImVec2 size = ImVec2(canvas_width - 2 * pos.x, HORIZONTAL_SLIDER_WIDTH * m_scale);
+
+    imgui_ctrl.Init(pos, size, m_scale);
+    if (imgui_ctrl.render())
+        process_thumb_move();
+}
+
+void DSManagerForLayers::imgui_render(const int canvas_width, const int canvas_height, float extra_scale/* = 0.1f*/)
+{
+    if (!imgui_ctrl.IsShown())
+        return;
+    m_scale = extra_scale * 0.1f * wxGetApp().em_unit();
+
+    const float action_btn_sz   = wxGetApp().imgui()->GetTextureCustomRect(ImGui::DSRevert)->Height;
+    const float tick_icon_side  = wxGetApp().imgui()->GetTextureCustomRect(ImGui::PausePrint)->Height;
 
     ImVec2 pos;
     ImVec2 size;
 
-    const float action_btn_sz   = wxGetApp().imgui()->GetTextureCustomRect(ImGui::DSRevert)->Height;
-
-    if (imgui_ctrl.is_horizontal()) {
-        pos.x = std::max(LEFT_MARGIN, 0.2f * canvas_width);
-        pos.y = canvas_height - HORIZONTAL_SLIDER_WIDTH * m_scale;
-        size = ImVec2(canvas_width - 2 * pos.x, HORIZONTAL_SLIDER_WIDTH * m_scale);
-        imgui_ctrl.ShowLabelOnMouseMove(false);
-    }
-    else {
-        const float tick_icon_side = wxGetApp().imgui()->GetTextureCustomRect(ImGui::PausePrint)->Height;
-
-        pos.x = canvas_width - VERTICAL_SLIDER_HEIGHT * m_scale - tick_icon_side;
-        pos.y = 1.f * action_btn_sz;
-        if (m_allow_editing)
-            pos.y += 2.f;
-        size = ImVec2(VERTICAL_SLIDER_HEIGHT * m_scale, canvas_height - 4.f * action_btn_sz);
-        imgui_ctrl.ShowLabelOnMouseMove(true);
-    }
+    pos.x = canvas_width - VERTICAL_SLIDER_HEIGHT * m_scale - tick_icon_side;
+    pos.y = 1.f * action_btn_sz;
+    if (m_allow_editing)
+        pos.y += 2.f;
+    size = ImVec2(VERTICAL_SLIDER_HEIGHT * m_scale, canvas_height - 4.f * action_btn_sz);
+    imgui_ctrl.ShowLabelOnMouseMove(true);
 
     imgui_ctrl.Init(pos, size, m_scale);
-    if (imgui_ctrl.render())  {
-        wxCommandEvent e(wxEVT_SCROLL_CHANGED);
-        e.SetEventObject(this);
-        ProcessWindowEvent(e);
-    }
-
     if (imgui_ctrl.render()) {
         // request one more frame if value was changes with mouse wheel
         if (GImGui->IO.MouseWheel != 0.0f)
             wxGetApp().imgui()->set_requires_extra_frame();
-
-        wxCommandEvent e(wxEVT_SCROLL_CHANGED);
-        e.SetEventObject(this);
-        ProcessWindowEvent(e);
+        process_thumb_move();
     }
 
     // draw action buttons
-    if (!imgui_ctrl.is_horizontal()) {
-        const float groove_center_x = imgui_ctrl.GetGrooveRect().GetCenter().x; 
-        
-        ImVec2 btn_pos = ImVec2(groove_center_x - 0.5f * action_btn_sz, pos.y - 0.25f * action_btn_sz);
 
-        if (!m_ticks.empty() && m_allow_editing &&
-            render_button(ImGui::DSRevert, ImGui::DSRevertHovered, "revert", btn_pos, fiRevertIcon))
-            discard_all_thicks();
+    const float groove_center_x = imgui_ctrl.GetGrooveRect().GetCenter().x;
 
-        btn_pos.y += 0.1f * action_btn_sz + size.y;
-        const bool is_one_layer = imgui_ctrl.IsCombineThumbs();
-        if (render_button(is_one_layer ? ImGui::Lock : ImGui::Unlock, is_one_layer ? ImGui::LockHovered : ImGui::UnlockHovered, "one_layer", btn_pos, fiOneLayerIcon))
-            imgui_ctrl.CombineThumbs(!is_one_layer);
+    ImVec2 btn_pos = ImVec2(groove_center_x - 0.5f * action_btn_sz, pos.y - 0.25f * action_btn_sz);
 
-        btn_pos.y += 1.2f * action_btn_sz;
-        if (render_button(ImGui::DSSettings, ImGui::DSSettingsHovered, "settings", btn_pos, fiCogIcon))
-            show_cog_icon_context_menu();
+    if (!m_ticks.empty() && m_allow_editing &&
+        render_button(ImGui::DSRevert, ImGui::DSRevertHovered, "revert", btn_pos, fiRevertIcon))
+        discard_all_thicks();
 
-        if (m_draw_mode == dmSequentialFffPrint && imgui_ctrl.is_rclick_on_thumb()) {
-            std::string tooltip = _u8L("The sequential print is on.\n"
-                                       "It's impossible to apply any custom G-code for objects printing sequentually.");
-            ImGuiPureWrap::tooltip(tooltip, ImGui::GetFontSize() * 20.0f);
-        }
-        else if (m_allow_editing)
-            render_menu();
+    btn_pos.y += 0.1f * action_btn_sz + size.y;
+    const bool is_one_layer = imgui_ctrl.IsCombineThumbs();
+    if (render_button(is_one_layer ? ImGui::Lock : ImGui::Unlock, is_one_layer ? ImGui::LockHovered : ImGui::UnlockHovered, "one_layer", btn_pos, fiOneLayerIcon))
+        ChangeOneLayerLock();
+
+    btn_pos.y += 1.2f * action_btn_sz;
+    if (render_button(ImGui::DSSettings, ImGui::DSSettingsHovered, "settings", btn_pos, fiCogIcon))
+        show_cog_icon_context_menu();
+
+    if (m_draw_mode == dmSequentialFffPrint && imgui_ctrl.is_rclick_on_thumb()) {
+        std::string tooltip = _u8L("The sequential print is on.\n"
+                                   "It's impossible to apply any custom G-code for objects printing sequentually.");
+        ImGuiPureWrap::tooltip(tooltip, ImGui::GetFontSize() * 20.0f);
     }
+    else if (m_allow_editing)
+        render_menu();
 }
 
-bool Control::is_wipe_tower_layer(int tick) const
+bool DSManagerForLayers::is_wipe_tower_layer(int tick) const
 {
     if (!m_is_wipe_tower || tick >= (int)m_values.size())
         return false;
@@ -667,7 +562,7 @@ bool Control::is_wipe_tower_layer(int tick) const
     return false;
 }
 
-static wxString short_and_splitted_time(const std::string& time)
+static std::string short_and_splitted_time(const std::string& time)
 {
     // Parse the dhms time format.
     int days = 0;
@@ -690,30 +585,30 @@ static wxString short_and_splitted_time(const std::string& time)
     auto get_s = [seconds](){ return GUI::format(_u8L("%1%s"), seconds); };
 
     if (days > 0)
-        return format_wxstr("%1%%2%\n%3%", get_d(), get_h(), get_m());
+        return GUI::format("%1%%2%\n%3%", get_d(), get_h(), get_m());
     if (hours > 0) {
         if (hours < 10 && minutes < 10 && seconds < 10)
-            return format_wxstr("%1%%2%%3%", get_h(), get_m(), get_s());
+            return GUI::format("%1%%2%%3%", get_h(), get_m(), get_s());
         if (hours > 10 && minutes > 10 && seconds > 10)
-            return format_wxstr("%1%\n%2%\n%3%", get_h(), get_m(), get_s());
+            return GUI::format("%1%\n%2%\n%3%", get_h(), get_m(), get_s());
         if ((minutes < 10 && seconds > 10) || (minutes > 10 && seconds < 10))
-            return format_wxstr("%1%\n%2%%3%", get_h(), get_m(), get_s());
-        return format_wxstr("%1%%2%\n%3%", get_h(), get_m(), get_s());
+            return GUI::format("%1%\n%2%%3%", get_h(), get_m(), get_s());
+        return GUI::format("%1%%2%\n%3%", get_h(), get_m(), get_s());
     }
     if (minutes > 0) {
         if (minutes > 10 && seconds > 10)
-            return format_wxstr("%1%\n%2%", get_m(), get_s());
-        return format_wxstr("%1%%2%", get_m(), get_s());
+            return GUI::format("%1%\n%2%", get_m(), get_s());
+        return GUI::format("%1%%2%", get_m(), get_s());
     }
-    return from_u8(get_s());
+    return get_s();
 }
 
-wxString Control::get_label(int tick, LabelType label_type/* = ltHeightWithLayer*/) const
+std::string DSManagerForLayers::get_label(int pos, LabelType label_type/* = ltHeightWithLayer*/) const
 {
-    const size_t value = tick;
+    const size_t value = pos;
 
     if (m_values.empty())
-        return wxString::Format("%lu", static_cast<unsigned long>(value));
+        return GUI::format("%1%", pos);
     if (value >= m_values.size())
         return "ErrVal";
 
@@ -738,29 +633,25 @@ wxString Control::get_label(int tick, LabelType label_type/* = ltHeightWithLayer
         return size_t(it - m_layers_values.begin());
     };
 
-    if (m_draw_mode == dmSequentialGCodeView)
-        return wxString::Format("%lu", static_cast<unsigned long>(m_alternate_values[value]));
-    else {
-        if (label_type == ltEstimatedTime) {
-            if (m_is_wipe_tower) {
-                size_t layer_number = get_layer_number(value, label_type);
-                return (layer_number == size_t(-1) || layer_number == m_layers_times.size()) ? "" : short_and_splitted_time(get_time_dhms(m_layers_times[layer_number]));
-            }
-            return value < m_layers_times.size() ? short_and_splitted_time(get_time_dhms(m_layers_times[value])) : "";
+    if (label_type == ltEstimatedTime) {
+        if (m_is_wipe_tower) {
+            size_t layer_number = get_layer_number(value, label_type);
+            return (layer_number == size_t(-1) || layer_number == m_layers_times.size()) ? "" : short_and_splitted_time(get_time_dhms(m_layers_times[layer_number]));
         }
-        wxString str = wxString::Format("%.*f", 2, m_values[value]);
-        if (label_type == ltHeight)
-            return str;
-        if (label_type == ltHeightWithLayer) {
-            size_t layer_number = m_is_wipe_tower ? get_layer_number(value, label_type) + 1 : (m_values.empty() ? value : value + 1);
-            return format_wxstr("%1%\n(%2%)", str, layer_number);
-        }
+        return value < m_layers_times.size() ? short_and_splitted_time(get_time_dhms(m_layers_times[value])) : "";
     }
+    std::string str = GUI::format("%1$.2f", m_values[value]);
+    if (label_type == ltHeight)
+        return str;
+    if (label_type == ltHeightWithLayer) {
+        size_t layer_number = m_is_wipe_tower ? get_layer_number(value, label_type) + 1 : (m_values.empty() ? value : value + 1);
+        return GUI::format("%1%\n(%2%)", str, layer_number);
+    }    
 
-    return wxEmptyString;
+    return "";
 }
 
-std::string Control::get_color_for_tool_change_tick(std::set<TickCode>::const_iterator it) const
+std::string DSManagerForLayers::get_color_for_tool_change_tick(std::set<TickCode>::const_iterator it) const
 {
     const int current_extruder = it->extruder == 0 ? std::max<int>(m_only_extruder, 1) : it->extruder;
 
@@ -774,7 +665,7 @@ std::string Control::get_color_for_tool_change_tick(std::set<TickCode>::const_it
     return m_extruder_colors[current_extruder-1]; // return a color for a specific extruder from the colors list 
 }
 
-std::string Control::get_color_for_color_change_tick(std::set<TickCode>::const_iterator it) const
+std::string DSManagerForLayers::get_color_for_color_change_tick(std::set<TickCode>::const_iterator it) const
 {
     const int def_extruder = std::max<int>(1, m_only_extruder);
     auto it_n = it;
@@ -796,23 +687,13 @@ std::string Control::get_color_for_color_change_tick(std::set<TickCode>::const_i
     return "";
 }
 
-bool Control::is_lower_thumb_editable()
+void DSManagerForLayers::ChangeOneLayerLock()
 {
-    if (m_draw_mode == dmSequentialGCodeView)
-        return Slic3r::GUI::get_app_config()->get("seq_top_layer_only") == "0";
-    return true;
+    imgui_ctrl.CombineThumbs(!imgui_ctrl.IsCombineThumbs()); 
+    process_thumb_move();
 }
 
-void Control::ChangeOneLayerLock()
-{
-    imgui_ctrl.CombineThumbs(imgui_ctrl.IsCombineThumbs()); 
-
-    wxCommandEvent e(wxEVT_SCROLL_CHANGED);
-    e.SetEventObject(this);
-    ProcessWindowEvent(e);
-}
-
-wxString Control::get_tooltip(int tick/*=-1*/)
+wxString DSManagerForLayers::get_tooltip(int tick/*=-1*/)
 {
     if (m_focus == fiNone)
         return "";
@@ -822,15 +703,12 @@ wxString Control::get_tooltip(int tick/*=-1*/)
         return _L("Discard all custom changes");
     if (m_focus == fiCogIcon)
     {
-        if (m_draw_mode == dmSequentialGCodeView)
-            return _L("Jump to move") + " (Shift + G)";
-        else
-            return m_mode == MultiAsSingle ?
-            GUI::from_u8((boost::format(_u8L("Jump to height %s\n"
-                                               "Set ruler mode\n"
-                                               "or Set extruder sequence for the entire print")) % "(Shift + G)").str()) :
-            GUI::from_u8((boost::format(_u8L("Jump to height %s\n"
-                                                "or Set ruler mode")) % "(Shift + G)").str());
+        return m_mode == MultiAsSingle ?
+        GUI::from_u8((boost::format(_u8L("Jump to height %s\n"
+                                            "Set ruler mode\n"
+                                            "or Set extruder sequence for the entire print")) % "(Shift + G)").str()) :
+        GUI::from_u8((boost::format(_u8L("Jump to height %s\n"
+                                            "or Set ruler mode")) % "(Shift + G)").str());
     }
     if (m_focus == fiColorBand)
         return m_mode != SingleExtruder ? "" :
@@ -943,7 +821,7 @@ wxString Control::get_tooltip(int tick/*=-1*/)
 
 }
 
-void Control::append_change_extruder_menu_item(wxMenu* menu, bool switch_current_code/* = false*/)
+void DSManagerForLayers::append_change_extruder_menu_item(wxMenu* menu, bool switch_current_code/* = false*/)
 {
     const int extruders_cnt = GUI::wxGetApp().extruders_edited_cnt();
     if (extruders_cnt > 1) {
@@ -974,7 +852,7 @@ void Control::append_change_extruder_menu_item(wxMenu* menu, bool switch_current
     }
 }
 
-void Control::append_add_color_change_menu_item(wxMenu* menu, bool switch_current_code/* = false*/)
+void DSManagerForLayers::append_add_color_change_menu_item(wxMenu* menu, bool switch_current_code/* = false*/)
 {
     const int extruders_cnt = GUI::wxGetApp().extruders_edited_cnt();
     if (extruders_cnt > 1) {
@@ -1002,86 +880,16 @@ void Control::append_add_color_change_menu_item(wxMenu* menu, bool switch_curren
     }
 }
 
-// "condition" have to be true for:
-//    -  value increase (if wxSL_VERTICAL)
-//    -  value decrease (if wxSL_HORIZONTAL) 
-void Control::move_current_thumb(const bool condition)
-{
-//     m_is_one_layer = wxGetKeyState(WXK_CONTROL);
-    int delta = condition ? -1 : 1;
-    if (imgui_ctrl.is_horizontal())
-        delta *= -1;
-
-    // accelerators
-    int accelerator = 0;
-    if (wxGetKeyState(WXK_SHIFT))
-        accelerator += 5;
-    if (wxGetKeyState(WXK_CONTROL))
-        accelerator += 5;
-    if (accelerator > 0)
-        delta *= accelerator;
-
-    imgui_ctrl.MoveActiveThumb(delta);
-
-    wxCommandEvent e(wxEVT_SCROLL_CHANGED);
-    e.SetEventObject(this);
-    ProcessWindowEvent(e);
-}
-
-void Control::UseDefaultColors(bool def_colors_on)
+void DSManagerForLayers::UseDefaultColors(bool def_colors_on)
 {
     m_ticks.set_default_colors(def_colors_on);
-}
-
-void Control::OnKeyDown(wxKeyEvent &event)
-{
-    const int key = event.GetKeyCode();
-    if (m_draw_mode != dmSequentialGCodeView && key == WXK_NUMPAD_ADD) {
-        // OnChar() is called immediately after OnKeyDown(), which can cause call of add_tick() twice.
-        // To avoid this case we should suppress second add_tick() call.
-        m_ticks.suppress_plus(true);
-        add_current_tick(true);
-    }
-    else if (m_draw_mode != dmSequentialGCodeView && (key == WXK_NUMPAD_SUBTRACT || key == WXK_DELETE || key == WXK_BACK)) {
-        // OnChar() is called immediately after OnKeyDown(), which can cause call of delete_tick() twice.
-        // To avoid this case we should suppress second delete_tick() call.
-        m_ticks.suppress_minus(true);
-        delete_current_tick();
-    }
-    else if (m_draw_mode != dmSequentialGCodeView && event.GetKeyCode() == WXK_SHIFT)
-        UseDefaultColors(false);
-    else if (imgui_ctrl.is_horizontal()) {
-        if (key == WXK_LEFT || key == WXK_RIGHT)
-            move_current_thumb(key == WXK_LEFT);
-    }
-    else if (key == WXK_UP || key == WXK_DOWN)
-        move_current_thumb(key == WXK_UP);
-
-    event.Skip(); // !Needed to have EVT_CHAR generated as well
-}
-
-void Control::OnChar(wxKeyEvent& event)
-{
-    const int key = event.GetKeyCode();
-    if (m_draw_mode != dmSequentialGCodeView) {
-        if (key == '+' && !m_ticks.suppressed_plus()) {
-            add_current_tick(true);
-            m_ticks.suppress_plus(false);
-        }
-        else if (key == '-' && !m_ticks.suppressed_minus()) {
-            delete_current_tick();
-            m_ticks.suppress_minus(false);
-        }
-    }
-    if (key == 'G')
-        jump_to_value();
 }
 
 // Get active extruders for tick. 
 // Means one current extruder for not existing tick OR 
 // 2 extruders - for existing tick (extruder before ToolChange and extruder of current existing tick)
 // Use those values to disable selection of active extruders
-std::array<int, 2> Control::get_active_extruders_for_tick(int tick) const
+std::array<int, 2> DSManagerForLayers::get_active_extruders_for_tick(int tick) const
 {
     int default_initial_extruder = m_mode == MultiAsSingle ? std::max<int>(1, m_only_extruder) : 1;
     std::array<int, 2> extruders = { default_initial_extruder, -1 };
@@ -1164,7 +972,7 @@ std::set<int> TickCodeInfo::get_used_extruders_for_tick(int tick, int only_extru
     return used_extruders;
 }
 
-void Control::show_cog_icon_context_menu()
+void DSManagerForLayers::show_cog_icon_context_menu()
 {
     wxMenu menu;
 
@@ -1217,12 +1025,12 @@ bool check_color_change(const PrintObject* object, size_t frst_layer_id, size_t 
     return detected;
 }
 
-void Control::auto_color_change()
+void DSManagerForLayers::auto_color_change()
 {
     if (!m_ticks.empty()) {
         wxString msg_text = _L("This action will cause deletion of all ticks on vertical slider.") + "\n\n" +
                             _L("This action is not revertible.\nDo you want to proceed?");
-        GUI::WarningDialog dialog(m_parent, msg_text, _L("Warning"), wxYES | wxNO);
+        GUI::WarningDialog dialog(nullptr, msg_text, _L("Warning"), wxYES | wxNO);
         if (dialog.ShowModal() == wxID_NO)
             return;    
         m_ticks.ticks.clear();
@@ -1364,9 +1172,9 @@ static std::string get_pause_print_msg(const std::string& msg_in, double height)
 
 static double get_value_to_jump(double active_value, double min_z, double max_z, DrawMode mode)
 {
-    wxString msg_text = (mode == dmSequentialGCodeView) ? _L("Enter the move you want to jump to") + ":" : _L("Enter the height you want to jump to") + ":";
-    wxString msg_header = (mode == dmSequentialGCodeView) ? _L("Jump to move") : _L("Jump to height");
-    wxString msg_in = GUI::double_to_string(active_value);
+    wxString msg_text   = _L("Enter the height you want to jump to") + ":";
+    wxString msg_header = _L("Jump to height");
+    wxString msg_in     = GUI::double_to_string(active_value);
 
     // get custom gcode
     wxTextEntryDialog dlg(nullptr, msg_text, msg_header, msg_in, wxTextEntryDialogStyle);
@@ -1379,7 +1187,7 @@ static double get_value_to_jump(double active_value, double min_z, double max_z,
     return dlg.GetValue().ToDouble(&value) ? value : -1.0;
 }
 
-void Control::add_code_as_tick(Type type, int selected_extruder/* = -1*/)
+void DSManagerForLayers::add_code_as_tick(Type type, int selected_extruder/* = -1*/)
 {
     const int tick = imgui_ctrl.GetActiveValue();
 
@@ -1413,7 +1221,7 @@ void Control::add_code_as_tick(Type type, int selected_extruder/* = -1*/)
     post_ticks_changed_event(type);
 }
 
-void Control::add_current_tick(bool call_from_keyboard /*= false*/)
+void DSManagerForLayers::add_current_tick(bool call_from_keyboard /*= false*/)
 {
     const int tick = imgui_ctrl.GetActiveValue();
     auto it = m_ticks.ticks.find(TickCode{ tick });
@@ -1455,7 +1263,7 @@ void Control::add_current_tick(bool call_from_keyboard /*= false*/)
     */
 }
 
-void Control::delete_current_tick()
+void DSManagerForLayers::delete_current_tick()
 {
     auto it = m_ticks.ticks.find(TickCode{ imgui_ctrl.GetActiveValue()});
     if (it == m_ticks.ticks.end() ||
@@ -1467,7 +1275,7 @@ void Control::delete_current_tick()
     post_ticks_changed_event(type);
 }
 
-void Control::edit_tick(int tick/* = -1*/)
+void DSManagerForLayers::edit_tick(int tick/* = -1*/)
 {
     if (tick < 0)
         tick = imgui_ctrl.GetActiveValue();
@@ -1482,14 +1290,8 @@ void Control::edit_tick(int tick/* = -1*/)
         post_ticks_changed_event(type);
 }
 
-// switch on/off one layer mode
-void Control::switch_one_layer_mode()
-{
-    imgui_ctrl.CombineThumbs(!imgui_ctrl.IsCombineThumbs());
-}
-
 // discard all custom changes on DoubleSlider
-void Control::discard_all_thicks()
+void DSManagerForLayers::discard_all_thicks()
 {
     m_ticks.ticks.clear();
     imgui_ctrl.ResetValues();
@@ -1497,7 +1299,7 @@ void Control::discard_all_thicks()
     post_ticks_changed_event();
 }
 
-void Control::edit_extruder_sequence()
+void DSManagerForLayers::edit_extruder_sequence()
 {
     if (!check_ticks_changed_event(ToolChange))
         return;
@@ -1558,7 +1360,7 @@ void Control::edit_extruder_sequence()
     post_ticks_changed_event(ToolChange);
 }
 
-void Control::jump_to_value()
+void DSManagerForLayers::jump_to_value()
 {
     double value = get_value_to_jump(m_values[imgui_ctrl.GetActiveValue()],
                                      m_values[imgui_ctrl.GetMinValue()], m_values[imgui_ctrl.GetMaxValue()], m_draw_mode);
@@ -1573,14 +1375,13 @@ void Control::jump_to_value()
         SetLowerValue(tick_value);
 }
 
-void Control::post_ticks_changed_event(Type type /*= Custom*/)
+void DSManagerForLayers::post_ticks_changed_event(Type type /*= Custom*/)
 {
 //    m_force_mode_apply = type != ToolChange; // It looks like this condition is no needed now. Leave it for the testing
-
-    wxPostEvent(this->GetParent(), wxCommandEvent(wxCUSTOMEVT_TICKSCHANGED));
+    process_ticks_changed();
 }
 
-bool Control::check_ticks_changed_event(Type type)
+bool DSManagerForLayers::check_ticks_changed_event(Type type)
 {
     if ( m_ticks.mode == m_mode                                                     ||
         (type != ColorChange && type != ToolChange)                       ||
@@ -1602,7 +1403,7 @@ bool Control::check_ticks_changed_event(Type type)
                             _L("Are you sure you want to continue?");
 
         //wxMessageDialog msg(this, message, _L("Notice"), wxYES_NO);
-        GUI::MessageDialog msg(this, message, _L("Notice"), wxYES_NO);
+        GUI::MessageDialog msg(nullptr, message, _L("Notice"), wxYES_NO);
         if (msg.ShowModal() == wxID_YES) {
             m_ticks.erase_all_ticks_with_code(ColorChange);
             post_ticks_changed_event(ColorChange);
@@ -1622,7 +1423,7 @@ bool Control::check_ticks_changed_event(Type type)
                             _L("Your current changes will delete all saved extruder (tool) changes.") + "\n\n\t" +
                             _L("Are you sure you want to continue?")                  ) ;
 
-        GUI::MessageDialog msg(this, message, _L("Notice"), wxYES_NO | (m_mode == SingleExtruder ? wxCANCEL : 0));
+        GUI::MessageDialog msg(nullptr, message, _L("Notice"), wxYES_NO | (m_mode == SingleExtruder ? wxCANCEL : 0));
         const int answer = msg.ShowModal();
         if (answer == wxID_YES) {
             m_ticks.erase_all_ticks_with_code(ToolChange);
@@ -1636,6 +1437,25 @@ bool Control::check_ticks_changed_event(Type type)
     }
 
     return true;
+}
+
+DSManagerForLayers::DSManagerForLayers( int lowerValue,
+                                        int higherValue,
+                                        int minValue,
+                                        int maxValue,
+                                        bool allow_editing/* = true*/) :
+     m_allow_editing(allow_editing)
+{
+#ifdef __WXOSX__ 
+    is_osx = true;
+#endif //__WXOSX__
+    Init(lowerValue, higherValue, minValue, maxValue, "layers_slider", false);
+
+    imgui_ctrl.set_get_label_on_move_cb([this](int pos) { return m_show_estimated_times ? into_u8(get_label(pos, ltEstimatedTime)) : ""; });
+    imgui_ctrl.set_extra_draw_cb([this](const ImRect& draw_rc) {return draw_ticks(draw_rc); });
+
+    m_ticks.set_pause_print_msg(_u8L("Place bearings in slots and resume printing"));
+    m_ticks.set_extruder_colors(&m_extruder_colors);
 }
 
 std::string TickCodeInfo::get_color_for_tick(TickCode tick, Type type, const int extruder)

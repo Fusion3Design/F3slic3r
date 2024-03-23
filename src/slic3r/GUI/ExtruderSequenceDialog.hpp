@@ -7,6 +7,7 @@
 
 #include "GUI_Utils.hpp"
 #include "DoubleSlider.hpp"
+#include "wxExtensions.hpp"
 
 class wxTextCtrl;
 class wxFlexGridSizer;

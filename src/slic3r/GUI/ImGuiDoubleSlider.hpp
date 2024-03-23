@@ -32,13 +32,6 @@ enum SelectedSlider {
     ssHigher
 };
 
-enum LabelType
-{
-    ltHeightWithLayer,
-    ltHeight,
-    ltEstimatedTime,
-};
-
 class ImGuiControl
 {
 public:
@@ -46,8 +39,6 @@ public:
                  int higherValue,
                  int minValue,
                  int maxValue,
-                 ImVec2 pos,
-                 ImVec2 size,
                  ImGuiSliderFlags flags = ImGuiSliderFlags_None,
                  std::string name = "d_slider",
                  bool use_lower_thumb = true);
@@ -79,12 +70,12 @@ public:
                                           m_draw_opts.scale = scale;
     }
 
-    void Show(bool show)                { m_is_shown = show; }
-    void Hide()                         { m_is_shown = false; }
-    bool IsShown() const                { return m_is_shown; }
-    void MoveActiveThumb(int delta);
-    bool IsCombineThumbs() const        { return m_combine_thumbs; }
-    bool IsActiveHigherThumb() const    { return m_selection == ssHigher; }
+    void    Show(bool show)             { m_is_shown = show; }
+    void    Hide()                      { m_is_shown = false; }
+    bool    IsShown() const             { return m_is_shown; }
+    bool    IsCombineThumbs() const     { return m_combine_thumbs; }
+    bool    IsActiveHigherThumb() const { return m_selection == ssHigher; }
+    void    MoveActiveThumb(int delta);
 
     void    ShowLabelOnMouseMove(bool show = true) { m_show_move_label = show; }
     ImRect  GetGrooveRect() const       { return m_draw_opts.groove(m_pos, m_size, is_horizontal()); }
@@ -95,11 +86,7 @@ public:
     bool    is_full_span() const        { return this->is_lower_at_min() && this->is_higher_at_max(); }
     bool    is_rclick_on_thumb() const  { return m_rclick_on_selected_thumb; }
 
-    void    correct_lower_value();
-    void    correct_higher_value();
-
     bool    render();
-    void    draw_scroll_line(const ImRect& scroll_line, const ImRect& slideable_region);
 
     std::string get_label(int pos) const;
 
@@ -107,6 +94,8 @@ public:
     void    set_get_label_cb(std::function<std::string(int)> cb)                            { m_cb_get_label = cb; }
     void    set_draw_scroll_line_cb(std::function<void(const ImRect&, const ImRect&)> cb)   { m_cb_draw_scroll_line = cb; }
     void    set_extra_draw_cb(std::function<void(const ImRect&)> cb)                        { m_cb_extra_draw = cb; }
+
+private:
 
     struct DrawOptions {
         float       scale                   { 1.f }; // used for Retina on osx
@@ -134,8 +123,6 @@ public:
         ImRect lower_thumb;
     };
 
-private:
-
     SelectedSlider  m_selection;
     ImVec2          m_pos;
     ImVec2          m_size;
@@ -143,31 +130,34 @@ private:
     ImGuiSliderFlags m_flags{ ImGuiSliderFlags_None };
     bool            m_is_shown{ true };
 
-    int         m_min_value;
-    int         m_max_value;
-    int         m_lower_value;
-    int         m_higher_value;
-    int         m_mouse_pos_value;
+    int             m_min_value;
+    int             m_max_value;
+    int             m_lower_value;
+    int             m_higher_value;
+    int             m_mouse_pos_value;
 
-    bool        m_rclick_on_selected_thumb{ false };
+    bool            m_rclick_on_selected_thumb{ false };
 
-    bool        m_draw_lower_thumb{ true };
-    bool        m_combine_thumbs  { false };
-    bool        m_show_move_label{ false };
+    bool            m_draw_lower_thumb{ true };
+    bool            m_combine_thumbs  { false };
+    bool            m_show_move_label { false };
 
-    DrawOptions m_draw_opts;
-    Regions     m_regions;
+    DrawOptions     m_draw_opts;
+    Regions         m_regions;
 
     std::function<std::string(int)>                     m_cb_get_label          { nullptr };
     std::function<std::string(int)>                     m_cb_get_label_on_move  { nullptr };
     std::function<void(const ImRect&, const ImRect&)>   m_cb_draw_scroll_line   { nullptr };
     std::function<void(const ImRect&)>                  m_cb_extra_draw         { nullptr };
 
-    void        apply_regions(int higher_value, int lower_value, const ImRect& draggable_region);
+    void        correct_lower_value();
+    void        correct_higher_value();
     std::string get_label_on_move(int pos) const { return m_cb_get_label_on_move ? m_cb_get_label_on_move(pos) : get_label(pos); }
 
+    void        apply_regions(int higher_value, int lower_value, const ImRect& draggable_region);
     void        check_and_correct_thumbs(int* higher_value, int* lower_value);
 
+    void        draw_scroll_line(const ImRect& scroll_line, const ImRect& slideable_region);
     void        draw_background(const ImRect& slideable_region);
     void        draw_label(std::string label, const ImRect& thumb);
     void        draw_thumb(const ImVec2& center, bool mark = false);
