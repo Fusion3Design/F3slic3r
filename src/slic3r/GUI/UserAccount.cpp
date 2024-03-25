@@ -204,7 +204,7 @@ bool UserAccount::on_connect_printers_success(const std::string& data, AppConfig
         std::string name;
         ConnectPrinterState state;
 
-        const auto type_opt = printer_tree.second.get_optional<std::string>("printer_type");
+        const auto type_opt = printer_tree.second.get_optional<std::string>("printer_model");
         if (!type_opt) {
             continue;
         }
