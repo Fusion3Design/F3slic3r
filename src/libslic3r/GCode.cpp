@@ -3304,6 +3304,9 @@ std::string GCodeGenerator::_extrude(
     } else {
         this->m_already_unretracted = true;
         gcode += "FIRST_UNRETRACT" + this->unretract();
+
+        //First unretract may or may not be removed thus we must start from E0.
+        gcode += this->writer().reset_e();
     }
 
     if (m_writer.multiple_extruders && !has_active_instance) {
