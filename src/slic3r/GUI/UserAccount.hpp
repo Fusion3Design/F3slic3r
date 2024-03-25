@@ -86,6 +86,7 @@ private:
     std::map<std::string, std::string>  m_account_user_data;
     std::string                         m_username;
     size_t                              m_fail_counter { 0 };
+    std::string                         m_avatar_extension;
 
     // first string is "printer_type" code from Connect edpoints
     const std::map<std::string, std::string> printer_type_and_name_table = {

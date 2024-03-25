@@ -337,7 +337,7 @@ void UserAccountCommunication::enqueue_test_connection()
     wakeup_session_thread();
 }
 
-void UserAccountCommunication::enqueue_avatar_action(const std::string url)
+void UserAccountCommunication::enqueue_avatar_action(const std::string& url)
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);

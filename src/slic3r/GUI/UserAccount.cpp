@@ -77,7 +77,7 @@ std::string UserAccount::get_shared_session_key()
 boost::filesystem::path UserAccount::get_avatar_path(bool logged) const
 {
     if (logged) {
-        const std::string filename = "prusaslicer-avatar-" + m_instance_hash + ".png";
+        const std::string filename = "prusaslicer-avatar-" + m_instance_hash + m_avatar_extension;
         return boost::filesystem::path(wxStandardPaths::Get().GetTempDir().utf8_str().data()) / filename;
     } else {
         return  boost::filesystem::path(resources_dir()) / "icons" / "user.svg";
@@ -143,6 +143,8 @@ bool UserAccount::on_user_id_success(const std::string data, std::string& out_us
     out_username = public_username;
     // equeue GET with avatar url
     if (m_account_user_data.find("avatar") != m_account_user_data.end()) {
+        const boost::filesystem::path server_file(m_account_user_data["avatar"]);
+        m_avatar_extension = server_file.extension().string();
         enqueue_avatar_action();
     }
     else {
