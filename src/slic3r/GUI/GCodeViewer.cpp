@@ -14,6 +14,7 @@
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/LocalesUtils.hpp"
 #include "libslic3r/PresetBundle.hpp"
+#include "libslic3r/CustomGCode.hpp"
 
 #include "slic3r/GUI/format.hpp"
 
@@ -24,7 +25,6 @@
 #include "I18N.hpp"
 #include "GUI_Utils.hpp"
 #include "GUI.hpp"
-#include "DoubleSlider.hpp"
 #include "GLCanvas3D.hpp"
 #include "GLToolbar.hpp"
 #include "GUI_Preview.hpp"
@@ -2120,12 +2120,12 @@ void GCodeViewer::render_legend(float& legend_height)
             if (extruder_id + 1 != static_cast<unsigned char>(item.extruder))
                 continue;
 
-            if (item.type != ColorChange)
+            if (item.type != CustomGCode::ColorChange)
                 continue;
 
             const std::vector<float> zs = m_viewer.get_layers_zs();
             auto lower_b = std::lower_bound(zs.begin(), zs.end(),
-                static_cast<float>(item.print_z - Slic3r::DoubleSlider::epsilon()));
+                static_cast<float>(item.print_z - Slic3r::CustomGCode::epsilon()));
             if (lower_b == zs.end())
                 continue;
 

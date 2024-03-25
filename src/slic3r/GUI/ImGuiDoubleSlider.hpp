@@ -24,7 +24,7 @@ std::string to_string_with_precision(const T a_value, const int n = 2)
 }
 
 namespace Slic3r {
-namespace GUI {
+namespace DoubleSlider {
 
 enum SelectedSlider {
     ssUndef,
@@ -45,25 +45,24 @@ public:
     ImGuiControl() {}
     ~ImGuiControl() {}
 
-    int     GetMinValue() const     { return m_min_value; }
-    int     GetMaxValue() const     { return m_max_value; }
-    int     GetLowerValue()  const  { return m_lower_value; }
-    int     GetHigherValue() const  { return m_higher_value; }
-    int     GetActiveValue() const;
-    float   GetPositionFromValue(int value, const ImRect& rect) const;
+    int     GetMinPos() const     { return m_min_pos; }
+    int     GetMaxPos() const     { return m_max_pos; }
+    int     GetLowerPos()  const  { return m_lower_pos; }
+    int     GetHigherPos() const  { return m_higher_pos; }
+    int     GetActivePos() const;
 
     // Set low and high slider position. If the span is non-empty, disable the "one layer" mode.
-    void    SetLowerValue (const int lower_val);
-    void    SetHigherValue(const int higher_val);
-    void    SetSelectionSpan(const int lower_val, const int higher_val);
+    void    SetLowerPos (const int lower_pos);
+    void    SetHigherPos(const int higher_pos);
+    void    SetSelectionSpan(const int lower_pos, const int higher_pos);
 
-    void    SetMaxValue(const int max_value);
+    void    SetMaxPos(const int max_pos);
     void    CombineThumbs(bool combine);
-    void    ResetValues();
+    void    ResetPositions();
 
-    void    SetPos(ImVec2 pos)          { m_pos = pos; }
-    void    SetSize(ImVec2 size)        { m_size = size; }
-    void    SetScale(float scale)       { m_draw_opts.scale = scale; }
+    void    SetCtrlPos(ImVec2 pos)          { m_pos = pos; }
+    void    SetCtrlSize(ImVec2 size)        { m_size = size; }
+    void    SetCtrlScale(float scale)       { m_draw_opts.scale = scale; }
     void    Init(const ImVec2& pos, const ImVec2& size, float scale) {
                                           m_pos = pos; 
                                           m_size = size;
@@ -76,16 +75,15 @@ public:
     bool    IsCombineThumbs() const     { return m_combine_thumbs; }
     bool    IsActiveHigherThumb() const { return m_selection == ssHigher; }
     void    MoveActiveThumb(int delta);
+    void    ShowLowerThumb(bool show)   { m_draw_lower_thumb = show; }
 
     void    ShowLabelOnMouseMove(bool show = true) { m_show_move_label = show; }
     ImRect  GetGrooveRect() const       { return m_draw_opts.groove(m_pos, m_size, is_horizontal()); }
+    float   GetPositionInRect(int pos, const ImRect& rect) const;
+
+    bool    IsRClickOnThumb() const     { return m_rclick_on_selected_thumb; }
 
     bool    is_horizontal() const       { return !(m_flags & ImGuiSliderFlags_Vertical); }
-    bool    is_lower_at_min() const     { return m_lower_value == m_min_value; }
-    bool    is_higher_at_max() const    { return m_higher_value == m_max_value; }
-    bool    is_full_span() const        { return this->is_lower_at_min() && this->is_higher_at_max(); }
-    bool    is_rclick_on_thumb() const  { return m_rclick_on_selected_thumb; }
-
     bool    render();
 
     std::string get_label(int pos) const;
@@ -130,11 +128,12 @@ private:
     ImGuiSliderFlags m_flags{ ImGuiSliderFlags_None };
     bool            m_is_shown{ true };
 
-    int             m_min_value;
-    int             m_max_value;
-    int             m_lower_value;
-    int             m_higher_value;
-    int             m_mouse_pos_value;
+    int             m_min_pos;
+    int             m_max_pos;
+    int             m_lower_pos;
+    int             m_higher_pos;
+    // slider's position of the mouse cursor
+    int             m_mouse_pos;
 
     bool            m_rclick_on_selected_thumb{ false };
 
@@ -150,24 +149,136 @@ private:
     std::function<void(const ImRect&, const ImRect&)>   m_cb_draw_scroll_line   { nullptr };
     std::function<void(const ImRect&)>                  m_cb_extra_draw         { nullptr };
 
-    void        correct_lower_value();
-    void        correct_higher_value();
+    void        correct_lower_pos();
+    void        correct_higher_pos();
     std::string get_label_on_move(int pos) const { return m_cb_get_label_on_move ? m_cb_get_label_on_move(pos) : get_label(pos); }
 
-    void        apply_regions(int higher_value, int lower_value, const ImRect& draggable_region);
-    void        check_and_correct_thumbs(int* higher_value, int* lower_value);
+    void        apply_regions(int higher_pos, int lower_pos, const ImRect& draggable_region);
+    void        check_and_correct_thumbs(int* higher_pos, int* lower_pos);
 
     void        draw_scroll_line(const ImRect& scroll_line, const ImRect& slideable_region);
     void        draw_background(const ImRect& slideable_region);
     void        draw_label(std::string label, const ImRect& thumb);
     void        draw_thumb(const ImVec2& center, bool mark = false);
-    bool        draw_slider(int* higher_value, int* lower_value,
+    bool        draw_slider(int* higher_pos, int* lower_pos,
                             std::string& higher_label, std::string& lower_label,
                             const ImVec2& pos, const ImVec2& size, float scale = 1.0f);
 };
 
-} // GUI
+// VatType = a typ of values, related to the each position in slider
+template<typename ValType>
+class Manager
+{
+public:
 
+    void Init(  int lowerPos,
+                int higherPos,
+                int minPos,
+                int maxPos,
+                const std::string& name,
+                bool is_horizontal)
+    {
+        m_ctrl = ImGuiControl(  lowerPos, higherPos,
+                                minPos, maxPos,
+                                is_horizontal ? 0 : ImGuiSliderFlags_Vertical,
+                                name, !is_horizontal);
+
+        m_ctrl.set_get_label_cb([this](int pos) {return get_label(pos); });
+    };
+
+    Manager() {}
+    Manager(int lowerPos,
+            int higherPos,
+            int minPos,
+            int maxPos,
+            const std::string& name,
+            bool is_horizontal) 
+    {
+        Init (lowerPos, higherPos, minPos, maxPos, name, is_horizontal);
+    }
+    ~Manager() {}
+
+    int     GetMinPos()   const { return m_ctrl.GetMinPos(); }
+    int     GetMaxPos()   const { return m_ctrl.GetMaxPos(); }
+    int     GetLowerPos() const { return m_ctrl.GetLowerPos(); }
+    int     GetHigherPos()const { return m_ctrl.GetHigherPos(); }
+
+    ValType  GetMinValue()    { return m_values.empty() ? static_cast<ValType>(0) : m_values[GetMinPos()]; }
+    ValType  GetMaxValue()    { return m_values.empty() ? static_cast<ValType>(0) : m_values[GetMaxPos()]; }
+    ValType  GetLowerValue()  { return m_values.empty() ? static_cast<ValType>(0) : m_values[GetLowerPos()];}
+    ValType  GetHigherValue() { return m_values.empty() ? static_cast<ValType>(0) : m_values[GetHigherPos()]; }
+
+    // Set low and high slider position. If the span is non-empty, disable the "one layer" mode.
+    void    SetLowerPos(const int lower_pos) {
+        m_ctrl.SetLowerPos(lower_pos);
+        process_thumb_move();
+    }
+    void    SetHigherPos(const int higher_pos) {
+        m_ctrl.SetHigherPos(higher_pos);
+        process_thumb_move();
+    }
+    void    SetSelectionSpan(const int lower_pos, const int higher_pos) {
+        m_ctrl.SetSelectionSpan(lower_pos, higher_pos);
+        process_thumb_move();
+    }
+    void    SetMaxPos(const int max_pos) {
+        m_ctrl.SetMaxPos(max_pos);
+        process_thumb_move();
+    }
+
+    void    SetSliderValues(const std::vector<ValType>& values)          { m_values = values; }
+    // values used to show thumb labels
+    void    SetSliderAlternateValues(const std::vector<ValType>& values) { m_alternate_values = values; }
+
+    bool IsLowerAtMin() const   { return m_ctrl.GetLowerPos() == m_ctrl.GetMinPos(); }
+    bool IsHigherAtMax() const  { return m_ctrl.GetHigherPos() == m_ctrl.GetMaxPos(); }
+
+    void Show(bool show = true) { m_ctrl.Show(show); }
+    void Hide()                 { m_ctrl.Show(false); }
+    void SetEmUnit(int em_unit) { m_em = em_unit; }
+    void ShowLowerThumb(bool show) { m_ctrl.ShowLowerThumb(show); }
+
+    virtual void Render(const int canvas_width, const int canvas_height, float extra_scale = 1.f) = 0;
+
+    void set_callback_on_thumb_move(std::function<void()> cb) { m_cb_thumb_move = cb; };
+
+    void move_current_thumb(const int delta)
+    {
+        m_ctrl.MoveActiveThumb(delta);
+        process_thumb_move();
+    }
+
+protected:
+
+    std::vector<ValType>    m_values;
+    std::vector<ValType>    m_alternate_values;
+
+    ImGuiControl            m_ctrl;
+    int                     m_em{ 10 };
+    float                   m_scale{ 1.f };
+
+    std::string get_label(int pos) const {
+        if (m_values.empty())
+            return std::to_string(pos);
+        if (pos >= m_values.size())
+            return "ErrVal";
+        return to_string_with_precision(static_cast<ValType>(m_alternate_values.empty() ? m_values[pos] : m_alternate_values[pos]));
+    }
+
+    void process_thumb_move() { 
+        if (m_cb_thumb_move) 
+            m_cb_thumb_move(); 
+    }
+
+private:
+
+    std::function<void()> m_cb_thumb_move{ nullptr };
+
+};
+
+
+
+} // GUI
 } // Slic3r
 
 

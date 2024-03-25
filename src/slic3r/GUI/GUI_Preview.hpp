@@ -28,8 +28,8 @@ class BackgroundSlicingProcess;
 class Model;
 
 namespace DoubleSlider {
-    class DSManagerForGcode;
-    class DSManagerForLayers;
+    class DSForGcode;
+    class DSForLayers;
 };
 
 namespace GUI {
@@ -96,8 +96,8 @@ class Preview : public wxPanel
 
     bool m_loaded { false };
 
-    DoubleSlider::DSManagerForLayers*       m_layers_slider{ nullptr };
-    DoubleSlider::DSManagerForGcode*        m_moves_slider { nullptr };
+    DoubleSlider::DSForLayers*       m_layers_slider{ nullptr };
+    DoubleSlider::DSForGcode*        m_moves_slider { nullptr };
 
 public:
     enum class OptionType : unsigned int

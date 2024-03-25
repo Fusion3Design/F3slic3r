@@ -2,8 +2,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#ifndef slic3r_GUI_DoubleSlider_hpp_
-#define slic3r_GUI_DoubleSlider_hpp_
+#ifndef slic3r_GUI_DoubleSliderForLayers_hpp_
+#define slic3r_GUI_DoubleSliderForLayers_hpp_
 
 #include "libslic3r/CustomGCode.hpp"
 #include "ImGuiDoubleSlider.hpp"
@@ -22,11 +22,6 @@ class Layer;
 namespace DoubleSlider {
 
 using namespace GUI;
-
-/* For exporting GCode in GCodeWriter is used XYZF_NUM(val) = PRECISION(val, 3) for XYZ values. 
- * So, let use same value as a permissible error for layer height.
- */
-constexpr double epsilon() { return 0.0011; }
 
 // return true when areas are mostly equivalent
 bool equivalent_areas(const double& bottom_area, const double& top_area);
@@ -58,20 +53,6 @@ enum ConflictType
     ctMeaninglessColorChange,
     ctMeaninglessToolChange,
     ctRedundant
-};
-
-enum MouseAction
-{
-    maNone,
-    maAddMenu,                  // show "Add"  context menu for NOTexist active tick
-    maEditMenu,                 // show "Edit" context menu for exist active tick
-    maCogIconMenu,              // show context for "cog" icon
-    maForceColorEdit,           // force color editing from colored band
-    maAddTick,                  // force tick adding
-    maDeleteTick,               // force tick deleting
-    maCogIconClick,             // LeftMouseClick on "cog" icon
-    maOneLayerIconClick,        // LeftMouseClick on "one_layer" icon
-    maRevertIconClick,          // LeftMouseClick on "revert" icon
 };
 
 enum DrawMode
@@ -192,148 +173,17 @@ struct ExtrudersSequence
     }
 };
 
-template<typename ValType>
-class DSManager_t
+
+class DSForLayers : public Manager<double>
 {
 public:
-
-    void Init(  int lowerValue,
+    DSForLayers() : Manager<double>() {}
+    DSForLayers(int lowerValue,
                 int higherValue,
                 int minValue,
                 int maxValue,
-                const std::string& name,
-                bool is_horizontal)
-    {
-        imgui_ctrl = ImGuiControl(  lowerValue, higherValue,
-                                    minValue, maxValue,
-                                    is_horizontal ? 0 : ImGuiSliderFlags_Vertical,
-                                    name, !is_horizontal);
-
-        imgui_ctrl.set_get_label_cb([this](int pos) {return get_label(pos); });
-    };
-
-    DSManager_t() {}
-    DSManager_t(int lowerValue,
-                int higherValue,
-                int minValue,
-                int maxValue,
-                const std::string& name,
-                bool is_horizontal) 
-    {
-        Init (lowerValue, higherValue, minValue, maxValue, name, is_horizontal);
-    }
-    ~DSManager_t() {}
-
-    int     GetMinValue()   const { return imgui_ctrl.GetMinValue(); }
-    int     GetMaxValue()   const { return imgui_ctrl.GetMaxValue(); }
-    int     GetLowerValue() const { return imgui_ctrl.GetLowerValue(); }
-    int     GetHigherValue()const { return imgui_ctrl.GetHigherValue(); }
-
-    ValType  GetMinValueD()    { return m_values.empty() ? static_cast<ValType>(0) : m_values[GetMinValue()]; }
-    ValType  GetMaxValueD()    { return m_values.empty() ? static_cast<ValType>(0) : m_values[GetMaxValue()]; }
-    ValType  GetLowerValueD()  { return m_values.empty() ? static_cast<ValType>(0) : m_values[GetLowerValue()];}
-    ValType  GetHigherValueD() { return m_values.empty() ? static_cast<ValType>(0) : m_values[GetHigherValue()]; }
-
-    // Set low and high slider position. If the span is non-empty, disable the "one layer" mode.
-    void    SetLowerValue(const int lower_val) {
-        imgui_ctrl.SetLowerValue(lower_val);
-        process_thumb_move();
-    }
-    void    SetHigherValue(const int higher_val) {
-        imgui_ctrl.SetHigherValue(higher_val);
-        process_thumb_move();
-    }
-    void    SetSelectionSpan(const int lower_val, const int higher_val) {
-        imgui_ctrl.SetSelectionSpan(lower_val, higher_val);
-        process_thumb_move();
-    }
-    void    SetMaxValue(const int max_value) {
-        imgui_ctrl.SetMaxValue(max_value);
-        process_thumb_move();
-    }
-
-    void    SetSliderValues(const std::vector<ValType>& values)          { m_values = values; }
-    // values used to show thumb labels
-    void    SetSliderAlternateValues(const std::vector<ValType>& values) { m_alternate_values = values; }
-
-    bool is_lower_at_min() const    { return imgui_ctrl.is_lower_at_min(); }
-    bool is_higher_at_max() const   { return imgui_ctrl.is_higher_at_max(); }
-
-    void Show(bool show = true)     { imgui_ctrl.Show(show); }
-    void Hide()                     { Show(false); }
-
-    virtual void imgui_render(const int canvas_width, const int canvas_height, float extra_scale = 1.f) = 0;
-
-    void set_callback_on_thumb_move(std::function<void()> cb) { m_cb_thumb_move = cb; };
-
-    void move_current_thumb(const int delta)
-    {
-        imgui_ctrl.MoveActiveThumb(delta);
-        process_thumb_move();
-    }
-
-protected:
-
-    std::vector<ValType> m_values;
-    std::vector<ValType> m_alternate_values;
-
-    GUI::ImGuiControl   imgui_ctrl;
-    float               m_scale{ 1.f };
-
-    std::string         get_label(int pos) const {
-        if (m_values.empty())
-            return GUI::format("%1%", pos);
-        if (pos >= m_values.size())
-            return "ErrVal";
-        return GUI::format("%1%", static_cast<ValType>(m_alternate_values.empty() ? m_values[pos] : m_alternate_values[pos]));
-    }
-
-    void process_thumb_move() { 
-        if (m_cb_thumb_move) 
-            m_cb_thumb_move(); 
-    }
-
-private:
-
-    std::function<void()> m_cb_thumb_move{ nullptr };
-};
-
-
-class DSManagerForGcode : public DSManager_t<unsigned int>
-{
-public:
-    DSManagerForGcode() : DSManager_t<unsigned int>() {}
-    DSManagerForGcode(  int lowerValue,
-                        int higherValue,
-                        int minValue,
-                        int maxValue) 
-    {
-        Init(lowerValue, higherValue, minValue, maxValue, "moves_slider", true);
-    }
-    ~DSManagerForGcode() {}
-
-    void imgui_render(const int canvas_width, const int canvas_height, float extra_scale = 1.f) override;
-
-    void set_render_as_disabled(bool value) { m_render_as_disabled = value; }
-    bool is_rendering_as_disabled() const { return m_render_as_disabled; }   
-
-private:
-
-    bool        m_render_as_disabled{ false };
-};
-
-
-
-class DSManagerForLayers : public DSManager_t<double>
-{
-public:
-    DSManagerForLayers() : DSManager_t<double>() {}
-    DSManagerForLayers( int lowerValue,
-                        int higherValue,
-                        int minValue,
-                        int maxValue,
-                        bool allow_editing = true);
-    ~DSManagerForLayers() {}
+                bool allow_editing);
+    ~DSForLayers() {}
 
     void    ChangeOneLayerLock();
 
@@ -349,35 +199,38 @@ public:
     void    SetModeAndOnlyExtruder(const bool is_one_extruder_printed_model, const int only_extruder);
     void    SetExtruderColors(const std::vector<std::string>& extruder_colors);
 
-    void UseDefaultColors(bool def_colors_on);
-
-    void add_code_as_tick(Type type, int selected_extruder = -1);
-    // add default action for tick, when press "+"
-    void add_current_tick(bool call_from_keyboard = false);
-    // delete current tick, when press "-"
-    void delete_current_tick();
-    void edit_tick(int tick = -1);
-    void discard_all_thicks();
-    void edit_extruder_sequence();
-    void enable_action_icon(bool enable) { m_enable_action_icon = enable; }
-    void show_cog_icon_context_menu();
-    void auto_color_change();
-    void jump_to_value();
-
-    void set_callback_on_ticks_changed(std::function<void()> cb) { m_cb_ticks_changed = cb; };
-
-    void imgui_render(const int canvas_width, const int canvas_height, float extra_scale = 1.f) override;
-
+    void    UseDefaultColors(bool def_colors_on);
     bool    IsNewPrint(const std::string& print_obj_idxs);
+
+    void    Render(const int canvas_width, const int canvas_height, float extra_scale = 1.f) override;
+
+    void    set_callback_on_ticks_changed(std::function<void()> cb) { m_cb_ticks_changed = cb; };
+
+    // manipulation with slider from keyboard
+
+    // add default action for tick, when press "+"
+    void    add_current_tick();
+    // delete current tick, when press "-"
+    void    delete_current_tick();
+    // process adding of auto color change
+    void    auto_color_change();
+    // jump to selected layer
+    void    jump_to_value();
 
 private:
 
+    void    add_code_as_tick(Type type, int selected_extruder = -1);
+    void    edit_tick(int tick = -1);
+    void    discard_all_thicks();
+    void    edit_extruder_sequence();
+    void    show_cog_icon_context_menu();
+
     bool    is_wipe_tower_layer(int tick) const;
 
-    std::string    get_label(int tick, LabelType label_type = ltHeightWithLayer) const;
+    std::string get_label(int tick, LabelType label_type = ltHeightWithLayer) const;
 
     int         get_tick_from_value(double value, bool force_lower_bound = false);
-    wxString    get_tooltip(int tick = -1);
+    std::string get_tooltip(int tick = -1);
 
     std::string get_color_for_tool_change_tick(std::set<TickCode>::const_iterator it) const;
     std::string get_color_for_color_change_tick(std::set<TickCode>::const_iterator it) const;
@@ -393,48 +246,44 @@ private:
     // Use those values to disable selection of active extruders
     std::array<int, 2> get_active_extruders_for_tick(int tick) const;
 
-    void    post_ticks_changed_event(Type type = Custom);
     bool    check_ticks_changed_event(Type type);
 
-    void    append_change_extruder_menu_item(wxMenu*, bool switch_current_code = false);
-    void    append_add_color_change_menu_item(wxMenu*, bool switch_current_code = false);
+    void    append_change_extruder_menu_item(wxMenu*, bool switch_current_code = false);  // ysFIXME !
+    void    append_add_color_change_menu_item(wxMenu*, bool switch_current_code = false); // ysFIXME !
 
-    bool        is_osx{ false };
-    bool        m_allow_editing{ true };
+    bool        is_osx                  { false };
+    bool        m_allow_editing         { true };
+    bool        m_is_wipe_tower         { false }; //This flag indicates that there is multiple extruder print with wipe tower
+    bool        m_show_estimated_times  { false };
 
-    bool        m_force_mode_apply = true;
-    bool        m_enable_action_icon = true;
-    bool        m_is_wipe_tower = false; //This flag indicates that there is multiple extruder print with wipe tower
+    DrawMode    m_draw_mode             { dmRegular };
+    Mode        m_mode                  { SingleExtruder };
+    FocusedItem m_focus                 { fiNone };
 
-    DrawMode    m_draw_mode { dmRegular };
-
-    Mode        m_mode = SingleExtruder;
-    int         m_only_extruder = -1;
-
-    MouseAction m_mouse = maNone;
-    FocusedItem m_focus = fiNone;
-
-    bool        m_show_estimated_times{ false };
-
-    TickCodeInfo        m_ticks;
-    std::vector<double> m_layers_times;
-    std::vector<double> m_layers_values;
-    std::vector<std::string>    m_extruder_colors;
-
-    ExtrudersSequence   m_extruders_sequence;
-
-    std::function<void()> m_cb_ticks_changed{ nullptr };
+    int         m_only_extruder         { -1 };
 
     std::string m_print_obj_idxs;
 
-    // ImGuiDS
+    std::vector<double>         m_layers_times;
+    std::vector<double>         m_layers_values;
+    std::vector<std::string>    m_extruder_colors;
+
+    TickCodeInfo                m_ticks;
+
+    ExtrudersSequence           m_extruders_sequence;
+
+    std::function<void()>       m_cb_ticks_changed{ nullptr };
+
     bool        m_can_change_color{ true };
+
+    // functions for extend rendering of m_ctrl
 
     void        draw_colored_band(const ImRect& groove, const ImRect& slideable_region);
     void        draw_ticks(const ImRect& slideable_region);
     void        render_menu();
     bool        render_button(const wchar_t btn_icon, const wchar_t btn_icon_hovered, const std::string& label_id, const ImVec2& pos, FocusedItem focus, int tick = -1);
-    void        update_callbacks();
+
+    void        update_draw_scroll_line_cb();
 };
 
 } // DoubleSlider;
@@ -443,4 +292,4 @@ private:
 
 
 
-#endif // slic3r_GUI_DoubleSlider_hpp_
+#endif // slic3r_GUI_DoubleSliderForLayers_hpp_

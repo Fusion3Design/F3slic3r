@@ -6,7 +6,9 @@
 #include "ImGuiDoubleSlider.hpp"
 
 namespace Slic3r {
-namespace GUI {
+namespace DoubleSlider {
+
+using namespace GUI;
 
 const ImU32 tooltip_bg_clr  = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_GREY_LIGHT);
 const ImU32 thumb_bg_clr    = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_ORANGE_LIGHT);
@@ -125,46 +127,47 @@ ImGuiControl::ImGuiControl( int lowerValue,
                             bool use_lower_thumb) :
     m_selection(ssUndef),
     m_name(name),
-    m_lower_value(lowerValue), 
-    m_higher_value (higherValue), 
-    m_min_value(minValue), 
-    m_max_value(maxValue),
+    m_lower_pos(lowerValue), 
+    m_higher_pos (higherValue), 
+    m_min_pos(minValue), 
+    m_max_pos(maxValue),
     m_flags(flags),
     m_draw_lower_thumb(use_lower_thumb)
 {
 }
 
-int ImGuiControl::GetActiveValue() const
+int ImGuiControl::GetActivePos() const
 {
-    return m_selection == ssLower  ? m_lower_value : 
-           m_selection == ssHigher ? m_higher_value : -1;
+    return m_selection == ssLower  ? m_lower_pos : 
+           m_selection == ssHigher ? m_higher_pos : -1;
 }
 
-void ImGuiControl::SetLowerValue(const int lower_val)
+void ImGuiControl::SetLowerPos(const int lower_pos)
 {
     m_selection = ssLower;
-    m_lower_value = lower_val;
-    correct_lower_value();
+    m_lower_pos = lower_pos;
+    correct_lower_pos();
 }
 
-void ImGuiControl::SetHigherValue(const int higher_val)
+void ImGuiControl::SetHigherPos(const int higher_pos)
 {
     m_selection = ssHigher;
-    m_higher_value = higher_val;
-    correct_higher_value();
+    m_higher_pos = higher_pos;
+    correct_higher_pos();
 }
 
-void ImGuiControl::SetSelectionSpan(const int lower_val, const int higher_val)
+void ImGuiControl::SetSelectionSpan(const int lower_pos, const int higher_pos)
 {
-    m_lower_value  = std::max(lower_val, m_min_value);
-    m_higher_value = std::max(std::min(higher_val, m_max_value), m_lower_value);
-    if (m_lower_value < m_higher_value)
+    m_lower_pos  = std::max(lower_pos, m_min_pos);
+    m_higher_pos = std::max(std::min(higher_pos, m_max_pos), m_lower_pos);
+    if (m_lower_pos < m_higher_pos)
         m_combine_thumbs = false;
 }
 
-void ImGuiControl::SetMaxValue(const int max_value)
+void ImGuiControl::SetMaxPos(const int max_pos)
 {
-    m_max_value = max_value;
+    m_max_pos = max_pos;
+    correct_higher_pos();
 }
 
 void ImGuiControl::MoveActiveThumb(int delta)
@@ -173,36 +176,36 @@ void ImGuiControl::MoveActiveThumb(int delta)
         m_selection = ssHigher;
 
     if (m_selection == ssLower) {
-        m_lower_value -= delta;
-        correct_lower_value();
+        m_lower_pos -= delta;
+        correct_lower_pos();
     }
     else if (m_selection == ssHigher) {
-        m_higher_value -= delta;
-        correct_higher_value();
+        m_higher_pos -= delta;
+        correct_higher_pos();
     }
 }
 
-void ImGuiControl::correct_lower_value()
+void ImGuiControl::correct_lower_pos()
 {
-    if (m_lower_value < m_min_value)
-        m_lower_value = m_min_value;
-    else if (m_lower_value > m_max_value)
-        m_lower_value = m_max_value;
+    if (m_lower_pos < m_min_pos)
+        m_lower_pos = m_min_pos;
+    else if (m_lower_pos > m_max_pos)
+        m_lower_pos = m_max_pos;
 
-    if ((m_lower_value >= m_higher_value && m_lower_value <= m_max_value) || m_combine_thumbs) {
-        m_higher_value = m_lower_value;
+    if ((m_lower_pos >= m_higher_pos && m_lower_pos <= m_max_pos) || m_combine_thumbs) {
+        m_higher_pos = m_lower_pos;
     }
 }
 
-void ImGuiControl::correct_higher_value()
+void ImGuiControl::correct_higher_pos()
 {
-    if (m_higher_value > m_max_value)
-        m_higher_value = m_max_value;
-    else if (m_higher_value < m_min_value)
-        m_higher_value = m_min_value;
+    if (m_higher_pos > m_max_pos)
+        m_higher_pos = m_max_pos;
+    else if (m_higher_pos < m_min_pos)
+        m_higher_pos = m_min_pos;
 
-    if ((m_higher_value <= m_lower_value && m_higher_value >= m_min_value) || m_combine_thumbs) {
-        m_lower_value = m_higher_value;
+    if ((m_higher_pos <= m_lower_pos && m_higher_pos >= m_min_pos) || m_combine_thumbs) {
+        m_lower_pos = m_higher_pos;
     }
 }
 
@@ -211,17 +214,17 @@ void ImGuiControl::CombineThumbs(bool combine)
     m_combine_thumbs = combine; 
     if (combine) {
         m_selection = ssHigher;
-        correct_higher_value();
+        correct_higher_pos();
     }
     else
-        ResetValues();
+        ResetPositions();
 }
 
-void ImGuiControl::ResetValues()
+void ImGuiControl::ResetPositions()
 {
-    SetLowerValue(m_min_value);
-    SetHigherValue(m_max_value);
-    m_selection == ssLower ? correct_lower_value() : correct_higher_value();
+    SetLowerPos(m_min_pos);
+    SetHigherPos(m_max_pos);
+    m_selection == ssLower ? correct_lower_pos() : correct_higher_pos();
 }
 
 std::string ImGuiControl::get_label(int pos) const
@@ -229,18 +232,18 @@ std::string ImGuiControl::get_label(int pos) const
     if (m_cb_get_label)
         return m_cb_get_label(pos);
 
-    if (pos >= m_max_value || pos < m_min_value)
+    if (pos >= m_max_pos || pos < m_min_pos)
         return "ErrVal";
 
     return std::to_string(pos);
 }
 
-float ImGuiControl::GetPositionFromValue(int value, const ImRect& rect) const
+float ImGuiControl::GetPositionInRect(int pos, const ImRect& rect) const
 {
-    int v_min = m_min_value;
-    int v_max = m_max_value;
+    int v_min = m_min_pos;
+    int v_max = m_max_pos;
 
-    float pos_ratio = (v_max - v_min) != 0 ? ((float)(value - v_min) / (float)(v_max - v_min)) : 0.0f;
+    float pos_ratio = (v_max - v_min) != 0 ? ((float)(pos - v_min) / (float)(v_max - v_min)) : 0.0f;
     float thumb_pos;
     if (is_horizontal()) {
         thumb_pos = rect.Min.x + (rect.Max.x - rect.Min.x) * pos_ratio;
@@ -324,7 +327,7 @@ void ImGuiControl::draw_thumb(const ImVec2& center, bool mark/* = false*/)
     }
 }
 
-void ImGuiControl::apply_regions(int higher_value, int lower_value, const ImRect& draggable_region)
+void ImGuiControl::apply_regions(int higher_pos, int lower_pos, const ImRect& draggable_region)
 {
     ImVec2  mid             = draggable_region.GetCenter();
     float   thumb_radius    = m_draw_opts.thumb_radius();
@@ -338,18 +341,18 @@ void ImGuiControl::apply_regions(int higher_value, int lower_value, const ImRect
                                         ImRect(draggable_region.Min + ImVec2(0, thumb_radius), draggable_region.Max);
 
     // initialize the thumbs.
-    float higher_thumb_pos = GetPositionFromValue(higher_value, m_regions.higher_slideable_region);
+    float higher_thumb_pos = GetPositionInRect(higher_pos, m_regions.higher_slideable_region);
     m_regions.higher_thumb =    is_horizontal() ? 
                                 ImRect(higher_thumb_pos - thumb_radius, mid.y - thumb_radius, higher_thumb_pos + thumb_radius, mid.y + thumb_radius) : 
                                 ImRect(mid.x - thumb_radius, higher_thumb_pos - thumb_radius, mid.x + thumb_radius, higher_thumb_pos + thumb_radius);
 
-    float  lower_thumb_pos = GetPositionFromValue(lower_value, m_regions.lower_slideable_region);
+    float  lower_thumb_pos = GetPositionInRect(lower_pos, m_regions.lower_slideable_region);
     m_regions.lower_thumb  =    is_horizontal() ? 
                                 ImRect(lower_thumb_pos - thumb_radius, mid.y - thumb_radius, lower_thumb_pos + thumb_radius, mid.y + thumb_radius) :
                                 ImRect(mid.x - thumb_radius, lower_thumb_pos - thumb_radius, mid.x + thumb_radius, lower_thumb_pos + thumb_radius);
 }
 
-void ImGuiControl::check_and_correct_thumbs(int* higher_value, int* lower_value)
+void ImGuiControl::check_and_correct_thumbs(int* higher_pos, int* lower_pos)
 {
     if (!m_draw_lower_thumb || m_combine_thumbs)
         return;
@@ -366,12 +369,12 @@ void ImGuiControl::check_and_correct_thumbs(int* higher_value, int* lower_value)
             if (m_selection == ssHigher) {
                 m_regions.lower_thumb = m_regions.higher_thumb;
                 m_regions.higher_thumb.TranslateX(thumb_radius);
-                *lower_value = *higher_value;
+                *lower_pos = *higher_pos;
             }
             else {
                 m_regions.higher_thumb = m_regions.lower_thumb;
                 m_regions.lower_thumb.TranslateX(-thumb_radius);
-                *higher_value = *lower_value;
+                *higher_pos = *lower_pos;
             }
         }
     }
@@ -380,18 +383,18 @@ void ImGuiControl::check_and_correct_thumbs(int* higher_value, int* lower_value)
             if (m_selection == ssHigher) {
                 m_regions.lower_thumb = m_regions.higher_thumb;
                 m_regions.lower_thumb.TranslateY(thumb_radius);
-                *lower_value = *higher_value;
+                *lower_pos = *higher_pos;
             }        
             else {
                 m_regions.higher_thumb = m_regions.lower_thumb;
                 m_regions.lower_thumb.TranslateY(-thumb_radius);
-                *higher_value = *lower_value;
+                *higher_pos = *lower_pos;
             }
         }
     }
 }
 
-bool ImGuiControl::draw_slider( int* higher_value, int* lower_value, 
+bool ImGuiControl::draw_slider( int* higher_pos, int* lower_pos, 
                                 std::string& higher_label, std::string& lower_label, 
                                 const ImVec2& pos, const ImVec2& size, float scale)
 {
@@ -418,7 +421,7 @@ bool ImGuiControl::draw_slider( int* higher_value, int* lower_value,
     }
     
     // set slideable regions and thumbs.
-    apply_regions(*higher_value, *lower_value, draggable_region);
+    apply_regions(*higher_pos, *lower_pos, draggable_region);
 
     // select and mark higher thumb by default
     if (m_selection == ssUndef)
@@ -433,28 +436,28 @@ bool ImGuiControl::draw_slider( int* higher_value, int* lower_value,
         ImGui::ItemHoverable(m_regions.lower_thumb, id) && context.IO.MouseClicked[0])
         m_selection = ssLower;
 
-    // update thumb position and value
-    bool value_changed = false;
+    // update thumb position
+    bool pos_changed = false;
     if (m_selection == ssHigher) {
-        value_changed = behavior(id, m_regions.higher_slideable_region, m_min_value, m_max_value,
-                                 higher_value, &m_regions.higher_thumb, m_flags);
+        pos_changed = behavior(id, m_regions.higher_slideable_region, m_min_pos, m_max_pos,
+                                 higher_pos, &m_regions.higher_thumb, m_flags);
     }
     else if (m_draw_lower_thumb && !m_combine_thumbs) {
-        value_changed = behavior(id, m_regions.lower_slideable_region, m_min_value, m_max_value,
-                                 lower_value, &m_regions.lower_thumb, m_flags);
+        pos_changed = behavior(id, m_regions.lower_slideable_region, m_min_pos, m_max_pos,
+                                 lower_pos, &m_regions.lower_thumb, m_flags);
     }
 
-    // check thumbs values and correct them if needed
-    check_and_correct_thumbs(higher_value, lower_value);
+    // check thumbs poss and correct them if needed
+    check_and_correct_thumbs(higher_pos, lower_pos);
 
     const ImRect& slideable_region  = m_selection == ssHigher ? m_regions.higher_slideable_region : m_regions.lower_slideable_region;
     const ImRect& active_thumb      = m_selection == ssHigher ? m_regions.higher_thumb            : m_regions.lower_thumb;
 
     bool show_move_label = false;
     ImRect mouse_pos_rc = active_thumb;
-    if (!value_changed && ImGui::ItemHoverable(item_size, id) && !ImGui::IsMouseDragging(0)) {
-        behavior(id, slideable_region, m_min_value, m_max_value,
-                 &m_mouse_pos_value, &mouse_pos_rc, m_flags, true);
+    if (!pos_changed && ImGui::ItemHoverable(item_size, id) && !ImGui::IsMouseDragging(0)) {
+        behavior(id, slideable_region, m_min_pos, m_max_pos,
+                 &m_mouse_pos, &mouse_pos_rc, m_flags, true);
         show_move_label = true;
     }
 
@@ -491,9 +494,9 @@ bool ImGuiControl::draw_slider( int* higher_value, int* lower_value,
 
     // draw label on mouse move
     if (show_move_label)
-        draw_label(get_label_on_move(m_mouse_pos_value), mouse_pos_rc);
+        draw_label(get_label_on_move(m_mouse_pos), mouse_pos_rc);
 
-    return value_changed;
+    return pos_changed;
 }
 
 bool ImGuiControl::render()
@@ -519,21 +522,21 @@ bool ImGuiControl::render()
 
     float scale = 1.f;
 
-    int         higher_value        = m_higher_value;
-    int         lower_value         = m_lower_value;
-    std::string higher_label        = get_label(m_higher_value);
-    std::string lower_label         = get_label(m_lower_value);
-    int         temp_higher_value   = m_higher_value;
-    int         temp_lower_value    = m_lower_value;
+    int         higher_pos        = m_higher_pos;
+    int         lower_pos         = m_lower_pos;
+    std::string higher_label        = get_label(m_higher_pos);
+    std::string lower_label         = get_label(m_lower_pos);
+    int         temp_higher_pos   = m_higher_pos;
+    int         temp_lower_pos    = m_lower_pos;
 
-    if (draw_slider(&higher_value, &lower_value, higher_label, lower_label, m_pos, m_size, scale)) {
-        if (temp_higher_value != higher_value) {
-            m_higher_value = higher_value;
+    if (draw_slider(&higher_pos, &lower_pos, higher_label, lower_label, m_pos, m_size, scale)) {
+        if (temp_higher_pos != higher_pos) {
+            m_higher_pos = higher_pos;
             if (m_combine_thumbs)
-                m_lower_value = m_higher_value;
+                m_lower_pos = m_higher_pos;
         }
-        if (temp_lower_value != lower_value)
-            m_lower_value = lower_value;
+        if (temp_lower_pos != lower_pos)
+            m_lower_pos = lower_pos;
         result = true;
     }
 

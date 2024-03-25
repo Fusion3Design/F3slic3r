@@ -19,7 +19,8 @@
 #include "OpenGLManager.hpp"
 #include "GLCanvas3D.hpp"
 #include "libslic3r/PresetBundle.hpp"
-#include "DoubleSlider.hpp"
+#include "DoubleSliderForGcode.hpp"
+#include "DoubleSliderForLayers.hpp"
 #include "Plater.hpp"
 #include "MainFrame.hpp"
 #include "format.hpp"
@@ -197,8 +198,8 @@ Preview::Preview(
 
 void Preview::set_layers_slider_values_range(int bottom, int top)
 {
-    m_layers_slider->SetHigherValue(std::min(top, m_layers_slider->GetMaxValue()));
-    m_layers_slider->SetLowerValue(std::max(bottom, m_layers_slider->GetMinValue()));
+    m_layers_slider->SetHigherPos(std::min(top, m_layers_slider->GetMaxPos()));
+    m_layers_slider->SetLowerPos(std::max(bottom, m_layers_slider->GetMinPos()));
 }
 
 bool Preview::init(wxWindow* parent, Bed3D& bed, Model* model)
@@ -314,6 +315,8 @@ void Preview::reload_print()
 
 void Preview::msw_rescale()
 {
+    m_layers_slider->SetEmUnit(wxGetApp().em_unit());
+    m_moves_slider->SetEmUnit(wxGetApp().em_unit());
     // rescale warning legend on the canvas
     get_canvas3d()->msw_rescale();
 
@@ -328,9 +331,9 @@ void Preview::render_sliders(GLCanvas3D& canvas, float extra_scale/* = 0.1f*/)
     const int   canvas_height = cnv_size.get_height();
 
     if (m_layers_slider)
-        m_layers_slider->imgui_render(canvas_width, canvas_height, extra_scale);
+        m_layers_slider->Render(canvas_width, canvas_height, extra_scale);
     if (m_moves_slider)
-        m_moves_slider->imgui_render(canvas_width, canvas_height, extra_scale);
+        m_moves_slider->Render(canvas_width, canvas_height, extra_scale);
 }
 
 void Preview::bind_event_handlers()
@@ -358,12 +361,11 @@ void Preview::create_sliders()
 {
     // Layers Slider
 
-    m_layers_slider = new DoubleSlider::DSManagerForLayers(0, 0, 0, 100, wxGetApp().is_editor());
+    m_layers_slider = new DoubleSlider::DSForLayers(0, 0, 0, 100, wxGetApp().is_editor());
+    m_layers_slider->SetEmUnit(wxGetApp().em_unit());
 
     m_layers_slider->SetDrawMode(wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA,
                                  wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_bool("complete_objects"));
-
-    m_layers_slider->enable_action_icon(wxGetApp().is_editor());
 
     m_layers_slider->set_callback_on_thumb_move( [this]() -> void { Preview::on_layers_slider_scroll_changed(); } );
 
@@ -378,7 +380,8 @@ void Preview::create_sliders()
 
     // Move Gcode Slider
 
-    m_moves_slider = new DoubleSlider::DSManagerForGcode(0, 0, 0, 100);
+    m_moves_slider = new DoubleSlider::DSForGcode(0, 0, 0, 100);
+    m_moves_slider->SetEmUnit(wxGetApp().em_unit());
 
     m_moves_slider->set_callback_on_thumb_move([this]() ->void { Preview::on_moves_slider_scroll_changed(); });
 
@@ -423,7 +426,7 @@ void Preview::check_layers_slider_values(std::vector<CustomGCode::Item>& ticks_f
     ticks_from_model.erase(std::remove_if(ticks_from_model.begin(), ticks_from_model.end(),
                      [layers_z](CustomGCode::Item val)
         {
-            auto it = std::lower_bound(layers_z.begin(), layers_z.end(), val.print_z - DoubleSlider::epsilon());
+            auto it = std::lower_bound(layers_z.begin(), layers_z.end(), val.print_z - CustomGCode::epsilon());
             return it == layers_z.end();
         }),
         ticks_from_model.end());
@@ -434,17 +437,17 @@ void Preview::check_layers_slider_values(std::vector<CustomGCode::Item>& ticks_f
 void Preview::update_layers_slider(const std::vector<double>& layers_z, bool keep_z_range)
 {
     // Save the initial slider span.
-    double z_low = m_layers_slider->GetLowerValueD();
-    double z_high = m_layers_slider->GetHigherValueD();
-    bool   was_empty = m_layers_slider->GetMaxValue() == 0;
+    double z_low = m_layers_slider->GetLowerValue();
+    double z_high = m_layers_slider->GetHigherValue();
+    bool   was_empty = m_layers_slider->GetMaxPos() == 0;
 
     bool force_sliders_full_range = was_empty;
     if (!keep_z_range) {
-        bool span_changed = layers_z.empty() || std::abs(layers_z.back() - m_layers_slider->GetMaxValueD()) > DoubleSlider::epsilon()/*1e-6*/;
+        bool span_changed = layers_z.empty() || std::abs(layers_z.back() - m_layers_slider->GetMaxValue()) > CustomGCode::epsilon()/*1e-6*/;
         force_sliders_full_range |= span_changed;
     }
-    bool   snap_to_min = force_sliders_full_range || m_layers_slider->is_lower_at_min();
-    bool   snap_to_max = force_sliders_full_range || m_layers_slider->is_higher_at_max();
+    bool   snap_to_min = force_sliders_full_range || m_layers_slider->IsLowerAtMin();
+    bool   snap_to_max = force_sliders_full_range || m_layers_slider->IsHigherAtMax();
 
     // Detect and set manipulation mode for double slider
     update_layers_slider_mode();
@@ -462,19 +465,19 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
     //first of all update extruder colors to avoid crash, when we are switching printer preset from MM to SM
     m_layers_slider->SetExtruderColors(plater->get_extruder_colors_from_plater_config(wxGetApp().is_editor() ? nullptr : m_gcode_result));
     m_layers_slider->SetSliderValues(layers_z);
-    assert(m_layers_slider->GetMinValue() == 0);
-    m_layers_slider->SetMaxValue(layers_z.empty() ? 0 : layers_z.size() - 1);
+    assert(m_layers_slider->GetMinPos() == 0);
+    m_layers_slider->SetMaxPos(layers_z.empty() ? 0 : layers_z.size() - 1);
 
     int idx_low = 0;
-    int idx_high = m_layers_slider->GetMaxValue();
+    int idx_high = m_layers_slider->GetMaxPos();
     if (!layers_z.empty()) {
         if (!snap_to_min) {
-            int idx_new = find_close_layer_idx(layers_z, z_low, DoubleSlider::epsilon()/*1e-6*/);
+            int idx_new = find_close_layer_idx(layers_z, z_low, CustomGCode::epsilon()/*1e-6*/);
             if (idx_new != -1)
                 idx_low = idx_new;
         }
         if (!snap_to_max) {
-            int idx_new = find_close_layer_idx(layers_z, z_high, DoubleSlider::epsilon()/*1e-6*/);
+            int idx_new = find_close_layer_idx(layers_z, z_high, CustomGCode::epsilon()/*1e-6*/);
             if (idx_new != -1)
                 idx_high = idx_new;
         }
@@ -625,17 +628,19 @@ void Preview::update_layers_slider_mode()
 
 void Preview::reset_layers_slider()
 {
-    m_layers_slider->SetHigherValue(0);
-    m_layers_slider->SetLowerValue(0);
+    m_layers_slider->SetHigherPos(0);
+    m_layers_slider->SetLowerPos(0);
 }
 
 void Preview::update_sliders_from_canvas(wxKeyEvent& event)
 {
     const auto key = event.GetKeyCode();
 
-    if (key == WXK_NUMPAD_ADD || key == '+')
-        m_layers_slider->add_current_tick(true);
-    else if (key == WXK_NUMPAD_SUBTRACT || key == WXK_DELETE || key == WXK_BACK || key == '-')
+    const bool can_edit = wxGetApp().is_editor();
+
+    if (can_edit && (key == WXK_NUMPAD_ADD || key == '+'))
+        m_layers_slider->add_current_tick();
+    else if (can_edit && (key == WXK_NUMPAD_SUBTRACT || key == WXK_DELETE || key == WXK_BACK || key == '-'))
         m_layers_slider->delete_current_tick();
     else if (key == 'G' || key == 'g')
         m_layers_slider->jump_to_value();
@@ -662,12 +667,12 @@ void Preview::update_sliders_from_canvas(wxKeyEvent& event)
     }
 
     else if (key == 'S' || key == 'W') {
-        const int new_pos = key == 'W' ? m_layers_slider->GetHigherValue() + 1 : m_layers_slider->GetHigherValue() - 1;
-        m_layers_slider->SetHigherValue(new_pos);
+        const int new_pos = key == 'W' ? m_layers_slider->GetHigherPos() + 1 : m_layers_slider->GetHigherPos() - 1;
+        m_layers_slider->SetHigherPos(new_pos);
     }
     else if (key == 'A' || key == 'D') {
-        const int new_pos = key == 'D' ? m_moves_slider->GetHigherValue() + 1 : m_moves_slider->GetHigherValue() - 1;
-        m_moves_slider->SetHigherValue(new_pos);
+        const int new_pos = key == 'D' ? m_moves_slider->GetHigherPos() + 1 : m_moves_slider->GetHigherPos() - 1;
+        m_moves_slider->SetHigherPos(new_pos);
     }
     else if (key == 'X')
         m_layers_slider->ChangeOneLayerLock();
@@ -726,8 +731,10 @@ void Preview::update_moves_slider(std::optional<int> visible_range_min, std::opt
 
     m_moves_slider->SetSliderValues(values);
     m_moves_slider->SetSliderAlternateValues(alternate_values);
-    m_moves_slider->SetMaxValue(static_cast<int>(values.size()) - 1);
+    m_moves_slider->SetMaxPos(static_cast<int>(values.size()) - 1);
     m_moves_slider->SetSelectionSpan(span_min_id, span_max_id);
+
+    m_moves_slider->ShowLowerThumb(get_app_config()->get("seq_top_layer_only") == "0");
 }
 
 void Preview::enable_moves_slider(bool enable)
@@ -888,13 +895,13 @@ void Preview::on_layers_slider_scroll_changed()
     if (IsShown()) {
         PrinterTechnology tech = m_process->current_printer_technology();
         if (tech == ptFFF) {
-            m_canvas->set_volumes_z_range({ m_layers_slider->GetLowerValueD(), m_layers_slider->GetHigherValueD() });
-            m_canvas->set_toolpaths_z_range({ static_cast<unsigned int>(m_layers_slider->GetLowerValue()), static_cast<unsigned int>(m_layers_slider->GetHigherValue()) });
+            m_canvas->set_volumes_z_range({ m_layers_slider->GetLowerValue(), m_layers_slider->GetHigherValue() });
+            m_canvas->set_toolpaths_z_range({ static_cast<unsigned int>(m_layers_slider->GetLowerPos()), static_cast<unsigned int>(m_layers_slider->GetHigherPos()) });
             m_canvas->set_as_dirty();
         }
         else if (tech == ptSLA) {
-            m_canvas->set_clipping_plane(0, ClippingPlane(Vec3d::UnitZ(), -m_layers_slider->GetLowerValueD()));
-            m_canvas->set_clipping_plane(1, ClippingPlane(-Vec3d::UnitZ(), m_layers_slider->GetHigherValueD()));
+            m_canvas->set_clipping_plane(0, ClippingPlane(Vec3d::UnitZ(), -m_layers_slider->GetLowerValue()));
+            m_canvas->set_clipping_plane(1, ClippingPlane(-Vec3d::UnitZ(), m_layers_slider->GetHigherValue()));
             m_canvas->render();
         }
     }
@@ -902,7 +909,7 @@ void Preview::on_layers_slider_scroll_changed()
 
 void Preview::on_moves_slider_scroll_changed()
 {
-    m_canvas->update_gcode_sequential_view_current(static_cast<unsigned int>(m_moves_slider->GetLowerValueD() - 1.0), static_cast<unsigned int>(m_moves_slider->GetHigherValueD() - 1.0));
+    m_canvas->update_gcode_sequential_view_current(static_cast<unsigned int>(m_moves_slider->GetLowerValue() - 1), static_cast<unsigned int>(m_moves_slider->GetHigherValue() - 1));
     m_canvas->set_as_dirty();
     m_canvas->request_extra_frame();
 }

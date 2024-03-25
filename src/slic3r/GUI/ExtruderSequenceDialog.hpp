@@ -6,7 +6,7 @@
 #define slic3r_GUI_ExtruderSequenceDialog_hpp_
 
 #include "GUI_Utils.hpp"
-#include "DoubleSlider.hpp"
+#include "DoubleSliderForLayers.hpp"
 #include "wxExtensions.hpp"
 
 class wxTextCtrl;
