@@ -3680,7 +3680,15 @@ void GUI_App::handle_connect_request_printer_pick(std::string msg)
     // return to plater
     this->mainframe->select_tab(size_t(0));
     // parse message
-    std::string model_name = plater()->get_user_account()->get_model_from_json(msg);
+    std::vector<std::string> compatible_printers;
+    plater()->get_user_account()->fill_compatible_printers_from_json(msg, compatible_printers);
+    std::string model_name;
+    if (compatible_printers.empty()) {
+        // TODO: This should go away when compatible printers gives right information.
+        model_name = plater()->get_user_account()->get_model_from_json(msg);
+    } else {
+        model_name = compatible_printers.front();
+    }
     std::string nozzle = plater()->get_user_account()->get_nozzle_from_json(msg);
     assert(!model_name.empty());
     if (model_name.empty())

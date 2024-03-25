@@ -695,7 +695,7 @@ void PrinterPickWebViewDialog::request_compatible_printers()
     const std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
     const std::string printer_type = wxGetApp().plater()->get_user_account()->get_printer_type_from_name(printer_model_serialized);
 
-    assert(!filament_type_serialized.empty() && !nozzle_diameter_serialized.empty() && !printer_type.empty());
+   // assert(!filament_type_serialized.empty() && !nozzle_diameter_serialized.empty() && !printer_type.empty());
     const std::string request = GUI::format(
         "{"
         "\"material\": \"%1%\", "

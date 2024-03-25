@@ -5862,29 +5862,75 @@ void Plater::connect_gcode()
     }
     BOOST_LOG_TRIVIAL(debug) << "Message from Printer pick webview: " << dialog_msg;
 
-    std::string connect_printer_model = p->user_account->get_model_from_json(dialog_msg);
+    PresetBundle* preset_bundle = wxGetApp().preset_bundle;
+    // Connect data
+    std::vector<std::string> compatible_printers;
+    p->user_account->fill_compatible_printers_from_json(dialog_msg, compatible_printers);
     std::string connect_nozzle = p->user_account->get_nozzle_from_json(dialog_msg);
     std::string connect_filament = p->user_account->get_keyword_from_json(dialog_msg, "filament_type");
-    assert(!connect_printer_model.empty());
-    PresetBundle* preset_bundle = wxGetApp().preset_bundle; 
+    std::vector<const Preset*> compatible_printer_presets;
+    for (const std::string& cp : compatible_printers) {
+        compatible_printer_presets.emplace_back(preset_bundle->printers.find_system_preset_by_model_and_variant(cp, connect_nozzle));
+    }
+    // Selected profiles
     const Preset* selected_printer_preset = &preset_bundle->printers.get_selected_preset();
     const Preset* selected_filament_preset = &preset_bundle->filaments.get_selected_preset();
     const std::string selected_nozzle_serialized = dynamic_cast<const ConfigOptionFloats*>(selected_printer_preset->config.option("nozzle_diameter"))->serialize();
-    const std::string selected_filament_serialized = selected_filament_preset ->config.option("filament_type")->serialize();
+    const std::string selected_filament_serialized = selected_filament_preset->config.option("filament_type")->serialize();
     const std::string selected_printer_model_serialized = selected_printer_preset->config.option("printer_model")->serialize();
-    
-    const Preset* connect_printer_preset = preset_bundle->printers.find_system_preset_by_model_and_variant(connect_printer_model, connect_nozzle);
 
-    if (connect_printer_model != selected_printer_model_serialized || (!connect_nozzle.empty() && connect_nozzle != selected_nozzle_serialized) || (!connect_filament.empty() && connect_filament != selected_filament_serialized)) {
-        wxString line1 = _L("The printer profile you've selected for upload is not fully compatible with profiles selected for slicing.");
-        wxString line2 = GUI::format_wxstr(_L("PrusaSlicer Profile: %1%, filament: %3%"), selected_printer_preset->name, selected_nozzle_serialized, selected_filament_serialized);
-        wxString line3 = GUI::format_wxstr(_L("Selected Printer: %1%, filament: %3%"), connect_printer_preset->name, connect_nozzle, connect_filament);
-        wxString line4 =_L("Choose YES to continue upload, choose NO to switch selected printer in PrusaSlicer.");
-        wxString message = GUI::format_wxstr("%1%\n\n%2%\n%3%\n\n%4%", line1, line2, line3, line4);
+    bool is_first = compatible_printer_presets.front()->name == selected_printer_preset->name;
+    bool found = false;
+    for (const Preset* connect_preset : compatible_printer_presets) {
+        if (!connect_preset) {
+            continue;
+        }
+        if (selected_printer_preset->name == connect_preset->name) {
+            found = true;
+            break;
+        }
+    }
+    // 
+    if (!found) {
+        wxString line1 = _L("The printer profile you've selected for upload is not compatible with profiles selected for slicing.");
+        wxString line2 = GUI::format_wxstr(_L("PrusaSlicer Profile:\n%1%"), selected_printer_preset->name);
+        wxString line3 = _L("Known profiles compatible with printer selected for upload:");
+        wxString printers_line;
+        for (const Preset* connect_preset : compatible_printer_presets) {
+            if (!connect_preset) {
+                continue;
+            }
+            printers_line += GUI::format_wxstr(_L("\n%1%"), connect_preset->name);
+        }
+        wxString line4 = _L("Do you still wish to upload?");
+        wxString message = GUI::format_wxstr("%1%\n\n%2%\n\n%3%%4%\n\n%5%", line1, line2, line3, printers_line,line4);
         MessageDialog msg_dialog(this, message, _L("Do you wish to upload?"), wxYES_NO);
         auto modal_res = msg_dialog.ShowModal();
-        if (modal_res == wxID_NO) {
-            // if selected (in connect) preset is not visible, make it visible and selected 
+        if (modal_res != wxID_YES) {
+            return;
+        }
+    } else if (!is_first) {
+        wxString line1 = _L("The printer profile you've selected for upload might not be compatible with profiles selected for slicing.");
+        wxString line2 = GUI::format_wxstr(_L("PrusaSlicer Profile:\n%1%"), selected_printer_preset->name);
+        wxString line3 = _L("Known profiles compatible with printer selected for upload:");
+        wxString printers_line;
+        for (const Preset* connect_preset : compatible_printer_presets) {
+            if (!connect_preset) {
+                continue;
+            }
+            printers_line += GUI::format_wxstr(_L("\n%1%"), connect_preset->name);
+        }
+        wxString line4 = _L("Do you still wish to upload?");
+        wxString message = GUI::format_wxstr("%1%\n\n%2%\n\n%3%%4%\n\n%5%", line1, line2, line3, printers_line, line4);
+        MessageDialog msg_dialog(this, message, _L("Do you wish to upload?"), wxYES_NO);
+        auto modal_res = msg_dialog.ShowModal();
+        if (modal_res != wxID_YES) {
+            return;
+        }
+    }
+ // Commented code with selecting printers in plater
+ /* 
+           // if selected (in connect) preset is not visible, make it visible and selected 
             if (!connect_printer_preset->is_visible) {
                 size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(connect_printer_preset->name);
                 assert(preset_id != size_t(-1));
@@ -5904,13 +5950,7 @@ void Plater::connect_gcode()
                 p->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, format(_u8L("Changed Printer to %1%."), connect_printer_preset->name));
                 select_view_3D("3D");                
             }
-            // TODO: select filament
-            return;
-        } else if (modal_res != wxID_YES) {
-            // exit dialog without selecting yes / no
-            return;
-        }
-    }
+ */
 
     const std::string connect_state = p->user_account->get_keyword_from_json(dialog_msg, "connect_state");
     const std::string printer_state = p->user_account->get_keyword_from_json(dialog_msg, "printer_state");
@@ -5929,7 +5969,7 @@ void Plater::connect_gcode()
         show_error(this, _L("Failed to select a printer. Missing data (uuid and team id) for chosen printer."));
         return;
     }
-    PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *connect_printer_preset);
+    PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), /**connect_printer_preset*/*selected_printer_preset);
     ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnectNew));
     // use existing structures to pass data
     ph_printer.config.opt_string("printhost_apikey") = team_id;

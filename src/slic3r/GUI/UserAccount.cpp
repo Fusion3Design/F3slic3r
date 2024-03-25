@@ -179,6 +179,21 @@ namespace {
         }
         return {};
     }
+
+    pt::ptree parse_tree_for_subtree(const pt::ptree& tree, const std::string& param)
+    {
+        for (const auto& section : tree) {
+            if (section.first == param) {
+                return section.second;
+            }
+            else {
+                if (pt::ptree res = parse_tree_for_subtree(section.second, param); !res.empty())
+                    return res;
+            }
+
+        }
+        return pt::ptree();
+    }
 }
 
 bool UserAccount::on_connect_printers_success(const std::string& data, AppConfig* app_config, bool& out_printers_changed)
@@ -316,6 +331,29 @@ std::string UserAccount::get_keyword_from_json(const std::string& json, const st
     }
     return out;
 }
+
+void UserAccount::fill_compatible_printers_from_json(const std::string& json, std::vector<std::string>& result) const
+{
+    try {
+        std::stringstream ss(json);
+        pt::ptree ptree;
+        pt::read_json(ss, ptree);
+
+        pt::ptree out = parse_tree_for_subtree(ptree, "printer_type_compatible");
+        if (out.empty()) {
+            BOOST_LOG_TRIVIAL(error) << "Failed to find compatible_printer_type in printer detail.";
+            return;
+        }
+        for (const auto& sub : out) {
+            result.emplace_back(sub.second.data());
+        }
+    }
+    catch (const std::exception& e) {
+        BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
+    }
+}
+
+
 std::string UserAccount::get_printer_type_from_name(const std::string& printer_name) const
 {
     
@@ -327,5 +365,6 @@ std::string UserAccount::get_printer_type_from_name(const std::string& printer_n
     assert(true); // This assert means printer_type_and_name_table needs a update
     return {};
 }
+
 
 }} // namespace slic3r::GUI

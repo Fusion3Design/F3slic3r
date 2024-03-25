@@ -71,6 +71,7 @@ public:
     std::string get_nozzle_from_json(const std::string& message) const;
     //std::string get_apikey_from_json(const std::string& message) const;
     std::string get_keyword_from_json(const std::string& json, const std::string& keyword) const;
+    void fill_compatible_printers_from_json(const std::string& json, std::vector<std::string>& result) const;
 
     const std::map<std::string, ConnectPrinterState>& get_printer_state_table() const { return printer_state_table; }
 
@@ -101,14 +102,14 @@ private:
         {"3.1.0", "XL"          },
         {"5.1.0", "SL1"         },
         // ysFIXME : needs to add Connect ids for next printers
-        {"0.0.0", "MK4IS"       },
+        /*{"0.0.0", "MK4IS"       },
         {"0.0.0", "MK3SMMU2S"   },
         {"0.0.0", "MK3MMU2"     },
         {"0.0.0", "MK2.5SMMU2S" },
         {"0.0.0", "MK2.5MMU2"   },
         {"0.0.0", "MK2S"        },
         {"0.0.0", "MK2SMM"      },
-        {"0.0.0", "SL1S"        },
+        {"0.0.0", "SL1S"        },*/
     };
     /* TODO: 
         4	1	0	iXL
