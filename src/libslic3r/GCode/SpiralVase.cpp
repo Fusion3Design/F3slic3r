@@ -107,8 +107,11 @@ std::string SpiralVase::process_layer(const std::string &gcode, bool last_layer)
                         transition_line.set(reader, E, line.e() * (1.f - factor), 5);
                         transition_gcode += transition_line.raw() + '\n';
                     }
+
                     // This line is the core of Spiral Vase mode, ramp up the Z smoothly
                     line.set(reader, Z, z + factor * layer_height);
+
+                    bool emit_gcode_line = true;
                     if (smooth_spiral) {
                         // Now we also need to try to interpolate X and Y
                         Vec2f p(line.x(), line.y());   // Get current x/y coordinates
@@ -118,6 +121,10 @@ std::string SpiralVase::process_layer(const std::string &gcode, bool last_layer)
                         if (nearest_distance < max_xy_smoothing) {
                             // Interpolate between the point on this layer and the point on the previous layer
                             Vec2f target = nearest_pt.cast<float>() * (1.f - factor) + p * factor;
+
+                            // We will emit a new g-code line only when XYZ positions differ from the previous g-code line.
+                            emit_gcode_line = GCodeFormatter::quantize(last_point) != GCodeFormatter::quantize(target);
+
                             line.set(reader, X, target.x());
                             line.set(reader, Y, target.y());
                             // We need to figure out the distance of this new line!
@@ -129,7 +136,9 @@ std::string SpiralVase::process_layer(const std::string &gcode, bool last_layer)
                             last_point = p;
                         }
                     }
-                    new_gcode += line.raw() + '\n';
+
+                    if (emit_gcode_line)
+                        new_gcode += line.raw() + '\n';
                 }
                 return;
                 /*  Skip travel moves: the move to first perimeter point will
