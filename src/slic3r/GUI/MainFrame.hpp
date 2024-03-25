@@ -43,6 +43,8 @@ class Plater;
 class MainFrame;
 class PreferencesDialog;
 class GalleryDialog;
+class WebViewPanel; 
+class MediaMainPanel;
 
 enum QuickSlice
 {
@@ -219,6 +221,8 @@ public:
     PreferencesDialog*    preferences_dialog { nullptr };
     PrintHostQueueDialog* m_printhost_queue_dlg;
     GalleryDialog*        m_gallery_dialog{ nullptr };
+    WebViewPanel*         m_webview{ nullptr };
+    MediaMainPanel*       m_media{ nullptr};
 
 #ifdef __APPLE__
     std::unique_ptr<wxTaskBarIcon> m_taskbar_icon;

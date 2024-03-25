@@ -49,7 +49,7 @@ namespace DownloaderUtils {
         void set_path_name(const std::string& name);
 
         bool on_finish();
-        bool perform_register(const std::string& path_override = {});
+        static bool perform_register(const std::string& path);
 #ifdef __linux__
         bool get_perform_registration_linux() { return perform_registration_linux; }
 #endif // __linux__

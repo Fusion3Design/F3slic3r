@@ -62,7 +62,7 @@ class Mouse3DController;
 class NotificationManager;
 struct Camera;
 class GLToolbar;
-class PrusaAuthCommunication;
+class UserAccount;
 
 class Plater: public wxPanel
 {
@@ -351,8 +351,8 @@ public:
     NotificationManager* get_notification_manager();
     const NotificationManager* get_notification_manager() const;
 
-    PrusaAuthCommunication* get_auth_communication();
-    const PrusaAuthCommunication* get_auth_communication() const;
+    UserAccount* get_user_account();
+    const UserAccount* get_user_account() const;
 
     void init_notification_manager();
 

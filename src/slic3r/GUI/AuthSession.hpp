@@ -103,8 +103,8 @@ public:
         m_actions[UserActionID::CODE_FOR_TOKEN] = std::make_unique<UserActionPost>("EXCHANGE_TOKENS", "https://test-account.prusa3d.com/o/token/");
         m_actions[UserActionID::TEST_CONNECTION] = std::make_unique<UserActionGetWithEvent>("TEST_CONNECTION", "https://test-account.prusa3d.com/api/v1/me/", evt_handler, EVT_PA_ID_USER_SUCCESS, EVT_PRUSAAUTH_FAIL);
         m_actions[UserActionID::USER_ID] = std::make_unique<UserActionGetWithEvent>("USER_ID", "https://test-account.prusa3d.com/api/v1/me/", evt_handler, EVT_PA_ID_USER_SUCCESS, EVT_PRUSAAUTH_FAIL);
-        m_actions[UserActionID::CONNECT_DUMMY] = std::make_unique<UserActionGetWithEvent>("CONNECT_DUMMY", "dev.connect.prusa:8000/slicer/dummy", evt_handler, EVT_PRUSAAUTH_SUCCESS, EVT_PRUSAAUTH_FAIL);
-        m_actions[UserActionID::CONNECT_PRINTERS] = std::make_unique<UserActionGetWithEvent>("CONNECT_PRINTERS", "dev.connect.prusa:8000/slicer/printers", evt_handler, EVT_PRUSACONNECT_PRINTERS_SUCCESS, EVT_PRUSAAUTH_FAIL);
+        m_actions[UserActionID::CONNECT_DUMMY] = std::make_unique<UserActionGetWithEvent>("CONNECT_DUMMY", "https://dev.connect.prusa3d.com/slicer/dummy"/*"dev.connect.prusa:8000/slicer/dummy"*/, evt_handler, EVT_PRUSAAUTH_SUCCESS, EVT_PRUSAAUTH_FAIL);
+        m_actions[UserActionID::CONNECT_PRINTERS] = std::make_unique<UserActionGetWithEvent>("CONNECT_PRINTERS", "https://dev.connect.prusa3d.com/slicer/printers"/*"dev.connect.prusa:8000/slicer/printers"*/, evt_handler, EVT_PRUSACONNECT_PRINTERS_SUCCESS, EVT_PRUSAAUTH_FAIL);
     }
     ~AuthSession()
     {

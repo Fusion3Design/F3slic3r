@@ -62,6 +62,9 @@
 #include "GalleryDialog.hpp"
 #include "NotificationManager.hpp"
 #include "Preferences.hpp"
+#include "WebViewDialog.hpp"
+#include "MediaControlPanel.hpp"
+#include "MediaControl.hpp"
 
 #ifdef _WIN32
 #include <dbt.h>
@@ -724,6 +727,10 @@ void MainFrame::init_tabpanel()
         if (panel == nullptr || (tab != nullptr && !tab->supports_printer_technology(m_plater->printer_technology())))
             return;
 
+        // temporary fix - WebViewPanel is not inheriting from Tab -> would jump to select Plater
+        if (panel && !tab)
+            return;
+
         auto& tabs_list = wxGetApp().tabs_list;
         if (tab && std::find(tabs_list.begin(), tabs_list.end(), tab) != tabs_list.end()) {
             // On GTK, the wxEVT_NOTEBOOK_PAGE_CHANGED event is triggered
@@ -738,6 +745,13 @@ void MainFrame::init_tabpanel()
         else
             select_tab(size_t(0)); // select Plater
     });
+
+    if (wxGetApp().is_editor()) {
+       
+        //m_webview = new WebViewPanel(m_tabpanel);
+        //m_tabpanel->AddPage(m_webview, "web", "cog"/*, "tab_home_active"*/);
+        //m_param_panel = new ParamsPanel(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBK_LEFT | wxTAB_TRAVERSAL);
+    }
 
     m_plater = new Plater(this, this);
     m_plater->Hide();
@@ -823,6 +837,13 @@ void MainFrame::create_preset_tabs()
     add_created_tab(new TabSLAPrint(m_tabpanel), "cog");
     add_created_tab(new TabSLAMaterial(m_tabpanel), "resin");
     add_created_tab(new TabPrinter(m_tabpanel), wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptFFF ? "printer" : "sla_printer");
+    
+    m_webview = new WebViewPanel(m_tabpanel);
+    m_tabpanel->AddPage(m_webview, "Web View");
+    /*
+    m_media = new MediaMainPanel(this);
+    m_tabpanel->AddPage(m_media, "Media");
+    */
 }
 
 void MainFrame::add_created_tab(Tab* panel,  const std::string& bmp_name /*= ""*/)
@@ -1510,6 +1531,9 @@ void MainFrame::init_menubar_as_editor()
         append_menu_check_item(viewMenu, wxID_ANY, _L("&Collapse Sidebar") + sep + "Shift+" + sep_space + "Tab", _L("Collapse sidebar"),
             [this](wxCommandEvent&) { m_plater->collapse_sidebar(!m_plater->is_sidebar_collapsed()); }, this,
             []() { return true; }, [this]() { return m_plater->is_sidebar_collapsed(); }, this);
+        append_menu_check_item(viewMenu, wxID_ANY, _L("&Load URL"), _L("Load URL"),
+            [this](wxCommandEvent&) {  wxString url = "https://dev.connect.prusa3d.com/"/*"file:///C:/Projects/BambuStudio/resources/web/homepage/index.html"*/; m_webview->load_url(url); }, this,
+            []() { return true; }, []() { return true; }, this);
 #ifndef __APPLE__
         // OSX adds its own menu item to toggle fullscreen.
         append_menu_check_item(viewMenu, wxID_ANY, _L("&Fullscreen") + "\t" + "F11", _L("Fullscreen"),

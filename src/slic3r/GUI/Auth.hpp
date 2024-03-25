@@ -34,14 +34,13 @@ public:
     // UI Session thread Interface 
     //
     bool is_logged();
-    void login();
-    void logout();
+    void do_login();
+    void do_logout();
     // Trigger function starts various remote operations
-    // Each user action is implemented in different UserAction class and stored in m_actions.
     void enqueue_user_id_action();
     void enqueue_connect_dummy_action();
     void enqueue_connect_printers_action();
-    void set_remember_session(bool b) { m_remember_session = b; }
+   
     
     // Callbacks - called from UI after receiving Event from Session thread. Some might use Session thread.
     // 
@@ -51,13 +50,15 @@ public:
 
 
     void set_username(const std::string& username, AppConfig* app_config);
+    void set_remember_session(bool b) { m_remember_session = b; }
 
     std::string get_username() const { return m_username; }
-   
-    std::string proccess_prusaconnect_printers_message(const std::string& message);
+    std::string get_access_token();
+
+    
 
 private:
-    std::unique_ptr<AuthSession>                m_session;
+    std::unique_ptr<AuthSession>            m_session;
     std::thread                             m_thread;
     std::mutex                              m_session_mutex;
     std::mutex                              m_thread_stop_mutex;
@@ -73,6 +74,9 @@ private:
     void init_session_thread();
     void login_redirect();
     std::string client_id() const { return "UfTRUm5QjWwaQEGpWQBHGHO3reAyuzgOdBaiqO52"; }
+    
+    
+    
 };
 }
 }

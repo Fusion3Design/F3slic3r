@@ -98,8 +98,10 @@ enum ConfigMenuIDs {
     ConfigMenuTakeSnapshot,
     ConfigMenuUpdateConf,
     ConfigMenuUpdateApp,
+    ConfigMenuMediaDialog,
     ConfigMenuAuthLogin,
     ConfigMenuConnectDummy,
+    ConfigMenuConnectDialog,
     ConfigMenuDesktopIntegration,
     ConfigMenuPreferences,
     ConfigMenuModeSimple,
@@ -401,6 +403,24 @@ public:
 
     void            open_wifi_config_dialog(bool forced, const wxString& drive_path = {});
     bool            get_wifi_config_dialog_shown() const { return m_wifi_config_dialog_shown; }
+    
+    void            request_login(bool show_user_info = false) {}
+    bool            check_login() { return false; }
+    void            get_login_info() {}
+    bool            is_user_login() { return true; }
+
+    void            request_user_login(int online_login) {}
+    void            request_user_logout() {}
+    int             request_user_unbind(std::string dev_id) { return 0; }
+    void            handle_web_request(std::string cmd);
+    void            select_printer_with_load(Preset* prst, const std::string& preset_name, const std::string& printer_name, const std::string& nozzle_name, const std::string& nozzle );
+    void            handle_script_message(std::string msg) {}
+    void            request_model_download(std::string import_json) {}
+    void            download_project(std::string project_id) {}
+    void            request_project_download(std::string project_id) {}
+    void            request_open_project(std::string project_id) {}
+    void            request_remove_project(std::string project_id) {}
+
 private:
     bool            on_init_inner();
 	void            init_app_config();

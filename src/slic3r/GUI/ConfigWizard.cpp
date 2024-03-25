@@ -1536,11 +1536,9 @@ bool PageDownloader::on_finish_downloader() const
     return m_downloader->on_finish();
 }
 
-bool DownloaderUtils::Worker::perform_register(const std::string& path_override/* = {}*/)
+bool DownloaderUtils::Worker::perform_register(const std::string& path)
 {
-    boost::filesystem::path aux_dest (GUI::into_u8(path_name()));
-    if (!path_override.empty())
-        aux_dest = boost::filesystem::path(path_override);
+    boost::filesystem::path aux_dest (path);
     boost::system::error_code ec;
     boost::filesystem::path chosen_dest = boost::filesystem::absolute(aux_dest, ec);
     if(ec)
@@ -1549,7 +1547,7 @@ bool DownloaderUtils::Worker::perform_register(const std::string& path_override/
     if (chosen_dest.empty() || !boost::filesystem::is_directory(chosen_dest, ec) || ec) {
         std::string err_msg = GUI::format("%1%\n\n%2%",_L("Chosen directory for downloads does not exist.") ,chosen_dest.string());
         BOOST_LOG_TRIVIAL(error) << err_msg;
-        show_error(m_parent, err_msg);
+        show_error(/*m_parent*/ nullptr, err_msg);
         return false;
     }
     BOOST_LOG_TRIVIAL(info) << "Downloader registration: Directory for downloads: " << chosen_dest.string();
@@ -1613,12 +1611,12 @@ bool DownloaderUtils::Worker::on_finish() {
     BOOST_LOG_TRIVIAL(debug) << "PageDownloader::on_finish_downloader ac_value " << ac_value << " downloader_checked " << downloader_checked;
     if (ac_value && downloader_checked) {
         // already registered but we need to do it again
-        if (!perform_register())
+        if (!perform_register(GUI::into_u8(path_name())))
             return false;
         app_config->set("downloader_url_registered", "1");
     } else if (!ac_value && downloader_checked) {
         // register
-        if (!perform_register())
+        if (!perform_register(GUI::into_u8(path_name())))
             return false;
         app_config->set("downloader_url_registered", "1");
     } else if (ac_value && !downloader_checked) {

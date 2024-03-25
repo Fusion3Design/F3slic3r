@@ -72,8 +72,11 @@ void UserActionGetWithEvent::perform(const std::string& access_token, UserAction
 
 void AuthSession::process_action_queue()
 {
-    if (m_priority_action_queue.empty() && m_action_queue.empty())
+    BOOST_LOG_TRIVIAL(debug) << "process_action_queue start";
+    if (m_priority_action_queue.empty() && m_action_queue.empty()) {
+        BOOST_LOG_TRIVIAL(debug) << "process_action_queue queues empty";
         return;
+    }
 
     if (this->is_initialized()) {
         // if priority queue already has some action f.e. to exchange tokens, the test should not be neccessary but also shouldn't be problem
@@ -86,18 +89,22 @@ void AuthSession::process_action_queue()
             m_priority_action_queue.pop();
     }
 
-    if (!this->is_initialized())
+    if (!this->is_initialized()) {
+        BOOST_LOG_TRIVIAL(debug) << "process_action_queue not initialized";
         return;
+    }
 
     while (!m_action_queue.empty()) {
         m_actions[m_action_queue.front().action_id]->perform(m_access_token, m_action_queue.front().success_callback, m_action_queue.front().fail_callback, m_action_queue.front().input);
         if (!m_action_queue.empty())
             m_action_queue.pop();
     }
+    BOOST_LOG_TRIVIAL(debug) << "process_action_queue end";
 }
 
 void AuthSession::enqueue_action(UserActionID id, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
 {
+    BOOST_LOG_TRIVIAL(info) << "enqueue_action " << (int)id;
     m_action_queue.push({ id, success_callback, fail_callback, input });
 }
 

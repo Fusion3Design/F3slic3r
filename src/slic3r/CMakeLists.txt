@@ -23,6 +23,12 @@ set(SLIC3R_GUI_SOURCES
     GUI/Auth.hpp
     GUI/AuthSession.cpp
     GUI/AuthSession.hpp
+    GUI/UserAccount.cpp
+    GUI/UserAccount.hpp
+    GUI/WebViewDialog.cpp
+    GUI/WebViewDialog.hpp
+    GUI/WebView.cpp
+    GUI/WebView.hpp
     GUI/SysInfoDialog.cpp
     GUI/SysInfoDialog.hpp
     GUI/KBShortcutsDialog.cpp

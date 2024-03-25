@@ -606,6 +606,13 @@ function(prusaslicer_copy_dlls target)
         COMMENT "Copy mpfr runtime to build tree"
         VERBATIM)
 
+    if(DEFINED DESTDIR)
+        add_custom_command(TARGET ${target} POST_BUILD 
+            COMMAND ${CMAKE_COMMAND} -E copy ${DESTDIR}/usr/local/bin/WebView2Loader.dll ${_out_dir}
+            COMMENT "Copy WebView2Loader runtime to build tree"
+            VERBATIM)
+    endif ()
+
 endfunction()
 
 

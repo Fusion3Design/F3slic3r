@@ -98,7 +98,9 @@
 #include "Downloader.hpp"
 #include "PhysicalPrinterDialog.hpp"
 #include "WifiConfigDialog.hpp"
-#include "Auth.hpp"
+#include "UserAccount.hpp"
+#include "MediaControlPanel.hpp"
+#include "WebViewDialog.hpp"
 
 #include "BitmapCache.hpp"
 #include "Notebook.hpp"
@@ -2501,6 +2503,8 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
         updatable_item = local_menu->Append(config_id_base + ConfigMenuConnectDummy, _L("PrusaConnect Printers"), _L(""));
         updatable_item->Enable(false);
         m_config_menu_updatable_items.emplace(ConfigMenuIDs::ConfigMenuConnectDummy, updatable_item);
+        local_menu->Append(config_id_base + ConfigMenuConnectDialog, _L("Connect Dialog"), _L("Connect Dialog"));
+        local_menu->Append(config_id_base + ConfigMenuMediaDialog, _L("Media Dialog"), _L("Media Dialog"));
 #if defined(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION) 
         //if (DesktopIntegrationDialog::integration_possible())
         local_menu->Append(config_id_base + ConfigMenuDesktopIntegration, _L("Desktop Integration"), _L("Desktop Integration"));    
@@ -2551,15 +2555,15 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
             break;
         case ConfigMenuAuthLogin:
         {
-            if (this->plater()->get_auth_communication()->is_logged())
-                this->plater()->get_auth_communication()->logout();
+            if (this->plater()->get_user_account()->is_logged())
+                this->plater()->get_user_account()->do_logout();
             else
-                this->plater()->get_auth_communication()->login();
+                this->plater()->get_user_account()->do_login();
         }
             break;
         case ConfigMenuConnectDummy:
         {
-            this->plater()->get_auth_communication()->enqueue_connect_printers_action();
+            this->plater()->get_user_account()->enqueue_connect_printers_action();
         }
             break;
 #ifdef __linux__
@@ -2661,6 +2665,13 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
             */
         }
         break;
+        case ConfigMenuMediaDialog:
+            //MediaDialog(nullptr).ShowModal();
+            wxMediaPlayerDialog("Media").ShowModal();
+            break;
+        case ConfigMenuConnectDialog:
+            WebViewDialog(plater()).ShowModal();
+            break;
         default:
             break;
         }
@@ -2679,8 +2690,8 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
 }
 void GUI_App::update_config_menu()
 {
-    m_config_menu_updatable_items[ConfigMenuIDs::ConfigMenuAuthLogin]->SetItemLabel(this->plater()->get_auth_communication()->is_logged() ? _L("PrusaAuth Log out") : _L("PrusaAuth Log in"));
-    m_config_menu_updatable_items[ConfigMenuIDs::ConfigMenuConnectDummy]->Enable(this->plater()->get_auth_communication()->is_logged());
+    m_config_menu_updatable_items[ConfigMenuIDs::ConfigMenuAuthLogin]->SetItemLabel(this->plater()->get_user_account()->is_logged() ? _L("PrusaAuth Log out") : _L("PrusaAuth Log in"));
+    m_config_menu_updatable_items[ConfigMenuIDs::ConfigMenuConnectDummy]->Enable(this->plater()->get_user_account()->is_logged());
 }
 void GUI_App::open_preferences(const std::string& highlight_option /*= std::string()*/, const std::string& tab_name/*= std::string()*/)
 {
@@ -3465,7 +3476,7 @@ bool GUI_App::open_login_browser_with_dialog(const wxString& url, wxWindow* pare
     dialog.ShowCheckBox(_L("Remember me"), true);
     auto answer = dialog.ShowModal();
     launch = answer == wxID_YES;
-    plater()->get_auth_communication()->set_remember_session(dialog.IsCheckBoxChecked());
+    plater()->get_user_account()->set_remember_session(dialog.IsCheckBoxChecked());
            
     return  launch && wxLaunchDefaultBrowser(url, flags);
 }
@@ -3663,6 +3674,73 @@ void GUI_App::open_wifi_config_dialog(bool forced, const wxString& drive_path/* 
         app_config->set("wifi_config_dialog_declined", "1");
     }
     m_wifi_config_dialog_shown = false;
+}
+
+void GUI_App::select_printer_with_load(Preset* prst, const std::string& preset_name, const std::string& model_name, const std::string& nozzle_name, const std::string& nozzle)
+{
+    assert(prst);
+    if (prst->is_visible)
+        bool suc = get_tab(Preset::Type::TYPE_PRINTER)->select_preset(preset_name);
+    else {
+        AppConfig appconfig_new(AppConfig::EAppMode::Editor);
+        appconfig_new.set_vendors(*app_config);
+        prst->vendor->models;
+        if (auto it = std::find_if(prst->vendor->models.begin(), prst->vendor->models.end(), [model_name](const VendorProfile::PrinterModel& a) {
+            if (a.name == model_name)
+                return true;
+            else
+                return false;
+            }); it != prst->vendor->models.end())
+        {
+            appconfig_new.set_variant("PrusaResearch", it->id, nozzle, true);
+            app_config->set_vendors(appconfig_new);
+
+            preset_bundle->load_presets(*app_config, ForwardCompatibilitySubstitutionRule::EnableSilentDisableSystem,
+                { it->id, nozzle, "", "" });
+            load_current_presets();
+        }
+    }
+}
+
+void GUI_App::handle_web_request(std::string cmd) 
+{
+    BOOST_LOG_TRIVIAL(error) << "Handling web request: " << cmd;
+    // return to plater
+    //this->mainframe->select_tab(size_t(0));
+    // parse message
+    std::string model_name = plater()->get_user_account()->get_model_from_json(cmd);
+    std::string nozzle = plater()->get_user_account()->get_nozzle_from_json(cmd);
+    std::string nozzle_name = nozzle.empty() ? "" : (nozzle +" nozzle");
+    assert(!model_name.empty());
+    assert(!nozzle_name.empty());
+    if (model_name.empty() && nozzle_name.empty())
+        return;
+    // select printer
+    std::string preset_name = nozzle.empty() ? model_name : format("%1% %2%",model_name, nozzle_name);
+    Preset* prst = preset_bundle->printers.find_preset(preset_name, false);
+    if (!prst) {
+        model_name = std::string(*preset_bundle->printers.get_preset_name_renamed(model_name));
+        preset_name = nozzle.empty() ? model_name : format("%1% %2%", model_name, nozzle_name);
+        prst = preset_bundle->printers.find_preset(preset_name, false);
+    }
+    if (!prst) {
+        preset_name = model_name;
+        prst = preset_bundle->printers.find_preset(preset_name, false);
+    }
+    if (prst) {
+        select_printer_with_load(prst, preset_name, model_name, nozzle_name, nozzle);
+        // notification
+        std::string out = GUI::format("Select Printer:\n%1%", preset_name);
+        this->plater()->get_notification_manager()->close_notification_of_type(NotificationType::PrusaAuthUserID);
+        this->plater()->get_notification_manager()->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
+    } else {
+        // notification
+        std::string out = GUI::format("Printer not found:\n%1%", preset_name);
+        this->plater()->get_notification_manager()->close_notification_of_type(NotificationType::PrusaAuthUserID);
+        this->plater()->get_notification_manager()->push_notification(NotificationType::PrusaAuthUserID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
+    }
+   
+    
 }
 
 } // GUI

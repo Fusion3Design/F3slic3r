@@ -2,12 +2,9 @@
 #include "GUI_App.hpp"
 #include "format.hpp"
 #include "../Utils/Http.hpp"
-#include "I18N.hpp"
+#include "slic3r/GUI/I18N.hpp"
 
 #include <boost/log/trivial.hpp>
-#include <boost/regex.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include <boost/beast/core/detail/base64.hpp>
 #include <curl/curl.h>
 #include <string>
@@ -29,6 +26,10 @@
 #include <wincrypt.h>
 #endif // WIN32
 
+#ifdef __APPLE__
+#include <CommonCrypto/CommonDigest.h>
+#endif
+
 #ifdef __linux__
 #include <openssl/evp.h>
 #include <openssl/bio.h>
@@ -38,7 +39,7 @@
 
 
 namespace fs = boost::filesystem;
-namespace pt = boost::property_tree;
+
 
 namespace Slic3r {
 namespace GUI {
@@ -144,14 +145,13 @@ PrusaAuthCommunication::PrusaAuthCommunication(wxEvtHandler* evt_handler, AppCon
         refresh_token = app_config->get("refresh_token");
         shared_session_key = app_config->get("shared_session_key");
     }
-    
     if (!access_token.empty() || !refresh_token.empty())
         m_remember_session = true;
     m_session = std::make_unique<AuthSession>(evt_handler, access_token, refresh_token, shared_session_key);
     init_session_thread();
     // perform login at the start - do we want this
     if (m_remember_session)
-        login();
+        do_login();
 }
 
 PrusaAuthCommunication::~PrusaAuthCommunication() {
@@ -182,7 +182,14 @@ void PrusaAuthCommunication::set_username(const std::string& username, AppConfig
             app_config->set("refresh_token", m_remember_session ? m_session->get_refresh_token() : std::string());
             app_config->set("shared_session_key", m_remember_session ? m_session->get_shared_session_key() : std::string());
         }
-       
+    }
+}
+
+std::string PrusaAuthCommunication::get_access_token()
+{
+    {
+        std::lock_guard<std::mutex> lock(m_session_mutex);
+        return m_session->get_access_token();
     }
 }
 
@@ -205,7 +212,7 @@ bool PrusaAuthCommunication::is_logged()
 {
     return !m_username.empty();
 }
-void PrusaAuthCommunication::login()
+void PrusaAuthCommunication::do_login()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -217,7 +224,7 @@ void PrusaAuthCommunication::login()
     }
     wakeup_session_thread();
 }
-void PrusaAuthCommunication::logout()
+void PrusaAuthCommunication::do_logout()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -301,78 +308,9 @@ void PrusaAuthCommunication::wakeup_session_thread()
     m_thread_stop_condition.notify_all();
 }
 
-namespace {
-/*
-void proccess_tree(const pt::ptree& tree, const std::string depth, std::string& out)
-{
-     
-    for (const auto& section : tree) {
-        printf("%s%s", depth.c_str(), section.first.c_str());
-        if (!section.second.data().empty()) {
-            if (section.first == "printer_type_name") {
-                out += section.second.data();
-                out += " : ";
-            } else if (section.first == "state") {
-                out += section.second.data();
-                out += "\n";
-            }
-            printf(" : %s\n", section.second.data().c_str());
-        } else {
-            printf("\n");
-            proccess_tree(section.second, depth + "  ", out);
-        }
-        
-    }
-}
-*/
-typedef std::map<std::string, int> ModelCounter;
-void proccess_tree(const pt::ptree& tree, const std::string depth, ModelCounter& models)
-{
-    for (const auto& section : tree) {
-        //printf("%s%s", depth.c_str(), section.first.c_str());
-        if (!section.second.data().empty()) {
-            //printf(" : %s\n", section.second.data().c_str());
-        }
-        else {
-            if (section.first == "printer_type_compatible") {
-                for (const auto& sub : section.second) {
-                    if (!sub.second.data().empty()) {
-                        //printf(" : %s\n", section.second.data().c_str());
-                        if(models.find(sub.second.data()) == models.end())
-                            models.emplace(sub.second.data(), 1);
-                        else 
-                            models[sub.second.data()]++;
-                    }
-                }
-            } else {
-                //printf("\n");
-                proccess_tree(section.second, depth + "  ", models);
-            }
-        }
-    }
-}
-}
 
-std::string PrusaAuthCommunication::proccess_prusaconnect_printers_message(const std::string& message)
-{
-    std::string out;
-    try {
-        std::stringstream ss(message);
-        pt::ptree ptree;
-        pt::read_json(ss, ptree);
-       
-        ModelCounter counter;
-        proccess_tree(ptree, "", counter);
-        for (const auto model : counter)
-        {
-            out += GUI::format("%1%x %2%\n", std::to_string(model.second), model.first);
-        }
-    }
-    catch (const std::exception& e) {
-        BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
-    }
-    return out;
-}
+
+
 
 std::string CodeChalengeGenerator::generate_chalenge(const std::string& verifier)
 {
@@ -458,8 +396,28 @@ std::string CodeChalengeGenerator::sha256(const std::string& input)
     }
     return output;
 }
-#endif // WIN32
-#ifdef __linux__
+#elif __APPLE__
+std::string CodeChalengeGenerator::sha256(const std::string& input) {
+    // Initialize the context
+    CC_SHA256_CTX sha256;
+    CC_SHA256_Init(&sha256);
+
+    // Update the context with the input data
+    CC_SHA256_Update(&sha256, input.c_str(), static_cast<CC_LONG>(input.length()));
+
+    // Finalize the hash and retrieve the result
+    unsigned char digest[CC_SHA256_DIGEST_LENGTH];
+    CC_SHA256_Final(digest, &sha256);
+
+    // Convert the result to a string
+    char hashString[CC_SHA256_DIGEST_LENGTH * 2 + 1];
+    for (int i = 0; i < CC_SHA256_DIGEST_LENGTH; i++) {
+        sprintf(&hashString[i * 2], "%02x", digest[i]);
+    }
+
+    return std::string(hashString);
+}
+#else
 std::string CodeChalengeGenerator::sha256(const std::string& input) {
     EVP_MD_CTX* mdctx;
     const EVP_MD* md;
