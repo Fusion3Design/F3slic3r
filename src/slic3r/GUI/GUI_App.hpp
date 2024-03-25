@@ -98,8 +98,6 @@ enum ConfigMenuIDs {
     ConfigMenuTakeSnapshot,
     ConfigMenuUpdateConf,
     ConfigMenuUpdateApp,
-    ConfigMenuMediaDialog,
-    ConfigMenuConnectDialog,
     ConfigMenuDesktopIntegration,
     ConfigMenuPreferences,
     ConfigMenuModeSimple,

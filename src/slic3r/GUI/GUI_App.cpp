@@ -99,7 +99,6 @@
 #include "PhysicalPrinterDialog.hpp"
 #include "WifiConfigDialog.hpp"
 #include "UserAccount.hpp"
-#include "MediaControlPanel.hpp"
 #include "WebViewDialog.hpp"
 #include "LoginDialog.hpp"
 
@@ -2504,9 +2503,6 @@ wxMenu* GUI_App::get_config_menu()
         local_menu->Append(config_id_base + ConfigMenuTakeSnapshot, _L("Take Configuration &Snapshot"), _L("Capture a configuration snapshot"));
         local_menu->Append(config_id_base + ConfigMenuUpdateConf, _L("Check for Configuration Updates"), _L("Check for configuration updates"));
         local_menu->Append(config_id_base + ConfigMenuUpdateApp, _L("Check for Application Updates"), _L("Check for new version of application"));
-        local_menu->AppendSeparator();
-        local_menu->Append(config_id_base + ConfigMenuConnectDialog, _L("Connect Dialog"), _L("Connect Dialog"));
-        local_menu->Append(config_id_base + ConfigMenuMediaDialog, _L("Media Dialog"), _L("Media Dialog"));
 #if defined(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION) 
         //if (DesktopIntegrationDialog::integration_possible())
         local_menu->Append(config_id_base + ConfigMenuDesktopIntegration, _L("Desktop Integration"), _L("Desktop Integration"));    
@@ -2641,13 +2637,6 @@ wxMenu* GUI_App::get_config_menu()
             */
         }
         break;
-        case ConfigMenuMediaDialog:
-            //MediaDialog(nullptr).ShowModal();
-            //wxMediaPlayerDialog("Media").ShowModal();
-            break;
-        case ConfigMenuConnectDialog:
-            //WebViewDialog(plater()).ShowModal();
-            break;
         default:
             break;
         }

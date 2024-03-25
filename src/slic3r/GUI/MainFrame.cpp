@@ -65,8 +65,6 @@
 #include "NotificationManager.hpp"
 #include "Preferences.hpp"
 #include "WebViewDialog.hpp"
-#include "MediaControlPanel.hpp"
-#include "MediaControl.hpp"
 
 #ifdef _WIN32
 #include <dbt.h>
