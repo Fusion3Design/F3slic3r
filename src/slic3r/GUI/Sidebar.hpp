@@ -21,6 +21,7 @@
 
 #include <wx/panel.h>
 #include <wx/string.h>
+#include <wx/sizer.h>
 
 #include "libslic3r/Preset.hpp"
 #include "GUI.hpp"
@@ -49,7 +50,8 @@ class Plater;
 enum class ActionButtonType : int {
     Reslice,
     Export,
-    SendGCode
+    SendGCode,
+    Connect
 };
 
 class Sidebar : public wxPanel
@@ -61,7 +63,6 @@ class Sidebar : public wxPanel
     wxScrolledWindow*   m_scrolled_panel    { nullptr };
     wxPanel*            m_presets_panel     { nullptr }; // Used for MSW better layouts
 
-    ModeSizer*          m_mode_sizer        { nullptr };
     wxFlexGridSizer*    m_presets_sizer     { nullptr };
     wxBoxSizer*         m_filaments_sizer   { nullptr };
 
@@ -77,6 +78,7 @@ class Sidebar : public wxPanel
 
     wxButton*       m_btn_export_gcode          { nullptr };
     wxButton*       m_btn_reslice               { nullptr };
+    wxButton*       m_btn_connect_gcode         { nullptr };
     ScalableButton* m_btn_send_gcode            { nullptr };
     ScalableButton* m_btn_export_gcode_removable{ nullptr }; //exports to removable drives (appears only if removable drive is connected)
 
@@ -123,23 +125,19 @@ public:
     bool show_export(bool show) const;
     bool show_send(bool show) const;
     bool show_export_removable(bool show) const;
+    bool show_connect(bool show) const;
 
     void collapse(bool collapse);
-    void change_top_border_for_mode_sizer(bool increase_border);
     void set_extruders_count(size_t extruders_count);
 
     void update_mode();
     void update_ui_from_settings();
     void update_objects_list_extruder_column(size_t extruders_count);
     void update_presets(Preset::Type preset_type);
-    void update_mode_markers();
+    void update_printer_presets_combobox();
 
     void msw_rescale();
     void sys_color_changed();
-
-#ifdef _MSW_DARK_MODE
-    void show_mode_sizer(bool show);
-#endif
 
     bool is_collapsed{ false };
 };

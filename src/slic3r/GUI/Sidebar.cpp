@@ -32,6 +32,7 @@
 #include <wx/statbox.h>
 #include <wx/statbmp.h>
 #include <wx/wupdlock.h>
+#include "wx/generic/stattextg.h"
 #ifdef _WIN32
 #include <wx/richtooltip.h>
 #include <wx/custombgwin.h>
@@ -331,9 +332,6 @@ Sidebar::Sidebar(Plater *parent)
     auto *scrolled_sizer = new wxBoxSizer(wxVERTICAL);
     m_scrolled_panel->SetSizer(scrolled_sizer);
 
-    // Sizer with buttons for mode changing
-    m_mode_sizer = new ModeSizer(m_scrolled_panel, int(0.5 * wxGetApp().em_unit()));
-
     // The preset chooser
     m_presets_sizer = new wxFlexGridSizer(10, 1, 1, 2);
     m_presets_sizer->AddGrowableCol(0, 1);
@@ -381,6 +379,9 @@ Sidebar::Sidebar(Plater *parent)
                 wxBOTTOM, 1);
                 (void)margin_5; // supress unused capture warning
 #endif // __WXGTK3__
+            if ((*combo)->connect_info)
+                sizer_presets->Add((*combo)->connect_info, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT | wxBOTTOM,
+                    int(0.3 * wxGetApp().em_unit()));
         } else {
             sizer_filaments->Add(combo_and_btn_sizer, 0, wxEXPAND |
 #ifdef __WXGTK3__
@@ -433,10 +434,6 @@ Sidebar::Sidebar(Plater *parent)
     // Info boxes
     m_object_info = new ObjectInfo(m_scrolled_panel);
     m_sliced_info = new SlicedInfo(m_scrolled_panel);
-
-    // Sizer in the scrolled area
-    if (m_mode_sizer)
-        scrolled_sizer->Add(m_mode_sizer, 0, wxALIGN_CENTER_HORIZONTAL);
 
     int size_margin = wxGTK3 ? wxLEFT | wxRIGHT : wxLEFT;
 
@@ -497,6 +494,7 @@ Sidebar::Sidebar(Plater *parent)
 
     init_btn(&m_btn_export_gcode, _L("Export G-code") + dots , scaled_height);
     init_btn(&m_btn_reslice     , _L("Slice now")            , scaled_height);
+    init_btn(&m_btn_connect_gcode, _L("Send to Connect"), scaled_height);
 
     enable_buttons(false);
 
@@ -504,6 +502,7 @@ Sidebar::Sidebar(Plater *parent)
 
     auto* complect_btns_sizer = new wxBoxSizer(wxHORIZONTAL);
     complect_btns_sizer->Add(m_btn_export_gcode, 1, wxEXPAND);
+    complect_btns_sizer->Add(m_btn_connect_gcode, 1, wxLEFT, margin_5);
     complect_btns_sizer->Add(m_btn_send_gcode, 0, wxLEFT, margin_5);
 	complect_btns_sizer->Add(m_btn_export_gcode_removable, 0, wxLEFT, margin_5);
 
@@ -543,6 +542,7 @@ Sidebar::Sidebar(Plater *parent)
 
     m_btn_send_gcode->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->send_gcode(); });
     m_btn_export_gcode_removable->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->export_gcode(true); });
+    m_btn_connect_gcode->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_plater->connect_gcode(); });
 
     this->Bind(wxEVT_COMBOBOX, &Sidebar::on_select_preset, this);
 
@@ -601,6 +601,12 @@ void Sidebar::update_all_preset_comboboxes()
         for (PlaterPresetComboBox* cb : m_combos_filament)
             cb->update();
     }
+}
+
+void Sidebar::update_printer_presets_combobox()
+{
+    m_combo_printer->update();
+    Layout();
 }
 
 void Sidebar::update_presets(Preset::Type preset_type)
@@ -711,6 +717,8 @@ void Sidebar::on_select_preset(wxCommandEvent& evt)
          * and for SLA presets they should be deleted
          */
         m_object_list->update_object_list_by_printer_technology();
+
+        wxGetApp().show_printer_webview_tab();
     }
 
 #ifdef __WXMSW__
@@ -720,14 +728,6 @@ void Sidebar::on_select_preset(wxCommandEvent& evt)
     // So, set the focus to the combobox explicitly
     combo->SetFocus();
 #endif
-}
-
-void Sidebar::change_top_border_for_mode_sizer(bool increase_border)
-{
-    if (m_mode_sizer) {
-        m_mode_sizer->set_items_flag(increase_border ? wxTOP : 0);
-        m_mode_sizer->set_items_border(increase_border ? int(0.5 * wxGetApp().em_unit()) : 0);
-    }
 }
 
 void Sidebar::update_reslice_btn_tooltip()
@@ -778,11 +778,9 @@ void Sidebar::sys_color_changed()
         wxGetApp().UpdateDarkUI(win);
     for (wxWindow* win : std::vector<wxWindow*>{ m_scrolled_panel, m_presets_panel })
         wxGetApp().UpdateAllStaticTextDarkUI(win);
-    for (wxWindow* btn : std::vector<wxWindow*>{ m_btn_reslice, m_btn_export_gcode })
+    for (wxWindow* btn : std::vector<wxWindow*>{ m_btn_reslice, m_btn_export_gcode, m_btn_connect_gcode })
         wxGetApp().UpdateDarkUI(btn, true);
 
-    if (m_mode_sizer)
-        m_mode_sizer->sys_color_changed();
     m_frequently_changed_parameters->sys_color_changed();
     m_object_settings              ->sys_color_changed();
 #endif
@@ -805,12 +803,6 @@ void Sidebar::sys_color_changed()
 
     m_scrolled_panel->Layout();
     m_scrolled_panel->Refresh();
-}
-
-void Sidebar::update_mode_markers()
-{
-    if (m_mode_sizer)
-        m_mode_sizer->update_mode_markers();
 }
 
 ObjectManipulation* Sidebar::obj_manipul()
@@ -1075,18 +1067,19 @@ void Sidebar::enable_buttons(bool enable)
     m_btn_export_gcode->Enable(enable);
     m_btn_send_gcode->Enable(enable);
     m_btn_export_gcode_removable->Enable(enable);
+    m_btn_connect_gcode->Enable(enable);
 }
 
 bool Sidebar::show_reslice(bool show)          const { return m_btn_reslice->Show(show); }
 bool Sidebar::show_export(bool show)           const { return m_btn_export_gcode->Show(show); }
 bool Sidebar::show_send(bool show)             const { return m_btn_send_gcode->Show(show); }
 bool Sidebar::show_export_removable(bool show) const { return m_btn_export_gcode_removable->Show(show); }
+bool Sidebar::show_connect(bool show)          const { return m_btn_connect_gcode->Show(show); }
+
 
 void Sidebar::update_mode()
 {
     m_mode = wxGetApp().get_mode();
-    if (m_mode_sizer)
-        m_mode_sizer->SetMode(m_mode);
 
     update_reslice_btn_tooltip();
 
@@ -1109,7 +1102,8 @@ void Sidebar::set_btn_label(const ActionButtonType btn_type, const wxString& lab
     {
     case ActionButtonType::Reslice:   m_btn_reslice->SetLabelText(label);        break;
     case ActionButtonType::Export:    m_btn_export_gcode->SetLabelText(label);   break;
-    case ActionButtonType::SendGCode: /*m_btn_send_gcode->SetLabelText(label);*/     break;
+    case ActionButtonType::SendGCode: /*m_btn_send_gcode->SetLabelText(label);*/ break;
+    case ActionButtonType::Connect: /*m_btn_connect_gcode->SetLabelText(label);*/ break;
     }
 }
 
@@ -1124,13 +1118,6 @@ void Sidebar::collapse(bool collapse)
     if (wxGetApp().is_editor())
         wxGetApp().app_config->set("collapsed_sidebar", collapse ? "1" : "0");
 }
-
-#ifdef _MSW_DARK_MODE
-void Sidebar::show_mode_sizer(bool show)
-{
-    m_mode_sizer->Show(show);
-}
-#endif
 
 void Sidebar::update_ui_from_settings()
 {

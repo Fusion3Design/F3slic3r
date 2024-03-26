@@ -780,7 +780,6 @@ public:
 
     bool is_layers_editing_enabled() const;
     bool is_layers_editing_allowed() const;
-    bool is_search_pressed() const;
 
     void reset_layer_height_profile();
     void adaptive_layer_height_profile(float quality_factor);
@@ -1064,7 +1063,6 @@ private:
     void _render_sla_slices();
     void _render_selection_sidebar_hints();
     bool _render_undo_redo_stack(const bool is_undo, float pos_x);
-    bool _render_search_list(float pos_x);
     bool _render_arrange_menu(float pos_x);
     void _render_thumbnail_internal(ThumbnailData& thumbnail_data, const ThumbnailsParams& thumbnail_params, const GLVolumeCollection& volumes, Camera::EType camera_type);
     // render thumbnail using an off-screen framebuffer
@@ -1113,8 +1111,6 @@ private:
     void _update_selection_from_hover();
 
     bool _deactivate_undo_redo_toolbar_items();
-    bool _deactivate_search_toolbar_item();
-    bool _activate_search_toolbar_item();
     bool _deactivate_collapse_toolbar_items();
     bool _deactivate_arrange_menu();
 

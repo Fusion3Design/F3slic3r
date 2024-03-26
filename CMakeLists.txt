@@ -41,8 +41,8 @@ option(SLIC3R_MSVC_COMPILE_PARALLEL "Compile on Visual Studio in parallel" 1)
 option(SLIC3R_MSVC_PDB          "Generate PDB files on MSVC in Release mode" 1)
 option(SLIC3R_ASAN              "Enable ASan on Clang and GCC" 0)
 option(SLIC3R_UBSAN             "Enable UBSan on Clang and GCC" 0)
-option(SLIC3R_ENABLE_FORMAT_STEP "Enable compilation of STEP file support" ON)
-# If SLIC3R_FHS is 1 -> SLIC3R_DESKTOP_INTEGRATION is always 0, othrewise variable.
+option(SLIC3R_ENABLE_FORMAT_STEP "Enable compilation of STEP file support" 1)
+# If SLIC3R_FHS is 1 -> SLIC3R_DESKTOP_INTEGRATION is always 0, otherwise variable.
 CMAKE_DEPENDENT_OPTION(SLIC3R_DESKTOP_INTEGRATION "Allow perfoming desktop integration during runtime" 1 "NOT SLIC3R_FHS" 0)
 
 set(OPENVDB_FIND_MODULE_PATH "" CACHE PATH "Path to OpenVDB installation's find modules.")
@@ -605,6 +605,13 @@ function(prusaslicer_copy_dlls target)
         COMMAND ${CMAKE_COMMAND} -E copy ${TOP_LEVEL_PROJECT_DIR}/deps/+MPFR/mpfr/lib/win${_bits}/libmpfr-4.dll ${_out_dir}
         COMMENT "Copy mpfr runtime to build tree"
         VERBATIM)
+
+    if(DEFINED DESTDIR)
+        add_custom_command(TARGET ${target} POST_BUILD 
+            COMMAND ${CMAKE_COMMAND} -E copy ${DESTDIR}/usr/local/bin/WebView2Loader.dll ${_out_dir}
+            COMMENT "Copy WebView2Loader runtime to build tree"
+            VERBATIM)
+    endif ()
 
 endfunction()
 

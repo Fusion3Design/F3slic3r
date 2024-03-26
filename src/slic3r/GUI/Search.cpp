@@ -16,6 +16,8 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "GUI_App.hpp"
+#include "I18N.hpp"
+#include "format.hpp"
 #include "MainFrame.hpp"
 #include "Tab.hpp"
 
@@ -306,6 +308,7 @@ bool OptionsSearcher::search(const std::string& search, bool force/* = false*/)
 
 OptionsSearcher::OptionsSearcher()
 {
+    default_string = _L("Enter a search term");
 }
 
 OptionsSearcher::~OptionsSearcher()
@@ -421,20 +424,60 @@ Option OptionsSearcher::get_option(const std::string& opt_key, const wxString& l
     return create_option(opt_key, label, type, gc);
 }
 
-void OptionsSearcher::show_dialog()
+static bool has_focus(wxWindow* win)
 {
-    if (!search_dialog) {
-        search_dialog = new SearchDialog(this);
+    if (win->HasFocus())
+        return true;
 
-        auto parent = search_dialog->GetParent();
-        wxPoint pos = parent->ClientToScreen(wxPoint(0, 0));
-        pos.x += em_unit(parent) * 40;
-        pos.y += em_unit(parent) * 4;
-
-        search_dialog->SetPosition(pos);
+    auto children = win->GetChildren();
+    for (auto child : children) {
+        if (has_focus(child))
+            return true;
     }
 
+    return false;
+}
+
+void OptionsSearcher::update_dialog_position()
+{
+    if (search_dialog) {
+        search_dialog->CenterOnParent(wxHORIZONTAL);
+        search_dialog->SetPosition({ search_dialog->GetPosition().x, search_input->GetScreenPosition().y + search_input->GetSize().y });
+    }
+}
+
+void OptionsSearcher::show_dialog(bool show /*= true*/)
+{
+    if (search_dialog && !show) {
+        search_dialog->EndModal(wxID_CLOSE);
+        return;
+    }
+
+    if (!search_dialog) {
+        search_dialog = new SearchDialog(this, search_input);
+        update_dialog_position();
+
+        search_dialog->Bind(wxEVT_KILL_FOCUS, [this](wxFocusEvent& e)
+        {
+            if (search_dialog->IsShown() && !search_input->HasFocus())
+                show_dialog(false);
+            e.Skip();
+        });
+
+        search_input->Bind(wxEVT_KILL_FOCUS, [this](wxFocusEvent& e)
+        {
+            e.Skip();
+            if (search_dialog->IsShown() && !has_focus(search_dialog))
+                show_dialog(false);
+        });
+    }
+
+    search_string();
+    search_input->SetSelection(-1,-1);
+
     search_dialog->Popup();
+    if (!search_input->HasFocus())
+        search_input->SetFocus();
 }
 
 void OptionsSearcher::dlg_sys_color_changed()
@@ -447,6 +490,57 @@ void OptionsSearcher::dlg_msw_rescale()
 {
     if (search_dialog)
         search_dialog->msw_rescale();
+}
+
+void OptionsSearcher::set_search_input(TextInput* input_ctrl)
+{
+    search_input = input_ctrl;
+
+    search_input->Bind(wxEVT_TEXT, [this](wxEvent& e)
+    {
+        if (search_dialog) {
+            search_dialog->input_text(search_input->GetValue());
+            if (!search_dialog->IsShown())
+                search_dialog->Popup();
+        }
+        else
+            GUI::wxGetApp().show_search_dialog();
+    });
+
+    wxTextCtrl* ctrl = search_input->GetTextCtrl();
+    ctrl->SetToolTip(GUI::format_wxstr(_L("Search in settings [%1%]"), "Ctrl+F"));
+
+    ctrl->Bind(wxEVT_KEY_DOWN, [this](wxKeyEvent& e)
+    {
+        int key = e.GetKeyCode();
+        if (key == WXK_TAB)
+            search_input->Navigate(e.ShiftDown() ? wxNavigationKeyEvent::IsBackward : wxNavigationKeyEvent::IsForward);
+        else if (key == WXK_ESCAPE)
+            search_dialog->EndModal(wxID_CLOSE);
+        else if (search_dialog && (key == WXK_UP || key == WXK_DOWN || key == WXK_NUMPAD_ENTER || key == WXK_RETURN))
+            search_dialog->KeyDown(e);
+        e.Skip();
+    });
+
+    ctrl->Bind(wxEVT_LEFT_UP, [this](wxMouseEvent& event)
+    {
+        if (search_input->GetValue() == default_string)
+            search_input->SetValue("");
+        event.Skip();
+    });
+
+    ctrl->Bind(wxEVT_LEFT_DOWN, [](wxMouseEvent& event) {
+        GUI::wxGetApp().show_search_dialog();
+        event.Skip();
+    });
+
+    search_input->Bind(wxEVT_MOVE, [this](wxMoveEvent& event)
+    {
+        event.Skip();
+        update_dialog_position();
+    });
+
+    search_input->SetOnDropDownIcon([](){ GUI::wxGetApp().show_search_dialog(); });
 }
 
 void OptionsSearcher::add_key(const std::string& opt_key, Preset::Type type, const wxString& group, const wxString& category)
@@ -468,8 +562,8 @@ static const std::map<const char, int> icon_idxs = {
     {ImGui::PreferencesButton   , 5},
 };
 
-SearchDialog::SearchDialog(OptionsSearcher* searcher)
-    : GUI::DPIDialog(GUI::wxGetApp().tab_panel(), wxID_ANY, _L("Search"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
+SearchDialog::SearchDialog(OptionsSearcher* searcher, wxWindow* parent)
+    : GUI::DPIDialog(parent ? parent : GUI::wxGetApp().tab_panel(), wxID_ANY, _L("Search"), wxDefaultPosition, wxDefaultSize, wxSTAY_ON_TOP | wxRESIZE_BORDER),
     searcher(searcher)
 {
     SetFont(GUI::wxGetApp().normal_font());
@@ -479,12 +573,8 @@ SearchDialog::SearchDialog(OptionsSearcher* searcher)
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
 #endif
 
-    default_string = _L("Enter a search term");
     int border = 10;
     int em = em_unit();
-
-    search_line = new wxTextCtrl(this, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
-    GUI::wxGetApp().UpdateDarkUI(search_line);
 
     search_list = new wxDataViewCtrl(this, wxID_ANY, wxDefaultPosition, wxSize(em * 40, em * 30), wxDV_NO_HEADER | wxDV_SINGLE
 #ifdef _WIN32
@@ -531,14 +621,8 @@ SearchDialog::SearchDialog(OptionsSearcher* searcher)
 
     wxBoxSizer* topSizer = new wxBoxSizer(wxVERTICAL);
 
-    topSizer->Add(search_line, 0, wxEXPAND | wxLEFT | wxTOP | wxRIGHT, border);
     topSizer->Add(search_list, 1, wxEXPAND | wxLEFT | wxTOP | wxRIGHT, border);
     topSizer->Add(check_sizer, 0, wxEXPAND | wxALL, border);
-
-    search_line->Bind(wxEVT_TEXT,    &SearchDialog::OnInputText, this);
-    search_line->Bind(wxEVT_LEFT_UP, &SearchDialog::OnLeftUpInTextCtrl, this);
-    // process wxEVT_KEY_DOWN to navigate inside search_list, if ArrowUp/Down was pressed
-    search_line->Bind(wxEVT_KEY_DOWN,&SearchDialog::OnKeyDown, this);
 
     search_list->Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &SearchDialog::OnSelect,    this);
     search_list->Bind(wxEVT_DATAVIEW_ITEM_ACTIVATED,    &SearchDialog::OnActivate,  this);
@@ -559,7 +643,7 @@ SearchDialog::SearchDialog(OptionsSearcher* searcher)
         check_english ->Bind(wxEVT_CHECKBOX, &SearchDialog::OnCheck, this);
 
 //    Bind(wxEVT_MOTION, &SearchDialog::OnMotion, this);
-    Bind(wxEVT_LEFT_DOWN, &SearchDialog::OnLeftDown, this);
+//    Bind(wxEVT_LEFT_DOWN, &SearchDialog::OnLeftDown, this);
 
     SetSizer(topSizer);
     topSizer->SetSizeHints(this);
@@ -573,11 +657,6 @@ SearchDialog::~SearchDialog()
 
 void SearchDialog::Popup(wxPoint position /*= wxDefaultPosition*/)
 {
-    const std::string& line = searcher->search_string();
-    search_line->SetValue(line.empty() ? default_string : from_u8(line));
-    search_line->SetFocus();
-    search_line->SelectAll();
-
     update_list();
 
     const OptionViewParameters& params = searcher->view_params;
@@ -587,7 +666,11 @@ void SearchDialog::Popup(wxPoint position /*= wxDefaultPosition*/)
 
     if (position != wxDefaultPosition)
         this->SetPosition(position);
-    this->ShowModal();
+#ifdef __APPLE__
+    this->ShowWithoutActivating();
+#else
+    this->Show();
+#endif
 }
 
 void SearchDialog::ProcessSelection(wxDataViewItem selection)
@@ -606,23 +689,14 @@ void SearchDialog::ProcessSelection(wxDataViewItem selection)
     wxPostEvent(GUI::wxGetApp().mainframe, event);
 }
 
-void SearchDialog::OnInputText(wxCommandEvent&)
+void SearchDialog::input_text(wxString input_string)
 {
-    wxString input_string = search_line->GetValue();
-    if (input_string == default_string)
+    if (input_string == searcher->default_string)
         input_string.Clear();
 
     searcher->search(into_u8(input_string));
 
     update_list();
-}
-
-void SearchDialog::OnLeftUpInTextCtrl(wxEvent& event)
-{
-    if (search_line->GetValue() == default_string)
-        search_line->SetValue("");
-
-    event.Skip();
 }
 
 void SearchDialog::OnKeyDown(wxKeyEvent& event)
@@ -749,7 +823,7 @@ void SearchDialog::on_sys_color_changed()
 #ifdef _WIN32
     GUI::wxGetApp().UpdateAllStaticTextDarkUI(this);
     GUI::wxGetApp().UpdateDarkUI(static_cast<wxButton*>(this->FindWindowById(wxID_CANCEL, this)), true);
-    for (wxWindow* win : std::vector<wxWindow*> {search_line, search_list, check_category, check_english})
+    for (wxWindow* win : std::vector<wxWindow*> {search_list, check_category, check_english})
         if (win) GUI::wxGetApp().UpdateDarkUI(win);
 #endif
 

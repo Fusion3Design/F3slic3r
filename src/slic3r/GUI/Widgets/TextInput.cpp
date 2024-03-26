@@ -86,6 +86,12 @@ void TextInput::Create(wxWindow *     parent,
 
     if (!icon.IsEmpty()) {
         this->drop_down_icon = ScalableBitmap(this, icon.ToStdString(), 16);
+        this->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent& event) {
+            const wxPoint pos = event.GetLogicalPosition(wxClientDC(this));
+            if (OnClickDropDownIcon && dd_icon_rect.Contains(pos))
+                OnClickDropDownIcon();
+            event.Skip();
+        });
     }
     messureSize();
 }
@@ -140,6 +146,16 @@ void TextInput::SetSelection(long from, long to)
 {
     if (text_ctrl)
         text_ctrl->SetSelection(from, to);
+}
+
+void TextInput::SysColorsChanged()
+{
+    if (auto parent = this->GetParent()) {
+        SetBackgroundColour(parent->GetBackgroundColour());
+        SetForegroundColour(parent->GetForegroundColour());
+        if (this->drop_down_icon.bmp().IsOk())
+            this->drop_down_icon.sys_color_changed();
+    }
 }
 
 void TextInput::SetIcon(const wxBitmapBundle& icon_in)
@@ -285,6 +301,7 @@ void TextInput::render(wxDC& dc)
         wxSize szIcon = drop_down_icon.GetSize();
         pt_r.x -= szIcon.x + 2;
         pt_r.y = (size.y - szIcon.y) / 2;
+        dd_icon_rect = wxRect(pt_r, szIcon);
         dc.DrawBitmap(drop_down_icon.get_bitmap(), pt_r);
     }
 

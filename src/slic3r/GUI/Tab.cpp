@@ -67,7 +67,8 @@
 #include "SavePresetDialog.hpp"
 #include "EditGCodeDialog.hpp"
 #include "MsgDialog.hpp"
-#include "Notebook.hpp"
+//#include "Notebook.hpp"
+#include "TopBar.hpp"
 
 #include "Widgets/CheckBox.hpp"
 
@@ -88,6 +89,8 @@ Tab::Tab(wxBookCtrlBase* parent, const wxString& title, Preset::Type type) :
     wxGetApp().UpdateDarkUI(this);
 #elif __WXOSX__
     SetBackgroundColour(parent->GetBackgroundColour());
+#elif __WXGTK3__
+    SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
 #endif
 
     m_compatible_printers.type			= Preset::TYPE_PRINTER;
@@ -203,9 +206,6 @@ void Tab::create_preset_tab()
     m_question_btn->SetToolTip(_(L("Hover the cursor over buttons to find more information \n"
                                    "or click this button.")));
 
-    add_scaled_button(panel, &m_search_btn, "search");
-    m_search_btn->SetToolTip(format_wxstr(_L("Search in settings [%1%]"), "Ctrl+F"));
-
     // Bitmaps to be shown on the "Revert to system" aka "Lock to system" button next to each input field.
     add_scaled_bitmap(this, m_bmp_value_lock  , "lock_closed");
     add_scaled_bitmap(this, m_bmp_value_unlock, "lock_open");
@@ -229,18 +229,11 @@ void Tab::create_preset_tab()
         if (dlg.ShowModal() == wxID_OK)
             wxGetApp().update_label_colours();
     });
-    m_search_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent) { wxGetApp().show_search_dialog(); });
 
     // Colors for ui "decoration"
     m_sys_label_clr			= wxGetApp().get_label_clr_sys();
     m_modified_label_clr	= wxGetApp().get_label_clr_modified();
     m_default_text_clr		= wxGetApp().get_label_clr_default();
-
-#ifdef _MSW_DARK_MODE
-    // Sizer with buttons for mode changing
-    if (wxGetApp().tabs_as_menu())
-#endif
-        m_mode_sizer = new ModeSizer(panel, int (0.5*em_unit(this)));
 
     const float scale_factor = em_unit(this)*0.1;// GetContentScaleFactor();
     m_top_hsizer = new wxBoxSizer(wxHORIZONTAL);
@@ -265,22 +258,12 @@ void Tab::create_preset_tab()
     m_h_buttons_sizer->AddSpacer(int(32 * scale_factor));
     m_h_buttons_sizer->Add(m_undo_to_sys_btn, 0, wxALIGN_CENTER_VERTICAL);
     m_h_buttons_sizer->Add(m_undo_btn, 0, wxALIGN_CENTER_VERTICAL);
-    m_h_buttons_sizer->AddSpacer(int(32 * scale_factor));
-    m_h_buttons_sizer->Add(m_search_btn, 0, wxALIGN_CENTER_VERTICAL);
     m_h_buttons_sizer->AddSpacer(int(8*scale_factor));
     m_h_buttons_sizer->Add(m_btn_compare_preset, 0, wxALIGN_CENTER_VERTICAL);
 
     m_top_hsizer->Add(m_h_buttons_sizer, 1, wxEXPAND);
     m_top_hsizer->AddSpacer(int(16*scale_factor));
     // StretchSpacer has a strange behavior under OSX, so
-    // There is used just additional sizer for m_mode_sizer with right alignment
-    if (m_mode_sizer) {
-        auto mode_sizer = new wxBoxSizer(wxVERTICAL);
-        // Don't set the 2nd parameter to 1, making the sizer rubbery scalable in Y axis may lead 
-        // to wrong vertical size assigned to wxBitmapComboBoxes, see GH issue #7176.
-        mode_sizer->Add(m_mode_sizer, 0, wxALIGN_RIGHT);
-        m_top_hsizer->Add(mode_sizer, 1, wxALIGN_CENTER_VERTICAL | wxRIGHT, wxOSX ? 15 : 10);
-    }
     // hide whole top sizer to correct layout later
     m_top_hsizer->ShowItems(false);
 
@@ -923,10 +906,6 @@ void Tab::update_mode()
 {
     m_mode = wxGetApp().get_mode();
 
-    // update mode for ModeSizer
-    if (m_mode_sizer)
-        m_mode_sizer->SetMode(m_mode);
-
     update_visibility();
 
     update_changed_tree_ui();
@@ -934,10 +913,6 @@ void Tab::update_mode()
 
 void Tab::update_mode_markers()
 {
-    // update mode for ModeSizer
-    if (m_mode_sizer)
-        m_mode_sizer->update_mode_markers();
-
     if (m_active_page)
         m_active_page->refresh();
 }
@@ -1002,8 +977,6 @@ void Tab::sys_color_changed()
     update_label_colours();
 #ifdef _WIN32
     wxWindowUpdateLocker noUpdates(this);
-    if (m_mode_sizer)
-        m_mode_sizer->sys_color_changed();
     wxGetApp().UpdateDarkUI(this);
     wxGetApp().UpdateDarkUI(m_treectrl);
 #endif
@@ -1177,13 +1150,13 @@ void Tab::activate_option(const std::string& opt_key, const wxString& category)
 {
     wxString page_title = translate_category(category, m_type);
 
-    auto cur_item = m_treectrl->GetFirstVisibleItem();
-    if (!cur_item)
-        return;
-
     // We should to activate a tab with searched option, if it doesn't.
     // And do it before finding of the cur_item to avoid a case when Tab isn't activated jet and all treeItems are invisible
     wxGetApp().mainframe->select_tab(this);
+
+    auto cur_item = m_treectrl->GetFirstVisibleItem();
+    if (!cur_item)
+        return;
 
     while (cur_item) {
         auto title = m_treectrl->GetItemText(cur_item);
@@ -3648,13 +3621,6 @@ void Tab::load_current_preset()
 
 //	m_undo_to_sys_btn->Enable(!preset.is_default);
 
-#if 0
-    // use CallAfter because some field triggers schedule on_change calls using CallAfter,
-    // and we don't want them to be called after this update_dirty() as they would mark the
-    // preset dirty again
-    // (not sure this is true anymore now that update_dirty is idempotent)
-    wxTheApp->CallAfter([this]
-#endif
     {
         // checking out if this Tab exists till this moment
         if (!wxGetApp().checked_tab(this))
@@ -3682,16 +3648,15 @@ void Tab::load_current_preset()
                     }
                     if (tab->supports_printer_technology(printer_technology))
                     {
-#ifdef _MSW_DARK_MODE
+#ifdef _WIN32
                         if (!wxGetApp().tabs_as_menu()) {
-                            std::string bmp_name = tab->type() == Slic3r::Preset::TYPE_FILAMENT      ? "spool" :
-                                                   tab->type() == Slic3r::Preset::TYPE_SLA_MATERIAL  ? "resin" : "cog";
-                            tab->Hide(); // #ys_WORKAROUND : Hide tab before inserting to avoid unwanted rendering of the tab
-                            dynamic_cast<Notebook*>(wxGetApp().tab_panel())->InsertPage(wxGetApp().tab_panel()->FindPage(this), tab, tab->title(), bmp_name);
+#endif
+                            dynamic_cast<TopBar*>(wxGetApp().tab_panel())->InsertPage(wxGetApp().tab_panel()->FindPage(this), tab, tab->title(),"");
+#ifdef _WIN32
                         }
                         else
-#endif
                             wxGetApp().tab_panel()->InsertPage(wxGetApp().tab_panel()->FindPage(this), tab, tab->title());
+#endif
                         #ifdef __linux__ // the tabs apparently need to be explicitly shown on Linux (pull request #1563)
                             int page_id = wxGetApp().tab_panel()->FindPage(tab);
                             wxGetApp().tab_panel()->GetPage(page_id)->Show(true);
@@ -3705,10 +3670,6 @@ void Tab::load_current_preset()
                 }
                 static_cast<TabPrinter*>(this)->m_printer_technology = printer_technology;
                 m_active_page = tmp_page;
-#ifdef _MSW_DARK_MODE
-                if (!wxGetApp().tabs_as_menu())
-                    dynamic_cast<Notebook*>(wxGetApp().tab_panel())->SetPageImage(wxGetApp().tab_panel()->FindPage(this), printer_technology == ptFFF ? "printer" : "sla_printer");
-#endif
             }
             on_presets_changed();
             if (printer_technology == ptFFF) {

@@ -129,7 +129,11 @@ enum class NotificationType
 	// MacOS specific - PS comes forward even when downloader is not allowed
 	URLNotRegistered,
 	// Config file was detected during startup, open wifi config dialog via hypertext
-	WifiConfigFileDetected
+	WifiConfigFileDetected,
+	// Info abouty successful login or logout
+	UserAccountID,
+	// Debug notification for connect communication
+	PrusaConnectPrinters,
 };
 
 class NotificationManager

@@ -180,7 +180,7 @@ foreach (pkg ${FOUND_PACKAGES})
 
         if (${pkg} IN_LIST SYSTEM_PROVIDED_PACKAGES)
           check_system_package(${pkg} _checked_list)
-        else ()
+        elseif (TARGET dep_${pkg})
           get_target_property(_is_excluded_from_all dep_${pkg} EXCLUDE_FROM_ALL)
           if (NOT _is_excluded_from_all)
             list(APPEND DEPS_TO_BUILD ${pkg})
@@ -188,6 +188,12 @@ foreach (pkg ${FOUND_PACKAGES})
         endif ()
     endif ()
 endforeach()
+
+# This ugly append ensures that WebView2 was appended no matter what EXCLUDE_FROM_ALL is.
+# (Webview2 is not added by add_cmake_project)
+if (MSVC)
+  list(APPEND DEPS_TO_BUILD WebView2)
+endif()
 
 # Establish dependency graph
 foreach (pkg ${SUPPORTED_PACKAGES})

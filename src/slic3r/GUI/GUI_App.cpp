@@ -98,9 +98,13 @@
 #include "Downloader.hpp"
 #include "PhysicalPrinterDialog.hpp"
 #include "WifiConfigDialog.hpp"
+#include "UserAccount.hpp"
+#include "WebViewDialog.hpp"
+#include "LoginDialog.hpp"
 
 #include "BitmapCache.hpp"
-#include "Notebook.hpp"
+//#include "Notebook.hpp"
+#include "TopBar.hpp"
 
 #ifdef __WXMSW__
 #include <dbt.h>
@@ -1109,6 +1113,10 @@ void GUI_App::jump_to_option(const std::string& composite_key)
 
 void GUI_App::show_search_dialog()
 {
+    // To avoid endless loop caused by mutual lose focuses from serch_input and search_dialog
+    // invoke killFocus for serch_input by set focus to tab_panel
+    GUI::wxGetApp().tab_panel()->SetFocus();
+
     check_and_update_searcher(get_mode());
     m_searcher->show_dialog();
 }
@@ -1401,6 +1409,8 @@ bool GUI_App::on_init_inner()
 
     update_mode(); // update view mode after fix of the object_list size
 
+    show_printer_webview_tab();
+
 #ifdef __APPLE__
     other_instance_message_handler()->bring_instance_forward();
 #endif //__APPLE__
@@ -1516,16 +1526,16 @@ void GUI_App::init_ui_colours()
     m_mode_palette                  = get_mode_default_palette();
 
     bool is_dark_mode = dark_mode();
-#ifdef _WIN32
+//#ifdef _WIN32
     m_color_label_default           = is_dark_mode ? wxColour(250, 250, 250): wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
     m_color_highlight_label_default = is_dark_mode ? wxColour(230, 230, 230): wxSystemSettings::GetColour(/*wxSYS_COLOUR_HIGHLIGHTTEXT*/wxSYS_COLOUR_WINDOWTEXT);
     m_color_highlight_default       = is_dark_mode ? wxColour(78, 78, 78)   : wxSystemSettings::GetColour(wxSYS_COLOUR_3DLIGHT);
     m_color_hovered_btn_label       = is_dark_mode ? wxColour(253, 111, 40) : wxColour(252, 77, 1);
     m_color_default_btn_label       = is_dark_mode ? wxColour(255, 181, 100): wxColour(203, 61, 0);
     m_color_selected_btn_bg         = is_dark_mode ? wxColour(95, 73, 62)   : wxColour(228, 220, 216);
-#else
-    m_color_label_default = wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
-#endif
+//#else
+//    m_color_label_default = wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT);
+//#endif
     m_color_window_default          = is_dark_mode ? wxColour(43, 43, 43)   : wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW);
 }
 
@@ -1561,12 +1571,13 @@ void GUI_App::update_label_colours()
         tab->update_label_colours();
 }
 
-#ifdef _WIN32
+#if 0//def _WIN32
 static bool is_focused(HWND hWnd)
 {
     HWND hFocusedWnd = ::GetFocus();
     return hFocusedWnd && hWnd == hFocusedWnd;
 }
+#endif
 
 static bool is_default(wxWindow* win)
 {
@@ -1576,7 +1587,6 @@ static bool is_default(wxWindow* win)
         
     return win == tlw->GetDefaultItem();
 }
-#endif
 
 void GUI_App::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, bool just_font/* = false*/)
 {
@@ -1589,6 +1599,7 @@ void GUI_App::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, bool ju
             highlited = true;
         }
         // button marking
+        if (!dynamic_cast<TopBarItemsCtrl*>(window->GetParent())) // don't marking the button if it is from TopBar
         {
             auto mark_button = [this, btn, highlited](const bool mark) {
                 if (btn->GetLabel().IsEmpty())
@@ -1601,12 +1612,12 @@ void GUI_App::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, bool ju
 
             // hovering
             btn->Bind(wxEVT_ENTER_WINDOW, [mark_button](wxMouseEvent& event) { mark_button(true); event.Skip(); });
-            btn->Bind(wxEVT_LEAVE_WINDOW, [mark_button, btn](wxMouseEvent& event) { mark_button(is_focused(btn->GetHWND())); event.Skip(); });
+            btn->Bind(wxEVT_LEAVE_WINDOW, [mark_button, btn](wxMouseEvent& event) { mark_button(btn->HasFocus()); event.Skip(); });
             // focusing
             btn->Bind(wxEVT_SET_FOCUS,    [mark_button](wxFocusEvent& event) { mark_button(true); event.Skip(); });
             btn->Bind(wxEVT_KILL_FOCUS,   [mark_button](wxFocusEvent& event) { mark_button(false); event.Skip(); });
 
-            is_focused_button = is_focused(btn->GetHWND());
+            is_focused_button = btn->HasFocus();// is_focused(btn->GetHWND());
             is_default_button = is_default(btn);
             if (is_focused_button || is_default_button)
                 mark_button(is_focused_button);
@@ -1824,7 +1835,7 @@ bool GUI_App::suppress_round_corners() const
 
 wxSize GUI_App::get_min_size(wxWindow* display_win) const
 {
-    wxSize min_size(76*m_em_unit, 49 * m_em_unit);
+    wxSize min_size(120 * m_em_unit, 49 * m_em_unit);
 
     const wxDisplay display = wxDisplay(display_win);
     wxRect display_rect = display.GetGeometry();
@@ -2468,10 +2479,8 @@ void GUI_App::update_mode()
 {
     sidebar().update_mode();
 
-#ifdef _WIN32 //_MSW_DARK_MODE
     if (!wxGetApp().tabs_as_menu())
-        dynamic_cast<Notebook*>(mainframe->m_tabpanel)->UpdateMode();
-#endif
+        dynamic_cast<TopBar*>(mainframe->m_tabpanel)->UpdateMode();
 
     for (auto tab : tabs_list)
         tab->update_mode();
@@ -2480,7 +2489,7 @@ void GUI_App::update_mode()
     plater()->canvas3D()->update_gizmos_on_off_state();
 }
 
-void GUI_App::add_config_menu(wxMenuBar *menu)
+wxMenu* GUI_App::get_config_menu()
 {
     auto local_menu = new wxMenu();
     wxWindowID config_id_base = wxWindow::NewControlId(int(ConfigMenuCnt));
@@ -2507,20 +2516,7 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
         "\tCtrl+P",
 #endif
         _L("Application preferences"));
-    wxMenu* mode_menu = nullptr;
-    if (is_editor()) {
-        local_menu->AppendSeparator();
-        mode_menu = new wxMenu();
-        mode_menu->AppendRadioItem(config_id_base + ConfigMenuModeSimple, _L("Simple"), _L("Simple View Mode"));
-//    mode_menu->AppendRadioItem(config_id_base + ConfigMenuModeAdvanced, _L("Advanced"), _L("Advanced View Mode"));
-        mode_menu->AppendRadioItem(config_id_base + ConfigMenuModeAdvanced, _CTX("Advanced", "Mode"), _L("Advanced View Mode"));
-        mode_menu->AppendRadioItem(config_id_base + ConfigMenuModeExpert, _L("Expert"), _L("Expert View Mode"));
-        Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt) { if (get_mode() == comSimple) evt.Check(true); }, config_id_base + ConfigMenuModeSimple);
-        Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt) { if (get_mode() == comAdvanced) evt.Check(true); }, config_id_base + ConfigMenuModeAdvanced);
-        Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt) { if (get_mode() == comExpert) evt.Check(true); }, config_id_base + ConfigMenuModeExpert);
 
-        local_menu->AppendSubMenu(mode_menu, _L("Mode"), wxString::Format(_L("%s View Mode"), SLIC3R_APP_NAME));
-    }
     local_menu->AppendSeparator();
     local_menu->Append(config_id_base + ConfigMenuLanguage, _L("&Language"));
     if (is_editor()) {
@@ -2646,16 +2642,7 @@ void GUI_App::add_config_menu(wxMenuBar *menu)
         }
     });
     
-    using std::placeholders::_1;
-
-    if (mode_menu != nullptr) {
-        auto modfn = [this](int mode, wxCommandEvent&) { if (get_mode() != mode) save_mode(mode); };
-        mode_menu->Bind(wxEVT_MENU, std::bind(modfn, comSimple, _1), config_id_base + ConfigMenuModeSimple);
-        mode_menu->Bind(wxEVT_MENU, std::bind(modfn, comAdvanced, _1), config_id_base + ConfigMenuModeAdvanced);
-        mode_menu->Bind(wxEVT_MENU, std::bind(modfn, comExpert, _1), config_id_base + ConfigMenuModeExpert);
-    }
-
-    menu->Append(local_menu, _L("&Configuration"));
+    return local_menu;
 }
 
 void GUI_App::open_preferences(const std::string& highlight_option /*= std::string()*/, const std::string& tab_name/*= std::string()*/)
@@ -2690,7 +2677,7 @@ void GUI_App::open_preferences(const std::string& highlight_option /*= std::stri
     if (mainframe->preferences_dialog->settings_layout_changed()) {
         // hide full main_sizer for mainFrame
         mainframe->GetSizer()->Show(false);
-        mainframe->update_layout();
+        mainframe->update_layout();  
         mainframe->select_tab(size_t(0));
     }
 }
@@ -3016,7 +3003,15 @@ void GUI_App::MacOpenURL(const wxString& url)
         BOOST_LOG_TRIVIAL(error) << "Recieved command to open URL, but it is not allowed in app configuration. URL: " << url;
         return;
     }
-    start_download(into_u8(url));
+
+    std::string narrow_url = into_u8(url);
+    if (boost::starts_with(narrow_url, "prusaslicer://open?file=")) {
+        start_download(std::move(narrow_url));
+    } else if (boost::starts_with(narrow_url, "prusaslicer://login")) {
+        plater()->get_user_account()->on_login_code_recieved(std::move(narrow_url));
+    } else {
+        BOOST_LOG_TRIVIAL(error) << "MacOpenURL recieved improper URL: " << url;
+    }
 }
 
 #endif /* __APPLE */
@@ -3147,6 +3142,15 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
 {
     wxCHECK_MSG(mainframe != nullptr, false, "Internal error: Main frame not created / null");
 
+    if (!plater()->get_user_account()->is_logged()) {
+        m_login_dialog = std::make_unique<LoginDialog>(mainframe, plater()->get_user_account());
+        m_login_dialog->ShowModal();
+        mainframe->RemoveChild(m_login_dialog.get());
+        m_login_dialog->Destroy();
+        // Destructor does not call Destroy
+        m_login_dialog.reset();
+    }
+
     if (reason == ConfigWizard::RR_USER) {
         // Cancel sync before starting wizard to prevent two downloads at same time
         preset_updater->cancel_sync();
@@ -3176,6 +3180,14 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
     return res;
 }
 
+void GUI_App::update_login_dialog()
+{
+    if (!m_login_dialog) {
+        return;
+    }
+    m_login_dialog->update_account();
+}
+
 void GUI_App::show_desktop_integration_dialog()
 {
 #ifdef __linux__
@@ -3199,7 +3211,7 @@ void GUI_App::show_downloader_registration_dialog()
         auto downloader_worker = new DownloaderUtils::Worker(nullptr);
         downloader_worker->perform_register(app_config->get("url_downloader_dest"));
 #ifdef __linux__
-        if (downloader_worker->get_perform_registration_linux())
+        if (DownloaderUtils::Worker::perform_registration_linux)
             DesktopIntegrationDialog::perform_downloader_desktop_integration();
 #endif // __linux__
     } else {
@@ -3431,6 +3443,18 @@ bool GUI_App::open_browser_with_warning_dialog(const wxString& url, wxWindow* pa
     return  launch && wxLaunchDefaultBrowser(url, flags);
 }
 
+bool GUI_App::open_login_browser_with_dialog(const wxString& url, wxWindow* parent/* = nullptr*/, int flags/* = 0*/)
+{
+    bool auth_login_dialog_confirmed = app_config->get_bool("auth_login_dialog_confirmed");
+    if (!auth_login_dialog_confirmed) {
+        RichMessageDialog dialog(parent, _L("Open default browser with Prusa Account Log in page?\n(On Yes, You will not be asked again.)"), _L("PrusaSlicer: Open Log in page"), wxICON_QUESTION | wxYES_NO);
+         if (dialog.ShowModal() != wxID_YES)
+             return false;
+         app_config->set("auth_login_dialog_confirmed", "1");
+    }
+    return  wxLaunchDefaultBrowser(url, flags);
+}
+
 // static method accepting a wxWindow object as first parameter
 // void warning_catcher{
 //     my($self, $message_dialog) = @_;
@@ -3626,5 +3650,92 @@ void GUI_App::open_wifi_config_dialog(bool forced, const wxString& drive_path/* 
     m_wifi_config_dialog_shown = false;
 }
 
+bool GUI_App::select_printer_from_connect(const Preset* preset)
+{
+    assert(preset);
+
+    bool is_installed{ false };
+
+    // When physical printer is selected, it somehow remains selected in printer tab
+    // TabPresetComboBox::update() looks at physical_printers and if some has selected = true, it overrides the selection.
+    // This might be, because OnSelect event callback is not triggered
+    if(preset_bundle->physical_printers.get_selected_printer_config()) {
+        preset_bundle->physical_printers.unselect_printer();
+    }
+
+    if (!preset->is_visible) {
+        size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(preset->name);
+        assert(preset_id != size_t(-1));
+        preset_bundle->printers.select_preset(preset_id);
+        is_installed = true;
+    }
+            
+    get_tab(Preset::Type::TYPE_PRINTER)->select_preset(preset->name);
+    return is_installed;
+}
+
+void GUI_App::handle_connect_request_printer_pick(std::string msg) 
+{
+    BOOST_LOG_TRIVIAL(error) << "Handling web request: " << msg;
+    // return to plater
+    this->mainframe->select_tab(size_t(0));
+    // parse message
+    std::vector<std::string> compatible_printers;
+    plater()->get_user_account()->fill_compatible_printers_from_json(msg, compatible_printers);
+    std::string model_name;
+    if (compatible_printers.empty()) {
+        // TODO: This should go away when compatible printers gives right information.
+        model_name = plater()->get_user_account()->get_model_from_json(msg);
+    } else {
+        model_name = compatible_printers.front();
+    }
+    std::string nozzle = plater()->get_user_account()->get_nozzle_from_json(msg);
+    assert(!model_name.empty());
+    if (model_name.empty())
+        return;
+
+    // select printer
+    const Preset* preset = preset_bundle->printers.find_system_preset_by_model_and_variant(model_name, nozzle);
+    bool is_installed = preset && select_printer_from_connect(preset);
+    // notification
+    std::string out = preset ? 
+                      (is_installed ? GUI::format(_L("Installed and Select Printer:\n%1%"), preset->name) : 
+                                      GUI::format(_L("Select Printer:\n%1%"), preset->name) ):
+                      GUI::format(_L("Printer not found:\n%1%"), model_name);
+    this->plater()->get_notification_manager()->close_notification_of_type(NotificationType::UserAccountID);
+    this->plater()->get_notification_manager()->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);    
+}
+
+void GUI_App::show_printer_webview_tab()
+{
+    //bool show, const DynamicPrintConfig& dpc
+
+    if (DynamicPrintConfig* dpc = preset_bundle->physical_printers.get_selected_printer_config(); dpc == nullptr) {
+        this->mainframe->select_tab(size_t(0));
+        mainframe->remove_printer_webview_tab();
+    } else {
+        std::string url = dpc->opt_string("print_host");
+        
+        if (url.find("http://") != 0 && url.find("https://") != 0) {
+            url = "http://" + url;
+        }
+
+        // set password / api key
+        if (dynamic_cast<const ConfigOptionEnum<AuthorizationType>*>(dpc->option("printhost_authorization_type"))->value == AuthorizationType::atKeyPassword) {
+            mainframe->set_printer_webview_api_key(dpc->opt_string("printhost_apikey"));
+        }
+#if 0 // The user password authentication is not working in prusa link as of now.
+        else {
+            mainframe->set_printer_webview_credentials(dpc->opt_string("printhost_user"), dpc->opt_string("printhost_password"));
+        }
+#endif // 0       
+        // add printer or change url
+        if (mainframe->get_printer_webview_tab_added()) {
+            mainframe->set_printer_webview_tab_url(from_u8(url));
+        } else {
+            mainframe->add_printer_webview_tab(from_u8(url));
+        }
+    }
+}
 } // GUI
 } //Slic3r

@@ -9,6 +9,7 @@
 #include <cmath>
 
 #include <wx/sizer.h>
+#include <wx/accel.h>
 
 #include <boost/algorithm/string/replace.hpp>
 
@@ -51,6 +52,14 @@ void sys_color_changed_menu(wxMenu* menu)
 }
 #endif /* no __linux__ */
 
+#ifndef __APPLE__
+std::vector<wxAcceleratorEntry*>& accelerator_entries_cache()
+{
+    static std::vector<wxAcceleratorEntry*> entries;
+    return entries;
+}
+#endif
+
 void enable_menu_item(wxUpdateUIEvent& evt, std::function<bool()> const cb_condition, wxMenuItem* item, wxWindow* win)
 {
     const bool enable = cb_condition();
@@ -78,7 +87,19 @@ wxMenuItem* append_menu_item(wxMenu* menu, int id, const wxString& string, const
         event_handler->Bind(wxEVT_MENU, cb, id);
     else
 #endif // __WXMSW__
+#ifndef __APPLE__
+    if (parent)
+        parent->Bind(wxEVT_MENU, cb, id);
+    else
+#endif // n__APPLE__
         menu->Bind(wxEVT_MENU, cb, id);
+
+#ifndef __APPLE__
+    if (wxAcceleratorEntry* entry = wxAcceleratorEntry::Create(string)) {
+        entry->SetMenuItem(item);
+        accelerator_entries_cache().push_back(entry);
+    }
+#endif
 
     if (parent) {
         parent->Bind(wxEVT_UPDATE_UI, [cb_condition, item, parent](wxUpdateUIEvent& evt) {
@@ -809,6 +830,22 @@ ScalableBitmap(parent, icon_name, icon_size.x, icon_size.y, grayscale)
 {
 }
 
+ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_path, const wxSize icon_size)
+    :m_parent(parent), m_bmp_width(icon_size.x), m_bmp_height(icon_size.y)
+{
+    wxString path = Slic3r::GUI::from_u8(icon_path.string());
+    wxBitmap bitmap;
+    const std::string ext = icon_path.extension().string();
+    if (ext == ".png") {
+        bitmap.LoadFile(path, wxBITMAP_TYPE_PNG);
+        wxBitmap::Rescale(bitmap, icon_size);
+        m_bmp = wxBitmapBundle(bitmap);
+    }
+    else if (ext == ".svg") {
+        m_bmp = wxBitmapBundle::FromSVGFile(path, icon_size);
+    }
+}
+
 void ScalableBitmap::sys_color_changed()
 {
     m_bmp = *get_bmp_bundle(m_icon_name, m_bmp_width, m_bmp_height);
@@ -904,10 +941,20 @@ int ScalableButton::GetBitmapHeight()
 #endif
 }
 
+wxSize ScalableButton::GetBitmapSize()
+{
+#ifdef __APPLE__
+    return wxSize(GetBitmap().GetScaledWidth(), GetBitmap().GetScaledHeight());
+#else
+    return wxSize(GetBitmap().GetWidth(), GetBitmap().GetHeight());
+#endif
+}
+
 void ScalableButton::sys_color_changed()
 {
     Slic3r::GUI::wxGetApp().UpdateDarkUI(this, m_has_border);
-
+    if (m_current_icon_name.empty())
+        return;
     wxBitmapBundle bmp = *get_bmp_bundle(m_current_icon_name, m_bmp_width, m_bmp_height);
     SetBitmap(bmp);
     SetBitmapCurrent(bmp);

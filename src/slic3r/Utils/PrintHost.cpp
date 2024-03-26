@@ -29,6 +29,7 @@
 #include "Repetier.hpp"
 #include "MKS.hpp"
 #include "Moonraker.hpp"
+#include "PrusaConnect.hpp"
 #include "../GUI/PrintHostDialogs.hpp"
 
 namespace fs = boost::filesystem;
@@ -63,6 +64,7 @@ PrintHost* PrintHost::get_print_host(DynamicPrintConfig *config)
             case htRepetier:  return new Repetier(config);
             case htPrusaLink: return new PrusaLink(config);
             case htPrusaConnect: return new PrusaConnect(config);
+            case htPrusaConnectNew: return new PrusaConnectNew(config);
             case htMKS:       return new MKS(config);
             case htMoonraker: return new Moonraker(config);
             default:          return nullptr;

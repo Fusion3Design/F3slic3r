@@ -19,6 +19,16 @@ set(SLIC3R_GUI_SOURCES
     GUI/AboutDialog.hpp
     GUI/ArrangeSettingsDialogImgui.hpp
     GUI/ArrangeSettingsDialogImgui.cpp
+    GUI/UserAccountCommunication.cpp
+    GUI/UserAccountCommunication.hpp
+    GUI/UserAccountSession.cpp
+    GUI/UserAccountSession.hpp
+    GUI/UserAccount.cpp
+    GUI/UserAccount.hpp
+    GUI/WebViewDialog.cpp
+    GUI/WebViewDialog.hpp
+    GUI/WebView.cpp
+    GUI/WebView.hpp
     GUI/SysInfoDialog.cpp
     GUI/SysInfoDialog.hpp
     GUI/KBShortcutsDialog.cpp
@@ -242,6 +252,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/DoubleSlider.hpp
     GUI/Notebook.cpp
     GUI/Notebook.hpp
+    GUI/TopBar.cpp
+    GUI/TopBar.hpp
     GUI/ObjectDataViewModel.cpp
     GUI/ObjectDataViewModel.hpp
     GUI/InstanceCheck.cpp
@@ -289,6 +301,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/Downloader.hpp
     GUI/DownloaderFileGet.cpp
     GUI/DownloaderFileGet.hpp
+    GUI/LoginDialog.cpp
+    GUI/LoginDialog.hpp
     Utils/AppUpdater.cpp
     Utils/AppUpdater.hpp
     Utils/Http.cpp
@@ -335,6 +349,10 @@ set(SLIC3R_GUI_SOURCES
     Utils/WxFontUtils.hpp
     Utils/WifiScanner.hpp
     Utils/WifiScanner.cpp
+    Utils/Secrets.hpp
+    Utils/Secrets.cpp
+    Utils/PrusaConnect.hpp
+    Utils/PrusaConnect.cpp
 )
 
 find_package(NanoSVG REQUIRED)

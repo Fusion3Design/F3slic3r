@@ -35,6 +35,8 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/nowide/convert.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -50,6 +52,9 @@
 #include <wx/debug.h>
 #include <wx/busyinfo.h>
 #include <wx/stdpaths.h>
+#if wxUSE_SECRETSTORE 
+#include <wx/secretstore.h>
+#endif
 
 #include <LibBGCode/convert/convert.hpp>
 
@@ -116,6 +121,9 @@
 #include "Gizmos/GLGizmoSVG.hpp" // Drop SVG file
 #include "Gizmos/GLGizmoCut.hpp"
 #include "FileArchiveDialog.hpp"
+#include "UserAccount.hpp"
+#include "DesktopIntegrationDialog.hpp"
+#include "WebViewDialog.hpp"
 
 #ifdef __APPLE__
 #include "Gizmos/GLGizmosManager.hpp"
@@ -259,9 +267,10 @@ struct Plater::priv
     GLToolbar collapse_toolbar;
     Preview *preview;
     std::unique_ptr<NotificationManager> notification_manager;
+    std::unique_ptr<UserAccount> user_account;
 
     ProjectDirtyStateManager dirty_state;
-
+     
     BackgroundSlicingProcess    background_process;
     bool suppressed_backround_processing_update { false };
 
@@ -605,6 +614,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         }))
     , sidebar(new Sidebar(q))
     , notification_manager(std::make_unique<NotificationManager>(q))
+    , user_account(std::make_unique<UserAccount>(q, wxGetApp().app_config, wxGetApp().get_instance_hash_string()))
     , m_worker{q, std::make_unique<NotificationProgressIndicator>(notification_manager.get()), "ui_worker"}
     , m_sla_import_dlg{new SLAImportDialog{q}}
     , delayed_scene_refresh(false)
@@ -850,11 +860,118 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             wxGetApp().start_download(evt.data[i]);
         }
        
+    }); 
+    this->q->Bind(EVT_LOGIN_OTHER_INSTANCE, [this](LoginOtherInstanceEvent& evt) {
+        BOOST_LOG_TRIVIAL(trace) << "Received login from other instance event.";
+        user_account->on_login_code_recieved(evt.data);
     });
 
     this->q->Bind(EVT_INSTANCE_GO_TO_FRONT, [this](InstanceGoToFrontEvent &) {
         bring_instance_forward();
     });
+
+    this->q->Bind(EVT_OPEN_PRUSAAUTH, [](OpenPrusaAuthEvent& evt) {
+       BOOST_LOG_TRIVIAL(info)  << "open browser: " << evt.data;
+       // first register url to be sure to get the code back
+       //auto downloader_worker = new DownloaderUtils::Worker(nullptr);
+       DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
+#ifdef __linux__
+       if (DownloaderUtils::Worker::perform_registration_linux)
+           DesktopIntegrationDialog::perform_downloader_desktop_integration();
+#endif // __linux__
+       // than open url
+       wxGetApp().open_login_browser_with_dialog(evt.data);
+     });
+    
+    this->q->Bind(EVT_UA_LOGGEDOUT, [this](UserAccountSuccessEvent& evt) {
+        user_account->clear();
+        std::string text = _u8L("Logged out from Prusa Account.");
+        this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
+        this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
+        this->main_frame->remove_connect_webview_tab();
+        this->main_frame->refresh_account_menu(true);
+        // Update sidebar printer status
+        sidebar->update_printer_presets_combobox();
+        wxGetApp().update_login_dialog();
+        this->show_action_buttons(this->ready_to_slice);
+    });
+
+    this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+        std::string username;
+        if (user_account->on_user_id_success(evt.data, username)) {
+            // login notification
+            std::string text = format(_u8L("Logged to Prusa Account as %1%."), username);
+            this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
+            this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
+            // show connect tab
+            this->main_frame->add_connect_webview_tab();
+            // Update User name in TopBar
+            this->main_frame->refresh_account_menu();
+            wxGetApp().update_login_dialog();
+            this->show_action_buttons(this->ready_to_slice);
+        } else {
+            // data were corrupt and username was not retrieved
+            // procced as if EVT_UA_RESET was recieved
+            BOOST_LOG_TRIVIAL(error) << "Reseting Prusa Account communication. Recieved data were corrupt.";
+            user_account->clear();
+            this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
+            this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Failed to connect to Prusa Account."));
+            this->main_frame->remove_connect_webview_tab();
+            // Update User name in TopBar
+            this->main_frame->refresh_account_menu(true);
+            // Update sidebar printer status
+            sidebar->update_printer_presets_combobox();
+        }
+        
+    });
+    this->q->Bind(EVT_UA_RESET, [this](UserAccountFailEvent& evt) {
+        BOOST_LOG_TRIVIAL(error) << "Reseting Prusa Account communication. Error message: " << evt.data;
+        user_account->clear();
+        this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
+        this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Failed to connect to Prusa Account."));
+        this->main_frame->remove_connect_webview_tab();
+        // Update User name in TopBar
+        this->main_frame->refresh_account_menu(true);
+        // Update sidebar printer status
+        sidebar->update_printer_presets_combobox();
+    });
+    this->q->Bind(EVT_UA_FAIL, [this](UserAccountFailEvent& evt) {
+        BOOST_LOG_TRIVIAL(error) << "Failed communication with Prusa Account: " << evt.data;
+        user_account->on_communication_fail();
+    });
+#if 0
+    // for debug purposes only
+    this->q->Bind(EVT_UA_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+        this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
+        this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, evt.data);
+    });
+    this->q->Bind(EVT_UA_CONNECT_USER_DATA_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+        BOOST_LOG_TRIVIAL(error) << evt.data;
+        user_account->on_connect_user_data_success(evt.data);
+    });
+#endif // 0
+    this->q->Bind(EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+        std::string text;
+        bool printers_changed = false;
+        if (user_account->on_connect_printers_success(evt.data, wxGetApp().app_config, printers_changed)) {
+            if (printers_changed) {
+                sidebar->update_printer_presets_combobox();
+            }
+        } else {
+            // message was corrupt, procceed like EVT_UA_FAIL
+            user_account->on_communication_fail();
+        }
+    });
+    this->q->Bind(EVT_UA_AVATAR_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+       boost::filesystem::path path = user_account->get_avatar_path(true);
+       FILE* file; 
+       file = fopen(path.string().c_str(), "wb");
+       fwrite(evt.data.c_str(), 1, evt.data.size(), file);
+       fclose(file);
+       this->main_frame->refresh_account_menu(true);
+       wxGetApp().update_login_dialog();
+    }); 
+
 	wxGetApp().other_instance_message_handler()->init(this->q);
 
     // collapse sidebar according to saved value
@@ -3408,7 +3525,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
     DynamicPrintConfig* selected_printer_config = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
     const auto print_host_opt = selected_printer_config ? selected_printer_config->option<ConfigOptionString>("print_host") : nullptr;
     const bool send_gcode_shown = print_host_opt != nullptr && !print_host_opt->value.empty();
-    
+    const bool connect_gcode_shown = print_host_opt == nullptr && user_account->is_logged();
     // when a background processing is ON, export_btn and/or send_btn are showing
     if (get_config_bool("background_processing"))
     {
@@ -3416,6 +3533,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
 		if (sidebar->show_reslice(false) |
 			sidebar->show_export(true) |
 			sidebar->show_send(send_gcode_shown) |
+            sidebar->show_connect(connect_gcode_shown) |
 			sidebar->show_export_removable(removable_media_status.has_removable_drives))
             sidebar->Layout();
     }
@@ -3427,6 +3545,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
         if (sidebar->show_reslice(ready_to_slice) |
             sidebar->show_export(!ready_to_slice) |
             sidebar->show_send(send_gcode_shown && !ready_to_slice) |
+            sidebar->show_connect(connect_gcode_shown && !ready_to_slice) |
 			sidebar->show_export_removable(!ready_to_slice && removable_media_status.has_removable_drives))
             sidebar->Layout();
     }
@@ -5700,6 +5819,166 @@ void Plater::reslice_SLA_until_step(SLAPrintObjectStep step, const ModelObject &
     this->reslice_until_step_inner(SLAPrintObjectStep(step), object, postpone_error_messages);
 }
 
+namespace {
+bool load_secret(const std::string& id, const std::string& opt, std::string& usr, std::string& psswd)
+{
+#if wxUSE_SECRETSTORE
+    wxSecretStore store = wxSecretStore::GetDefault();
+    wxString errmsg;
+    if (!store.IsOk(&errmsg)) {
+        std::string msg = GUI::format("%1% (%2%).", _u8L("This system doesn't support storing passwords securely"), errmsg);
+        BOOST_LOG_TRIVIAL(error) << msg;
+        show_error(nullptr, msg);
+        return false;
+    }
+    const wxString service = GUI::format_wxstr(L"%1%/PhysicalPrinter/%2%/%3%", SLIC3R_APP_NAME, id, opt);
+    wxString username;
+    wxSecretValue password;
+    if (!store.Load(service, username, password)) {
+        std::string msg(_u8L("Failed to load credentials from the system secret store."));
+        BOOST_LOG_TRIVIAL(error) << msg;
+        show_error(nullptr, msg);
+        return false;
+    }
+    usr = into_u8(username);
+    psswd = into_u8(password.GetAsString());
+    return true;
+#else
+    BOOST_LOG_TRIVIAL(error) << "wxUSE_SECRETSTORE not supported. Cannot load password from the system store.";
+    return false;
+#endif // wxUSE_SECRETSTORE 
+}
+}
+void Plater::connect_gcode()
+{
+    assert(p->user_account->is_logged());
+    std::string  dialog_msg;
+    if(PrinterPickWebViewDialog(this, dialog_msg).ShowModal() != wxID_OK) {
+        return;
+    }
+    if (dialog_msg.empty())  {
+        show_error(this, _L("Failed to select a printer. PrusaConnect did not return a value."));
+        return;
+    }
+    BOOST_LOG_TRIVIAL(debug) << "Message from Printer pick webview: " << dialog_msg;
+
+    PresetBundle* preset_bundle = wxGetApp().preset_bundle;
+    // Connect data
+    std::vector<std::string> compatible_printers;
+    p->user_account->fill_compatible_printers_from_json(dialog_msg, compatible_printers);
+    std::string connect_nozzle = p->user_account->get_nozzle_from_json(dialog_msg);
+    std::string connect_filament = p->user_account->get_keyword_from_json(dialog_msg, "filament_type");
+    std::vector<const Preset*> compatible_printer_presets;
+    for (const std::string& cp : compatible_printers) {
+        compatible_printer_presets.emplace_back(preset_bundle->printers.find_system_preset_by_model_and_variant(cp, connect_nozzle));
+    }
+    // Selected profiles
+    const Preset* selected_printer_preset = &preset_bundle->printers.get_selected_preset();
+    const Preset* selected_filament_preset = &preset_bundle->filaments.get_selected_preset();
+    const std::string selected_nozzle_serialized = dynamic_cast<const ConfigOptionFloats*>(selected_printer_preset->config.option("nozzle_diameter"))->serialize();
+    const std::string selected_filament_serialized = selected_filament_preset->config.option("filament_type")->serialize();
+    const std::string selected_printer_model_serialized = selected_printer_preset->config.option("printer_model")->serialize();
+
+    bool is_first = compatible_printer_presets.front()->name == selected_printer_preset->name;
+    bool found = false;
+    for (const Preset* connect_preset : compatible_printer_presets) {
+        if (!connect_preset) {
+            continue;
+        }
+        if (selected_printer_preset->name == connect_preset->name) {
+            found = true;
+            break;
+        }
+    }
+    // 
+    if (!found) {
+        wxString line1 = _L("The printer profile you've selected for upload is not compatible with profiles selected for slicing.");
+        wxString line2 = GUI::format_wxstr(_L("PrusaSlicer Profile:\n%1%"), selected_printer_preset->name);
+        wxString line3 = _L("Known profiles compatible with printer selected for upload:");
+        wxString printers_line;
+        for (const Preset* connect_preset : compatible_printer_presets) {
+            if (!connect_preset) {
+                continue;
+            }
+            printers_line += GUI::format_wxstr(_L("\n%1%"), connect_preset->name);
+        }
+        wxString line4 = _L("Do you still wish to upload?");
+        wxString message = GUI::format_wxstr("%1%\n\n%2%\n\n%3%%4%\n\n%5%", line1, line2, line3, printers_line,line4);
+        MessageDialog msg_dialog(this, message, _L("Do you wish to upload?"), wxYES_NO);
+        auto modal_res = msg_dialog.ShowModal();
+        if (modal_res != wxID_YES) {
+            return;
+        }
+    } else if (!is_first) {
+        wxString line1 = _L("The printer profile you've selected for upload might not be compatible with profiles selected for slicing.");
+        wxString line2 = GUI::format_wxstr(_L("PrusaSlicer Profile:\n%1%"), selected_printer_preset->name);
+        wxString line3 = _L("Known profiles compatible with printer selected for upload:");
+        wxString printers_line;
+        for (const Preset* connect_preset : compatible_printer_presets) {
+            if (!connect_preset) {
+                continue;
+            }
+            printers_line += GUI::format_wxstr(_L("\n%1%"), connect_preset->name);
+        }
+        wxString line4 = _L("Do you still wish to upload?");
+        wxString message = GUI::format_wxstr("%1%\n\n%2%\n\n%3%%4%\n\n%5%", line1, line2, line3, printers_line, line4);
+        MessageDialog msg_dialog(this, message, _L("Do you wish to upload?"), wxYES_NO);
+        auto modal_res = msg_dialog.ShowModal();
+        if (modal_res != wxID_YES) {
+            return;
+        }
+    }
+ // Commented code with selecting printers in plater
+ /* 
+           // if selected (in connect) preset is not visible, make it visible and selected 
+            if (!connect_printer_preset->is_visible) {
+                size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(connect_printer_preset->name);
+                assert(preset_id != size_t(-1));
+                preset_bundle->printers.select_preset(preset_id);
+                wxGetApp().get_tab(Preset::Type::TYPE_PRINTER)->select_preset(connect_printer_preset->name);
+                p->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
+                p->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, format(_u8L("Changed Printer to %1%."), connect_printer_preset->name));
+                select_view_3D("3D");
+            }
+            // if selected (in connect) preset is not selected in slicer, select it
+            if (preset_bundle->printers.get_selected_preset_name() != connect_printer_preset->name) {
+                size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(connect_printer_preset->name);
+                assert(preset_id != size_t(-1));
+                preset_bundle->printers.select_preset(preset_id);
+                wxGetApp().get_tab(Preset::Type::TYPE_PRINTER)->select_preset(connect_printer_preset->name);
+                p->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
+                p->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, format(_u8L("Changed Printer to %1%."), connect_printer_preset->name));
+                select_view_3D("3D");                
+            }
+ */
+
+    const std::string connect_state = p->user_account->get_keyword_from_json(dialog_msg, "connect_state");
+    const std::string printer_state = p->user_account->get_keyword_from_json(dialog_msg, "printer_state");
+    const std::map<std::string, ConnectPrinterState>& printer_state_table = p->user_account->get_printer_state_table();
+    const auto state = printer_state_table.find(connect_state);
+    assert(state != printer_state_table.end());
+    // TODO: all states that does not allow to upload 
+    if (state->second == ConnectPrinterState::CONNECT_PRINTER_OFFLINE) {
+        show_error(this, _L("Failed to select a printer. Chosen printer is in offline state."));
+        return;
+    }
+
+    const std::string uuid = p->user_account->get_keyword_from_json(dialog_msg, "uuid");
+    const std::string team_id = p->user_account->get_keyword_from_json(dialog_msg, "team_id");
+    if (uuid.empty() || team_id.empty()) {
+        show_error(this, _L("Failed to select a printer. Missing data (uuid and team id) for chosen printer."));
+        return;
+    }
+    PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), /**connect_printer_preset*/*selected_printer_preset);
+    ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnectNew));
+    // use existing structures to pass data
+    ph_printer.config.opt_string("printhost_apikey") = team_id;
+    ph_printer.config.opt_string("print_host") = uuid;
+    DynamicPrintConfig* physical_printer_config = &ph_printer.config;
+
+    send_gcode_inner(physical_printer_config);
+}
+
 void Plater::send_gcode()
 {
     // if physical_printer is selected, send gcode for this printer
@@ -5707,6 +5986,38 @@ void Plater::send_gcode()
     if (! physical_printer_config || p->model.objects.empty())
         return;
 
+    // Passwords and API keys
+    // "stored" indicates data are stored secretly, load them from store.
+    std::string printer_name = wxGetApp().preset_bundle->physical_printers.get_selected_printer().name;
+    if (physical_printer_config->opt_string("printhost_password") == "stored" && physical_printer_config->opt_string("printhost_password") == "stored") {
+        std::string username;
+        std::string password;
+        if (load_secret(printer_name, "printhost_password", username, password)) {
+            if (!username.empty())
+                physical_printer_config->opt_string("printhost_user") = username;
+            if (!password.empty())
+                physical_printer_config->opt_string("printhost_password") = password;
+        }
+        else {
+            physical_printer_config->opt_string("printhost_user") = std::string();
+            physical_printer_config->opt_string("printhost_password") = std::string();
+        }
+    }
+    /*
+    if (physical_printer_config->opt_string("printhost_apikey") == "stored") {
+        std::string username;
+        std::string password;
+        if (load_secret(printer_name, "printhost_apikey", username, password) && !password.empty())
+            physical_printer_config->opt_string("printhost_apikey") = password;
+        else
+            physical_printer_config->opt_string("printhost_apikey") = std::string();
+    }
+    */
+    send_gcode_inner(physical_printer_config);
+}
+
+void Plater::send_gcode_inner(DynamicPrintConfig* physical_printer_config)
+{
     PrintHostJob upload_job(physical_printer_config);
     if (upload_job.empty())
         return;
@@ -5782,6 +6093,7 @@ void Plater::send_gcode()
 
         p->export_gcode(fs::path(), false, std::move(upload_job));
     }
+
 }
 
 // Called when the Eject button is pressed.
@@ -6371,23 +6683,6 @@ void Plater::paste_from_clipboard()
         p->view3D->get_canvas3d()->get_selection().paste_from_clipboard();
 }
 
-void Plater::search()
-{
-    if (is_preview_shown())
-        return;
-    // plater should be focused for correct navigation inside search window 
-    this->SetFocus();
-
-    wxKeyEvent evt;
-#ifdef __APPLE__
-    evt.m_keyCode = 'f';
-#else /* __APPLE__ */
-    evt.m_keyCode = WXK_CONTROL_F;
-#endif /* __APPLE__ */
-    evt.SetControlDown(true);
-    canvas3D()->on_char(evt);
-}
-
 void Plater::msw_rescale()
 {
     p->preview->msw_rescale();
@@ -6517,6 +6812,16 @@ NotificationManager * Plater::get_notification_manager()
 const NotificationManager * Plater::get_notification_manager() const
 {
     return p->notification_manager.get();
+}
+
+UserAccount* Plater::get_user_account()
+{
+    return p->user_account.get();
+}
+
+const UserAccount* Plater::get_user_account() const
+{
+    return p->user_account.get();
 }
 
 void Plater::init_notification_manager()

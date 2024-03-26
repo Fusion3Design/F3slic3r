@@ -62,6 +62,7 @@ class Mouse3DController;
 class NotificationManager;
 struct Camera;
 class GLToolbar;
+class UserAccount;
 
 class Plater: public wxPanel
 {
@@ -223,7 +224,9 @@ public:
     bool is_background_process_update_scheduled() const;
     void suppress_background_process(const bool stop_background_process) ;
     void send_gcode();
+    void send_gcode_inner(DynamicPrintConfig* physical_printer_config);
 	void eject_drive();
+    void connect_gcode();
 
     void take_snapshot(const std::string &snapshot_name);
     void take_snapshot(const wxString &snapshot_name);
@@ -282,7 +285,6 @@ public:
 
     void copy_selection_to_clipboard();
     void paste_from_clipboard();
-    void search();
     void mirror(Axis axis);
     void split_object();
     void split_volume();
@@ -347,8 +349,11 @@ public:
     void set_bed_shape(const Pointfs& shape, const double max_print_height, const std::string& custom_texture, const std::string& custom_model, bool force_as_custom = false) const;
     void set_default_bed_shape() const;
 
-    NotificationManager * get_notification_manager();
-    const NotificationManager * get_notification_manager() const;
+    NotificationManager* get_notification_manager();
+    const NotificationManager* get_notification_manager() const;
+
+    UserAccount* get_user_account();
+    const UserAccount* get_user_account() const;
 
     void init_notification_manager();
 

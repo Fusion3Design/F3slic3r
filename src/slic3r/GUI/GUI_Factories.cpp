@@ -1463,6 +1463,8 @@ void MenuFactory::sys_color_changed()
 
 void MenuFactory::sys_color_changed(wxMenuBar* menubar)
 {
+    if (!menubar)
+        return;
     for (size_t id = 0; id < menubar->GetMenuCount(); id++) {
         wxMenu* menu = menubar->GetMenu(id);
         sys_color_changed_menu(menu);
