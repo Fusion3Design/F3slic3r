@@ -2649,7 +2649,7 @@ void Clipper::ProcessEdgesAtTopOfScanbeam(const cInt topY)
       if (ePrev && ePrev->Curr.x() == e->Bot.x() &&
         ePrev->Curr.y() == e->Bot.y() && op &&
         ePrev->OutIdx >= 0 && ePrev->Curr.y() > ePrev->Top.y() &&
-        SlopesEqual(*e, *ePrev, m_UseFullRange) &&
+        SlopesEqual(e->Curr, e->Top, ePrev->Curr, ePrev->Top, m_UseFullRange) &&
         (e->WindDelta != 0) && (ePrev->WindDelta != 0))
       {
         OutPt* op2 = AddOutPt(ePrev, e->Bot);
@@ -2658,7 +2658,7 @@ void Clipper::ProcessEdgesAtTopOfScanbeam(const cInt topY)
       else if (eNext && eNext->Curr.x() == e->Bot.x() &&
         eNext->Curr.y() == e->Bot.y() && op &&
         eNext->OutIdx >= 0 && eNext->Curr.y() > eNext->Top.y() &&
-        SlopesEqual(*e, *eNext, m_UseFullRange) &&
+        SlopesEqual(e->Curr, e->Top, eNext->Curr, eNext->Top, m_UseFullRange) &&
         (e->WindDelta != 0) && (eNext->WindDelta != 0))
       {
         OutPt* op2 = AddOutPt(eNext, e->Bot);
