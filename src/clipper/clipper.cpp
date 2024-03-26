@@ -1,10 +1,10 @@
 /*******************************************************************************
 *                                                                              *
 * Author    :  Angus Johnson                                                   *
-* Version   :  6.4.1                                                           *
-* Date      :  5 December 2016                                                 *
+* Version   :  6.4.2                                                           *
+* Date      :  27 February 2017                                                *
 * Website   :  http://www.angusj.com                                           *
-* Copyright :  Angus Johnson 2010-2016                                         *
+* Copyright :  Angus Johnson 2010-2017                                         *
 *                                                                              *
 * License:                                                                     *
 * Use, modification & distribution is subject to Boost Software License Ver 1. *
@@ -1423,7 +1423,7 @@ OutPt* Clipper::AddLocalMinPoly(TEdge *e1, TEdge *e2, const IntPoint &Pt)
         prevE = e->PrevInAEL;
   }
 
-  if (prevE && prevE->OutIdx >= 0)
+  if (prevE && prevE->OutIdx >= 0 && prevE->Top.y() < Pt.y() && e->Top.y() < Pt.y())
   {
     cInt xPrev = TopX(*prevE, Pt.y());
     cInt xE = TopX(*e, Pt.y());
