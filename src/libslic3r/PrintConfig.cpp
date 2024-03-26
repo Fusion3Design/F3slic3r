@@ -499,20 +499,21 @@ void PrintConfigDef::init_fff_params()
     def = this->add("chamber_temperature", coInts);
     def->label = L("Nominal");
     def->full_label = L("Chamber temperature");
-    def->tooltip = L("Chamber temperature. Note that this setting doesn't do anything, but you can access it in Start G-code, Tool change G-code and the other ones, like for other temperature settings.");
+    def->tooltip = L("Required chamber temperature for the print. Only used when heated chamber is supported by the printer.");
     def->sidetext = L("°C");
     def->min = 0;
-    def->max = 300;
+    def->max = 1000;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInts{ 0 });
 
     def = this->add("chamber_minimal_temperature", coInts);
     def->label = L("Minimal");
     def->full_label = L("Chamber minimal temperature");
-    def->tooltip = L("Chamber temperature. Note that this setting doesn't do anything, but you can access it in Start G-code, Tool change G-code and the other ones, like for other temperature settings.");
+    def->tooltip = L("Minimal chamber temperature that the printer should wait for before the print starts. This allows "
+                     "to start the print before the nominal chamber temperature is reached.");
     def->sidetext = L("°C");
     def->min = 0;
-    def->max = 300;
+    def->max = 1000;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInts{ 0 });
 
@@ -2725,16 +2726,17 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("autoemit_temperature_commands", coBool);
     def->label = L("Emit temperature commands automatically");
-    def->tooltip = L("When enabled, PrusaSlicer will check whether your Custom Start G-Code contains M104 or M190. "
+    def->tooltip = L("When enabled, PrusaSlicer will check whether your custom Start G-Code contains G-codes to set "
+                     "extruder, bed or chamber temperature (M104, M109, M140, M190, M141 and M191). "
                      "If so, the temperatures will not be emitted automatically so you're free to customize "
                      "the order of heating commands and other custom actions. Note that you can use "
                      "placeholder variables for all PrusaSlicer settings, so you can put "
                      "a \"M109 S[first_layer_temperature]\" command wherever you want.\n"
-                     "If your Custom Start G-Code does NOT contain M104 or M190, "
-                     "PrusaSlicer will execute the Start G-Code after bed reached its target temperature "
-                     "and extruder just started heating.\n\n"
-                     "When disabled, PrusaSlicer will NOT emit commands to heat up extruder and bed, "
-                     "leaving both to Custom Start G-Code.");
+                     "If your custom Start G-Code does NOT contain these G-codes, "
+                     "PrusaSlicer will execute the Start G-Code after heated chamber was set to its temperature, "
+                     "bed reached its target temperature and extruder just started heating.\n\n"
+                     "When disabled, PrusaSlicer will NOT emit commands to heat up extruder, bed or chamber, "
+                     "leaving all to Custom Start G-Code.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(true));
 
