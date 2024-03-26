@@ -1,10 +1,10 @@
 /*******************************************************************************
 *                                                                              *
 * Author    :  Angus Johnson                                                   *
-* Version   :  6.4.0                                                           *
-* Date      :  2 July 2015                                                     *
+* Version   :  6.4.1                                                           *
+* Date      :  5 December 2016                                                 *
 * Website   :  http://www.angusj.com                                           *
-* Copyright :  Angus Johnson 2010-2015                                         *
+* Copyright :  Angus Johnson 2010-2016                                         *
 *                                                                              *
 * License:                                                                     *
 * Use, modification & distribution is subject to Boost Software License Ver 1. *
@@ -3243,7 +3243,7 @@ void Clipper::FixupFirstLefts3(OutRec* OldOutRec, OutRec* NewOutRec)
   for (OutRec &outRec : m_PolyOuts)
   {
     OutRec* firstLeft = ParseFirstLeft(outRec.FirstLeft);
-    if (outRec.Pts && outRec.FirstLeft == OldOutRec)
+    if (outRec.Pts && firstLeft == OldOutRec)
       outRec.FirstLeft = NewOutRec;
   }
 }
@@ -4014,6 +4014,7 @@ void CleanPolygon(Path& poly, double distance)
 
 void CleanPolygons(const Paths& in_polys, Paths& out_polys, double distance)
 {
+  out_polys.resize(in_polys.size());
   for (Paths::size_type i = 0; i < in_polys.size(); ++i)
     CleanPolygon(in_polys[i], out_polys[i], distance);
 }

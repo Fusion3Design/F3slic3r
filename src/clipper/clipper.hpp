@@ -1,8 +1,8 @@
 /*******************************************************************************
 *                                                                              *
 * Author    :  Angus Johnson                                                   *
-* Version   :  6.4.0                                                           *
-* Date      :  2 July 2015                                                     *
+* Version   :  6.4.1                                                           *
+* Date      :  5 December 2016                                                 *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2015                                         *
 *                                                                              *
@@ -144,7 +144,7 @@ typedef std::vector<PolyNode*, Allocator<PolyNode*>> PolyNodes;
 class PolyNode 
 { 
 public:
-    PolyNode() : Childs(), Parent(0), Index(0), m_IsOpen(false) {}
+    PolyNode() : Parent(0), Index(0), m_IsOpen(false) {}
     virtual ~PolyNode(){};
     Path Contour;
     PolyNodes Childs;
