@@ -2167,7 +2167,6 @@ void TabFilament::build()
         optgroup = page->new_optgroup(L("Temperature"));
 
         create_line_with_near_label_widget(optgroup, "idle_temperature");
-        optgroup->append_single_option_line("chamber_temperature");
 
         Line line = { L("Nozzle"), "" };
         line.append_option(optgroup->get_option("first_layer_temperature"));
@@ -2177,6 +2176,11 @@ void TabFilament::build()
         line = { L("Bed"), "" };
         line.append_option(optgroup->get_option("first_layer_bed_temperature"));
         line.append_option(optgroup->get_option("bed_temperature"));
+        optgroup->append_line(line);
+
+        line = { L("Chamber"), "" };
+        line.append_option(optgroup->get_option("chamber_temperature"));
+        line.append_option(optgroup->get_option("chamber_minimal_temperature"));
         optgroup->append_line(line);
 
     page = add_options_page(L("Cooling"), "cooling");

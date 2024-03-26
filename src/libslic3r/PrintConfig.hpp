@@ -820,6 +820,8 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionInts,               overhang_fan_speed_1))
     ((ConfigOptionInts,               overhang_fan_speed_2))
     ((ConfigOptionInts,               overhang_fan_speed_3))
+    ((ConfigOptionInts,               chamber_temperature))
+    ((ConfigOptionInts,               chamber_minimal_temperature))
     ((ConfigOptionBool,               complete_objects))
     ((ConfigOptionFloats,             colorprint_heights))
     ((ConfigOptionBools,              cooling))
@@ -896,7 +898,6 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionFloats,             wiping_volumes_matrix))
     ((ConfigOptionBool,               wiping_volumes_use_custom_matrix))
     ((ConfigOptionFloat,              z_offset))
-    ((ConfigOptionInts,               chamber_temperature))
 )
 
 PRINT_CONFIG_CLASS_DERIVED_DEFINE0(
