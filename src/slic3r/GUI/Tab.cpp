@@ -2385,6 +2385,13 @@ void TabFilament::toggle_options()
         }
     }
 
+    if (m_active_page->title() == "Filament")
+    {
+        bool supports_chamber = m_preset_bundle->printers.get_edited_preset().config.opt_bool("heated_chamber");
+        toggle_option("chamber_temperature", supports_chamber);
+        toggle_option("chamber_minimal_temperature", supports_chamber);
+    }
+
     if (m_active_page->title() == "Advanced")
     {
         bool multitool_ramming = m_config->opt_bool("filament_multitool_ramming", 0);
@@ -2696,6 +2703,7 @@ void TabPrinter::build_fff()
         optgroup->append_single_option_line("silent_mode");
         optgroup->append_single_option_line("remaining_times");
         optgroup->append_single_option_line("binary_gcode");
+        optgroup->append_single_option_line("heated_chamber");
 
         optgroup->on_change = [this](t_config_option_key opt_key, boost::any value) {
             wxTheApp->CallAfter([this, opt_key, value]() {

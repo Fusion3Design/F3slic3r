@@ -1856,6 +1856,15 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionString(""));
 
+    def = this->add("heated_chamber", coBool);
+    def->label = L("Supports heated chamber");
+    def->tooltip = L("When enabled, G-codes to heat up the chamber will be emitted before and after the Start G-code (unless they are "
+                     "explicitely used in the Start G-code).\n\nThe temperature can be configured in Filament Settings, "
+                     "temperature for the first printing filament will be used. The chamber heating is not turned off "
+                     "at the end, the user is supposed to do it in custom End G-code when they want it.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("remaining_times", coBool);
     def->label = L("Supports remaining times");
     def->tooltip = L("Emit M73 P[percent printed] R[remaining time in minutes] at 1 minute"
