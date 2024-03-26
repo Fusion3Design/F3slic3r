@@ -183,7 +183,7 @@ std::string GCodeWriter::set_bed_temperature(unsigned int temperature, bool wait
 
 
 
-std::string GCodeWriter::set_chamber_temperature(unsigned int temperature, bool wait) const
+std::string GCodeWriter::set_chamber_temperature(unsigned int temperature, bool wait, bool accurate) const
 {
     std::string_view code, comment;
     if (wait) {
@@ -195,7 +195,7 @@ std::string GCodeWriter::set_chamber_temperature(unsigned int temperature, bool 
     }
     
     std::ostringstream gcode;
-    gcode << code << " S" << temperature << " ; " << comment << "\n";
+    gcode << code << (accurate ? " R" : " S") << temperature << " ; " << comment << "\n";
     
     return gcode.str();
 }
