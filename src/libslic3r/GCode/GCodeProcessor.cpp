@@ -3900,7 +3900,7 @@ void GCodeProcessor::post_process()
                 ++m_times_cache_id;
             }
 
-            if (it == m_machine.g1_times_cache.end() || it->id > g1_lines_counter)
+            if (it == m_machines[Normal].g1_times_cache.end() || it->id > g1_lines_counter)
                 return ret;
 
             // search for internal G1 lines
