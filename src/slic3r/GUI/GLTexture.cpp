@@ -336,12 +336,6 @@ void GLTexture::render_sub_texture(unsigned int tex_id, float left, float right,
 {
     glsafe(::glEnable(GL_BLEND));
     glsafe(::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-
-#if !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
-    glsafe(::glEnable(GL_TEXTURE_2D));
-    glsafe(::glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE));
-#endif // !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
-
     glsafe(::glBindTexture(GL_TEXTURE_2D, (GLuint)tex_id));
 
     GLModel::Geometry init_data;
@@ -372,10 +366,6 @@ void GLTexture::render_sub_texture(unsigned int tex_id, float left, float right,
     }
 
     glsafe(::glBindTexture(GL_TEXTURE_2D, 0));
-
-#if !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
-    glsafe(::glDisable(GL_TEXTURE_2D));
-#endif // !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
     glsafe(::glDisable(GL_BLEND));
 }
 

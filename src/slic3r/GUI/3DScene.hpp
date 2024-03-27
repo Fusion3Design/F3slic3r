@@ -409,13 +409,13 @@ public:
         int                volume_idx,
         int                instance_idx);
 
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
     int load_wipe_tower_preview(
         float pos_x, float pos_y, float width, float depth, const std::vector<std::pair<float, float>>& z_and_depth_pairs, float height, float cone_angle, float rotation_angle, bool size_unknown, float brim_width, TriangleMesh* out_mesh = nullptr);
 #else
     int load_wipe_tower_preview(
         float pos_x, float pos_y, float width, float depth, const std::vector<std::pair<float, float>>& z_and_depth_pairs, float height, float cone_angle, float rotation_angle, bool size_unknown, float brim_width);
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
 
     // Load SLA auxiliary GLVolumes (for support trees or pad).
     void load_object_auxiliary(

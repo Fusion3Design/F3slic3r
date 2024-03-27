@@ -89,12 +89,6 @@ class Preview : public wxPanel
     BackgroundSlicingProcess* m_process;
     GCodeProcessorResult* m_gcode_result;
 
-#ifdef __linux__
-    // We are getting mysterious crashes on Linux in gtk due to OpenGL context activation GH #1874 #1955.
-    // So we are applying a workaround here.
-    bool m_volumes_cleanup_required { false };
-#endif /* __linux__ */
-
     // Calling this function object forces Plater::schedule_background_process.
     std::function<void()> m_schedule_background_process;
 
@@ -138,8 +132,7 @@ public:
 
     void load_gcode_shells();
     void load_print(bool keep_z_range = false);
-    void reload_print(bool keep_volumes = false);
-    void refresh_print();
+    void reload_print();
 
     void msw_rescale();
     void sys_color_changed();
@@ -149,7 +142,7 @@ public:
 
     bool is_loaded() const { return m_loaded; }
 
-    void update_moves_slider();
+    void update_moves_slider(std::optional<int> visible_range_min = std::nullopt, std::optional<int> visible_range_max = std::nullopt);
     void enable_moves_slider(bool enable);
     void move_moves_slider(wxKeyEvent& evt);
     void hide_layers_slider();

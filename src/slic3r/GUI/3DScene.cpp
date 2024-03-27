@@ -147,10 +147,10 @@ void GLVolume::NonManifoldEdges::render()
 {
     update();
 
-#if ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
     if (!GUI::OpenGLManager::get_gl_info().is_core_profile())
-#endif // ENABLE_GL_CORE_PROFILE
         glsafe(::glLineWidth(2.0f));
+#endif // !SLIC3R_OPENGL_ES
 
     GLShaderProgram* shader = GUI::wxGetApp().get_current_shader();
     if (shader == nullptr)
@@ -159,12 +159,16 @@ void GLVolume::NonManifoldEdges::render()
     const GUI::Camera& camera = GUI::wxGetApp().plater()->get_camera();
     shader->set_uniform("view_model_matrix", camera.get_view_matrix() * m_parent.world_matrix());
     shader->set_uniform("projection_matrix", camera.get_projection_matrix());
-#if ENABLE_GL_CORE_PROFILE
-    const std::array<int, 4>& viewport = camera.get_viewport();
-    shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
-    shader->set_uniform("width", 0.5f);
-    shader->set_uniform("gap_size", 0.0f);
-#endif // ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
+    if (GUI::OpenGLManager::get_gl_info().is_core_profile()) {
+#endif // !SLIC3R_OPENGL_ES
+        const std::array<int, 4>& viewport = camera.get_viewport();
+        shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
+        shader->set_uniform("width", 0.5f);
+        shader->set_uniform("gap_size", 0.0f);
+#if !SLIC3R_OPENGL_ES
+    }
+#endif // !SLIC3R_OPENGL_ES
     m_model.set_color(complementary(m_parent.render_color));
     m_model.render();
 }
@@ -493,7 +497,7 @@ int GLVolumeCollection::load_object_volume(
     return int(this->volumes.size() - 1);
 }
 
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
 int GLVolumeCollection::load_wipe_tower_preview(
     float pos_x, float pos_y, float width, float depth, const std::vector<std::pair<float, float>>& z_and_depth_pairs, float height, float cone_angle,
     float rotation_angle, bool size_unknown, float brim_width, TriangleMesh* out_mesh)
@@ -501,14 +505,14 @@ int GLVolumeCollection::load_wipe_tower_preview(
 int GLVolumeCollection::load_wipe_tower_preview(
     float pos_x, float pos_y, float width, float depth, const std::vector<std::pair<float, float>>& z_and_depth_pairs, float height, float cone_angle,
     float rotation_angle, bool size_unknown, float brim_width)
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
 {
     if (height == 0.0f)
         height = 0.1f;
 
     // Because the GLVolume is also used for arrangement, it must be safely larger
     // than the actual extruded tower, otherwise the arranged tower ends up out of bed.
-    float offset = 0.3;
+    const float offset = 0.3f;
     pos_x -= offset;
     pos_y -= offset;
     width += 2.f * offset;
@@ -588,10 +592,10 @@ int GLVolumeCollection::load_wipe_tower_preview(
 
     volumes.emplace_back(new GLVolume(color));
     GLVolume& v = *volumes.back();
-#if ENABLE_OPENGL_ES
+#if SLIC3R_OPENGL_ES
     if (out_mesh != nullptr)
         *out_mesh = mesh;
-#endif // ENABLE_OPENGL_ES
+#endif // SLIC3R_OPENGL_ES
     v.model.init_from(mesh);
     v.model.set_color(color);
     v.mesh_raycaster = std::make_unique<GUI::MeshRaycaster>(std::make_shared<const TriangleMesh>(mesh));
@@ -749,11 +753,11 @@ void GLVolumeCollection::render(GLVolumeCollection::ERenderType type, bool disab
         return;
 
     GLShaderProgram* sink_shader  = GUI::wxGetApp().get_shader("flat");
-#if ENABLE_GL_CORE_PROFILE
-    GLShaderProgram* edges_shader = GUI::OpenGLManager::get_gl_info().is_core_profile() ? GUI::wxGetApp().get_shader("dashed_thick_lines") : GUI::wxGetApp().get_shader("flat");
+#if SLIC3R_OPENGL_ES
+    GLShaderProgram* edges_shader = GUI::wxGetApp().get_shader("dashed_lines");
 #else
-    GLShaderProgram* edges_shader = GUI::wxGetApp().get_shader("flat");
-#endif // ENABLE_GL_CORE_PROFILE
+    GLShaderProgram* edges_shader = GUI::OpenGLManager::get_gl_info().is_core_profile() ? GUI::wxGetApp().get_shader("dashed_thick_lines") : GUI::wxGetApp().get_shader("flat");
+#endif // SLIC3R_OPENGL_ES
 
     if (type == ERenderType::Transparent) {
         glsafe(::glEnable(GL_BLEND));

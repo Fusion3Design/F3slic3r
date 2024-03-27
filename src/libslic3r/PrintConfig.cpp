@@ -4915,7 +4915,15 @@ CLIActionsConfigDef::CLIActionsConfigDef()
     def->cli = "gcodeviewer";
     def->set_default_value(new ConfigOptionBool(false));
 
-#if ENABLE_GL_CORE_PROFILE
+#if ENABLE_OPENGL_AUTO_AA_SAMPLES
+    def = this->add("opengl-aa", coBool);
+    def->label = L("Automatic OpenGL antialising samples number selection");
+    def->tooltip = L("Automatically select the highest number of samples for OpenGL antialising.");
+    def->cli = "opengl-aa";
+    def->set_default_value(new ConfigOptionBool(false));
+#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
+
+#if !SLIC3R_OPENGL_ES
     def = this->add("opengl-version", coString);
     def->label = L("OpenGL version");
     def->tooltip = L("Select a specific version of OpenGL");
@@ -4933,7 +4941,7 @@ CLIActionsConfigDef::CLIActionsConfigDef()
     def->tooltip = L("Activate OpenGL debug output on graphic cards which support it (OpenGL 4.3 or higher)");
     def->cli = "opengl-debug";
     def->set_default_value(new ConfigOptionBool(false));
-#endif // ENABLE_GL_CORE_PROFILE
+#endif // !SLIC3R_OPENGL_ES
 
     def = this->add("slice", coBool);
     def->label = L("Slice");

@@ -108,7 +108,7 @@ public:
     void reload_gcode_from_disk();
     void convert_gcode_to_ascii();
     void convert_gcode_to_binary();
-    void refresh_print();
+    void reload_print();
 
     std::vector<size_t> load_files(const std::vector<boost::filesystem::path>& input_files, bool load_model = true, bool load_config = true, bool imperial_units = false);
     // To be called when providing a list of files to the GUI slic3r on command line.
@@ -336,7 +336,7 @@ public:
 
     void set_preview_layers_slider_values_range(int bottom, int top);
 
-    void update_preview_moves_slider();
+    void update_preview_moves_slider(std::optional<int> visible_range_min = std::nullopt, std::optional<int> visible_range_max = std::nullopt);
     void enable_preview_moves_slider(bool enable);
 
     void reset_gcode_toolpaths();

@@ -887,12 +887,12 @@ std::string GUI_App::get_gl_info(bool for_github)
 
 wxGLContext* GUI_App::init_glcontext(wxGLCanvas& canvas)
 {
-#if ENABLE_GL_CORE_PROFILE
+#if SLIC3R_OPENGL_ES
+    return m_opengl_mgr.init_glcontext(canvas);
+#else
     return m_opengl_mgr.init_glcontext(canvas, init_params != nullptr ? init_params->opengl_version : std::make_pair(0, 0),
         init_params != nullptr ? init_params->opengl_compatibiity_profile : false, init_params != nullptr ? init_params->opengl_debug : false);
-#else
-    return m_opengl_mgr.init_glcontext(canvas);
-#endif // ENABLE_GL_CORE_PROFILE
+#endif // SLIC3R_OPENGL_ES
 }
 
 bool GUI_App::init_opengl()
@@ -2652,12 +2652,8 @@ void GUI_App::open_preferences(const std::string& highlight_option /*= std::stri
     if (mainframe->preferences_dialog->recreate_GUI())
         recreate_GUI(_L("Restart application") + dots);
 
-#if ENABLE_GCODE_LINES_ID_IN_H_SLIDER
-    if (dlg.seq_top_layer_only_changed() || dlg.seq_seq_top_gcode_indices_changed())
-#else
     if (mainframe->preferences_dialog->seq_top_layer_only_changed())
-#endif // ENABLE_GCODE_LINES_ID_IN_H_SLIDER
-        this->plater_->refresh_print();
+        this->plater_->reload_print();
 
 #ifdef _WIN32
     if (is_editor()) {

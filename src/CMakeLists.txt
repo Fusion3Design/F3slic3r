@@ -31,6 +31,7 @@ endif ()
 
 if (SLIC3R_GUI)
     add_subdirectory(imgui)
+    add_subdirectory(libvgcode)
     add_subdirectory(hidapi)
     include_directories(hidapi/include)
 

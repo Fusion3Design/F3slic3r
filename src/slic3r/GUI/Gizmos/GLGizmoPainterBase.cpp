@@ -158,103 +158,115 @@ void GLGizmoPainterBase::render_cursor_circle()
     const float cnv_inv_height = 1.0f / cnv_height;
 
     const Vec2d center = m_parent.get_local_mouse_position();
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
     const float zoom = float(wxGetApp().plater()->get_camera().get_zoom());
     const float radius = m_cursor_radius * zoom;
-#else
-    const float radius = m_cursor_radius * float(wxGetApp().plater()->get_camera().get_zoom());
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
 
-#if ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
     if (!OpenGLManager::get_gl_info().is_core_profile())
-#endif // ENABLE_GL_CORE_PROFILE
         glsafe(::glLineWidth(1.5f));
+#endif // !SLIC3R_OPENGL_ES
+
     glsafe(::glDisable(GL_DEPTH_TEST));
 
-#if !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
-    glsafe(::glPushAttrib(GL_ENABLE_BIT));
-    glsafe(::glLineStipple(4, 0xAAAA));
-    glsafe(::glEnable(GL_LINE_STIPPLE));
-#endif // !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
+#if !SLIC3R_OPENGL_ES
+    if (!OpenGLManager::get_gl_info().is_core_profile()) {
+        glsafe(::glPushAttrib(GL_ENABLE_BIT));
+        glsafe(::glLineStipple(4, 0xAAAA));
+        glsafe(::glEnable(GL_LINE_STIPPLE));
+    }
+#endif // !SLIC3R_OPENGL_ES
 
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
-    if (!m_circle.is_initialized() || std::abs(m_old_cursor_radius - radius) > EPSILON) {
-        m_old_cursor_radius = radius;
-        m_circle.reset();
-#else
     if (!m_circle.is_initialized() || !m_old_center.isApprox(center) || std::abs(m_old_cursor_radius - radius) > EPSILON) {
         m_old_cursor_radius = radius;
         m_old_center = center;
         m_circle.reset();
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
 
         GLModel::Geometry init_data;
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
-        const unsigned int StepsCount = (unsigned int)(2 * (4 + int(252 * (zoom - 1.0f) / (250.0f - 1.0f))));
-        const float StepSize = 2.0f * float(PI) / float(StepsCount);
-        init_data.format = { GLModel::Geometry::EPrimitiveType::Lines, GLModel::Geometry::EVertexLayout::P2 };
-#else
-        static const unsigned int StepsCount = 32;
-        static const float StepSize = 2.0f * float(PI) / float(StepsCount);
-        init_data.format = { GLModel::Geometry::EPrimitiveType::LineLoop, GLModel::Geometry::EVertexLayout::P2 };
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+        unsigned int steps_count = 0;
+#if !SLIC3R_OPENGL_ES
+        if (OpenGLManager::get_gl_info().is_core_profile()) {
+#endif // !SLIC3R_OPENGL_ES
+            steps_count = (unsigned int)(2 * (4 + int(252 * (zoom - 1.0f) / (250.0f - 1.0f))));
+            init_data.format = { GLModel::Geometry::EPrimitiveType::Lines, GLModel::Geometry::EVertexLayout::P2 };
+#if !SLIC3R_OPENGL_ES
+        }
+        else {
+            steps_count = 32;
+            init_data.format = { GLModel::Geometry::EPrimitiveType::LineLoop, GLModel::Geometry::EVertexLayout::P2 };
+        }
+#endif // !SLIC3R_OPENGL_ES
+        const float step_size = 2.0f * float(PI) / float(steps_count);
         init_data.color  = { 0.0f, 1.0f, 0.3f, 1.0f };
-        init_data.reserve_vertices(StepsCount);
-        init_data.reserve_indices(StepsCount);
+        init_data.reserve_vertices(steps_count);
+        init_data.reserve_indices(steps_count);
 
         // vertices + indices
-        for (unsigned int i = 0; i < StepsCount; ++i) {
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
-            if (i % 2 != 0) continue;
+        for (unsigned int i = 0; i < steps_count; ++i) {
+#if !SLIC3R_OPENGL_ES
+            if (OpenGLManager::get_gl_info().is_core_profile()) {
+#endif // !SLIC3R_OPENGL_ES
+                if (i % 2 != 0) continue;
 
-            const float angle_i = float(i) * StepSize;
-            const unsigned int j = (i + 1) % StepsCount;
-            const float angle_j = float(j) * StepSize;
-            const Vec2d v_i(::cos(angle_i), ::sin(angle_i));
-            const Vec2d v_j(::cos(angle_j), ::sin(angle_j));
-            init_data.add_vertex(Vec2f(v_i.x(), v_i.y()));
-            init_data.add_vertex(Vec2f(v_j.x(), v_j.y()));
-            const size_t vcount = init_data.vertices_count();
-            init_data.add_line(vcount - 2, vcount - 1);
-#else
-            const float angle = float(i) * StepSize;
-            init_data.add_vertex(Vec2f(2.0f * ((center.x() + ::cos(angle) * radius) * cnv_inv_width - 0.5f),
-                                       -2.0f * ((center.y() + ::sin(angle) * radius) * cnv_inv_height - 0.5f)));
-            init_data.add_index(i);
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+                const float angle_i = float(i) * step_size;
+                const unsigned int j = (i + 1) % steps_count;
+                const float angle_j = float(j) * step_size;
+                const Vec2d v_i(::cos(angle_i), ::sin(angle_i));
+                const Vec2d v_j(::cos(angle_j), ::sin(angle_j));
+                init_data.add_vertex(Vec2f(v_i.x(), v_i.y()));
+                init_data.add_vertex(Vec2f(v_j.x(), v_j.y()));
+                const size_t vcount = init_data.vertices_count();
+                init_data.add_line(vcount - 2, vcount - 1);
+#if !SLIC3R_OPENGL_ES
+            }
+            else {
+                const float angle = float(i) * step_size;
+                init_data.add_vertex(Vec2f(2.0f * ((center.x() + ::cos(angle) * radius) * cnv_inv_width - 0.5f),
+                  -2.0f * ((center.y() + ::sin(angle) * radius) * cnv_inv_height - 0.5f)));
+                init_data.add_index(i);
+            }
+#endif // !SLIC3R_OPENGL_ES
         }
 
         m_circle.init_from(std::move(init_data));
     }
 
-#if ENABLE_GL_CORE_PROFILE
-    GLShaderProgram* shader = OpenGLManager::get_gl_info().is_core_profile() ? wxGetApp().get_shader("dashed_thick_lines") : wxGetApp().get_shader("flat");
+#if SLIC3R_OPENGL_ES
+    GLShaderProgram* shader = wxGetApp().get_shader("dashed_lines");
 #else
-    GLShaderProgram* shader = GUI::wxGetApp().get_shader("flat");
-#endif // ENABLE_GL_CORE_PROFILE
+    GLShaderProgram* shader = OpenGLManager::get_gl_info().is_core_profile() ? wxGetApp().get_shader("dashed_thick_lines") : wxGetApp().get_shader("flat");
+#endif // SLIC3R_OPENGL_ES
     if (shader != nullptr) {
         shader->start_using();
-#if ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
-        const Transform3d view_model_matrix = Geometry::translation_transform(Vec3d(2.0f * (center.x() * cnv_inv_width - 0.5f), -2.0f * (center.y() * cnv_inv_height - 0.5f), 0.0)) *
-            Geometry::scale_transform(Vec3d(2.0f * radius * cnv_inv_width, 2.0f * radius * cnv_inv_height, 1.0f));
-        shader->set_uniform("view_model_matrix", view_model_matrix);
-#else
-        shader->set_uniform("view_model_matrix", Transform3d::Identity());
-#endif // ENABLE_GL_CORE_PROFILE || ENABLE_OPENGL_ES
+#if !SLIC3R_OPENGL_ES
+        if (OpenGLManager::get_gl_info().is_core_profile()) {
+#endif // !SLIC3R_OPENGL_ES
+            const Transform3d view_model_matrix = Geometry::translation_transform(Vec3d(2.0f * (center.x() * cnv_inv_width - 0.5f), -2.0f * (center.y() * cnv_inv_height - 0.5f), 0.0)) *
+                Geometry::scale_transform(Vec3d(2.0f * radius * cnv_inv_width, 2.0f * radius * cnv_inv_height, 1.0f));
+            shader->set_uniform("view_model_matrix", view_model_matrix);
+#if !SLIC3R_OPENGL_ES
+        }
+        else
+            shader->set_uniform("view_model_matrix", Transform3d::Identity());
+#endif // !SLIC3R_OPENGL_ES
         shader->set_uniform("projection_matrix", Transform3d::Identity());
-#if ENABLE_GL_CORE_PROFILE
-        const std::array<int, 4>& viewport = wxGetApp().plater()->get_camera().get_viewport();
-        shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
-        shader->set_uniform("width", 0.25f);
-        shader->set_uniform("gap_size", 0.0f);
-#endif // ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
+        if (OpenGLManager::get_gl_info().is_core_profile()) {
+#endif // !SLIC3R_OPENGL_ES
+            const std::array<int, 4>& viewport = wxGetApp().plater()->get_camera().get_viewport();
+            shader->set_uniform("viewport_size", Vec2d(double(viewport[2]), double(viewport[3])));
+            shader->set_uniform("width", 0.25f);
+            shader->set_uniform("gap_size", 0.0f);
+#if !SLIC3R_OPENGL_ES
+        }
+#endif // !SLIC3R_OPENGL_ES
         m_circle.render();
         shader->stop_using();
     }
 
-#if !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
-    glsafe(::glPopAttrib());
-#endif // !ENABLE_GL_CORE_PROFILE && !ENABLE_OPENGL_ES
+#if !SLIC3R_OPENGL_ES
+    if (!OpenGLManager::get_gl_info().is_core_profile())
+        glsafe(::glPopAttrib());
+#endif // !SLIC3R_OPENGL_ES
     glsafe(::glEnable(GL_DEPTH_TEST));
 }
 

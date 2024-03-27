@@ -392,8 +392,7 @@ struct Plater::priv
     bool init_collapse_toolbar();
 
     void set_preview_layers_slider_values_range(int bottom, int top);
-
-    void update_preview_moves_slider();
+    void update_preview_moves_slider(std::optional<int> visible_range_min = std::nullopt, std::optional<int> visible_range_max = std::nullopt);
     void enable_preview_moves_slider(bool enable);
 
     void reset_gcode_toolpaths();
@@ -740,7 +739,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     preview->get_wxglcanvas()->Bind(EVT_GLCANVAS_MOVE_SLIDERS, [this](wxKeyEvent& evt) {
         preview->move_layers_slider(evt);
         preview->move_moves_slider(evt);
-        });
+      });
     preview->get_wxglcanvas()->Bind(EVT_GLCANVAS_EDIT_COLOR_CHANGE, [this](wxKeyEvent& evt) { preview->edit_layers_slider(evt); });
     if (wxGetApp().is_gcode_viewer())
         preview->Bind(EVT_GLCANVAS_RELOAD_FROM_DISK, [this](SimpleEvent&) { this->q->reload_gcode_from_disk(); });
@@ -2703,7 +2702,7 @@ void Plater::priv::set_current_panel(wxPanel* panel)
                 q->reslice();
             }
             // keeps current gcode preview, if any
-            preview->reload_print(true);
+            preview->reload_print();
         }
 
         preview->set_as_dirty();
@@ -3316,9 +3315,9 @@ void Plater::priv::set_preview_layers_slider_values_range(int bottom, int top)
     preview->set_layers_slider_values_range(bottom, top);
 }
 
-void Plater::priv::update_preview_moves_slider()
+void Plater::priv::update_preview_moves_slider(std::optional<int> visible_range_min, std::optional<int> visible_range_max)
 {
-    preview->update_moves_slider();
+    preview->update_moves_slider(visible_range_min, visible_range_max);
 }
 
 void Plater::priv::enable_preview_moves_slider(bool enable)
@@ -4009,7 +4008,7 @@ void Plater::load_gcode(const wxString& filename)
     // cleanup view before to start loading/processing
     p->gcode_result.reset();
     reset_gcode_toolpaths();
-    p->preview->reload_print(false);
+    p->preview->reload_print();
     p->get_current_canvas3D()->render();
 
     wxBusyCursor wait;
@@ -4030,7 +4029,7 @@ void Plater::load_gcode(const wxString& filename)
     // show results
     try
     {
-        p->preview->reload_print(false);
+        p->preview->reload_print();
     }
     catch (const std::exception&)
     {
@@ -4038,7 +4037,7 @@ void Plater::load_gcode(const wxString& filename)
         p->gcode_result.reset();
         reset_gcode_toolpaths();
         set_default_bed_shape();
-        p->preview->reload_print(false);
+        p->preview->reload_print();
         p->get_current_canvas3D()->render();
         MessageDialog(this, _L("The selected file") + ":\n" + filename + "\n" + _L("does not contain valid gcode."),
             wxString(GCODEVIEWER_APP_NAME) + " - " + _L("Error while loading .gcode file"), wxOK | wxICON_WARNING | wxCENTRE).ShowModal();
@@ -4249,9 +4248,9 @@ void Plater::convert_gcode_to_binary()
     msg_dlg.ShowModal();
 }
 
-void Plater::refresh_print()
+void Plater::reload_print()
 {
-    p->preview->refresh_print();
+    p->preview->reload_print();
 }
 
 std::vector<size_t> Plater::load_files(const std::vector<fs::path>& input_files, bool load_model, bool load_config, bool imperial_units /*= false*/) { return p->load_files(input_files, load_model, load_config, imperial_units); }
@@ -5780,7 +5779,7 @@ void Plater::reslice()
     if (clean_gcode_toolpaths)
         reset_gcode_toolpaths();
 
-    p->preview->reload_print(!clean_gcode_toolpaths);
+    p->preview->reload_print();
 }
 
 void Plater::reslice_until_step_inner(int step, const ModelObject &object, bool postpone_error_messages)
@@ -6202,6 +6201,7 @@ void Plater::on_config_change(const DynamicPrintConfig &config)
             p->reset_gcode_toolpaths();
             p->view3D->get_canvas3d()->reset_sequential_print_clearance();
             p->view3D->get_canvas3d()->set_sla_view_type(GLCanvas3D::ESLAViewType::Original);
+            p->preview->get_canvas3d()->reset_volumes();
         }
         else if (opt_key == "bed_shape" || opt_key == "bed_custom_texture" || opt_key == "bed_custom_model") {
             bed_shape_changed = true;
@@ -6779,9 +6779,9 @@ void Plater::set_preview_layers_slider_values_range(int bottom, int top)
     p->set_preview_layers_slider_values_range(bottom, top);
 }
 
-void Plater::update_preview_moves_slider()
+void Plater::update_preview_moves_slider(std::optional<int> visible_range_min, std::optional<int> visible_range_max)
 {
-    p->update_preview_moves_slider();
+    p->update_preview_moves_slider(visible_range_min, visible_range_max);
 }
 
 void Plater::enable_preview_moves_slider(bool enable)
