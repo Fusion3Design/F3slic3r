@@ -71,7 +71,7 @@ bool PrusaConnectNew::test(wxString& curl_msg) const
         res = false;
         curl_msg = format_error(body, error, status);
     })
-    .on_complete([&, this](std::string body, unsigned) {
+    .on_complete([&](std::string body, unsigned) {
          BOOST_LOG_TRIVIAL(error) << boost::format("%1%: Got files/raw: %2%") % name % body;
     })
     .perform_sync();

@@ -310,7 +310,7 @@ void UserAccountCommunication::enqueue_connect_user_data_action()
     }
     wakeup_session_thread();
 }
-#endif 0
+#endif // 0
 
 void UserAccountCommunication::enqueue_connect_printers_action()
 {
@@ -422,7 +422,7 @@ std::string CodeChalengeGenerator::generate_code_verifier(size_t length)
     std::mt19937                        gen(rd());
     std::uniform_int_distribution<int>  distribution(0, chars.size() - 1);
     std::string                         code_verifier;
-    for (int i = 0; i < length; ++i) {
+    for (size_t i = 0; i < length; ++i) {
         code_verifier += chars[distribution(gen)];
     }
     return code_verifier;

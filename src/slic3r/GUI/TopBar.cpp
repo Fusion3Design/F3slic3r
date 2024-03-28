@@ -228,7 +228,6 @@ void TopBarItemsCtrl::CreateAccountMenu()
     m_connect_dummy_menu_item = append_menu_item(&m_account_menu, wxID_ANY, _L("PrusaConnect Printers"), "",
         [](wxCommandEvent&) { wxGetApp().plater()->get_user_account()->enqueue_connect_printers_action(); }, 
         "", nullptr, []() { return wxGetApp().plater()->get_user_account()->is_logged(); }, this->GetParent());
-#endif // 0
 
     wxMenuItem* remember_me_menu_item = append_menu_check_item(&m_account_menu, wxID_ANY, _L("Remember me"), ""
         , [](wxCommandEvent&) {  wxGetApp().plater()->get_user_account()->toggle_remember_session(); }
@@ -236,6 +235,7 @@ void TopBarItemsCtrl::CreateAccountMenu()
         , []() { return wxGetApp().plater()->get_user_account() ? wxGetApp().plater()->get_user_account()->is_logged()            : false; }
         , []() { return wxGetApp().plater()->get_user_account() ? wxGetApp().plater()->get_user_account()->get_remember_session() : false; }
         , this->GetParent());
+#endif // 0
 
     m_login_menu_item = append_menu_item(&m_account_menu, wxID_ANY, "", "",
         [](wxCommandEvent&) {

@@ -9,6 +9,6 @@ std::string GetDataDir()
 												 inDomain:NSUserDomainMask
 												 appropriateForURL:nil create:NO error:nil];
 
-	return std::string([(CFStringRef)url.path UTF8String]);
+	return std::string([url.path UTF8String]);
 }
 

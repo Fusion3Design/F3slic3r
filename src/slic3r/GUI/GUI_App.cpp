@@ -1579,7 +1579,7 @@ static bool is_focused(HWND hWnd)
 }
 #endif
 
-static bool is_default(wxWindow* win)
+[[maybe_unused]] static bool is_default(wxWindow* win)
 {
     wxTopLevelWindow* tlw = find_toplevel_parent(win);
     if (!tlw)

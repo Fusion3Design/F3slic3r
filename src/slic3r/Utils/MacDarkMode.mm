@@ -7,6 +7,7 @@
 #import <Cocoa/Cocoa.h>
 #import <Foundation/Foundation.h>
 #import <AppKit/NSScreen.h>
+#import <WebKit/WebKit.h>
 
 @interface MacDarkMode : NSObject {}
 @end

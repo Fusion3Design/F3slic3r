@@ -650,7 +650,8 @@ void WebViewDialog::run_script(const wxString& javascript)
 {
     if (!m_browser) 
         return;
-    bool res = WebView::run_script(m_browser, javascript);
+    // dk_FIXME: Is it ok to discard the return value?
+    /*bool res = */ WebView::run_script(m_browser, javascript);
 }
 
 PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val)

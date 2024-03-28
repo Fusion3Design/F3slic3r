@@ -475,7 +475,7 @@ std::string load_full_print_config(const std::string& print_preset_name,
 
     check_material(material_preset_names_in.front(), errors);
     if (material_preset_names_in.size() > 1) {
-        for (int idx = 1; idx < material_preset_names_in.size(); idx++) {
+        for (size_t idx = 1; idx < material_preset_names_in.size(); idx++) {
             if (material_preset_names_in[idx] != material_preset_names_in.front())
                 check_material(material_preset_names_in[idx], errors);
         }
@@ -494,14 +494,14 @@ std::string load_full_print_config(const std::string& print_preset_name,
     }
 
     if (printer_technology == ptFFF) {
-        const int extruders_count = static_cast<const ConfigOptionFloats*>(printer_preset->config.option("nozzle_diameter"))->values.size();
+        const int extruders_count = int(static_cast<const ConfigOptionFloats*>(printer_preset->config.option("nozzle_diameter"))->values.size());
         if (extruders_count > material_preset_names.size()) {
             BOOST_LOG_TRIVIAL(warning) << "Note: Less than needed filament profiles were entered. Missed filament profiles will be filled with first material.";
             material_preset_names.reserve(extruders_count);
             for (int i = extruders_count - material_preset_names.size(); i > 0; i--)
                 material_preset_names.push_back(material_preset_names.front());
         }
-        else if (extruders_count < material_preset_names.size()) {
+        else if (extruders_count < int(material_preset_names.size())) {
             BOOST_LOG_TRIVIAL(warning) << "Note: More than needed filament profiles were entered. Extras filament profiles will be ignored.";
             material_preset_names.resize(extruders_count);
         }
@@ -529,7 +529,7 @@ std::string load_full_print_config(const std::string& print_preset_name,
 
     check_material_preset_compatibility(material_preset_names.front(), errors);
     if (material_preset_names.size() > 1) {
-        for (int idx = 1; idx < material_preset_names.size(); idx++) {
+        for (size_t idx = 1; idx < material_preset_names.size(); idx++) {
             if (material_preset_names[idx] != material_preset_names.front())
                 check_material_preset_compatibility(material_preset_names[idx], errors);
         }

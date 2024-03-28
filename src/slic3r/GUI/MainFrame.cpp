@@ -909,7 +909,7 @@ void MainFrame::set_printer_webview_tab_url(const wxString& url)
     }
     m_printer_webview->clear();
     m_printer_webview->set_default_url(url);
-    if (m_tabpanel->GetSelection() == m_tabpanel->GetPageCount() - 1) {
+    if (m_tabpanel->GetSelection() == int(m_tabpanel->GetPageCount() - 1)) {
         m_printer_webview->load_url(url);
     } else {
         m_printer_webview->load_default_url_delayed();
@@ -1903,9 +1903,10 @@ void MainFrame::export_configbundle(bool export_physical_printers /*= false*/)
         file = dlg.GetPath();
     if (!file.IsEmpty()) {
         // Export the config bundle.
-
+#if wxUSE_SECRETSTORE
         bool passwords_to_plain = false;
         bool passwords_dialog_shown = false;
+#endif
         // callback function thats going to be passed to preset bundle (so preset bundle doesnt have to include WX secret lib)
         std::function<bool(const std::string&, const std::string&, std::string&)> load_password = [&](const std::string& printer_id, const std::string& opt, std::string& out_psswd)->bool{
             out_psswd = std::string();
