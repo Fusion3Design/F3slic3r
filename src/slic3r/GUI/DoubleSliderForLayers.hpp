@@ -168,6 +168,7 @@ private:
     void        add_code_as_tick(Type type, int selected_extruder = -1);
     void        edit_tick(int tick = -1);
     void        discard_all_thicks();
+    void        process_jump_to_value();
 
     std::string get_label(int pos) const override { return get_label(pos, ltHeightWithLayer); }
 
@@ -177,14 +178,17 @@ private:
     }
 
     bool        m_show_just_color_change_menu   { false };
+    bool        m_show_get_jump_value           { false };
     bool        m_show_color_picker             { false };
-    bool        m_close             { false };
+
+    double      m_jump_to_value                 { 0.0 };
 
     std::string m_print_obj_idxs;
     std::string m_selectable_color;
 
     void        render_add_tick_menu();
     void        render_multi_extruders_menu();
+    bool        render_jump_to_window(const ImVec2& pos, double* active_value, double min_z, double max_z);
     void        render_color_picker();
 
     std::function<void()>                       m_cb_ticks_changed              { nullptr };

@@ -551,6 +551,70 @@ bool DSForLayers::render_button(const wchar_t btn_icon, const wchar_t btn_icon_h
     return ret;
 }
 
+bool DSForLayers::render_jump_to_window(const ImVec2& pos, double* active_value, double min_z, double max_z)
+{
+    if (!m_show_get_jump_value)
+        return false;
+
+    const std::string   msg_text    = _u8L("Enter the height you want to jump to") + ":";
+    const std::string   win_name    = _u8L("Jump to height") + "##btn_win";
+    const ImVec2        msg_size    = ImGui::CalcTextSize(msg_text.c_str(), NULL, true);
+
+    const float         ctrl_pos_x  = msg_size.x + 15 * m_scale;
+    const float         ctrl_width  = 50.f * m_scale;
+
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 4.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 12.0f, 8.0f });
+
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.13f, 0.13f, 0.13f, 0.8f));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_Text));
+
+    ImGuiWindowFlags windows_flag =   ImGuiWindowFlags_NoCollapse
+                                    | ImGuiWindowFlags_NoMove
+                                    | ImGuiWindowFlags_NoResize
+                                    | ImGuiWindowFlags_NoScrollbar
+                                    | ImGuiWindowFlags_NoScrollWithMouse;
+
+    ImGui::Begin(win_name.c_str(), &m_show_get_jump_value, windows_flag);
+
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("%s", msg_text.c_str());
+    ImGui::SameLine(ctrl_pos_x);
+    ImGui::PushItemWidth(ctrl_width);
+
+    ImGui::InputDouble("##jump_to", active_value, 0.0, 0.0, "%.2f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_AutoSelectAll);
+    //check if Enter was pressed
+    bool enter_pressed = ImGui::IsItemDeactivatedAfterEdit();
+
+    //check out of range
+    bool disable_ok = *active_value < min_z || *active_value > max_z;
+
+    ImGui::Text("%s", "");
+    ImGui::SameLine(ctrl_pos_x);
+
+    if (disable_ok) {
+        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+    }
+
+    bool ok_pressed = ImGui::Button("OK##jump_to", ImVec2(ctrl_width, 0.f));
+
+    if (disable_ok) {
+        ImGui::PopItemFlag();
+        ImGui::PopStyleVar();
+    }
+
+    ImGui::End();
+
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(3);
+
+    return enter_pressed || ok_pressed;
+}
+
 void DSForLayers::Render(const int canvas_width, const int canvas_height, float extra_scale/* = 0.1f*/)
 {
     if (!m_ctrl.IsShown())
@@ -575,6 +639,9 @@ void DSForLayers::Render(const int canvas_width, const int canvas_height, float 
         if (GImGui->IO.MouseWheel != 0.0f)
             m_imgui->set_requires_extra_frame();
         process_thumb_move();
+
+        // discard all getters dialogs
+        m_show_get_jump_value = false;
     }
 
     // draw action buttons
@@ -604,6 +671,10 @@ void DSForLayers::Render(const int canvas_width, const int canvas_height, float 
     }
     else
         render_menu();
+
+    if (render_jump_to_window(ImVec2(0.5f * canvas_width, 0.5f*canvas_height), &m_jump_to_value,
+                              m_values[m_ctrl.GetMinPos()], m_values[m_ctrl.GetMaxPos()]))
+        process_jump_to_value();
 
     if (m_allow_editing)
         render_color_picker();
@@ -858,14 +929,6 @@ void DSForLayers::auto_color_change()
         process_ticks_changed();
     }
 }
-static double get_value_to_jump(double active_value, double min_z, double max_z, DrawMode mode)
-{
-    wxString msg_text   = _L("Enter the height you want to jump to") + ":";
-    wxString msg_header = _L("Jump to height");
-    wxString msg_in = "";//  GUI::double_to_string(active_value);
-
-    return -1.0;
-}
 
 void DSForLayers::add_code_as_tick(Type type, int selected_extruder/* = -1*/)
 {
@@ -959,17 +1022,23 @@ void DSForLayers::discard_all_thicks()
 
 void DSForLayers::jump_to_value()
 {
-    double value = get_value_to_jump(m_values[m_ctrl.GetActivePos()],
-                                     m_values[m_ctrl.GetMinPos()], m_values[m_ctrl.GetMaxPos()], m_draw_mode);
-    if (value < 0.0)
-        return;
+    //Init "jump to value";
+    m_show_get_jump_value = true;
+    m_jump_to_value = m_values[m_ctrl.GetActivePos()];
 
-    int tick_value = m_ticks.get_tick_from_value(value);
+    m_imgui->set_requires_extra_frame();
+}
 
-    if (m_ctrl.IsActiveHigherThumb())
-        SetHigherPos(tick_value);
-    else
-        SetLowerPos(tick_value);
+void DSForLayers::process_jump_to_value()
+{
+    if (int tick_value = m_ticks.get_tick_from_value(m_jump_to_value, true); tick_value > 0.0) {
+        m_show_get_jump_value = false;
+
+        if (m_ctrl.IsActiveHigherThumb())
+            SetHigherPos(tick_value);
+        else
+            SetLowerPos(tick_value);
+    }
 }
 
 } // DoubleSlider
