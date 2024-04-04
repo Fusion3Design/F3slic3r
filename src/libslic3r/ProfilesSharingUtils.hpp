@@ -15,12 +15,14 @@ class DynamicPrintConfig;
 bool load_full_print_config(const std::string& print_preset, const std::string& filament_preset, const std::string& printer_preset, DynamicPrintConfig& out_config);
 
 // Load full print config into config
-// Return error/warning string if any exists
+// Return value is always error string if any exists
+// Note, that all appearing warnings are added into BOOST_LOG
+// When printer_technology is set, then it will be compared with printer technology of the printer_profile and return the error, when they aren't the same
 std::string load_full_print_config( const std::string& print_preset_name, 
                                     const std::vector<std::string>& material_preset_names,
                                     const std::string& printer_preset_name, 
                                     DynamicPrintConfig& config,
-                                    PrinterTechnology printer_technology);
+                                    PrinterTechnology printer_technology = ptUnknown);
 
 
 } // namespace Slic3r

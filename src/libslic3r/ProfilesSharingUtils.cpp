@@ -432,7 +432,7 @@ std::string load_full_print_config(const std::string& print_preset_name,
                                    const std::vector<std::string>& material_preset_names_in, 
                                    const std::string& printer_preset_name,
                                    DynamicPrintConfig& config,
-                                   PrinterTechnology printer_technology)
+                                   PrinterTechnology printer_technology /*= ptUnknown*/)
 {
     // check entered profile names
 
@@ -495,7 +495,7 @@ std::string load_full_print_config(const std::string& print_preset_name,
 
     if (printer_technology == ptFFF) {
         const int extruders_count = int(static_cast<const ConfigOptionFloats*>(printer_preset->config.option("nozzle_diameter"))->values.size());
-        if (extruders_count > material_preset_names.size()) {
+        if (extruders_count > int(material_preset_names.size())) {
             BOOST_LOG_TRIVIAL(warning) << "Note: Less than needed filament profiles were entered. Missed filament profiles will be filled with first material.";
             material_preset_names.reserve(extruders_count);
             for (int i = extruders_count - material_preset_names.size(); i > 0; i--)
