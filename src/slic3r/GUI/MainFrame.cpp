@@ -1187,8 +1187,10 @@ void MainFrame::on_sys_color_changed()
     for (auto tab : wxGetApp().tabs_list)
         tab->sys_color_changed();
 
-    m_connect_webview->sys_color_changed();
-    m_printer_webview->sys_color_changed();
+    if (m_connect_webview)
+        m_connect_webview->sys_color_changed();
+    if (m_printer_webview)
+        m_printer_webview->sys_color_changed();
 
     MenuFactory::sys_color_changed(m_menubar);
 
