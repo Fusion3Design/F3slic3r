@@ -887,7 +887,7 @@ void MainFrame::add_printer_webview_tab(const wxString& url)
     }
     m_printer_webview_added = true;
     // add as the last (rightmost) panel
-    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_printer_webview, L"Physical Printer", "", false);
+    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_printer_webview, _L("Physical Printer"), "", false);
     m_printer_webview->set_default_url(url);
     m_printer_webview->load_default_url_delayed();
 }

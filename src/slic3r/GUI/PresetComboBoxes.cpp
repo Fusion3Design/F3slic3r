@@ -380,8 +380,10 @@ void PresetComboBox::edit_physical_printer()
 
 void PresetComboBox::add_physical_printer()
 {
-    if (PhysicalPrinterDialog(this->GetParent(), wxEmptyString).ShowModal() == wxID_OK)
+    if (PhysicalPrinterDialog(this->GetParent(), wxEmptyString).ShowModal() == wxID_OK) {
         update();
+        wxGetApp().show_printer_webview_tab();
+    }
 }
 
 void PresetComboBox::open_physical_printer_url()
@@ -782,9 +784,7 @@ void PlaterPresetComboBox::show_add_menu()
 
     append_menu_item(menu, wxID_ANY, _L("Add physical printer"), "",
         [this](wxCommandEvent&) {
-            PhysicalPrinterDialog dlg(this->GetParent(), wxEmptyString);
-            if (dlg.ShowModal() == wxID_OK)
-                update();
+            add_physical_printer();
         }, "edit_uni", menu, []() { return true; }, wxGetApp().plater());
 
     wxGetApp().plater()->PopupMenu(menu);
