@@ -53,8 +53,9 @@ class UserAction
 {
 public:
     UserAction(const std::string name, const std::string url) : m_action_name(name), m_url(url){}
-    ~UserAction() {}
-    virtual void perform(wxEvtHandler* evt_handler, const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) = 0;
+    virtual ~UserAction() = default;
+    virtual void perform(wxEvtHandler* evt_handler, const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) const = 0;
+
 protected:
     std::string m_action_name;
     std::string m_url;
@@ -69,7 +70,7 @@ public:
         , UserAction(name, url)
     {}
     ~UserActionGetWithEvent() {}
-    void perform(wxEvtHandler* evt_handler, const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) override;
+    void perform(wxEvtHandler* evt_handler, const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) const override;
 private:
     wxEventType   m_succ_evt_type;
     wxEventType   m_fail_evt_type;
@@ -80,7 +81,7 @@ class UserActionPost : public UserAction
 public:
     UserActionPost(const std::string name, const std::string url) : UserAction(name, url) {}
     ~UserActionPost() {}
-    void perform(wxEvtHandler* evt_handler, const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) override;
+    void perform(wxEvtHandler* evt_handler, const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) const override;
 };
 
 class DummyUserAction : public UserAction
@@ -88,7 +89,7 @@ class DummyUserAction : public UserAction
 public:
     DummyUserAction() : UserAction("Dummy", {}) {}
     ~DummyUserAction() {}
-    void perform(wxEvtHandler* evt_handler, const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) override { }
+    void perform(wxEvtHandler* evt_handler, const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) const override { }
 };
 
 struct ActionQueueData

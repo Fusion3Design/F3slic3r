@@ -30,7 +30,7 @@ wxDEFINE_EVENT(EVT_UA_RESET, UserAccountFailEvent);
 wxDEFINE_EVENT(EVT_UA_FAIL, UserAccountFailEvent);
 #endif // 0
 
-void UserActionPost::perform(/*UNUSED*/ wxEvtHandler* evt_handler, /*UNUSED*/ const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
+void UserActionPost::perform(/*UNUSED*/ wxEvtHandler* evt_handler, /*UNUSED*/ const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) const
 {
     std::string url = m_url;
     auto http = Http::post(std::move(url));
@@ -48,7 +48,7 @@ void UserActionPost::perform(/*UNUSED*/ wxEvtHandler* evt_handler, /*UNUSED*/ co
     http.perform_sync();
 }
 
-void UserActionGetWithEvent::perform(wxEvtHandler* evt_handler, const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input)
+void UserActionGetWithEvent::perform(wxEvtHandler* evt_handler, const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) const
 {
     std::string url = m_url + input;
     auto http = Http::get(std::move(url));
