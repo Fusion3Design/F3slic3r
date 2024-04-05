@@ -5,6 +5,9 @@
 #ifndef slic3r_ProfilesSharingUtils_hpp_
 #define slic3r_ProfilesSharingUtils_hpp_
 
+#include <string>
+#include "Config.hpp"
+
 namespace Slic3r {
 
 std::string get_json_printer_models(PrinterTechnology printer_technology);

@@ -69,7 +69,7 @@ public:
     //
     // Return the size of the palette, in bytes
     //
-    size_t size_in_bytes_cpu() const;
+    std::size_t size_in_bytes_cpu() const;
 
     static const ColorRange DUMMY_COLOR_RANGE;
 
@@ -87,7 +87,7 @@ private:
     //
     // Count of different values passed to update()
     // 
-    size_t m_count{ 0 };
+    std::size_t m_count{ 0 };
 
     //
     // Use the passed value to update the range.

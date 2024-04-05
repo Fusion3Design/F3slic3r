@@ -72,7 +72,7 @@ using AABox = std::array<Vec3, 2>;
 // [0] -> min
 // [1] -> max
 //
-using Interval = std::array<size_t, 2>;
+using Interval = std::array<std::size_t, 2>;
 
 //
 // View types
@@ -95,7 +95,7 @@ enum class EViewType : uint8_t
     COUNT
 };
 
-static constexpr size_t VIEW_TYPES_COUNT = static_cast<size_t>(EViewType::COUNT);
+static constexpr std::size_t VIEW_TYPES_COUNT = static_cast<std::size_t>(EViewType::COUNT);
 
 //
 // Move types
@@ -116,7 +116,7 @@ enum class EMoveType : uint8_t
     COUNT
 };
 
-static constexpr size_t MOVE_TYPES_COUNT = static_cast<size_t>(EMoveType::COUNT);
+static constexpr std::size_t MOVE_TYPES_COUNT = static_cast<std::size_t>(EMoveType::COUNT);
 
 //
 // Extrusion roles
@@ -141,7 +141,7 @@ enum class EGCodeExtrusionRole : uint8_t
     COUNT
 };
 
-static constexpr size_t GCODE_EXTRUSION_ROLES_COUNT = static_cast<size_t>(EGCodeExtrusionRole::COUNT);
+static constexpr std::size_t GCODE_EXTRUSION_ROLES_COUNT = static_cast<std::size_t>(EGCodeExtrusionRole::COUNT);
 
 //
 // Option types
@@ -164,7 +164,7 @@ enum class EOptionType : uint8_t
     COUNT
 };
 
-static constexpr size_t OPTION_TYPES_COUNT = static_cast<size_t>(EOptionType::COUNT);
+static constexpr std::size_t OPTION_TYPES_COUNT = static_cast<std::size_t>(EOptionType::COUNT);
 
 //
 // Time modes
@@ -176,7 +176,7 @@ enum class ETimeMode : uint8_t
     COUNT
 };
 
-static constexpr size_t TIME_MODES_COUNT = static_cast<size_t>(ETimeMode::COUNT);
+static constexpr std::size_t TIME_MODES_COUNT = static_cast<std::size_t>(ETimeMode::COUNT);
 
 //
 // Color range types
@@ -188,7 +188,7 @@ enum class EColorRangeType : uint8_t
     COUNT
 };
 
-static constexpr size_t COLOR_RANGE_TYPES_COUNT = static_cast<size_t>(EColorRangeType::COUNT);
+static constexpr std::size_t COLOR_RANGE_TYPES_COUNT = static_cast<std::size_t>(EColorRangeType::COUNT);
 
 //
 // Predefined colors

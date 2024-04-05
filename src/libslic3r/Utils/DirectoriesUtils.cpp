@@ -1,6 +1,7 @@
 #include "DirectoriesUtils.hpp"
 #include "../libslic3r.h"
 
+#include <boost/filesystem/path.hpp>
 #include <boost/log/trivial.hpp>
 
 #if defined(_WIN32)

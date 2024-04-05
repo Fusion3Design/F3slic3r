@@ -6,6 +6,7 @@
 #include "libslic3r/AppConfig.hpp"
 
 #include <queue>
+#include <condition_variable>
 #include <map>
 #include <thread>
 #include <mutex>

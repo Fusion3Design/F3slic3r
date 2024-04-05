@@ -18,29 +18,29 @@ public:
     void reset();
     
     bool empty() const { return m_items.empty(); }
-    size_t count() const { return m_items.size(); }
+    std::size_t count() const { return m_items.size(); }
 
     std::vector<float> get_times(ETimeMode mode) const;
     std::vector<float> get_zs() const;
     
-    float get_layer_time(ETimeMode mode, size_t layer_id) const {
+    float get_layer_time(ETimeMode mode, std::size_t layer_id) const {
         return (mode < ETimeMode::COUNT&& layer_id < m_items.size()) ?
-            m_items[layer_id].times[static_cast<size_t>(mode)] : 0.0f;
+            m_items[layer_id].times[static_cast<std::size_t>(mode)] : 0.0f;
     }
-    float get_layer_z(size_t layer_id) const {
+    float get_layer_z(std::size_t layer_id) const {
         return (layer_id < m_items.size()) ? m_items[layer_id].z : 0.0f;
     }
-    size_t get_layer_id_at(float z) const;
+    std::size_t get_layer_id_at(float z) const;
     
     const Interval& get_view_range() const { return m_view_range.get(); }
     void set_view_range(const Interval& range) { set_view_range(range[0], range[1]); }
     void set_view_range(Interval::value_type min, Interval::value_type max) { m_view_range.set(min, max); }
     
-    bool layer_contains_colorprint_options(size_t layer_id) const {
+    bool layer_contains_colorprint_options(std::size_t layer_id) const {
         return (layer_id < m_items.size()) ? m_items[layer_id].contains_colorprint_options : false;
     }
 
-    size_t size_in_bytes_cpu() const;
+    std::size_t size_in_bytes_cpu() const;
 
 private:
     struct Item

@@ -12,7 +12,7 @@ void ExtrusionRoles::add(EGCodeExtrusionRole role, const std::array<float, TIME_
     if (role_it == m_items.end())
         role_it = m_items.insert(std::make_pair(role, Item())).first;
 
-    for (size_t i = 0; i < TIME_MODES_COUNT; ++i) {
+    for (std::size_t i = 0; i < TIME_MODES_COUNT; ++i) {
         role_it->second.times[i] += times[i];
     }
 }
@@ -33,7 +33,7 @@ float ExtrusionRoles::get_time(EGCodeExtrusionRole role, ETimeMode mode) const
     if (role_it == m_items.end())
         return 0.0f;
 
-    return (mode < ETimeMode::COUNT) ? role_it->second.times[static_cast<size_t>(mode)] : 0.0f;
+    return (mode < ETimeMode::COUNT) ? role_it->second.times[static_cast<std::size_t>(mode)] : 0.0f;
 }
 
 } // namespace libvgcode
