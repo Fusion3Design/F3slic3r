@@ -12,7 +12,7 @@
 #include "WxFontUtils.hpp"
 #include "slic3r/GUI/3DScene.hpp" // ::glsafe
 #include "slic3r/GUI/Jobs/CreateFontStyleImagesJob.hpp"
-#include "slic3r/GUI/ImGuiWrapper.hpp" // check of font ranges
+#include "slic3r/GUI/ImGuiPureWrap.hpp" // check of font ranges
 
 #include <boost/assign.hpp>
 #include <boost/bimap.hpp>
@@ -337,8 +337,8 @@ void StyleManager::init_trunc_names(float max_width) {
     for (auto &s : m_styles)
         if (s.truncated_name.empty()) {
             std::string name = s.name;
-            ImGuiWrapper::escape_double_hash(name);
-            s.truncated_name = ImGuiWrapper::trunc(name, max_width);
+            ImGuiPureWrap::escape_double_hash(name);
+            s.truncated_name = ImGuiPureWrap::trunc(name, max_width);
         }
 }
 

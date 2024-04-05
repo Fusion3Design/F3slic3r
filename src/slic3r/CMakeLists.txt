@@ -200,6 +200,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/ButtonsDescription.hpp
     GUI/ImGuiWrapper.hpp
     GUI/ImGuiWrapper.cpp
+    GUI/ImGuiPureWrap.hpp
+    GUI/ImGuiPureWrap.cpp
     Config/Snapshot.cpp
     Config/Snapshot.hpp
     Config/Version.cpp

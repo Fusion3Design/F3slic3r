@@ -180,63 +180,63 @@ void GLCanvas3D::LayersEditing::render_overlay(const GLCanvas3D& canvas)
 
     const Size& cnv_size = canvas.get_canvas_size();
 
-    ImGuiWrapper& imgui = *wxGetApp().imgui();
-    imgui.set_next_window_pos(static_cast<float>(cnv_size.get_width()) - imgui.get_style_scaling() * THICKNESS_BAR_WIDTH, 
+    ImGuiPureWrap::set_next_window_pos(static_cast<float>(cnv_size.get_width()) - wxGetApp().imgui()->get_style_scaling() * THICKNESS_BAR_WIDTH,
         static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 1.0f, 1.0f);
 
-    imgui.begin(_L("Variable layer height"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+    ImGuiPureWrap::begin(_u8L("Variable layer height"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 
-    imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _L("Left mouse button:"));
+    ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, _u8L("Left mouse button:"));
     ImGui::SameLine();
-    imgui.text(_L("Add detail"));
+    ImGuiPureWrap::text(_u8L("Add detail"));
 
-    imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _L("Right mouse button:"));
+    ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, _u8L("Right mouse button:"));
     ImGui::SameLine();
-    imgui.text(_L("Remove detail"));
+    ImGuiPureWrap::text(_u8L("Remove detail"));
 
-    imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _L("Shift + Left mouse button:"));
+    ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, _u8L("Shift + Left mouse button:"));
     ImGui::SameLine();
-    imgui.text(_L("Reset to base"));
+    ImGuiPureWrap::text(_u8L("Reset to base"));
 
-    imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _L("Shift + Right mouse button:"));
+    ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, _u8L("Shift + Right mouse button:"));
     ImGui::SameLine();
-    imgui.text(_L("Smoothing"));
+    ImGuiPureWrap::text(_u8L("Smoothing"));
 
-    imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _L("Mouse wheel:"));
+    ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, _u8L("Mouse wheel:"));
     ImGui::SameLine();
-    imgui.text(_L("Increase/decrease edit area"));
+    ImGuiPureWrap::text(_u8L("Increase/decrease edit area"));
     
     ImGui::Separator();
-    if (imgui.button(_L("Adaptive")))
+    if (ImGuiPureWrap::button(_u8L("Adaptive")))
         wxPostEvent((wxEvtHandler*)canvas.get_wxglcanvas(), Event<float>(EVT_GLCANVAS_ADAPTIVE_LAYER_HEIGHT_PROFILE, m_adaptive_quality));
 
     ImGui::SameLine();
     float text_align = ImGui::GetCursorPosX();
     ImGui::AlignTextToFramePadding();
-    imgui.text(_L("Quality / Speed"));
+    ImGuiPureWrap::text(_u8L("Quality / Speed"));
     if (ImGui::IsItemHovered()) {
         ImGui::BeginTooltip();
-        ImGui::TextUnformatted(_L("Higher print quality versus higher print speed.").ToUTF8());
+        ImGui::TextUnformatted(_u8L("Higher print quality versus higher print speed.").c_str());
         ImGui::EndTooltip();
     }
 
     ImGui::SameLine();
     float widget_align = ImGui::GetCursorPosX();
-    ImGui::PushItemWidth(imgui.get_style_scaling() * 120.0f);
+    const float style_scaling = wxGetApp().imgui()->get_style_scaling();
+    ImGui::PushItemWidth(style_scaling * 120.0f);
     m_adaptive_quality = std::clamp(m_adaptive_quality, 0.0f, 1.f);
-    imgui.slider_float("", &m_adaptive_quality, 0.0f, 1.f, "%.2f");
+    wxGetApp().imgui()->slider_float("", &m_adaptive_quality, 0.0f, 1.f, "%.2f");
 
     ImGui::Separator();
-    if (imgui.button(_L("Smooth")))
+    if (ImGuiPureWrap::button(_u8L("Smooth")))
         wxPostEvent((wxEvtHandler*)canvas.get_wxglcanvas(), HeightProfileSmoothEvent(EVT_GLCANVAS_SMOOTH_LAYER_HEIGHT_PROFILE, m_smooth_params));
 
     ImGui::SameLine();
     ImGui::SetCursorPosX(text_align);
     ImGui::AlignTextToFramePadding();
-    imgui.text(_L("Radius"));
+    ImGuiPureWrap::text(_u8L("Radius"));
     ImGui::SameLine();
     ImGui::SetCursorPosX(widget_align);
-    ImGui::PushItemWidth(imgui.get_style_scaling() * 120.0f);
+    ImGui::PushItemWidth(style_scaling * 120.0f);
     int radius = (int)m_smooth_params.radius;
     if (ImGui::SliderInt("##1", &radius, 1, 10)) {
         radius = std::clamp(radius, 1, 10);
@@ -245,20 +245,20 @@ void GLCanvas3D::LayersEditing::render_overlay(const GLCanvas3D& canvas)
 
     ImGui::SetCursorPosX(text_align);
     ImGui::AlignTextToFramePadding();
-    imgui.text(_L("Keep min"));
+    ImGuiPureWrap::text(_u8L("Keep min"));
     ImGui::SameLine();
     if (ImGui::GetCursorPosX() < widget_align)  // because of line lenght after localization
         ImGui::SetCursorPosX(widget_align);
 
-    ImGui::PushItemWidth(imgui.get_style_scaling() * 120.0f);
-    imgui.checkbox("##2", m_smooth_params.keep_min);
+    ImGui::PushItemWidth(style_scaling * 120.0f);
+    ImGuiPureWrap::checkbox("##2", m_smooth_params.keep_min);
 
     ImGui::Separator();
-    if (imgui.button(_L("Reset")))
+    if (ImGuiPureWrap::button(_u8L("Reset")))
         wxPostEvent((wxEvtHandler*)canvas.get_wxglcanvas(), SimpleEvent(EVT_GLCANVAS_RESET_LAYER_HEIGHT_PROFILE));
 
     GLCanvas3D::LayersEditing::s_overlay_window_width = ImGui::GetWindowSize().x /*+ (float)m_layers_texture.width/4*/;
-    imgui.end();
+    ImGuiPureWrap::end();
 
     render_active_object_annotations(canvas);
     render_profile(canvas);
@@ -737,8 +737,6 @@ void GLCanvas3D::Labels::render(const std::vector<const ModelInstance*>& sorted_
             return (owner1.eye_center_z < owner2.eye_center_z);
         });
 
-    ImGuiWrapper& imgui = *wxGetApp().imgui();
-
     // render info windows
     for (const Owner& owner : owners) {
         Vec3d screen_box_center = world_to_screen * owner.world_box.center();
@@ -758,28 +756,28 @@ void GLCanvas3D::Labels::render(const std::vector<const ModelInstance*>& sorted_
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, owner.selected ? 3.0f : 1.5f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleColor(ImGuiCol_Border, owner.selected ? ImVec4(0.757f, 0.404f, 0.216f, 1.0f) : ImVec4(0.75f, 0.75f, 0.75f, 1.0f));
-        imgui.set_next_window_pos(x, y, ImGuiCond_Always, 0.5f, 0.5f);
-        imgui.begin(owner.title, ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+        ImGuiPureWrap::set_next_window_pos(x, y, ImGuiCond_Always, 0.5f, 0.5f);
+        ImGuiPureWrap::begin(owner.title, ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
         ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
         float win_w = ImGui::GetWindowWidth();
         float label_len = ImGui::CalcTextSize(owner.label.c_str()).x;
         ImGui::SetCursorPosX(0.5f * (win_w - label_len));
         ImGui::AlignTextToFramePadding();
-        imgui.text(owner.label);
+        ImGuiPureWrap::text(owner.label);
 
         if (!owner.print_order.empty()) {
             ImGui::Separator();
             float po_len = ImGui::CalcTextSize(owner.print_order.c_str()).x;
             ImGui::SetCursorPosX(0.5f * (win_w - po_len));
             ImGui::AlignTextToFramePadding();
-            imgui.text(owner.print_order);
+            ImGuiPureWrap::text(owner.print_order);
         }
 
         // force re-render while the windows gets to its final size (it takes several frames)
         if (ImGui::GetWindowContentRegionWidth() + 2.0f * ImGui::GetStyle().WindowPadding.x != ImGui::CalcWindowNextAutoFitSize(ImGui::GetCurrentWindow()).x)
-            imgui.set_requires_extra_frame();
+            wxGetApp().imgui()->set_requires_extra_frame();
 
-        imgui.end();
+        ImGuiPureWrap::end();
         ImGui::PopStyleColor();
         ImGui::PopStyleVar(2);
     }
@@ -854,9 +852,9 @@ void GLCanvas3D::Tooltip::render(const Vec2d& mouse_position, GLCanvas3D& canvas
     ImGuiWrapper& imgui = *wxGetApp().imgui();
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
-    imgui.set_next_window_pos(position.x(), position.y(), ImGuiCond_Always, 0.0f, 0.0f);
+    ImGuiPureWrap::set_next_window_pos(position.x(), position.y(), ImGuiCond_Always, 0.0f, 0.0f);
 
-    imgui.begin(wxString("canvas_tooltip"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoFocusOnAppearing);
+    ImGuiPureWrap::begin("canvas_tooltip", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoFocusOnAppearing);
     ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
     ImGui::TextUnformatted(m_text.c_str());
 
@@ -866,7 +864,7 @@ void GLCanvas3D::Tooltip::render(const Vec2d& mouse_position, GLCanvas3D& canvas
 
     size = ImGui::GetWindowSize();
 
-    imgui.end();
+    ImGuiPureWrap::end();
     ImGui::PopStyleVar(2);
 }
 
@@ -1205,16 +1203,15 @@ void GLCanvas3D::SLAView::render_switch_button()
         ss_box = selection.get_screen_space_bounding_box();
     assert(ss_box.defined);
 
-    ImGuiWrapper& imgui = *wxGetApp().imgui();
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     ImGui::SetNextWindowPos(ImVec2((float)ss_box.max.x(), (float)ss_box.center().y()), ImGuiCond_Always, ImVec2(0.0, 0.5));
-    imgui.begin(std::string("SLAViewSwitch"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration);
+    ImGuiPureWrap::begin(std::string("SLAViewSwitch"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration);
     const float icon_size = 1.5 * ImGui::GetTextLineHeight();
-    if (imgui.draw_radio_button(_u8L("SLA view"), 1.5f * icon_size, true,
-        [&imgui, sel_instance](ImGuiWindow& window, const ImVec2& pos, float size) {
+    if (ImGuiPureWrap::draw_radio_button(_u8L("SLA view"), 1.5f * icon_size, true,
+        [sel_instance](ImGuiWindow& window, const ImVec2& pos, float size) {
             const wchar_t icon_id = (sel_instance->second == ESLAViewType::Original) ? ImGui::SlaViewProcessed : ImGui::SlaViewOriginal;
-            imgui.draw_icon(window, pos, size, icon_id);
+            wxGetApp().imgui()->draw_icon(window, pos, size, icon_id);
         })) {
         switch (sel_instance->second)
         {
@@ -1225,21 +1222,21 @@ void GLCanvas3D::SLAView::render_switch_button()
     }
 
     if (ImGui::IsItemHovered()) {
-        ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGuiWrapper::COL_WINDOW_BACKGROUND);
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGuiPureWrap::COL_WINDOW_BACKGROUND);
         ImGui::BeginTooltip();
-        wxString tooltip;
+        std::string tooltip;
         switch (type)
         {
-        case ESLAViewType::Original:  { tooltip = _L("Show as processed"); break; }
-        case ESLAViewType::Processed: { tooltip = _L("Show as original"); break; }
+        case ESLAViewType::Original:  { tooltip = _u8L("Show as processed"); break; }
+        case ESLAViewType::Processed: { tooltip = _u8L("Show as original"); break; }
         default: { assert(false); break; }
         }
 
-        imgui.text(tooltip);
+        ImGuiPureWrap::text(tooltip);
         ImGui::EndTooltip();
         ImGui::PopStyleColor();
     }
-    imgui.end();
+    ImGuiPureWrap::end();
     ImGui::PopStyleColor(2);
 }
 
@@ -1247,17 +1244,17 @@ void GLCanvas3D::SLAView::render_switch_button()
 void GLCanvas3D::SLAView::render_debug_window()
 {
     ImGuiWrapper& imgui = *wxGetApp().imgui();
-    imgui.begin(std::string("SLAView"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
+    ImGuiPureWrap::begin(std::string("SLAView"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
     for (const auto& [id, type] : m_instances_cache) {
-        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "(" + std::to_string(id.object_id) + ", " + std::to_string(id.instance_id) + ")");
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "(" + std::to_string(id.object_id) + ", " + std::to_string(id.instance_id) + ")");
         ImGui::SameLine();
-        imgui.text_colored(ImGui::GetStyleColorVec4(ImGuiCol_Text), (type == ESLAViewType::Original) ? "Original" : "Processed");
+        ImGuiPureWrap::text_colored(ImGui::GetStyleColorVec4(ImGuiCol_Text), (type == ESLAViewType::Original) ? "Original" : "Processed");
     }
     if (!m_instances_cache.empty())
         ImGui::Separator();
 
-    imgui.checkbox("Use instance bounding box", m_use_instance_bbox);
-    imgui.end();
+    ImGuiPureWrap::checkbox("Use instance bounding box", m_use_instance_bbox);
+    ImGuiPureWrap::end();
 }
 #endif // ENABLE_SLA_VIEW_DEBUG_WINDOW
 
@@ -1814,9 +1811,9 @@ void GLCanvas3D::render()
 #if ENABLE_RAYCAST_PICKING_DEBUG
         else {
             ImGuiWrapper& imgui = *wxGetApp().imgui();
-            imgui.begin(std::string("Hit result"), ImGuiWindowFlags_AlwaysAutoResize);
-            imgui.text("Picking disabled");
-            imgui.end();
+            ImGuiPureWrap::begin(std::string("Hit result"), ImGuiWindowFlags_AlwaysAutoResize);
+            ImGuiPureWrap::text("Picking disabled");
+            ImGuiPureWrap::end();
         }
 #endif // ENABLE_RAYCAST_PICKING_DEBUG
     }
@@ -1878,18 +1875,18 @@ void GLCanvas3D::render()
 
     if (wxGetApp().plater()->is_render_statistic_dialog_visible()) {
         ImGuiWrapper& imgui = *wxGetApp().imgui();
-        imgui.begin(std::string("Render statistics"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-        imgui.text("FPS (SwapBuffers() calls per second):");
+        ImGuiPureWrap::begin(std::string("Render statistics"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+        ImGuiPureWrap::text("FPS (SwapBuffers() calls per second):");
         ImGui::SameLine();
-        imgui.text(std::to_string(m_render_stats.get_fps_and_reset_if_needed()));
+        ImGuiPureWrap::text(std::to_string(m_render_stats.get_fps_and_reset_if_needed()));
         ImGui::Separator();
-        imgui.text("Compressed textures:");
+        ImGuiPureWrap::text("Compressed textures:");
         ImGui::SameLine();
-        imgui.text(OpenGLManager::are_compressed_textures_supported() ? "supported" : "not supported");
-        imgui.text("Max texture size:");
+        ImGuiPureWrap::text(OpenGLManager::are_compressed_textures_supported() ? "supported" : "not supported");
+        ImGuiPureWrap::text("Max texture size:");
         ImGui::SameLine();
-        imgui.text(std::to_string(OpenGLManager::get_gl_info().get_max_tex_size()));
-        imgui.end();
+        ImGuiPureWrap::text(std::to_string(OpenGLManager::get_gl_info().get_max_tex_size()));
+        ImGuiPureWrap::end();
     }
 
 #if ENABLE_PROJECT_DIRTY_STATE_DEBUG_WINDOW
@@ -4567,9 +4564,9 @@ bool GLCanvas3D::_render_undo_redo_stack(const bool is_undo, float pos_x)
 
     ImGuiWrapper* imgui = wxGetApp().imgui();
 
-    imgui->set_next_window_pos(pos_x, m_undoredo_toolbar.get_height(), ImGuiCond_Always, 0.5f, 0.0f);
-    std::string title = is_undo ? L("Undo History") : L("Redo History");
-    imgui->begin(_(title), ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    ImGuiPureWrap::set_next_window_pos(pos_x, m_undoredo_toolbar.get_height(), ImGuiCond_Always, 0.5f, 0.0f);
+    std::string title = is_undo ? _u8L("Undo History") : _u8L("Redo History");
+    ImGuiPureWrap::begin(title, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
     int hovered = m_imgui_undo_redo_hovered_pos;
     int selected = -1;
@@ -4578,7 +4575,7 @@ bool GLCanvas3D::_render_undo_redo_stack(const bool is_undo, float pos_x)
 	em *= m_retina_helper->get_scale_factor();
 #endif
 
-    if (imgui->undo_redo_list(ImVec2(18 * em, 26 * em), is_undo, &string_getter, hovered, selected, m_mouse_wheel))
+    if (ImGuiPureWrap::undo_redo_list(ImVec2(18 * em, 26 * em), is_undo, &string_getter, hovered, selected, m_mouse_wheel))
         m_imgui_undo_redo_hovered_pos = hovered;
     else
         m_imgui_undo_redo_hovered_pos = -1;
@@ -4588,9 +4585,9 @@ bool GLCanvas3D::_render_undo_redo_stack(const bool is_undo, float pos_x)
         action_taken = true;
     }
 
-    imgui->text(wxString::Format(is_undo ? _L_PLURAL("Undo %1$d Action", "Undo %1$d Actions", hovered + 1) : _L_PLURAL("Redo %1$d Action", "Redo %1$d Actions", hovered + 1), hovered + 1));
+    ImGuiPureWrap::text(GUI::format(is_undo ? _L_PLURAL("Undo %1$d Action", "Undo %1$d Actions", hovered + 1) : _L_PLURAL("Redo %1$d Action", "Redo %1$d Actions", hovered + 1), hovered + 1));
 
-    imgui->end();
+    ImGuiPureWrap::end();
 
     return action_taken;
 }
@@ -5319,7 +5316,7 @@ void GLCanvas3D::_resize(unsigned int w, unsigned int h)
     m_old_size = new_size;
 
     auto *imgui = wxGetApp().imgui();
-    imgui->set_display_size(static_cast<float>(w), static_cast<float>(h));
+    ImGuiPureWrap::set_display_size(static_cast<float>(w), static_cast<float>(h));
     const float font_size = 1.5f * wxGetApp().em_unit();
 #if ENABLE_RETINA_GL
     imgui->set_scaling(font_size, 1.0f, m_retina_helper->get_scale_factor());
@@ -5408,10 +5405,9 @@ void GLCanvas3D::_picking_pass()
 {
     if (!m_picking_enabled || m_mouse.dragging || m_mouse.position == Vec2d(DBL_MAX, DBL_MAX) || m_gizmos.is_dragging()) {
 #if ENABLE_RAYCAST_PICKING_DEBUG
-        ImGuiWrapper& imgui = *wxGetApp().imgui();
-        imgui.begin(std::string("Hit result"), ImGuiWindowFlags_AlwaysAutoResize);
-        imgui.text("Picking disabled");
-        imgui.end();
+        ImGuiPureWrap::begin(std::string("Hit result"), ImGuiWindowFlags_AlwaysAutoResize);
+        ImGuiPureWrap::text("Picking disabled");
+        ImGuiPureWrap::end();
 #endif // ENABLE_RAYCAST_PICKING_DEBUG
         return;
     }
@@ -5467,7 +5463,7 @@ void GLCanvas3D::_picking_pass()
 
 #if ENABLE_RAYCAST_PICKING_DEBUG
     ImGuiWrapper& imgui = *wxGetApp().imgui();
-    imgui.begin(std::string("Hit result"), ImGuiWindowFlags_AlwaysAutoResize);
+    ImGuiPureWrap::begin(std::string("Hit result"), ImGuiWindowFlags_AlwaysAutoResize);
     std::string object_type = "None";
     switch (hit.type)
     {
@@ -5491,55 +5487,55 @@ void GLCanvas3D::_picking_pass()
     default: { break; }
     }
 
-    auto add_strings_row_to_table = [&imgui](const std::string& col_1, const ImVec4& col_1_color, const std::string& col_2, const ImVec4& col_2_color,
+    auto add_strings_row_to_table = [](const std::string& col_1, const ImVec4& col_1_color, const std::string& col_2, const ImVec4& col_2_color,
         const std::string& col_3 = "", const ImVec4& col_3_color = ImGui::GetStyleColorVec4(ImGuiCol_Text)) {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(col_1_color, col_1.c_str());
+        ImGuiPureWrap::text_colored(col_1_color, col_1.c_str());
         ImGui::TableSetColumnIndex(1);
-        imgui.text_colored(col_2_color, col_2.c_str());
+        ImGuiPureWrap::text_colored(col_2_color, col_2.c_str());
         if (!col_3.empty()) {
             ImGui::TableSetColumnIndex(2);
-            imgui.text_colored(col_3_color, col_3.c_str());
+            ImGuiPureWrap::text_colored(col_3_color, col_3.c_str());
         }
     };
 
     char buf[1024];
     if (hit.type != SceneRaycaster::EType::None) {
         if (ImGui::BeginTable("Hit", 2)) {
-            add_strings_row_to_table("Object ID", ImGuiWrapper::COL_ORANGE_LIGHT, std::to_string(hit.raycaster_id), ImGui::GetStyleColorVec4(ImGuiCol_Text));
-            add_strings_row_to_table("Type", ImGuiWrapper::COL_ORANGE_LIGHT, object_type, ImGui::GetStyleColorVec4(ImGuiCol_Text));
+            add_strings_row_to_table("Object ID", ImGuiPureWrap::COL_ORANGE_LIGHT, std::to_string(hit.raycaster_id), ImGui::GetStyleColorVec4(ImGuiCol_Text));
+            add_strings_row_to_table("Type", ImGuiPureWrap::COL_ORANGE_LIGHT, object_type, ImGui::GetStyleColorVec4(ImGuiCol_Text));
             sprintf(buf, "%.3f, %.3f, %.3f", hit.position.x(), hit.position.y(), hit.position.z());
-            add_strings_row_to_table("Position", ImGuiWrapper::COL_ORANGE_LIGHT, std::string(buf), ImGui::GetStyleColorVec4(ImGuiCol_Text));
+            add_strings_row_to_table("Position", ImGuiPureWrap::COL_ORANGE_LIGHT, std::string(buf), ImGui::GetStyleColorVec4(ImGuiCol_Text));
             sprintf(buf, "%.3f, %.3f, %.3f", hit.normal.x(), hit.normal.y(), hit.normal.z());
-            add_strings_row_to_table("Normal", ImGuiWrapper::COL_ORANGE_LIGHT, std::string(buf), ImGui::GetStyleColorVec4(ImGuiCol_Text));
+            add_strings_row_to_table("Normal", ImGuiPureWrap::COL_ORANGE_LIGHT, std::string(buf), ImGui::GetStyleColorVec4(ImGuiCol_Text));
             ImGui::EndTable();
         }
     }
     else
-        imgui.text("NO HIT");
+        ImGuiPureWrap::text("NO HIT");
 
     ImGui::Separator();
-    imgui.text("Registered for picking:");
+    ImGuiPureWrap::text("Registered for picking:");
     if (ImGui::BeginTable("Raycasters", 2)) {
         sprintf(buf, "%d (%d)", (int)m_scene_raycaster.beds_count(), (int)m_scene_raycaster.active_beds_count());
-        add_strings_row_to_table("Beds", ImGuiWrapper::COL_ORANGE_LIGHT, std::string(buf), ImGui::GetStyleColorVec4(ImGuiCol_Text));
+        add_strings_row_to_table("Beds", ImGuiPureWrap::COL_ORANGE_LIGHT, std::string(buf), ImGui::GetStyleColorVec4(ImGuiCol_Text));
         sprintf(buf, "%d (%d)", (int)m_scene_raycaster.volumes_count(), (int)m_scene_raycaster.active_volumes_count());
-        add_strings_row_to_table("Volumes", ImGuiWrapper::COL_ORANGE_LIGHT, std::string(buf), ImGui::GetStyleColorVec4(ImGuiCol_Text));
+        add_strings_row_to_table("Volumes", ImGuiPureWrap::COL_ORANGE_LIGHT, std::string(buf), ImGui::GetStyleColorVec4(ImGuiCol_Text));
         sprintf(buf, "%d (%d)", (int)m_scene_raycaster.gizmos_count(), (int)m_scene_raycaster.active_gizmos_count());
-        add_strings_row_to_table("Gizmo elements", ImGuiWrapper::COL_ORANGE_LIGHT, std::string(buf), ImGui::GetStyleColorVec4(ImGuiCol_Text));
+        add_strings_row_to_table("Gizmo elements", ImGuiPureWrap::COL_ORANGE_LIGHT, std::string(buf), ImGui::GetStyleColorVec4(ImGuiCol_Text));
         sprintf(buf, "%d (%d)", (int)m_scene_raycaster.fallback_gizmos_count(), (int)m_scene_raycaster.active_fallback_gizmos_count());
-        add_strings_row_to_table("Gizmo2 elements", ImGuiWrapper::COL_ORANGE_LIGHT, std::string(buf), ImGui::GetStyleColorVec4(ImGuiCol_Text));
+        add_strings_row_to_table("Gizmo2 elements", ImGuiPureWrap::COL_ORANGE_LIGHT, std::string(buf), ImGui::GetStyleColorVec4(ImGuiCol_Text));
         ImGui::EndTable();
     }
 
     std::vector<std::shared_ptr<SceneRaycasterItem>>* gizmo_raycasters = m_scene_raycaster.get_raycasters(SceneRaycaster::EType::Gizmo);
     if (gizmo_raycasters != nullptr && !gizmo_raycasters->empty()) {
         ImGui::Separator();
-        imgui.text("Gizmo raycasters IDs:");
+        ImGuiPureWrap::text("Gizmo raycasters IDs:");
         if (ImGui::BeginTable("GizmoRaycasters", 3)) {
             for (size_t i = 0; i < gizmo_raycasters->size(); ++i) {
-                add_strings_row_to_table(std::to_string(i), ImGuiWrapper::COL_ORANGE_LIGHT,
+                add_strings_row_to_table(std::to_string(i), ImGuiPureWrap::COL_ORANGE_LIGHT,
                     std::to_string(SceneRaycaster::decode_id(SceneRaycaster::EType::Gizmo, (*gizmo_raycasters)[i]->get_id())), ImGui::GetStyleColorVec4(ImGuiCol_Text),
                     to_string(Geometry::Transformation((*gizmo_raycasters)[i]->get_transform()).get_offset()), ImGui::GetStyleColorVec4(ImGuiCol_Text));
             }
@@ -5550,10 +5546,10 @@ void GLCanvas3D::_picking_pass()
     std::vector<std::shared_ptr<SceneRaycasterItem>>* gizmo2_raycasters = m_scene_raycaster.get_raycasters(SceneRaycaster::EType::FallbackGizmo);
     if (gizmo2_raycasters != nullptr && !gizmo2_raycasters->empty()) {
         ImGui::Separator();
-        imgui.text("Gizmo2 raycasters IDs:");
+        ImGuiPureWrap::text("Gizmo2 raycasters IDs:");
         if (ImGui::BeginTable("Gizmo2Raycasters", 3)) {
             for (size_t i = 0; i < gizmo2_raycasters->size(); ++i) {
-                add_strings_row_to_table(std::to_string(i), ImGuiWrapper::COL_ORANGE_LIGHT,
+                add_strings_row_to_table(std::to_string(i), ImGuiPureWrap::COL_ORANGE_LIGHT,
                     std::to_string(SceneRaycaster::decode_id(SceneRaycaster::EType::FallbackGizmo, (*gizmo2_raycasters)[i]->get_id())), ImGui::GetStyleColorVec4(ImGuiCol_Text),
                     to_string(Geometry::Transformation((*gizmo2_raycasters)[i]->get_transform()).get_offset()), ImGui::GetStyleColorVec4(ImGuiCol_Text));
             }
@@ -5561,7 +5557,7 @@ void GLCanvas3D::_picking_pass()
         }
     }
 
-    imgui.end();
+    ImGuiPureWrap::end();
 #endif // ENABLE_RAYCAST_PICKING_DEBUG
 }
 
@@ -6962,14 +6958,14 @@ void GLCanvas3D::show_binary_gcode_debug_window()
     bgcode::binarize::BinarizerConfig& binarizer_config = GCodeProcessor::get_binarizer_config();
 
     ImGuiWrapper& imgui = *wxGetApp().imgui();
-    imgui.begin(std::string("Binary GCode"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    ImGuiPureWrap::begin(std::string("Binary GCode"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
     using namespace bgcode::core;
     if (ImGui::BeginTable("BinaryGCodeConfig", 2)) {
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "File metadata compression");
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "File metadata compression");
         ImGui::TableSetColumnIndex(1);
         std::vector<std::string> options = { "None", "Deflate", "heatshrink 11,4", "heatshrink 12,4" };
         int option_id = (int)binarizer_config.compression.file_metadata;
@@ -6978,7 +6974,7 @@ void GLCanvas3D::show_binary_gcode_debug_window()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Printer metadata compression");
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Printer metadata compression");
         ImGui::TableSetColumnIndex(1);
         option_id = (int)binarizer_config.compression.printer_metadata;
         if (imgui.combo(std::string("##printer_metadata_compression"), options, option_id, ImGuiComboFlags_HeightLargest, 0.0f, 175.0f))
@@ -6986,7 +6982,7 @@ void GLCanvas3D::show_binary_gcode_debug_window()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Print metadata compression");
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Print metadata compression");
         ImGui::TableSetColumnIndex(1);
         option_id = (int)binarizer_config.compression.print_metadata;
         if (imgui.combo(std::string("##print_metadata_compression"), options, option_id, ImGuiComboFlags_HeightLargest, 0.0f, 175.0f))
@@ -6994,7 +6990,7 @@ void GLCanvas3D::show_binary_gcode_debug_window()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Slicer metadata compression");
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Slicer metadata compression");
         ImGui::TableSetColumnIndex(1);
         option_id = (int)binarizer_config.compression.slicer_metadata;
         if (imgui.combo(std::string("##slicer_metadata_compression"), options, option_id, ImGuiComboFlags_HeightLargest, 0.0f, 175.0f))
@@ -7002,7 +6998,7 @@ void GLCanvas3D::show_binary_gcode_debug_window()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "GCode compression");
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "GCode compression");
         ImGui::TableSetColumnIndex(1);
         option_id = (int)binarizer_config.compression.gcode;
         if (imgui.combo(std::string("##gcode_compression"), options, option_id, ImGuiComboFlags_HeightLargest, 0.0f, 175.0f))
@@ -7010,7 +7006,7 @@ void GLCanvas3D::show_binary_gcode_debug_window()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "GCode encoding");
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "GCode encoding");
         ImGui::TableSetColumnIndex(1);
         options = { "None", "MeatPack", "MeatPack Comments" };
         option_id = (int)binarizer_config.gcode_encoding;
@@ -7019,7 +7015,7 @@ void GLCanvas3D::show_binary_gcode_debug_window()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Metadata encoding");
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Metadata encoding");
         ImGui::TableSetColumnIndex(1);
         options = { "INI" };
         option_id = (int)binarizer_config.metadata_encoding;
@@ -7028,7 +7024,7 @@ void GLCanvas3D::show_binary_gcode_debug_window()
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Checksum type");
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Checksum type");
         ImGui::TableSetColumnIndex(1);
         options = { "None", "CRC32" };
         option_id = (int)binarizer_config.checksum;
@@ -7038,11 +7034,11 @@ void GLCanvas3D::show_binary_gcode_debug_window()
         ImGui::EndTable();
 
         ImGui::Separator();
-        imgui.text("!!! WARNING !!!");
-        imgui.text("Changing values does NOT invalidate the current slice");
+        ImGuiPureWrap::text("!!! WARNING !!!");
+        ImGuiPureWrap::text("Changing values does NOT invalidate the current slice");
     }
 
-    imgui.end();
+    ImGuiPureWrap::end();
 }
 #endif // ENABLE_BINARIZED_GCODE_DEBUG_WINDOW
 

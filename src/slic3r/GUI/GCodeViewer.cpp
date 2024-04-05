@@ -101,16 +101,16 @@ void GCodeViewer::COG::render()
 
     //ImGuiWrapper& imgui = *wxGetApp().imgui();
     //const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
-    //imgui.set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), 0.0f, ImGuiCond_Always, 0.5f, 0.0f);
+    //ImGuiPureWrap::set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), 0.0f, ImGuiCond_Always, 0.5f, 0.0f);
     //ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     //ImGui::SetNextWindowBgAlpha(0.25f);
-    //imgui.begin(std::string("COG"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
-    //imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Center of mass") + ":");
+    //ImGuiPureWrap::begin(std::string("COG"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+    //ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, _u8L("Center of mass") + ":");
     //ImGui::SameLine();
     //char buf[1024];
     //const Vec3d position = cog();
     //sprintf(buf, "X: %.3f, Y: %.3f, Z: %.3f", position.x(), position.y(), position.z());
-    //imgui.text(std::string(buf));
+    //ImGuiPureWrap::text(std::string(buf));
 
     //// force extra frame to automatically update window size
     //const float width = ImGui::GetWindowWidth();
@@ -173,7 +173,7 @@ int GCodeViewer::SequentialView::ActualSpeedImguiWidget::plot(const char* label,
             const float y = 1.0f - ImSaturate((level - y_range.first) * inv_scale_y);
 
             window->DrawList->AddLine(ImLerp(inner_bb.Min, ImVec2(inner_bb.Min.x + offset.x, inner_bb.Max.y), ImVec2(0.1f, y)),
-                ImLerp(inner_bb.Min, ImVec2(inner_bb.Min.x + offset.x, inner_bb.Max.y), ImVec2(0.9f, y)), ImGuiWrapper::to_ImU32(color), 3.0f);
+                ImLerp(inner_bb.Min, ImVec2(inner_bb.Min.x + offset.x, inner_bb.Max.y), ImVec2(0.9f, y)), ImGuiPSWrap::to_ImU32(color), 3.0f);
 
             window->DrawList->AddLine(ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(0.0f, y)),
                 ImLerp(inner_bb.Min + offset, inner_bb.Max, ImVec2(1.0f, y)), grid_main_color);
@@ -303,12 +303,12 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
     if (viewer != nullptr) {
         ImGuiWrapper& imgui = *wxGetApp().imgui();
         const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
-        imgui.set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.5f, 1.0f);
+        ImGuiPureWrap::set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.5f, 1.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::SetNextWindowBgAlpha(0.25f);
-        imgui.begin(std::string("ToolPosition"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+        ImGuiPureWrap::begin(std::string("ToolPosition"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
         ImGui::AlignTextToFramePadding();
-        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Position") + ":");
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, _u8L("Position") + ":");
         ImGui::SameLine();
         libvgcode::PathVertex vertex = viewer->get_current_vertex();
         size_t vertex_id = viewer->get_current_vertex_id();
@@ -319,10 +319,10 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
 
         char buf[1024];
         sprintf(buf, "X: %.3f, Y: %.3f, Z: %.3f", vertex.position[0], vertex.position[1], vertex.position[2]);
-        imgui.text(std::string(buf));
+        ImGuiPureWrap::text(std::string(buf));
 
         ImGui::SameLine();
-        if (imgui.image_button(properties_shown ? ImGui::HorizontalHide : ImGui::HorizontalShow, properties_shown ? _L("Hide properties") : _L("Show properties"))) {
+        if (imgui.image_button(properties_shown ? ImGui::HorizontalHide : ImGui::HorizontalShow, properties_shown ? _u8L("Hide properties") : _u8L("Show properties"))) {
             properties_shown = !properties_shown;
             imgui.requires_extra_frame();
         }
@@ -331,7 +331,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
             auto append_table_row = [&imgui](const std::string& label, std::function<void(void)> value_callback) {
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
-                imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, label);
+                ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, label);
                 ImGui::TableSetColumnIndex(1);
                 value_callback();
             };
@@ -344,7 +344,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                     std::string text = _u8L(to_string(vertex.type));
                     if (vertex.is_extrusion())
                         text += " (" + _u8L(to_string(vertex.role)) + ")";
-                    imgui.text(text);
+                    ImGuiPureWrap::text(text);
                 });
                 append_table_row(_u8L("Width") + " (" + _u8L("mm") + ")", [&imgui, &vertex, &buff]() {
                     std::string text;
@@ -354,7 +354,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                     }
                     else
                         text = _u8L("N/A");
-                    imgui.text(text);
+                    ImGuiPureWrap::text(text);
                 });
                 append_table_row(_u8L("Height") + " (" + _u8L("mm") + ")", [&imgui, &vertex, &buff]() {
                     std::string text;
@@ -364,12 +364,12 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                     }
                     else
                         text = _u8L("N/A");
-                    imgui.text(text);
+                    ImGuiPureWrap::text(text);
                 });
                 append_table_row(_u8L("Layer"), [&imgui, &vertex, &buff]() {
                     sprintf(buff, "%d", vertex.layer_id + 1);
                     const std::string text = std::string(buff);
-                    imgui.text(text);
+                    ImGuiPureWrap::text(text);
                 });
 #if !ENABLE_ACTUAL_SPEED_DEBUG
                 append_table_row(_u8L("Speed") + " (" + _u8L("mm/s") + ")", [&imgui, &vertex, &buff]() {
@@ -380,7 +380,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                     }
                     else
                         text = _u8L("N/A");
-                    imgui.text(text);
+                    ImGuiPureWrap::text(text);
                 });
                 append_table_row(_u8L("Actual speed") + " (" + _u8L("mm/s") + ")", [&imgui, &vertex, &buff]() {
                     std::string text;
@@ -390,7 +390,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                     }
                     else
                         text = _u8L("N/A");
-                    imgui.text(text);
+                    ImGuiPureWrap::text(text);
                 });
 #endif // !ENABLE_ACTUAL_SPEED_DEBUG
                 append_table_row(_u8L("Fan speed") + " (" + _u8L("%") + ")", [&imgui, &vertex, &buff]() {
@@ -401,17 +401,17 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                     }
                     else
                         text = _u8L("N/A");
-                    imgui.text(text);
+                    ImGuiPureWrap::text(text);
                 });
                 append_table_row(_u8L("Temperature") + " (" + _u8L("°C") + ")", [&imgui, &vertex, &buff]() {
                     sprintf(buff, "%.0f", vertex.temperature);
-                    imgui.text(std::string(buff));
+                    ImGuiPureWrap::text(std::string(buff));
                 });
                 append_table_row(_u8L("Time"), [viewer, &imgui, &vertex, &buff, vertex_id]() {
                     const float estimated_time = viewer->get_estimated_time_at(vertex_id);
                     sprintf(buff, "%s (%.3fs)", get_time_dhms(estimated_time).c_str(), vertex.times[static_cast<size_t>(viewer->get_time_mode())]);
                     const std::string text = std::string(buff);
-                    imgui.text(text);
+                    ImGuiPureWrap::text(text);
                 });
 
                 ImGui::EndTable();
@@ -420,19 +420,19 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
 #if ENABLE_ACTUAL_SPEED_DEBUG
             if (vertex.is_extrusion() || vertex.is_travel() || vertex.is_wipe()) {
                 ImGui::Spacing();
-                imgui.text(_u8L("Actual speed profile"));
+                ImGuiPureWrap::text(_u8L("Actual speed profile"));
                 ImGui::SameLine();
                 static bool table_shown = false;
-                if (imgui.button(table_shown ? _u8L("Hide table") : _u8L("Show table")))
+                if (ImGuiPureWrap::button(table_shown ? _u8L("Hide table") : _u8L("Show table")))
                     table_shown = !table_shown;
                 ImGui::Separator();
                 const int hover_id = m_actual_speed_imgui_widget.plot("##ActualSpeedProfile", { -1.0f, 150.0f });
                 if (table_shown) {
                     static float table_wnd_height = 0.0f;
                     const ImVec2 wnd_size = ImGui::GetWindowSize();
-                    imgui.set_next_window_pos(ImGui::GetWindowPos().x + wnd_size.x, static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.0f, 1.0f);
+                    ImGuiPureWrap::set_next_window_pos(ImGui::GetWindowPos().x + wnd_size.x, static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.0f, 1.0f);
                     ImGui::SetNextWindowSizeConstraints({ 0.0f, 0.0f }, { -1.0f, wnd_size.y });
-                    imgui.begin(std::string("ToolPositionTableWnd"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar |
+                    ImGuiPureWrap::begin(std::string("ToolPositionTableWnd"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar |
                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
                     if (ImGui::BeginTable("ToolPositionTable", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY)) {
                         char buff[1024];
@@ -450,10 +450,10 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                             ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, row_bg_color);
                             ImGui::TableSetColumnIndex(0);
                             sprintf(buff, "%.3f", item.pos);
-                            imgui.text_colored(highlight ? ImGuiWrapper::COL_ORANGE_LIGHT : ImGuiWrapper::to_ImVec4(ColorRGBA::WHITE()), buff);
+                            ImGuiPureWrap::text_colored(highlight ? ImGuiPureWrap::COL_ORANGE_LIGHT : ImGuiPSWrap::to_ImVec4(ColorRGBA::WHITE()), buff);
                             ImGui::TableSetColumnIndex(1);
                             sprintf(buff, "%.1f", item.speed);
-                            imgui.text_colored(highlight ? ImGuiWrapper::COL_ORANGE_LIGHT : ImGuiWrapper::to_ImVec4(ColorRGBA::WHITE()), buff);
+                            ImGuiPureWrap::text_colored(highlight ? ImGuiPureWrap::COL_ORANGE_LIGHT : ImGuiPSWrap::to_ImVec4(ColorRGBA::WHITE()), buff);
                             ++counter;
                         }
                         ImGui::EndTable();
@@ -464,7 +464,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                         // require extra frame to hide the table scroll bar (bug in imgui)
                         imgui.set_requires_extra_frame();
                     }
-                    imgui.end();
+                    ImGuiPureWrap::end();
                 }
             }
 #endif // ENABLE_ACTUAL_SPEED_DEBUG
@@ -479,22 +479,22 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
             imgui.set_requires_extra_frame();
         }
 
-        imgui.end();
+        ImGuiPureWrap::end();
         ImGui::PopStyleVar();
     }
     else {
         ImGuiWrapper& imgui = *wxGetApp().imgui();
         const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
-        imgui.set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.5f, 1.0f);
+        ImGuiPureWrap::set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.5f, 1.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::SetNextWindowBgAlpha(0.25f);
-        imgui.begin(std::string("ToolPosition"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
-        imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, _u8L("Tool position") + ":");
+        ImGuiPureWrap::begin(std::string("ToolPosition"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, _u8L("Tool position") + ":");
         ImGui::SameLine();
         char buf[1024];
         const Vec3f position = m_world_position + m_world_offset + m_z_offset * Vec3f::UnitZ();
         sprintf(buf, "X: %.3f, Y: %.3f, Z: %.3f", position.x(), position.y(), position.z());
-        imgui.text(std::string(buf));
+        ImGuiPureWrap::text(std::string(buf));
 
         // force extra frame to automatically update window size
         const float width = ImGui::GetWindowWidth();
@@ -505,7 +505,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
             imgui.set_requires_extra_frame();
         }
 
-        imgui.end();
+        ImGuiPureWrap::end();
         ImGui::PopStyleVar();
     }
 }
@@ -662,8 +662,8 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
         assert(m_lines_cache.size() == m_cache_range.size());
     };
 
-    static const ImVec4 LINE_NUMBER_COLOR = ImGuiWrapper::COL_ORANGE_LIGHT;
-    static const ImVec4 SELECTION_RECT_COLOR = ImGuiWrapper::COL_ORANGE_DARK;
+    static const ImVec4 LINE_NUMBER_COLOR = ImGuiPureWrap::COL_ORANGE_LIGHT;
+    static const ImVec4 SELECTION_RECT_COLOR = ImGuiPureWrap::COL_ORANGE_DARK;
     static const ImVec4 COMMAND_COLOR    = { 0.8f, 0.8f, 0.0f, 1.0f };
     static const ImVec4 PARAMETERS_COLOR = { 1.0f, 1.0f, 1.0f, 1.0f };
     static const ImVec4 COMMENT_COLOR    = { 0.7f, 0.7f, 0.7f, 1.0f };
@@ -737,20 +737,20 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
         current_length += out_text.length();
 
         ImGui::SameLine(0.0f, spacing);
-        imgui.text_colored(color, out_text);
+        ImGuiPureWrap::text_colored(color, out_text);
         if (reduced) {
             ImGui::SameLine(0.0f, 0.0f);
-            imgui.text_colored(ELLIPSIS_COLOR, "...");
+            ImGuiPureWrap::text_colored(ELLIPSIS_COLOR, "...");
         }
 
         return reduced;
     };
 
-    imgui.set_next_window_pos(0.0f, top, ImGuiCond_Always, 0.0f, 0.0f);
-    imgui.set_next_window_size(0.0f, wnd_height, ImGuiCond_Always);
+    ImGuiPureWrap::set_next_window_pos(0.0f, top, ImGuiCond_Always, 0.0f, 0.0f);
+    ImGuiPureWrap::set_next_window_size(0.0f, wnd_height, ImGuiCond_Always);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::SetNextWindowBgAlpha(0.6f);
-    imgui.begin(std::string("G-code"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+    ImGuiPureWrap::begin(std::string("G-code"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
 
     // center the text in the window by pushing down the first line
     const float f_lines_count = static_cast<float>(visible_lines_count);
@@ -791,7 +791,7 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
         max_line_length = std::max(max_line_length, line_length);
     }
 
-    imgui.end();
+    ImGuiPureWrap::end();
     ImGui::PopStyleVar();
 
     // request an extra frame if window's width changed
@@ -1150,15 +1150,15 @@ void GCodeViewer::render()
     if (is_legend_shown()) {
         ImGuiWrapper& imgui = *Slic3r::GUI::wxGetApp().imgui();
         const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
-        imgui.set_next_window_pos(static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 1.0f, 1.0f);
-        imgui.begin(std::string("LibVGCode Viewer Controller"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
+        ImGuiPureWrap::set_next_window_pos(static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 1.0f, 1.0f);
+        ImGuiPureWrap::begin(std::string("LibVGCode Viewer Controller"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
 
         imgui.checkbox("Cog marker fixed screen size", m_cog_marker_fixed_screen_size);
         if (ImGui::BeginTable("Cog", 2)) {
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Cog marker size");
+            ImGuiPureWrap::text_colored(Slic3r::GUI::ImGuiPureWrap::COL_ORANGE_LIGHT, "Cog marker size");
             ImGui::TableSetColumnIndex(1);
             imgui.slider_float("##CogSize", &m_cog_marker_size, 1.0f, 5.0f);
 
@@ -1170,7 +1170,7 @@ void GCodeViewer::render()
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(Slic3r::GUI::ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker size");
+            ImGuiPureWrap::text_colored(Slic3r::GUI::ImGuiPureWrap::COL_ORANGE_LIGHT, "Tool marker size");
             ImGui::TableSetColumnIndex(1);
             imgui.slider_float("##ToolSize", &m_tool_marker_size, 1.0f, 5.0f);
 
@@ -1710,75 +1710,75 @@ void GCodeViewer::render_toolpaths()
     if (is_legend_shown()) {
         ImGuiWrapper& imgui = *wxGetApp().imgui();
         const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
-        imgui.set_next_window_pos(static_cast<float>(cnv_size.get_width()), 0.0f, ImGuiCond_Always, 1.0f, 0.0f);
-        imgui.begin(std::string("LibVGCode Viewer Debug"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
+        ImGuiPureWrap::set_next_window_pos(static_cast<float>(cnv_size.get_width()), 0.0f, ImGuiCond_Always, 1.0f, 0.0f);
+        ImGuiPureWrap::begin(std::string("LibVGCode Viewer Debug"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
 
         if (ImGui::BeginTable("Data", 2)) {
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "# vertices");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "# vertices");
             ImGui::TableSetColumnIndex(1);
-            imgui.text(std::to_string(m_viewer.get_vertices_count()));
+            ImGuiPureWrap::text(std::to_string(m_viewer.get_vertices_count()));
 
             ImGui::Separator();
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "cpu memory");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "cpu memory");
             ImGui::TableSetColumnIndex(1);
-            imgui.text(format_memsize(m_viewer.get_used_cpu_memory()));
+            ImGuiPureWrap::text(format_memsize(m_viewer.get_used_cpu_memory()));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "gpu memory");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "gpu memory");
             ImGui::TableSetColumnIndex(1);
-            imgui.text(format_memsize(m_viewer.get_used_gpu_memory()));
+            ImGuiPureWrap::text(format_memsize(m_viewer.get_used_gpu_memory()));
 
             ImGui::Separator();
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "layers range");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "layers range");
             ImGui::TableSetColumnIndex(1);
             const libvgcode::Interval& layers_range = m_viewer.get_layers_view_range();
-            imgui.text(std::to_string(layers_range[0]) + " - " + std::to_string(layers_range[1]));
+            ImGuiPureWrap::text(std::to_string(layers_range[0]) + " - " + std::to_string(layers_range[1]));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "view range (full)");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "view range (full)");
             ImGui::TableSetColumnIndex(1);
             const libvgcode::Interval& full_view_range = m_viewer.get_view_full_range();
-            imgui.text(std::to_string(full_view_range[0]) + " - " + std::to_string(full_view_range[1]) + " | " +
+            ImGuiPureWrap::text(std::to_string(full_view_range[0]) + " - " + std::to_string(full_view_range[1]) + " | " +
                 std::to_string(m_viewer.get_vertex_at(full_view_range[0]).gcode_id) + " - " +
                 std::to_string(m_viewer.get_vertex_at(full_view_range[1]).gcode_id));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "view range (enabled)");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "view range (enabled)");
             ImGui::TableSetColumnIndex(1);
             const libvgcode::Interval& enabled_view_range = m_viewer.get_view_enabled_range();
-            imgui.text(std::to_string(enabled_view_range[0]) + " - " + std::to_string(enabled_view_range[1]) + " | " +
+            ImGuiPureWrap::text(std::to_string(enabled_view_range[0]) + " - " + std::to_string(enabled_view_range[1]) + " | " +
                 std::to_string(m_viewer.get_vertex_at(enabled_view_range[0]).gcode_id) + " - " +
                 std::to_string(m_viewer.get_vertex_at(enabled_view_range[1]).gcode_id));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "view range (visible)");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "view range (visible)");
             ImGui::TableSetColumnIndex(1);
             const libvgcode::Interval& visible_view_range = m_viewer.get_view_visible_range();
-            imgui.text(std::to_string(visible_view_range[0]) + " - " + std::to_string(visible_view_range[1]) + " | " +
+            ImGuiPureWrap::text(std::to_string(visible_view_range[0]) + " - " + std::to_string(visible_view_range[1]) + " | " +
                 std::to_string(m_viewer.get_vertex_at(visible_view_range[0]).gcode_id) + " - " +
                 std::to_string(m_viewer.get_vertex_at(visible_view_range[1]).gcode_id));
 
             auto add_range_property_row = [&imgui](const std::string& label, const std::array<float, 2>& range) {
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
-                imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, label);
+                ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, label);
                 ImGui::TableSetColumnIndex(1);
                 char buf[128];
                 sprintf(buf, "%.3f - %.3f", range[0], range[1]);
-                imgui.text(buf);
+                ImGuiPureWrap::text(buf);
             };
 
             add_range_property_row("height range", m_viewer.get_color_range(libvgcode::EViewType::Height).get_range());
@@ -1799,9 +1799,9 @@ void GCodeViewer::render_toolpaths()
         if (ImGui::BeginTable("Cog", 2)) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Cog marker scale factor");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Cog marker scale factor");
             ImGui::TableSetColumnIndex(1);
-            imgui.text(std::to_string(get_cog_marker_scale_factor()));
+            ImGuiPureWrap::text(std::to_string(get_cog_marker_scale_factor()));
 
             ImGui::EndTable();
         }
@@ -1811,13 +1811,13 @@ void GCodeViewer::render_toolpaths()
         if (ImGui::BeginTable("Tool", 2)) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker scale factor");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Tool marker scale factor");
             ImGui::TableSetColumnIndex(1);
-            imgui.text(std::to_string(m_viewer.get_tool_marker_scale_factor()));
+            ImGuiPureWrap::text(std::to_string(m_viewer.get_tool_marker_scale_factor()));
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker z offset");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Tool marker z offset");
             ImGui::TableSetColumnIndex(1);
             float tool_z_offset = m_viewer.get_tool_marker_offset_z();
             if (imgui.slider_float("##ToolZOffset", &tool_z_offset, 0.0f, 1.0f))
@@ -1825,7 +1825,7 @@ void GCodeViewer::render_toolpaths()
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker color");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Tool marker color");
             ImGui::TableSetColumnIndex(1);
             const libvgcode::Color& color = m_viewer.get_tool_marker_color();
             std::array<float, 3> c = { static_cast<float>(color[0]) / 255.0f, static_cast<float>(color[1]) / 255.0f, static_cast<float>(color[2]) / 255.0f };
@@ -1837,7 +1837,7 @@ void GCodeViewer::render_toolpaths()
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Tool marker alpha");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Tool marker alpha");
             ImGui::TableSetColumnIndex(1);
             float tool_alpha = m_viewer.get_tool_marker_alpha();
             if (imgui.slider_float("##ToolAlpha", &tool_alpha, 0.25f, 0.75f))
@@ -1852,7 +1852,7 @@ void GCodeViewer::render_toolpaths()
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Travels radius");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Travels radius");
             ImGui::TableSetColumnIndex(1);
             float travels_radius = m_viewer.get_travels_radius();
             ImGui::SetNextItemWidth(200.0f);
@@ -1861,7 +1861,7 @@ void GCodeViewer::render_toolpaths()
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            imgui.text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, "Wipes radius");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Wipes radius");
             ImGui::TableSetColumnIndex(1);
             float wipes_radius = m_viewer.get_wipes_radius();
             ImGui::SetNextItemWidth(200.0f);
@@ -1902,13 +1902,13 @@ void GCodeViewer::render_legend(float& legend_height)
 
     ImGuiWrapper& imgui = *wxGetApp().imgui();
 
-    imgui.set_next_window_pos(0.0f, 0.0f, ImGuiCond_Always);
+    ImGuiPureWrap::set_next_window_pos(0.0f, 0.0f, ImGuiCond_Always);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::SetNextWindowBgAlpha(0.6f);
     const float max_height = 0.75f * static_cast<float>(cnv_size.get_height());
     const float child_height = 0.3333f * max_height;
     ImGui::SetNextWindowSizeConstraints({ 0.0f, 0.0f }, { -1.0f, max_height });
-    imgui.begin(std::string("Legend"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    ImGuiPureWrap::begin(std::string("Legend"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
     enum class EItemType : unsigned char
     {
@@ -1943,21 +1943,21 @@ void GCodeViewer::render_legend(float& legend_height)
         default:
         case EItemType::Rect: {
             draw_list->AddRectFilled({ pos.x + 1.0f, pos.y + 1.0f }, { pos.x + icon_size - 1.0f, pos.y + icon_size - 1.0f },
-                ImGuiWrapper::to_ImU32(color));
+                ImGuiPSWrap::to_ImU32(color));
             break;
         }
         case EItemType::Circle: {
             ImVec2 center(0.5f * (pos.x + pos.x + icon_size), 0.5f * (pos.y + pos.y + icon_size));
-            draw_list->AddCircleFilled(center, 0.5f * icon_size, ImGuiWrapper::to_ImU32(color), 16);
+            draw_list->AddCircleFilled(center, 0.5f * icon_size, ImGuiPSWrap::to_ImU32(color), 16);
             break;
         }
         case EItemType::Hexagon: {
             ImVec2 center(0.5f * (pos.x + pos.x + icon_size), 0.5f * (pos.y + pos.y + icon_size));
-            draw_list->AddNgonFilled(center, 0.5f * icon_size, ImGuiWrapper::to_ImU32(color), 6);
+            draw_list->AddNgonFilled(center, 0.5f * icon_size, ImGuiPSWrap::to_ImU32(color), 6);
             break;
         }
         case EItemType::Line: {
-            draw_list->AddLine({ pos.x + 1, pos.y + icon_size - 1 }, { pos.x + icon_size - 1, pos.y + 1 }, ImGuiWrapper::to_ImU32(color), 3.0f);
+            draw_list->AddLine({ pos.x + 1, pos.y + icon_size - 1 }, { pos.x + icon_size - 1, pos.y + 1 }, ImGuiPSWrap::to_ImU32(color), 3.0f);
             break;
         }
         }
@@ -1978,9 +1978,9 @@ void GCodeViewer::render_legend(float& legend_height)
                 if (ImGui::IsItemHovered()) {
                     if (!visible)
                         ImGui::PopStyleVar();
-                    ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGuiWrapper::COL_WINDOW_BACKGROUND);
+                    ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGuiPureWrap::COL_WINDOW_BACKGROUND);
                     ImGui::BeginTooltip();
-                    imgui.text(visible ? _u8L("Click to hide") : _u8L("Click to show"));
+                    ImGuiPureWrap::text(visible ? _u8L("Click to hide") : _u8L("Click to show"));
                     ImGui::EndTooltip();
                     ImGui::PopStyleColor();
                     if (!visible)
@@ -1993,33 +1993,33 @@ void GCodeViewer::render_legend(float& legend_height)
 
             if (!time.empty()) {
                 ImGui::SameLine(offsets[0]);
-                imgui.text(time);
+                ImGuiPureWrap::text(time);
                 ImGui::SameLine(offsets[1]);
                 pos = ImGui::GetCursorScreenPos();
                 const float width = std::max(1.0f, percent_bar_size * percent / max_percent);
                 draw_list->AddRectFilled({ pos.x, pos.y + 2.0f }, { pos.x + width, pos.y + icon_size - 2.0f },
-                    ImGui::GetColorU32(ImGuiWrapper::COL_ORANGE_LIGHT));
+                    ImGui::GetColorU32(ImGuiPureWrap::COL_ORANGE_LIGHT));
                 ImGui::Dummy({ percent_bar_size, icon_size });
                 ImGui::SameLine();
                 char buf[64];
                 ::sprintf(buf, "%.1f%%", 100.0f * percent);
                 ImGui::TextUnformatted((percent > 0.0f) ? buf : "");
                 ImGui::SameLine(offsets[2]);
-                imgui.text(format("%1$.2f %2%", used_filament_m, (imperial_units ? inches : metres)));
+                ImGuiPureWrap::text(format("%1$.2f %2%", used_filament_m, (imperial_units ? inches : metres)));
                 ImGui::SameLine(offsets[3]);
-                imgui.text(format("%1$.2f %2%", used_filament_g, grams));
+                ImGuiPureWrap::text(format("%1$.2f %2%", used_filament_g, grams));
             }
         }
         else {
-            imgui.text(label);
+            ImGuiPureWrap::text(label);
             if (!time.empty()) {
                 ImGui::SameLine(offsets[0]);
-                imgui.text(time);
+                ImGuiPureWrap::text(time);
                 ImGui::SameLine(offsets[1]);
                 pos = ImGui::GetCursorScreenPos();
                 const float width = std::max(1.0f, percent_bar_size * percent / max_percent);
                 draw_list->AddRectFilled({ pos.x, pos.y + 2.0f }, { pos.x + width, pos.y + icon_size - 2.0f },
-                    ImGui::GetColorU32(ImGuiWrapper::COL_ORANGE_LIGHT));
+                    ImGui::GetColorU32(ImGuiPureWrap::COL_ORANGE_LIGHT));
                 ImGui::Dummy({ percent_bar_size, icon_size });
                 ImGui::SameLine();
                 char buf[64];
@@ -2028,9 +2028,9 @@ void GCodeViewer::render_legend(float& legend_height)
             }
             else if (used_filament_m > 0.0) {
                 ImGui::SameLine(offsets[0]);
-                imgui.text(format("%1$.2f %2%", used_filament_m, (imperial_units ? inches : metres)));
+                ImGuiPureWrap::text(format("%1$.2f %2%", used_filament_m, (imperial_units ? inches : metres)));
                 ImGui::SameLine(offsets[1]);
-                imgui.text(format("%1$.2f %2%", used_filament_g, grams));
+                ImGuiPureWrap::text(format("%1$.2f %2%", used_filament_g, grams));
             }
         }
 
@@ -2088,10 +2088,10 @@ void GCodeViewer::render_legend(float& legend_height)
     auto append_headers = [&imgui](const std::array<std::string, 5>& texts, const std::array<float, 4>& offsets) {
         size_t i = 0;
         for (; i < offsets.size(); i++) {
-            imgui.text(texts[i]);
+            ImGuiPureWrap::text(texts[i]);
             ImGui::SameLine(offsets[i]);
         }
-        imgui.text(texts[i]);
+        ImGuiPureWrap::text(texts[i]);
         ImGui::Separator();
     };
 
@@ -2323,7 +2323,7 @@ void GCodeViewer::render_legend(float& legend_height)
     }
     auto new_view_type_it = std::find(view_options_id.begin(), view_options_id.end(), new_view_type_i);
     int new_view_type_id = (new_view_type_it == view_options_id.end()) ? 0 : std::distance(view_options_id.begin(), new_view_type_it);
-    if (imgui.combo(std::string(), view_options, new_view_type_id, ImGuiComboFlags_HeightLargest, 0.0f, -1.0f))
+    if (ImGuiPureWrap::combo(std::string(), view_options, new_view_type_id, ImGuiComboFlags_HeightLargest, 0.0f, -1.0f))
         new_view_type_i = view_options_id[new_view_type_id];
     ImGui::PopStyleColor(2);
    
@@ -2538,7 +2538,7 @@ void GCodeViewer::render_legend(float& legend_height)
         };
 
         auto append_color_change = [&imgui](const ColorRGBA& color1, const ColorRGBA& color2, const std::array<float, 4>& offsets, const Times& times) {
-            imgui.text(_u8L("Color change"));
+            ImGuiPureWrap::text(_u8L("Color change"));
             ImGui::SameLine();
 
             float icon_size = ImGui::GetTextLineHeight();
@@ -2547,17 +2547,17 @@ void GCodeViewer::render_legend(float& legend_height)
             pos.x -= 0.5f * ImGui::GetStyle().ItemSpacing.x;
 
             draw_list->AddRectFilled({ pos.x + 1.0f, pos.y + 1.0f }, { pos.x + icon_size - 1.0f, pos.y + icon_size - 1.0f },
-                ImGuiWrapper::to_ImU32(color1));
+                ImGuiPSWrap::to_ImU32(color1));
             pos.x += icon_size;
             draw_list->AddRectFilled({ pos.x + 1.0f, pos.y + 1.0f }, { pos.x + icon_size - 1.0f, pos.y + icon_size - 1.0f },
-                ImGuiWrapper::to_ImU32(color2));
+                ImGuiPSWrap::to_ImU32(color2));
 
             ImGui::SameLine(offsets[0]);
-            imgui.text(short_time_ui(get_time_dhms(times.second - times.first)));
+            ImGuiPureWrap::text(short_time_ui(get_time_dhms(times.second - times.first)));
         };
 
         auto append_print = [&imgui, imperial_units](const ColorRGBA& color, const std::array<float, 4>& offsets, const Times& times, std::pair<double, double> used_filament) {
-            imgui.text(_u8L("Print"));
+            ImGuiPureWrap::text(_u8L("Print"));
             ImGui::SameLine();
 
             float icon_size = ImGui::GetTextLineHeight();
@@ -2566,21 +2566,21 @@ void GCodeViewer::render_legend(float& legend_height)
             pos.x -= 0.5f * ImGui::GetStyle().ItemSpacing.x;
 
             draw_list->AddRectFilled({ pos.x + 1.0f, pos.y + 1.0f }, { pos.x + icon_size - 1.0f, pos.y + icon_size - 1.0f },
-                ImGuiWrapper::to_ImU32(color));
+                ImGuiPSWrap::to_ImU32(color));
 
             ImGui::SameLine(offsets[0]);
-            imgui.text(short_time_ui(get_time_dhms(times.second)));
+            ImGuiPureWrap::text(short_time_ui(get_time_dhms(times.second)));
             ImGui::SameLine(offsets[1]);
-            imgui.text(short_time_ui(get_time_dhms(times.first)));
+            ImGuiPureWrap::text(short_time_ui(get_time_dhms(times.first)));
             if (used_filament.first > 0.0f) {
                 char buffer[64];
                 ImGui::SameLine(offsets[2]);
                 ::sprintf(buffer, imperial_units ? "%.2f in" : "%.2f m", used_filament.first);
-                imgui.text(buffer);
+                ImGuiPureWrap::text(buffer);
 
                 ImGui::SameLine(offsets[3]);
                 ::sprintf(buffer, "%.2f g", used_filament.second);
-                imgui.text(buffer);
+                ImGuiPureWrap::text(buffer);
             }
         };
 
@@ -2627,9 +2627,9 @@ void GCodeViewer::render_legend(float& legend_height)
                     break;
                 }
                 case PartialTime::EType::Pause: {
-                    imgui.text(_u8L("Pause"));
+                    ImGuiPureWrap::text(_u8L("Pause"));
                     ImGui::SameLine(offsets[0]);
-                    imgui.text(short_time_ui(get_time_dhms(item.times.second - item.times.first)));
+                    ImGuiPureWrap::text(short_time_ui(get_time_dhms(item.times.second - item.times.first)));
                     break;
                 }
                 case PartialTime::EType::ColorChange: {
@@ -2647,9 +2647,9 @@ void GCodeViewer::render_legend(float& legend_height)
     auto add_strings_row_to_table = [&imgui](const std::string& col_1, const ImVec4& col_1_color, const std::string& col_2, const ImVec4& col_2_color) {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        imgui.text_colored(col_1_color, col_1.c_str());
+        ImGuiPureWrap::text_colored(col_1_color, col_1.c_str());
         ImGui::TableSetColumnIndex(1);
-        imgui.text_colored(col_2_color, col_2.c_str());
+        ImGuiPureWrap::text_colored(col_2_color, col_2.c_str());
     };
 
     // settings section
@@ -2667,7 +2667,7 @@ void GCodeViewer::render_legend(float& legend_height)
     show_settings &= has_settings;
     if (show_settings) {
         ImGui::Spacing();
-        imgui.title(_u8L("Settings"));
+        ImGuiPureWrap::title(_u8L("Settings"));
 
         auto trim_text_if_needed = [](const std::string& txt) {
             const float max_length = 250.0f;
@@ -2681,19 +2681,19 @@ void GCodeViewer::render_legend(float& legend_height)
 
         if (ImGui::BeginTable("Settings", 2)) {
             if (!m_settings_ids.printer.empty())
-                add_strings_row_to_table(_u8L("Printer") + ":", ImGuiWrapper::COL_ORANGE_LIGHT,
-                    trim_text_if_needed(m_settings_ids.printer), ImGuiWrapper::to_ImVec4(ColorRGBA::WHITE()));
+                add_strings_row_to_table(_u8L("Printer") + ":", ImGuiPureWrap::COL_ORANGE_LIGHT,
+                    trim_text_if_needed(m_settings_ids.printer), ImGuiPSWrap::to_ImVec4(ColorRGBA::WHITE()));
             if (!m_settings_ids.print.empty())
-                add_strings_row_to_table(_u8L("Print settings") + ":", ImGuiWrapper::COL_ORANGE_LIGHT,
-                    trim_text_if_needed(m_settings_ids.print), ImGuiWrapper::to_ImVec4(ColorRGBA::WHITE()));
+                add_strings_row_to_table(_u8L("Print settings") + ":", ImGuiPureWrap::COL_ORANGE_LIGHT,
+                    trim_text_if_needed(m_settings_ids.print), ImGuiPSWrap::to_ImVec4(ColorRGBA::WHITE()));
             if (!m_settings_ids.filament.empty()) {
                 const std::vector<uint8_t>& used_extruders_ids = m_viewer.get_used_extruders_ids();
                 for (uint8_t extruder_id : used_extruders_ids) {
                     if (extruder_id < static_cast<unsigned char>(m_settings_ids.filament.size()) && !m_settings_ids.filament[extruder_id].empty()) {
                         std::string txt = _u8L("Filament");
                         txt += (m_viewer.get_used_extruders_count() == 1) ? ":" : " " + std::to_string(extruder_id + 1);
-                        add_strings_row_to_table(txt, ImGuiWrapper::COL_ORANGE_LIGHT,
-                            trim_text_if_needed(m_settings_ids.filament[extruder_id]), ImGuiWrapper::to_ImVec4(ColorRGBA::WHITE()));
+                        add_strings_row_to_table(txt, ImGuiPureWrap::COL_ORANGE_LIGHT,
+                            trim_text_if_needed(m_settings_ids.filament[extruder_id]), ImGuiPSWrap::to_ImVec4(ColorRGBA::WHITE()));
                     }
                 }
             }
@@ -2707,7 +2707,7 @@ void GCodeViewer::render_legend(float& legend_height)
         const auto custom_it = std::find(roles.begin(), roles.end(), libvgcode::EGCodeExtrusionRole::Custom);
         if (custom_it != roles.end()) {
             const bool custom_visible = m_viewer.is_extrusion_role_visible((libvgcode::EGCodeExtrusionRole)GCodeExtrusionRole::Custom);
-            const wxString btn_text = custom_visible ? _L("Hide Custom G-code") : _L("Show Custom G-code");
+            const std::string btn_text = custom_visible ? _u8L("Hide Custom G-code") : _u8L("Show Custom G-code");
             ImGui::Separator();
             if (imgui.button(btn_text, ImVec2(-1.0f, 0.0f), true))
                 toggle_extrusion_role_visibility(libvgcode::EGCodeExtrusionRole::Custom);
@@ -2741,23 +2741,23 @@ void GCodeViewer::render_legend(float& legend_height)
             }
         }
 
-        imgui.title(time_title + ":");
+        ImGuiPureWrap::title(time_title + ":");
 
         if (ImGui::BeginTable("Times", 2)) {
             const std::vector<float> layers_times = get_layers_times();
             if (!layers_times.empty())
-                add_strings_row_to_table(_u8L("First layer") + ":", ImGuiWrapper::COL_ORANGE_LIGHT,
-                    short_time_ui(get_time_dhms(layers_times.front())), ImGuiWrapper::to_ImVec4(ColorRGBA::WHITE()));
+                add_strings_row_to_table(_u8L("First layer") + ":", ImGuiPureWrap::COL_ORANGE_LIGHT,
+                    short_time_ui(get_time_dhms(layers_times.front())), ImGuiPSWrap::to_ImVec4(ColorRGBA::WHITE()));
 
-            add_strings_row_to_table(_u8L("Total") + ":", ImGuiWrapper::COL_ORANGE_LIGHT,
-                short_time_ui(get_time_dhms(time_mode.time)), ImGuiWrapper::to_ImVec4(ColorRGBA::WHITE()));
+            add_strings_row_to_table(_u8L("Total") + ":", ImGuiPureWrap::COL_ORANGE_LIGHT,
+                short_time_ui(get_time_dhms(time_mode.time)), ImGuiPSWrap::to_ImVec4(ColorRGBA::WHITE()));
 
             ImGui::EndTable();
         }
 
-        auto show_mode_button = [this, &imgui, can_show_mode_button](const wxString& label, libvgcode::ETimeMode mode) {
+        auto show_mode_button = [this, &imgui, can_show_mode_button](const std::string& label, libvgcode::ETimeMode mode) {
             if (can_show_mode_button(mode)) {
-                if (imgui.button(label)) {
+                if (ImGuiPureWrap::button(label)) {
                     m_viewer.set_time_mode(mode);
                     imgui.set_requires_extra_frame();
                 }
@@ -2766,11 +2766,11 @@ void GCodeViewer::render_legend(float& legend_height)
 
         switch (time_mode_id) {
         case libvgcode::ETimeMode::Normal: {
-            show_mode_button(_L("Show stealth mode"), libvgcode::ETimeMode::Stealth);
+            show_mode_button(_u8L("Show stealth mode"), libvgcode::ETimeMode::Stealth);
             break;
         }
         case libvgcode::ETimeMode::Stealth: {
-            show_mode_button(_L("Show normal mode"), libvgcode::ETimeMode::Normal);
+            show_mode_button(_u8L("Show normal mode"), libvgcode::ETimeMode::Normal);
             break;
         }
         default : { assert(false); break; }
@@ -2793,7 +2793,7 @@ void GCodeViewer::render_legend(float& legend_height)
         }
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
-        if (imgui.draw_radio_button(name, 1.5f * icon_size, active, draw_callback)) {
+        if (ImGuiPureWrap::draw_radio_button(name, 1.5f * icon_size, active, draw_callback)) {
             // check whether we need to keep the current visible range
             libvgcode::Interval view_visible_range = m_viewer.get_view_visible_range();
             const libvgcode::Interval view_enabled_range = m_viewer.get_view_enabled_range();
@@ -2826,9 +2826,9 @@ void GCodeViewer::render_legend(float& legend_height)
         }
 
         if (ImGui::IsItemHovered()) {
-            ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGuiWrapper::COL_WINDOW_BACKGROUND);
+            ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGuiPureWrap::COL_WINDOW_BACKGROUND);
             ImGui::BeginTooltip();
-            imgui.text(name);
+            ImGuiPureWrap::text(name);
             ImGui::EndTooltip();
             ImGui::PopStyleColor();
         }
@@ -2897,7 +2897,7 @@ void GCodeViewer::render_legend(float& legend_height)
 
     legend_height = ImGui::GetWindowHeight();
 
-    imgui.end();
+    ImGuiPureWrap::end();
     ImGui::PopStyleVar();
 }
 

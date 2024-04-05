@@ -635,7 +635,7 @@ GLGizmoRotate3D::RotoptimzeWindow::RotoptimzeWindow(ImGuiWrapper *   imgui,
                                                     const Alignment &alignment)
     : m_imgui{imgui}
 {
-    imgui->begin(_L("Optimize orientation"), ImGuiWindowFlags_NoMove |
+    ImGuiPureWrap::begin(_u8L("Optimize orientation"), ImGuiWindowFlags_NoMove |
                                      ImGuiWindowFlags_AlwaysAutoResize |
                                      ImGuiWindowFlags_NoCollapse);
 
@@ -682,7 +682,7 @@ GLGizmoRotate3D::RotoptimzeWindow::RotoptimzeWindow(ImGuiWrapper *   imgui,
 
     ImGui::Separator();
 
-    auto btn_txt = _L("Apply");
+    auto btn_txt = _u8L("Apply");
     auto btn_txt_sz = ImGui::CalcTextSize(btn_txt.c_str());
     ImVec2 button_sz = {btn_txt_sz.x + padding.x, btn_txt_sz.y + padding.y};
     ImGui::SetCursorPosX(padding.x + sz.x - button_sz.x);
@@ -690,7 +690,7 @@ GLGizmoRotate3D::RotoptimzeWindow::RotoptimzeWindow(ImGuiWrapper *   imgui,
     if (!wxGetApp().plater()->get_ui_job_worker().is_idle())
         imgui->disabled_begin(true);
 
-    if ( imgui->button(btn_txt) ) {
+    if ( ImGuiPureWrap::button(btn_txt) ) {
         replace_job(wxGetApp().plater()->get_ui_job_worker(),
                     std::make_unique<RotoptimizeJob>());
     }
@@ -700,7 +700,7 @@ GLGizmoRotate3D::RotoptimzeWindow::RotoptimzeWindow(ImGuiWrapper *   imgui,
 
 GLGizmoRotate3D::RotoptimzeWindow::~RotoptimzeWindow()
 {
-    m_imgui->end();
+    ImGuiPureWrap::end();
 }
 
 } // namespace GUI
