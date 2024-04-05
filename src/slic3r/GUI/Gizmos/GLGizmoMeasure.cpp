@@ -1842,7 +1842,7 @@ void GLGizmoMeasure::on_render_input_window(float x, float y, float bottom_limit
     if (ImGui::BeginTable("Commands", 2)) {
         unsigned int row_count = 1;
         add_row_to_table(
-            [this]() {
+            []() {
                 ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, _u8L("Left mouse button"));
             },
             [this]() {
@@ -1978,7 +1978,7 @@ void GLGizmoMeasure::on_render_input_window(float x, float y, float bottom_limit
 
         if (m_selected_features.first.feature.has_value() || m_selected_features.second.feature.has_value()) {
           add_row_to_table(
-            [this]() {
+            []() {
                 ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Esc");
             },
             [this]() {

@@ -1874,7 +1874,6 @@ void GLCanvas3D::render()
     _render_overlays();
 
     if (wxGetApp().plater()->is_render_statistic_dialog_visible()) {
-        ImGuiWrapper& imgui = *wxGetApp().imgui();
         ImGuiPureWrap::begin(std::string("Render statistics"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
         ImGuiPureWrap::text("FPS (SwapBuffers() calls per second):");
         ImGui::SameLine();
@@ -4561,8 +4560,6 @@ static bool string_getter(const bool is_undo, int idx, const char** out_text)
 bool GLCanvas3D::_render_undo_redo_stack(const bool is_undo, float pos_x)
 {
     bool action_taken = false;
-
-    ImGuiWrapper* imgui = wxGetApp().imgui();
 
     ImGuiPureWrap::set_next_window_pos(pos_x, m_undoredo_toolbar.get_height(), ImGuiCond_Always, 0.5f, 0.0f);
     std::string title = is_undo ? _u8L("Undo History") : _u8L("Redo History");

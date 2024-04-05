@@ -633,7 +633,6 @@ void GLGizmoRotate3D::on_unregister_raycasters_for_picking()
 GLGizmoRotate3D::RotoptimzeWindow::RotoptimzeWindow(ImGuiWrapper *   imgui,
                                                     State &          state,
                                                     const Alignment &alignment)
-    : m_imgui{imgui}
 {
     ImGuiPureWrap::begin(_u8L("Optimize orientation"), ImGuiWindowFlags_NoMove |
                                      ImGuiWindowFlags_AlwaysAutoResize |

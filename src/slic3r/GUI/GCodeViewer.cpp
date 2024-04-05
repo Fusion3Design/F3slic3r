@@ -328,7 +328,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
         }
 
         if (properties_shown) {
-            auto append_table_row = [&imgui](const std::string& label, std::function<void(void)> value_callback) {
+            auto append_table_row = [](const std::string& label, std::function<void(void)> value_callback) {
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
                 ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, label);
@@ -340,13 +340,13 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
             if (ImGui::BeginTable("Properties", 2)) {
                 char buff[1024];
 
-                append_table_row(_u8L("Type"), [&imgui, &vertex]() {
+                append_table_row(_u8L("Type"), [&vertex]() {
                     std::string text = _u8L(to_string(vertex.type));
                     if (vertex.is_extrusion())
                         text += " (" + _u8L(to_string(vertex.role)) + ")";
                     ImGuiPureWrap::text(text);
                 });
-                append_table_row(_u8L("Width") + " (" + _u8L("mm") + ")", [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Width") + " (" + _u8L("mm") + ")", [&vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
                         sprintf(buff, "%.3f", vertex.width);
@@ -356,7 +356,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                         text = _u8L("N/A");
                     ImGuiPureWrap::text(text);
                 });
-                append_table_row(_u8L("Height") + " (" + _u8L("mm") + ")", [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Height") + " (" + _u8L("mm") + ")", [&vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
                         sprintf(buff, "%.3f", vertex.height);
@@ -366,13 +366,13 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                         text = _u8L("N/A");
                     ImGuiPureWrap::text(text);
                 });
-                append_table_row(_u8L("Layer"), [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Layer"), [&vertex, &buff]() {
                     sprintf(buff, "%d", vertex.layer_id + 1);
                     const std::string text = std::string(buff);
                     ImGuiPureWrap::text(text);
                 });
 #if !ENABLE_ACTUAL_SPEED_DEBUG
-                append_table_row(_u8L("Speed") + " (" + _u8L("mm/s") + ")", [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Speed") + " (" + _u8L("mm/s") + ")", [&vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
                         sprintf(buff, "%.1f", vertex.feedrate);
@@ -382,7 +382,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                         text = _u8L("N/A");
                     ImGuiPureWrap::text(text);
                 });
-                append_table_row(_u8L("Actual speed") + " (" + _u8L("mm/s") + ")", [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Actual speed") + " (" + _u8L("mm/s") + ")", [&vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
                         sprintf(buff, "%.1f", vertex.actual_feedrate);
@@ -393,7 +393,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                     ImGuiPureWrap::text(text);
                 });
 #endif // !ENABLE_ACTUAL_SPEED_DEBUG
-                append_table_row(_u8L("Fan speed") + " (" + _u8L("%") + ")", [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Fan speed") + " (" + _u8L("%") + ")", [&vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
                         sprintf(buff, "%.0f", vertex.fan_speed);
@@ -403,11 +403,11 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                         text = _u8L("N/A");
                     ImGuiPureWrap::text(text);
                 });
-                append_table_row(_u8L("Temperature") + " (" + _u8L("°C") + ")", [&imgui, &vertex, &buff]() {
+                append_table_row(_u8L("Temperature") + " (" + _u8L("°C") + ")", [&vertex, &buff]() {
                     sprintf(buff, "%.0f", vertex.temperature);
                     ImGuiPureWrap::text(std::string(buff));
                 });
-                append_table_row(_u8L("Time"), [viewer, &imgui, &vertex, &buff, vertex_id]() {
+                append_table_row(_u8L("Time"), [viewer, &vertex, &buff, vertex_id]() {
                     const float estimated_time = viewer->get_estimated_time_at(vertex_id);
                     sprintf(buff, "%s (%.3fs)", get_time_dhms(estimated_time).c_str(), vertex.times[static_cast<size_t>(viewer->get_time_mode())]);
                     const std::string text = std::string(buff);
@@ -721,7 +721,7 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, s
 
     ImGuiWrapper& imgui = *wxGetApp().imgui();
 
-    auto add_item_to_line = [&imgui](const std::string& txt, const ImVec4& color, float spacing, size_t& current_length) {
+    auto add_item_to_line = [](const std::string& txt, const ImVec4& color, float spacing, size_t& current_length) {
         static const size_t LENGTH_THRESHOLD = 60;
 
         if (txt.empty())
@@ -2085,7 +2085,7 @@ void GCodeViewer::render_legend(float& legend_height)
         }
     };
 
-    auto append_headers = [&imgui](const std::array<std::string, 5>& texts, const std::array<float, 4>& offsets) {
+    auto append_headers = [](const std::array<std::string, 5>& texts, const std::array<float, 4>& offsets) {
         size_t i = 0;
         for (; i < offsets.size(); i++) {
             ImGuiPureWrap::text(texts[i]);
@@ -2537,7 +2537,7 @@ void GCodeViewer::render_legend(float& legend_height)
             return items;
         };
 
-        auto append_color_change = [&imgui](const ColorRGBA& color1, const ColorRGBA& color2, const std::array<float, 4>& offsets, const Times& times) {
+        auto append_color_change = [](const ColorRGBA& color1, const ColorRGBA& color2, const std::array<float, 4>& offsets, const Times& times) {
             ImGuiPureWrap::text(_u8L("Color change"));
             ImGui::SameLine();
 
@@ -2556,7 +2556,7 @@ void GCodeViewer::render_legend(float& legend_height)
             ImGuiPureWrap::text(short_time_ui(get_time_dhms(times.second - times.first)));
         };
 
-        auto append_print = [&imgui, imperial_units](const ColorRGBA& color, const std::array<float, 4>& offsets, const Times& times, std::pair<double, double> used_filament) {
+        auto append_print = [imperial_units](const ColorRGBA& color, const std::array<float, 4>& offsets, const Times& times, std::pair<double, double> used_filament) {
             ImGuiPureWrap::text(_u8L("Print"));
             ImGui::SameLine();
 
@@ -2644,7 +2644,7 @@ void GCodeViewer::render_legend(float& legend_height)
         }
     }
 
-    auto add_strings_row_to_table = [&imgui](const std::string& col_1, const ImVec4& col_1_color, const std::string& col_2, const ImVec4& col_2_color) {
+    auto add_strings_row_to_table = [](const std::string& col_1, const ImVec4& col_1_color, const std::string& col_2, const ImVec4& col_2_color) {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
         ImGuiPureWrap::text_colored(col_1_color, col_1.c_str());
@@ -2778,7 +2778,7 @@ void GCodeViewer::render_legend(float& legend_height)
     }
 
     // toolbar section
-    auto toggle_button = [this, &imgui, icon_size](Preview::OptionType type, const std::string& name,
+    auto toggle_button = [this, icon_size](Preview::OptionType type, const std::string& name,
         std::function<void(ImGuiWindow& window, const ImVec2& pos, float size)> draw_callback) {
         bool active = false;
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS

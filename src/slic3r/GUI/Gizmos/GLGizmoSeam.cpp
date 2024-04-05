@@ -113,7 +113,7 @@ void GLGizmoSeam::on_render_input_window(float x, float y, float bottom_limit)
     window_width = std::max(window_width, button_width);
     window_width = std::max(window_width, cursor_type_radio_left + cursor_type_radio_sphere + cursor_type_radio_circle);
 
-    auto draw_text_with_caption = [this, &caption_max](const std::string& caption, const std::string& text) {
+    auto draw_text_with_caption = [&caption_max](const std::string& caption, const std::string& text) {
         ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, caption);
         ImGui::SameLine(caption_max);
         ImGuiPureWrap::text(text);

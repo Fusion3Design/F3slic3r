@@ -470,32 +470,6 @@ bool ImGuiWrapper::slider_float(const wxString& label, float* v, float v_min, fl
     return this->slider_float(label_utf8.c_str(), v, v_min, v_max, format, power, clamp, tooltip, show_edit_btn);
 }
 
-static bool image_button_ex(ImGuiID id, ImTextureID texture_id, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec2& padding, const ImVec4& bg_col, const ImVec4& tint_col, ImGuiButtonFlags flags)
-{
-    ImGuiContext& g = *GImGui;
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
-    if (window->SkipItems)
-        return false;
-
-    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size + padding * 2);
-    ImGui::ItemSize(bb);
-    if (!ImGui::ItemAdd(bb, id))
-        return false;
-
-    bool hovered, held;
-    bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held, flags);
-
-    // Render
-    const ImU32 col = ImGui::GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
-    ImGui::RenderNavHighlight(bb, id);
-    ImGui::RenderFrame(bb.Min, bb.Max, col, true, ImClamp((float)ImMin(padding.x, padding.y), 0.0f, g.Style.FrameRounding));
-    if (bg_col.w > 0.0f)
-        window->DrawList->AddRectFilled(bb.Min + padding, bb.Max - padding, ImGui::GetColorU32(bg_col));
-    window->DrawList->AddImage(texture_id, bb.Min + padding, bb.Max - padding, uv0, uv1, ImGui::GetColorU32(tint_col));
-
-    return pressed;
-}
-
 bool ImGuiWrapper::image_button(const wchar_t icon, const std::string& tooltip)
 {
     const ImGuiIO& io = ImGui::GetIO();
@@ -821,7 +795,7 @@ void ImGuiWrapper::search_list(const ImVec2& size_, bool (*items_getter)(int, co
 
     ImGui::ListBoxFooter();
 
-    auto check_box = [&edited, this](const std::string& label, bool& check) {
+    auto check_box = [&edited](const std::string& label, bool& check) {
         ImGui::SameLine();
         bool ch = check;
         ImGuiPureWrap::checkbox(label, ch);
