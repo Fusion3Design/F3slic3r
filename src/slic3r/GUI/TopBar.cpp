@@ -332,7 +332,9 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     m_menu_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
         m_menu_btn->set_selected(true);
         wxPoint pos = m_menu_btn->GetPosition();
-        wxGetApp().plater()->PopupMenu(&m_main_menu, pos);
+        // !!! To popup main menu use native wxPanel::PopupMenu() function
+        // Don't use wrap function Plater::PopupMenu(), because it's no need in this case
+        wxGetApp().plater()->wxPanel::PopupMenu(&m_main_menu, pos);
     });
     m_main_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_menu_btn->set_selected(false); });
 #endif
