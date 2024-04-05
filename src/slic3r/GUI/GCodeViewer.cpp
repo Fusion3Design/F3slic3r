@@ -1153,31 +1153,31 @@ void GCodeViewer::render()
         ImGuiPureWrap::set_next_window_pos(static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 1.0f, 1.0f);
         ImGuiPureWrap::begin(std::string("LibVGCode Viewer Controller"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
 
-        imgui.checkbox("Cog marker fixed screen size", m_cog_marker_fixed_screen_size);
+        ImGuiPureWrap::checkbox("Cog marker fixed screen size", m_cog_marker_fixed_screen_size);
         if (ImGui::BeginTable("Cog", 2)) {
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            ImGuiPureWrap::text_colored(Slic3r::GUI::ImGuiPureWrap::COL_ORANGE_LIGHT, "Cog marker size");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Cog marker size");
             ImGui::TableSetColumnIndex(1);
             imgui.slider_float("##CogSize", &m_cog_marker_size, 1.0f, 5.0f);
 
             ImGui::EndTable();
         }
 
-        imgui.checkbox("Tool marker fixed screen size", m_tool_marker_fixed_screen_size);
+        ImGuiPureWrap::checkbox("Tool marker fixed screen size", m_tool_marker_fixed_screen_size);
         if (ImGui::BeginTable("Tool", 2)) {
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            ImGuiPureWrap::text_colored(Slic3r::GUI::ImGuiPureWrap::COL_ORANGE_LIGHT, "Tool marker size");
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, "Tool marker size");
             ImGui::TableSetColumnIndex(1);
             imgui.slider_float("##ToolSize", &m_tool_marker_size, 1.0f, 5.0f);
 
             ImGui::EndTable();
         }
 
-        imgui.end();
+        ImGuiPureWrap::end();
     }
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 }
