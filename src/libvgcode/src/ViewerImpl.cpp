@@ -1764,6 +1764,7 @@ void ViewerImpl::update_color_ranges()
             if (!v.is_custom_gcode() || m_settings.extrusion_roles_visibility.at(EGCodeExtrusionRole::Custom)) {
                 m_width_range.update(round_to_bin(v.width));
                 m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate()));
+                m_actual_volumetric_rate_range.update(round_to_bin(v.actual_volumetric_rate()));
             }
             m_fan_speed_range.update(v.fan_speed);
             m_temperature_range.update(v.temperature);
@@ -1773,7 +1774,6 @@ void ViewerImpl::update_color_ranges()
              v.is_extrusion()) {
             m_speed_range.update(v.feedrate);
             m_actual_speed_range.update(v.actual_feedrate);
-            m_actual_volumetric_rate_range.update(round_to_bin(v.actual_volumetric_rate()));
         }
     }
 
