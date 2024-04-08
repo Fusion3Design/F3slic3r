@@ -5430,7 +5430,7 @@ void TabSLAMaterial::build_tilt_group(Slic3r::GUI::PageShp page)
     create_legend(page, legend_columns, comExpert, true);
 
     auto optgroup = page->new_optgroup(L("Tilt profiles"));
-    optgroup->on_change = [this, optgroup](const t_config_option_key& key, boost::any value)
+    optgroup->m_on_change = [this, optgroup](const t_config_option_key& key, boost::any value)
     {
         if (key.find_first_of("use_tilt") == 0)
             toggle_tilt_options(key == "use_tilt#0");
