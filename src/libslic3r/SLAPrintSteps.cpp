@@ -924,7 +924,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
 
     print_statistics.clear();
 
-    const double area_fill = printer_config.area_fill.getFloat()*0.01;// 0.5 (50%);
+    const double area_fill = /*printer_config*/material_config.area_fill.getFloat()*0.01;// 0.5 (50%);
     const double fast_tilt = printer_config.fast_tilt_time.getFloat();// 5.0;
     const double slow_tilt = printer_config.slow_tilt_time.getFloat();// 8.0;
     const double hv_tilt   = printer_config.high_viscosity_tilt_time.getFloat();// 10.0;

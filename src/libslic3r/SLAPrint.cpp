@@ -839,6 +839,24 @@ bool SLAPrint::invalidate_state_by_config_options(const std::vector<t_config_opt
         "elefant_foot_compensation"sv,
         "elefant_foot_min_width"sv,
         "gamma_correction"sv,
+        // tilt params
+        "delay_before_exposure_ms"sv,
+        "delay_after_exposure_ms"sv,
+        "tower_hop_height_nm"sv,
+        "tower_profile"sv,
+        "use_tilt"sv,
+        "tilt_down_initial_profile"sv,
+        "tilt_down_offset_steps"sv,
+        "tilt_down_offset_delay_ms"sv,
+        "tilt_down_finish_profile"sv,
+        "tilt_down_cycles"sv,
+        "tilt_down_delay_ms"sv,
+        "tilt_up_initial_profile"sv,
+        "tilt_up_offset_steps"sv,
+        "tilt_up_offset_delay_ms"sv,
+        "tilt_up_finish_profile"sv,
+        "tilt_up_cycles"sv,
+        "tilt_up_delay_ms"sv,
     };
 
     // Cache the plenty of parameters, which influence the final rasterization only,
@@ -887,6 +905,7 @@ bool SLAPrint::invalidate_state_by_config_options(const std::vector<t_config_opt
         "material_ow_relative_correction_x"sv,
         "material_ow_relative_correction_y"sv,
         "material_ow_relative_correction_z"sv
+        ,"moves_time_ms"sv
     };
 
     std::vector<SLAPrintStep> steps;

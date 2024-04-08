@@ -578,6 +578,8 @@ public:
     ~TabSLAMaterial() {}
 
 	void		build() override;
+	void		build_tilt_group(Slic3r::GUI::PageShp page);
+	void		toggle_tilt_options(bool is_above);
 	void		toggle_options() override;
 	void		update() override;
 	bool 		supports_printer_technology(const PrinterTechnology tech) const override { return tech == ptSLA; }
