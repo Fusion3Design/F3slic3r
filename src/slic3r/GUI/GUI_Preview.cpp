@@ -328,14 +328,14 @@ void Preview::render_sliders(GLCanvas3D& canvas)
         m_moves_slider->Render(canvas_width, canvas_height, extra_scale);
 }
 
-float Preview::get_moves_slider_height()
+float Preview::get_moves_slider_height() const
 {
     if (m_moves_slider && m_moves_slider->IsShown())
         return m_moves_slider->GetHeight();
     return 0.0f;
 }
 
-float Preview::get_layers_slider_width()
+float Preview::get_layers_slider_width() const
 {
     if (m_layers_slider && m_layers_slider->IsShown())
         return m_layers_slider->GetWidth();
@@ -629,7 +629,7 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
     bool sequential_print = wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_bool("complete_objects");
     m_layers_slider->SetDrawMode(sla_print_technology, sequential_print);
     if (sla_print_technology)
-        m_layers_slider->SetLayersTimes(plater->sla_print().print_statistics().layers_times);
+        m_layers_slider->SetLayersTimes(plater->sla_print().print_statistics().layers_times_running_total);
     else
         m_layers_slider->SetLayersTimes(m_canvas->get_gcode_layers_times_cache(), m_gcode_result->print_statistics.modes.front().time);
 
@@ -1037,6 +1037,7 @@ void Preview::on_layers_slider_scroll_changed()
         else if (tech == ptSLA) {
             m_canvas->set_clipping_plane(0, ClippingPlane(Vec3d::UnitZ(), -m_layers_slider->GetLowerValue()));
             m_canvas->set_clipping_plane(1, ClippingPlane(-Vec3d::UnitZ(), m_layers_slider->GetHigherValue()));
+            m_canvas->set_layer_slider_index(m_layers_slider->GetHigherPos());
             m_canvas->render();
         }
     }

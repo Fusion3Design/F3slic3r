@@ -942,8 +942,10 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     double models_volume(0.0);
 
     double estim_time(0.0);
-    std::vector<double> layers_times;
+    std::vector<std::pair<coord_t, double>> layers_times; // level and time
+    std::vector<std::pair<coord_t, double>> layers_areas; // level and area
     layers_times.reserve(printer_input.size());
+    layers_areas.reserve(printer_input.size());
 
     size_t slow_layers = 0;
     size_t fast_layers = 0;
@@ -961,7 +963,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
 
             // write vars
             &mutex, &models_volume, &supports_volume, &estim_time, &slow_layers,
-            &fast_layers, &fade_layer_time, &layers_times](size_t sliced_layer_cnt)
+            &fast_layers, &fade_layer_time, &layers_times, &layers_areas](size_t sliced_layer_cnt)
     {
         PrintLayer &layer = m_print->m_printer_input[sliced_layer_cnt];
 
@@ -1029,6 +1031,8 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
             Lock lck(mutex); supports_volume += layer_support_area * l_height;
         }
 
+        double layer_area = layer_model_area + layer_support_area;
+
         // Here we can save the expensively calculated polygons for printing
         ExPolygons trslices;
         trslices.reserve(model_polygons.size() + supports_polygons.size());
@@ -1039,7 +1043,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
 
         // Calculation of the slow and fast layers to the future controlling those values on FW
 
-        const bool is_fast_layer = (layer_model_area + layer_support_area) <= display_area*area_fill;
+        const bool is_fast_layer = layer_area <= display_area*area_fill;
         const double tilt_time = material_config.material_print_speed == slamsSlow              ? slow_tilt :
                                  material_config.material_print_speed == slamsHighViscosity     ? hv_tilt   :
                                  is_fast_layer ? fast_tilt : slow_tilt;
@@ -1082,13 +1086,14 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
                 + 120 / 1000  // Magical constant to compensate remaining computation delay in exposure thread
             );
 
-            layers_times.push_back(layer_times);
+            layers_times.emplace_back(layer.level(), layer_times);
             estim_time += layer_times;
+            layers_areas.emplace_back(layer.level(), layer_area * SCALING_FACTOR * SCALING_FACTOR);
         }
     };
 
     // sequential version for debugging:
-    // for(size_t i = 0; i < m_printer_input.size(); ++i) printlayerfn(i);
+    // for(size_t i = 0; i < printer_input.size(); ++i) printlayerfn(i);
     execution::for_each(ex_tbb, size_t(0), printer_input.size(), printlayerfn,
                         execution::max_concurrency(ex_tbb));
 
@@ -1102,7 +1107,17 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
         print_statistics.estimated_print_time = NaNd;
     else {
         print_statistics.estimated_print_time = estim_time;
-        print_statistics.layers_times = layers_times;
+
+        // Times and areas vectors were filled in parallel, they need to be sorted first.
+        // The print statistics will contain only the values (in the correct order).
+        std::sort(layers_times.begin(), layers_times.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+        std::sort(layers_areas.begin(), layers_areas.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+        print_statistics.layers_times_running_total.clear();
+        for (size_t i=0; i<layers_times.size(); ++i)
+            print_statistics.layers_times_running_total.emplace_back(layers_times[i].second + (i==0 ? 0. : print_statistics.layers_times_running_total[i-1]));
+        print_statistics.layers_areas.clear();
+        for (const auto& [level, area] : layers_areas)
+            print_statistics.layers_areas.emplace_back(area);
     }
 
     print_statistics.fast_layers_count = fast_layers;
