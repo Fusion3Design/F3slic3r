@@ -887,7 +887,7 @@ void MainFrame::add_printer_webview_tab(const wxString& url)
     }
     m_printer_webview_added = true;
     // add as the last (rightmost) panel
-    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_printer_webview, L"Physical Printer", "", false);
+    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_printer_webview, _L("Physical Printer"), "", false);
     m_printer_webview->set_default_url(url);
     m_printer_webview->load_default_url_delayed();
 }
@@ -1187,8 +1187,10 @@ void MainFrame::on_sys_color_changed()
     for (auto tab : wxGetApp().tabs_list)
         tab->sys_color_changed();
 
-    m_connect_webview->sys_color_changed();
-    m_printer_webview->sys_color_changed();
+    if (m_connect_webview)
+        m_connect_webview->sys_color_changed();
+    if (m_printer_webview)
+        m_printer_webview->sys_color_changed();
 
     MenuFactory::sys_color_changed(m_menubar);
 
@@ -1749,7 +1751,7 @@ void MainFrame::init_menubar_as_gcodeviewer()
     m_menubar->Append(fileMenu, _L("&File"));
     if (viewMenu != nullptr) m_menubar->Append(viewMenu, _L("&View"));
     // Add additional menus from C++
-//    wxGetApp().add_config_menu(m_menubar);
+    m_menubar->Append(wxGetApp().get_config_menu(), _L("&Configuration"));
     m_menubar->Append(helpMenu, _L("&Help"));
     SetMenuBar(m_menubar);
 

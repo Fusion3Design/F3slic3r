@@ -493,7 +493,9 @@ void TopBarItemsCtrl::RemovePage(size_t n)
     ScalableButton* btn = m_pageButtons[n];
     m_pageButtons.erase(m_pageButtons.begin() + n);
     m_buttons_sizer->Remove(n);
-    btn->Reparent(nullptr);
+
+    // Under OSX call of btn->Reparent(nullptr) causes a crash, so as a workaround use RemoveChild() instead
+    this->RemoveChild(btn);
     btn->Destroy();
     m_sizer->Layout();
 }
