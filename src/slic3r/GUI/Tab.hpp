@@ -575,6 +575,8 @@ public:
     ~TabSLAMaterial() {}
 
 	void		build() override;
+	void		build_tilt_group(Slic3r::GUI::PageShp page);
+	void		toggle_tilt_options(bool is_above);
 	void		toggle_options() override;
 	void		update() override;
 	void        msw_rescale() override;

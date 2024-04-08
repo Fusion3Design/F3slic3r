@@ -171,6 +171,20 @@ enum class GCodeThumbnailsFormat {
     PNG, JPG, QOI
 };
 
+enum TiltProfiles : int {
+    tpHomingFast, 
+    tpHomingSlow,
+    tpMoveFast, 
+    tpMoveSlow, 
+    tpLayer, 
+    tpLayerMove, 
+    tpSuperSlow, 
+    tpResinSensor,
+    tpLayerMoveSlow, 
+    tpLayerRelease, 
+    tpLayerMoveFast,
+};
+
 #define CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NAME) \
     template<> const t_config_enum_names& ConfigOptionEnum<NAME>::get_enum_names(); \
     template<> const t_config_enum_values& ConfigOptionEnum<NAME>::get_enum_values();
@@ -226,6 +240,7 @@ private:
     void init_fff_params();
     void init_extruder_option_keys();
     void init_sla_params();
+    void init_sla_tilt_params();
     void init_sla_support_params(const std::string &method_prefix);
 
     std::vector<std::string>    m_extruder_option_keys;
@@ -304,6 +319,9 @@ public:
     void                handle_legacy_composite() override
         { PrintConfigDef::handle_legacy_composite(*this); }
 };
+
+// This vector containes list of parameters for preview of tilt profiles
+const std::vector<std::string>& tilt_options();
 
 void handle_legacy_sla(DynamicPrintConfig &config);
 
@@ -1148,11 +1166,31 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloatNullable,               material_ow_support_head_width))
     ((ConfigOptionFloatNullable,               material_ow_branchingsupport_head_width))
     ((ConfigOptionIntNullable,                 material_ow_support_points_density_relative))
-
     ((ConfigOptionFloatNullable,               material_ow_elefant_foot_compensation))
     ((ConfigOptionFloatNullable,               material_ow_relative_correction_x))
     ((ConfigOptionFloatNullable,               material_ow_relative_correction_y))
     ((ConfigOptionFloatNullable,               material_ow_relative_correction_z))
+    ((ConfigOptionFloat,                       area_fill))
+
+    //tilt params
+    ((ConfigOptionFloats,                      delay_before_exposure_ms))
+    ((ConfigOptionFloats,                      delay_after_exposure_ms))
+    ((ConfigOptionInts,                        tower_hop_height_nm))
+    ((ConfigOptionEnums<TiltProfiles>,         tower_profile))
+    ((ConfigOptionBools,                       use_tilt))
+    ((ConfigOptionEnums<TiltProfiles>,         tilt_down_initial_profile))
+    ((ConfigOptionInts,                        tilt_down_offset_steps))
+    ((ConfigOptionFloats,                      tilt_down_offset_delay_ms))
+    ((ConfigOptionEnums<TiltProfiles>,         tilt_down_finish_profile))
+    ((ConfigOptionInts,                        tilt_down_cycles))
+    ((ConfigOptionFloats,                      tilt_down_delay_ms))
+    ((ConfigOptionEnums<TiltProfiles>,         tilt_up_initial_profile))
+    ((ConfigOptionInts,                        tilt_up_offset_steps))
+    ((ConfigOptionFloats,                      tilt_up_offset_delay_ms))
+    ((ConfigOptionEnums<TiltProfiles>,         tilt_up_finish_profile))
+    ((ConfigOptionInts,                        tilt_up_cycles))
+    ((ConfigOptionFloats,                      tilt_up_delay_ms))
+    ((ConfigOptionFloats,                      moves_time_ms))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
@@ -1179,7 +1217,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloat,                      fast_tilt_time))
     ((ConfigOptionFloat,                      slow_tilt_time))
     ((ConfigOptionFloat,                      high_viscosity_tilt_time))
-    ((ConfigOptionFloat,                      area_fill))
+//    ((ConfigOptionFloat,                      area_fill))
     ((ConfigOptionFloat,                      min_exposure_time))
     ((ConfigOptionFloat,                      max_exposure_time))
     ((ConfigOptionFloat,                      min_initial_exposure_time))
