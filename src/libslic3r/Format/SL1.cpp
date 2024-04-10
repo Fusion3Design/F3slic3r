@@ -76,7 +76,8 @@ std::string to_json(const SLAPrint& print, const ConfMap &m)
     pt::ptree below_node;
     pt::ptree above_node;
 
-    const t_config_enum_names& enum_names = ConfigOptionEnum<TiltProfiles>::get_enum_names();
+    const t_config_enum_names& tilt_enum_names  = ConfigOptionEnum<TiltProfiles>::get_enum_names();
+    const t_config_enum_names& tower_enum_names = ConfigOptionEnum<TowerProfiles>::get_enum_names();
 
     for (const std::string& opt_key : tilt_options()) {
         const ConfigOption* opt = cfg.option(opt_key);
@@ -104,6 +105,7 @@ std::string to_json(const SLAPrint& print, const ConfMap &m)
         }
         break;
         case coEnums: {
+            const t_config_enum_names& enum_names = opt_key == "tower_profile" ? tower_enum_names : tilt_enum_names;
             auto values = static_cast<const ConfigOptionEnums<TiltProfiles>*>(opt);
             below_node.put(opt_key, enum_names[values->get_at(0)]);
             above_node.put(opt_key, enum_names[values->get_at(1)]);

@@ -5367,11 +5367,11 @@ static void append_tilt_options_line(ConfigOptionsGroupShp optgroup, const std::
 {
     auto option = optgroup->get_option(opt_key, 0);
     auto line = Line{ option.opt.full_label, "" };
-    option.opt.width = Field::def_width_wider();
+    option.opt.width = Field::def_width/*_wider*/();
     line.append_option(option);
 
     option = optgroup->get_option(opt_key, 1);
-    option.opt.width = Field::def_width_wider();
+    option.opt.width = Field::def_width/*_wider*/();
     line.append_option(option);
 
     optgroup->append_line(line);
@@ -5384,7 +5384,7 @@ void TabSLAMaterial::build_tilt_group(Slic3r::GUI::PageShp page)
         {L("Below"), L("Values in this column are for ???")},
         {L("Above"), L("Values in this column are for ???")},
     };
-    create_legend(page, legend_columns, comExpert, true);
+    create_legend(page, legend_columns, comExpert/*, true*/);
 
     auto optgroup = page->new_optgroup(L("Tilt profiles"));
     optgroup->on_change = [this, optgroup](const t_config_option_key& key, boost::any value)
@@ -5443,7 +5443,6 @@ std::vector<std::string> disable_tilt_options = {
         ,"tilt_up_finish_profile"
         ,"tilt_up_cycles"
         ,"tilt_up_delay_ms"
-        ,"moves_time_ms"
 };
 
 void TabSLAMaterial::toggle_tilt_options(bool is_above)

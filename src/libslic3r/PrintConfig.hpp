@@ -171,18 +171,35 @@ enum class GCodeThumbnailsFormat {
     PNG, JPG, QOI
 };
 
+enum TowerProfiles : int {
+    tpLayer1,
+    tpLayer2,
+    tpLayer3,
+    tpLayer4,
+    tpLayer5,
+    tpLayer8,
+    tpLayer11,
+    tpLayer14,
+    tpLayer18, 
+    tpLayer22,
+    tpLayer24,
+};
+
 enum TiltProfiles : int {
-    tpHomingFast, 
-    tpHomingSlow,
-    tpMoveFast, 
-    tpMoveSlow, 
-    tpLayer, 
-    tpLayerMove, 
-    tpSuperSlow, 
-    tpResinSensor,
-    tpLayerMoveSlow, 
-    tpLayerRelease, 
-    tpLayerMoveFast,
+    tpMove120,
+    tpLayer200,
+    tpMove300,
+    tpLayer400,
+    tpLayer600,
+    tpLayer800,
+    tpLayer1000,
+    tpLayer1250,
+    tpLayer1500,
+    tpLayer1750,
+    tpLayer2000,
+    tpLayer2250,
+    tpMove5120,
+    tpMove8000,
 };
 
 #define CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NAME) \
@@ -1176,7 +1193,7 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloats,                      delay_before_exposure_ms))
     ((ConfigOptionFloats,                      delay_after_exposure_ms))
     ((ConfigOptionInts,                        tower_hop_height_nm))
-    ((ConfigOptionEnums<TiltProfiles>,         tower_profile))
+    ((ConfigOptionEnums<TowerProfiles>,        tower_profile))
     ((ConfigOptionBools,                       use_tilt))
     ((ConfigOptionEnums<TiltProfiles>,         tilt_down_initial_profile))
     ((ConfigOptionInts,                        tilt_down_offset_steps))
@@ -1190,7 +1207,6 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionEnums<TiltProfiles>,         tilt_up_finish_profile))
     ((ConfigOptionInts,                        tilt_up_cycles))
     ((ConfigOptionFloats,                      tilt_up_delay_ms))
-    ((ConfigOptionFloats,                      moves_time_ms))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
