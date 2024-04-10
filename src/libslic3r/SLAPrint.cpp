@@ -905,7 +905,6 @@ bool SLAPrint::invalidate_state_by_config_options(const std::vector<t_config_opt
         "material_ow_relative_correction_x"sv,
         "material_ow_relative_correction_y"sv,
         "material_ow_relative_correction_z"sv
-        ,"moves_time_ms"sv
     };
 
     std::vector<SLAPrintStep> steps;
