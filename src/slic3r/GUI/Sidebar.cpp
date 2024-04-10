@@ -938,6 +938,14 @@ void Sidebar::update_sliced_info_sizer()
             m_sliced_info->SetTextAndShow(siCost, str_total_cost, "Cost");
 
             wxString t_est = std::isnan(ps.estimated_print_time) ? "N/A" : from_u8(short_time_ui(get_time_dhms(float(ps.estimated_print_time))));
+            // For Prusa SLA printer we add +/- 3% ration for estimated time
+            if (std::string printer_model = wxGetApp().preset_bundle->printers.get_edited_preset().config.opt_string("printer_model");
+                t_est != "N/A" && (printer_model == "SL1" || printer_model == "SL1S" || printer_model == "M1")) {
+                const double ratio = 0.03 * ps.estimated_print_time;
+                const wxString ratio_str = from_u8(short_time_ui(get_time_dhms(float(ratio))));
+                t_est += " +/- " + ratio_str;
+            }
+
             m_sliced_info->SetTextAndShow(siEstimatedTime, t_est, _L("Estimated printing time") + ":");
 
             m_plater->get_notification_manager()->set_slicing_complete_print_time(_u8L("Estimated printing time") + ": " + into_u8(t_est), m_plater->is_sidebar_collapsed());
