@@ -69,31 +69,21 @@ class FakeWebView : public wxWebView
     virtual void DoSetPage(const wxString& html, const wxString& baseUrl) override { }
 };
 
-wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
+wxWebView* WebView::CreateWebView(wxWindow * parent, const wxString& url)
 {
 #if wxUSE_WEBVIEW_EDGE
-    // WebView2Loader.dll in exe folder is enough?
-    /*
-    // Check if a fixed version of edge is present in
-    // $executable_path/edge_fixed and use it
-    wxFileName edgeFixedDir(wxStandardPaths::Get().GetExecutablePath());
-    edgeFixedDir.SetFullName("");
-    edgeFixedDir.AppendDir("edge_fixed");
-    if (edgeFixedDir.DirExists()) {
-        wxWebViewEdge::MSWSetBrowserExecutableDir(edgeFixedDir.GetFullPath());
-        wxLogMessage("Using fixed edge version");
-    }
-    */
+    bool backend_available = wxWebView::IsBackendAvailable(wxWebViewBackendEdge);
+#else
+    bool backend_available = wxWebView::IsBackendAvailable(wxWebViewBackendWebKit);
 #endif
-    wxString correct_url  = url;
-#ifdef __WIN32__
-    correct_url.Replace("\\", "/");
-#endif
-    if (!correct_url.empty()) 
-        correct_url = wxURI(correct_url).BuildURI();
 
-    auto webView = wxWebView::New();
+    wxWebView* webView = nullptr;
+    if (backend_available)
+        webView = wxWebView::New();
+    
     if (webView) {
+        wxString correct_url = url.empty() ? wxString("") : wxURI(url).BuildURI();
+
 #ifdef __WIN32__
         webView->SetUserAgent(wxString::Format("PrusaSlicer/v%s", SLIC3R_VERSION));
         webView->Create(parent, wxID_ANY, correct_url, wxDefaultPosition, wxDefaultSize);
@@ -113,7 +103,7 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
         Slic3r::GUI::wxGetApp().CallAfter([webView] {
 #endif
         if (!webView->AddScriptMessageHandler("_prusaSlicer")) {
-            // TODO: dialog to user
+            // TODO: dialog to user !!!
             //wxLogError("Could not add script message handler");
             BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << "Could not add script message handler";
         }
@@ -122,7 +112,7 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
 #endif
         webView->EnableContextMenu(false);
     } else {
-        // TODO: dialog to user
+        // TODO: dialog to user !!!
         BOOST_LOG_TRIVIAL(error) << "Failed to create wxWebView object. Using Dummy object instead. Webview won't be working.";
         webView = new FakeWebView;
     }

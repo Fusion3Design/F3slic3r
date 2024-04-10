@@ -73,7 +73,7 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
 #endif
 
     // Create the webview
-    m_browser = WebView::CreateWebView(this, /*m_default_url*/ wxString::Format("file://%s/web/connection_failed.html", from_u8(resources_dir())));
+    m_browser = WebView::CreateWebView(this, /*m_default_url*/ GUI::format_wxstr("file://%1%/web/connection_failed.html", boost::filesystem::path(resources_dir()).generic_string()));
     if (m_browser == nullptr) {
         wxLogError("Could not init m_browser");
         return;
@@ -170,7 +170,7 @@ void WebViewPanel::load_default_url_delayed()
 
 void WebViewPanel::load_error_page()
 {
-    load_url(wxString::Format("file://%s/web/connection_failed.html", from_u8(resources_dir())));
+    load_url(GUI::format_wxstr("file://%1%/web/connection_failed.html", boost::filesystem::path(resources_dir()).generic_string()));
 }
 
 void WebViewPanel::on_show(wxShowEvent& evt)
