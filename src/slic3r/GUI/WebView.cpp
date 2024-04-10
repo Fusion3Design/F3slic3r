@@ -2,36 +2,10 @@
 #include "slic3r/GUI/GUI_App.hpp"
 #include "slic3r/Utils/MacDarkMode.hpp"
 
-#include <wx/webviewarchivehandler.h>
-#include <wx/webviewfshandler.h>
-#include <wx/msw/webview_edge.h>
 #include <wx/uri.h>
-#include "wx/private/jsscriptwrapper.h"
 
 #include <boost/log/trivial.hpp>
 
-#ifdef __WIN32__
-#include <WebView2.h>
-#elif defined __linux__
-#include <gtk/gtk.h>
-#define WEBKIT_API
-struct WebKitWebView;
-struct WebKitJavascriptResult;
-extern "C" {
-WEBKIT_API void
-webkit_web_view_run_javascript                       (WebKitWebView             *web_view,
-                                                      const gchar               *script,
-                                                      GCancellable              *cancellable,
-                                                      GAsyncReadyCallback       callback,
-                                                      gpointer                  user_data);
-WEBKIT_API WebKitJavascriptResult *
-webkit_web_view_run_javascript_finish                (WebKitWebView             *web_view,
-                                                      GAsyncResult              *result,
-						      GError                    **error);
-WEBKIT_API void
-webkit_javascript_result_unref              (WebKitJavascriptResult *js_result);
-}
-#endif
 
 class FakeWebView : public wxWebView
 {
@@ -132,35 +106,6 @@ void WebView::LoadUrl(wxWebView * webView, wxString const &url)
 
 bool WebView::run_script(wxWebView *webView, wxString const &javascript)
 {
-    try {
-#ifdef __WIN32__
-        ICoreWebView2 *   webView2 = (ICoreWebView2 *) webView->GetNativeBackend();
-        if (webView2 == nullptr)
-            return false;
-        int               count   = 0;
-        wxJSScriptWrapper wrapJS(javascript, wxJSScriptWrapper::OutputType::JS_OUTPUT_STRING);
-        wxString wrapped_code = wrapJS.GetWrappedCode();
-        return webView2->ExecuteScript(wrapJS.GetWrappedCode(), NULL) == 0;
-#elif defined __WXMAC__
-        WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
-        wxJSScriptWrapper wrapJS(javascript, wxJSScriptWrapper::OutputType::JS_OUTPUT_STRING);
-        Slic3r::GUI::WKWebView_evaluateJavaScript(wkWebView, wrapJS.GetWrappedCode(), nullptr);
-        return true;
-#else
-        WebKitWebView *wkWebView = (WebKitWebView *) webView->GetNativeBackend();
-        webkit_web_view_run_javascript(
-            wkWebView, javascript.utf8_str(), NULL,
-            [](GObject *wkWebView, GAsyncResult *res, void *) {
-                GError * error = NULL;
-                auto result = webkit_web_view_run_javascript_finish((WebKitWebView*)wkWebView, res, &error);
-                if (!result)
-                    g_error_free (error);
-                else
-                    webkit_javascript_result_unref (result);
-        }, NULL);
-        return true;
-#endif
-    } catch (std::exception &) {
-        return false;
-    }
+    webView->RunScriptAsync(javascript);
+    return true;
 }
