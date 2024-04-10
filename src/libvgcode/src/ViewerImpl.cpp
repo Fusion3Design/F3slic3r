@@ -1425,7 +1425,7 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
     if (v.type == EMoveType::Noop)
         return DUMMY_COLOR;
 
-    if ((v.is_wipe() && m_settings.view_type != EViewType::ActualSpeed) || v.is_option())
+    if ((v.is_wipe() && (m_settings.view_type != EViewType::Speed && m_settings.view_type != EViewType::ActualSpeed)) || v.is_option())
         return get_option_color(move_type_to_option(v.type));
 
     switch (m_settings.view_type)
