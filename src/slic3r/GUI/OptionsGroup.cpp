@@ -821,7 +821,7 @@ void ConfigOptionsGroup::Hide()
 
 void ConfigOptionsGroup::Show(const bool show)
 {
-    sizer->ShowItems(show);
+    if (sizer) sizer->ShowItems(show);
 #if 0//#ifdef __WXGTK__
     m_panel->Show(show);
     m_grid_sizer->Show(show);

@@ -907,6 +907,7 @@ void Tab::update_mode()
     m_mode = wxGetApp().get_mode();
 
     update_visibility();
+    update_sla_prusa_specific_visibility();
 
     update_changed_tree_ui();
 }
@@ -2931,15 +2932,15 @@ void TabPrinter::build_sla()
     // FIXME: This should be on one line in the UI
     optgroup->append_single_option_line("display_mirror_x");
     optgroup->append_single_option_line("display_mirror_y");
-/*
+
     optgroup = page->new_optgroup(L("Tilt"));
     line = { L("Tilt time"), "" };
     line.append_option(optgroup->get_option("fast_tilt_time"));
     line.append_option(optgroup->get_option("slow_tilt_time"));
     line.append_option(optgroup->get_option("high_viscosity_tilt_time"));
     optgroup->append_line(line);
-    optgroup->append_single_option_line("area_fill");
-*/
+//    optgroup->append_single_option_line("area_fill");
+
     optgroup = page->new_optgroup(L("Corrections"));
     line = Line{ m_config->def()->get("relative_correction")->full_label, "" };
     for (auto& axis : { "X", "Y", "Z" }) {
@@ -3615,8 +3616,15 @@ void TabPrinter::update_fff()
     toggle_options();
 }
 
+bool Tab::is_prusa_printer() const
+{
+    std::string printer_model = m_preset_bundle->printers.get_edited_preset().config.opt_string("printer_model");
+    return printer_model == "SL1" || printer_model == "SL1S" || printer_model == "M1";
+}
+
 void TabPrinter::update_sla()
-{ ; }
+{
+}
 
 void Tab::update_ui_items_related_on_parent_preset(const Preset* selected_preset_parent)
 {
@@ -3704,6 +3712,7 @@ void Tab::load_current_preset()
         m_opt_status_value = (m_presets->get_selected_preset_parent() ? osSystemValue : 0) | osInitValue;
         init_options_list();
         update_visibility();
+        update_sla_prusa_specific_visibility();
         update_changed_ui();
     }
 #if 0
@@ -4058,6 +4067,7 @@ void Tab::activate_selected_page(std::function<void()> throw_if_canceled)
             this->compatible_widget_reload(m_compatible_prints);
     }
 
+    update_sla_prusa_specific_visibility();
     update_changed_ui();
     update_description_lines();
     toggle_options();
@@ -4974,6 +4984,17 @@ bool TabPrinter::apply_extruder_cnt_from_cache()
     return false;
 }
 
+void TabPrinter::update_sla_prusa_specific_visibility()
+{
+    if (m_active_page && m_active_page->title() == "General") {
+        auto og_it = std::find_if(m_active_page->m_optgroups.begin(), m_active_page->m_optgroups.end(), [](const ConfigOptionsGroupShp og) { return og->title == "Tilt"; });
+        if (og_it != m_active_page->m_optgroups.end()) {            
+            og_it->get()->Show(m_mode == comExpert && !is_prusa_printer());
+            Layout();
+        }
+    }
+}
+
 bool Tab::validate_custom_gcodes()
 {
     if (m_type != Preset::TYPE_FILAMENT &&
@@ -5355,10 +5376,21 @@ void TabSLAMaterial::build()
     build_preset_description_line(optgroup.get());
 
     page = add_options_page(L("Material printing profile"), "note");
+
+#if 1
     optgroup = page->new_optgroup(L("Material printing profile"));
-//    option = optgroup->get_option("material_print_speed");
-//    optgroup->append_single_option_line(option);
+    optgroup->append_single_option_line("material_print_speed");
+
+    optgroup = page->new_optgroup(L("Tilt"));
     optgroup->append_single_option_line("area_fill");
+
+#else
+    optgroup = page->new_optgroup(L("Material printing profile"));
+    option = optgroup->get_option("material_print_speed");
+    optgroup->append_single_option_line(option);
+
+    optgroup->append_single_option_line("area_fill");
+#endif
 
     build_tilt_group(page);
 }
@@ -5503,6 +5535,25 @@ void TabSLAMaterial::sys_color_changed()
             wxGetApp().UpdateDarkUI(check_box);
             CheckBox::SysColorChanged(check_box);
         }
+}
+
+void TabSLAMaterial::update_sla_prusa_specific_visibility()
+{
+    if (m_active_page && m_active_page->title() == "Material printing profile") {
+        for (auto& title : { "", "Tilt profiles" }) {
+            auto og_it = std::find_if(m_active_page->m_optgroups.begin(), m_active_page->m_optgroups.end(), 
+                         [title](const ConfigOptionsGroupShp og) { return og->title == title; });
+            if (og_it != m_active_page->m_optgroups.end())
+                og_it->get()->Show(m_mode == comExpert && is_prusa_printer());
+        }
+
+        auto og_it = std::find_if(m_active_page->m_optgroups.begin(), m_active_page->m_optgroups.end(), 
+                        [](const ConfigOptionsGroupShp og) { return og->title == "Material printing profile"; });
+        if (og_it != m_active_page->m_optgroups.end())
+            og_it->get()->Show(m_mode >= comAdvanced && !is_prusa_printer());
+
+        Layout();
+    }
 }
 
 static void add_options_into_line(ConfigOptionsGroupShp &optgroup,
