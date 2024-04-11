@@ -6,7 +6,6 @@
 #include "WallToolPaths.hpp"
 
 #include "SkeletalTrapezoidation.hpp"
-#include "../ClipperUtils.hpp"
 #include "utils/linearAlg2D.hpp"
 #include "EdgeGrid.hpp"
 #include "utils/SparseLineGrid.hpp"
