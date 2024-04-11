@@ -22,8 +22,8 @@ using namespace Slic3r::GUI;
 #endif
 
 
-TopBarItemsCtrl::Button::Button(wxWindow* parent, const wxString& label, const std::string& icon_name, const int px_cnt)
-:ScalableButton(parent, wxID_ANY, icon_name, label, wxDefaultSize, wxDefaultPosition, wxNO_BORDER, px_cnt)
+TopBarItemsCtrl::Button::Button(wxWindow* parent, const wxString& label, const std::string& icon_name, const int px_cnt, wxSize size_def)
+:ScalableButton(parent, wxID_ANY, icon_name, label, size_def, wxDefaultPosition, wxNO_BORDER, px_cnt)
 #ifdef _WIN32
 ,m_background_color(wxGetApp().get_window_default_clr())
 #else
@@ -167,9 +167,11 @@ void TopBarItemsCtrl::Button::sys_color_changed()
     m_foreground_color = wxGetApp().get_label_clr_default();
 }
 
-TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const wxString& label, const std::string& icon_name)
-    :TopBarItemsCtrl::Button(parent, label, icon_name, 24)
+TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const wxString& label, const std::string& icon_name, wxSize size)
+    :TopBarItemsCtrl::Button(parent, label, icon_name, 24, size)
 {
+    if (size != wxDefaultSize)
+        m_fixed_width = size.x;
     this->SetLabel(label);
 }
 
@@ -180,8 +182,26 @@ TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const std::s
 
 void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
 {
-    wxString full_label = "  " + label + "  " + down_arrow;
+    wxString text = label;
+    int btn_height = GetMinSize().GetHeight();
+
+    bool resize_and_layout{ false };
+    if (m_fixed_width != wxDefaultCoord) {
+        const int text_width    = m_fixed_width - 2 * btn_height;
+        const int label_width   = GetTextExtent(text).GetWidth();
+        if (label_width > text_width) {
+            wxWindowDC wdc(this);
+            text = wxControl::Ellipsize(text, wdc, wxELLIPSIZE_END, text_width);
+            resize_and_layout = true;
+        }
+    }
+
+    wxString full_label = "  " + text + "  " + down_arrow;
     ScalableButton::SetLabel(full_label);
+    if (resize_and_layout) {
+        SetMinSize(wxSize(m_fixed_width, btn_height));
+        GetParent()->Layout();
+    }
 }
 
 static wxString get_workspace_name(Slic3r::ConfigOptionMode mode) 
@@ -293,7 +313,10 @@ void TopBarItemsCtrl::UpdateAccountMenu(bool avatar/* = false*/)
 
 void TopBarItemsCtrl::CreateSearch()
 {
-    m_search = new ::TextInput(this, wxGetApp().searcher().default_string, "", "search", wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+    // Linux specific: If wxDefaultSize is used in constructor and than set just maxSize, 
+    // than this max size will be used as a default control size and can't be resized.
+    // So, set initial size for some minimum value
+    m_search = new ::TextInput(this, wxGetApp().searcher().default_string, "", "search", wxDefaultPosition, wxSize(2 * em_unit(this), -1), wxTE_PROCESS_ENTER);
     m_search->SetMaxSize(wxSize(42*em_unit(this), -1));
     wxGetApp().UpdateDarkUI(m_search);
     wxGetApp().searcher().set_search_input(m_search);
@@ -350,7 +373,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     CreateSearch();
 
     wxBoxSizer* search_sizer = new wxBoxSizer(wxVERTICAL);
-    search_sizer->Add(m_search, 0, wxEXPAND | wxALIGN_RIGHT);
+    search_sizer->Add(m_search, 1, wxEXPAND | wxALIGN_RIGHT);
     left_sizer->Add(search_sizer, 1, wxALIGN_CENTER_VERTICAL);
 
     m_sizer->Add(left_sizer, 1, wxEXPAND);
@@ -373,7 +396,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     // create Account menu
     CreateAccountMenu();
 
-    m_account_btn = new ButtonWithPopup(this, _L("Anonymous"), "user");
+    m_account_btn = new ButtonWithPopup(this, _L("Anonymous"), "user", wxSize(18 * em_unit(this), -1));
     right_sizer->Add(m_account_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT | wxLEFT, m_btn_margin);
     
     m_account_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {

@@ -27,7 +27,8 @@ class TopBarItemsCtrl : public wxControl
         Button( wxWindow*           parent,
                 const wxString&     label,
                 const std::string&  icon_name = "",
-                const int           px_cnt = 16);
+                const int           px_cnt = 16,
+                wxSize              size = wxDefaultSize);
 
         ~Button() {}
 
@@ -41,11 +42,13 @@ class TopBarItemsCtrl : public wxControl
 
     class ButtonWithPopup : public Button
     {
+        int             m_fixed_width       { wxDefaultCoord };
     public:
         ButtonWithPopup() {};
         ButtonWithPopup(wxWindow*           parent,
                         const wxString&     label,
-                        const std::string&  icon_name = "");
+                        const std::string&  icon_name = "",
+                        wxSize              size = wxDefaultSize);
         ButtonWithPopup(wxWindow*           parent,
                         const std::string&  icon_name,
                         int                 icon_width = 20,
