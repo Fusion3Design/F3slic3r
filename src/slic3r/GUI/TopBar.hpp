@@ -54,6 +54,7 @@ class TopBarItemsCtrl : public wxControl
         ~ButtonWithPopup() {}
 
         void SetLabel(const wxString& label) override;
+        wxPoint get_popup_pos();
     };
 
     wxMenu          m_main_menu;
@@ -164,7 +165,7 @@ public:
     // by this control) and show it immediately.
     bool ShowNewPage(wxWindow * page)
     {
-        return AddPage(page, wxString(), ""/*true *//* select it */);
+        return AddNewPage(page, wxString(), ""/*true *//* select it */);
     }
 
 
@@ -197,13 +198,22 @@ public:
     // Implement base class pure virtual methods.
 
     // adds a new page to the control
-    bool AddPage(wxWindow* page,
+    bool AddNewPage(wxWindow* page,
                  const wxString& text,
                  const std::string& bmp_name,
                  bool bSelect = false)
     {
         DoInvalidateBestSize();
         return InsertPage(GetPageCount(), page, text, bmp_name, bSelect);
+    }
+
+    // override AddPage with using of AddNewPage
+    bool AddPage(   wxWindow* page,
+                    const wxString& text,
+                    bool bSelect = false,
+                    int imageId = NO_IMAGE) override
+    {
+        return AddNewPage(page, text, "", bSelect);
     }
 
     // Page management

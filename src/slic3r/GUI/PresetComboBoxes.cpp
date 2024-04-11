@@ -1184,6 +1184,8 @@ void PlaterPresetComboBox::sys_color_changed()
 {
     PresetComboBox::sys_color_changed();
     edit_btn->sys_color_changed();
+    if (connect_info)
+        wxGetApp().UpdateDarkUI(connect_info);
 }
 
 // ---------------------------------

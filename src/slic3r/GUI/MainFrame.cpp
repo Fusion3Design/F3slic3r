@@ -753,7 +753,7 @@ void MainFrame::init_tabpanel()
     if (wxGetApp().is_editor()) {
        
         //m_webview = new WebViewPanel(m_tabpanel);
-        //m_tabpanel->AddPage(m_webview, "web", "cog"/*, "tab_home_active"*/);
+        //m_tabpanel->AddNewPage(m_webview, "web", "cog"/*, "tab_home_active"*/);
         //m_param_panel = new ParamsPanel(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBK_LEFT | wxTAB_TRAVERSAL);
     }
 
@@ -887,7 +887,7 @@ void MainFrame::add_printer_webview_tab(const wxString& url)
     }
     m_printer_webview_added = true;
     // add as the last (rightmost) panel
-    dynamic_cast<TopBar*>(m_tabpanel)->AddPage(m_printer_webview, _L("Physical Printer"), "", false);
+    dynamic_cast<TopBar*>(m_tabpanel)->AddNewPage(m_printer_webview, _L("Physical Printer"), "");
     m_printer_webview->set_default_url(url);
     m_printer_webview->load_default_url_delayed();
 }
@@ -937,15 +937,14 @@ void MainFrame::add_created_tab(Tab* panel,  const std::string& bmp_name /*= ""*
 
     const auto printer_tech = wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology();
 
-    if (panel->supports_printer_technology(printer_tech))
+    if (panel->supports_printer_technology(printer_tech)) {
 #ifdef _WIN32
-        if (!wxGetApp().tabs_as_menu())
-#endif
-            dynamic_cast<TopBar*>(m_tabpanel)->AddPage(panel, panel->title(), bmp_name);
-#ifdef _WIN32
+        if (wxGetApp().tabs_as_menu())
+            m_tabpanel->AddPage(panel, panel->title());
         else
-        m_tabpanel->AddPage(panel, panel->title());
 #endif
+            dynamic_cast<TopBar*>(m_tabpanel)->AddNewPage(panel, panel->title(), bmp_name);
+    }
 }
 
 bool MainFrame::is_active_and_shown_tab(Tab* tab)

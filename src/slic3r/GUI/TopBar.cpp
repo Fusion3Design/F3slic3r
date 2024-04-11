@@ -85,15 +85,14 @@ void TopBarItemsCtrl::Button::set_selected(bool selected)
 void TopBarItemsCtrl::Button::set_hovered(bool hovered)
 {
     using namespace Slic3r::GUI;
-    const wxFont& new_font = hovered ? wxGetApp().bold_font() : wxGetApp().normal_font();
 
-    this->SetFont(new_font);
 #ifdef _WIN32
     this->GetParent()->Refresh(); // force redraw a background of the selected mode button
 #endif /* no _WIN32 */
 
-    m_background_color =    hovered       ? wxGetApp().get_color_selected_btn_bg() :
-                            m_is_selected ? wxGetApp().get_label_clr_default()       :
+    m_background_color =    m_is_selected ? wxGetApp().get_label_clr_default()     :
+                            hovered       ? wxGetApp().get_color_selected_btn_bg() :
+                            
 #ifdef _WIN32
                                             wxGetApp().get_window_default_clr();
 #else
@@ -187,8 +186,8 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
 
 static wxString get_workspace_name(Slic3r::ConfigOptionMode mode) 
 {
-    return  mode == Slic3r::ConfigOptionMode::comSimple   ? _L("Beginners") :
-            mode == Slic3r::ConfigOptionMode::comAdvanced ? _L("Regulars")  : _L("Experts");
+    return  mode == Slic3r::ConfigOptionMode::comSimple   ? _L("Beginner mode") :
+            mode == Slic3r::ConfigOptionMode::comAdvanced ? _L("Normal mode")  : _L("Expert mode");
 }
 
 void TopBarItemsCtrl::ApplyWorkspacesMenu()
@@ -307,6 +306,13 @@ void TopBarItemsCtrl::update_margins()
     m_line_margin = std::lround(0.1 * em);
 }
 
+wxPoint TopBarItemsCtrl::ButtonWithPopup::get_popup_pos()
+{
+    wxPoint pos = this->GetPosition();
+    pos.y = -pos.y + int(0.2 * wxGetApp().em_unit());
+    return pos;
+}
+
 TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL)
 {
@@ -331,10 +337,9 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     
     m_menu_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
         m_menu_btn->set_selected(true);
-        wxPoint pos = m_menu_btn->GetPosition();
         // !!! To popup main menu use native wxPanel::PopupMenu() function
         // Don't use wrap function Plater::PopupMenu(), because it's no need in this case
-        wxGetApp().plater()->wxPanel::PopupMenu(&m_main_menu, pos);
+        wxGetApp().plater()->wxPanel::PopupMenu(&m_main_menu, m_menu_btn->get_popup_pos());
     });
     m_main_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_menu_btn->set_selected(false); });
 #endif
@@ -361,8 +366,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     
     m_workspace_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
         m_workspace_btn->set_selected(true);
-        wxPoint pos = m_workspace_btn->GetPosition();
-        wxGetApp().plater()->PopupMenu(&m_workspaces_menu, pos);
+        wxGetApp().plater()->wxPanel::PopupMenu(&m_workspaces_menu, m_workspace_btn->get_popup_pos());
     });
     m_workspaces_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_workspace_btn->set_selected(false); });
 
@@ -375,8 +379,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     m_account_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
         UpdateAccountMenu();
         m_account_btn->set_selected(true);
-        wxPoint pos = m_account_btn->GetPosition();
-        wxGetApp().plater()->PopupMenu(&m_account_menu, pos);
+        wxGetApp().plater()->wxPanel::PopupMenu(&m_account_menu, m_account_btn->get_popup_pos());
     });    
     m_account_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_account_btn->set_selected(false); });
 
