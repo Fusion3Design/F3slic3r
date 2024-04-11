@@ -6,7 +6,6 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "PerimeterGenerator.hpp"
-#include "AABBTreeIndirect.hpp"
 #include "AABBTreeLines.hpp"
 #include "BoundingBox.hpp"
 #include "BridgeDetector.hpp"
@@ -14,8 +13,6 @@
 #include "ExPolygon.hpp"
 #include "ExtrusionEntity.hpp"
 #include "ExtrusionEntityCollection.hpp"
-#include "Geometry/MedialAxis.hpp"
-#include "KDTreeIndirect.hpp"
 #include "MultiPoint.hpp"
 #include "Point.hpp"
 #include "Polygon.hpp"
@@ -25,9 +22,9 @@
 #include "Surface.hpp"
 
 #include "Geometry/ConvexHull.hpp"
-#include "SurfaceCollection.hpp"
 #include "clipper/clipper_z.hpp"
 
+#include "Arachne/PerimeterOrder.hpp"
 #include "Arachne/WallToolPaths.hpp"
 #include "Arachne/utils/ExtrusionLine.hpp"
 #include "Arachne/utils/ExtrusionJunction.hpp"
@@ -36,16 +33,10 @@
 #include <algorithm>
 #include <cmath>
 #include <cassert>
-#include <cstddef>
 #include <cstdlib>
-#include <functional>
 #include <iterator>
 #include <limits>
-#include <list>
-#include <math.h>
-#include <ostream>
 #include <stack>
-#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -53,14 +44,12 @@
 
 #include <ankerl/unordered_dense.h>
 
-// #define ARACHNE_DEBUG
+//#define ARACHNE_DEBUG
 
 #ifdef ARACHNE_DEBUG
 #include "SVG.hpp"
 #include "Utils.hpp"
 #endif
-
-#include "SVG.hpp"
 
 namespace Slic3r {
 
@@ -503,29 +492,20 @@ static ClipperLib_Z::Paths clip_extrusion(const ClipperLib_Z::Path &subject, con
     return clipped_paths;
 }
 
-struct PerimeterGeneratorArachneExtrusion
-{
-    Arachne::ExtrusionLine *extrusion = nullptr;
-    // Indicates if closed ExtrusionLine is a contour or a hole. Used it only when ExtrusionLine is a closed loop.
-    bool is_contour = false;
-    // Should this extrusion be fuzzyfied on path generation?
-    bool fuzzify = false;
-};
-
-static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator::Parameters &params, const Polygons &lower_slices_polygons_cache, std::vector<PerimeterGeneratorArachneExtrusion> &pg_extrusions)
+static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator::Parameters &params, const Polygons &lower_slices_polygons_cache, Arachne::PerimeterOrder::PerimeterExtrusions &pg_extrusions)
 {
     ExtrusionEntityCollection extrusion_coll;
-    for (PerimeterGeneratorArachneExtrusion &pg_extrusion : pg_extrusions) {
-        Arachne::ExtrusionLine *extrusion = pg_extrusion.extrusion;
-        if (extrusion->empty())
+    for (Arachne::PerimeterOrder::PerimeterExtrusion &pg_extrusion : pg_extrusions) {
+        Arachne::ExtrusionLine &extrusion = pg_extrusion.extrusion;
+        if (extrusion.empty())
             continue;
 
-        const bool    is_external = extrusion->inset_idx == 0;
+        const bool    is_external   = extrusion.inset_idx == 0;
         ExtrusionRole role_normal   = is_external ? ExtrusionRole::ExternalPerimeter : ExtrusionRole::Perimeter;
         ExtrusionRole role_overhang = role_normal | ExtrusionRoleModifier::Bridge;
 
         if (pg_extrusion.fuzzify)
-            fuzzy_extrusion_line(*extrusion, scaled<float>(params.config.fuzzy_skin_thickness.value), scaled<float>(params.config.fuzzy_skin_point_dist.value));
+            fuzzy_extrusion_line(extrusion, scaled<float>(params.config.fuzzy_skin_thickness.value), scaled<float>(params.config.fuzzy_skin_point_dist.value));
 
         ExtrusionPaths paths;
         // detect overhanging/bridging perimeters
@@ -534,9 +514,9 @@ static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator::P
                  params.object_config.support_material_contact_distance.value == 0)) {
 
             ClipperLib_Z::Path extrusion_path;
-            extrusion_path.reserve(extrusion->size());
+            extrusion_path.reserve(extrusion.size());
             BoundingBox extrusion_path_bbox;
-            for (const Arachne::ExtrusionJunction &ej : extrusion->junctions) {
+            for (const Arachne::ExtrusionJunction &ej : extrusion.junctions) {
                 extrusion_path.emplace_back(ej.p.x(), ej.p.y(), ej.w);
                 extrusion_path_bbox.merge(Point{ej.p.x(), ej.p.y()});
             }
@@ -574,7 +554,7 @@ static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator::P
             // Arachne sometimes creates extrusion with zero-length (just two same endpoints);
             if (!paths.empty()) {
                 Point start_point = paths.front().first_point();
-                if (!extrusion->is_closed) {
+                if (!extrusion.is_closed) {
                     // Especially for open extrusion, we need to select a starting point that is at the start
                     // or the end of the extrusions to make one continuous line. Also, we prefer a non-overhang
                     // starting point.
@@ -607,15 +587,15 @@ static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator::P
                 chain_and_reorder_extrusion_paths(paths, &start_point);
             }
         } else {
-            extrusion_paths_append(paths, *extrusion, role_normal, is_external ? params.ext_perimeter_flow : params.perimeter_flow);
+            extrusion_paths_append(paths, extrusion, role_normal, is_external ? params.ext_perimeter_flow : params.perimeter_flow);
         }
 
         // Append paths to collection.
         if (!paths.empty()) {
-            if (extrusion->is_closed) {
+            if (extrusion.is_closed) {
                 ExtrusionLoop extrusion_loop(std::move(paths));
                 // Restore the orientation of the extrusion loop.
-                if (pg_extrusion.is_contour == extrusion_loop.is_clockwise())
+                if (pg_extrusion.is_contour() == extrusion_loop.is_clockwise())
                     extrusion_loop.reverse_loop();
 
                 for (auto it = std::next(extrusion_loop.paths.begin()); it != extrusion_loop.paths.end(); ++it) {
@@ -654,7 +634,7 @@ static ExtrusionEntityCollection traverse_extrusions(const PerimeterGenerator::P
 }
 
 #ifdef ARACHNE_DEBUG
-static void export_perimeters_to_svg(const std::string &path, const Polygons &contours, const std::vector<Arachne::VariableWidthLines> &perimeters, const ExPolygons &infill_area)
+static void export_perimeters_to_svg(const std::string &path, const Polygons &contours, const Arachne::Perimeters &perimeters, const ExPolygons &infill_area)
 {
     coordf_t    stroke_width = scale_(0.03);
     BoundingBox bbox         = get_extents(contours);
@@ -663,7 +643,7 @@ static void export_perimeters_to_svg(const std::string &path, const Polygons &co
 
     svg.draw(infill_area, "cyan");
 
-    for (const Arachne::VariableWidthLines &perimeter : perimeters)
+    for (const Arachne::Perimeter &perimeter : perimeters)
         for (const Arachne::ExtrusionLine &extrusion_line : perimeter) {
             ThickPolyline thick_polyline = to_thick_polyline(extrusion_line);
             svg.draw({thick_polyline}, "green", "blue", stroke_width);
@@ -1130,8 +1110,8 @@ void PerimeterGenerator::process_arachne(
     ExPolygons last   = offset_ex(surface.expolygon.simplify_p(params.scaled_resolution), - float(ext_perimeter_width / 2. - ext_perimeter_spacing / 2.));
     Polygons   last_p = to_polygons(last);
     Arachne::WallToolPaths wall_tool_paths(last_p, ext_perimeter_spacing, perimeter_spacing, coord_t(loop_number + 1), 0, params.layer_height, params.object_config, params.print_config);
-    std::vector<Arachne::VariableWidthLines> perimeters     = wall_tool_paths.getToolPaths();
-    ExPolygons                               infill_contour = union_ex(wall_tool_paths.getInnerContour());
+    Arachne::Perimeters    perimeters     = wall_tool_paths.getToolPaths();
+    ExPolygons             infill_contour = union_ex(wall_tool_paths.getInnerContour());
 
     // Check if there are some remaining perimeters to generate (the number of perimeters
     // is greater than one together with enabled the single perimeter on top surface feature).
@@ -1168,7 +1148,7 @@ void PerimeterGenerator::process_arachne(
 
             const Polygons not_top_polygons = to_polygons(not_top_expolygons);
             Arachne::WallToolPaths inner_wall_tool_paths(not_top_polygons, perimeter_spacing, perimeter_spacing, coord_t(inner_loop_number + 1), 0, params.layer_height, params.object_config, params.print_config);
-            std::vector<Arachne::VariableWidthLines> inner_perimeters = inner_wall_tool_paths.getToolPaths();
+            Arachne::Perimeters inner_perimeters = inner_wall_tool_paths.getToolPaths();
 
             // Recalculate indexes of inner perimeters before merging them.
             if (!perimeters.empty()) {
@@ -1197,7 +1177,7 @@ void PerimeterGenerator::process_arachne(
 #ifdef ARACHNE_DEBUG
     {
         static int iRun = 0;
-        export_perimeters_to_svg(debug_out_path("arachne-perimeters-%d-%d.svg", layer_id, iRun++), to_polygons(last), perimeters, union_ex(wallToolPaths.getInnerContour()));
+        export_perimeters_to_svg(debug_out_path("arachne-perimeters-%d-%d.svg", params.layer_id, iRun++), to_polygons(last), perimeters, union_ex(wallToolPaths.getInnerContour()));
     }
 #endif
 
@@ -1205,107 +1185,20 @@ void PerimeterGenerator::process_arachne(
     // But in rare cases, Arachne produce ExtrusionLine marked as closed but without
     // equal the first and the last point.
     assert([&perimeters = std::as_const(perimeters)]() -> bool {
-        for (const Arachne::VariableWidthLines &perimeter : perimeters)
+        for (const Arachne::Perimeter &perimeter : perimeters)
             for (const Arachne::ExtrusionLine &el : perimeter)
                 if (el.is_closed && el.junctions.front().p != el.junctions.back().p)
                     return false;
         return true;
     }());
 
-    int start_perimeter = int(perimeters.size()) - 1;
-    int end_perimeter   = -1;
-    int direction       = -1;
-
-    if (params.config.external_perimeters_first) {
-        start_perimeter = 0;
-        end_perimeter   = int(perimeters.size());
-        direction       = 1;
-    }
-
-    std::vector<Arachne::ExtrusionLine *> all_extrusions;
-    for (int perimeter_idx = start_perimeter; perimeter_idx != end_perimeter; perimeter_idx += direction) {
-        if (perimeters[perimeter_idx].empty())
-            continue;
-        for (Arachne::ExtrusionLine &wall : perimeters[perimeter_idx])
-            all_extrusions.emplace_back(&wall);
-    }
-
-    // Find topological order with constraints from extrusions_constrains.
-    std::vector<size_t>              blocked(all_extrusions.size(), 0); // Value indicating how many extrusions it is blocking (preceding extrusions) an extrusion.
-    std::vector<std::vector<size_t>> blocking(all_extrusions.size());   // Each extrusion contains a vector of extrusions that are blocked by this extrusion.
-    ankerl::unordered_dense::map<const Arachne::ExtrusionLine *, size_t> map_extrusion_to_idx;
-    for (size_t idx = 0; idx < all_extrusions.size(); idx++)
-        map_extrusion_to_idx.emplace(all_extrusions[idx], idx);
-
-    Arachne::WallToolPaths::ExtrusionLineSet extrusions_constrains = Arachne::WallToolPaths::getRegionOrder(all_extrusions, params.config.external_perimeters_first);
-    for (auto [before, after] : extrusions_constrains) {
-        auto after_it = map_extrusion_to_idx.find(after);
-        ++blocked[after_it->second];
-        blocking[map_extrusion_to_idx.find(before)->second].emplace_back(after_it->second);
-    }
-
-    std::vector<bool> processed(all_extrusions.size(), false);          // Indicate that the extrusion was already processed.
-    Point             current_position = all_extrusions.empty() ? Point::Zero() : all_extrusions.front()->junctions.front().p; // Some starting position.
-    std::vector<PerimeterGeneratorArachneExtrusion> ordered_extrusions;         // To store our result in. At the end we'll std::swap.
-    ordered_extrusions.reserve(all_extrusions.size());
-
-    while (ordered_extrusions.size() < all_extrusions.size()) {
-        size_t best_candidate    = 0;
-        double best_distance_sqr = std::numeric_limits<double>::max();
-        bool   is_best_closed    = false;
-
-        std::vector<size_t> available_candidates;
-        for (size_t candidate = 0; candidate < all_extrusions.size(); ++candidate) {
-            if (processed[candidate] || blocked[candidate])
-                continue; // Not a valid candidate.
-            available_candidates.push_back(candidate);
-        }
-
-        std::sort(available_candidates.begin(), available_candidates.end(), [&all_extrusions](const size_t a_idx, const size_t b_idx) -> bool {
-            return all_extrusions[a_idx]->is_closed < all_extrusions[b_idx]->is_closed;
-        });
-
-        for (const size_t candidate_path_idx : available_candidates) {
-            auto& path = all_extrusions[candidate_path_idx];
-
-            if (path->junctions.empty()) { // No vertices in the path. Can't find the start position then or really plan it in. Put that at the end.
-                if (best_distance_sqr == std::numeric_limits<double>::max()) {
-                    best_candidate = candidate_path_idx;
-                    is_best_closed = path->is_closed;
-                }
-                continue;
-            }
-
-            const Point candidate_position = path->junctions.front().p;
-            double      distance_sqr       = (current_position - candidate_position).cast<double>().norm();
-            if (distance_sqr < best_distance_sqr) { // Closer than the best candidate so far.
-                if (path->is_closed || (!path->is_closed && best_distance_sqr != std::numeric_limits<double>::max()) || (!path->is_closed && !is_best_closed)) {
-                    best_candidate    = candidate_path_idx;
-                    best_distance_sqr = distance_sqr;
-                    is_best_closed    = path->is_closed;
-                }
-            }
-        }
-
-        auto &best_path = all_extrusions[best_candidate];
-        ordered_extrusions.push_back({best_path, best_path->is_contour(), false});
-        processed[best_candidate] = true;
-        for (size_t unlocked_idx : blocking[best_candidate])
-            blocked[unlocked_idx]--;
-
-        if (!best_path->junctions.empty()) { //If all paths were empty, the best path is still empty. We don't upate the current position then.
-            if(best_path->is_closed)
-                current_position = best_path->junctions[0].p; //We end where we started.
-            else
-                current_position = best_path->junctions.back().p; //Pick the other end from where we started.
-        }
-    }
+    Arachne::PerimeterOrder::PerimeterExtrusions ordered_extrusions = Arachne::PerimeterOrder::ordered_perimeter_extrusions(perimeters, params.config.external_perimeters_first);
 
     if (params.layer_id > 0 && params.config.fuzzy_skin != FuzzySkinType::None) {
-        std::vector<PerimeterGeneratorArachneExtrusion *> closed_loop_extrusions;
-        for (PerimeterGeneratorArachneExtrusion &extrusion : ordered_extrusions)
-            if (extrusion.extrusion->inset_idx == 0) {
-                if (extrusion.extrusion->is_closed && params.config.fuzzy_skin == FuzzySkinType::External) {
+        std::vector<Arachne::PerimeterOrder::PerimeterExtrusion *> closed_loop_extrusions;
+        for (Arachne::PerimeterOrder::PerimeterExtrusion &extrusion : ordered_extrusions)
+            if (extrusion.extrusion.inset_idx == 0) {
+                if (extrusion.extrusion.is_closed && params.config.fuzzy_skin == FuzzySkinType::External) {
                     closed_loop_extrusions.emplace_back(&extrusion);
                 } else {
                     extrusion.fuzzify = true;
@@ -1316,11 +1209,11 @@ void PerimeterGenerator::process_arachne(
             ClipperLib_Z::Paths loops_paths;
             loops_paths.reserve(closed_loop_extrusions.size());
             for (const auto &cl_extrusion : closed_loop_extrusions) {
-                assert(cl_extrusion->extrusion->junctions.front() == cl_extrusion->extrusion->junctions.back());
+                assert(cl_extrusion->extrusion.junctions.front() == cl_extrusion->extrusion.junctions.back());
                 size_t             loop_idx = &cl_extrusion - &closed_loop_extrusions.front();
                 ClipperLib_Z::Path loop_path;
-                loop_path.reserve(cl_extrusion->extrusion->junctions.size() - 1);
-                for (auto junction_it = cl_extrusion->extrusion->junctions.begin(); junction_it != std::prev(cl_extrusion->extrusion->junctions.end()); ++junction_it)
+                loop_path.reserve(cl_extrusion->extrusion.junctions.size() - 1);
+                for (auto junction_it = cl_extrusion->extrusion.junctions.begin(); junction_it != std::prev(cl_extrusion->extrusion.junctions.end()); ++junction_it)
                     loop_path.emplace_back(junction_it->p.x(), junction_it->p.y(), loop_idx);
                 loops_paths.emplace_back(loop_path);
             }

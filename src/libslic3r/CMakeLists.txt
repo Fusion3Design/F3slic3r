@@ -500,6 +500,8 @@ set(SLIC3R_SOURCES
     Geometry/Voronoi.cpp
     Geometry/VoronoiUtils.hpp
     Geometry/VoronoiUtils.cpp
+    Arachne/PerimeterOrder.hpp
+    Arachne/PerimeterOrder.cpp
     Arachne/SkeletalTrapezoidation.hpp
     Arachne/SkeletalTrapezoidation.cpp
     Arachne/SkeletalTrapezoidationEdge.hpp
