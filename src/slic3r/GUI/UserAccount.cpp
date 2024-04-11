@@ -84,20 +84,6 @@ boost::filesystem::path UserAccount::get_avatar_path(bool logged) const
     }
 }
 
-#if 0
-void UserAccount::enqueue_user_id_action()
-{
-    m_communication->enqueue_user_id_action();
-}
-void UserAccount::enqueue_connect_dummy_action()
-{
-    m_communication->enqueue_connect_dummy_action();
-}
-void UserAccount::enqueue_connect_user_data_action()
-{
-    m_communication->enqueue_connect_user_data_action();
-}
-#endif
 
 void UserAccount::enqueue_connect_printers_action()
 {

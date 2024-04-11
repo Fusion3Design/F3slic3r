@@ -1,26 +1,20 @@
 #include "WebViewDialog.hpp"
 
 #include "slic3r/GUI/I18N.hpp"
-#include "slic3r/GUI/wxExtensions.hpp"
 #include "slic3r/GUI/GUI_App.hpp"
-#include "slic3r/GUI/GUI.hpp"
 #include "slic3r/GUI/MainFrame.hpp"
 #include "slic3r/GUI/Plater.hpp"
-#include "libslic3r_version.h"
-#include "libslic3r/Utils.hpp"
-#include "libslic3r/libslic3r.h"
 #include "slic3r/GUI/UserAccount.hpp"
 #include "slic3r/GUI/format.hpp"
+#include "slic3r/GUI/WebView.hpp"
 
-#include <wx/sizer.h>
-#include <wx/toolbar.h>
-#include <wx/textdlg.h>
+
+#include <wx/webview.h>
 
 #include <boost/log/trivial.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-#include "slic3r/GUI/WebView.hpp"
 
 namespace pt = boost::property_tree;
 

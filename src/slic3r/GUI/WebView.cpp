@@ -1,8 +1,8 @@
 #include "WebView.hpp"
 #include "slic3r/GUI/GUI_App.hpp"
-#include "slic3r/Utils/MacDarkMode.hpp"
 
 #include <wx/uri.h>
+#include <wx/webview.h>
 
 #include <boost/log/trivial.hpp>
 
@@ -93,16 +93,7 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, const wxString& url)
     return webView;
 }
 
-void WebView::LoadUrl(wxWebView * webView, wxString const &url)
-{
-    auto url2  = url;
-#ifdef __WIN32__
-    url2.Replace("\\", "/");
-#endif
-    if (!url2.empty()) { url2 = wxURI(url2).BuildURI(); }
-    BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << url2.ToUTF8();
-    webView->LoadURL(url2);
-}
+
 
 bool WebView::run_script(wxWebView *webView, wxString const &javascript)
 {
