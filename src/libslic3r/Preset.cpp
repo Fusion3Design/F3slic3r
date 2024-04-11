@@ -159,6 +159,9 @@ VendorProfile VendorProfile::from_ini(const ptree &tree, const boost::filesystem
     const auto repo_id = vendor_section.find("repo_id");
     if (repo_id != vendor_section.not_found()) {
         res.repo_id = repo_id->second.data();
+    } else {
+        // For backward compatibility assume all profiles without repo_id are from "prod" repo
+        res.repo_id = "prod";
     }
 
     if (! load_all) {

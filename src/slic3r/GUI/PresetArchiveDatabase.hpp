@@ -7,7 +7,9 @@
 #include <vector>
 #include <memory>
 
-class boost::filesystem::path;
+namespace boost::filesystem {
+class path;
+}
 
 namespace Slic3r {
 class AppConfig;
@@ -46,7 +48,7 @@ public:
 	};
 	// Use std::move when calling constructor.
 	ArchiveRepository(RepositoryManifest&& data) : m_data(std::move(data)) {}
-	~ArchiveRepository() {}
+	virtual ~ArchiveRepository() {}
 	// Gets vendor_indices.zip to target_path
 	virtual bool get_archive(const boost::filesystem::path& target_path) const = 0;
 	// Gets file if repository_id arg matches m_id.
@@ -80,6 +82,7 @@ public:
 private:
 	bool get_file_inner(const std::string& url, const boost::filesystem::path& target_path) const;
 };
+
 class LocalArchiveRepository : public ArchiveRepository
 {
 public:

@@ -2,6 +2,9 @@
 
 #include "slic3r/Utils/Http.hpp"
 #include "slic3r/GUI/format.hpp"
+#include "slic3r/GUI/GUI_App.hpp"
+#include "slic3r/GUI/Plater.hpp"
+#include "slic3r/GUI/UserAccount.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/AppConfig.hpp"
 #include "libslic3r/miniz_extension.hpp"
@@ -193,6 +196,15 @@ std::string escape_path_by_element(const std::string& path_string)
 	}
 	return ret_val;
 }
+
+void add_authorization_header(Http& http)
+{
+    const std::string access_token = GUI::wxGetApp().plater()->get_user_account()->get_access_token();
+    if (!access_token.empty()) {
+        http.header("Authorization", "Bearer " + access_token);
+    }
+}
+
 }
 
 bool OnlineArchiveRepository::get_file_inner(const std::string& url, const fs::path& target_path) const
@@ -206,7 +218,9 @@ bool OnlineArchiveRepository::get_file_inner(const std::string& url, const fs::p
 		target_path.string(),
 		tmp_path.string());
 
-	Http::get(url)
+	auto http = Http::get(url);
+    add_authorization_header(http);
+    http
 		.on_progress([](Http::Progress, bool& cancel) {
 			//if (cancel) { cancel = true; }
 		})
@@ -363,8 +377,14 @@ std::string test_json(bool secret)
 bool sync_inner(std::string& manifest)
 {
 	bool ret = false;
-	std::string url = "http://10.24.3.3:8001/v1/repos";
-	Http::get(std::move(url))
+#ifdef SLIC3R_REPO_URL
+    std::string url = SLIC3R_REPO_URL;
+#else
+    std::string url = "http://10.24.3.3:8001/v1/repos";
+#endif
+    auto http = Http::get(std::move(url));
+    add_authorization_header(http);
+    http
 		.on_error([&](std::string body, std::string error, unsigned http_status) {
 			BOOST_LOG_TRIVIAL(error) << "Failed to get online archive repository manifests: "<< body << " ; " << error << " ; " << http_status;
 			ret = false;
