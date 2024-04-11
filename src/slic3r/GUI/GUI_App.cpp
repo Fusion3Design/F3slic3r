@@ -3132,7 +3132,7 @@ bool GUI_App::may_switch_to_SLA_preset(const wxString& caption)
 bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage start_page)
 {
     wxCHECK_MSG(mainframe != nullptr, false, "Internal error: Main frame not created / null");
-
+#if 0
     if (!plater()->get_user_account()->is_logged()) {
         m_login_dialog = std::make_unique<LoginDialog>(mainframe, plater()->get_user_account());
         m_login_dialog->ShowModal();
@@ -3141,7 +3141,7 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
         // Destructor does not call Destroy
         m_login_dialog.reset();
     }
-
+#endif // 0
     if (reason == ConfigWizard::RR_USER) {
         // Cancel sync before starting wizard to prevent two downloads at same time
         preset_updater->cancel_sync();
@@ -3171,6 +3171,7 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
     return res;
 }
 
+#if 0
 void GUI_App::update_login_dialog()
 {
     if (!m_login_dialog) {
@@ -3178,6 +3179,7 @@ void GUI_App::update_login_dialog()
     }
     m_login_dialog->update_account();
 }
+#endif // 0
 
 void GUI_App::show_desktop_integration_dialog()
 {

@@ -887,7 +887,9 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         this->main_frame->refresh_account_menu(true);
         // Update sidebar printer status
         sidebar->update_printer_presets_combobox();
+#if 0
         wxGetApp().update_login_dialog();
+#endif // 0
         this->show_action_buttons(this->ready_to_slice);
     });
 
@@ -902,7 +904,9 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->main_frame->add_connect_webview_tab();
             // Update User name in TopBar
             this->main_frame->refresh_account_menu();
+#if 0
             wxGetApp().update_login_dialog();
+#endif // 0
             this->show_action_buttons(this->ready_to_slice);
         } else {
             // data were corrupt and username was not retrieved
@@ -953,7 +957,9 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
        fwrite(evt.data.c_str(), 1, evt.data.size(), file);
        fclose(file);
        this->main_frame->refresh_account_menu(true);
+#if 0
        wxGetApp().update_login_dialog();
+#endif // 0    
     }); 
 
 	wxGetApp().other_instance_message_handler()->init(this->q);

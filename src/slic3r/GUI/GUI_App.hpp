@@ -371,7 +371,9 @@ public:
     void            open_web_page_localized(const std::string &http_address);
     bool            may_switch_to_SLA_preset(const wxString& caption);
     bool            run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage start_page = ConfigWizard::SP_WELCOME);
+#if 0
     void            update_login_dialog();
+#endif // 0
     void            show_desktop_integration_dialog();
     void            show_downloader_registration_dialog();
 
@@ -446,8 +448,9 @@ private:
     // change to vector of items when adding more items that require update
     //wxMenuItem*    m_login_config_menu_item { nullptr };
     std::map< ConfigMenuIDs, wxMenuItem*> m_config_menu_updatable_items;
-
+#if 0
     std::unique_ptr<LoginDialog> m_login_dialog;
+#endif // 0
 };
 
 DECLARE_APP(GUI_App)
