@@ -45,6 +45,9 @@ namespace fs = boost::filesystem;
 namespace Slic3r {
 namespace GUI {
 
+wxDEFINE_EVENT(EVT_UA_NO_TOKENS, UserAccountFailEvent);
+
+
 namespace {
 
 std::string get_code_from_message(const std::string& url_message)
@@ -151,8 +154,12 @@ UserAccountCommunication::UserAccountCommunication(wxEvtHandler* evt_handler, Ap
     m_session = std::make_unique<UserAccountSession>(evt_handler, access_token, refresh_token, shared_session_key, m_app_config->get_bool("connect_polling"));
     init_session_thread();
     // perform login at the start, but only with tokens
-    if (has_token)
+    if (has_token) {
         do_login();
+    } else {
+        // send evt so preset archive database knows it can sync
+        wxQueueEvent(evt_handler, new UserAccountFailEvent(EVT_UA_NO_TOKENS, {}));
+    }
 }
 
 UserAccountCommunication::~UserAccountCommunication() 

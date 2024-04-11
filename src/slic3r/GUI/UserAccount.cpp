@@ -20,7 +20,8 @@ namespace GUI {
 UserAccount::UserAccount(wxEvtHandler* evt_handler, AppConfig* app_config, const std::string& instance_hash)
     : m_communication(std::make_unique<UserAccountCommunication>(evt_handler, app_config))
     , m_instance_hash(instance_hash)
-{}
+{
+}
 
 UserAccount::~UserAccount()
 {}
@@ -135,7 +136,7 @@ bool UserAccount::on_user_id_success(const std::string data, std::string& out_us
     std::string public_username = m_account_user_data["public_username"];
     set_username(public_username);
     out_username = public_username;
-    // equeue GET with avatar url
+    // enqueue GET with avatar url
     if (m_account_user_data.find("avatar") != m_account_user_data.end()) {
         const boost::filesystem::path server_file(m_account_user_data["avatar"]);
         m_avatar_extension = server_file.extension().string();

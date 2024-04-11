@@ -60,7 +60,7 @@ class Downloader;
 struct GUI_InitParams;
 class GalleryDialog;
 class LoginDialog;
-
+class PresetArchiveDatabase;
 
 enum FileType
 {
@@ -170,14 +170,14 @@ private:
 
     OpenGLManager m_opengl_mgr;
 
-    std::unique_ptr<RemovableDriveManager> m_removable_drive_manager;
-
-    std::unique_ptr<ImGuiWrapper> m_imgui;
-    std::unique_ptr<PrintHostJobQueue> m_printhost_job_queue;
-	std::unique_ptr <OtherInstanceMessageHandler> m_other_instance_message_handler;
-    std::unique_ptr <AppUpdater> m_app_updater;
-    std::unique_ptr <wxSingleInstanceChecker> m_single_instance_checker;
-    std::unique_ptr <Downloader> m_downloader;
+    std::unique_ptr<RemovableDriveManager>          m_removable_drive_manager;
+    std::unique_ptr<ImGuiWrapper>                   m_imgui;
+    std::unique_ptr<PrintHostJobQueue>              m_printhost_job_queue;
+	std::unique_ptr<OtherInstanceMessageHandler>    m_other_instance_message_handler;
+    std::unique_ptr<AppUpdater>                     m_app_updater;
+    std::unique_ptr<wxSingleInstanceChecker>        m_single_instance_checker;
+    std::unique_ptr<Downloader>                     m_downloader;
+    
     std::string m_instance_hash_string;
 	size_t m_instance_hash_int;
 
@@ -427,6 +427,8 @@ public:
     void            request_open_project(std::string project_id) {}
     void            request_remove_project(std::string project_id) {}
 
+    void            start_preset_updater(bool forced);
+
 private:
     bool            on_init_inner();
 	void            init_app_config();
@@ -450,6 +452,7 @@ private:
 
     bool                    m_wifi_config_dialog_shown { false };
     bool                    m_wifi_config_dialog_was_declined { false };
+    bool                    m_started_preset_updater { false };
     // change to vector of items when adding more items that require update
     //wxMenuItem*    m_login_config_menu_item { nullptr };
     std::map< ConfigMenuIDs, wxMenuItem*> m_config_menu_updatable_items;

@@ -63,6 +63,7 @@ class NotificationManager;
 struct Camera;
 class GLToolbar;
 class UserAccount;
+class PresetArchiveDatabase;
 
 class Plater: public wxPanel
 {
@@ -354,6 +355,9 @@ public:
 
     NotificationManager* get_notification_manager();
     const NotificationManager* get_notification_manager() const;
+
+    PresetArchiveDatabase* get_preset_archive_database();
+    const PresetArchiveDatabase* get_preset_archive_database() const;
 
     UserAccount* get_user_account();
     const UserAccount* get_user_account() const;

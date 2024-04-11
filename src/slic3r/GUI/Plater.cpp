@@ -124,6 +124,7 @@
 #include "UserAccount.hpp"
 #include "DesktopIntegrationDialog.hpp"
 #include "WebViewDialog.hpp"
+#include "PresetArchiveDatabase.hpp"
 
 #ifdef __APPLE__
 #include "Gizmos/GLGizmosManager.hpp"
@@ -268,6 +269,7 @@ struct Plater::priv
     Preview *preview;
     std::unique_ptr<NotificationManager> notification_manager;
     std::unique_ptr<UserAccount> user_account;
+    std::unique_ptr<PresetArchiveDatabase>  preset_archive_database;
 
     ProjectDirtyStateManager dirty_state;
      
@@ -615,6 +617,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     , sidebar(new Sidebar(q))
     , notification_manager(std::make_unique<NotificationManager>(q))
     , user_account(std::make_unique<UserAccount>(q, wxGetApp().app_config, wxGetApp().get_instance_hash_string()))
+    , preset_archive_database(std::make_unique<PresetArchiveDatabase>(wxGetApp().app_config, q))
     , m_worker{q, std::make_unique<NotificationProgressIndicator>(notification_manager.get()), "ui_worker"}
     , m_sla_import_dlg{new SLAImportDialog{q}}
     , delayed_scene_refresh(false)
@@ -891,11 +894,11 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
             std::string username;
             if (user_account->on_user_id_success(evt.data, username)) {
-                // login notification
                 std::string text = format(_u8L("Logged to Prusa Account as %1%."), username);
+                // login notification
                 this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
-                this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
                 // show connect tab
+                this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
                 this->main_frame->add_connect_webview_tab();
                 // Update User name in TopBar
                 this->main_frame->refresh_account_menu();
@@ -903,6 +906,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                 wxGetApp().update_login_dialog();
 #endif // 0
                 this->show_action_buttons(this->ready_to_slice);
+            preset_archive_database->set_token("ABCD");
+            preset_archive_database->sync();
             } else {
                 // data were corrupt and username was not retrieved
                 // procced as if EVT_UA_RESET was recieved
@@ -928,6 +933,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->main_frame->refresh_account_menu(true);
             // Update sidebar printer status
             sidebar->update_printer_presets_combobox();
+        preset_archive_database->set_token({});
+        preset_archive_database->sync();
         });
         this->q->Bind(EVT_UA_FAIL, [this](UserAccountFailEvent& evt) {
             BOOST_LOG_TRIVIAL(error) << "Failed communication with Prusa Account: " << evt.data;
@@ -985,6 +992,11 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->notification_manager->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::WarningNotificationLevel, msg);
         });
     }
+
+    this->q->Bind(EVT_PRESET_ARCHIVE_DATABASE_SYNC_DONE, [this](Event<ArchiveRepositorySyncData>& evt) {
+        preset_archive_database->set_archives(evt.data.json);
+        wxGetApp().start_preset_updater(evt.data.force_updater);
+    });
 
 	wxGetApp().other_instance_message_handler()->init(this->q);
 
@@ -6803,6 +6815,16 @@ NotificationManager * Plater::get_notification_manager()
 const NotificationManager * Plater::get_notification_manager() const
 {
     return p->notification_manager.get();
+}
+
+PresetArchiveDatabase* Plater::get_preset_archive_database()
+{
+    return p->preset_archive_database.get();
+}
+
+const PresetArchiveDatabase* Plater::get_preset_archive_database() const
+{
+    return p->preset_archive_database.get();
 }
 
 UserAccount* Plater::get_user_account()

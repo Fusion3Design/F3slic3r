@@ -5,6 +5,8 @@
 #ifndef slic3r_PresetUpdate_hpp_
 #define slic3r_PresetUpdate_hpp_
 
+#include "slic3r/GUI/PresetArchiveDatabase.hpp"
+
 #include <memory>
 #include <vector>
 
@@ -16,6 +18,8 @@ namespace Slic3r {
 class AppConfig;
 class PresetBundle;
 class Semver;
+
+typedef std::vector<std::unique_ptr<const GUI::ArchiveRepository>> ArchiveRepositoryVector;
 
 static constexpr const int SLIC3R_VERSION_BODY_MAX = 256;
 
@@ -30,8 +34,10 @@ public:
 	~PresetUpdater();
 
 	// If either version check or config updating is enabled, get the appropriate data in the background and cache it.
-	void sync(const PresetBundle *preset_bundle, wxEvtHandler* evt_handler);
+	void sync(const PresetBundle *preset_bundle, wxEvtHandler* evt_handler, const ArchiveRepositoryVector& repositories);
 	void cancel_sync();
+
+	void sync_blocking(const PresetBundle* preset_bundle, wxEvtHandler* evt_handler, const ArchiveRepositoryVector& repositories);
 
 	// If version check is enabled, check if chaced online slic3r version is newer, notify if so.
 	void slic3r_update_notify();
@@ -67,9 +73,13 @@ public:
 
 	bool version_check_enabled() const;
 
+	void add_additional_archive(const std::string& archive_url, const std::string& download_url);
+	void add_additional_archives(const std::vector<std::pair<std::string, std::string>>& archives);
 private:
 	struct priv;
 	std::unique_ptr<priv> p;
+
+	std::vector<std::pair<std::string, std::string>> m_additional_archives;
 };
 
 //wxDECLARE_EVENT(EVT_SLIC3R_VERSION_ONLINE, wxCommandEvent);

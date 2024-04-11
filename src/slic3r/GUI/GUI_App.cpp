@@ -102,6 +102,7 @@
 #include "UserAccount.hpp"
 #include "WebViewDialog.hpp"
 #include "LoginDialog.hpp"
+#include "PresetArchiveDatabase.hpp"
 
 #include "BitmapCache.hpp"
 //#include "Notebook.hpp"
@@ -833,8 +834,8 @@ void GUI_App::post_init()
 #endif
         CallAfter([this] {
             // preset_updater->sync downloads profile updates on background so it must begin after config wizard finished.
+            // its call was moved to start_preset_updater method
             bool cw_showed = this->config_wizard_startup();
-            this->preset_updater->sync(preset_bundle, this);
             if (! cw_showed) {
                 // The CallAfter is needed as well, without it, GL extensions did not show.
                 // Also, we only want to show this when the wizard does not, so the new user
@@ -3127,19 +3128,29 @@ bool GUI_App::may_switch_to_SLA_preset(const wxString& caption)
 bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage start_page)
 {
     wxCHECK_MSG(mainframe != nullptr, false, "Internal error: Main frame not created / null");
+
+    // Cancel sync before starting wizard to prevent two downloads at same time.
+    preset_updater->cancel_sync();
+    // Show login dialog before wizard.
 #if 0
-    if (!plater()->get_user_account()->is_logged()) {
+    bool user_was_logged = plater()->get_user_account()->is_logged();
+    if (!user_was_logged) {
         m_login_dialog = std::make_unique<LoginDialog>(mainframe, plater()->get_user_account());
         m_login_dialog->ShowModal();
         mainframe->RemoveChild(m_login_dialog.get());
         m_login_dialog->Destroy();
-        // Destructor does not call Destroy
+        // Destructor does not call Destroy.
         m_login_dialog.reset();
     }
+    // Update archive db if login status changed, otherwise we expect to have archive db on date.
+    if (user_was_logged != plater()->get_user_account()->is_logged()) {
+        plater()->get_preset_archive_database()->sync_blocking();
+    }
 #endif // 0
-    if (reason == ConfigWizard::RR_USER) {
-        // Cancel sync before starting wizard to prevent two downloads at same time
-        preset_updater->cancel_sync();
+    // Do blocking sync on every start of wizard, so user is always offered recent profiles.
+    preset_updater->sync_blocking(preset_bundle, this, plater()->get_preset_archive_database()->get_archives());
+    // Offer update installation (of already installed profiles) only when run by user.
+    if (reason == ConfigWizard::RR_USER) {   
         preset_updater->update_index_db();
         if (preset_updater->config_update(app_config->orig_version(), PresetUpdater::UpdateParams::FORCED_BEFORE_WIZARD) == PresetUpdater::R_ALL_CANCELED)
             return false;
@@ -3843,5 +3854,14 @@ void GUI_App::show_printer_webview_tab()
     mainframe->show_printer_webview_tab(preset_bundle->physical_printers.get_selected_printer_config());
 }
 
+void GUI_App::start_preset_updater(bool forced)
+{
+    if (m_started_preset_updater && !forced) {
+        return;
+    }
+    this->preset_updater->cancel_sync();
+    this->preset_updater->sync(preset_bundle, this, plater()->get_preset_archive_database()->get_archives());
+    m_started_preset_updater = true;
+}
 } // GUI
 } //Slic3r
