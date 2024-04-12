@@ -56,9 +56,3 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, const wxString& url)
 }
 
 
-
-bool WebView::run_script(wxWebView *webView, wxString const &javascript)
-{
-    webView->RunScriptAsync(javascript);
-    return true;
-}

@@ -318,11 +318,8 @@ void WebViewPanel::run_script(const wxString& javascript)
     // Remember the script we run in any case, so the next time the user opens
     // the "Run Script" dialog box, it is shown there for convenient updating.
     m_javascript = javascript;
-
-    if (!m_browser) return;
-
-    bool res = WebView::run_script(m_browser, javascript);
-    BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript << " " << res;
+    BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript;
+    m_browser->RunScriptAsync(javascript);
 }
 
 
@@ -681,8 +678,7 @@ void WebViewDialog::run_script(const wxString& javascript)
 {
     if (!m_browser) 
         return;
-    // dk_FIXME: Is it ok to discard the return value?
-    /*bool res = */ WebView::run_script(m_browser, javascript);
+    m_browser->RunScriptAsync(javascript);
 }
 
 PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val)
