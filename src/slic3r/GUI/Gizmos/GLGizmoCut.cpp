@@ -2639,13 +2639,20 @@ void GLGizmoCut3D::render_snap_specific_input(const std::string& label, const wx
     }
 }
 
+static std::string get_string_from_wchar(const wchar_t& icon)
+{
+    std::wstring tmp;
+    tmp += icon;
+    return boost::nowide::narrow(tmp);
+}
+
 void GLGizmoCut3D::render_cut_plane_input_window(CutConnectors &connectors)
 {
 //    if (m_mode == size_t(CutMode::cutPlanar)) {
     CutMode mode = CutMode(m_mode);
     if (mode == CutMode::cutPlanar || mode == CutMode::cutTongueAndGroove) {
         ImGui::AlignTextToFramePadding();
-        ImGuiPureWrap::text(std::wstring(&ImGui::InfoMarkerSmall));
+        ImGuiPureWrap::text(get_string_from_wchar(ImGui::InfoMarkerSmall));
         ImGui::SameLine();
         ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT,
                                     into_u8(get_wraped_wxString(_L("Hold SHIFT key to draw a cut line"), 40)));
@@ -2901,7 +2908,7 @@ void GLGizmoCut3D::init_input_window_data(CutConnectors &connectors)
 
 void GLGizmoCut3D::render_input_window_warning() const
 {
-    const std::string warning_marker = boost::nowide::narrow(std::wstring(&ImGui::WarningMarkerSmall));
+    const std::string warning_marker = get_string_from_wchar(ImGui::WarningMarkerSmall);
 
     if (! m_invalid_connectors_idxs.empty()) {
         std::string out = warning_marker + _u8L("Invalid connectors detected") + ":";
