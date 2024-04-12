@@ -1,16 +1,14 @@
 #ifndef slic3r_GUI_WebView_hpp_
 #define slic3r_GUI_WebView_hpp_
 
-#include <wx/webview.h>
+class wxWebView;
+class wxWindow;
+class wxString;
 
-class WebView
+namespace WebView
 {
-public:
-    static wxWebView *CreateWebView(wxWindow *parent, wxString const &url);
-    
-    static void LoadUrl(wxWebView * webView, wxString const &url);
-
-    static bool run_script(wxWebView * webView, wxString const & msg);
+    wxWebView *CreateWebView(wxWindow *parent, const wxString& url);
+    bool run_script(wxWebView * webView, const wxString& msg);
 };
 
 #endif // !slic3r_GUI_WebView_hpp_

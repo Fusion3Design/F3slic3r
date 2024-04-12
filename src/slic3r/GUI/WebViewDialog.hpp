@@ -1,30 +1,10 @@
 #ifndef slic3r_WebViewDialog_hpp_
 #define slic3r_WebViewDialog_hpp_
 
-
-#include "wx/artprov.h"
-#include "wx/cmdline.h"
-#include "wx/notifmsg.h"
-#include "wx/settings.h"
-#include "wx/webview.h"
-
-#if wxUSE_WEBVIEW_EDGE
-#include "wx/msw/webview_edge.h"
-#endif
-
-#include "wx/webviewarchivehandler.h"
-#include "wx/webviewfshandler.h"
-#include "wx/numdlg.h"
-#include "wx/infobar.h"
-#include "wx/filesys.h"
-#include "wx/fs_arc.h"
-#include "wx/fs_mem.h"
-#include "wx/stdpaths.h"
-#include <wx/panel.h>
-#include <wx/tbarbase.h>
-#include "wx/textctrl.h"
-#include <wx/timer.h>
 #include <map>
+
+class wxWebView;
+class wxWebViewEvent;
 
 namespace Slic3r {
 namespace GUI {

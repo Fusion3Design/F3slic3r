@@ -750,13 +750,6 @@ void MainFrame::init_tabpanel()
             select_tab(size_t(0)); // select Plater
     });
 
-    if (wxGetApp().is_editor()) {
-       
-        //m_webview = new WebViewPanel(m_tabpanel);
-        //m_tabpanel->AddNewPage(m_webview, "web", "cog"/*, "tab_home_active"*/);
-        //m_param_panel = new ParamsPanel(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBK_LEFT | wxTAB_TRAVERSAL);
-    }
-
     m_plater = new Plater(this, this);
     m_plater->Hide();
 
@@ -1183,7 +1176,7 @@ void MainFrame::on_sys_color_changed()
     wxGetApp().plater()->sys_color_changed();
 
     // update Tabs
-    for (auto tab : wxGetApp().tabs_list)
+    for (Tab* tab : wxGetApp().tabs_list)
         tab->sys_color_changed();
 
     if (m_connect_webview)

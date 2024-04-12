@@ -13,7 +13,6 @@ namespace GUI {
 #if __APPLE__
 extern bool mac_dark_mode();
 extern double mac_max_scaling_factor();
-void WKWebView_evaluateJavaScript(void * web, wxString const & script, void (*callback)(wxString const &));
 #endif
 
 

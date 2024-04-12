@@ -938,17 +938,6 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         BOOST_LOG_TRIVIAL(error) << "Failed communication with Prusa Account: " << evt.data;
         user_account->on_communication_fail();
     });
-#if 0
-    // for debug purposes only
-    this->q->Bind(EVT_UA_SUCCESS, [this](UserAccountSuccessEvent& evt) {
-        this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
-        this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, evt.data);
-    });
-    this->q->Bind(EVT_UA_CONNECT_USER_DATA_SUCCESS, [this](UserAccountSuccessEvent& evt) {
-        BOOST_LOG_TRIVIAL(error) << evt.data;
-        user_account->on_connect_user_data_success(evt.data);
-    });
-#endif // 0
     this->q->Bind(EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, [this](UserAccountSuccessEvent& evt) {
         std::string text;
         bool printers_changed = false;

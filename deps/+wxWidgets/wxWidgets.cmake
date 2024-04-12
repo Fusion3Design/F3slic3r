@@ -16,6 +16,7 @@ endif()
 
 if (MSVC)
     set(_wx_webview "-DwxUSE_WEBVIEW_EDGE=ON")
+
 else ()
     set(_wx_webview "-DwxUSE_WEBVIEW=ON")
 endif ()
@@ -56,3 +57,14 @@ add_cmake_project(wxWidgets
 )
 
 set(DEP_wxWidgets_DEPENDS ZLIB PNG EXPAT JPEG NanoSVG)
+
+
+if (MSVC)
+    # After the build, copy the WebView2Loader.dll into the installation directory.
+    # This should probably be done better.
+    add_custom_command(TARGET dep_wxWidgets POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_CURRENT_BINARY_DIR}/builds/wxWidgets/lib/vc_x64_lib/WebView2Loader.dll"
+            "${${PROJECT_NAME}_DEP_INSTALL_PREFIX}/bin/WebView2Loader.dll")
+endif()
+

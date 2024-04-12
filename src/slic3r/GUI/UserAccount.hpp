@@ -41,11 +41,6 @@ public:
     void set_remember_session(bool remember);
     void toggle_remember_session();
     bool get_remember_session();
-#if 0
-    void enqueue_user_id_action();
-    void enqueue_connect_dummy_action();
-    void enqueue_connect_user_data_action();
-#endif
     void enqueue_connect_printers_action();
     void enqueue_avatar_action();
 

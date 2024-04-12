@@ -212,6 +212,13 @@ if (WIN32)
                 COMMENT "Symlinking the resources directory into the build tree"
                 VERBATIM
             )
+
+            if (SLIC3R_GUI)
+                add_custom_command(TARGET PrusaSlicer POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy
+                    "${wxWidgets_ROOT_DIR}/bin/WebView2Loader.dll"
+                    "${CMAKE_CURRENT_BINARY_DIR}/${CONF}/WebView2Loader.dll")
+            endif()
         endforeach ()
     else ()
         file(TO_NATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}/resources" WIN_RESOURCES_SYMLINK)
@@ -220,6 +227,12 @@ if (WIN32)
             COMMENT "Symlinking the resources directory into the build tree"
             VERBATIM
         )
+        if (SLIC3R_GUI)
+            add_custom_command(TARGET PrusaSlicer POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                "${wxWidgets_ROOT_DIR}/bin/WebView2Loader.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/${CONF}/WebView2Loader.dll")
+        endif()
     endif ()
 
     # This has to be a separate target due to the windows command line lenght limits

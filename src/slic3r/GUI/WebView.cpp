@@ -1,37 +1,11 @@
 #include "WebView.hpp"
 #include "slic3r/GUI/GUI_App.hpp"
-#include "slic3r/Utils/MacDarkMode.hpp"
 
-#include <wx/webviewarchivehandler.h>
-#include <wx/webviewfshandler.h>
-#include <wx/msw/webview_edge.h>
 #include <wx/uri.h>
-#include "wx/private/jsscriptwrapper.h"
+#include <wx/webview.h>
 
 #include <boost/log/trivial.hpp>
 
-#ifdef __WIN32__
-#include <WebView2.h>
-#elif defined __linux__
-#include <gtk/gtk.h>
-#define WEBKIT_API
-struct WebKitWebView;
-struct WebKitJavascriptResult;
-extern "C" {
-WEBKIT_API void
-webkit_web_view_run_javascript                       (WebKitWebView             *web_view,
-                                                      const gchar               *script,
-                                                      GCancellable              *cancellable,
-                                                      GAsyncReadyCallback       callback,
-                                                      gpointer                  user_data);
-WEBKIT_API WebKitJavascriptResult *
-webkit_web_view_run_javascript_finish                (WebKitWebView             *web_view,
-                                                      GAsyncResult              *result,
-						      GError                    **error);
-WEBKIT_API void
-webkit_javascript_result_unref              (WebKitJavascriptResult *js_result);
-}
-#endif
 
 class FakeWebView : public wxWebView
 {
@@ -69,31 +43,21 @@ class FakeWebView : public wxWebView
     virtual void DoSetPage(const wxString& html, const wxString& baseUrl) override { }
 };
 
-wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
+wxWebView* WebView::CreateWebView(wxWindow * parent, const wxString& url)
 {
 #if wxUSE_WEBVIEW_EDGE
-    // WebView2Loader.dll in exe folder is enough?
-    /*
-    // Check if a fixed version of edge is present in
-    // $executable_path/edge_fixed and use it
-    wxFileName edgeFixedDir(wxStandardPaths::Get().GetExecutablePath());
-    edgeFixedDir.SetFullName("");
-    edgeFixedDir.AppendDir("edge_fixed");
-    if (edgeFixedDir.DirExists()) {
-        wxWebViewEdge::MSWSetBrowserExecutableDir(edgeFixedDir.GetFullPath());
-        wxLogMessage("Using fixed edge version");
-    }
-    */
+    bool backend_available = wxWebView::IsBackendAvailable(wxWebViewBackendEdge);
+#else
+    bool backend_available = wxWebView::IsBackendAvailable(wxWebViewBackendWebKit);
 #endif
-    wxString correct_url  = url;
-#ifdef __WIN32__
-    correct_url.Replace("\\", "/");
-#endif
-    if (!correct_url.empty()) 
-        correct_url = wxURI(correct_url).BuildURI();
 
-    auto webView = wxWebView::New();
+    wxWebView* webView = nullptr;
+    if (backend_available)
+        webView = wxWebView::New();
+    
     if (webView) {
+        wxString correct_url = url.empty() ? wxString("") : wxURI(url).BuildURI();
+
 #ifdef __WIN32__
         webView->SetUserAgent(wxString::Format("PrusaSlicer/v%s", SLIC3R_VERSION));
         webView->Create(parent, wxID_ANY, correct_url, wxDefaultPosition, wxDefaultSize);
@@ -113,7 +77,7 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
         Slic3r::GUI::wxGetApp().CallAfter([webView] {
 #endif
         if (!webView->AddScriptMessageHandler("_prusaSlicer")) {
-            // TODO: dialog to user
+            // TODO: dialog to user !!!
             //wxLogError("Could not add script message handler");
             BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << "Could not add script message handler";
         }
@@ -122,55 +86,17 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, wxString const & url)
 #endif
         webView->EnableContextMenu(false);
     } else {
-        // TODO: dialog to user
+        // TODO: dialog to user !!!
         BOOST_LOG_TRIVIAL(error) << "Failed to create wxWebView object. Using Dummy object instead. Webview won't be working.";
         webView = new FakeWebView;
     }
     return webView;
 }
 
-void WebView::LoadUrl(wxWebView * webView, wxString const &url)
-{
-    auto url2  = url;
-#ifdef __WIN32__
-    url2.Replace("\\", "/");
-#endif
-    if (!url2.empty()) { url2 = wxURI(url2).BuildURI(); }
-    BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << url2.ToUTF8();
-    webView->LoadURL(url2);
-}
+
 
 bool WebView::run_script(wxWebView *webView, wxString const &javascript)
 {
-    try {
-#ifdef __WIN32__
-        ICoreWebView2 *   webView2 = (ICoreWebView2 *) webView->GetNativeBackend();
-        if (webView2 == nullptr)
-            return false;
-        int               count   = 0;
-        wxJSScriptWrapper wrapJS(javascript, wxJSScriptWrapper::OutputType::JS_OUTPUT_STRING);
-        wxString wrapped_code = wrapJS.GetWrappedCode();
-        return webView2->ExecuteScript(wrapJS.GetWrappedCode(), NULL) == 0;
-#elif defined __WXMAC__
-        WKWebView * wkWebView = (WKWebView *) webView->GetNativeBackend();
-        wxJSScriptWrapper wrapJS(javascript, wxJSScriptWrapper::OutputType::JS_OUTPUT_STRING);
-        Slic3r::GUI::WKWebView_evaluateJavaScript(wkWebView, wrapJS.GetWrappedCode(), nullptr);
-        return true;
-#else
-        WebKitWebView *wkWebView = (WebKitWebView *) webView->GetNativeBackend();
-        webkit_web_view_run_javascript(
-            wkWebView, javascript.utf8_str(), NULL,
-            [](GObject *wkWebView, GAsyncResult *res, void *) {
-                GError * error = NULL;
-                auto result = webkit_web_view_run_javascript_finish((WebKitWebView*)wkWebView, res, &error);
-                if (!result)
-                    g_error_free (error);
-                else
-                    webkit_javascript_result_unref (result);
-        }, NULL);
-        return true;
-#endif
-    } catch (std::exception &) {
-        return false;
-    }
+    webView->RunScriptAsync(javascript);
+    return true;
 }
