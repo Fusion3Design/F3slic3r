@@ -66,17 +66,16 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
     topsizer->Add(m_info, wxSizerFlags().Expand());
 #endif
 
-    // Create the webview
-    m_browser = WebView::CreateWebView(this, /*m_default_url*/ GUI::format_wxstr("file://%1%/web/connection_failed.html", boost::filesystem::path(resources_dir()).generic_string()));
-    if (m_browser == nullptr) {
-        wxLogError("Could not init m_browser");
-        return;
-    }
-
     SetSizer(topsizer);
 
+    // Create the webview
+    m_browser = WebView::CreateWebView(this, /*m_default_url*/ GUI::format_wxstr("file://%1%/web/connection_failed.html", boost::filesystem::path(resources_dir()).generic_string()));
+    if (!m_browser) {
+        wxStaticText* text = new wxStaticText(this, wxID_ANY, _L("Failed to load a web browser."));
+        topsizer->Add(text, 0, wxALIGN_LEFT | wxBOTTOM, 10);
+        return;
+    }
     topsizer->Add(m_browser, wxSizerFlags().Expand().Proportion(1));
-
 #ifdef DEBUG_URL_PANEL
     // Create the Tools menu
     m_tools_menu = new wxMenu();
@@ -98,7 +97,6 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
     //Zoom
     m_zoomFactor = 100;
 
-    
     Bind(wxEVT_SHOW, &WebViewPanel::on_show, this);
 
     // Connect the webview events
@@ -147,6 +145,9 @@ WebViewPanel::~WebViewPanel()
 
 void WebViewPanel::load_url(const wxString& url)
 {
+    if (!m_browser)
+        return;
+
     this->Show();
     this->Raise();
 #ifdef DEBUG_URL_PANEL
@@ -169,8 +170,7 @@ void WebViewPanel::load_error_page()
 
 void WebViewPanel::on_show(wxShowEvent& evt)
 {
-    if (evt.IsShown() && m_load_default_url)
-    {
+    if (evt.IsShown() && m_load_default_url) {
         m_load_default_url = false;
         load_url(m_default_url);
     }
@@ -179,6 +179,8 @@ void WebViewPanel::on_show(wxShowEvent& evt)
 
 void WebViewPanel::on_idle(wxIdleEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
     if (m_browser->IsBusy())
         wxSetCursor(wxCURSOR_ARROWWAIT);
     else
@@ -194,6 +196,8 @@ void WebViewPanel::on_idle(wxIdleEvent& WXUNUSED(evt))
     */
 void WebViewPanel::on_url(wxCommandEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
 #ifdef DEBUG_URL_PANEL
     m_browser->LoadURL(m_url->GetValue());
     m_browser->SetFocus();
@@ -205,6 +209,8 @@ void WebViewPanel::on_url(wxCommandEvent& WXUNUSED(evt))
     */
 void WebViewPanel::on_back_button(wxCommandEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
     m_browser->GoBack();
 }
 
@@ -213,6 +219,8 @@ void WebViewPanel::on_back_button(wxCommandEvent& WXUNUSED(evt))
     */
 void WebViewPanel::on_forward_button(wxCommandEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
     m_browser->GoForward();
 }
 
@@ -221,6 +229,8 @@ void WebViewPanel::on_forward_button(wxCommandEvent& WXUNUSED(evt))
     */
 void WebViewPanel::on_stop_button(wxCommandEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
     m_browser->Stop();
 }
 
@@ -229,6 +239,8 @@ void WebViewPanel::on_stop_button(wxCommandEvent& WXUNUSED(evt))
     */
 void WebViewPanel::on_reload_button(wxCommandEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
     m_browser->Reload();
 }
 
@@ -251,6 +263,9 @@ void WebViewPanel::on_script_message(wxWebViewEvent& evt)
     */
 void WebViewPanel::on_view_source_request(wxCommandEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
+
     SourceViewDialog dlg(this, m_browser->GetPageSource());
     dlg.ShowModal();
 }
@@ -260,6 +275,9 @@ void WebViewPanel::on_view_source_request(wxCommandEvent& WXUNUSED(evt))
     */
 void WebViewPanel::on_view_text_request(wxCommandEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
+
     wxDialog textViewDialog(this, wxID_ANY, "Page Text",
         wxDefaultPosition, wxSize(700, 500),
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
@@ -281,6 +299,9 @@ void WebViewPanel::on_view_text_request(wxCommandEvent& WXUNUSED(evt))
     */
 void WebViewPanel::on_tools_clicked(wxCommandEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
+
 #ifdef DEBUG_URL_PANEL
     m_context_menu->Check(m_browser->IsContextMenuEnabled());
     m_dev_tools->Check(m_browser->IsAccessToDevToolsEnabled());
@@ -292,6 +313,8 @@ void WebViewPanel::on_tools_clicked(wxCommandEvent& WXUNUSED(evt))
 
 void WebViewPanel::run_script(const wxString& javascript)
 {
+    if (!m_browser)
+        return;
     // Remember the script we run in any case, so the next time the user opens
     // the "Run Script" dialog box, it is shown there for convenient updating.
     m_javascript = javascript;
@@ -339,6 +362,9 @@ void WebViewPanel::on_add_user_script(wxCommandEvent& WXUNUSED(evt))
 
 void WebViewPanel::on_set_custom_user_agent(wxCommandEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
+
     wxString customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.1 Mobile/15E148 Safari/604.1";
     wxTextEntryDialog dialog
     (
@@ -357,25 +383,40 @@ void WebViewPanel::on_set_custom_user_agent(wxCommandEvent& WXUNUSED(evt))
 
 void WebViewPanel::on_clear_selection(wxCommandEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
+
     m_browser->ClearSelection();
 }
 
 void WebViewPanel::on_delete_selection(wxCommandEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
+
     m_browser->DeleteSelection();
 }
 
 void WebViewPanel::on_select_all(wxCommandEvent& WXUNUSED(evt))
 {
+    if (!m_browser)
+        return;
+
     m_browser->SelectAll();
 }
 
 void WebViewPanel::On_enable_context_menu(wxCommandEvent& evt)
 {
+    if (!m_browser)
+        return;
+
     m_browser->EnableContextMenu(evt.IsChecked());
 }
 void WebViewPanel::On_enable_dev_tools(wxCommandEvent& evt)
 {
+    if (!m_browser)
+        return;
+
     m_browser->EnableAccessToDevTools(evt.IsChecked());
 }
 
@@ -542,6 +583,9 @@ void ConnectWebViewPanel::on_request_update_selected_printer_action()
 PrinterWebViewPanel::PrinterWebViewPanel(wxWindow* parent, const wxString& default_url)
     : WebViewPanel(parent, default_url)
 {
+    if (!m_browser)
+        return;
+
     m_browser->Bind(wxEVT_WEBVIEW_LOADED, &PrinterWebViewPanel::on_loaded, this);
 }
 
@@ -558,7 +602,7 @@ void PrinterWebViewPanel::on_loaded(wxWebViewEvent& evt)
 
 void PrinterWebViewPanel::send_api_key()
 {
-    if (m_api_key_sent)
+    if (!m_browser || m_api_key_sent)
         return;
     m_api_key_sent = true;
     wxString key = from_u8(m_api_key);
@@ -583,7 +627,7 @@ void PrinterWebViewPanel::send_api_key()
 
 void PrinterWebViewPanel::send_credentials()
 {
-    if (m_api_key_sent)
+    if (!m_browser || m_api_key_sent)
         return;
     m_api_key_sent = true;
     wxString usr = from_u8(m_usr);
@@ -614,15 +658,15 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
     : wxDialog(parent, wxID_ANY, dialog_name, wxDefaultPosition, size, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
+    SetSizer(topsizer);
 
     // Create the webview
     m_browser = WebView::CreateWebView(this, url);
-    if (m_browser == nullptr) {
-        wxLogError("Could not init m_browser");
+    if (!m_browser) {
+        wxStaticText* text = new wxStaticText(this, wxID_ANY, _L("Failed to load a web browser."));
+        topsizer->Add(text, 0, wxALIGN_LEFT | wxBOTTOM, 10);
         return;
     }
-
-    SetSizer(topsizer);
 
     topsizer->Add(m_browser, wxSizerFlags().Expand().Proportion(1));
 
