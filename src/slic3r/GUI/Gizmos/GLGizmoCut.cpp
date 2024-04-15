@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <wx/progdlg.h>
+#include <boost/nowide/convert.hpp>
 
 #include "slic3r/GUI/GUI_App.hpp"
 #include "slic3r/GUI/Plater.hpp"

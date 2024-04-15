@@ -5,6 +5,7 @@
 ///|/
 #include "ImGuiPureWrap.hpp"
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/nowide/convert.hpp>
 
 #ifndef IMGUI_DEFINE_MATH_OPERATORS

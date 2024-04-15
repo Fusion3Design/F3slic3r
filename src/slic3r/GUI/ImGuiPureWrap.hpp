@@ -5,6 +5,7 @@
 #ifndef slic3r_ImGuiPureWrap_hpp_
 #define slic3r_ImGuiPureWrap_hpp_
 
+#include <functional>
 #include <string>
 #include <string_view>
 #include <vector>

@@ -2,6 +2,8 @@
 #define slic3r_WebViewDialog_hpp_
 
 #include <map>
+#include <wx/wx.h>
+#include <wx/event.h>
 
 class wxWebView;
 class wxWebViewEvent;
