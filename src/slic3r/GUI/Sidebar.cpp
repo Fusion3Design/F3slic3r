@@ -717,8 +717,6 @@ void Sidebar::on_select_preset(wxCommandEvent& evt)
          * and for SLA presets they should be deleted
          */
         m_object_list->update_object_list_by_printer_technology();
-
-        wxGetApp().show_printer_webview_tab();
     }
 
 #ifdef __WXMSW__

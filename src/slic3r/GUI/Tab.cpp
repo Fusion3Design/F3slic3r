@@ -3619,6 +3619,8 @@ void Tab::load_current_preset()
             on_preset_loaded();
         else
             wxGetApp().sidebar().update_objects_list_extruder_column(1);
+        // Check and show "Physical printer" page if needed
+        wxGetApp().show_printer_webview_tab();
     }
     // Reload preset pages with the new configuration values.
     reload_config();
@@ -3646,27 +3648,19 @@ void Tab::load_current_preset()
                 Page* tmp_page = m_active_page;
                 m_active_page = nullptr;
                 for (auto tab : wxGetApp().tabs_list) {
-                    if (tab->type() == Preset::TYPE_PRINTER) { // Printer tab is shown every time
-                        int cur_selection = wxGetApp().tab_panel()->GetSelection();
-                        if (cur_selection != 0)
-                            wxGetApp().tab_panel()->SetSelection(wxGetApp().tab_panel()->GetPageCount() - 1);
+                    if (tab->type() == Preset::TYPE_PRINTER) {
+                        // Printer tab is shown every time
                         continue;
                     }
                     if (tab->supports_printer_technology(printer_technology))
                     {
 #ifdef _WIN32
-                        if (!wxGetApp().tabs_as_menu()) {
-#endif
-                            dynamic_cast<TopBar*>(wxGetApp().tab_panel())->InsertPage(wxGetApp().tab_panel()->FindPage(this), tab, tab->title(),"");
-#ifdef _WIN32
-                        }
-                        else
+                        if (wxGetApp().tabs_as_menu())
                             wxGetApp().tab_panel()->InsertPage(wxGetApp().tab_panel()->FindPage(this), tab, tab->title());
+                        else
 #endif
-                        #ifdef __linux__ // the tabs apparently need to be explicitly shown on Linux (pull request #1563)
-                            int page_id = wxGetApp().tab_panel()->FindPage(tab);
-                            wxGetApp().tab_panel()->GetPage(page_id)->Show(true);
-                        #endif // __linux__
+                            dynamic_cast<TopBar*>(wxGetApp().tab_panel())->InsertNewPage(wxGetApp().tab_panel()->FindPage(this), tab, tab->title(),"");
+
                     }
                     else {
                         int page_id = wxGetApp().tab_panel()->FindPage(tab);
@@ -4376,8 +4370,11 @@ void Tab::delete_preset()
     {
         PhysicalPrinter& printer = physical_printers.get_selected_printer();
         if (printer.preset_names.size() == 1) {
-            if (m_presets_choice->del_physical_printer(_L("It's a last preset for this physical printer.")))
+            if (m_presets_choice->del_physical_printer(_L("It's a last preset for this physical printer."))) {
+                // Hide "Physical printer" page
+                wxGetApp().show_printer_webview_tab();
                 Layout();
+            }
             return;
         }
         

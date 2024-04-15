@@ -207,37 +207,10 @@ public:
                  bool bSelect = false)
     {
         DoInvalidateBestSize();
-        return InsertPage(GetPageCount(), page, text, bmp_name, bSelect);
+        return InsertNewPage(GetPageCount(), page, text, bmp_name, bSelect);
     }
 
-    // override AddPage with using of AddNewPage
-    bool AddPage(   wxWindow* page,
-                    const wxString& text,
-                    bool bSelect = false,
-                    int imageId = NO_IMAGE) override
-    {
-        return AddNewPage(page, text, "", bSelect);
-    }
-
-    // Page management
-    virtual bool InsertPage(size_t n,
-                            wxWindow * page,
-                            const wxString & text,
-                            bool bSelect = false,
-                            int imageId = NO_IMAGE) override
-    {
-        if (!wxBookCtrlBase::InsertPage(n, page, text, bSelect, imageId))
-            return false;
-
-        GetTopBarItemsCtrl()->InsertPage(n, text, bSelect);
-
-        if (!DoSetSelectionAfterInsertion(n, bSelect))
-            page->Hide();
-
-        return true;
-    }
-
-    bool InsertPage(size_t n,
+    bool InsertNewPage(size_t n,
                     wxWindow * page,
                     const wxString & text,
                     const std::string& bmp_name = "",
@@ -250,8 +223,29 @@ public:
 
         if (bSelect)
             SetSelection(n);
+        else
+            page->Hide();
 
         return true;
+    }
+
+    // override AddPage with using of AddNewPage
+    bool AddPage(   wxWindow* page,
+                    const wxString& text,
+                    bool bSelect = false,
+                    int imageId = NO_IMAGE) override
+    {
+        return AddNewPage(page, text, "", bSelect);
+    }
+
+    // Page management
+    bool InsertPage(size_t n,
+                    wxWindow * page,
+                    const wxString & text,
+                    bool bSelect = false,
+                    int imageId = NO_IMAGE) override
+    {
+        return InsertNewPage(n, page, text, "", bSelect);
     }
 
     virtual int SetSelection(size_t n) override
@@ -456,7 +450,8 @@ protected:
         if (win)
         {
             GetTopBarItemsCtrl()->RemovePage(page);
-            DoSetSelectionAfterRemoval(page);
+            // Don't setect any page after deletion some of them
+            // DoSetSelectionAfterRemoval(page);
         }
 
         return win;
