@@ -22,9 +22,10 @@ namespace Slic3r {
 namespace GUI {
 
 
-WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
+WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const std::string& loading_html/* = "loading"*/)
         : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
         , m_default_url (default_url)
+        , m_loading_html(loading_html)
  {
     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
 #ifdef DEBUG_URL_PANEL
@@ -69,7 +70,7 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
     SetSizer(topsizer);
 
     // Create the webview
-    m_browser = WebView::CreateWebView(this, /*m_default_url*/ GUI::format_wxstr("file://%1%/web/connection_failed.html", boost::filesystem::path(resources_dir()).generic_string()));
+    m_browser = WebView::CreateWebView(this, /*m_default_url*/ GUI::format_wxstr("file://%1%/web/%2%.html", boost::filesystem::path(resources_dir()).generic_string(), m_loading_html));
     if (!m_browser) {
         wxStaticText* text = new wxStaticText(this, wxID_ANY, _L("Failed to load a web browser."));
         topsizer->Add(text, 0, wxALIGN_LEFT | wxBOTTOM, 10);
@@ -125,7 +126,6 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url)
     Bind(wxEVT_IDLE, &WebViewPanel::on_idle, this);
     Bind(wxEVT_CLOSE_WINDOW, &WebViewPanel::on_close, this);
 
-    m_LoginUpdateTimer = nullptr;
  }
 
 WebViewPanel::~WebViewPanel()
@@ -133,12 +133,6 @@ WebViewPanel::~WebViewPanel()
     SetEvtHandlerEnabled(false);
 #ifdef DEBUG_URL_PANEL
     delete m_tools_menu;
-
-    if (m_LoginUpdateTimer != nullptr) {
-        m_LoginUpdateTimer->Stop();
-        delete m_LoginUpdateTimer;
-        m_LoginUpdateTimer = NULL;
-    }
 #endif
 }
 
@@ -549,7 +543,7 @@ void ConnectRequestHandler::on_request_config()
 }
 
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
-    : WebViewPanel(parent, L"https://connect.prusa3d.com/connect-slicer-app/")
+    : WebViewPanel(parent, L"https://connect.prusa3d.com/connect-slicer-app/", "connect_loading")
 {  
 }
 
@@ -651,14 +645,15 @@ void PrinterWebViewPanel::sys_color_changed()
 {
 }
 
-WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size)
+WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size, const std::string& loading_html/* = "loading"*/)
     : wxDialog(parent, wxID_ANY, dialog_name, wxDefaultPosition, size, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+    , m_loading_html(loading_html)
 {
     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
     SetSizer(topsizer);
 
     // Create the webview
-    m_browser = WebView::CreateWebView(this, url);
+    m_browser = WebView::CreateWebView(this, GUI::format_wxstr("file://%1%/web/%2%.html", boost::filesystem::path(resources_dir()).generic_string(), m_loading_html));
     if (!m_browser) {
         wxStaticText* text = new wxStaticText(this, wxID_ANY, _L("Failed to load a web browser."));
         topsizer->Add(text, 0, wxALIGN_LEFT | wxBOTTOM, 10);
@@ -669,6 +664,8 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
 
     Bind(wxEVT_SHOW, &WebViewDialog::on_show, this);
     Bind(wxEVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED, &WebViewDialog::on_script_message, this, m_browser->GetId());
+
+    m_browser->LoadURL(url);
 }
 WebViewDialog::~WebViewDialog()
 {
@@ -682,7 +679,11 @@ void WebViewDialog::run_script(const wxString& javascript)
 }
 
 PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val)
-    : WebViewDialog(parent, L"https://connect.prusa3d.com/connect-slicer-app/printer-list", _L("Choose a printer"), wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit())))
+    : WebViewDialog(parent
+        , L"https://connect.prusa3d.com/connect-slicer-app/printer-list"
+        , _L("Choose a printer")
+        , wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit()))
+        , "connect_loading")
     , m_ret_val(ret_val)
 {
     Centre();
