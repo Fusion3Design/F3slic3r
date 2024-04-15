@@ -301,10 +301,10 @@ void TopBarItemsCtrl::UpdateAccountMenu(bool avatar/* = false*/)
             if (new_logo.IsOk())
                 m_account_btn->SetBitmapBundle(new_logo.bmp());
             else
-                m_account_btn->SetBitmapBundle(*get_bmp_bundle("user"));
+                m_account_btn->SetBitmapBundle(*get_bmp_bundle("user", 24));
         }
         else {
-            m_account_btn->SetBitmapBundle(*get_bmp_bundle("user"));
+            m_account_btn->SetBitmapBundle(*get_bmp_bundle("user", 24));
         }
     }
 #endif

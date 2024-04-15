@@ -860,6 +860,11 @@ ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_p
         wxBitmap::Rescale(bitmap, icon_size);
         m_bmp = wxBitmapBundle(bitmap);
     }
+    else if (ext == ".jpg") {
+        bitmap.LoadFile(path, wxBITMAP_TYPE_JPEG);
+        wxBitmap::Rescale(bitmap, icon_size);
+        m_bmp = wxBitmapBundle(bitmap);
+    }
     else if (ext == ".svg") {
         m_bmp = wxBitmapBundle::FromSVGFile(path, icon_size);
     }
