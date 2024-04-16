@@ -2730,8 +2730,9 @@ void GCodeProcessor::process_G1(const std::array<std::optional<double>, 4>& axes
 
         for (unsigned char a = X; a <= E; ++a) {
             const float axis_max_acceleration = get_axis_max_acceleration(static_cast<PrintEstimatedStatistics::ETimeMode>(i), static_cast<Axis>(a));
-            if (acceleration * std::abs(delta_pos[a]) * inv_distance > axis_max_acceleration)
-                acceleration = axis_max_acceleration;
+            const float scale = std::abs(delta_pos[a]) * inv_distance;
+            if (acceleration * scale > axis_max_acceleration)
+                acceleration = axis_max_acceleration / scale;
         }
 
         block.acceleration = acceleration;
