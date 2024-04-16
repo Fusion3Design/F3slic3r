@@ -81,6 +81,7 @@ public:
 #endif //__APPLE__
 #ifdef _WIN32
 	static void    init_windows_properties(MainFrame* main_frame, size_t instance_hash);
+	void           update_windows_properties(MainFrame* main_frame);
 #endif //WIN32
 private:
 	bool                    m_initialized { false };

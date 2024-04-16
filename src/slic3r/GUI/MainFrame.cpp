@@ -278,6 +278,15 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
         event.Skip();
     });
 
+
+#ifdef _WIN32
+    Bind(wxEVT_SIZE, [this](wxSizeEvent& event) {
+        event.Skip();
+        // Update window property to mainframe so other instances can indentify it.
+        wxGetApp().other_instance_message_handler()->update_windows_properties(this);
+    });
+#endif //WIN32
+
 // OSX specific issue:
 // When we move application between Retina and non-Retina displays, The legend on a canvas doesn't redraw
 // So, redraw explicitly canvas, when application is moved
