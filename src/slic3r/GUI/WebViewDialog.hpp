@@ -85,7 +85,9 @@ protected:
 
     std::string m_loading_html;
     //DECLARE_EVENT_TABLE()
-};
+
+    bool m_load_error_page { false };
+}; 
 
 class ConnectRequestHandler
 {

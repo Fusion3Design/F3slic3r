@@ -159,7 +159,11 @@ void WebViewPanel::load_default_url_delayed()
 
 void WebViewPanel::load_error_page()
 {
-    load_url(GUI::format_wxstr("file://%1%/web/connection_failed.html", boost::filesystem::path(resources_dir()).generic_string()));
+    if (!m_browser)
+        return;
+
+    m_browser->Stop();
+    m_load_error_page = true;    
 }
 
 void WebViewPanel::on_show(wxShowEvent& evt)
@@ -168,18 +172,22 @@ void WebViewPanel::on_show(wxShowEvent& evt)
         m_load_default_url = false;
         load_url(m_default_url);
     }
-    // TODO: add check that any url was loaded
 }
 
 void WebViewPanel::on_idle(wxIdleEvent& WXUNUSED(evt))
 {
     if (!m_browser)
         return;
-    if (m_browser->IsBusy())
+    if (m_browser->IsBusy()) {
         wxSetCursor(wxCURSOR_ARROWWAIT);
-    else
+    } else {
         wxSetCursor(wxNullCursor);
 
+        if (m_load_error_page) {
+            m_load_error_page = false;
+            load_url(GUI::format_wxstr("file://%1%/web/connection_failed.html", boost::filesystem::path(resources_dir()).generic_string()));
+        }
+    }
 #ifdef DEBUG_URL_PANEL
     m_button_stop->Enable(m_browser->IsBusy());
 #endif
@@ -238,19 +246,14 @@ void WebViewPanel::on_reload_button(wxCommandEvent& WXUNUSED(evt))
     m_browser->Reload();
 }
 
-
-
 void WebViewPanel::on_close(wxCloseEvent& evt)
 {
     this->Hide();
 }
 
-
 void WebViewPanel::on_script_message(wxWebViewEvent& evt)
 {
 }
-
-
 
 /**
     * Invoked when user selects the "View Source" menu item
