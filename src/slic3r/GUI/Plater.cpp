@@ -5866,7 +5866,14 @@ void Plater::connect_gcode()
     std::string connect_filament_type = p->user_account->get_keyword_from_json(dialog_msg, "material");
     std::vector<const Preset*> compatible_printer_presets;
     for (const std::string& cp : compatible_printers) {
-        compatible_printer_presets.emplace_back(preset_bundle->printers.find_system_preset_by_model_and_variant(cp, connect_nozzle));
+        const Preset* found_preset = preset_bundle->printers.find_system_preset_by_model_and_variant(cp, connect_nozzle);
+        if (found_preset) {
+            compatible_printer_presets.emplace_back(found_preset);
+        }
+    }
+    if (compatible_printer_presets.empty()) {
+        show_error(this, _L("No compatible printer presets found."));
+        return;
     }
     // Selected profiles
     const Preset* selected_printer_preset = &preset_bundle->printers.get_selected_preset();
