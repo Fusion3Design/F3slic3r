@@ -1,12 +1,8 @@
 #include <catch2/catch.hpp>
-#include <test_utils.hpp>
 
 #include <libslic3r/Polygon.hpp>
 #include <libslic3r/Polyline.hpp>
 #include <libslic3r/EdgeGrid.hpp>
-#include <libslic3r/Geometry.hpp>
-#include "libslic3r/Geometry/VoronoiUtilsCgal.hpp"
-
 #include <libslic3r/Geometry/VoronoiOffset.hpp>
 #include <libslic3r/Geometry/VoronoiVisualUtils.hpp>
 
@@ -15,7 +11,8 @@
 // #define VORONOI_DEBUG_OUT
 
 #ifdef VORONOI_DEBUG_OUT
-#include <libslic3r/VoronoiVisualUtils.hpp>
+#include <libslic3r/Geometry/VoronoiVisualUtils.hpp>
+#include <libslic3r/Utils.hpp>
 #endif
 
 using boost::polygon::voronoi_builder;
