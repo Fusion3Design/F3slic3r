@@ -502,7 +502,7 @@ Sidebar::Sidebar(Plater *parent)
 
     auto* complect_btns_sizer = new wxBoxSizer(wxHORIZONTAL);
     complect_btns_sizer->Add(m_btn_export_gcode, 1, wxEXPAND);
-    complect_btns_sizer->Add(m_btn_connect_gcode, 1, wxLEFT, margin_5);
+    complect_btns_sizer->Add(m_btn_connect_gcode, 1, wxEXPAND | wxLEFT, margin_5);
     complect_btns_sizer->Add(m_btn_send_gcode, 0, wxLEFT, margin_5);
 	complect_btns_sizer->Add(m_btn_export_gcode_removable, 0, wxLEFT, margin_5);
 
@@ -511,7 +511,7 @@ Sidebar::Sidebar(Plater *parent)
 
     auto *sizer = new wxBoxSizer(wxVERTICAL);
     sizer->Add(m_scrolled_panel, 1, wxEXPAND);
-    sizer->Add(btns_sizer, 0, wxEXPAND | wxLEFT, margin_5);
+    sizer->Add(btns_sizer, 0, wxEXPAND | wxLEFT | wxBOTTOM, margin_5);
     SetSizer(sizer);
 
     // Events
@@ -717,8 +717,6 @@ void Sidebar::on_select_preset(wxCommandEvent& evt)
          * and for SLA presets they should be deleted
          */
         m_object_list->update_object_list_by_printer_technology();
-
-        wxGetApp().show_printer_webview_tab();
     }
 
 #ifdef __WXMSW__

@@ -3707,34 +3707,8 @@ void GUI_App::handle_connect_request_printer_pick(std::string msg)
 
 void GUI_App::show_printer_webview_tab()
 {
-    //bool show, const DynamicPrintConfig& dpc
-
-    if (DynamicPrintConfig* dpc = preset_bundle->physical_printers.get_selected_printer_config(); dpc == nullptr) {
-        this->mainframe->select_tab(size_t(0));
-        mainframe->remove_printer_webview_tab();
-    } else {
-        std::string url = dpc->opt_string("print_host");
-        
-        if (url.find("http://") != 0 && url.find("https://") != 0) {
-            url = "http://" + url;
-        }
-
-        // set password / api key
-        if (dynamic_cast<const ConfigOptionEnum<AuthorizationType>*>(dpc->option("printhost_authorization_type"))->value == AuthorizationType::atKeyPassword) {
-            mainframe->set_printer_webview_api_key(dpc->opt_string("printhost_apikey"));
-        }
-#if 0 // The user password authentication is not working in prusa link as of now.
-        else {
-            mainframe->set_printer_webview_credentials(dpc->opt_string("printhost_user"), dpc->opt_string("printhost_password"));
-        }
-#endif // 0       
-        // add printer or change url
-        if (mainframe->get_printer_webview_tab_added()) {
-            mainframe->set_printer_webview_tab_url(from_u8(url));
-        } else {
-            mainframe->add_printer_webview_tab(from_u8(url));
-        }
-    }
+    mainframe->show_printer_webview_tab(preset_bundle->physical_printers.get_selected_printer_config());
 }
+
 } // GUI
 } //Slic3r

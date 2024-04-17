@@ -96,8 +96,27 @@ wxMenuItem* append_menu_item(wxMenu* menu, int id, const wxString& string, const
 
 #ifndef __APPLE__
     if (wxAcceleratorEntry* entry = wxAcceleratorEntry::Create(string)) {
-        entry->SetMenuItem(item);
-        accelerator_entries_cache().push_back(entry);
+
+        static const std::set<int> special_keys = {
+                                                WXK_PAGEUP,
+                                                WXK_PAGEDOWN,
+                                                WXK_NUMPAD_PAGEDOWN,
+                                                WXK_END,
+                                                WXK_HOME,
+                                                WXK_LEFT,
+                                                WXK_UP,
+                                                WXK_RIGHT,
+                                                WXK_DOWN,
+                                                WXK_INSERT,
+                                                WXK_DELETE,
+        };
+
+        // Check for special keys not included in the table
+        // see wxMSWKeyboard::WXWORD WXToVK(int wxk, bool *isExtended)
+        if (std::find(special_keys.begin(), special_keys.end(), entry->GetKeyCode()) == special_keys.end()) {
+            entry->SetMenuItem(item);
+            accelerator_entries_cache().push_back(entry);
+        }
     }
 #endif
 
@@ -838,6 +857,11 @@ ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_p
     const std::string ext = icon_path.extension().string();
     if (ext == ".png") {
         bitmap.LoadFile(path, wxBITMAP_TYPE_PNG);
+        wxBitmap::Rescale(bitmap, icon_size);
+        m_bmp = wxBitmapBundle(bitmap);
+    }
+    else if (ext == ".jpg") {
+        bitmap.LoadFile(path, wxBITMAP_TYPE_JPEG);
         wxBitmap::Rescale(bitmap, icon_size);
         m_bmp = wxBitmapBundle(bitmap);
     }

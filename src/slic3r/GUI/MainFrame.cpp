@@ -278,6 +278,15 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
         event.Skip();
     });
 
+
+#ifdef _WIN32
+    Bind(wxEVT_SIZE, [this](wxSizeEvent& event) {
+        event.Skip();
+        // Update window property to mainframe so other instances can indentify it.
+        wxGetApp().other_instance_message_handler()->update_windows_properties(this);
+    });
+#endif //WIN32
+
 // OSX specific issue:
 // When we move application between Retina and non-Retina displays, The legend on a canvas doesn't redraw
 // So, redraw explicitly canvas, when application is moved
@@ -476,13 +485,12 @@ void MainFrame::update_layout()
         m_plater->Reparent(m_tabpanel);
         m_plater->Layout();
 #ifdef _WIN32
-        if (!wxGetApp().tabs_as_menu())
-#endif
-            dynamic_cast<TopBar*>(m_tabpanel)->InsertPage(0, m_plater, _L("Plater"), std::string("plater"), true);
-#ifdef _WIN32
+        if (wxGetApp().tabs_as_menu())
+            m_tabpanel->InsertPage(0, m_plater, _L("Plater"));
         else
-        m_tabpanel->InsertPage(0, m_plater, _L("Plater"));
 #endif
+            dynamic_cast<TopBar*>(m_tabpanel)->InsertNewPage(0, m_plater, _L("Plater"), std::string("plater"), true);
+
         m_main_sizer->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 1);
         m_plater->Show();
         m_tabpanel->Show();
@@ -503,13 +511,12 @@ void MainFrame::update_layout()
         m_main_sizer->Add(m_tabpanel, 1, wxEXPAND);
         m_plater_page = new wxPanel(m_tabpanel);
 #ifdef _WIN32
-        if (!wxGetApp().tabs_as_menu())
-#endif
-            dynamic_cast<TopBar*>(m_tabpanel)->InsertPage(0, m_plater_page, _L("Plater"), std::string("plater"), true);
-#ifdef _WIN32
+        if (wxGetApp().tabs_as_menu())
+            m_tabpanel->InsertPage(0, m_plater_page, _L("Plater")); // empty panel just for Plater tab
         else
-        m_tabpanel->InsertPage(0, m_plater_page, _L("Plater")); // empty panel just for Plater tab */
 #endif
+            dynamic_cast<TopBar*>(m_tabpanel)->InsertNewPage(0, m_plater_page, _L("Plater"), std::string("plater"), true);
+
         m_plater->Show();
         break;
     }
@@ -847,7 +854,7 @@ void MainFrame::add_connect_webview_tab()
 {
     if (m_connect_webview_added) {
         return;
-    }    // parameters of InsertPage (to prevent ambigous overloaded function)
+    }    // parameters of InsertNewPage (to prevent ambigous overloaded function)
         // insert to positon 4, if physical printer is already added, it moves to 5
     // order of tabs: Plater - Print Settings - Filaments - Printers - Prusa Connect - Prusa Link
     size_t n = 4;
@@ -855,7 +862,7 @@ void MainFrame::add_connect_webview_tab()
     const wxString text(L"Prusa Connect");
     const std::string bmp_name = "";
     bool bSelect = false;
-    dynamic_cast<TopBar*>(m_tabpanel)->InsertPage(n, page, text, bmp_name, bSelect);
+    dynamic_cast<TopBar*>(m_tabpanel)->InsertNewPage(n, page, text, bmp_name, bSelect);
     m_connect_webview->load_default_url_delayed();
     m_connect_webview_added = true;
 }
@@ -870,6 +877,41 @@ void MainFrame::remove_connect_webview_tab()
     dynamic_cast<TopBar*>(m_tabpanel)->RemovePage(4);
     m_connect_webview_added = false;
     m_connect_webview->logout();
+}
+
+void MainFrame::show_printer_webview_tab(DynamicPrintConfig* dpc)
+{
+    // if physical printer is selected
+    if (dpc) { 
+        std::string url = dpc->opt_string("print_host");
+
+        if (url.find("http://") != 0 && url.find("https://") != 0) {
+            url = "http://" + url;
+        }
+
+        // set password / api key
+        if (dynamic_cast<const ConfigOptionEnum<AuthorizationType>*>(dpc->option("printhost_authorization_type"))->value == AuthorizationType::atKeyPassword) {
+            set_printer_webview_api_key(dpc->opt_string("printhost_apikey"));
+        }
+#if 0 // The user password authentication is not working in prusa link as of now.
+        else {
+            mset_printer_webview_credentials(dpc->opt_string("printhost_user"), dpc->opt_string("printhost_password"));
+        }
+#endif // 0
+        // add printer or change url
+        if (get_printer_webview_tab_added()) {
+            set_printer_webview_tab_url(from_u8(url));
+        }
+        else {
+            add_printer_webview_tab(from_u8(url));
+        }
+    }
+    // if physical printer isn't selected, so delete page from TopBar
+    else {
+        if (m_tabpanel->GetPageText(m_tabpanel->GetSelection()) == _L("Physical Printer"))
+            select_tab(size_t(0));
+        remove_printer_webview_tab();
+    }
 }
 
 void MainFrame::add_printer_webview_tab(const wxString& url)
@@ -891,8 +933,7 @@ void MainFrame::remove_printer_webview_tab()
     }
     m_printer_webview_added = false;
     m_printer_webview->Hide();
-    // always remove the last tab
-    dynamic_cast<TopBar*>(m_tabpanel)->RemovePage(m_tabpanel->GetPageCount() - 1);
+    dynamic_cast<TopBar*>(m_tabpanel)->RemovePage(m_tabpanel->FindPage(m_printer_webview));
 }
 void MainFrame::set_printer_webview_tab_url(const wxString& url)
 {
@@ -902,7 +943,8 @@ void MainFrame::set_printer_webview_tab_url(const wxString& url)
     }
     m_printer_webview->clear();
     m_printer_webview->set_default_url(url);
-    if (m_tabpanel->GetSelection() == int(m_tabpanel->GetPageCount() - 1)) {
+
+    if (m_tabpanel->GetSelection() == m_tabpanel->FindPage(m_printer_webview)) {
         m_printer_webview->load_url(url);
     } else {
         m_printer_webview->load_default_url_delayed();
