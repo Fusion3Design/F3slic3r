@@ -411,10 +411,13 @@ public:
     void            request_user_login(int online_login) {}
     void            request_user_logout() {}
     int             request_user_unbind(std::string dev_id) { return 0; }
-    void            handle_connect_request_printer_pick(std::string cmd);
+    bool            select_printer_from_connect(const std::string& cmd);
+    void            select_filament_from_connect(const std::string& cmd);
+    void            handle_connect_request_printer_pick(const std::string& cmd);
     void            show_printer_webview_tab();
     // return true if preset vas invisible and we have to installed it to make it selectable
-    bool            select_printer_from_connect(const Preset* printer_preset);
+    bool            select_printer_preset(const Preset* printer_preset);
+    bool            select_filament_preset(const Preset* filament_preset);
     void            handle_script_message(std::string msg) {}
     void            request_model_download(std::string import_json) {}
     void            download_project(std::string project_id) {}

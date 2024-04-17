@@ -131,6 +131,9 @@ enum class NotificationType
 	WifiConfigFileDetected,
 	// Info abouty successful login or logout
 	UserAccountID,
+	// When in Connect tab "set as current" is selected and selected presets in plater changes
+	SelectPrinterFromConnect,
+	SelectFilamentFromConnect,
 	// Debug notification for connect communication
 	PrusaConnectPrinters,
 };

@@ -157,11 +157,10 @@ namespace {
         for (const auto& section : tree) {
             if (section.first == param) {
                 return section.second.data();
-            } else {
-                if (std::string res = parse_tree_for_param(section.second, param); !res.empty())
-                    return res;
             }
-
+            if (std::string res = parse_tree_for_param(section.second, param); !res.empty()) {
+                return res;
+            }
         }
         return {};
     }

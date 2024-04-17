@@ -5863,7 +5863,7 @@ void Plater::connect_gcode()
     std::vector<std::string> compatible_printers;
     p->user_account->fill_compatible_printers_from_json(dialog_msg, compatible_printers);
     std::string connect_nozzle = p->user_account->get_nozzle_from_json(dialog_msg);
-    std::string connect_filament = p->user_account->get_keyword_from_json(dialog_msg, "filament_type");
+    std::string connect_filament_type = p->user_account->get_keyword_from_json(dialog_msg, "material");
     std::vector<const Preset*> compatible_printer_presets;
     for (const std::string& cp : compatible_printers) {
         compatible_printer_presets.emplace_back(preset_bundle->printers.find_system_preset_by_model_and_variant(cp, connect_nozzle));
@@ -5872,7 +5872,7 @@ void Plater::connect_gcode()
     const Preset* selected_printer_preset = &preset_bundle->printers.get_selected_preset();
     const Preset* selected_filament_preset = &preset_bundle->filaments.get_selected_preset();
     const std::string selected_nozzle_serialized = dynamic_cast<const ConfigOptionFloats*>(selected_printer_preset->config.option("nozzle_diameter"))->serialize();
-    const std::string selected_filament_serialized = selected_filament_preset->config.option("filament_type")->serialize();
+    const std::string selected_filament_type_serialized = selected_filament_preset->config.option("filament_type")->serialize();
     const std::string selected_printer_model_serialized = selected_printer_preset->config.option("printer_model")->serialize();
 
     bool is_first = compatible_printer_presets.front()->name == selected_printer_preset->name;
@@ -5886,9 +5886,9 @@ void Plater::connect_gcode()
             break;
         }
     }
-    // 
+    // Dialog to select action
     if (!found) {
-        wxString line1 = _L("The printer profile you've selected for upload is not compatible with profiles selected for slicing.");
+        wxString line1 = _L("The printer you've selected for upload is not compatible with profiles selected for slicing.");
         wxString line2 = GUI::format_wxstr(_L("PrusaSlicer Profile:\n%1%"), selected_printer_preset->name);
         wxString line3 = _L("Known profiles compatible with printer selected for upload:");
         wxString printers_line;
@@ -5906,7 +5906,7 @@ void Plater::connect_gcode()
             return;
         }
     } else if (!is_first) {
-        wxString line1 = _L("The printer profile you've selected for upload might not be compatible with profiles selected for slicing.");
+        wxString line1 = _L("The printer you've selected for upload might not be compatible with profiles selected for slicing.");
         wxString line2 = GUI::format_wxstr(_L("PrusaSlicer Profile:\n%1%"), selected_printer_preset->name);
         wxString line3 = _L("Known profiles compatible with printer selected for upload:");
         wxString printers_line;
@@ -5918,6 +5918,19 @@ void Plater::connect_gcode()
         }
         wxString line4 = _L("Do you still wish to upload?");
         wxString message = GUI::format_wxstr("%1%\n\n%2%\n\n%3%%4%\n\n%5%", line1, line2, line3, printers_line, line4);
+        MessageDialog msg_dialog(this, message, _L("Do you wish to upload?"), wxYES_NO);
+        auto modal_res = msg_dialog.ShowModal();
+        if (modal_res != wxID_YES) {
+            return;
+        }
+    }
+    
+    if (selected_filament_type_serialized != connect_filament_type) {
+        wxString line1 = _L("The printer you've selected has different filament type than filament profile selected for slicing.");
+        wxString line2 = GUI::format_wxstr(_L("PrusaConnect Filament Type: %1%"), connect_filament_type);
+        wxString line3 = GUI::format_wxstr(_L("PrusaSlicer Filament Type: %1%"), selected_filament_type_serialized);
+        wxString line4 = _L("Do you still wish to upload?");
+        wxString message = GUI::format_wxstr("%1%\n\n%2%\n%3%\n\n%4%", line1, line2, line3, line4);
         MessageDialog msg_dialog(this, message, _L("Do you wish to upload?"), wxYES_NO);
         auto modal_res = msg_dialog.ShowModal();
         if (modal_res != wxID_YES) {

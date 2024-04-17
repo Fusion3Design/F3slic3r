@@ -3652,8 +3652,8 @@ void GUI_App::open_wifi_config_dialog(bool forced, const wxString& drive_path/* 
     }
     m_wifi_config_dialog_shown = false;
 }
-
-bool GUI_App::select_printer_from_connect(const Preset* preset)
+// Returns true if preset had to be installed.
+bool GUI_App::select_printer_preset(const Preset* preset)
 {
     assert(preset);
 
@@ -3677,11 +3677,8 @@ bool GUI_App::select_printer_from_connect(const Preset* preset)
     return is_installed;
 }
 
-void GUI_App::handle_connect_request_printer_pick(std::string msg) 
+bool GUI_App::select_printer_from_connect(const std::string& msg)
 {
-    BOOST_LOG_TRIVIAL(error) << "Handling web request: " << msg;
-    // return to plater
-    this->mainframe->select_tab(size_t(0));
     // parse message
     std::vector<std::string> compatible_printers;
     plater()->get_user_account()->fill_compatible_printers_from_json(msg, compatible_printers);
@@ -3689,24 +3686,116 @@ void GUI_App::handle_connect_request_printer_pick(std::string msg)
     if (compatible_printers.empty()) {
         // TODO: This should go away when compatible printers gives right information.
         model_name = plater()->get_user_account()->get_model_from_json(msg);
-    } else {
+    }
+    else {
         model_name = compatible_printers.front();
     }
     std::string nozzle = plater()->get_user_account()->get_nozzle_from_json(msg);
     assert(!model_name.empty());
     if (model_name.empty())
-        return;
+        return false;
 
     // select printer
-    const Preset* preset = preset_bundle->printers.find_system_preset_by_model_and_variant(model_name, nozzle);
-    bool is_installed = preset && select_printer_from_connect(preset);
+    const Preset* printer_preset = preset_bundle->printers.find_system_preset_by_model_and_variant(model_name, nozzle);
+    bool is_installed = printer_preset && select_printer_preset(printer_preset);
     // notification
-    std::string out = preset ? 
-                      (is_installed ? GUI::format(_L("Installed and Select Printer:\n%1%"), preset->name) : 
-                                      GUI::format(_L("Select Printer:\n%1%"), preset->name) ):
-                      GUI::format(_L("Printer not found:\n%1%"), model_name);
-    this->plater()->get_notification_manager()->close_notification_of_type(NotificationType::UserAccountID);
-    this->plater()->get_notification_manager()->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);    
+    std::string out = printer_preset ?
+        (is_installed ? GUI::format(_L("Installed and Selected Printer:\n%1%"), printer_preset->name) :
+            GUI::format(_L("Selected Printer:\n%1%"), printer_preset->name)) :
+        GUI::format(_L("Printer not found:\n%1%"), model_name);
+    this->plater()->get_notification_manager()->close_notification_of_type(NotificationType::SelectPrinterFromConnect);
+    this->plater()->get_notification_manager()->push_notification(NotificationType::SelectPrinterFromConnect, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
+    return printer_preset;
+}
+
+bool GUI_App::select_filament_preset(const Preset* preset)
+{
+    assert(preset && preset->is_compatible);
+
+    if (!preset->is_visible) {
+        size_t preset_id = preset_bundle->filaments.get_preset_idx_by_name(preset->name);
+        assert(preset_id != size_t(-1));
+        preset_bundle->filaments.select_preset(preset_id);
+    }
+
+    return get_tab(Preset::Type::TYPE_FILAMENT)->select_preset(preset->name);
+}
+void GUI_App::select_filament_from_connect(const std::string& msg)
+{
+    
+    // parse message
+    std::string desired_type;
+    desired_type = plater()->get_user_account()->get_keyword_from_json(msg, "material");
+    if (desired_type.empty()) {
+        return;
+    }
+    // test if currently selected is same type
+    std::string selected_type = preset_bundle->filaments.get_selected_preset().config.option("filament_type")->serialize();
+    if (selected_type == desired_type) {
+        return;
+    }
+    // find first filament  with suitable type
+    for (const auto& filament_preset : preset_bundle->filaments) {
+        if (filament_preset.is_visible
+            && !filament_preset.vendor->templates_profile
+            && filament_preset.is_compatible
+            && filament_preset.config.option("filament_type")->serialize() == desired_type
+            && select_filament_preset(&filament_preset))
+        {
+            std::string out = GUI::format(_L("Selected Filament:\n%1%"), filament_preset.name);
+            plater()->get_notification_manager()->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
+            plater()->get_notification_manager()->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
+            return;
+        }
+    }
+    // find profile to install
+    // first try finding Prusament
+    for (const auto& filament_preset : preset_bundle->filaments) {
+        if (!filament_preset.vendor->templates_profile
+            && filament_preset.is_compatible
+            && filament_preset.config.option("filament_type")->serialize() == desired_type
+            && filament_preset.name.compare(0, 9, "Prusament") == 0
+            && select_filament_preset(&filament_preset))
+        {
+            std::string out = GUI::format(_L("Installed and Selected Filament:\n%1%"), filament_preset.name);
+            plater()->get_notification_manager()->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
+            plater()->get_notification_manager()->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
+            return;
+        }
+    }
+    // then just any compatible
+    for (const auto& filament_preset : preset_bundle->filaments) {
+        if (!filament_preset.vendor->templates_profile
+            && filament_preset.is_compatible
+            && filament_preset.config.option("filament_type")->serialize() == desired_type
+            && select_filament_preset(&filament_preset))
+        {
+            std::string out = GUI::format(_L("Installed and Selected Filament:\n%1%"), filament_preset.name);
+            plater()->get_notification_manager()->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
+            plater()->get_notification_manager()->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
+            return;
+        }
+    }
+    // no filamet found
+    std::string out = GUI::format(_L("Failed to find and select filament type:\n%1%"), desired_type);
+    plater()->get_notification_manager()->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
+    plater()->get_notification_manager()->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::ImportantNotificationLevel, out);
+}
+
+void GUI_App::handle_connect_request_printer_pick(const std::string& msg) 
+{
+    BOOST_LOG_TRIVIAL(debug) << "Handling web request: " << msg;
+    // return to plater
+    this->mainframe->select_tab(size_t(0));
+  
+    if (!select_printer_from_connect(msg)) {
+        // If printer was not selected, do not select filament.
+        return;
+    }
+    if (Preset::printer_technology(preset_bundle->printers.get_selected_preset().config) != ptFFF) {
+        return;
+    }
+    select_filament_from_connect(msg);
 }
 
 void GUI_App::show_printer_webview_tab()
