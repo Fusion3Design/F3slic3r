@@ -101,9 +101,6 @@ void AppConfig::set_defaults()
         if (get("associate_stl").empty())
             set("associate_stl", "0");
 
-        if (get("tabs_as_menu").empty())
-            set("tabs_as_menu", "0");
-
         if (get("suppress_round_corners").empty())
             set("suppress_round_corners", "1");
 #endif // _WIN32

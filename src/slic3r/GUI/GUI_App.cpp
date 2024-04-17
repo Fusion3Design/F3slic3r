@@ -1823,11 +1823,6 @@ void GUI_App::set_mode_palette(const std::vector<wxColour>& palette)
     }
 }
 
-bool GUI_App::tabs_as_menu() const
-{
-    return app_config->get_bool("tabs_as_menu"); // || dark_mode();
-}
-
 bool GUI_App::suppress_round_corners() const
 {
     return true;// app_config->get("suppress_round_corners") == "1";
@@ -2479,8 +2474,7 @@ void GUI_App::update_mode()
 {
     sidebar().update_mode();
 
-    if (!wxGetApp().tabs_as_menu())
-        dynamic_cast<TopBar*>(mainframe->m_tabpanel)->UpdateMode();
+    dynamic_cast<TopBar*>(mainframe->m_tabpanel)->UpdateMode();
 
     for (auto tab : tabs_list)
         tab->update_mode();
