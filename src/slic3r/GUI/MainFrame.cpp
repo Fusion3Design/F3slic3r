@@ -57,7 +57,6 @@
 #include "GUI_App.hpp"
 #include "UnsavedChangesDialog.hpp"
 #include "MsgDialog.hpp"
-//#include "Notebook.hpp"
 #include "TopBar.hpp"
 #include "GUI_Factories.hpp"
 #include "GUI_ObjectList.hpp"
@@ -350,6 +349,7 @@ void MainFrame::update_layout()
             m_settings_dialog.Close();
 
         m_tabpanel->Hide();
+        m_tmp_top_bar->Hide();
         m_plater->Hide();
 
         Layout();
@@ -398,11 +398,13 @@ void MainFrame::update_layout()
     {
         m_plater->Reparent(m_tabpanel);
         m_plater->Layout();
-        dynamic_cast<TopBar*>(m_tabpanel)->InsertNewPage(0, m_plater, _L("Plater"), std::string("plater"), true);
+        m_tabpanel->InsertNewPage(0, m_plater, _L("Plater"), std::string("plater"), true);
 
         m_main_sizer->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 1);
         m_plater->Show();
-        m_tabpanel->Show();
+        m_tabpanel->ShowFull();
+        m_tmp_top_bar->Hide();
+
         // update Tabs
         if (old_layout == ESettingsLayout::Dlg)
             if (int sel = m_tabpanel->GetSelection(); sel != wxNOT_FOUND)
@@ -411,11 +413,20 @@ void MainFrame::update_layout()
     }
     case ESettingsLayout::Dlg:
     {
-        m_main_sizer->Add(m_plater, 1, wxEXPAND);
-        m_tabpanel->Reparent(&m_settings_dialog);
-        m_settings_dialog.GetSizer()->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 2);
-        m_tabpanel->Show();
+        const int sel = m_tabpanel->GetSelection();
+
+        m_plater->Reparent(this);
+        m_main_sizer->Add(m_tmp_top_bar, 0, wxEXPAND | wxTOP, 1);
+        m_main_sizer->Add(m_plater, 1, wxEXPAND | wxTOP, 1);
+        m_plater->Layout();
+        m_tmp_top_bar->ShowFull();
         m_plater->Show();
+
+        m_tabpanel->Reparent(&m_settings_dialog);
+        m_tabpanel->SetSelection(sel > 0 ? (sel - 1) : 0);
+        m_tabpanel->ShowJustMode();
+        m_settings_dialog.GetSizer()->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 2);
+        m_settings_dialog.Layout();
         break;
     }
     case ESettingsLayout::GCodeViewer:
@@ -578,9 +589,15 @@ void MainFrame::init_tabpanel()
 {
     wxGetApp().update_ui_colours_from_appconfig();
 
+    if (wxGetApp().is_editor()) {
+        m_tmp_top_bar = new TopBar(this, &m_bar_menus);
+        m_tmp_top_bar->SetFont(Slic3r::GUI::wxGetApp().normal_font());
+        m_tmp_top_bar->Hide();
+    }
+
     // wxNB_NOPAGETHEME: Disable Windows Vista theme for the Notebook background. The theme performance is terrible on Windows 10
     // with multiple high resolution displays connected.
-    m_tabpanel = new TopBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME);
+    m_tabpanel = new TopBar(this, &m_bar_menus);
 
     m_tabpanel->SetFont(Slic3r::GUI::wxGetApp().normal_font());
     m_tabpanel->Hide();
@@ -721,7 +738,7 @@ void MainFrame::add_connect_webview_tab()
     const wxString text(L"Prusa Connect");
     const std::string bmp_name = "";
     bool bSelect = false;
-    dynamic_cast<TopBar*>(m_tabpanel)->InsertNewPage(n, page, text, bmp_name, bSelect);
+    m_tabpanel->InsertNewPage(n, page, text, bmp_name, bSelect);
     m_connect_webview->load_default_url_delayed();
     m_connect_webview_added = true;
 }
@@ -733,7 +750,7 @@ void MainFrame::remove_connect_webview_tab()
     // connect tab should always be at position 4
     if (m_tabpanel->GetSelection() == 4)
         m_tabpanel->SetSelection(0);
-    dynamic_cast<TopBar*>(m_tabpanel)->RemovePage(4);
+    m_tabpanel->RemovePage(4);
     m_connect_webview_added = false;
     m_connect_webview->logout();
 }
@@ -781,7 +798,7 @@ void MainFrame::add_printer_webview_tab(const wxString& url)
     }
     m_printer_webview_added = true;
     // add as the last (rightmost) panel
-    dynamic_cast<TopBar*>(m_tabpanel)->AddNewPage(m_printer_webview, _L("Physical Printer"), "");
+    m_tabpanel->AddNewPage(m_printer_webview, _L("Physical Printer"), "");
     m_printer_webview->set_default_url(url);
     m_printer_webview->load_default_url_delayed();
 }
@@ -792,7 +809,7 @@ void MainFrame::remove_printer_webview_tab()
     }
     m_printer_webview_added = false;
     m_printer_webview->Hide();
-    dynamic_cast<TopBar*>(m_tabpanel)->RemovePage(m_tabpanel->FindPage(m_printer_webview));
+    m_tabpanel->RemovePage(m_tabpanel->FindPage(m_printer_webview));
 }
 void MainFrame::set_printer_webview_tab_url(const wxString& url)
 {
@@ -822,7 +839,9 @@ void MainFrame::set_printer_webview_credentials(const std::string& usr, const st
 void Slic3r::GUI::MainFrame::refresh_account_menu(bool avatar/* = false */)
 {
     // Update User name in TopBar
-    dynamic_cast<TopBar*>(m_tabpanel)->GetTopBarItemsCtrl()->UpdateAccountMenu(avatar);
+    m_bar_menus.UpdateAccountMenu(m_plater->get_user_account());
+    m_tabpanel->GetTopBarItemsCtrl()->UpdateAccountButton(avatar);
+    m_tmp_top_bar->GetTopBarItemsCtrl()->UpdateAccountButton(avatar);
 }
 
 void MainFrame::add_created_tab(Tab* panel,  const std::string& bmp_name /*= ""*/)
@@ -832,7 +851,7 @@ void MainFrame::add_created_tab(Tab* panel,  const std::string& bmp_name /*= ""*
     const auto printer_tech = wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology();
 
     if (panel->supports_printer_technology(printer_tech))
-        dynamic_cast<TopBar*>(m_tabpanel)->AddNewPage(panel, panel->title(), bmp_name);
+        m_tabpanel->AddNewPage(panel, panel->title(), bmp_name);
 }
 
 bool MainFrame::is_active_and_shown_tab(Tab* tab)
@@ -1013,7 +1032,7 @@ void MainFrame::on_dpi_changed(const wxRect& suggested_rect)
 
 #ifdef _WIN32
     // update common mode sizer
-    dynamic_cast<TopBar*>(m_tabpanel)->Rescale();
+    m_tabpanel->Rescale();
 #endif
 
     // update Plater
@@ -1059,7 +1078,7 @@ void MainFrame::on_sys_color_changed()
 #ifdef __WXMSW__
     wxGetApp().UpdateDarkUI(m_tabpanel);
 #endif
-    dynamic_cast<TopBar*>(m_tabpanel)->OnColorsChanged();
+    m_tabpanel->OnColorsChanged();
 
     // update Plater
     wxGetApp().plater()->sys_color_changed();
@@ -1083,7 +1102,8 @@ void MainFrame::on_sys_color_changed()
 void MainFrame::update_mode_markers()
 {
     // update markers in common mode sizer
-    dynamic_cast<TopBar*>(m_tabpanel)->UpdateModeMarkers();
+    m_tmp_top_bar->UpdateModeMarkers();
+    m_tabpanel->UpdateModeMarkers();
 
     // update mode markers in tabs
     for (auto tab : wxGetApp().tabs_list)
@@ -1509,22 +1529,21 @@ void MainFrame::init_menubar_as_editor()
 #ifndef __APPLE__
     // append menus for Menu button from TopBar
 
-    TopBar* top_bar = dynamic_cast<TopBar*>(m_tabpanel);
-    top_bar->AppendMenuItem(fileMenu, _L("&File"));
+    m_bar_menus.AppendMenuItem(fileMenu, _L("&File"));
     if (editMenu) 
-        top_bar->AppendMenuItem(editMenu, _L("&Edit"));
+        m_bar_menus.AppendMenuItem(editMenu, _L("&Edit"));
 
-    top_bar->AppendMenuSeparaorItem();
+    m_bar_menus.AppendMenuSeparaorItem();
 
-    top_bar->AppendMenuItem(windowMenu, _L("&Window"));
+    m_bar_menus.AppendMenuItem(windowMenu, _L("&Window"));
     if (viewMenu) 
-        top_bar->AppendMenuItem(viewMenu, _L("&View"));
+        m_bar_menus.AppendMenuItem(viewMenu, _L("&View"));
     
-    top_bar->AppendMenuItem(wxGetApp().get_config_menu(), _L("&Configuration"));
+    m_bar_menus.AppendMenuItem(wxGetApp().get_config_menu(), _L("&Configuration"));
 
-    top_bar->AppendMenuSeparaorItem();
+    m_bar_menus.AppendMenuSeparaorItem();
 
-    top_bar->AppendMenuItem(helpMenu, _L("&Help"));
+    m_bar_menus.AppendMenuItem(helpMenu, _L("&Help"));
 
 #else
 
@@ -2184,7 +2203,7 @@ void SettingsDialog::on_dpi_changed(const wxRect& suggested_rect)
     const wxSize& size = wxSize(85 * em, 50 * em);
 
 #ifdef _WIN32
-    dynamic_cast<TopBar*>(m_tabpanel)->Rescale();
+    m_tabpanel->Rescale();
 #endif
 
     // update Tabs

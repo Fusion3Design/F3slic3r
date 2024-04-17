@@ -29,7 +29,9 @@
 #include "UnsavedChangesDialog.hpp"
 #include "Search.hpp"
 
-class wxBookCtrlBase;
+#include "TopBarMenus.hpp"
+
+class TopBar;
 class wxProgressDialog;
 
 namespace Slic3r {
@@ -67,13 +69,13 @@ struct PresetTab {
 
 class SettingsDialog : public DPIFrame//DPIDialog
 {
-    wxBookCtrlBase* m_tabpanel { nullptr };
+    TopBar*         m_tabpanel { nullptr };
     MainFrame*      m_main_frame { nullptr };
     wxMenuBar*      m_menubar{ nullptr };
 public:
     SettingsDialog(MainFrame* mainframe);
     ~SettingsDialog() = default;
-    void set_tabpanel(wxBookCtrlBase* tabpanel) { m_tabpanel = tabpanel; }
+    void set_tabpanel(TopBar* tabpanel) { m_tabpanel = tabpanel; }
     wxMenuBar* menubar() { return m_menubar; }
 
 protected:
@@ -88,6 +90,7 @@ class MainFrame : public DPIFrame
     wxString    m_qs_last_output_file = wxEmptyString;
     wxString    m_last_config = wxEmptyString;
     wxMenuBar*  m_menubar{ nullptr };
+    TopBarMenus m_bar_menus;
 
 #if 0
     wxMenuItem* m_menu_item_repeat { nullptr }; // doesn't used now
@@ -228,7 +231,8 @@ public:
     PrintHostQueueDialog* printhost_queue_dlg() { return m_printhost_queue_dlg; }
 
     Plater*               m_plater { nullptr };
-    wxBookCtrlBase*       m_tabpanel { nullptr };
+    TopBar*               m_tmp_top_bar { nullptr };
+    TopBar*               m_tabpanel { nullptr };
     SettingsDialog        m_settings_dialog;
     DiffPresetDialog      diff_dialog;
     wxWindow*             m_plater_page{ nullptr };

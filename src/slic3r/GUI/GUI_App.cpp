@@ -12,6 +12,7 @@
 #include "GUI_ObjectList.hpp"
 #include "GUI_ObjectManipulation.hpp"
 #include "GUI_Factories.hpp"
+#include "TopBar.hpp"
 #include "format.hpp"
 
 // Localization headers: include libslic3r version first so everything in this file
@@ -2474,7 +2475,8 @@ void GUI_App::update_mode()
 {
     sidebar().update_mode();
 
-    dynamic_cast<TopBar*>(mainframe->m_tabpanel)->UpdateMode();
+    mainframe->m_tmp_top_bar->UpdateMode();
+    mainframe->m_tabpanel->UpdateMode();
 
     for (auto tab : tabs_list)
         tab->update_mode();
