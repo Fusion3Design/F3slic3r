@@ -715,6 +715,16 @@ void PrinterPickWebViewDialog::on_request_update_selected_printer_action()
 
 void PrinterPickWebViewDialog::request_compatible_printers()
 {
+    
+    if (Preset::printer_technology(wxGetApp().preset_bundle->printers.get_selected_preset().config) == ptFFF) {
+        request_compatible_printers_FFF();
+    } else {
+        request_compatible_printers_SLA();
+    }
+}
+
+void PrinterPickWebViewDialog::request_compatible_printers_FFF()
+{
     //PrinterParams: {
     //material: Material;
     //nozzleDiameter: number;
@@ -727,14 +737,29 @@ void PrinterPickWebViewDialog::request_compatible_printers()
     const std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
     const std::string printer_type = wxGetApp().plater()->get_user_account()->get_printer_type_from_name(printer_model_serialized);
 
-   // assert(!filament_type_serialized.empty() && !nozzle_diameter_serialized.empty() && !printer_type.empty());
     const std::string request = GUI::format(
         "{"
         "\"material\": \"%1%\", "
         "\"nozzleDiameter\": %2%, "
         "\"printerType\": \"%3%\" "
         "}", filament_type_serialized, nozzle_diameter_serialized, printer_type);
-    
+
+    wxString script = GUI::format_wxstr("window._prusaConnect_v1.requestCompatiblePrinter(%1%)", request);
+    run_script(script);
+}
+void PrinterPickWebViewDialog::request_compatible_printers_SLA()
+{
+    const Preset& selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
+    const std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
+    const std::string printer_type = wxGetApp().plater()->get_user_account()->get_printer_type_from_name(printer_model_serialized);
+    const Preset& selected_material = wxGetApp().preset_bundle->sla_materials.get_selected_preset();
+    const std::string material_type_serialized = selected_material.config.option("material_type")->serialize();
+    const std::string request = GUI::format(
+        "{"
+        "\"material\": \"%1%\", "
+        "\"printerType\": \"%2%\" "
+        "}", material_type_serialized, printer_type);
+
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.requestCompatiblePrinter(%1%)", request);
     run_script(script);
 }

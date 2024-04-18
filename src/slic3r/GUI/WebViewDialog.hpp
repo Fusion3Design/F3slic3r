@@ -169,6 +169,8 @@ public:
 protected:
     void on_request_update_selected_printer_action() override;
     void request_compatible_printers() override;
+    void request_compatible_printers_FFF();
+    void request_compatible_printers_SLA();
     void run_script_bridge(const wxString& script) override { run_script(script); }
 private:
     std::string& m_ret_val;

@@ -5877,11 +5877,15 @@ void Plater::connect_gcode()
     }
     // Selected profiles
     const Preset* selected_printer_preset = &preset_bundle->printers.get_selected_preset();
-    const Preset* selected_filament_preset = &preset_bundle->filaments.get_selected_preset();
-    const std::string selected_nozzle_serialized = dynamic_cast<const ConfigOptionFloats*>(selected_printer_preset->config.option("nozzle_diameter"))->serialize();
-    const std::string selected_filament_type_serialized = selected_filament_preset->config.option("filament_type")->serialize();
     const std::string selected_printer_model_serialized = selected_printer_preset->config.option("printer_model")->serialize();
-
+    std::string selected_filament_type_serialized;
+    if (Preset::printer_technology(selected_printer_preset->config) == ptFFF) {
+        const Preset* selected_filament_preset = &preset_bundle->filaments.get_selected_preset();
+        const std::string selected_nozzle_serialized = dynamic_cast<const ConfigOptionFloats*>(selected_printer_preset->config.option("nozzle_diameter"))->serialize();
+        std::string selected_filament_type_serialized = selected_filament_preset->config.option("filament_type")->serialize();
+    }
+    
+    
     bool is_first = compatible_printer_presets.front()->name == selected_printer_preset->name;
     bool found = false;
     for (const Preset* connect_preset : compatible_printer_presets) {
@@ -5932,7 +5936,7 @@ void Plater::connect_gcode()
         }
     }
     
-    if (selected_filament_type_serialized != connect_filament_type) {
+    if (!selected_filament_type_serialized.empty() && selected_filament_type_serialized != connect_filament_type) {
         wxString line1 = _L("The printer you've selected has different filament type than filament profile selected for slicing.");
         wxString line2 = GUI::format_wxstr(_L("PrusaConnect Filament Type: %1%"), connect_filament_type);
         wxString line3 = GUI::format_wxstr(_L("PrusaSlicer Filament Type: %1%"), selected_filament_type_serialized);
@@ -5985,7 +5989,7 @@ void Plater::connect_gcode()
         show_error(this, _L("Failed to select a printer. Missing data (uuid and team id) for chosen printer."));
         return;
     }
-    PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), /**connect_printer_preset*/*selected_printer_preset);
+    PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *selected_printer_preset);
     ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnectNew));
     // use existing structures to pass data
     ph_printer.config.opt_string("printhost_apikey") = team_id;

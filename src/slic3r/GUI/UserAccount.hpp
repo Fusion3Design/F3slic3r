@@ -96,6 +96,7 @@ private:
         {"2.1.0", "MINI"        },
         {"3.1.0", "XL"          },
         {"5.1.0", "SL1"         },
+        {"5.1.1", "SL1S"        },
         // ysFIXME : needs to add Connect ids for next printers
         /*{"0.0.0", "MK4IS"       },
         {"0.0.0", "MK3SMMU2S"   },
