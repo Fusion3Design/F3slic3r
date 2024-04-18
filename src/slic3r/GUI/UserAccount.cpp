@@ -297,6 +297,15 @@ std::string UserAccount::get_nozzle_from_json(const std::string& message) const
     catch (const std::exception& e) {
         BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
     }
+
+    // Get rid of trailing zeros.
+    // This is because somtimes we get "nozzle_diameter":0.40000000000000002
+    // This will return wrong result for f.e. 0.05. But we dont have such profiles right now.
+    if (size_t fist_dot = out.find('.'); fist_dot != std::string::npos) {
+        if (size_t first_zero = out.find('0', fist_dot); first_zero != std::string::npos) {
+            return out.substr(0, first_zero);
+        }
+    }
     return out;
 }
 
