@@ -148,6 +148,10 @@ public:
     void sort_options_by_label() { sort_options(); }
 
     void update_dialog_position();
+    void edit_search_input();
+    void process_key_down_from_input(wxKeyEvent& e);
+    void check_and_hide_dialog();
+    void set_focus_to_parent();
     void show_dialog(bool show = true);
     void dlg_sys_color_changed();
     void dlg_msw_rescale();

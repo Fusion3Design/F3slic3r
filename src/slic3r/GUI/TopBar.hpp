@@ -86,6 +86,7 @@ public:
     void ShowFull();
     void ShowJustMode();
     void SetSettingsButtonTooltip(const wxString& tooltip);
+    void UpdateSearch(const wxString& search);
 
     wxWindow* GetSearchCtrl() { return m_search->GetTextCtrl(); }
 
@@ -438,6 +439,10 @@ public:
 
     void SetSettingsButtonTooltip(const wxString& tooltip) {
         GetTopBarItemsCtrl()->SetSettingsButtonTooltip(tooltip);
+    }
+
+    void UpdateSearch(const wxString& search) {
+        GetTopBarItemsCtrl()->UpdateSearch(search);
     }
 
 protected:

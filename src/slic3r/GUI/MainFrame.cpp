@@ -286,17 +286,18 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
     });
 #endif //WIN32
 
+    Bind(wxEVT_MOVE, [](wxMoveEvent& event) {
 // OSX specific issue:
 // When we move application between Retina and non-Retina displays, The legend on a canvas doesn't redraw
 // So, redraw explicitly canvas, when application is moved
 //FIXME maybe this is useful for __WXGTK3__ as well?
 #if __APPLE__
-    Bind(wxEVT_MOVE, [](wxMoveEvent& event) {
         wxGetApp().plater()->get_current_canvas3D()->set_as_dirty();
         wxGetApp().plater()->get_current_canvas3D()->request_extra_frame();
+#endif
+        wxGetApp().searcher().update_dialog_position();
         event.Skip();
     });
-#endif
 
     wxGetApp().persist_window_geometry(this, true);
     wxGetApp().persist_window_geometry(&m_settings_dialog, true);
@@ -1947,6 +1948,13 @@ void MainFrame::load_config(const DynamicPrintConfig& config)
 #endif
 }
 
+void MainFrame::update_search_lines(const std::string search_line)
+{
+    wxString search = from_u8(search_line);
+    m_tabpanel   ->UpdateSearch(search);
+    m_tmp_top_bar->UpdateSearch(search);
+}
+
 void MainFrame::select_tab(Tab* tab)
 {
     if (!tab)
@@ -2174,6 +2182,8 @@ SettingsDialog::SettingsDialog(MainFrame* mainframe)
                 default:break;
                 }
             }
+
+            evt.Skip();
         };
 
         if (evt.IsShown()) {
@@ -2205,6 +2215,11 @@ SettingsDialog::SettingsDialog(MainFrame* mainframe)
     SetSize(GetMinSize());
 #endif
     Layout();
+
+    Bind(wxEVT_MOVE, [](wxMoveEvent& event) {
+        wxGetApp().searcher().update_dialog_position();
+        event.Skip();
+    });
 }
 
 void SettingsDialog::on_dpi_changed(const wxRect& suggested_rect)

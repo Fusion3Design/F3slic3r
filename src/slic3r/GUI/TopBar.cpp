@@ -259,7 +259,63 @@ void TopBarItemsCtrl::CreateSearch()
     m_search = new ::TextInput(this, wxGetApp().searcher().default_string, "", "search", wxDefaultPosition, wxSize(2 * em_unit(this), -1), wxTE_PROCESS_ENTER);
     m_search->SetMaxSize(wxSize(42*em_unit(this), -1));
     wxGetApp().UpdateDarkUI(m_search);
-    wxGetApp().searcher().set_search_input(m_search);
+
+    m_search->Bind(wxEVT_TEXT, [](wxEvent& e)
+    {
+        wxGetApp().searcher().edit_search_input();
+        wxGetApp().update_search_lines();
+    });
+
+    m_search->Bind(wxEVT_MOVE, [](wxMoveEvent& event)
+    { 
+        event.Skip();
+        wxGetApp().searcher().update_dialog_position();
+    });
+
+    m_search->SetOnDropDownIcon([this]() 
+    {
+        wxGetApp().searcher().set_search_input(m_search); 
+        wxGetApp().show_search_dialog(); 
+    });
+
+    m_search->Bind(wxEVT_KILL_FOCUS, [](wxFocusEvent& e)
+    {
+        e.Skip();
+        wxGetApp().searcher().check_and_hide_dialog();
+    });
+
+    wxTextCtrl* ctrl = m_search->GetTextCtrl();
+    ctrl->SetToolTip(format_wxstr(_L("Search in settings [%1%]"), "Ctrl+F"));
+
+    ctrl->Bind(wxEVT_KEY_DOWN, [this](wxKeyEvent& e)
+    {
+        wxGetApp().searcher().set_search_input(m_search); 
+        if (e.GetKeyCode() == WXK_TAB)
+            m_search->Navigate(e.ShiftDown() ? wxNavigationKeyEvent::IsBackward : wxNavigationKeyEvent::IsForward);
+        else
+            wxGetApp().searcher().process_key_down_from_input(e);
+        e.Skip();
+    });
+
+    ctrl->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent& event)
+    {
+        wxGetApp().searcher().set_search_input(m_search); 
+        wxGetApp().show_search_dialog();
+        event.Skip();
+    });
+
+    ctrl->Bind(wxEVT_LEFT_UP, [this](wxMouseEvent& event)
+    {
+        if (m_search->GetValue() == wxGetApp().searcher().default_string)
+            m_search->SetValue("");
+        event.Skip();
+    });
+}
+
+void TopBarItemsCtrl::UpdateSearch(const wxString& search)
+{
+    if (search != m_search->GetValue())
+        m_search->SetValue(search);
 }
 
 void TopBarItemsCtrl::update_margins()
@@ -317,6 +373,8 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
 
     CreateSearch();
+    if (!is_main)
+        wxGetApp().searcher().set_search_input(m_search);
 
     wxBoxSizer* search_sizer = new wxBoxSizer(wxVERTICAL);
     search_sizer->Add(m_search, 1, wxEXPAND | wxALIGN_RIGHT);
@@ -495,6 +553,7 @@ void TopBarItemsCtrl::ShowFull()
         m_account_btn->set_selected(true);
         m_menus->Popup(this, &m_menus->account, m_account_btn->get_popup_pos());
     });
+    m_sizer->SetItemMinSize(1, wxSize(42 * em_unit(this), -1));
 }
 
 void TopBarItemsCtrl::ShowJustMode()
@@ -505,6 +564,7 @@ void TopBarItemsCtrl::ShowJustMode()
         m_settings_btn->Hide();
     m_account_btn->Hide();
     m_menus->set_cb_on_user_item(nullptr);
+    m_sizer->SetItemMinSize(1, wxSize(20, -1));
 }
 
 void TopBarItemsCtrl::SetSettingsButtonTooltip(const wxString& tooltip)
