@@ -63,7 +63,8 @@ class TopBarItemsCtrl : public wxControl
 
 public:
     TopBarItemsCtrl(wxWindow* parent,
-                    TopBarMenus* menus = nullptr);
+                    TopBarMenus* menus = nullptr,
+                    bool is_main = true);
     ~TopBarItemsCtrl() {}
 
     void OnPaint(wxPaintEvent&);
@@ -84,15 +85,17 @@ public:
     void CreateSearch();
     void ShowFull();
     void ShowJustMode();
+    void SetSettingsButtonTooltip(const wxString& tooltip);
 
     wxWindow* GetSearchCtrl() { return m_search->GetTextCtrl(); }
 
 private:
     wxFlexGridSizer*                m_buttons_sizer;
     wxFlexGridSizer*                m_sizer;
-    ButtonWithPopup*                m_menu_btn {nullptr};
+    ButtonWithPopup*                m_menu_btn      {nullptr};
     ButtonWithPopup*                m_workspace_btn {nullptr};
-    ButtonWithPopup*                m_account_btn {nullptr};
+    ButtonWithPopup*                m_account_btn   {nullptr};
+    Button*                         m_settings_btn  {nullptr};
     std::vector<Button*>            m_pageButtons;
     int                             m_selection {-1};
     int                             m_btn_margin;
@@ -115,12 +118,13 @@ public:
     }
 
     TopBar( wxWindow * parent,
-            TopBarMenus* menus)
+            TopBarMenus* menus,
+            bool is_main = true)
     {
         Init();
         // wxNB_NOPAGETHEME: Disable Windows Vista theme for the Notebook background. The theme performance is terrible on Windows 10
         // with multiple high resolution displays connected.
-        Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME, menus);
+        Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME, menus, is_main);
     }
 
     bool Create(wxWindow * parent,
@@ -128,12 +132,13 @@ public:
                 const wxPoint & pos = wxDefaultPosition,
                 const wxSize & size = wxDefaultSize,
                 long style = 0,
-                TopBarMenus* menus = nullptr)
+                TopBarMenus* menus = nullptr,
+                bool is_main = true)
     {
         if (!wxBookCtrlBase::Create(parent, winid, pos, size, style | wxBK_TOP))
             return false;
 
-        m_bookctrl = new TopBarItemsCtrl(this, menus);
+        m_bookctrl = new TopBarItemsCtrl(this, menus, is_main);
 
         wxSizer* mainSizer = new wxBoxSizer(IsVertical() ? wxVERTICAL : wxHORIZONTAL);
 
@@ -429,7 +434,11 @@ public:
     void ShowJustMode() {
         Show();
         GetTopBarItemsCtrl()->ShowJustMode();
-    };
+    }
+
+    void SetSettingsButtonTooltip(const wxString& tooltip) {
+        GetTopBarItemsCtrl()->SetSettingsButtonTooltip(tooltip);
+    }
 
 protected:
     virtual void UpdateSelectedPage(size_t WXUNUSED(newsel)) override

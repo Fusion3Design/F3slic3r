@@ -2,6 +2,7 @@
 #include "TopBarMenus.hpp"
 
 #include "GUI_App.hpp"
+#include "MainFrame.hpp"
 #include "Plater.hpp"
 #include "Search.hpp"
 #include "UserAccount.hpp"
@@ -34,21 +35,18 @@ TopBarItemsCtrl::Button::Button(wxWindow* parent, const wxString& label, const s
 {
     int btn_margin = em_unit(this);
     int x, y;
-    GetTextExtent(label, &x, &y);
+    GetTextExtent(label.IsEmpty() ? "a" : label, &x, &y);
     wxSize size(x + 4 * btn_margin, y + int(1.5 * btn_margin));
     if (icon_name.empty())
         this->SetMinSize(size);
-#ifdef _WIN32
     else if (label.IsEmpty()) {
-        const int btn_side = px_cnt + btn_margin;
+        const int btn_side = size.y;
         this->SetMinSize(wxSize(btn_side, btn_side));
     }
     else
+#ifdef _WIN32
         this->SetMinSize(wxSize(-1, size.y));
 #else
-    else if (label.IsEmpty())
-        this->SetMinSize(wxSize(px_cnt, px_cnt));
-    else 
         this->SetMinSize(wxSize(size.x + px_cnt, size.y));
 #endif
 
@@ -130,9 +128,11 @@ void TopBarItemsCtrl::Button::render()
 
     wxPoint pt = { 0, 0 };
 
+    wxString text = GetLabelText();
+
     if (m_bmp_bundle.IsOk()) {
         wxSize szIcon = get_preferred_size(m_bmp_bundle, this);
-        pt.x = em;
+        pt.x = text.IsEmpty() ? ((rc.width - szIcon.x) / 2) : em;
         pt.y = (rc.height - szIcon.y) / 2;
 #ifdef __WXGTK3__
         dc.DrawBitmap(m_bmp_bundle.GetBitmap(szIcon), pt);
@@ -144,7 +144,6 @@ void TopBarItemsCtrl::Button::render()
 
     // Draw text
 
-    wxString text = GetLabelText();
     if (!text.IsEmpty()) {
         wxSize labelSize = dc.GetTextExtent(text);
         if (labelSize.x > rc.width)
@@ -277,7 +276,7 @@ wxPoint TopBarItemsCtrl::ButtonWithPopup::get_popup_pos()
     return pos;
 }
 
-TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullptr*/) :
+TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullptr*/, bool is_main/* = true*/) :
     wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL)
     ,m_menus(menus)
 {
@@ -305,6 +304,14 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
         m_menus->Popup(this, &m_menus->main, m_menu_btn->get_popup_pos());
     });
 #endif
+
+    if (!is_main) {
+        m_settings_btn = new Button(this, "", "settings");
+        m_settings_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent& event) {
+            wxGetApp().mainframe->select_tab();
+        });
+        left_sizer->Add(m_settings_btn, 0, wxALIGN_CENTER_VERTICAL);
+    }
 
     m_buttons_sizer = new wxFlexGridSizer(1, m_btn_margin, m_btn_margin);
     left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
@@ -394,6 +401,8 @@ void TopBarItemsCtrl::OnColorsChanged()
     wxGetApp().UpdateDarkUI(this);
     if (m_menu_btn)
         m_menu_btn->sys_color_changed();
+    if (m_settings_btn)
+        m_settings_btn->sys_color_changed();
 
     m_workspace_btn->sys_color_changed();
     m_account_btn->sys_color_changed();
@@ -478,6 +487,8 @@ void TopBarItemsCtrl::ShowFull()
 {
     if (m_menu_btn)
         m_menu_btn->Show();
+    if (m_settings_btn)
+        m_settings_btn->Show();
     m_account_btn->Show();
     UpdateAccountButton();
     m_menus->set_cb_on_user_item([this]() {
@@ -490,6 +501,14 @@ void TopBarItemsCtrl::ShowJustMode()
 {
     if (m_menu_btn)
         m_menu_btn->Hide();
+    if (m_settings_btn)
+        m_settings_btn->Hide();
     m_account_btn->Hide();
     m_menus->set_cb_on_user_item(nullptr);
+}
+
+void TopBarItemsCtrl::SetSettingsButtonTooltip(const wxString& tooltip)
+{
+    if (m_settings_btn)
+        m_settings_btn->SetToolTip(tooltip);
 }

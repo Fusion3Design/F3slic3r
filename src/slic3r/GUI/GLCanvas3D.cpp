@@ -5137,7 +5137,7 @@ bool GLCanvas3D::_init_main_toolbar()
 
     if (!m_main_toolbar.add_separator())
         return false;
-
+/*
     item.name = "settings";
     item.icon_filename = "settings.svg";
     item.tooltip = _u8L("Switch to Settings") + "\n" + "[" + GUI::shortkey_ctrl_prefix() + "2] - " + _u8L("Print Settings Tab")    + 
@@ -5149,7 +5149,7 @@ bool GLCanvas3D::_init_main_toolbar()
     item.left.action_callback = []() { wxGetApp().mainframe->select_tab(); };
     if (!m_main_toolbar.add_item(item))
         return false;
-
+*/
     if (!m_main_toolbar.add_separator())
         return false;
 

@@ -585,12 +585,20 @@ void MainFrame::update_title()
     SetTitle(title);
 }
 
+static wxString GetTooltipForSettingsButton(PrinterTechnology pt)
+{
+    std::string tooltip = _u8L("Switch to Settings") + "\n" + "[" + shortkey_ctrl_prefix() + "2] - " + _u8L("Print Settings Tab") +
+                                                       "\n" + "[" + shortkey_ctrl_prefix() + "3] - " + (pt == ptFFF ? _u8L("Filament Settings Tab") : _u8L("Material Settings Tab")) +
+                                                       "\n" + "[" + shortkey_ctrl_prefix() + "4] - " + _u8L("Printer Settings Tab");
+    return from_u8(tooltip);
+}
+
 void MainFrame::init_tabpanel()
 {
     wxGetApp().update_ui_colours_from_appconfig();
 
     if (wxGetApp().is_editor()) {
-        m_tmp_top_bar = new TopBar(this, &m_bar_menus);
+        m_tmp_top_bar = new TopBar(this, &m_bar_menus, false);
         m_tmp_top_bar->SetFont(Slic3r::GUI::wxGetApp().normal_font());
         m_tmp_top_bar->Hide();
     }
@@ -651,6 +659,9 @@ void MainFrame::init_tabpanel()
         if (full_config.has("nozzle_diameter")) {
             m_plater->sidebar().set_extruders_count(full_config.option<ConfigOptionFloats>("nozzle_diameter")->values.size());
         }
+
+        if (wxGetApp().is_editor())
+            m_tmp_top_bar->SetSettingsButtonTooltip(GetTooltipForSettingsButton(m_plater->printer_technology()));
     }
 }
 
@@ -2076,10 +2087,12 @@ void MainFrame::add_to_recent_projects(const wxString& filename)
 
 void MainFrame::technology_changed()
 {
+    PrinterTechnology pt = plater()->printer_technology();
+    m_tmp_top_bar->SetSettingsButtonTooltip(GetTooltipForSettingsButton(pt));
+
     if (!m_menubar)
         return;
     // update menu titles
-    PrinterTechnology pt = plater()->printer_technology();
     if (int id = m_menubar->FindMenu(pt == ptFFF ? _L("Material Settings") : _L("Filament Settings")); id != wxNOT_FOUND)
         m_menubar->SetMenuLabel(id , pt == ptSLA ? _L("Material Settings") : _L("Filament Settings"));
 
