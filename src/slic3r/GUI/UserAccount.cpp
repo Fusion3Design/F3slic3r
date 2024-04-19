@@ -165,6 +165,17 @@ namespace {
         return {};
     }
 
+    void parse_tree_for_param_vector(const pt::ptree& tree, const std::string& param, std::vector<std::string>& results)
+    {
+        for (const auto& section : tree) {
+            if (section.first == param) {
+                results.emplace_back(section.second.data());
+            } else {
+                parse_tree_for_param_vector(section.second, param, results);
+            }
+        }
+    }
+
     pt::ptree parse_tree_for_subtree(const pt::ptree& tree, const std::string& param)
     {
         for (const auto& section : tree) {
@@ -333,7 +344,7 @@ void UserAccount::fill_compatible_printers_from_json(const std::string& json, st
         pt::ptree ptree;
         pt::read_json(ss, ptree);
 
-        pt::ptree out = parse_tree_for_subtree(ptree, "printer_type_compatible");
+        pt::ptree out = parse_tree_for_subtree(ptree, "supported_printer_models");
         if (out.empty()) {
             BOOST_LOG_TRIVIAL(error) << "Failed to find compatible_printer_type in printer detail.";
             return;
@@ -341,6 +352,80 @@ void UserAccount::fill_compatible_printers_from_json(const std::string& json, st
         for (const auto& sub : out) {
             result.emplace_back(sub.second.data());
         }
+    }
+    catch (const std::exception& e) {
+        BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
+    }
+}
+
+void UserAccount::fill_material_from_json(const std::string& json, std::vector<std::string>& result) const
+{
+
+    /* option 1: 
+    "slot": {
+			"active": 2,
+			"slots": {
+				"1": {
+					"material": "PLA",
+					"temp": 170,
+					"fan_hotend": 7689,
+					"fan_print": 0
+				},
+				"2": {
+					"material": "PLA",
+					"temp": 225,
+					"fan_hotend": 7798,
+					"fan_print": 6503
+				},
+				"3": {
+					"material": "PLA",
+					"temp": 36,
+					"fan_hotend": 6636,
+					"fan_print": 0
+				},
+				"4": {
+					"material": "PLA",
+					"temp": 35,
+					"fan_hotend": 0,
+					"fan_print": 0
+				},
+				"5": {
+					"material": "PETG",
+					"temp": 136,
+					"fan_hotend": 8132,
+					"fan_print": 0
+				}
+			}
+		}
+    */
+    /* option 2
+        "filament": {
+			"material": "PLA",
+			"bed_temperature": 60,
+			"nozzle_temperature": 210
+		}
+    */
+    // try finding "slot" subtree a use it to
+    // if not found, find "filament" subtree
+    try {
+        std::stringstream ss(json);
+        pt::ptree ptree;
+        pt::read_json(ss, ptree);
+        // find "slot" subtree
+        pt::ptree slot_subtree = parse_tree_for_subtree(ptree, "slot");
+        if (slot_subtree.empty()) {
+            // if not found, find "filament" subtree
+            pt::ptree filament_subtree = parse_tree_for_subtree(ptree, "filament");
+            if (!filament_subtree.empty()) {
+                std::string material = parse_tree_for_param(filament_subtree, "material");
+                if (!material.empty()) {
+                    result.emplace_back(std::move(material));
+                }
+            }
+            return;
+        }
+        // search "slot" subtree for all "material"s
+        parse_tree_for_param_vector(slot_subtree, "material", result);
     }
     catch (const std::exception& e) {
         BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
