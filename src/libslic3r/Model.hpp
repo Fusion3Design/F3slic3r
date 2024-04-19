@@ -27,6 +27,7 @@
 #include "enum_bitmask.hpp"
 #include "TextConfiguration.hpp"
 #include "EmbossShape.hpp"
+#include "TriangleSelector.hpp"
 
 #include <map>
 #include <memory>
@@ -56,7 +57,6 @@ class ModelVolume;
 class ModelWipeTower;
 class Print;
 class SLAPrint;
-class TriangleSelector;
 
 namespace UndoRedo {
 	class StackImpl;
@@ -689,12 +689,12 @@ public:
     // Assign the content if the timestamp differs, don't assign an ObjectID.
     void assign(const FacetsAnnotation& rhs) { if (! this->timestamp_matches(rhs)) { m_data = rhs.m_data; this->copy_timestamp(rhs); } }
     void assign(FacetsAnnotation&& rhs) { if (! this->timestamp_matches(rhs)) { m_data = std::move(rhs.m_data); this->copy_timestamp(rhs); } }
-    const std::pair<std::vector<std::pair<int, int>>, std::vector<bool>>& get_data() const throw() { return m_data; }
+    const TriangleSelector::TriangleSplittingData &get_data() const throw() { return m_data; }
     bool set(const TriangleSelector& selector);
     indexed_triangle_set get_facets(const ModelVolume& mv, EnforcerBlockerType type) const;
     indexed_triangle_set get_facets_strict(const ModelVolume& mv, EnforcerBlockerType type) const;
     bool has_facets(const ModelVolume& mv, EnforcerBlockerType type) const;
-    bool empty() const { return m_data.first.empty(); }
+    bool empty() const { return m_data.triangles_to_split.empty(); }
 
     // Following method clears the config and increases its timestamp, so the deleted
     // state is considered changed from perspective of the undo/redo stack.
@@ -704,11 +704,11 @@ public:
     std::string get_triangle_as_string(int i) const;
 
     // Before deserialization, reserve space for n_triangles.
-    void reserve(int n_triangles) { m_data.first.reserve(n_triangles); }
+    void reserve(int n_triangles) { m_data.triangles_to_split.reserve(n_triangles); }
     // Deserialize triangles one by one, with strictly increasing triangle_id.
     void set_triangle_from_string(int triangle_id, const std::string& str);
     // After deserializing the last triangle, shrink data to fit.
-    void shrink_to_fit() { m_data.first.shrink_to_fit(); m_data.second.shrink_to_fit(); }
+    void shrink_to_fit() { m_data.triangles_to_split.shrink_to_fit(); m_data.bitstream.shrink_to_fit(); }
 
 private:
     // Constructors to be only called by derived classes.
@@ -734,7 +734,7 @@ private:
         ar(cereal::base_class<ObjectWithTimestamp>(this), m_data);
     }
 
-    std::pair<std::vector<std::pair<int, int>>, std::vector<bool>> m_data;
+    TriangleSelector::TriangleSplittingData m_data;
 
     // To access set_new_unique_id() when copy / pasting a ModelVolume.
     friend class ModelVolume;
