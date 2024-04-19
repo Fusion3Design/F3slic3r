@@ -837,7 +837,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     // Reset the "dirty project" flag.
     m_undo_redo_stack_main.mark_current_as_saved();
     dirty_state.update_from_undo_redo_stack(false);
-
+    
     this->q->Bind(EVT_LOAD_MODEL_OTHER_INSTANCE, [this](LoadFromOtherInstanceEvent& evt) {
         BOOST_LOG_TRIVIAL(trace) << "Received load from other instance event.";
         wxArrayString input_files;
@@ -847,71 +847,83 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         wxGetApp().mainframe->Raise();
         this->q->load_files(input_files);
     });
-  
-    this->q->Bind(EVT_START_DOWNLOAD_OTHER_INSTANCE, [](StartDownloadOtherInstanceEvent& evt) {
-        BOOST_LOG_TRIVIAL(trace) << "Received url from other instance event.";
-        wxGetApp().mainframe->Raise();
-        for (size_t i = 0; i < evt.data.size(); ++i) {
-            wxGetApp().start_download(evt.data[i]);
-        }
-       
-    }); 
-    this->q->Bind(EVT_LOGIN_OTHER_INSTANCE, [this](LoginOtherInstanceEvent& evt) {
-        BOOST_LOG_TRIVIAL(trace) << "Received login from other instance event.";
-        user_account->on_login_code_recieved(evt.data);
-    });
-
-    this->q->Bind(EVT_INSTANCE_GO_TO_FRONT, [this](InstanceGoToFrontEvent &) {
+    this->q->Bind(EVT_INSTANCE_GO_TO_FRONT, [this](InstanceGoToFrontEvent&) {
         bring_instance_forward();
     });
-
-    this->q->Bind(EVT_OPEN_PRUSAAUTH, [](OpenPrusaAuthEvent& evt) {
-       BOOST_LOG_TRIVIAL(info)  << "open browser: " << evt.data;
-       // first register url to be sure to get the code back
-       //auto downloader_worker = new DownloaderUtils::Worker(nullptr);
-       DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
-#ifdef __linux__
-       if (DownloaderUtils::Worker::perform_registration_linux)
-           DesktopIntegrationDialog::perform_downloader_desktop_integration();
-#endif // __linux__
-       // than open url
-       wxGetApp().open_login_browser_with_dialog(evt.data);
-     });
+    // Downloader and USerAccount Events doesnt need to be binded in viewer.
+    // Not binding Account events prevents it from loging in.
+    if (wxGetApp().is_editor()) {
+        this->q->Bind(EVT_START_DOWNLOAD_OTHER_INSTANCE, [](StartDownloadOtherInstanceEvent& evt) {
+            BOOST_LOG_TRIVIAL(trace) << "Received url from other instance event.";
+            wxGetApp().mainframe->Raise();
+            for (size_t i = 0; i < evt.data.size(); ++i) {
+                wxGetApp().start_download(evt.data[i]);
+            }
+        }); 
+        this->q->Bind(EVT_LOGIN_OTHER_INSTANCE, [this](LoginOtherInstanceEvent& evt) {
+            BOOST_LOG_TRIVIAL(trace) << "Received login from other instance event.";
+            user_account->on_login_code_recieved(evt.data);
+        });
+        this->q->Bind(EVT_OPEN_PRUSAAUTH, [](OpenPrusaAuthEvent& evt) {
+           BOOST_LOG_TRIVIAL(info)  << "open browser: " << evt.data;
+           // first register url to be sure to get the code back
+           //auto downloader_worker = new DownloaderUtils::Worker(nullptr);
+           DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
+    #ifdef __linux__
+           if (DownloaderUtils::Worker::perform_registration_linux)
+               DesktopIntegrationDialog::perform_downloader_desktop_integration();
+    #endif // __linux__
+           // than open url
+           wxGetApp().open_login_browser_with_dialog(evt.data);
+         });
     
-    this->q->Bind(EVT_UA_LOGGEDOUT, [this](UserAccountSuccessEvent& evt) {
-        user_account->clear();
-        std::string text = _u8L("Logged out from Prusa Account.");
-        this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
-        this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
-        this->main_frame->remove_connect_webview_tab();
-        this->main_frame->refresh_account_menu(true);
-        // Update sidebar printer status
-        sidebar->update_printer_presets_combobox();
-#if 0
-        wxGetApp().update_login_dialog();
-#endif // 0
-        this->show_action_buttons(this->ready_to_slice);
-    });
-
-    this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
-        std::string username;
-        if (user_account->on_user_id_success(evt.data, username)) {
-            // login notification
-            std::string text = format(_u8L("Logged to Prusa Account as %1%."), username);
+        this->q->Bind(EVT_UA_LOGGEDOUT, [this](UserAccountSuccessEvent& evt) {
+            user_account->clear();
+            std::string text = _u8L("Logged out from Prusa Account.");
             this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
             this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
-            // show connect tab
-            this->main_frame->add_connect_webview_tab();
-            // Update User name in TopBar
-            this->main_frame->refresh_account_menu();
+            this->main_frame->remove_connect_webview_tab();
+            this->main_frame->refresh_account_menu(true);
+            // Update sidebar printer status
+            sidebar->update_printer_presets_combobox();
 #if 0
             wxGetApp().update_login_dialog();
 #endif // 0
             this->show_action_buttons(this->ready_to_slice);
-        } else {
-            // data were corrupt and username was not retrieved
-            // procced as if EVT_UA_RESET was recieved
-            BOOST_LOG_TRIVIAL(error) << "Reseting Prusa Account communication. Recieved data were corrupt.";
+        });
+
+        this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+            std::string username;
+            if (user_account->on_user_id_success(evt.data, username)) {
+                // login notification
+                std::string text = format(_u8L("Logged to Prusa Account as %1%."), username);
+                this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
+                this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
+                // show connect tab
+                this->main_frame->add_connect_webview_tab();
+                // Update User name in TopBar
+                this->main_frame->refresh_account_menu();
+#if 0
+                wxGetApp().update_login_dialog();
+#endif // 0
+                this->show_action_buttons(this->ready_to_slice);
+            } else {
+                // data were corrupt and username was not retrieved
+                // procced as if EVT_UA_RESET was recieved
+                BOOST_LOG_TRIVIAL(error) << "Reseting Prusa Account communication. Recieved data were corrupt.";
+                user_account->clear();
+                this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
+                this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Failed to connect to Prusa Account."));
+                this->main_frame->remove_connect_webview_tab();
+                // Update User name in TopBar
+                this->main_frame->refresh_account_menu(true);
+                // Update sidebar printer status
+                sidebar->update_printer_presets_combobox();
+            }
+        
+        });
+        this->q->Bind(EVT_UA_RESET, [this](UserAccountFailEvent& evt) {
+            BOOST_LOG_TRIVIAL(error) << "Reseting Prusa Account communication. Error message: " << evt.data;
             user_account->clear();
             this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
             this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Failed to connect to Prusa Account."));
@@ -920,47 +932,35 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->main_frame->refresh_account_menu(true);
             // Update sidebar printer status
             sidebar->update_printer_presets_combobox();
-        }
-        
-    });
-    this->q->Bind(EVT_UA_RESET, [this](UserAccountFailEvent& evt) {
-        BOOST_LOG_TRIVIAL(error) << "Reseting Prusa Account communication. Error message: " << evt.data;
-        user_account->clear();
-        this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
-        this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::WarningNotificationLevel, _u8L("Failed to connect to Prusa Account."));
-        this->main_frame->remove_connect_webview_tab();
-        // Update User name in TopBar
-        this->main_frame->refresh_account_menu(true);
-        // Update sidebar printer status
-        sidebar->update_printer_presets_combobox();
-    });
-    this->q->Bind(EVT_UA_FAIL, [this](UserAccountFailEvent& evt) {
-        BOOST_LOG_TRIVIAL(error) << "Failed communication with Prusa Account: " << evt.data;
-        user_account->on_communication_fail();
-    });
-    this->q->Bind(EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, [this](UserAccountSuccessEvent& evt) {
-        std::string text;
-        bool printers_changed = false;
-        if (user_account->on_connect_printers_success(evt.data, wxGetApp().app_config, printers_changed)) {
-            if (printers_changed) {
-                sidebar->update_printer_presets_combobox();
-            }
-        } else {
-            // message was corrupt, procceed like EVT_UA_FAIL
+        });
+        this->q->Bind(EVT_UA_FAIL, [this](UserAccountFailEvent& evt) {
+            BOOST_LOG_TRIVIAL(error) << "Failed communication with Prusa Account: " << evt.data;
             user_account->on_communication_fail();
-        }
-    });
-    this->q->Bind(EVT_UA_AVATAR_SUCCESS, [this](UserAccountSuccessEvent& evt) {
-       boost::filesystem::path path = user_account->get_avatar_path(true);
-       FILE* file; 
-       file = fopen(path.string().c_str(), "wb");
-       fwrite(evt.data.c_str(), 1, evt.data.size(), file);
-       fclose(file);
-       this->main_frame->refresh_account_menu(true);
+        });
+        this->q->Bind(EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+            std::string text;
+            bool printers_changed = false;
+            if (user_account->on_connect_printers_success(evt.data, wxGetApp().app_config, printers_changed)) {
+                if (printers_changed) {
+                    sidebar->update_printer_presets_combobox();
+                }
+            } else {
+                // message was corrupt, procceed like EVT_UA_FAIL
+                user_account->on_communication_fail();
+            }
+        });
+        this->q->Bind(EVT_UA_AVATAR_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+           boost::filesystem::path path = user_account->get_avatar_path(true);
+           FILE* file; 
+           file = fopen(path.string().c_str(), "wb");
+           fwrite(evt.data.c_str(), 1, evt.data.size(), file);
+           fclose(file);
+           this->main_frame->refresh_account_menu(true);
 #if 0
-       wxGetApp().update_login_dialog();
+           wxGetApp().update_login_dialog();
 #endif // 0    
-    }); 
+        }); 
+    }
 
 	wxGetApp().other_instance_message_handler()->init(this->q);
 

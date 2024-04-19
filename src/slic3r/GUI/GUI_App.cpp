@@ -3801,10 +3801,10 @@ void GUI_App::handle_connect_request_printer_pick(const std::string& msg)
     // return to plater
     this->mainframe->select_tab(size_t(0));
   
-    //if (!select_printer_from_connect(msg)) {
-    //    // If printer was not selected, do not select filament.
-    //    return;
-    //}
+    if (!select_printer_from_connect(msg)) {
+        // If printer was not selected, do not select filament.
+        return;
+    }
     // TODO: Selecting SLA material
     if (Preset::printer_technology(preset_bundle->printers.get_selected_preset().config) != ptFFF) {
         return;
