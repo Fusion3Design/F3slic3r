@@ -3688,10 +3688,6 @@ bool GUI_App::select_printer_from_connect(const std::string& msg)
             model_name = compatible_printers.front();
         }
     }
-    // TODO: This should go away when compatible printers gives right information.
-    if (model_name.empty()) {
-        model_name = plater()->get_user_account()->get_model_from_json(msg);
-    }
     if (model_name.empty()) {
         BOOST_LOG_TRIVIAL(error) << "Failed to select printer from Connect. Printer_model is empty.";
         return false;
