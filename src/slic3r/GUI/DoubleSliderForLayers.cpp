@@ -218,7 +218,7 @@ void DSForLayers::draw_ticks(const ImRect& slideable_region)
         ImGui::RenderFrame(tick_left.Min, tick_left.Max, tick_clr, false);
         ImGui::RenderFrame(tick_right.Min, tick_right.Max, tick_clr, false);
 
-        ImVec2      icon_pos    = ImVec2(tick_right.Max.x + icon_offset, tick_pos - icon_offset);
+        ImVec2      icon_pos = ImVec2(tick_right.Max.x + 0.5f * icon_offset, tick_pos - icon_offset);
         std::string btn_label   = "tick " + std::to_string(tick_it->tick);
 
         //draw tick icon-buttons
@@ -286,7 +286,7 @@ void DSForLayers::draw_colored_band(const ImRect& groove, const ImRect& slideabl
     if (m_ticks.empty() || m_draw_mode == dmSequentialFffPrint)
         return;
 
-    ImVec2 blank_padding = ImVec2(5.0f, 2.0f) * m_scale;
+    ImVec2 blank_padding = ImVec2(0.5f * m_ctrl.GetGrooveRect().GetWidth(), 2.0f * m_scale);
     float  blank_width = 1.0f * m_scale;
 
     ImRect blank_rect = ImRect(groove.GetCenter().x - blank_width, groove.Min.y, groove.GetCenter().x + blank_width, groove.Max.y);
@@ -627,7 +627,7 @@ void DSForLayers::Render(const int canvas_width, const int canvas_height, float 
     ImVec2 pos;
 
     pos.x = canvas_width - VERTICAL_SLIDER_WIDTH * m_scale - tick_icon_side;
-    pos.y = 1.f * action_btn_sz;
+    pos.y = 1.5f * action_btn_sz;
     if (m_allow_editing)
         pos.y += 2.f;
 
@@ -648,13 +648,13 @@ void DSForLayers::Render(const int canvas_width, const int canvas_height, float 
 
     const float groove_center_x = m_ctrl.GetGrooveRect().GetCenter().x;
 
-    ImVec2 btn_pos = ImVec2(groove_center_x - 0.5f * action_btn_sz, pos.y - 0.25f * action_btn_sz);
+    ImVec2 btn_pos = ImVec2(groove_center_x - 0.5f * action_btn_sz, pos.y - 0.75f * action_btn_sz);
 
     if (!m_ticks.empty() && m_allow_editing &&
         render_button(ImGui::DSRevert, ImGui::DSRevertHovered, "revert", btn_pos, fiRevertIcon))
         discard_all_thicks();
 
-    btn_pos.y += 0.1f * action_btn_sz + size.y;
+    btn_pos.y += 0.5f * action_btn_sz + size.y;
     const bool is_one_layer = m_ctrl.IsCombineThumbs();
     if (render_button(is_one_layer ? ImGui::Lock : ImGui::Unlock, is_one_layer ? ImGui::LockHovered : ImGui::UnlockHovered, "one_layer", btn_pos, fiOneLayerIcon))
         ChangeOneLayerLock();

@@ -285,7 +285,7 @@ void ImGuiControl::draw_background(const ImRect& slideable_region)
 
 void ImGuiControl::draw_label(std::string label, const ImRect& thumb)
 {
-    if (label.empty())
+    if (label.empty() || label == "ErrVal")
         return;
 
     const ImVec2 thumb_center   = thumb.GetCenter();
@@ -313,9 +313,9 @@ void ImGuiControl::draw_label(std::string label, const ImRect& thumb)
 
 void ImGuiControl::draw_thumb(const ImVec2& center, bool mark/* = false*/)
 {
-    const float line_width  = 2.0f * m_draw_opts.scale;
-    const float line_offset = 9.0f * m_draw_opts.scale;
+    const float line_width  = 1.5f * m_draw_opts.scale;
     const float radius      = m_draw_opts.thumb_radius();
+    const float line_offset = 0.5f * radius;
 
     const float hexagon_angle = is_horizontal() ? 0.f : IM_PI * 0.5f;
 

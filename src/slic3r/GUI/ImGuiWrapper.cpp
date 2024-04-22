@@ -75,15 +75,6 @@ static const std::map<const wchar_t, std::string> font_icons = {
     {ImGui::SnapMarker            , "snap"                          },
     {ImGui::HorizontalHide        , "horizontal_hide"               },
     {ImGui::HorizontalShow        , "horizontal_show"               },
-
-    {ImGui::ErrorTick             , "error_tick"                    },
-    {ImGui::ErrorTickHovered      , "error_tick_f"                  },
-    {ImGui::PausePrint            , "pause_print"                   },
-    {ImGui::PausePrintHovered     , "pause_print_f"                 },
-    {ImGui::EditGCode             , "edit_gcode"                    },
-    {ImGui::EditGCodeHovered      , "edit_gcode_f"                  },
-    {ImGui::RemoveTick            , "colorchange_del"               },
-    {ImGui::RemoveTickHovered     , "colorchange_del_f"             },
 };
 
 static const std::map<const wchar_t, std::string> font_icons_large = {
@@ -134,6 +125,15 @@ static const std::map<const wchar_t, std::string> font_icons_medium = {
     {ImGui::DSRevertHovered         , "undo_f"                          },
     {ImGui::DSSettings              , "cog"                             },
     {ImGui::DSSettingsHovered       , "cog_f"                           },
+
+    {ImGui::ErrorTick               , "error_tick"                      },
+    {ImGui::ErrorTickHovered        , "error_tick_f"                    },
+    {ImGui::PausePrint              , "pause_print"                     },
+    {ImGui::PausePrintHovered       , "pause_print_f"                   },
+    {ImGui::EditGCode               , "edit_gcode"                      },
+    {ImGui::EditGCodeHovered        , "edit_gcode_f"                    },
+    {ImGui::RemoveTick              , "colorchange_del"                 },
+    {ImGui::RemoveTickHovered       , "colorchange_del_f"               },
 };
 
 static const std::map<const wchar_t, std::string> font_icons_extra_large = {

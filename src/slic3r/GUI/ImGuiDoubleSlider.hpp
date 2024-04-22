@@ -98,14 +98,14 @@ private:
     struct DrawOptions {
         float       scale                   { 1.f }; // used for Retina on osx
 
-        ImVec2      dummy_sz()           const { return ImVec2(24.0f, 44.0f) * scale; }
+        ImVec2      dummy_sz()           const { return ImVec2(24.0f, 22.0f) * scale; }
         ImVec2      thumb_dummy_sz()     const { return ImVec2(17.0f, 17.0f) * scale; }
-        ImVec2      groove_sz()          const { return ImVec2(10.0f,  8.0f) * scale; }
-        ImVec2      draggable_region_sz()const { return ImVec2(40.0f, 19.0f) * scale; }
+        ImVec2      groove_sz()          const { return ImVec2(4.0f,   4.0f) * scale; }
+        ImVec2      draggable_region_sz()const { return ImVec2(20.0f, 19.0f) * scale; }
         ImVec2      text_dummy_sz()      const { return ImVec2(50.0f, 34.0f) * scale; }
         ImVec2      text_padding()       const { return ImVec2( 5.0f,  2.0f) * scale; }
 
-        float       thumb_radius()       const { return 14.0f * scale; }
+        float       thumb_radius()       const { return 10.0f * scale; }
         float       thumb_border()       const { return 2.0f * scale; }
         float       rounding()           const { return 2.0f * scale; }
 
@@ -235,6 +235,7 @@ public:
 
     void Show(bool show = true) { m_ctrl.Show(show); }
     void Hide()                 { m_ctrl.Show(false); }
+    bool IsShown()              { return m_ctrl.IsShown(); }
     void SetEmUnit(int em_unit) { m_em = em_unit; }
     void ShowLowerThumb(bool show) { m_ctrl.ShowLowerThumb(show); }
 
