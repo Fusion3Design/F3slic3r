@@ -573,7 +573,6 @@ private:
         if (!is_tool_change && it->extruder == static_cast<int>(extruder_id + 1))
             return m600_color_id(it);
 
-        assert(false);
         return 0;
     }
 

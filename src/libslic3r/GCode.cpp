@@ -1987,7 +1987,7 @@ static std::string emit_custom_color_change_gcode_per_print_z(
 
     int color_change_extruder = -1;
     if (color_change && custom_gcode.extruder > 0)
-        color_change_extruder = custom_gcode.extruder - 1;
+        color_change_extruder = single_extruder_printer ? 0 : custom_gcode.extruder - 1;
 
     assert(color_change_extruder >= 0);
     // Color Change or Tool Change as Color Change.

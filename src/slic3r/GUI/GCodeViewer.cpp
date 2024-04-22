@@ -1014,8 +1014,7 @@ void GCodeViewer::load_as_gcode(const GCodeProcessorResult& gcode_result, const 
     m_extruders_count = gcode_result.extruders_count;
     m_sequential_view.gcode_window.load_gcode(gcode_result);
 
-    if (wxGetApp().is_gcode_viewer())
-        m_custom_gcode_per_print_z = gcode_result.custom_gcode_per_print_z;
+    m_custom_gcode_per_print_z = gcode_result.custom_gcode_per_print_z;
 
     m_max_print_height = gcode_result.max_print_height;
     m_z_offset = gcode_result.z_offset;
@@ -2399,11 +2398,10 @@ void GCodeViewer::render_legend(float& legend_height)
             break;
         }
         case libvgcode::EViewType::ColorPrint: {
-            const std::vector<CustomGCode::Item>& custom_gcode_per_print_z = wxGetApp().is_editor() ? wxGetApp().plater()->model().custom_gcode_per_print_z.gcodes : m_custom_gcode_per_print_z;
             size_t total_items = 1;
             const std::vector<uint8_t>& used_extruders_ids = m_viewer.get_used_extruders_ids();
             for (uint8_t extruder_id : used_extruders_ids) {
-                total_items += color_print_ranges(extruder_id, custom_gcode_per_print_z).size();
+                total_items += color_print_ranges(extruder_id, m_custom_gcode_per_print_z).size();
             }
 
             const bool need_scrollable = static_cast<float>(total_items) * icon_size + (static_cast<float>(total_items) - 1.0f) * ImGui::GetStyle().ItemSpacing.y > child_height;
@@ -2412,7 +2410,7 @@ void GCodeViewer::render_legend(float& legend_height)
             if (need_scrollable)
                 ImGui::BeginChild("color_prints", { -1.0f, child_height }, false);
             if (get_extruders_count() == 1) { // single extruder use case
-                const std::vector<std::pair<ColorRGBA, std::pair<double, double>>> cp_values = color_print_ranges(0, custom_gcode_per_print_z);
+                const std::vector<std::pair<ColorRGBA, std::pair<double, double>>> cp_values = color_print_ranges(0, m_custom_gcode_per_print_z);
                 const int items_cnt = static_cast<int>(cp_values.size());
                 if (items_cnt == 0)  // There are no color changes, but there are some pause print or custom Gcode
                     append_item(EItemType::Rect, libvgcode::convert(m_viewer.get_tool_colors().front()), _u8L("Default color"));
@@ -2435,7 +2433,7 @@ void GCodeViewer::render_legend(float& legend_height)
                 // shows only extruders actually used
                 const std::vector<uint8_t>& used_extruders_ids = m_viewer.get_used_extruders_ids();
                 for (uint8_t extruder_id : used_extruders_ids) {
-                    const std::vector<std::pair<ColorRGBA, std::pair<double, double>>> cp_values = color_print_ranges(extruder_id, custom_gcode_per_print_z);
+                    const std::vector<std::pair<ColorRGBA, std::pair<double, double>>> cp_values = color_print_ranges(extruder_id, m_custom_gcode_per_print_z);
                     const int items_cnt = static_cast<int>(cp_values.size());
                     if (items_cnt == 0)
                         // There are no color changes, but there are some pause print or custom Gcode
@@ -2497,7 +2495,7 @@ void GCodeViewer::render_legend(float& legend_height)
         auto generate_partial_times = [this, get_used_filament_from_volume](const TimesList& times, const std::vector<double>& used_filaments) {
             PartialTimes items;
 
-            std::vector<CustomGCode::Item> custom_gcode_per_print_z = wxGetApp().is_editor() ? wxGetApp().plater()->model().custom_gcode_per_print_z.gcodes : m_custom_gcode_per_print_z;
+            std::vector<CustomGCode::Item> custom_gcode_per_print_z = m_custom_gcode_per_print_z;
             const size_t extruders_count = get_extruders_count();
             std::vector<ColorRGBA> last_color(extruders_count);
             for (size_t i = 0; i < extruders_count; ++i) {
