@@ -5861,9 +5861,12 @@ void Plater::connect_gcode()
     PresetBundle* preset_bundle = wxGetApp().preset_bundle;
     // Connect data
     std::vector<std::string> compatible_printers;
-    p->user_account->fill_compatible_printers_from_json(dialog_msg, compatible_printers);
+    p->user_account->fill_compatible_printers_from_json_old(dialog_msg, compatible_printers);
     std::string connect_nozzle = p->user_account->get_nozzle_from_json(dialog_msg);
-    std::string connect_filament_type = p->user_account->get_keyword_from_json(dialog_msg, "material");
+
+    std::vector<std::string> connect_materials;
+    p->user_account->fill_material_from_json(dialog_msg, connect_materials);
+
     std::vector<const Preset*> compatible_printer_presets;
     for (const std::string& cp : compatible_printers) {
         const Preset* found_preset = preset_bundle->printers.find_system_preset_by_model_and_variant(cp, connect_nozzle);
@@ -5878,11 +5881,23 @@ void Plater::connect_gcode()
     // Selected profiles
     const Preset* selected_printer_preset = &preset_bundle->printers.get_selected_preset();
     const std::string selected_printer_model_serialized = selected_printer_preset->config.option("printer_model")->serialize();
-    std::string selected_filament_type_serialized;
+    
+    bool selected_filament_ok = true;
     if (Preset::printer_technology(selected_printer_preset->config) == ptFFF) {
-        const Preset* selected_filament_preset = &preset_bundle->filaments.get_selected_preset();
-        const std::string selected_nozzle_serialized = dynamic_cast<const ConfigOptionFloats*>(selected_printer_preset->config.option("nozzle_diameter"))->serialize();
-        std::string selected_filament_type_serialized = selected_filament_preset->config.option("filament_type")->serialize();
+        size_t extruder_count = preset_bundle->extruders_filaments.size();
+        for (size_t i = 0; i < extruder_count; i++) {
+            if (connect_materials.size() <= i) {
+                selected_filament_ok = false;
+                break;
+            }
+            const Preset* selected_filament_preset = preset_bundle->extruders_filaments[i].get_selected_preset();
+            if (selected_filament_preset && selected_filament_preset->config.has("filament_type")
+                && selected_filament_preset->config.option("filament_type")->serialize() != connect_materials[i])
+            {
+                selected_filament_ok = false;
+                break;
+            }
+        }
     }
     
     
@@ -5936,10 +5951,24 @@ void Plater::connect_gcode()
         }
     }
     
-    if (!selected_filament_type_serialized.empty() && selected_filament_type_serialized != connect_filament_type) {
+    if (!connect_materials.empty() && !selected_filament_ok) {
         wxString line1 = _L("The printer you've selected has different filament type than filament profile selected for slicing.");
-        wxString line2 = GUI::format_wxstr(_L("PrusaConnect Filament Type: %1%"), connect_filament_type);
-        wxString line3 = GUI::format_wxstr(_L("PrusaSlicer Filament Type: %1%"), selected_filament_type_serialized);
+        wxString connect_filament_types = "\n";
+        for (size_t i = 0; i < connect_materials.size(); i++) {
+            connect_filament_types += GUI::format_wxstr(_L("Extruder %1%: %2%\n"), i + 1, connect_materials[i]);
+        }
+        wxString line2 = GUI::format_wxstr(_L("PrusaConnect Filament Type: %1%"), connect_filament_types);
+        
+        wxString selected_filament_types = "\n";
+        for (size_t i = 0; i < preset_bundle->extruders_filaments.size(); i++) {
+            const Preset* selected_filament_preset = preset_bundle->extruders_filaments[i].get_selected_preset();
+            std::string filament_serialized;
+            if (selected_filament_preset && selected_filament_preset->config.has("filament_type")) {
+                filament_serialized = selected_filament_preset->config.option("filament_type")->serialize();
+            }
+            selected_filament_types += GUI::format_wxstr(_L("Extruder %1%: %2%\n"), i + 1, filament_serialized);
+        }
+        wxString line3 = GUI::format_wxstr(_L("PrusaSlicer Filament Type: %1%"), selected_filament_types);
         wxString line4 = _L("Do you still wish to upload?");
         wxString message = GUI::format_wxstr("%1%\n\n%2%\n%3%\n\n%4%", line1, line2, line3, line4);
         MessageDialog msg_dialog(this, message, _L("Do you wish to upload?"), wxYES_NO);
@@ -5948,29 +5977,6 @@ void Plater::connect_gcode()
             return;
         }
     }
- // Commented code with selecting printers in plater
- /* 
-           // if selected (in connect) preset is not visible, make it visible and selected 
-            if (!connect_printer_preset->is_visible) {
-                size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(connect_printer_preset->name);
-                assert(preset_id != size_t(-1));
-                preset_bundle->printers.select_preset(preset_id);
-                wxGetApp().get_tab(Preset::Type::TYPE_PRINTER)->select_preset(connect_printer_preset->name);
-                p->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
-                p->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, format(_u8L("Changed Printer to %1%."), connect_printer_preset->name));
-                select_view_3D("3D");
-            }
-            // if selected (in connect) preset is not selected in slicer, select it
-            if (preset_bundle->printers.get_selected_preset_name() != connect_printer_preset->name) {
-                size_t preset_id = preset_bundle->printers.get_preset_idx_by_name(connect_printer_preset->name);
-                assert(preset_id != size_t(-1));
-                preset_bundle->printers.select_preset(preset_id);
-                wxGetApp().get_tab(Preset::Type::TYPE_PRINTER)->select_preset(connect_printer_preset->name);
-                p->notification_manager->close_notification_of_type(NotificationType::PrusaConnectPrinters);
-                p->notification_manager->push_notification(NotificationType::PrusaConnectPrinters, NotificationManager::NotificationLevel::ImportantNotificationLevel, format(_u8L("Changed Printer to %1%."), connect_printer_preset->name));
-                select_view_3D("3D");                
-            }
- */
 
     const std::string connect_state = p->user_account->get_keyword_from_json(dialog_msg, "connect_state");
     const std::string printer_state = p->user_account->get_keyword_from_json(dialog_msg, "printer_state");

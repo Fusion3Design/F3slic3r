@@ -3791,11 +3791,11 @@ void GUI_App::select_filament_from_connect(const std::string& msg)
     // and filaments tab
     TabFilament* tab = dynamic_cast<TabFilament*>(get_tab(Preset::TYPE_FILAMENT));
     tab->select_preset(preset_bundle->extruders_filaments[tab->get_active_extruder()].get_selected_preset_name());
-
-    plater()->get_notification_manager()->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
-    plater()->get_notification_manager()->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::ImportantNotificationLevel, notification_text);
-    return;
-
+    
+    if (!notification_text.empty()) {
+        plater()->get_notification_manager()->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
+        plater()->get_notification_manager()->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::ImportantNotificationLevel, notification_text);
+    }
 }
 
 void GUI_App::handle_connect_request_printer_pick(const std::string& msg) 

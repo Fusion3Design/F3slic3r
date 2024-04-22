@@ -358,6 +358,27 @@ void UserAccount::fill_compatible_printers_from_json(const std::string& json, st
     }
 }
 
+void UserAccount::fill_compatible_printers_from_json_old(const std::string& json, std::vector<std::string>& result) const
+{
+    try {
+        std::stringstream ss(json);
+        pt::ptree ptree;
+        pt::read_json(ss, ptree);
+
+        pt::ptree out = parse_tree_for_subtree(ptree, "printer_type_compatible");
+        if (out.empty()) {
+            BOOST_LOG_TRIVIAL(error) << "Failed to find compatible_printer_type in printer detail.";
+            return;
+        }
+        for (const auto& sub : out) {
+            result.emplace_back(sub.second.data());
+        }
+    }
+    catch (const std::exception& e) {
+        BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
+    }
+}
+
 void UserAccount::fill_material_from_json(const std::string& json, std::vector<std::string>& result) const
 {
 
