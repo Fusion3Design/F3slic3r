@@ -3715,14 +3715,13 @@ bool GUI_App::select_filament_preset(const Preset* preset, size_t extruder_index
     assert(preset && preset->is_compatible);
 
     if (!preset->is_visible) {
-        //size_t preset_id = preset_bundle->filaments.get_preset_idx_by_name(preset->name);
-        //assert(preset_id != size_t(-1));
-        //preset_bundle->filaments.select_preset(preset_id);
-        bool r = preset_bundle->extruders_filaments[extruder_index].select_filament(preset->name);
-        assert(r);
+        // To correct update of presets visibility call select_preset for preset_bundle->filaments() 
+        size_t preset_id = preset_bundle->filaments.get_preset_idx_by_name(preset->name);
+        assert(preset_id != size_t(-1));
+        preset_bundle->filaments.select_preset(preset_id);
     }
-
-    return get_tab(Preset::Type::TYPE_FILAMENT)->select_preset(preset->name);
+    assert(preset->is_visible);
+    return preset_bundle->extruders_filaments[extruder_index].select_filament(preset->name);
 }
 void GUI_App::search_and_select_filaments(const std::string& material, size_t extruder_index, std::string& out_message)
 {
@@ -3757,7 +3756,7 @@ void GUI_App::search_and_select_filaments(const std::string& material, size_t ex
             && filament.preset->config.has("filament_type")
             && filament.preset->config.option("filament_type")->serialize() == material
             && filament.preset->name.compare(0, 9, "Prusament") == 0
-            && select_filament_preset(filament.preset, 0))
+            && select_filament_preset(filament.preset, extruder_index))
         {
             out_message += GUI::format(_L("Extruder %1%: Selected and Installed Filament %2%\n"), extruder_index + 1, filament.preset->name);
             return;
@@ -3785,6 +3784,14 @@ void GUI_App::select_filament_from_connect(const std::string& msg)
     for (size_t i = 0; i < extruder_count; i++) {
         search_and_select_filaments(materials[i], i, notification_text);
     }
+
+    // When all filaments are selected/intalled, 
+    // then update preset comboboxes on sidebar
+    sidebar().update_presets(Preset::TYPE_FILAMENT);
+    // and filaments tab
+    TabFilament* tab = dynamic_cast<TabFilament*>(get_tab(Preset::TYPE_FILAMENT));
+    tab->select_preset(preset_bundle->extruders_filaments[tab->get_active_extruder()].get_selected_preset_name());
+
     plater()->get_notification_manager()->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
     plater()->get_notification_manager()->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::ImportantNotificationLevel, notification_text);
     return;
