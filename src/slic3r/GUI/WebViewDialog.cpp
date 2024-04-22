@@ -168,6 +168,7 @@ void WebViewPanel::load_error_page()
 
 void WebViewPanel::on_show(wxShowEvent& evt)
 {
+    m_shown = evt.IsShown();
     if (evt.IsShown() && m_load_default_url) {
         m_load_default_url = false;
         load_url(m_default_url);
@@ -310,7 +311,7 @@ void WebViewPanel::on_tools_clicked(wxCommandEvent& WXUNUSED(evt))
 
 void WebViewPanel::run_script(const wxString& javascript)
 {
-    if (!m_browser)
+    if (!m_browser || !m_shown)
         return;
     // Remember the script we run in any case, so the next time the user opens
     // the "Run Script" dialog box, it is shown there for convenient updating.

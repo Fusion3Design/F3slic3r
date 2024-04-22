@@ -87,6 +87,7 @@ protected:
     //DECLARE_EVENT_TABLE()
 
     bool m_load_error_page { false };
+    bool m_shown { false };
 }; 
 
 class ConnectRequestHandler
