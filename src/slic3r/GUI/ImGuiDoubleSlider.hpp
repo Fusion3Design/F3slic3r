@@ -67,7 +67,9 @@ public:
                                           m_size = size;
                                           m_draw_opts.scale = scale;
     }
-
+    ImVec2  GetCtrlSize()               { return m_size; }
+    ImVec2  GetCtrlPos()                { return m_pos; }
+    
     void    Show(bool show)             { m_is_shown = show; }
     void    Hide()                      { m_is_shown = false; }
     bool    IsShown() const             { return m_is_shown; }
@@ -239,6 +241,8 @@ public:
     void SetEmUnit(int em_unit) { m_em = em_unit; }
     void ShowLowerThumb(bool show) { m_ctrl.ShowLowerThumb(show); }
 
+    float GetWidth()            { return m_ctrl.GetCtrlSize().x; }
+    float GetHeight()           { return m_ctrl.GetCtrlSize().y; }
     virtual void Render(const int canvas_width, const int canvas_height, float extra_scale = 1.f) = 0;
 
     void set_callback_on_thumb_move(std::function<void()> cb) { m_cb_thumb_move = cb; };

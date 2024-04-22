@@ -136,6 +136,8 @@ public:
     void msw_rescale();
 
     void render_sliders(GLCanvas3D& canvas, float extra_scale = 0.1f);
+    float get_layers_slider_width();
+    float get_moves_slider_height();
 
     bool is_loaded() const { return m_loaded; }
 

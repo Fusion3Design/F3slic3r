@@ -334,6 +334,20 @@ void Preview::render_sliders(GLCanvas3D& canvas, float extra_scale/* = 0.1f*/)
         m_moves_slider->Render(canvas_width, canvas_height, extra_scale);
 }
 
+float Preview::get_moves_slider_height()
+{
+    if (m_moves_slider && m_moves_slider->IsShown())
+        return m_moves_slider->GetHeight();
+    return 0.0f;
+}
+
+float Preview::get_layers_slider_width()
+{
+    if (m_layers_slider && m_layers_slider->IsShown())
+        return m_layers_slider->GetWidth();
+    return 0.0f;
+}
+
 void Preview::bind_event_handlers()
 {
     Bind(wxEVT_SIZE, &Preview::on_size, this);
