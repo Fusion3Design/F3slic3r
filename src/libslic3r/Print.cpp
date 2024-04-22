@@ -760,7 +760,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             if (! object->has_support() && warnings) {
                 for (const ModelVolume* mv : object->model_object()->volumes) {
                     bool has_enforcers = mv->is_support_enforcer() || 
-                        (mv->is_model_part() && mv->supported_facets.has_facets(*mv, EnforcerBlockerType::ENFORCER));
+                        (mv->is_model_part() && mv->supported_facets.has_facets(*mv, TriangleStateType::ENFORCER));
                     if (has_enforcers) {
                         warnings->emplace_back("_SUPPORTS_OFF");
                         break;

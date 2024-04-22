@@ -3150,7 +3150,7 @@ static void project_triangles_to_slabs(SpanOfConstPtrs<Layer> layers, const inde
 }
 
 void PrintObject::project_and_append_custom_facets(
-        bool seam, EnforcerBlockerType type, std::vector<Polygons>& out) const
+        bool seam, TriangleStateType type, std::vector<Polygons>& out) const
 {
     for (const ModelVolume* mv : this->model_object()->volumes)
         if (mv->is_model_part()) {

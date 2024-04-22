@@ -894,7 +894,7 @@ static inline std::vector<std::vector<ExPolygons>> mm_segmentation_top_and_botto
             if (mv->is_model_part()) {
                 const Transform3d volume_trafo = object_trafo * mv->get_matrix();
                 for (size_t extruder_idx = 0; extruder_idx < num_extruders; ++ extruder_idx) {
-                    const indexed_triangle_set painted = mv->mm_segmentation_facets.get_facets_strict(*mv, EnforcerBlockerType(extruder_idx));
+                    const indexed_triangle_set painted = mv->mm_segmentation_facets.get_facets_strict(*mv, TriangleStateType(extruder_idx));
 #ifdef MM_SEGMENTATION_DEBUG_TOP_BOTTOM
                     {
                         static int iRun = 0;
@@ -1298,7 +1298,7 @@ std::vector<std::vector<ExPolygons>> multi_material_segmentation_by_painting(con
         tbb::parallel_for(tbb::blocked_range<size_t>(1, num_extruders + 1), [&mv, &print_object, &layers, &edge_grids, &painted_lines, &painted_lines_mutex, &input_expolygons, &throw_on_cancel_callback](const tbb::blocked_range<size_t> &range) {
             for (size_t extruder_idx = range.begin(); extruder_idx < range.end(); ++extruder_idx) {
                 throw_on_cancel_callback();
-                const indexed_triangle_set custom_facets = mv->mm_segmentation_facets.get_facets(*mv, EnforcerBlockerType(extruder_idx));
+                const indexed_triangle_set custom_facets = mv->mm_segmentation_facets.get_facets(*mv, TriangleStateType(extruder_idx));
                 if (!mv->is_model_part() || custom_facets.indices.empty())
                     continue;
 

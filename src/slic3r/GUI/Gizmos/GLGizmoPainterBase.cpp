@@ -503,7 +503,7 @@ bool GLGizmoPainterBase::gizmo_event(SLAGizmoEventType action, const Vec2d& mous
         if (m_triangle_selectors.empty())
             return false;
 
-        EnforcerBlockerType new_state = EnforcerBlockerType::NONE;
+        TriangleStateType new_state = TriangleStateType::NONE;
         if (! shift_down) {
             if (action == SLAGizmoEventType::Dragging)
                 new_state = m_button_down == Button::Left ? this->get_left_button_state_type() : this->get_right_button_state_type();
@@ -937,16 +937,16 @@ void TriangleSelectorGUI::update_render_data()
     static const float offset = 0.001f;
 
     for (const Triangle &tr : m_triangles) {
-        if (!tr.valid() || tr.is_split() || (tr.get_state() == EnforcerBlockerType::NONE && !tr.is_selected_by_seed_fill()))
+        if (!tr.valid() || tr.is_split() || (tr.get_state() == TriangleStateType::NONE && !tr.is_selected_by_seed_fill()))
             continue;
 
         int tr_state = int(tr.get_state());
-        GLModel::Geometry &iva = tr.is_selected_by_seed_fill()                   ? iva_seed_fills_data[tr_state] :
-                                 tr.get_state() == EnforcerBlockerType::ENFORCER ? iva_enforcers_data :
-                                                                                   iva_blockers_data;
-        int                  &cnt = tr.is_selected_by_seed_fill()                   ? seed_fill_cnt[tr_state] :
-                                    tr.get_state() == EnforcerBlockerType::ENFORCER ? enf_cnt :
-                                                                                      blc_cnt;
+        GLModel::Geometry &iva = tr.is_selected_by_seed_fill()                 ? iva_seed_fills_data[tr_state] :
+                                 tr.get_state() == TriangleStateType::ENFORCER ? iva_enforcers_data :
+                                                                                 iva_blockers_data;
+        int                  &cnt = tr.is_selected_by_seed_fill()                 ? seed_fill_cnt[tr_state] :
+                                    tr.get_state() == TriangleStateType::ENFORCER ? enf_cnt :
+                                                                                    blc_cnt;
         const Vec3f          &v0  = m_vertices[tr.verts_idxs[0]].v;
         const Vec3f          &v1  = m_vertices[tr.verts_idxs[1]].v;
         const Vec3f          &v2  = m_vertices[tr.verts_idxs[2]].v;

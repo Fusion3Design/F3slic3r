@@ -14,8 +14,29 @@
 
 namespace Slic3r {
 
-enum class EnforcerBlockerType : int8_t;
-
+enum class TriangleStateType : int8_t {
+    // Maximum is 3. The value is serialized in TriangleSelector into 2 bits.
+    NONE      = 0,
+    ENFORCER  = 1,
+    BLOCKER   = 2,
+    // Maximum is 15. The value is serialized in TriangleSelector into 6 bits using a 2 bit prefix code.
+    Extruder1 = ENFORCER,
+    Extruder2 = BLOCKER,
+    Extruder3,
+    Extruder4,
+    Extruder5,
+    Extruder6,
+    Extruder7,
+    Extruder8,
+    Extruder9,
+    Extruder10,
+    Extruder11,
+    Extruder12,
+    Extruder13,
+    Extruder14,
+    Extruder15,
+    Count
+};
 
 // Following class holds information about selected triangles. It also has power
 // to recursively subdivide the triangles and make the selection finer.
@@ -206,7 +227,7 @@ public:
         // Vector of triangles and its indexes to the bitstream.
         std::vector<TriangleBitStreamMapping> triangles_to_split;
         // Bit stream containing splitting information.
-        std::vector<bool> bitstream;
+        std::vector<bool>                     bitstream;
 
         TriangleSplittingData() = default;
 
@@ -236,7 +257,7 @@ public:
     // Select all triangles fully inside the circle, subdivide where needed.
     void select_patch(int                       facet_start,                   // facet of the original mesh (unsplit) that the hit point belongs to
                       std::unique_ptr<Cursor> &&cursor,                        // Cursor containing information about the point where to start, camera position (mesh coords), matrix to get from mesh to world, and its shape and type.
-                      EnforcerBlockerType       new_state,                     // enforcer or blocker?
+                      TriangleStateType         new_state,                     // enforcer or blocker?
                       const Transform3d        &trafo_no_translate,            // matrix to get from mesh to world without translation
                       bool                      triangle_splitting,            // If triangles will be split base on the cursor or not
                       float                     highlight_by_angle_deg = 0.f); // The maximal angle of overhang. If it is set to a non-zero value, it is possible to paint only the triangles of overhang defined by this angle in degrees.
@@ -255,18 +276,18 @@ public:
                                       bool                 propagate,                  // if bucket fill is propagated to neighbor faces or if it fills the only facet of the modified mesh that the hit point belongs to.
                                       bool                 force_reselection = false); // force reselection of the triangle mesh even in cases that mouse is pointing on the selected triangle
 
-    bool                 has_facets(EnforcerBlockerType state) const;
-    static bool          has_facets(const TriangleSplittingData &data, EnforcerBlockerType test_state);
-    int                  num_facets(EnforcerBlockerType state) const;
+    bool                 has_facets(TriangleStateType state) const;
+    static bool          has_facets(const TriangleSplittingData &data, TriangleStateType test_state);
+    int                  num_facets(TriangleStateType state) const;
     // Get facets at a given state. Don't triangulate T-joints.
-    indexed_triangle_set get_facets(EnforcerBlockerType state) const;
+    indexed_triangle_set get_facets(TriangleStateType state) const;
     // Get facets at a given state. Triangulate T-joints.
-    indexed_triangle_set get_facets_strict(EnforcerBlockerType state) const;
+    indexed_triangle_set get_facets_strict(TriangleStateType state) const;
     // Get edges around the selected area by seed fill.
     std::vector<Vec2i> get_seed_fill_contour() const;
 
     // Set facet of the mesh to a given state. Only works for original triangles.
-    void set_facet(int facet_idx, EnforcerBlockerType state);
+    void set_facet(int facet_idx, TriangleStateType state);
 
     // Clear everything and make the tree empty.
     void reset();
@@ -284,9 +305,9 @@ public:
     // For all triangles, remove the flag indicating that the triangle was selected by seed fill.
     void seed_fill_unselect_all_triangles();
 
-    // For all triangles selected by seed fill, set new EnforcerBlockerType and remove flag indicating that triangle was selected by seed fill.
+    // For all triangles selected by seed fill, set new TriangleStateType and remove flag indicating that triangle was selected by seed fill.
     // The operation may merge split triangles if they are being assigned the same color.
-    void seed_fill_apply_on_triangles(EnforcerBlockerType new_state);
+    void seed_fill_apply_on_triangles(TriangleStateType new_state);
 
 protected:
     // Triangle and info about how it's split.
@@ -294,7 +315,7 @@ protected:
     public:
         // Use TriangleSelector::push_triangle to create a new triangle.
         // It increments/decrements reference counter on vertices.
-        Triangle(int a, int b, int c, int source_triangle, const EnforcerBlockerType init_state)
+        Triangle(int a, int b, int c, int source_triangle, const TriangleStateType init_state)
             : verts_idxs{a, b, c},
               source_triangle{source_triangle},
               state{init_state}
@@ -316,8 +337,8 @@ protected:
         void set_division(int sides_to_split, int special_side_idx);
 
         // Get/set current state.
-        void set_state(EnforcerBlockerType type) { assert(! is_split()); state = type; }
-        EnforcerBlockerType get_state() const { assert(! is_split()); return state; }
+        void set_state(TriangleStateType type) { assert(! is_split()); state = type; }
+        TriangleStateType get_state() const { assert(! is_split()); return state; }
 
         // Set if the triangle has been selected or unselected by seed fill.
         void select_by_seed_fill() { assert(! is_split()); m_selected_by_seed_fill = true; }
@@ -341,7 +362,7 @@ protected:
         // or index of a vertex shared by the two split edges (for number_of_splits == 2).
         // For number_of_splits == 3, special_side_idx is always zero.
         char special_side_idx { 0 };
-        EnforcerBlockerType state;
+        TriangleStateType state;
         bool m_selected_by_seed_fill : 1;
         // Is this triangle valid or marked to be removed?
         bool m_valid : 1;
@@ -379,14 +400,14 @@ protected:
 
     // Private functions:
 private:
-    bool select_triangle(int facet_idx, EnforcerBlockerType type, bool triangle_splitting);
-    bool select_triangle_recursive(int facet_idx, const Vec3i &neighbors, EnforcerBlockerType type, bool triangle_splitting);
+    bool select_triangle(int facet_idx, TriangleStateType type, bool triangle_splitting);
+    bool select_triangle_recursive(int facet_idx, const Vec3i &neighbors, TriangleStateType type, bool triangle_splitting);
     void undivide_triangle(int facet_idx);
     void split_triangle(int facet_idx, const Vec3i &neighbors);
     void remove_useless_children(int facet_idx); // No hidden meaning. Triangles are meant.
     bool is_facet_clipped(int facet_idx, const ClippingPlane &clp) const;
-    int  push_triangle(int a, int b, int c, int source_triangle, EnforcerBlockerType state = EnforcerBlockerType{0});
-    void perform_split(int facet_idx, const Vec3i &neighbors, EnforcerBlockerType old_state);
+    int  push_triangle(int a, int b, int c, int source_triangle, TriangleStateType state = TriangleStateType::NONE);
+    void perform_split(int facet_idx, const Vec3i &neighbors, TriangleStateType old_state);
     Vec3i child_neighbors(const Triangle &tr, const Vec3i &neighbors, int child_idx) const;
     Vec3i child_neighbors_propagated(const Triangle &tr, const Vec3i &neighbors_propagated, int child_idx, const Vec3i &child_neighbors) const;
     // Return child of itriangle at a CCW oriented side (vertexi, vertexj), either first or 2nd part.
@@ -415,7 +436,7 @@ private:
     void get_facets_strict_recursive(
         const Triangle                              &tr,
         const Vec3i                                 &neighbors,
-        EnforcerBlockerType                          state,
+        TriangleStateType                            state,
         std::vector<stl_triangle_vertex_indices>    &out_triangles) const;
     void get_facets_split_by_tjoints(const Vec3i &vertices, const Vec3i &neighbors, std::vector<stl_triangle_vertex_indices> &out_triangles) const;
 

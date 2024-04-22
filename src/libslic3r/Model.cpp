@@ -2021,7 +2021,7 @@ void ModelInstance::transform_polygon(Polygon* polygon) const
     polygon->scale(get_scaling_factor(X), get_scaling_factor(Y)); // scale around polygon origin
 }
 
-indexed_triangle_set FacetsAnnotation::get_facets(const ModelVolume& mv, EnforcerBlockerType type) const
+indexed_triangle_set FacetsAnnotation::get_facets(const ModelVolume& mv, TriangleStateType type) const
 {
     TriangleSelector selector(mv.mesh());
     // Reset of TriangleSelector is done inside TriangleSelector's constructor, so we don't need it to perform it again in deserialize().
@@ -2029,7 +2029,7 @@ indexed_triangle_set FacetsAnnotation::get_facets(const ModelVolume& mv, Enforce
     return selector.get_facets(type);
 }
 
-indexed_triangle_set FacetsAnnotation::get_facets_strict(const ModelVolume& mv, EnforcerBlockerType type) const
+indexed_triangle_set FacetsAnnotation::get_facets_strict(const ModelVolume& mv, TriangleStateType type) const
 {
     TriangleSelector selector(mv.mesh());
     // Reset of TriangleSelector is done inside TriangleSelector's constructor, so we don't need it to perform it again in deserialize().
@@ -2037,7 +2037,7 @@ indexed_triangle_set FacetsAnnotation::get_facets_strict(const ModelVolume& mv, 
     return selector.get_facets_strict(type);
 }
 
-bool FacetsAnnotation::has_facets(const ModelVolume& mv, EnforcerBlockerType type) const
+bool FacetsAnnotation::has_facets(const ModelVolume& mv, TriangleStateType type) const
 {
     return TriangleSelector::has_facets(m_data, type);
 }
