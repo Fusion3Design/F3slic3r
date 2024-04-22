@@ -538,7 +538,8 @@ void ConnectRequestHandler::on_request_config()
     const std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
     //const std::string sesh = wxGetApp().plater()->get_user_account()->get_shared_session_key();
     const std::string dark_mode = wxGetApp().dark_mode() ? "DARK" : "LIGHT";
-    const wxString language = GUI::wxGetApp().current_language_code();
+    wxString language = GUI::wxGetApp().current_language_code();
+    language = language.SubString(0, 1);
     const std::string init_options = GUI::format("{\"accessToken\": \"%1%\" , \"clientVersion\": \"%2%\", \"colorMode\": \"%3%\", \"language\": \"%4%\"}", token, SLIC3R_VERSION, dark_mode, language);
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.init(%1%)", init_options);
     run_script_bridge(script);

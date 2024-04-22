@@ -84,10 +84,13 @@ boost::filesystem::path UserAccount::get_avatar_path(bool logged) const
     }
 }
 
-
-void UserAccount::enqueue_connect_printers_action()
+void UserAccount::enqueue_connect_printer_models_action()
 {
-    m_communication->enqueue_connect_printers_action();
+    m_communication->enqueue_connect_printer_models_action();
+}
+void UserAccount::enqueue_connect_status_action()
+{
+    m_communication->enqueue_connect_status_action();
 }
 void UserAccount::enqueue_avatar_action()
 {
@@ -137,7 +140,7 @@ bool UserAccount::on_user_id_success(const std::string data, std::string& out_us
         BOOST_LOG_TRIVIAL(error) << "User ID message from PrusaAuth did not contain avatar.";
     }
     // update printers list
-    enqueue_connect_printers_action();
+    enqueue_connect_printer_models_action();
     return true;
 }
 
@@ -148,6 +151,10 @@ void UserAccount::on_communication_fail()
     {
         m_communication->enqueue_test_connection();
         m_fail_counter = 0;
+    }
+    // Printer models are called only after login, if it fails, it should repeat
+    if (m_printer_uuid_map.empty()) {
+        enqueue_connect_printer_models_action();
     }
 }
 
@@ -204,51 +211,45 @@ bool UserAccount::on_connect_printers_success(const std::string& data, AppConfig
         BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
         return false;
     }
-    // fill m_printer_map with data from ptree
-    // tree string is in format {"result": [{"printer_type": "1.2.3", "states": [{"printer_state": "OFFLINE", "count": 1}, ...]}, {..}]}
-
+    // tree format: 
+    /*
+    [{
+        "printer_uuid": "972d2ce7-0967-4555-bff2-330c7fa0a4e1",
+            "printer_state" : "IDLE"
+    }, {
+        "printer_uuid": "15d160fd-c7e4-4b5a-9748-f0e531c7e0f5",
+        "printer_state" : "OFFLINE"
+    }]
+    */
     ConnectPrinterStateMap new_printer_map;
-
-    assert(ptree.front().first == "result");
-    for (const auto& printer_tree : ptree.front().second) {
-        // printer_tree is {"printer_type": "1.2.3", "states": [..]}
-        std::string name;
-        ConnectPrinterState state;
-
-        const auto type_opt = printer_tree.second.get_optional<std::string>("printer_model");
-        if (!type_opt) {
+    for (const auto& printer_tree : ptree) {
+        const auto printer_uuid = printer_tree.second.get_optional<std::string>("printer_uuid");
+        if (!printer_uuid) {
             continue;
         }
-        // printer_type is actually printer_name for now
-        name = *type_opt;
-        // printer should not appear twice
-        assert(new_printer_map.find(name) == new_printer_map.end());
-        // prepare all states on 0
-        new_printer_map[name].reserve(static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT));
-        for (size_t i = 0; i < static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT); i++) {
-            new_printer_map[name].push_back(0);
+        const auto printer_state = printer_tree.second.get_optional<std::string>("printer_state");
+        if (!printer_state) {
+            continue;
         }
-
-        for (const auto& section : printer_tree.second) {
-            // section is "printer_type": "1.2.3" OR "states": [..]}
-            if (section.first == "states") {
-                for (const auto& subsection : section.second) {
-                    // subsection is {"printer_state": "OFFLINE", "count": 1}
-                    const auto state_opt = subsection.second.get_optional<std::string>("printer_state");
-                    const auto count_opt = subsection.second.get_optional<int>("count");
-                    if (!state_opt || ! count_opt) {
-                        continue;
-                    }
-                    if (auto pair = printer_state_table.find(*state_opt); pair != printer_state_table.end()) {
-                        state = pair->second;
-                    } else {
-                        assert(true); // On this assert, printer_state_table needs to be updated with *state_opt and correct ConnectPrinterState
-                        continue;
-                    }
-                    new_printer_map[name][static_cast<size_t>(state)] = *count_opt;
-                }
+        ConnectPrinterState state;
+        if (auto pair = printer_state_table.find(*printer_state); pair != printer_state_table.end()) {
+            state = pair->second;
+        } else {
+            assert(true); // On this assert, printer_state_table needs to be updated with *state_opt and correct ConnectPrinterState
+            continue;
+        }
+        if (m_printer_uuid_map.find(*printer_uuid) == m_printer_uuid_map.end()) {
+            BOOST_LOG_TRIVIAL(error) << "Missing printer model for printer uuid: " << *printer_uuid;
+            continue;
+        }
+        const std::string printer_model = m_printer_uuid_map[*printer_uuid];
+        if (new_printer_map.find(printer_model) == new_printer_map.end()) {
+            new_printer_map[printer_model].reserve(static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT));
+            for (size_t i = 0; i < static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT); i++) {
+                new_printer_map[printer_model].push_back(0);
             }
         }
+        new_printer_map[printer_model][static_cast<size_t>(state)] += 1;
     }
 
     // compare new and old printer map and update old map into new
@@ -272,6 +273,33 @@ bool UserAccount::on_connect_printers_success(const std::string& data, AppConfig
         }
     }
     return true;
+}
+
+bool UserAccount::on_connect_uiid_map_success(const std::string& data, AppConfig* app_config, bool& out_printers_changed)
+{
+    m_printer_uuid_map.clear();
+    pt::ptree ptree;
+    try {
+        std::stringstream ss(data);
+        pt::read_json(ss, ptree);
+    }
+    catch (const std::exception& e) {
+        BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
+        return false;
+    }
+
+    for (const auto& printer_tree : ptree) {
+        const auto printer_uuid = printer_tree.second.get_optional<std::string>("printer_uuid");
+        if (!printer_uuid) {
+            continue;
+        }
+        const auto printer_model = printer_tree.second.get_optional<std::string>("printer_model");
+        if (!printer_model) {
+            continue;
+        }
+        m_printer_uuid_map[*printer_uuid] = *printer_model;
+    }
+    return on_connect_printers_success(data, app_config, out_printers_changed);
 }
 
 std::string UserAccount::get_model_from_json(const std::string& message) const

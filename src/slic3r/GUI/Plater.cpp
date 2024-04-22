@@ -937,7 +937,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             BOOST_LOG_TRIVIAL(error) << "Failed communication with Prusa Account: " << evt.data;
             user_account->on_communication_fail();
         });
-        this->q->Bind(EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+        this->q->Bind(EVT_UA_PRUSACONNECT_STATUS_SUCCESS, [this](UserAccountSuccessEvent& evt) {
             std::string text;
             bool printers_changed = false;
             if (user_account->on_connect_printers_success(evt.data, wxGetApp().app_config, printers_changed)) {
@@ -945,6 +945,19 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                     sidebar->update_printer_presets_combobox();
                 }
             } else {
+                // message was corrupt, procceed like EVT_UA_FAIL
+                user_account->on_communication_fail();
+            }
+        });
+        this->q->Bind(EVT_UA_PRUSACONNECT_PRINTER_MODELS_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+            std::string text;
+            bool printers_changed = false;
+            if (user_account->on_connect_uiid_map_success(evt.data, wxGetApp().app_config, printers_changed)) {
+                if (printers_changed) {
+                    sidebar->update_printer_presets_combobox();
+                }
+            }
+            else {
                 // message was corrupt, procceed like EVT_UA_FAIL
                 user_account->on_communication_fail();
             }

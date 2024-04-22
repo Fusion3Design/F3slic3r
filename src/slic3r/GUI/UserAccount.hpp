@@ -26,6 +26,7 @@ enum class ConnectPrinterState {
 };
 
 typedef std::map<std::string, std::vector<size_t>> ConnectPrinterStateMap;
+typedef std::map<std::string, std::string> ConnectUUIDToModelMap;
 // Class UserAccount should handle every request for entities outside PrusaSlicer like PrusaAuth or PrusaConnect.
 // Outside communication is implemented in class UserAccountCommunication that runs separate thread. Results come back in events to Plater.
 // All incoming data shoud be stored in UserAccount.
@@ -41,7 +42,8 @@ public:
     void set_remember_session(bool remember);
     void toggle_remember_session();
     bool get_remember_session();
-    void enqueue_connect_printers_action();
+    void enqueue_connect_status_action();
+    void enqueue_connect_printer_models_action();
     void enqueue_avatar_action();
 
     // Clears all data and connections, called on logout or EVT_UA_RESET
@@ -54,6 +56,7 @@ public:
     // Called on EVT_UA_FAIL, triggers test after several calls
     void on_communication_fail();
     bool on_connect_printers_success(const std::string& data, AppConfig* app_config, bool& out_printers_changed);
+    bool on_connect_uiid_map_success(const std::string& data, AppConfig* app_config, bool& out_printers_changed);
 
     std::string get_username() const { return m_username; }
     std::string get_access_token();
@@ -80,6 +83,7 @@ private:
     std::unique_ptr<Slic3r::GUI::UserAccountCommunication> m_communication;
     
     ConnectPrinterStateMap              m_printer_map;
+    ConnectUUIDToModelMap               m_printer_uuid_map;
     std::map<std::string, std::string>  m_account_user_data;
     std::string                         m_username;
     size_t                              m_fail_counter { 0 };

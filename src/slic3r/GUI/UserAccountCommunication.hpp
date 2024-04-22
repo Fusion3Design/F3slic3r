@@ -39,7 +39,8 @@ public:
     void do_logout();
     void do_clear();
     // Trigger function starts various remote operations
-    void enqueue_connect_printers_action();
+    void enqueue_connect_status_action();
+    void enqueue_connect_printer_models_action();
     void enqueue_avatar_action(const std::string& url);
     void enqueue_test_connection();
 

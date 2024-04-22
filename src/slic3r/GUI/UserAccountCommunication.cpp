@@ -275,14 +275,25 @@ void UserAccountCommunication::on_login_code_recieved(const std::string& url_mes
     wakeup_session_thread();
 }
 
-
-
-void UserAccountCommunication::enqueue_connect_printers_action()
+void UserAccountCommunication::enqueue_connect_printer_models_action()
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         if (!m_session->is_initialized()) {
-            BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
+            BOOST_LOG_TRIVIAL(error) << "Connect Printer Models connection failed - Not Logged in.";
+            return;
+        }
+        m_session->enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS, nullptr, nullptr, {});
+    }
+    wakeup_session_thread();
+}
+
+void UserAccountCommunication::enqueue_connect_status_action()
+{
+    {
+        std::lock_guard<std::mutex> lock(m_session_mutex);
+        if (!m_session->is_initialized()) {
+            BOOST_LOG_TRIVIAL(error) << "Connect Status endpoint connection failed - Not Logged in.";
             return;
         }
         m_session->enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_STATUS, nullptr, nullptr, {});
