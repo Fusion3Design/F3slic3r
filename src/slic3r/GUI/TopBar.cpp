@@ -184,16 +184,30 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
     wxString text = label;
     int btn_height = GetMinSize().GetHeight();
 
+    if (label.IsEmpty()) {
+        ScalableButton::SetLabel(label);
+        SetMinSize(wxSize(btn_height, btn_height));
+        return;
+    }
+
+    const int label_width   = GetTextExtent(text).GetWidth();
     bool resize_and_layout{ false };
     if (m_fixed_width != wxDefaultCoord) {
         const int text_width    = m_fixed_width - 2 * btn_height;
-        const int label_width   = GetTextExtent(text).GetWidth();
-        if (label_width > text_width) {
+        if (label_width > text_width || GetMinSize().GetWidth() <= btn_height) {
             wxWindowDC wdc(this);
             text = wxControl::Ellipsize(text, wdc, wxELLIPSIZE_END, text_width);
             resize_and_layout = true;
         }
     }
+    else if (GetMinSize().GetWidth() <= btn_height)
+#ifdef _WIN32
+        this->SetMinSize(wxSize(-1, btn_height));
+#elif __APPLE__
+        this->SetMinSize(wxSize(label_width + 3 * btn_height, btn_height));
+#else
+        this->SetMinSize(wxSize(label_width + 2 * btn_height, btn_height));
+#endif
 
     wxString full_label = "  " + text + "  ";
 #ifndef __linux__
@@ -210,7 +224,7 @@ void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
 {
     auto user_account = wxGetApp().plater()->get_user_account();
     const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymous");   
-    m_account_btn->SetLabel(user_name);
+    m_account_btn->SetLabel(m_collapsed_btns ? "" : user_name);
 #ifdef __linux__
     if (avatar) {
         if (user_account->is_logged()) {
@@ -312,6 +326,48 @@ void TopBarItemsCtrl::CreateSearch()
     });
 }
 
+void TopBarItemsCtrl::UpdateSearchSizeAndPosition()
+{
+    if (!m_workspace_btn || !m_account_btn)
+        return;
+
+    int em = em_unit(this);
+
+    int btns_width = 2 * m_btn_margin;
+    if (m_menu_btn)
+        btns_width += m_menu_btn->GetSize().GetWidth();
+    else
+        btns_width += 4 * em;
+
+    if (m_settings_btn)
+        btns_width += m_settings_btn->GetSize().GetWidth() + m_btn_margin;
+    else {
+        for (const Button* btn : m_pageButtons)
+            btns_width += btn->GetSize().GetWidth() + m_btn_margin;
+    }
+
+    wxWindow* parent_win = GetParent()->GetParent();
+    int top_win_without_sidebar = parent_win->GetSize().GetWidth() - 42 * em;
+
+    bool update_bnts{ false };
+    if (top_win_without_sidebar - btns_width < 15 * em) {
+        if (!m_collapsed_btns) {
+            m_sizer->SetItemMinSize(1, wxSize(20, -1));
+            m_collapsed_btns = update_bnts = true;
+        }
+    }
+    else if (m_collapsed_btns) {
+        m_sizer->SetItemMinSize(1, wxSize(42 * em, -1));
+        m_collapsed_btns = false;
+        update_bnts = true;
+    }
+
+    if (update_bnts) {
+        UpdateMode();
+        UpdateAccountButton();
+    }
+}
+
 void TopBarItemsCtrl::UpdateSearch(const wxString& search)
 {
     if (search != m_search->GetValue())
@@ -362,7 +418,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
 #endif
 
     if (!is_main) {
-        m_settings_btn = new Button(this, "", "settings");
+        m_settings_btn = new Button(this, _L("Settings"/*, "settings"*/));
         m_settings_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent& event) {
             wxGetApp().mainframe->select_tab();
         });
@@ -394,7 +450,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     });
 
     m_account_btn = new ButtonWithPopup(this, _L("Anonymous"), "user", wxSize(18 * em_unit(this), -1));
-    right_sizer->Add(m_account_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT | wxLEFT, m_btn_margin);
+    right_sizer->Add(m_account_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT, m_btn_margin);
     
     m_account_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
         m_account_btn->set_selected(true);
@@ -433,7 +489,7 @@ void TopBarItemsCtrl::UpdateMode()
     m_workspace_btn->SetBitmapBundle(bmp);
 #endif
 
-    m_workspace_btn->SetLabel(m_menus->get_workspace_name(mode));
+    m_workspace_btn->SetLabel(m_collapsed_btns ? "" : m_menus->get_workspace_name(mode));
 
     this->Layout();
 }
@@ -451,6 +507,7 @@ void TopBarItemsCtrl::Rescale()
     m_buttons_sizer->SetVGap(m_btn_margin);
     m_buttons_sizer->SetHGap(m_btn_margin);
 
+    UpdateSearchSizeAndPosition();
     m_sizer->Layout();
 }
 
@@ -513,6 +570,8 @@ bool TopBarItemsCtrl::InsertPage(size_t n, const wxString& text, bool bSelect/* 
     m_pageButtons.insert(m_pageButtons.begin() + n, btn);
     m_buttons_sizer->Insert(n, new wxSizerItem(btn, 0, wxALIGN_CENTER_VERTICAL));
     m_buttons_sizer->SetCols(m_buttons_sizer->GetCols() + 1);
+
+    UpdateSearchSizeAndPosition();
     m_sizer->Layout();
     return true;
 }
@@ -526,6 +585,8 @@ void TopBarItemsCtrl::RemovePage(size_t n)
     // Under OSX call of btn->Reparent(nullptr) causes a crash, so as a workaround use RemoveChild() instead
     this->RemoveChild(btn);
     btn->Destroy();
+
+    UpdateSearchSizeAndPosition();
     m_sizer->Layout();
 }
 
@@ -533,6 +594,7 @@ void TopBarItemsCtrl::SetPageText(size_t n, const wxString& strText)
 {
     ScalableButton* btn = m_pageButtons[n];
     btn->SetLabel(strText);
+    UpdateSearchSizeAndPosition();
 }
 
 wxString TopBarItemsCtrl::GetPageText(size_t n) const
@@ -548,12 +610,12 @@ void TopBarItemsCtrl::ShowFull()
     if (m_settings_btn)
         m_settings_btn->Show();
     m_account_btn->Show();
-    UpdateAccountButton();
     m_menus->set_cb_on_user_item([this]() {
         m_account_btn->set_selected(true);
         m_menus->Popup(this, &m_menus->account, m_account_btn->get_popup_pos());
     });
-    m_sizer->SetItemMinSize(1, wxSize(42 * em_unit(this), -1));
+
+    UpdateSearchSizeAndPosition();
 }
 
 void TopBarItemsCtrl::ShowJustMode()
@@ -564,7 +626,8 @@ void TopBarItemsCtrl::ShowJustMode()
         m_settings_btn->Hide();
     m_account_btn->Hide();
     m_menus->set_cb_on_user_item(nullptr);
-    m_sizer->SetItemMinSize(1, wxSize(20, -1));
+
+    UpdateSearchSizeAndPosition();
 }
 
 void TopBarItemsCtrl::SetSettingsButtonTooltip(const wxString& tooltip)

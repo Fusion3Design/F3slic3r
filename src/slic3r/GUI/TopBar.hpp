@@ -61,6 +61,8 @@ class TopBarItemsCtrl : public wxControl
 
     ::TextInput*    m_search{ nullptr };
 
+    bool            m_collapsed_btns{ false };
+
 public:
     TopBarItemsCtrl(wxWindow* parent,
                     TopBarMenus* menus = nullptr,
@@ -86,6 +88,7 @@ public:
     void ShowFull();
     void ShowJustMode();
     void SetSettingsButtonTooltip(const wxString& tooltip);
+    void UpdateSearchSizeAndPosition();
     void UpdateSearch(const wxString& search);
 
     wxWindow* GetSearchCtrl() { return m_search->GetTextCtrl(); }
@@ -439,6 +442,10 @@ public:
 
     void SetSettingsButtonTooltip(const wxString& tooltip) {
         GetTopBarItemsCtrl()->SetSettingsButtonTooltip(tooltip);
+    }
+
+    void UpdateSearchSizeAndPosition() {
+        GetTopBarItemsCtrl()->UpdateSearchSizeAndPosition();
     }
 
     void UpdateSearch(const wxString& search) {

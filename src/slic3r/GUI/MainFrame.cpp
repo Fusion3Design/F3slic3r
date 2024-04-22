@@ -277,14 +277,19 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
         event.Skip();
     });
 
-
-#ifdef _WIN32
     Bind(wxEVT_SIZE, [this](wxSizeEvent& event) {
         event.Skip();
+#ifdef _WIN32
         // Update window property to mainframe so other instances can indentify it.
         wxGetApp().other_instance_message_handler()->update_windows_properties(this);
-    });
 #endif //WIN32
+        if (m_layout == ESettingsLayout::Dlg || m_layout == ESettingsLayout::Old) {
+            if (m_layout == ESettingsLayout::Old)
+                m_tabpanel->UpdateSearchSizeAndPosition();
+            else
+                m_tmp_top_bar->UpdateSearchSizeAndPosition();
+        }
+    });
 
     Bind(wxEVT_MOVE, [](wxMoveEvent& event) {
 // OSX specific issue:
@@ -1091,8 +1096,10 @@ void MainFrame::on_sys_color_changed()
     wxGetApp().update_ui_colours_from_appconfig();
 #ifdef __WXMSW__
     wxGetApp().UpdateDarkUI(m_tabpanel);
+    wxGetApp().UpdateDarkUI(m_tmp_top_bar);
 #endif
     m_tabpanel->OnColorsChanged();
+    m_tmp_top_bar->OnColorsChanged();
 
     // update Plater
     wxGetApp().plater()->sys_color_changed();
@@ -2200,6 +2207,12 @@ SettingsDialog::SettingsDialog(MainFrame* mainframe)
 
     //just hide the Frame on closing
     this->Bind(wxEVT_CLOSE_WINDOW, [this](wxCloseEvent& evt) { this->Hide(); });
+
+    this->Bind(wxEVT_SIZE, [this](wxSizeEvent& event) {
+        event.Skip();
+        if (m_tabpanel)
+            m_tabpanel->UpdateSearchSizeAndPosition();
+    });
 
     // initialize layout
     auto sizer = new wxBoxSizer(wxVERTICAL);
