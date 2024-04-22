@@ -5,8 +5,6 @@
 
 #include "DoubleSliderForGcode.hpp"
 
-namespace Slic3r {
-
 namespace DoubleSlider {
 
 static const float LEFT_MARGIN             = 13.0f + 100.0f;  // avoid thumbnail toolbar
@@ -27,7 +25,5 @@ void DSForGcode::Render(const int canvas_width, const int canvas_height, float e
 }
 
 } // DoubleSlider
-
-} // Slic3r
 
 

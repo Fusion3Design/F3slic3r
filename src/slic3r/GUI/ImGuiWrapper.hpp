@@ -153,9 +153,6 @@ namespace ImGuiPSWrap
     ColorRGBA   from_ImU32(const ImU32& color);
     ColorRGBA   from_ImVec4(const ImVec4& color);
 }
-bool begin_menu(const char* label, bool enabled = true);
-void end_menu();
-bool menu_item_with_icon(const char* label, const char* shortcut, ImVec2 icon_size = ImVec2(0, 0), ImU32 icon_color = 0, bool selected = false, bool enabled = true);
 
 } // namespace GUI
 } // namespace Slic3r

@@ -7,8 +7,6 @@
 
 #include "ImGuiDoubleSlider.hpp"
 
-namespace Slic3r {
-
 namespace DoubleSlider {
 
 class DSForGcode : public Manager<unsigned int>
@@ -35,8 +33,6 @@ private:
 };
 
 } // DoubleSlider;
-
-} // Slic3r
 
 
 #endif // slic3r_GUI_DoubleSliderForGcode_hpp_

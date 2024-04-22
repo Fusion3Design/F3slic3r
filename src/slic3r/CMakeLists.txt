@@ -254,6 +254,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/Mouse3DController.hpp
     GUI/ImGuiDoubleSlider.cpp
     GUI/ImGuiDoubleSlider.hpp
+    GUI/TickCodesManager.cpp
+    GUI/TickCodesManager.hpp
     GUI/DoubleSliderForLayers.cpp
     GUI/DoubleSliderForLayers.hpp
     GUI/DoubleSliderForGcode.cpp

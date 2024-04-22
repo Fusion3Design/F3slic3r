@@ -21,8 +21,10 @@
 #include "libslic3r/PresetBundle.hpp"
 #include "DoubleSliderForGcode.hpp"
 #include "DoubleSliderForLayers.hpp"
+#include "ExtruderSequenceDialog.hpp"
 #include "Plater.hpp"
 #include "MainFrame.hpp"
+#include "MsgDialog.hpp"
 #include "format.hpp"
 
 #include <wx/listbook.h>
@@ -34,6 +36,7 @@
 #include <wx/combo.h>
 #include <wx/combobox.h>
 #include <wx/checkbox.h>
+#include <wx/colordlg.h>
 
 // this include must follow the wxWidgets ones or it won't compile on Windows -> see http://trac.wxwidgets.org/ticket/2421
 #include "libslic3r/Print.hpp"
@@ -258,11 +261,6 @@ Preview::~Preview()
 
     if (m_canvas_widget != nullptr)
         delete m_canvas_widget;
-
-    if (m_layers_slider)
-        delete m_layers_slider;
-    if (m_moves_slider)
-        delete m_moves_slider;
 }
 
 void Preview::set_as_dirty()
@@ -357,33 +355,163 @@ void Preview::on_size(wxSizeEvent& evt)
     Refresh();
 }
 
+/* To avoid get an empty string from wxTextEntryDialog
+ * Let disable OK button, if TextCtrl is empty
+ * */
+static void upgrade_text_entry_dialog(wxTextEntryDialog* dlg, double min = -1.0, double max = -1.0)
+{
+    GUI::wxGetApp().UpdateDlgDarkUI(dlg);
+
+    // detect TextCtrl and OK button
+    wxWindowList& dlg_items = dlg->GetChildren();
+    for (auto item : dlg_items) {
+        if (wxTextCtrl* textctrl = dynamic_cast<wxTextCtrl*>(item)) {
+            textctrl->SetInsertionPointEnd();
+
+            wxButton* btn_OK = static_cast<wxButton*>(dlg->FindWindowById(wxID_OK));
+            btn_OK->Bind(wxEVT_UPDATE_UI, [textctrl](wxUpdateUIEvent& evt) {
+                evt.Enable(!textctrl->IsEmpty());
+            }, btn_OK->GetId());
+
+            break;
+        }
+    }   
+}
+
 void Preview::create_sliders()
 {
     // Layers Slider
 
-    m_layers_slider = new DoubleSlider::DSForLayers(0, 0, 0, 100, wxGetApp().is_editor());
+    m_layers_slider = std::make_unique<DoubleSlider::DSForLayers>(0, 0, 0, 100, wxGetApp().is_editor());
     m_layers_slider->SetEmUnit(wxGetApp().em_unit());
+    m_layers_slider->set_imgui_wrapper(wxGetApp().imgui());
 
     m_layers_slider->SetDrawMode(wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA,
                                  wxGetApp().preset_bundle->prints.get_edited_preset().config.opt_bool("complete_objects"));
 
     m_layers_slider->set_callback_on_thumb_move( [this]() -> void { Preview::on_layers_slider_scroll_changed(); } );
 
-    m_layers_slider->set_callback_on_ticks_changed( [this]() -> void {
-        Model& model = wxGetApp().plater()->model();
-        model.custom_gcode_per_print_z = m_layers_slider->GetTicksValues();
-        m_schedule_background_process();
+    if (wxGetApp().is_editor()) {
+        m_layers_slider->set_callback_on_ticks_changed([this]()                 -> void {
+            Model& model = wxGetApp().plater()->model();
+            model.custom_gcode_per_print_z = m_layers_slider->GetTicksValues();
+            m_schedule_background_process();
 
-        m_keep_current_preview_type = false;
-        reload_print();
-    });
+            m_keep_current_preview_type = false;
+            reload_print();
+        });
+
+        m_layers_slider->set_callback_on_check_gcode([this](CustomGCode::Type type) -> void {
+            if (type == ColorChange && m_layers_slider->gcode(ColorChange).empty())
+                GUI::wxGetApp().plater()->get_notification_manager()->push_notification(GUI::NotificationType::EmptyColorChangeCode);
+        });
+
+        m_layers_slider->set_callback_on_empty_auto_color_change([]()                         -> void {
+            GUI::wxGetApp().plater()->get_notification_manager()->push_notification(GUI::NotificationType::EmptyAutoColorChange);
+        });
+
+        m_layers_slider->set_callback_on_get_extruder_colors([]()               -> std::vector<std::string> {
+            return wxGetApp().plater()->get_extruder_colors_from_plater_config();
+        });
+
+        m_layers_slider->set_callback_on_get_print([]()                         -> const Print& {
+            return GUI::wxGetApp().plater()->fff_print();
+        });
+
+        m_layers_slider->set_callback_on_get_custom_code([](const std::string& code_in, double height) -> std::string 
+        {
+            wxString msg_text = _L("Enter custom G-code used on current layer") + ":";
+            wxString msg_header = format_wxstr(_L("Custom G-code on current layer (%1% mm)."), height);
+
+            // get custom gcode
+            wxTextEntryDialog dlg(nullptr, msg_text, msg_header, code_in,
+                wxTextEntryDialogStyle | wxTE_MULTILINE);
+            upgrade_text_entry_dialog(&dlg);
+
+            bool valid = true;
+            std::string value;
+            do {
+                if (dlg.ShowModal() != wxID_OK)
+                    return "";
+
+                value = into_u8(dlg.GetValue());
+                valid = true;// GUI::Tab::validate_custom_gcode("Custom G-code", value); // !ysFIXME validate_custom_gcode
+            } while (!valid);
+            return value;
+        });
+
+        m_layers_slider->set_callback_on_get_pause_print_msg([](const std::string& msg_in, double height) -> std::string
+        {
+            wxString msg_text = _L("Enter short message shown on Printer display when a print is paused") + ":";
+            wxString msg_header = format_wxstr(_L("Message for pause print on current layer (%1% mm)."), height);
+
+            // get custom gcode
+            wxTextEntryDialog dlg(nullptr, msg_text, msg_header, from_u8(msg_in),
+                wxTextEntryDialogStyle);
+            upgrade_text_entry_dialog(&dlg);
+
+            if (dlg.ShowModal() != wxID_OK || dlg.GetValue().IsEmpty())
+                return "";
+
+            return into_u8(dlg.GetValue());
+        });
+
+        m_layers_slider->set_callback_on_get_new_color([](const std::string& color) -> std::string
+        {
+            wxColour clr(color);
+            if (!clr.IsOk())
+                clr = wxColour(0, 0, 0); // Don't set alfa to transparence
+
+            auto data = new wxColourData();
+            data->SetChooseFull(1);
+            data->SetColour(clr);
+
+            wxColourDialog dialog(GUI::wxGetApp().GetTopWindow(), data);
+            dialog.CenterOnParent();
+            if (dialog.ShowModal() == wxID_OK)
+                return dialog.GetColourData().GetColour().GetAsString(wxC2S_HTML_SYNTAX).ToStdString();
+            return "";
+        });
+
+        m_layers_slider->set_callback_on_show_info_msg([this](const std::string& message, int btns_flag) -> int
+        {
+            GUI::MessageDialog msg(this, from_u8(message), _L("Notice"), btns_flag);
+            int ret = msg.ShowModal();
+            return ret == wxID_YES      ? wxYES     :
+                   ret == wxID_NO       ? wxNO      :
+                   ret == wxID_CANCEL   ? wxCANCEL  : -1;
+        });
+
+        m_layers_slider->set_callback_on_show_warning_msg([this](const std::string& message, int btns_flag) -> int
+        {
+            GUI::WarningDialog msg(this, from_u8(message), _L("Warning"), btns_flag);
+            int ret = msg.ShowModal();
+            return ret == wxID_YES      ? wxYES     :
+                   ret == wxID_NO       ? wxNO      :
+                   ret == wxID_CANCEL   ? wxCANCEL  : -1;
+        });
+
+        m_layers_slider->set_callback_on_get_extruders_cnt([]() -> int
+        {
+            return GUI::wxGetApp().extruders_edited_cnt();
+        });
+
+        m_layers_slider->set_callback_on_get_extruders_sequence([](DoubleSlider::ExtrudersSequence& extruders_sequence) -> bool
+        {
+            GUI::ExtruderSequenceDialog dlg(extruders_sequence);
+            if (dlg.ShowModal() != wxID_OK)
+                return false;
+            extruders_sequence = dlg.GetValue();
+            return true;
+        });
+    }
 
     // Move Gcode Slider
 
-    m_moves_slider = new DoubleSlider::DSForGcode(0, 0, 0, 100);
+    m_moves_slider = std::make_unique<DoubleSlider::DSForGcode>(0, 0, 0, 100);
     m_moves_slider->SetEmUnit(wxGetApp().em_unit());
 
-    m_moves_slider->set_callback_on_thumb_move([this]() ->void { Preview::on_moves_slider_scroll_changed(); });
+    m_moves_slider->set_callback_on_thumb_move([this]() ->void { on_moves_slider_scroll_changed(); });
 
     // m_canvas_widget
     m_canvas_widget->Bind(wxEVT_KEY_DOWN,                    &Preview::update_sliders_from_canvas, this);
@@ -514,7 +642,7 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
     // Suggest the auto color change, if model looks like sign
     if (!color_change_already_exists &&
         wxGetApp().app_config->get_bool("allow_auto_color_change") &&
-        m_layers_slider->IsNewPrint(get_print_obj_idxs()))
+        m_layers_slider->is_new_print(get_print_obj_idxs()))
     {
         const Print& print = wxGetApp().plater()->fff_print();
 
@@ -805,8 +933,6 @@ void Preview::load_print_as_fff(bool keep_z_range)
             // the view type may have been changed by the call m_canvas->load_gcode_preview()
             gcode_view_type = m_canvas->get_gcode_view_type();
             zs = m_canvas->get_gcode_layers_zs();
-            if (!zs.empty())
-                m_moves_slider->Show();
             m_loaded = true;
         }
         else if (is_pregcode_preview) {
@@ -815,12 +941,9 @@ void Preview::load_print_as_fff(bool keep_z_range)
             // the view type has been changed by the call m_canvas->load_gcode_preview()
             if (gcode_view_type == libvgcode::EViewType::ColorPrint && !color_print_values.empty())
                 m_canvas->set_gcode_view_type(gcode_view_type);
-            m_moves_slider->Hide();
             zs = m_canvas->get_gcode_layers_zs();
         }
-        else {
-            m_moves_slider->Hide();
-        }
+        m_moves_slider->Show(gcode_preview_data_valid && !zs.empty());
 
         if (!zs.empty() && !m_keep_current_preview_type) {
             const unsigned int number_extruders = wxGetApp().is_editor() ?

@@ -20,17 +20,17 @@ class wxComboBox;
 class wxComboCtrl;
 class wxCheckBox;
 
+namespace DoubleSlider {
+    class DSForGcode;
+    class DSForLayers;
+};
+
 namespace Slic3r {
 
 class DynamicPrintConfig;
 class Print;
 class BackgroundSlicingProcess;
 class Model;
-
-namespace DoubleSlider {
-    class DSForGcode;
-    class DSForLayers;
-};
 
 namespace GUI {
 
@@ -96,8 +96,8 @@ class Preview : public wxPanel
 
     bool m_loaded { false };
 
-    DoubleSlider::DSForLayers*       m_layers_slider{ nullptr };
-    DoubleSlider::DSForGcode*        m_moves_slider { nullptr };
+    std::unique_ptr<DoubleSlider::DSForLayers>  m_layers_slider{ nullptr };
+    std::unique_ptr<DoubleSlider::DSForGcode>   m_moves_slider { nullptr };
 
 public:
     enum class OptionType : unsigned int

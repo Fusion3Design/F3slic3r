@@ -5,10 +5,7 @@
 
 #include "ImGuiDoubleSlider.hpp"
 
-namespace Slic3r {
 namespace DoubleSlider {
-
-using namespace GUI;
 
 const ImU32 tooltip_bg_clr  = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_GREY_LIGHT);
 const ImU32 thumb_bg_clr    = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_ORANGE_LIGHT);
@@ -253,6 +250,11 @@ float ImGuiControl::GetPositionInRect(int pos, const ImRect& rect) const
         thumb_pos = rect.Min.y + (rect.Max.y - rect.Min.y) * pos_ratio;
     }
     return thumb_pos;
+}
+
+ImRect ImGuiControl::GetActiveThumbRect() const
+{
+    return m_selection == ssLower ? m_regions.lower_thumb : m_regions.higher_thumb;
 }
 
 void ImGuiControl::draw_scroll_line(const ImRect& scroll_line, const ImRect& slideable_region)
@@ -548,9 +550,5 @@ bool ImGuiControl::render()
     return result;
 }
 
-//} // DoubleSlider
-
-} // GUI
-
-} // Slic3r
+} // DoubleSlider
 

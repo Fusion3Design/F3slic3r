@@ -23,7 +23,6 @@ std::string to_string_with_precision(const T a_value, const int n = 2)
     return std::move(out).str();
 }
 
-namespace Slic3r {
 namespace DoubleSlider {
 
 enum SelectedSlider {
@@ -80,6 +79,7 @@ public:
     void    ShowLabelOnMouseMove(bool show = true) { m_show_move_label = show; }
     ImRect  GetGrooveRect() const       { return m_draw_opts.groove(m_pos, m_size, is_horizontal()); }
     float   GetPositionInRect(int pos, const ImRect& rect) const;
+    ImRect  GetActiveThumbRect() const;
 
     bool    IsRClickOnThumb() const     { return m_rclick_on_selected_thumb; }
 
@@ -192,7 +192,7 @@ public:
             int minPos,
             int maxPos,
             const std::string& name,
-            bool is_horizontal) 
+            bool is_horizontal)
     {
         Init (lowerPos, higherPos, minPos, maxPos, name, is_horizontal);
     }
@@ -257,10 +257,10 @@ protected:
     int                     m_em{ 10 };
     float                   m_scale{ 1.f };
 
-    std::string get_label(int pos) const {
+    virtual std::string get_label(int pos) const {
         if (m_values.empty())
             return std::to_string(pos);
-        if (pos >= m_values.size())
+        if (pos >= int(m_values.size()))
             return "ErrVal";
         return to_string_with_precision(static_cast<ValType>(m_alternate_values.empty() ? m_values[pos] : m_alternate_values[pos]));
     }
@@ -276,10 +276,7 @@ private:
 
 };
 
-
-
-} // GUI
-} // Slic3r
+} // DoubleSlider
 
 
 #endif // slic3r_ImGUI_DoubleSlider_hpp_

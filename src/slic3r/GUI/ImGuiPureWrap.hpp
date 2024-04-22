@@ -148,6 +148,10 @@ namespace ImGuiPureWrap
     bool is_chars_in_ranges(const ImWchar *ranges, const char *chars_ptr);
     bool is_char_in_ranges(const ImWchar *ranges, unsigned int letter);
 
+    bool begin_menu(const char* label, bool enabled = true);
+    void end_menu();
+    bool menu_item_with_icon(const char* label, const char* shortcut, ImVec2 icon_size = ImVec2(0, 0), ImU32 icon_color = 0, bool selected = false, bool enabled = true);
+
     const ImVec4 COL_GREY_DARK         = { 0.33f, 0.33f, 0.33f, 1.0f };
     const ImVec4 COL_GREY_LIGHT        = { 0.4f, 0.4f, 0.4f, 1.0f };
     const ImVec4 COL_ORANGE_DARK       = { 0.67f, 0.36f, 0.19f, 1.0f };
