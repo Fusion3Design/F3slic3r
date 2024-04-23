@@ -303,7 +303,11 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
     if (viewer != nullptr) {
         ImGuiWrapper& imgui = *wxGetApp().imgui();
         const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
-        ImGuiPureWrap::set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.5f, 1.0f);
+
+        Preview* preview = dynamic_cast<Preview*>(wxGetApp().plater()->get_current_canvas3D()->get_wxglcanvas_parent());
+        assert(preview);
+
+        ImGuiPureWrap::set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height() - preview->get_moves_slider_height()), ImGuiCond_Always, 0.5f, 1.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::SetNextWindowBgAlpha(0.25f);
         ImGuiPureWrap::begin(std::string("ToolPosition"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
@@ -430,7 +434,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                 if (table_shown) {
                     static float table_wnd_height = 0.0f;
                     const ImVec2 wnd_size = ImGui::GetWindowSize();
-                    ImGuiPureWrap::set_next_window_pos(ImGui::GetWindowPos().x + wnd_size.x, static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.0f, 1.0f);
+                    ImGuiPureWrap::set_next_window_pos(ImGui::GetWindowPos().x + wnd_size.x, static_cast<float>(cnv_size.get_height() - preview->get_moves_slider_height()), ImGuiCond_Always, 0.0f, 1.0f);
                     ImGui::SetNextWindowSizeConstraints({ 0.0f, 0.0f }, { -1.0f, wnd_size.y });
                     ImGuiPureWrap::begin(std::string("ToolPositionTableWnd"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar |
                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);

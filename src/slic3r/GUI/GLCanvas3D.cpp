@@ -1353,6 +1353,11 @@ void GLCanvas3D::post_event(wxEvent &&event)
     wxPostEvent(m_canvas, event);
 }
 
+wxWindow* GLCanvas3D::get_wxglcanvas_parent()
+{
+    return m_canvas->GetParent();
+}
+
 bool GLCanvas3D::init()
 {
     if (m_initialized)

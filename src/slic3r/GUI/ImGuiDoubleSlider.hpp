@@ -100,7 +100,7 @@ private:
     struct DrawOptions {
         float       scale                   { 1.f }; // used for Retina on osx
 
-        ImVec2      dummy_sz()           const { return ImVec2(24.0f, 22.0f) * scale; }
+        ImVec2      dummy_sz()           const { return ImVec2(24.0f, 16.0f) * scale; }
         ImVec2      thumb_dummy_sz()     const { return ImVec2(17.0f, 17.0f) * scale; }
         ImVec2      groove_sz()          const { return ImVec2(4.0f,   4.0f) * scale; }
         ImVec2      draggable_region_sz()const { return ImVec2(20.0f, 19.0f) * scale; }
