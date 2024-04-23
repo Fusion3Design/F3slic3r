@@ -322,14 +322,18 @@ void Preview::msw_rescale()
     reload_print();
 }
 
-void Preview::render_sliders(GLCanvas3D& canvas, float extra_scale/* = 0.1f*/)
+void Preview::render_sliders(GLCanvas3D& canvas)
 {
-    const Size  cnv_size = canvas.get_canvas_size();
-    const int   canvas_width = cnv_size.get_width();
-    const int   canvas_height = cnv_size.get_height();
+    const Size  cnv_size        = canvas.get_canvas_size();
+    const int   canvas_width    = cnv_size.get_width();
+    const int   canvas_height   = cnv_size.get_height();
+    const float extra_scale     = cnv_size.get_scale_factor();
+
+    GLToolbar& collapse_toolbar = wxGetApp().plater()->get_collapse_toolbar();
+    const bool  is_collapse_btn_shown = collapse_toolbar.is_enabled();
 
     if (m_layers_slider)
-        m_layers_slider->Render(canvas_width, canvas_height, extra_scale);
+        m_layers_slider->Render(canvas_width, canvas_height, extra_scale, is_collapse_btn_shown ? collapse_toolbar.get_height() : 0.f);
     if (m_moves_slider)
         m_moves_slider->Render(canvas_width, canvas_height, extra_scale);
 }

@@ -1947,13 +1947,7 @@ void GLCanvas3D::render()
 
     wxGetApp().plater()->get_notification_manager()->render_notifications(*this, get_overlay_window_width());
 
-    wxGetApp().plater()->render_sliders(*this,
-#if ENABLE_RETINA_GL
-        m_retina_helper->get_scale_factor()
-#else
-        1.f
-#endif
-        );
+    wxGetApp().plater()->render_sliders(*this);
 
     wxGetApp().imgui()->render();
 

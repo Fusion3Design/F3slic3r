@@ -243,7 +243,7 @@ public:
 
     float GetWidth()            { return m_ctrl.GetCtrlSize().x; }
     float GetHeight()           { return m_ctrl.GetCtrlSize().y; }
-    virtual void Render(const int canvas_width, const int canvas_height, float extra_scale = 1.f) = 0;
+    virtual void Render(const int canvas_width, const int canvas_height, float extra_scale = 1.f, float offset = 0.f) = 0;
 
     void set_callback_on_thumb_move(std::function<void()> cb) { m_cb_thumb_move = cb; };
 

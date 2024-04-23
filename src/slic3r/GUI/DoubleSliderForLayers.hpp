@@ -73,7 +73,7 @@ public:
 
     void    SetModeAndOnlyExtruder(const bool is_one_extruder_printed_model, const int only_extruder);
 
-    void    Render(const int canvas_width, const int canvas_height, float extra_scale = 1.f) override;
+    void    Render(const int canvas_width, const int canvas_height, float extra_scale = 1.f, float offset = 0.f) override;
 
     // jump to selected layer
     void    jump_to_value();

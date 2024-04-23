@@ -10,7 +10,7 @@ namespace DoubleSlider {
 static const float LEFT_MARGIN             = 13.0f + 100.0f;  // avoid thumbnail toolbar
 static const float HORIZONTAL_SLIDER_HEIGHT = 45.0f;
 
-void DSForGcode::Render(const int canvas_width, const int canvas_height, float extra_scale/* = 0.1f*/)
+void DSForGcode::Render(const int canvas_width, const int canvas_height, float extra_scale/* = 0.1f*/, float offset/* = 0.f*/)
 {
     if (!m_ctrl.IsShown())
         return;

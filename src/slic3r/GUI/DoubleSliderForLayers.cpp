@@ -615,7 +615,7 @@ bool DSForLayers::render_jump_to_window(const ImVec2& pos, double* active_value,
     return enter_pressed || ok_pressed;
 }
 
-void DSForLayers::Render(const int canvas_width, const int canvas_height, float extra_scale/* = 0.1f*/)
+void DSForLayers::Render(const int canvas_width, const int canvas_height, float extra_scale/* = 0.1f*/, float offset /*= 0.f*/)
 {
     if (!m_ctrl.IsShown())
         return;
@@ -627,11 +627,11 @@ void DSForLayers::Render(const int canvas_width, const int canvas_height, float 
     ImVec2 pos;
 
     pos.x = canvas_width - VERTICAL_SLIDER_WIDTH * m_scale - tick_icon_side;
-    pos.y = 1.5f * action_btn_sz;
+    pos.y = 1.5f * action_btn_sz + offset;
     if (m_allow_editing)
         pos.y += 2.f;
 
-    ImVec2 size = ImVec2(VERTICAL_SLIDER_WIDTH * m_scale, canvas_height - 4.f * action_btn_sz);
+    ImVec2 size = ImVec2(VERTICAL_SLIDER_WIDTH * m_scale, canvas_height - 4.f * action_btn_sz - offset);
 
     m_ctrl.Init(pos, size, m_scale);
     if (m_ctrl.render()) {
