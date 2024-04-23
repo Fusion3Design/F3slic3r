@@ -742,10 +742,12 @@ void MainFrame::add_connect_webview_tab()
 {
     if (m_connect_webview_added) {
         return;
-    }    // parameters of InsertNewPage (to prevent ambigous overloaded function)
-        // insert to positon 4, if physical printer is already added, it moves to 5
+    }
+    // parameters of InsertNewPage (to prevent ambigous overloaded function)
+    // insert "Connect" tab to position next to "Printer" tab
     // order of tabs: Plater - Print Settings - Filaments - Printers - Prusa Connect - Prusa Link
-    size_t n = 4;
+
+    int n = m_tabpanel->FindPage(wxGetApp().get_tab(Preset::TYPE_PRINTER)) + 1;
     wxWindow* page = m_connect_webview;
     const wxString text(L"Prusa Connect");
     const std::string bmp_name = "";
@@ -759,10 +761,10 @@ void MainFrame::remove_connect_webview_tab()
     if (!m_connect_webview_added) {
         return;
     }
-    // connect tab should always be at position 4
-    if (m_tabpanel->GetSelection() == 4)
+    int n = m_tabpanel->FindPage(m_connect_webview);
+    if (m_tabpanel->GetSelection() == n)
         m_tabpanel->SetSelection(0);
-    m_tabpanel->RemovePage(4);
+    m_tabpanel->RemovePage(size_t(n));
     m_connect_webview_added = false;
     m_connect_webview->logout();
 }
