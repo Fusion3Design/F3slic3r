@@ -3683,7 +3683,7 @@ bool GUI_App::select_printer_from_connect(const std::string& msg)
     std::string model_name = plater()->get_user_account()->get_keyword_from_json(msg, "printer_model");
     if (model_name.empty()) {
         std::vector<std::string> compatible_printers;
-        plater()->get_user_account()->fill_compatible_printers_from_json(msg, compatible_printers);
+        plater()->get_user_account()->fill_supported_printer_models_from_json(msg, compatible_printers);
         if (!compatible_printers.empty())  {
             model_name = compatible_printers.front();
         }

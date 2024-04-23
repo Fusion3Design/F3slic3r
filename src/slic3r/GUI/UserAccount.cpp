@@ -365,41 +365,27 @@ std::string UserAccount::get_keyword_from_json(const std::string& json, const st
     return out;
 }
 
-void UserAccount::fill_compatible_printers_from_json(const std::string& json, std::vector<std::string>& result) const
+void UserAccount::fill_supported_printer_models_from_json(const std::string& json, std::vector<std::string>& result) const
 {
     try {
         std::stringstream ss(json);
         pt::ptree ptree;
         pt::read_json(ss, ptree);
 
+        std::string printer_model = parse_tree_for_param(ptree, "printer_model");
+        if (!printer_model.empty()) {
+            result.emplace_back(printer_model);
+        }
         pt::ptree out = parse_tree_for_subtree(ptree, "supported_printer_models");
         if (out.empty()) {
             BOOST_LOG_TRIVIAL(error) << "Failed to find compatible_printer_type in printer detail.";
             return;
         }
         for (const auto& sub : out) {
-            result.emplace_back(sub.second.data());
-        }
-    }
-    catch (const std::exception& e) {
-        BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
-    }
-}
-
-void UserAccount::fill_compatible_printers_from_json_old(const std::string& json, std::vector<std::string>& result) const
-{
-    try {
-        std::stringstream ss(json);
-        pt::ptree ptree;
-        pt::read_json(ss, ptree);
-
-        pt::ptree out = parse_tree_for_subtree(ptree, "printer_type_compatible");
-        if (out.empty()) {
-            BOOST_LOG_TRIVIAL(error) << "Failed to find compatible_printer_type in printer detail.";
-            return;
-        }
-        for (const auto& sub : out) {
-            result.emplace_back(sub.second.data());
+            if (printer_model != sub.second.data()) {
+                result.emplace_back(sub.second.data());
+            }
+            
         }
     }
     catch (const std::exception& e) {

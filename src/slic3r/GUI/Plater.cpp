@@ -5874,7 +5874,7 @@ void Plater::connect_gcode()
     PresetBundle* preset_bundle = wxGetApp().preset_bundle;
     // Connect data
     std::vector<std::string> compatible_printers;
-    p->user_account->fill_compatible_printers_from_json_old(dialog_msg, compatible_printers);
+    p->user_account->fill_supported_printer_models_from_json(dialog_msg, compatible_printers);
     std::string connect_nozzle = p->user_account->get_nozzle_from_json(dialog_msg);
 
     std::vector<std::string> connect_materials;
