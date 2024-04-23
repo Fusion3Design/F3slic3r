@@ -1375,9 +1375,20 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
         if (const auto &volumes = print_object.model_object()->volumes;
             num_extruders > 1 &&
             std::find_if(volumes.begin(), volumes.end(), [](const ModelVolume *v) { return ! v->mm_segmentation_facets.empty(); }) != volumes.end()) {
-            //FIXME be more specific! Don't enumerate extruders that are not used for painting!
-            painting_extruders.assign(num_extruders, 0);
-            std::iota(painting_extruders.begin(), painting_extruders.end(), 1);
+
+            std::array<bool, static_cast<size_t>(TriangleStateType::Count)> used_facet_states{};
+            for (const ModelVolume *volume : volumes) {
+                const std::vector<bool> &volume_used_facet_states = volume->mm_segmentation_facets.get_data().used_states;
+
+                assert(volume_used_facet_states.size() == used_facet_states.size());
+                for (size_t state_idx = 0; state_idx < std::min(volume_used_facet_states.size(), used_facet_states.size()); ++state_idx)
+                    used_facet_states[state_idx] |= volume_used_facet_states[state_idx];
+            }
+
+            for (size_t state_idx = static_cast<size_t>(TriangleStateType::Extruder1); state_idx < used_facet_states.size(); ++state_idx) {
+                if (used_facet_states[state_idx])
+                    painting_extruders.emplace_back(state_idx);
+            }
         }
         if (model_object_status.print_object_regions_status == ModelObjectStatus::PrintObjectRegionsStatus::Valid) {
             // Verify that the trafo for regions & volume bounding boxes thus for regions is still applicable.
