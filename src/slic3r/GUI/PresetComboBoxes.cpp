@@ -374,8 +374,10 @@ void PresetComboBox::edit_physical_printer()
         return;
 
     PhysicalPrinterDialog dlg(this->GetParent(),this->GetString(this->GetSelection()));
-    if (dlg.ShowModal() == wxID_OK)
+    if (dlg.ShowModal() == wxID_OK) {
         update();
+        wxGetApp().show_printer_webview_tab();
+    }
 }
 
 void PresetComboBox::add_physical_printer()
@@ -609,6 +611,9 @@ bool PresetComboBox::selection_is_changed_according_to_physical_printers()
         }
         else if (dynamic_cast<TabPresetComboBox*>(this)!=nullptr)
             wxGetApp().sidebar().update_presets(m_type);
+
+        // Check and show "Physical printer" page if needed
+        wxGetApp().show_printer_webview_tab();
 
         return true;
     }
