@@ -655,7 +655,8 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
     , m_loading_html(loading_html)
 {
     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
-    SetSizer(topsizer);
+    topsizer->SetMinSize(size);
+    SetSizerAndFit(topsizer);
 
     // Create the webview
     m_browser = WebView::CreateWebView(this, GUI::format_wxstr("file://%1%/web/%2%.html", boost::filesystem::path(resources_dir()).generic_string(), m_loading_html));
@@ -670,7 +671,7 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
     Bind(wxEVT_SHOW, &WebViewDialog::on_show, this);
     Bind(wxEVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED, &WebViewDialog::on_script_message, this, m_browser->GetId());
 
-    m_browser->LoadURL(url);
+    m_browser->LoadURL(url);   
 }
 WebViewDialog::~WebViewDialog()
 {
