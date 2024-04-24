@@ -1425,7 +1425,7 @@ Color ViewerImpl::get_vertex_color(const PathVertex& v) const
     if (v.type == EMoveType::Noop)
         return DUMMY_COLOR;
 
-    if ((v.is_wipe() && m_settings.view_type != EViewType::ActualSpeed) || v.is_option())
+    if ((v.is_wipe() && (m_settings.view_type != EViewType::Speed && m_settings.view_type != EViewType::ActualSpeed)) || v.is_option())
         return get_option_color(move_type_to_option(v.type));
 
     switch (m_settings.view_type)
@@ -1764,16 +1764,16 @@ void ViewerImpl::update_color_ranges()
             if (!v.is_custom_gcode() || m_settings.extrusion_roles_visibility.at(EGCodeExtrusionRole::Custom)) {
                 m_width_range.update(round_to_bin(v.width));
                 m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate()));
+                m_actual_volumetric_rate_range.update(round_to_bin(v.actual_volumetric_rate()));
             }
-            m_fan_speed_range.update(v.fan_speed);
-            m_temperature_range.update(v.temperature);
+            m_fan_speed_range.update(round_to_bin(v.fan_speed));
+            m_temperature_range.update(round_to_bin(v.temperature));
         }
         if ((v.is_travel() && m_settings.options_visibility.at(EOptionType::Travels)) ||
             (v.is_wipe() && m_settings.options_visibility.at(EOptionType::Wipes)) ||
              v.is_extrusion()) {
             m_speed_range.update(v.feedrate);
             m_actual_speed_range.update(v.actual_feedrate);
-            m_actual_volumetric_rate_range.update(round_to_bin(v.actual_volumetric_rate()));
         }
     }
 
