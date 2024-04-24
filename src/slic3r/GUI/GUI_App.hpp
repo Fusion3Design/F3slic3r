@@ -203,6 +203,7 @@ public:
     void                     jump_to_option(const std::string& opt_key, Preset::Type type, const std::wstring& category);
     // jump to option which is represented by composite key : "opt_key;tab_name"
     void                     jump_to_option(const std::string& composite_key);
+    void                     update_search_lines();
     void                     show_search_dialog();
 
     // To be called after the GUI is fully built up.
@@ -265,7 +266,6 @@ public:
     const wxFont&   code_font()             { return m_code_font; }
     const wxFont&   link_font()             { return m_link_font; }
     int             em_unit() const         { return m_em_unit; }
-    bool            tabs_as_menu() const;
     bool            suppress_round_corners() const;
     wxSize          get_min_size(wxWindow* display_win) const;
     int             get_max_font_pt_size();

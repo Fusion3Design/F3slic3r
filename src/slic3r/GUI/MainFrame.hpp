@@ -29,7 +29,9 @@
 #include "UnsavedChangesDialog.hpp"
 #include "Search.hpp"
 
-class wxBookCtrlBase;
+#include "TopBarMenus.hpp"
+
+class TopBar;
 class wxProgressDialog;
 
 namespace Slic3r {
@@ -67,13 +69,13 @@ struct PresetTab {
 
 class SettingsDialog : public DPIFrame//DPIDialog
 {
-    wxBookCtrlBase* m_tabpanel { nullptr };
+    TopBar*         m_tabpanel { nullptr };
     MainFrame*      m_main_frame { nullptr };
     wxMenuBar*      m_menubar{ nullptr };
 public:
     SettingsDialog(MainFrame* mainframe);
     ~SettingsDialog() = default;
-    void set_tabpanel(wxBookCtrlBase* tabpanel) { m_tabpanel = tabpanel; }
+    void set_tabpanel(TopBar* tabpanel) { m_tabpanel = tabpanel; }
     wxMenuBar* menubar() { return m_menubar; }
 
 protected:
@@ -88,6 +90,7 @@ class MainFrame : public DPIFrame
     wxString    m_qs_last_output_file = wxEmptyString;
     wxString    m_last_config = wxEmptyString;
     wxMenuBar*  m_menubar{ nullptr };
+    TopBarMenus m_bar_menus;
 
 #if 0
     wxMenuItem* m_menu_item_repeat { nullptr }; // doesn't used now
@@ -143,7 +146,6 @@ class MainFrame : public DPIFrame
     {
         Unknown,
         Old,
-        New,
         Dlg,
         GCodeViewer
     };
@@ -181,9 +183,6 @@ public:
     void        update_menubar();
     // Open item in menu by menu and item name (in actual language)
     void        open_menubar_item(const wxString& menu_name,const wxString& item_name);
-#ifdef _WIN32
-    void        show_tabs_menu(bool show);
-#endif
     void        update_ui_from_settings();
     bool        is_loaded() const { return m_loaded; }
     bool        is_last_input_file() const  { return !m_qs_last_input_file.IsEmpty(); }
@@ -199,6 +198,7 @@ public:
     void        export_configbundle(bool export_physical_printers = false);
     void        load_configbundle(wxString file = wxEmptyString);
     void        load_config(const DynamicPrintConfig& config);
+    void        update_search_lines(const std::string search_line);
     // Select tab in m_tabpanel
     // When tab == -1, will be selected last selected tab
     void        select_tab(Tab* tab);
@@ -232,7 +232,8 @@ public:
     PrintHostQueueDialog* printhost_queue_dlg() { return m_printhost_queue_dlg; }
 
     Plater*               m_plater { nullptr };
-    wxBookCtrlBase*       m_tabpanel { nullptr };
+    TopBar*               m_tmp_top_bar { nullptr };
+    TopBar*               m_tabpanel { nullptr };
     SettingsDialog        m_settings_dialog;
     DiffPresetDialog      diff_dialog;
     wxWindow*             m_plater_page{ nullptr };

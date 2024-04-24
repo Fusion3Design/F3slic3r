@@ -1167,7 +1167,7 @@ wxString OptionsGroup::get_url(const std::string& path_end)
 
 bool OptionsGroup::launch_browser(const std::string& path_end)
 {
-    return wxGetApp().open_browser_with_warning_dialog(OptionsGroup::get_url(path_end), wxGetApp().mainframe->m_tabpanel);
+    return wxGetApp().open_browser_with_warning_dialog(OptionsGroup::get_url(path_end), wxGetApp().tab_panel());
 }
 
 // list of options, which doesn't have a related filed

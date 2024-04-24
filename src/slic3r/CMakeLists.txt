@@ -258,6 +258,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/Notebook.hpp
     GUI/TopBar.cpp
     GUI/TopBar.hpp
+    GUI/TopBarMenus.cpp
+    GUI/TopBarMenus.hpp
     GUI/ObjectDataViewModel.cpp
     GUI/ObjectDataViewModel.hpp
     GUI/InstanceCheck.cpp

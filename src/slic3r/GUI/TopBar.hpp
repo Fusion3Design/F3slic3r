@@ -1,14 +1,11 @@
 #ifndef slic3r_TopBar_hpp_
 #define slic3r_TopBar_hpp_
 
-//#ifdef _WIN32
-
 #include <wx/bookctrl.h>
 #include "wxExtensions.hpp"
 #include "Widgets/TextInput.hpp"
 
-class ModeSizer;
-//class ScalableButton;
+class TopBarMenus;
 
 // custom message the TopBarItemsCtrl sends to its parent (TopBar) to notify a selection change:
 wxDECLARE_EVENT(wxCUSTOMEVT_TOPBAR_SEL_CHANGED, wxCommandEvent);
@@ -60,24 +57,20 @@ class TopBarItemsCtrl : public wxControl
         wxPoint get_popup_pos();
     };
 
-    wxMenu          m_main_menu;
-    wxMenu          m_workspaces_menu;
-    wxMenu          m_account_menu;
-    // Prusa Account menu items
-    wxMenuItem*     m_user_menu_item{ nullptr };
-    wxMenuItem*     m_login_menu_item{ nullptr };
-#if 0
-    wxMenuItem* m_connect_dummy_menu_item{ nullptr };
-#endif // 0
+    TopBarMenus*    m_menus{ nullptr };
 
     ::TextInput*    m_search{ nullptr };
 
+    bool            m_collapsed_btns{ false };
+
 public:
-    TopBarItemsCtrl(wxWindow* parent);
+    TopBarItemsCtrl(wxWindow* parent,
+                    TopBarMenus* menus = nullptr,
+                    bool is_main = true);
     ~TopBarItemsCtrl() {}
 
     void OnPaint(wxPaintEvent&);
-    void SetSelection(int sel);
+    void SetSelection(int sel, bool force = false);
     void UpdateMode();
     void Rescale();
     void OnColorsChanged();
@@ -88,21 +81,25 @@ public:
     void SetPageText(size_t n, const wxString& strText);
     wxString GetPageText(size_t n) const;
 
-    void AppendMenuItem(wxMenu* menu, const wxString& title);
-    void AppendMenuSeparaorItem();
-    void ApplyWorkspacesMenu();
-    void CreateAccountMenu();
-    void UpdateAccountMenu(bool avatar = false);
+    void UpdateAccountButton(bool avatar = false);
+    void UnselectPopupButtons();
+
     void CreateSearch();
+    void ShowFull();
+    void ShowJustMode();
+    void SetSettingsButtonTooltip(const wxString& tooltip);
+    void UpdateSearchSizeAndPosition();
+    void UpdateSearch(const wxString& search);
 
     wxWindow* GetSearchCtrl() { return m_search->GetTextCtrl(); }
 
 private:
     wxFlexGridSizer*                m_buttons_sizer;
     wxFlexGridSizer*                m_sizer;
-    ButtonWithPopup*                m_menu_btn {nullptr};
+    ButtonWithPopup*                m_menu_btn      {nullptr};
     ButtonWithPopup*                m_workspace_btn {nullptr};
-    ButtonWithPopup*                m_account_btn {nullptr};
+    ButtonWithPopup*                m_account_btn   {nullptr};
+    Button*                         m_settings_btn  {nullptr};
     std::vector<Button*>            m_pageButtons;
     int                             m_selection {-1};
     int                             m_btn_margin;
@@ -124,16 +121,28 @@ public:
         Create(parent, winid, pos, size, style);
     }
 
+    TopBar( wxWindow * parent,
+            TopBarMenus* menus,
+            bool is_main = true)
+    {
+        Init();
+        // wxNB_NOPAGETHEME: Disable Windows Vista theme for the Notebook background. The theme performance is terrible on Windows 10
+        // with multiple high resolution displays connected.
+        Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME, menus, is_main);
+    }
+
     bool Create(wxWindow * parent,
                 wxWindowID winid = wxID_ANY,
                 const wxPoint & pos = wxDefaultPosition,
                 const wxSize & size = wxDefaultSize,
-                long style = 0)
+                long style = 0,
+                TopBarMenus* menus = nullptr,
+                bool is_main = true)
     {
         if (!wxBookCtrlBase::Create(parent, winid, pos, size, style | wxBK_TOP))
             return false;
 
-        m_bookctrl = new TopBarItemsCtrl(this);
+        m_bookctrl = new TopBarItemsCtrl(this, menus, is_main);
 
         wxSizer* mainSizer = new wxBoxSizer(IsVertical() ? wxVERTICAL : wxHORIZONTAL);
 
@@ -250,13 +259,16 @@ public:
 
     virtual int SetSelection(size_t n) override
     {
-        GetTopBarItemsCtrl()->SetSelection(n);
+        GetTopBarItemsCtrl()->SetSelection(n, true);
         int ret = DoSetSelection(n, SetSelection_SendEvent);
 
         // check that only the selected page is visible and others are hidden:
         for (size_t page = 0; page < m_pages.size(); page++)
             if (page != n)
                 m_pages[page]->Hide();
+
+        if (!m_pages[n]->IsShown())
+            m_pages[n]->Show();
 
         return ret;
     }
@@ -418,12 +430,26 @@ public:
 
     // Methods for extensions of this class
 
-    void AppendMenuItem(wxMenu* menu, const wxString& title) {
-        GetTopBarItemsCtrl()->AppendMenuItem(menu, title);
+    void ShowFull() {
+        Show();
+        GetTopBarItemsCtrl()->ShowFull();
     }
 
-    void AppendMenuSeparaorItem() {
-        GetTopBarItemsCtrl()->AppendMenuSeparaorItem();
+    void ShowJustMode() {
+        Show();
+        GetTopBarItemsCtrl()->ShowJustMode();
+    }
+
+    void SetSettingsButtonTooltip(const wxString& tooltip) {
+        GetTopBarItemsCtrl()->SetSettingsButtonTooltip(tooltip);
+    }
+
+    void UpdateSearchSizeAndPosition() {
+        GetTopBarItemsCtrl()->UpdateSearchSizeAndPosition();
+    }
+
+    void UpdateSearch(const wxString& search) {
+        GetTopBarItemsCtrl()->UpdateSearch(search);
     }
 
 protected:

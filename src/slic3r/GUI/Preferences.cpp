@@ -502,15 +502,6 @@ void PreferencesDialog::build()
 			wxGetApp().plater()->get_current_canvas3D()->render();
 			return;
 		}
-		if (opt_key == "tabs_as_menu") {
-			bool disable_new_layout = boost::any_cast<bool>(value);
-			m_rb_new_settings_layout_mode->Show(!disable_new_layout);
-			if (disable_new_layout && m_rb_new_settings_layout_mode->GetValue()) {
-				m_rb_new_settings_layout_mode->SetValue(false);
-				m_rb_old_settings_layout_mode->SetValue(true);
-			}
-			refresh_og(m_optgroup_gui);
-		}
 
 		if (auto it = m_values.find(opt_key); it != m_values.end()) {
 			m_values.erase(it); // we shouldn't change value, if some of those parameters were selected, and then deselected
@@ -563,13 +554,6 @@ void PreferencesDialog::build()
 			L("Allow automatically color change"),
 			L("If enabled, related notification will be shown, when sliced object looks like a logo or a sign."),
 			app_config->get_bool("allow_auto_color_change"));
-
-#ifdef _MSW_DARK_MODE
-		append_bool_option(m_optgroup_gui, "tabs_as_menu",
-			L("Set settings tabs as menu items"),
-			L("If enabled, Settings Tabs will be placed as menu items. If disabled, old UI will be used."),
-			app_config->get_bool("tabs_as_menu"));
-#endif
 
 		m_optgroup_gui->append_separator();
 /*
@@ -766,7 +750,7 @@ void PreferencesDialog::accept(wxEvent&)
 #endif //(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION)
 	}
 
-	std::vector<std::string> options_to_recreate_GUI = { "no_defaults", "tabs_as_menu", "sys_menu_enabled", "font_pt_size", "suppress_round_corners" };
+	std::vector<std::string> options_to_recreate_GUI = { "no_defaults", "sys_menu_enabled", "font_pt_size", "suppress_round_corners" };
 
 	for (const std::string& option : options_to_recreate_GUI) {
 		if (m_values.find(option) != m_values.end()) {
@@ -797,7 +781,6 @@ void PreferencesDialog::accept(wxEvent&)
 
 	m_settings_layout_changed = false;
 	for (const std::string& key : { "old_settings_layout_mode",
-								    "new_settings_layout_mode",
 								    "dlg_settings_layout_mode" })
 	{
 	    auto it = m_values.find(key);
@@ -875,11 +858,6 @@ void PreferencesDialog::revert(wxEvent&)
 			m_settings_layout_changed = false;
 			continue;
 		}
-		if (key == "new_settings_layout_mode") {
-			m_rb_new_settings_layout_mode->SetValue(app_config->get_bool(key));
-			m_settings_layout_changed = false;
-			continue;
-		}
 		if (key == "dlg_settings_layout_mode") {
 			m_rb_dlg_settings_layout_mode->SetValue(app_config->get_bool(key));
 			m_settings_layout_changed = false;
@@ -896,11 +874,6 @@ void PreferencesDialog::revert(wxEvent&)
 			}) {
 			if (opt_group->set_value(key, app_config->get_bool(key)))
 				break;
-		}
-		if (key == "tabs_as_menu") {
-			m_rb_new_settings_layout_mode->Show(!app_config->get_bool(key));
-			refresh_og(m_optgroup_gui);
-			continue;
 		}
 	}
 
@@ -1026,7 +999,6 @@ void PreferencesDialog::create_settings_mode_widget()
 
 	auto app_config = get_app_config();
 	std::vector<wxString> choices = {	_L("Old regular layout with the tab bar"),
-										_L("New layout, access via settings button in the top menu"),
 										_L("Settings in non-modal window") };
 	int id = -1;
 	auto add_radio = [this, parent, stb_sizer, choices](wxRadioButton** rb, int id, bool select) {
@@ -1035,24 +1007,12 @@ void PreferencesDialog::create_settings_mode_widget()
 		(*rb)->SetValue(select);
 		(*rb)->Bind(wxEVT_RADIOBUTTON, [this, id](wxCommandEvent&) {
 			m_values["old_settings_layout_mode"] = (id == 0) ? "1" : "0";
-			m_values["new_settings_layout_mode"] = (id == 1) ? "1" : "0";
-			m_values["dlg_settings_layout_mode"] = (id == 2) ? "1" : "0";
+			m_values["dlg_settings_layout_mode"] = (id == 1) ? "1" : "0";
 		});
 	};
 
 	add_radio(&m_rb_old_settings_layout_mode, ++id, app_config->get_bool("old_settings_layout_mode"));
-	add_radio(&m_rb_new_settings_layout_mode, ++id, app_config->get_bool("new_settings_layout_mode"));
 	add_radio(&m_rb_dlg_settings_layout_mode, ++id, app_config->get_bool("dlg_settings_layout_mode"));
-
-#ifdef _MSW_DARK_MODE
-	if (app_config->get_bool("tabs_as_menu")) {
-		m_rb_new_settings_layout_mode->Hide();
-		if (m_rb_new_settings_layout_mode->GetValue()) {
-			m_rb_new_settings_layout_mode->SetValue(false);
-			m_rb_old_settings_layout_mode->SetValue(true);
-		}
-	}
-#endif
 
 	std::string opt_key = "settings_layout_mode";
 	m_blinkers[opt_key] = new BlinkingBitmap(parent);

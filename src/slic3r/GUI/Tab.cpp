@@ -3658,13 +3658,7 @@ void Tab::load_current_preset()
                     }
                     if (tab->supports_printer_technology(printer_technology))
                     {
-#ifdef _WIN32
-                        if (wxGetApp().tabs_as_menu())
-                            wxGetApp().tab_panel()->InsertPage(wxGetApp().tab_panel()->FindPage(this), tab, tab->title());
-                        else
-#endif
-                            dynamic_cast<TopBar*>(wxGetApp().tab_panel())->InsertNewPage(wxGetApp().tab_panel()->FindPage(this), tab, tab->title(),"");
-
+                        dynamic_cast<TopBar*>(wxGetApp().tab_panel())->InsertNewPage(wxGetApp().tab_panel()->FindPage(this), tab, tab->title(),"");
                     }
                     else {
                         int page_id = wxGetApp().tab_panel()->FindPage(tab);

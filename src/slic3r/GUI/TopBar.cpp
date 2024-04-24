@@ -1,10 +1,11 @@
 #include "TopBar.hpp"
+#include "TopBarMenus.hpp"
 
 #include "GUI_App.hpp"
+#include "MainFrame.hpp"
 #include "Plater.hpp"
 #include "Search.hpp"
 #include "UserAccount.hpp"
-//#include "wxExtensions.hpp"
 #include "format.hpp"
 #include "I18N.hpp"
 
@@ -34,21 +35,18 @@ TopBarItemsCtrl::Button::Button(wxWindow* parent, const wxString& label, const s
 {
     int btn_margin = em_unit(this);
     int x, y;
-    GetTextExtent(label, &x, &y);
+    GetTextExtent(label.IsEmpty() ? "a" : label, &x, &y);
     wxSize size(x + 4 * btn_margin, y + int(1.5 * btn_margin));
     if (icon_name.empty())
         this->SetMinSize(size);
-#ifdef _WIN32
     else if (label.IsEmpty()) {
-        const int btn_side = px_cnt + btn_margin;
+        const int btn_side = size.y;
         this->SetMinSize(wxSize(btn_side, btn_side));
     }
     else
+#ifdef _WIN32
         this->SetMinSize(wxSize(-1, size.y));
 #else
-    else if (label.IsEmpty())
-        this->SetMinSize(wxSize(px_cnt, px_cnt));
-    else 
         this->SetMinSize(wxSize(size.x + px_cnt, size.y));
 #endif
 
@@ -130,9 +128,11 @@ void TopBarItemsCtrl::Button::render()
 
     wxPoint pt = { 0, 0 };
 
+    wxString text = GetLabelText();
+
     if (m_bmp_bundle.IsOk()) {
         wxSize szIcon = get_preferred_size(m_bmp_bundle, this);
-        pt.x = em;
+        pt.x = text.IsEmpty() ? ((rc.width - szIcon.x) / 2) : em;
         pt.y = (rc.height - szIcon.y) / 2;
 #ifdef __WXGTK3__
         dc.DrawBitmap(m_bmp_bundle.GetBitmap(szIcon), pt);
@@ -144,7 +144,6 @@ void TopBarItemsCtrl::Button::render()
 
     // Draw text
 
-    wxString text = GetLabelText();
     if (!text.IsEmpty()) {
         wxSize labelSize = dc.GetTextExtent(text);
         if (labelSize.x > rc.width)
@@ -185,18 +184,35 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
     wxString text = label;
     int btn_height = GetMinSize().GetHeight();
 
+    if (label.IsEmpty()) {
+        ScalableButton::SetLabel(label);
+        SetMinSize(wxSize(btn_height, btn_height));
+        return;
+    }
+
+    const int label_width   = GetTextExtent(text).GetWidth();
     bool resize_and_layout{ false };
     if (m_fixed_width != wxDefaultCoord) {
         const int text_width    = m_fixed_width - 2 * btn_height;
-        const int label_width   = GetTextExtent(text).GetWidth();
-        if (label_width > text_width) {
+        if (label_width > text_width || GetMinSize().GetWidth() <= btn_height) {
             wxWindowDC wdc(this);
             text = wxControl::Ellipsize(text, wdc, wxELLIPSIZE_END, text_width);
             resize_and_layout = true;
         }
     }
+    else if (GetMinSize().GetWidth() <= btn_height)
+#ifdef _WIN32
+        this->SetMinSize(wxSize(-1, btn_height));
+#elif __APPLE__
+        this->SetMinSize(wxSize(label_width + 3 * btn_height, btn_height));
+#else
+        this->SetMinSize(wxSize(label_width + 2 * btn_height, btn_height));
+#endif
 
-    wxString full_label = "  " + text + "  " + down_arrow;
+    wxString full_label = "  " + text + "  ";
+#ifndef __linux__
+    full_label += down_arrow;
+#endif
     ScalableButton::SetLabel(full_label);
     if (resize_and_layout) {
         SetMinSize(wxSize(m_fixed_width, btn_height));
@@ -204,81 +220,11 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
     }
 }
 
-static wxString get_workspace_name(Slic3r::ConfigOptionMode mode) 
-{
-    return  mode == Slic3r::ConfigOptionMode::comSimple   ? _L("Beginner mode") :
-            mode == Slic3r::ConfigOptionMode::comAdvanced ? _L("Normal mode")  : _L("Expert mode");
-}
-
-void TopBarItemsCtrl::ApplyWorkspacesMenu()
-{
-    wxMenuItemList& items = m_workspaces_menu.GetMenuItems();
-    if (!items.IsEmpty()) {
-        for (int id = int(m_workspaces_menu.GetMenuItemCount()) - 1; id >= 0; id--)
-            m_workspaces_menu.Destroy(items[id]);
-    }
-
-    for (const Slic3r::ConfigOptionMode& mode : { Slic3r::ConfigOptionMode::comSimple,
-                                                  Slic3r::ConfigOptionMode::comAdvanced,
-                                                  Slic3r::ConfigOptionMode::comExpert }) {
-        const wxString label = get_workspace_name(mode);
-        append_menu_item(&m_workspaces_menu, wxID_ANY, label, label,
-            [mode](wxCommandEvent&) {
-                if (wxGetApp().get_mode() != mode)
-                    wxGetApp().save_mode(mode);
-            }, get_bmp_bundle("mode", 16, -1, wxGetApp().get_mode_btn_color(mode)));
-
-        if (mode < Slic3r::ConfigOptionMode::comExpert)
-            m_workspaces_menu.AppendSeparator();
-    }
-}
-
-void TopBarItemsCtrl::CreateAccountMenu()
-{
-    m_user_menu_item = append_menu_item(&m_account_menu, wxID_ANY, "", "",
-        [this](wxCommandEvent& e) { 
-            m_account_btn->set_selected(true);
-            wxGetApp().plater()->PopupMenu(&m_account_menu, m_account_btn->GetPosition());
-        }, get_bmp_bundle("user", 16));
-
-    m_account_menu.AppendSeparator();
-
-#if 0
-    m_connect_dummy_menu_item = append_menu_item(&m_account_menu, wxID_ANY, _L("PrusaConnect Printers"), "",
-        [](wxCommandEvent&) { wxGetApp().plater()->get_user_account()->enqueue_connect_printers_action(); }, 
-        "", nullptr, []() { return wxGetApp().plater()->get_user_account()->is_logged(); }, this->GetParent());
-
-    wxMenuItem* remember_me_menu_item = append_menu_check_item(&m_account_menu, wxID_ANY, _L("Remember me"), ""
-        , [](wxCommandEvent&) {  wxGetApp().plater()->get_user_account()->toggle_remember_session(); }
-        , &m_account_menu
-        , []() { return wxGetApp().plater()->get_user_account() ? wxGetApp().plater()->get_user_account()->is_logged()            : false; }
-        , []() { return wxGetApp().plater()->get_user_account() ? wxGetApp().plater()->get_user_account()->get_remember_session() : false; }
-        , this->GetParent());
-#endif // 0
-
-    m_login_menu_item = append_menu_item(&m_account_menu, wxID_ANY, "", "",
-        [](wxCommandEvent&) {
-            auto user_account = wxGetApp().plater()->get_user_account();
-            if (user_account->is_logged())
-                user_account->do_logout();
-            else
-                user_account->do_login();
-        }, get_bmp_bundle("login", 16));
-}
-
-void TopBarItemsCtrl::UpdateAccountMenu(bool avatar/* = false*/)
+void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
 {
     auto user_account = wxGetApp().plater()->get_user_account();
-    if (m_login_menu_item) {
-        m_login_menu_item->SetItemLabel(user_account->is_logged() ? _L("Prusa Account Log out") : _L("Prusa Account Log in"));
-        m_login_menu_item->SetBitmap(user_account->is_logged() ? *get_bmp_bundle("logout", 16) : *get_bmp_bundle("login", 16));
-    }
-
-    const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymous");
-    if (m_user_menu_item)
-        m_user_menu_item->SetItemLabel(user_name);
-   
-    m_account_btn->SetLabel(user_name);
+    const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymous");   
+    m_account_btn->SetLabel(m_collapsed_btns ? "" : user_name);
 #ifdef __linux__
     if (avatar) {
         if (user_account->is_logged()) {
@@ -311,6 +257,14 @@ void TopBarItemsCtrl::UpdateAccountMenu(bool avatar/* = false*/)
     m_account_btn->Refresh();
 }
 
+void TopBarItemsCtrl::UnselectPopupButtons()
+{
+    if (m_menu_btn)
+        m_menu_btn  ->set_selected(false);
+    m_workspace_btn ->set_selected(false);
+    m_account_btn   ->set_selected(false);
+}
+
 void TopBarItemsCtrl::CreateSearch()
 {
     // Linux specific: If wxDefaultSize is used in constructor and than set just maxSize, 
@@ -319,7 +273,105 @@ void TopBarItemsCtrl::CreateSearch()
     m_search = new ::TextInput(this, wxGetApp().searcher().default_string, "", "search", wxDefaultPosition, wxSize(2 * em_unit(this), -1), wxTE_PROCESS_ENTER);
     m_search->SetMaxSize(wxSize(42*em_unit(this), -1));
     wxGetApp().UpdateDarkUI(m_search);
-    wxGetApp().searcher().set_search_input(m_search);
+
+    m_search->Bind(wxEVT_TEXT, [](wxEvent& e)
+    {
+        wxGetApp().searcher().edit_search_input();
+        wxGetApp().update_search_lines();
+    });
+
+    m_search->Bind(wxEVT_MOVE, [](wxMoveEvent& event)
+    { 
+        event.Skip();
+        wxGetApp().searcher().update_dialog_position();
+    });
+
+    m_search->SetOnDropDownIcon([this]() 
+    {
+        wxGetApp().searcher().set_search_input(m_search); 
+        wxGetApp().show_search_dialog(); 
+    });
+
+    m_search->Bind(wxEVT_KILL_FOCUS, [](wxFocusEvent& e)
+    {
+        e.Skip();
+        wxGetApp().searcher().check_and_hide_dialog();
+    });
+
+    wxTextCtrl* ctrl = m_search->GetTextCtrl();
+    ctrl->SetToolTip(format_wxstr(_L("Search in settings [%1%]"), "Ctrl+F"));
+
+    ctrl->Bind(wxEVT_KEY_DOWN, [this](wxKeyEvent& e)
+    {
+        wxGetApp().searcher().set_search_input(m_search); 
+        if (e.GetKeyCode() == WXK_TAB)
+            m_search->Navigate(e.ShiftDown() ? wxNavigationKeyEvent::IsBackward : wxNavigationKeyEvent::IsForward);
+        else
+            wxGetApp().searcher().process_key_down_from_input(e);
+        e.Skip();
+    });
+
+    ctrl->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent& event)
+    {
+        wxGetApp().searcher().set_search_input(m_search); 
+        wxGetApp().show_search_dialog();
+        event.Skip();
+    });
+
+    ctrl->Bind(wxEVT_LEFT_UP, [this](wxMouseEvent& event)
+    {
+        if (m_search->GetValue() == wxGetApp().searcher().default_string)
+            m_search->SetValue("");
+        event.Skip();
+    });
+}
+
+void TopBarItemsCtrl::UpdateSearchSizeAndPosition()
+{
+    if (!m_workspace_btn || !m_account_btn)
+        return;
+
+    int em = em_unit(this);
+
+    int btns_width = 2 * m_btn_margin;
+    if (m_menu_btn)
+        btns_width += m_menu_btn->GetSize().GetWidth();
+    else
+        btns_width += 4 * em;
+
+    if (m_settings_btn)
+        btns_width += m_settings_btn->GetSize().GetWidth() + m_btn_margin;
+    else {
+        for (const Button* btn : m_pageButtons)
+            btns_width += btn->GetSize().GetWidth() + m_btn_margin;
+    }
+
+    wxWindow* parent_win = GetParent()->GetParent();
+    int top_win_without_sidebar = parent_win->GetSize().GetWidth() - 42 * em;
+
+    bool update_bnts{ false };
+    if (top_win_without_sidebar - btns_width < 15 * em) {
+        if (!m_collapsed_btns) {
+            m_sizer->SetItemMinSize(1, wxSize(20, -1));
+            m_collapsed_btns = update_bnts = true;
+        }
+    }
+    else if (m_collapsed_btns) {
+        m_sizer->SetItemMinSize(1, wxSize(42 * em, -1));
+        m_collapsed_btns = false;
+        update_bnts = true;
+    }
+
+    if (update_bnts) {
+        UpdateMode();
+        UpdateAccountButton();
+    }
+}
+
+void TopBarItemsCtrl::UpdateSearch(const wxString& search)
+{
+    if (search != m_search->GetValue())
+        m_search->SetValue(search);
 }
 
 void TopBarItemsCtrl::update_margins()
@@ -332,12 +384,13 @@ void TopBarItemsCtrl::update_margins()
 wxPoint TopBarItemsCtrl::ButtonWithPopup::get_popup_pos()
 {
     wxPoint pos = this->GetPosition();
-    pos.y = -pos.y + int(0.2 * wxGetApp().em_unit());
+    pos.y += this->GetSize().GetHeight() + int(0.2 * wxGetApp().em_unit());
     return pos;
 }
 
-TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
+TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullptr*/, bool is_main/* = true*/) :
     wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL)
+    ,m_menus(menus)
 {
 #ifdef __WINDOWS__
     SetDoubleBuffered(true);
@@ -360,57 +413,61 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent) :
     
     m_menu_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
         m_menu_btn->set_selected(true);
-        // !!! To popup main menu use native wxPanel::PopupMenu() function
-        // Don't use wrap function Plater::PopupMenu(), because it's no need in this case
-        wxGetApp().plater()->wxPanel::PopupMenu(&m_main_menu, m_menu_btn->get_popup_pos());
+        m_menus->Popup(this, &m_menus->main, m_menu_btn->get_popup_pos());
     });
-    m_main_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_menu_btn->set_selected(false); });
 #endif
 
+    if (!is_main) {
+        m_settings_btn = new Button(this, _L("Settings"/*, "settings"*/));
+        m_settings_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent& event) {
+            wxGetApp().mainframe->select_tab();
+        });
+        left_sizer->Add(m_settings_btn, 0, wxALIGN_CENTER_VERTICAL);
+    }
+
     m_buttons_sizer = new wxFlexGridSizer(1, m_btn_margin, m_btn_margin);
-    left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL/* | wxLEFT*/ | wxRIGHT, 2 * m_btn_margin);
+    left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
 
     CreateSearch();
+    if (!is_main)
+        wxGetApp().searcher().set_search_input(m_search);
 
     wxBoxSizer* search_sizer = new wxBoxSizer(wxVERTICAL);
     search_sizer->Add(m_search, 1, wxEXPAND | wxALIGN_RIGHT);
-    left_sizer->Add(search_sizer, 1, wxALIGN_CENTER_VERTICAL);
+    left_sizer->Add(search_sizer, 1, wxALIGN_CENTER_VERTICAL | wxLEFT, m_btn_margin);
 
     m_sizer->Add(left_sizer, 1, wxEXPAND);
 
     wxBoxSizer* right_sizer = new wxBoxSizer(wxHORIZONTAL);
 
-    // create modes menu
-    ApplyWorkspacesMenu();
-
     m_workspace_btn = new ButtonWithPopup(this, _L("Workspace"), "mode_simple");
     right_sizer->AddStretchSpacer(20);
-    right_sizer->Add(m_workspace_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT);
+    right_sizer->Add(m_workspace_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxALL, m_btn_margin);
     
     m_workspace_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
         m_workspace_btn->set_selected(true);
-        wxGetApp().plater()->wxPanel::PopupMenu(&m_workspaces_menu, m_workspace_btn->get_popup_pos());
+        m_menus->Popup(this, &m_menus->workspaces, m_workspace_btn->get_popup_pos());
     });
-    m_workspaces_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_workspace_btn->set_selected(false); });
-
-    // create Account menu
-    CreateAccountMenu();
 
     m_account_btn = new ButtonWithPopup(this, _L("Anonymous"), "user", wxSize(18 * em_unit(this), -1));
-    right_sizer->Add(m_account_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT | wxLEFT, m_btn_margin);
+    right_sizer->Add(m_account_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT, m_btn_margin);
     
     m_account_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
-        UpdateAccountMenu();
         m_account_btn->set_selected(true);
-        wxGetApp().plater()->wxPanel::PopupMenu(&m_account_menu, m_account_btn->get_popup_pos());
-    });    
-    m_account_menu.Bind(wxEVT_MENU_CLOSE, [this](wxMenuEvent&) { m_account_btn->set_selected(false); });
+        m_menus->Popup(this, &m_menus->account, m_account_btn->get_popup_pos());
+    });
 
     m_sizer->Add(right_sizer, 0, wxALIGN_CENTER_VERTICAL);
 
     m_sizer->SetItemMinSize(1, wxSize(42 * wxGetApp().em_unit(), -1));
 
     this->Bind(wxEVT_PAINT, &TopBarItemsCtrl::OnPaint, this);
+
+    this->Bind(wxEVT_UPDATE_UI, [](wxUpdateUIEvent& evt) {
+        auto user_account = wxGetApp().plater()->get_user_account();
+        evt.Enable(user_account ? user_account->is_logged()             : false);
+        evt.Check (user_account ? user_account->get_remember_session()  : false);
+    }, m_menus->remember_me_item_id);
 }
 
 void TopBarItemsCtrl::OnPaint(wxPaintEvent&)
@@ -432,7 +489,7 @@ void TopBarItemsCtrl::UpdateMode()
     m_workspace_btn->SetBitmapBundle(bmp);
 #endif
 
-    m_workspace_btn->SetLabel(get_workspace_name(mode));
+    m_workspace_btn->SetLabel(m_collapsed_btns ? "" : m_menus->get_workspace_name(mode));
 
     this->Layout();
 }
@@ -450,6 +507,7 @@ void TopBarItemsCtrl::Rescale()
     m_buttons_sizer->SetVGap(m_btn_margin);
     m_buttons_sizer->SetHGap(m_btn_margin);
 
+    UpdateSearchSizeAndPosition();
     m_sizer->Layout();
 }
 
@@ -458,6 +516,8 @@ void TopBarItemsCtrl::OnColorsChanged()
     wxGetApp().UpdateDarkUI(this);
     if (m_menu_btn)
         m_menu_btn->sys_color_changed();
+    if (m_settings_btn)
+        m_settings_btn->sys_color_changed();
 
     m_workspace_btn->sys_color_changed();
     m_account_btn->sys_color_changed();
@@ -472,7 +532,7 @@ void TopBarItemsCtrl::OnColorsChanged()
 void TopBarItemsCtrl::UpdateModeMarkers()
 {
     UpdateMode();
-    ApplyWorkspacesMenu();
+    m_menus->ApplyWorkspacesMenu();
 }
 
 void TopBarItemsCtrl::UpdateSelection()
@@ -486,9 +546,9 @@ void TopBarItemsCtrl::UpdateSelection()
     Refresh();
 }
 
-void TopBarItemsCtrl::SetSelection(int sel)
+void TopBarItemsCtrl::SetSelection(int sel, bool force /*= false*/)
 {
-    if (m_selection == sel)
+    if (m_selection == sel && !force)
         return;
     m_selection = sel;
     UpdateSelection();
@@ -510,6 +570,8 @@ bool TopBarItemsCtrl::InsertPage(size_t n, const wxString& text, bool bSelect/* 
     m_pageButtons.insert(m_pageButtons.begin() + n, btn);
     m_buttons_sizer->Insert(n, new wxSizerItem(btn, 0, wxALIGN_CENTER_VERTICAL));
     m_buttons_sizer->SetCols(m_buttons_sizer->GetCols() + 1);
+
+    UpdateSearchSizeAndPosition();
     m_sizer->Layout();
     return true;
 }
@@ -523,6 +585,8 @@ void TopBarItemsCtrl::RemovePage(size_t n)
     // Under OSX call of btn->Reparent(nullptr) causes a crash, so as a workaround use RemoveChild() instead
     this->RemoveChild(btn);
     btn->Destroy();
+
+    UpdateSearchSizeAndPosition();
     m_sizer->Layout();
 }
 
@@ -530,6 +594,7 @@ void TopBarItemsCtrl::SetPageText(size_t n, const wxString& strText)
 {
     ScalableButton* btn = m_pageButtons[n];
     btn->SetLabel(strText);
+    UpdateSearchSizeAndPosition();
 }
 
 wxString TopBarItemsCtrl::GetPageText(size_t n) const
@@ -538,12 +603,35 @@ wxString TopBarItemsCtrl::GetPageText(size_t n) const
     return btn->GetLabel();
 }
 
-void TopBarItemsCtrl::AppendMenuItem(wxMenu* menu, const wxString& title)
+void TopBarItemsCtrl::ShowFull()
 {
-    append_submenu(&m_main_menu, menu, wxID_ANY, title, "cog");
+    if (m_menu_btn)
+        m_menu_btn->Show();
+    if (m_settings_btn)
+        m_settings_btn->Show();
+    m_account_btn->Show();
+    m_menus->set_cb_on_user_item([this]() {
+        m_account_btn->set_selected(true);
+        m_menus->Popup(this, &m_menus->account, m_account_btn->get_popup_pos());
+    });
+
+    UpdateSearchSizeAndPosition();
 }
 
-void TopBarItemsCtrl::AppendMenuSeparaorItem()
+void TopBarItemsCtrl::ShowJustMode()
 {
-    m_main_menu.AppendSeparator();
+    if (m_menu_btn)
+        m_menu_btn->Hide();
+    if (m_settings_btn)
+        m_settings_btn->Hide();
+    m_account_btn->Hide();
+    m_menus->set_cb_on_user_item(nullptr);
+
+    UpdateSearchSizeAndPosition();
+}
+
+void TopBarItemsCtrl::SetSettingsButtonTooltip(const wxString& tooltip)
+{
+    if (m_settings_btn)
+        m_settings_btn->SetToolTip(tooltip);
 }

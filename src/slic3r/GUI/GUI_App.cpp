@@ -12,6 +12,7 @@
 #include "GUI_ObjectList.hpp"
 #include "GUI_ObjectManipulation.hpp"
 #include "GUI_Factories.hpp"
+#include "TopBar.hpp"
 #include "format.hpp"
 
 // Localization headers: include libslic3r version first so everything in this file
@@ -1111,11 +1112,16 @@ void GUI_App::jump_to_option(const std::string& composite_key)
     }
 }
 
+void GUI_App::update_search_lines()
+{
+    mainframe->update_search_lines(m_searcher->search_string());
+}
+
 void GUI_App::show_search_dialog()
 {
     // To avoid endless loop caused by mutual lose focuses from serch_input and search_dialog
     // invoke killFocus for serch_input by set focus to tab_panel
-    GUI::wxGetApp().tab_panel()->SetFocus();
+    m_searcher->set_focus_to_parent();
 
     check_and_update_searcher(get_mode());
     m_searcher->show_dialog();
@@ -1823,11 +1829,6 @@ void GUI_App::set_mode_palette(const std::vector<wxColour>& palette)
     }
 }
 
-bool GUI_App::tabs_as_menu() const
-{
-    return app_config->get_bool("tabs_as_menu"); // || dark_mode();
-}
-
 bool GUI_App::suppress_round_corners() const
 {
     return true;// app_config->get("suppress_round_corners") == "1";
@@ -2479,8 +2480,8 @@ void GUI_App::update_mode()
 {
     sidebar().update_mode();
 
-    if (!wxGetApp().tabs_as_menu())
-        dynamic_cast<TopBar*>(mainframe->m_tabpanel)->UpdateMode();
+    mainframe->m_tmp_top_bar->UpdateMode();
+    mainframe->m_tabpanel->UpdateMode();
 
     for (auto tab : tabs_list)
         tab->update_mode();

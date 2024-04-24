@@ -57,7 +57,6 @@
 #include "GUI_App.hpp"
 #include "UnsavedChangesDialog.hpp"
 #include "MsgDialog.hpp"
-//#include "Notebook.hpp"
 #include "TopBar.hpp"
 #include "GUI_Factories.hpp"
 #include "GUI_ObjectList.hpp"
@@ -278,26 +277,32 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
         event.Skip();
     });
 
-
-#ifdef _WIN32
     Bind(wxEVT_SIZE, [this](wxSizeEvent& event) {
         event.Skip();
+#ifdef _WIN32
         // Update window property to mainframe so other instances can indentify it.
         wxGetApp().other_instance_message_handler()->update_windows_properties(this);
-    });
 #endif //WIN32
+        if (m_layout == ESettingsLayout::Dlg || m_layout == ESettingsLayout::Old) {
+            if (m_layout == ESettingsLayout::Old)
+                m_tabpanel->UpdateSearchSizeAndPosition();
+            else
+                m_tmp_top_bar->UpdateSearchSizeAndPosition();
+        }
+    });
 
+    Bind(wxEVT_MOVE, [](wxMoveEvent& event) {
 // OSX specific issue:
 // When we move application between Retina and non-Retina displays, The legend on a canvas doesn't redraw
 // So, redraw explicitly canvas, when application is moved
 //FIXME maybe this is useful for __WXGTK3__ as well?
 #if __APPLE__
-    Bind(wxEVT_MOVE, [](wxMoveEvent& event) {
         wxGetApp().plater()->get_current_canvas3D()->set_as_dirty();
         wxGetApp().plater()->get_current_canvas3D()->request_extra_frame();
+#endif
+        wxGetApp().searcher().update_dialog_position();
         event.Skip();
     });
-#endif
 
     wxGetApp().persist_window_geometry(this, true);
     wxGetApp().persist_window_geometry(&m_settings_dialog, true);
@@ -316,91 +321,6 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
         Bind(wxCUSTOMEVT_JUMP_TO_OPTION, [](wxCommandEvent& evt) { wxGetApp().jump_to_option(evt.GetInt()); });
     }
 }
-
-#ifdef _MSW_DARK_MODE
-static wxString pref() { return " [ "; }
-static wxString suff() { return " ] "; }
-static void append_tab_menu_items_to_menubar(wxMenuBar* bar, PrinterTechnology pt, bool is_mainframe_menu)
-{
-    if (is_mainframe_menu)
-        bar->Append(new wxMenu(), pref() + _L("Plater") + suff());
-    for (const wxString& title : { is_mainframe_menu    ? _L("Print Settings")       : pref() + _L("Print Settings") + suff(),
-                                   pt == ptSLA          ? _L("Material Settings")    : _L("Filament Settings"),
-                                   _L("Printer Settings") })
-        bar->Append(new wxMenu(), title);
-}
-
-// update markers for selected/unselected menu items
-static void update_marker_for_tabs_menu(wxMenuBar* bar, const wxString& title, bool is_mainframe_menu)
-{
-    if (!bar)
-        return;
-    size_t items_cnt = bar->GetMenuCount();
-    for (size_t id = items_cnt - (is_mainframe_menu ? 4 : 3); id < items_cnt; id++) {
-        wxString label = bar->GetMenuLabel(id);
-        if (label.First(pref()) == 0) {
-            if (label == pref() + title + suff())
-                return;
-            label.Remove(size_t(0), pref().Len());
-            label.RemoveLast(suff().Len());
-            bar->SetMenuLabel(id, label);
-            break;
-        }
-    }
-    if (int id = bar->FindMenu(title); id != wxNOT_FOUND)
-        bar->SetMenuLabel(id, pref() + title + suff());
-}
-
-static void add_tabs_as_menu(wxMenuBar* bar, MainFrame* main_frame, wxWindow* bar_parent)
-{
-    PrinterTechnology pt = main_frame->plater() ? main_frame->plater()->printer_technology() : ptFFF;
-
-    bool is_mainframe_menu = bar_parent == main_frame;
-    if (!is_mainframe_menu)
-        append_tab_menu_items_to_menubar(bar, pt, is_mainframe_menu);
-
-    bar_parent->Bind(wxEVT_MENU_OPEN, [main_frame, bar, is_mainframe_menu](wxMenuEvent& event) {
-        wxMenu* const menu = event.GetMenu();
-        if (!menu || menu->GetMenuItemCount() > 0) {
-            // If we are here it means that we open regular menu and not a tab used as a menu
-            event.Skip(); // event.Skip() is verry important to next processing of the wxEVT_UPDATE_UI by this menu items.
-                          // If wxEVT_MENU_OPEN will not be pocessed in next event queue then MenuItems of this menu will never caught wxEVT_UPDATE_UI 
-                          // and, as a result, "check/radio value" will not be updated
-            return;
-        }
-
-        // update tab selection
-
-        const wxString& title = menu->GetTitle();
-        if (title == _L("Plater"))
-            main_frame->select_tab(size_t(0));
-        else if (title == _L("Print Settings"))
-            main_frame->select_tab(wxGetApp().get_tab(main_frame->plater()->printer_technology() == ptFFF ? Preset::TYPE_PRINT : Preset::TYPE_SLA_PRINT));
-        else if (title == _L("Filament Settings"))
-            main_frame->select_tab(wxGetApp().get_tab(Preset::TYPE_FILAMENT));
-        else if (title == _L("Material Settings"))
-            main_frame->select_tab(wxGetApp().get_tab(Preset::TYPE_SLA_MATERIAL));
-        else if (title == _L("Printer Settings"))
-            main_frame->select_tab(wxGetApp().get_tab(Preset::TYPE_PRINTER));
-
-        // update markers for selected/unselected menu items
-        update_marker_for_tabs_menu(bar, title, is_mainframe_menu);
-    });
-}
-
-void MainFrame::show_tabs_menu(bool show)
-{
-    if (!m_menubar)
-        return;
-    if (show)
-        append_tab_menu_items_to_menubar(m_menubar, plater() ? plater()->printer_technology() : ptFFF, true);
-    else
-        while (m_menubar->GetMenuCount() >= 8) {
-            if (wxMenu* menu = m_menubar->Remove(7))
-                delete menu;
-        }
-}
-#endif // _MSW_DARK_MODE
 
 void MainFrame::update_layout()
 {
@@ -435,6 +355,7 @@ void MainFrame::update_layout()
             m_settings_dialog.Close();
 
         m_tabpanel->Hide();
+        m_tmp_top_bar->Hide();
         m_plater->Hide();
 
         Layout();
@@ -442,7 +363,6 @@ void MainFrame::update_layout()
 
     ESettingsLayout layout = wxGetApp().is_gcode_viewer() ? ESettingsLayout::GCodeViewer :
         (wxGetApp().app_config->get_bool("old_settings_layout_mode") ? ESettingsLayout::Old :
-         wxGetApp().app_config->get_bool("new_settings_layout_mode") ? ( wxGetApp().tabs_as_menu() ? ESettingsLayout::Old : ESettingsLayout::New) :
          wxGetApp().app_config->get_bool("dlg_settings_layout_mode") ? ESettingsLayout::Dlg : ESettingsLayout::Old);
 
     if (m_layout == layout)
@@ -484,54 +404,35 @@ void MainFrame::update_layout()
     {
         m_plater->Reparent(m_tabpanel);
         m_plater->Layout();
-#ifdef _WIN32
-        if (wxGetApp().tabs_as_menu())
-            m_tabpanel->InsertPage(0, m_plater, _L("Plater"));
-        else
-#endif
-            dynamic_cast<TopBar*>(m_tabpanel)->InsertNewPage(0, m_plater, _L("Plater"), std::string("plater"), true);
+        m_tabpanel->InsertNewPage(0, m_plater, _L("Plater"), std::string("plater"), true);
 
         m_main_sizer->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 1);
         m_plater->Show();
-        m_tabpanel->Show();
+        m_tabpanel->ShowFull();
+        m_tmp_top_bar->Hide();
+
         // update Tabs
         if (old_layout == ESettingsLayout::Dlg)
             if (int sel = m_tabpanel->GetSelection(); sel != wxNOT_FOUND)
                 m_tabpanel->SetSelection(sel+1);// call SetSelection to correct layout after switching from Dlg to Old mode
-#ifdef _MSW_DARK_MODE
-        if (wxGetApp().tabs_as_menu())
-            show_tabs_menu(true);
-#endif
-        break;
-    }
-    case ESettingsLayout::New:
-    {
-        m_main_sizer->Add(m_plater, 1, wxEXPAND);
-        m_tabpanel->Hide();
-        m_main_sizer->Add(m_tabpanel, 1, wxEXPAND);
-        m_plater_page = new wxPanel(m_tabpanel);
-#ifdef _WIN32
-        if (wxGetApp().tabs_as_menu())
-            m_tabpanel->InsertPage(0, m_plater_page, _L("Plater")); // empty panel just for Plater tab
-        else
-#endif
-            dynamic_cast<TopBar*>(m_tabpanel)->InsertNewPage(0, m_plater_page, _L("Plater"), std::string("plater"), true);
-
-        m_plater->Show();
         break;
     }
     case ESettingsLayout::Dlg:
     {
-        m_main_sizer->Add(m_plater, 1, wxEXPAND);
-        m_tabpanel->Reparent(&m_settings_dialog);
-        m_settings_dialog.GetSizer()->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 2);
-        m_tabpanel->Show();
+        const int sel = m_tabpanel->GetSelection();
+
+        m_plater->Reparent(this);
+        m_main_sizer->Add(m_tmp_top_bar, 0, wxEXPAND | wxTOP, 1);
+        m_main_sizer->Add(m_plater, 1, wxEXPAND | wxTOP, 1);
+        m_plater->Layout();
+        m_tmp_top_bar->ShowFull();
         m_plater->Show();
 
-#ifdef _WIN32
-        if (wxGetApp().tabs_as_menu())
-            show_tabs_menu(false);
-#endif
+        m_tabpanel->Reparent(&m_settings_dialog);
+        m_tabpanel->SetSelection(sel > 0 ? (sel - 1) : 0);
+        m_tabpanel->ShowJustMode();
+        m_settings_dialog.GetSizer()->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 2);
+        m_settings_dialog.Layout();
         break;
     }
     case ESettingsLayout::GCodeViewer:
@@ -574,20 +475,6 @@ void MainFrame::update_layout()
         }
     }
 #endif //__WXMSW__
-
-//#ifdef __APPLE__
-//    // Using SetMinSize() on Mac messes up the window position in some cases
-//    // cf. https://groups.google.com/forum/#!topic/wx-users/yUKPBBfXWO0
-//    // So, if we haven't possibility to set MinSize() for the MainFrame, 
-//    // set the MinSize() as a half of regular  for the m_plater and m_tabpanel, when settings layout is in slNew mode
-//    // Otherwise, MainFrame will be maximized by height
-//    if (m_layout == ESettingsLayout::New) {
-//        wxSize size = wxGetApp().get_min_size();
-//        size.SetHeight(int(0.5 * size.GetHeight()));
-//        m_plater->SetMinSize(size);
-//        m_tabpanel->SetMinSize(size);
-//    }
-//#endif
     
     Layout();
     Thaw();
@@ -704,20 +591,27 @@ void MainFrame::update_title()
     SetTitle(title);
 }
 
+static wxString GetTooltipForSettingsButton(PrinterTechnology pt)
+{
+    std::string tooltip = _u8L("Switch to Settings") + "\n" + "[" + shortkey_ctrl_prefix() + "2] - " + _u8L("Print Settings Tab") +
+                                                       "\n" + "[" + shortkey_ctrl_prefix() + "3] - " + (pt == ptFFF ? _u8L("Filament Settings Tab") : _u8L("Material Settings Tab")) +
+                                                       "\n" + "[" + shortkey_ctrl_prefix() + "4] - " + _u8L("Printer Settings Tab");
+    return from_u8(tooltip);
+}
+
 void MainFrame::init_tabpanel()
 {
     wxGetApp().update_ui_colours_from_appconfig();
 
+    if (wxGetApp().is_editor()) {
+        m_tmp_top_bar = new TopBar(this, &m_bar_menus, false);
+        m_tmp_top_bar->SetFont(Slic3r::GUI::wxGetApp().normal_font());
+        m_tmp_top_bar->Hide();
+    }
+
     // wxNB_NOPAGETHEME: Disable Windows Vista theme for the Notebook background. The theme performance is terrible on Windows 10
     // with multiple high resolution displays connected.
-#ifdef _MSW_DARK_MODE
-    if (wxGetApp().tabs_as_menu()) {
-        m_tabpanel = new wxSimplebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME);
-//        wxGetApp().UpdateDarkUI(m_tabpanel);
-    }
-    else
-#endif
-    m_tabpanel = new TopBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME);
+    m_tabpanel = new TopBar(this, &m_bar_menus);
 
     m_tabpanel->SetFont(Slic3r::GUI::wxGetApp().normal_font());
     m_tabpanel->Hide();
@@ -748,10 +642,6 @@ void MainFrame::init_tabpanel()
             // before the MainFrame is fully set up.
             tab->OnActivate();
             m_last_selected_tab = m_tabpanel->GetSelection();
-#ifdef _MSW_DARK_MODE
-            if (wxGetApp().tabs_as_menu())
-                tab->SetFocus();
-#endif
         }
         else
             select_tab(size_t(0)); // select Plater
@@ -775,6 +665,9 @@ void MainFrame::init_tabpanel()
         if (full_config.has("nozzle_diameter")) {
             m_plater->sidebar().set_extruders_count(full_config.option<ConfigOptionFloats>("nozzle_diameter")->values.size());
         }
+
+        if (wxGetApp().is_editor())
+            m_tmp_top_bar->SetSettingsButtonTooltip(GetTooltipForSettingsButton(m_plater->printer_technology()));
     }
 }
 
@@ -854,15 +747,17 @@ void MainFrame::add_connect_webview_tab()
 {
     if (m_connect_webview_added) {
         return;
-    }    // parameters of InsertNewPage (to prevent ambigous overloaded function)
-        // insert to positon 4, if physical printer is already added, it moves to 5
+    }
+    // parameters of InsertNewPage (to prevent ambigous overloaded function)
+    // insert "Connect" tab to position next to "Printer" tab
     // order of tabs: Plater - Print Settings - Filaments - Printers - Prusa Connect - Prusa Link
-    size_t n = 4;
+
+    int n = m_tabpanel->FindPage(wxGetApp().get_tab(Preset::TYPE_PRINTER)) + 1;
     wxWindow* page = m_connect_webview;
     const wxString text(L"Prusa Connect");
     const std::string bmp_name = "";
     bool bSelect = false;
-    dynamic_cast<TopBar*>(m_tabpanel)->InsertNewPage(n, page, text, bmp_name, bSelect);
+    m_tabpanel->InsertNewPage(n, page, text, bmp_name, bSelect);
     m_connect_webview->load_default_url_delayed();
     m_connect_webview_added = true;
 }
@@ -871,10 +766,10 @@ void MainFrame::remove_connect_webview_tab()
     if (!m_connect_webview_added) {
         return;
     }
-    // connect tab should always be at position 4
-    if (m_tabpanel->GetSelection() == 4)
+    int n = m_tabpanel->FindPage(m_connect_webview);
+    if (m_tabpanel->GetSelection() == n)
         m_tabpanel->SetSelection(0);
-    dynamic_cast<TopBar*>(m_tabpanel)->RemovePage(4);
+    m_tabpanel->RemovePage(size_t(n));
     m_connect_webview_added = false;
     m_connect_webview->logout();
 }
@@ -922,7 +817,7 @@ void MainFrame::add_printer_webview_tab(const wxString& url)
     }
     m_printer_webview_added = true;
     // add as the last (rightmost) panel
-    dynamic_cast<TopBar*>(m_tabpanel)->AddNewPage(m_printer_webview, _L("Physical Printer"), "");
+    m_tabpanel->AddNewPage(m_printer_webview, _L("Physical Printer"), "");
     m_printer_webview->set_default_url(url);
     m_printer_webview->load_default_url_delayed();
 }
@@ -933,7 +828,7 @@ void MainFrame::remove_printer_webview_tab()
     }
     m_printer_webview_added = false;
     m_printer_webview->Hide();
-    dynamic_cast<TopBar*>(m_tabpanel)->RemovePage(m_tabpanel->FindPage(m_printer_webview));
+    m_tabpanel->RemovePage(m_tabpanel->FindPage(m_printer_webview));
 }
 void MainFrame::set_printer_webview_tab_url(const wxString& url)
 {
@@ -963,7 +858,9 @@ void MainFrame::set_printer_webview_credentials(const std::string& usr, const st
 void Slic3r::GUI::MainFrame::refresh_account_menu(bool avatar/* = false */)
 {
     // Update User name in TopBar
-    dynamic_cast<TopBar*>(m_tabpanel)->GetTopBarItemsCtrl()->UpdateAccountMenu(avatar);
+    m_bar_menus.UpdateAccountMenu(m_plater->get_user_account());
+    m_tabpanel->GetTopBarItemsCtrl()->UpdateAccountButton(avatar);
+    m_tmp_top_bar->GetTopBarItemsCtrl()->UpdateAccountButton(avatar);
 }
 
 void MainFrame::add_created_tab(Tab* panel,  const std::string& bmp_name /*= ""*/)
@@ -972,14 +869,8 @@ void MainFrame::add_created_tab(Tab* panel,  const std::string& bmp_name /*= ""*
 
     const auto printer_tech = wxGetApp().preset_bundle->printers.get_edited_preset().printer_technology();
 
-    if (panel->supports_printer_technology(printer_tech)) {
-#ifdef _WIN32
-        if (wxGetApp().tabs_as_menu())
-            m_tabpanel->AddPage(panel, panel->title());
-        else
-#endif
-            dynamic_cast<TopBar*>(m_tabpanel)->AddNewPage(panel, panel->title(), bmp_name);
-    }
+    if (panel->supports_printer_technology(printer_tech))
+        m_tabpanel->AddNewPage(panel, panel->title(), bmp_name);
 }
 
 bool MainFrame::is_active_and_shown_tab(Tab* tab)
@@ -991,9 +882,6 @@ bool MainFrame::is_active_and_shown_tab(Tab* tab)
 
     if (m_layout == ESettingsLayout::Dlg)
         return m_settings_dialog.IsShown();
-
-    if (m_layout == ESettingsLayout::New)
-        return m_main_sizer->IsShown(m_tabpanel);
     
     return true;
 }
@@ -1122,7 +1010,6 @@ bool MainFrame::can_change_view() const
     switch (m_layout)
     {
     default:                   { return false; }
-    case ESettingsLayout::New: { return m_plater->IsShown(); }
     case ESettingsLayout::Dlg: { return true; }
     case ESettingsLayout::Old: { 
         int page_id = m_tabpanel->GetSelection();
@@ -1164,8 +1051,7 @@ void MainFrame::on_dpi_changed(const wxRect& suggested_rect)
 
 #ifdef _WIN32
     // update common mode sizer
-    if (!wxGetApp().tabs_as_menu())
-        dynamic_cast<TopBar*>(m_tabpanel)->Rescale();
+    m_tabpanel->Rescale();
 #endif
 
     // update Plater
@@ -1210,9 +1096,10 @@ void MainFrame::on_sys_color_changed()
     wxGetApp().update_ui_colours_from_appconfig();
 #ifdef __WXMSW__
     wxGetApp().UpdateDarkUI(m_tabpanel);
-    if (!wxGetApp().tabs_as_menu())
+    wxGetApp().UpdateDarkUI(m_tmp_top_bar);
 #endif
-         dynamic_cast<TopBar*>(m_tabpanel)->OnColorsChanged();
+    m_tabpanel->OnColorsChanged();
+    m_tmp_top_bar->OnColorsChanged();
 
     // update Plater
     wxGetApp().plater()->sys_color_changed();
@@ -1236,8 +1123,8 @@ void MainFrame::on_sys_color_changed()
 void MainFrame::update_mode_markers()
 {
     // update markers in common mode sizer
-    if (!wxGetApp().tabs_as_menu())
-        dynamic_cast<TopBar*>(m_tabpanel)->UpdateModeMarkers();
+    m_tmp_top_bar->UpdateModeMarkers();
+    m_tabpanel->UpdateModeMarkers();
 
     // update mode markers in tabs
     for (auto tab : wxGetApp().tabs_list)
@@ -1663,22 +1550,21 @@ void MainFrame::init_menubar_as_editor()
 #ifndef __APPLE__
     // append menus for Menu button from TopBar
 
-    TopBar* top_bar = dynamic_cast<TopBar*>(m_tabpanel);
-    top_bar->AppendMenuItem(fileMenu, _L("&File"));
+    m_bar_menus.AppendMenuItem(fileMenu, _L("&File"));
     if (editMenu) 
-        top_bar->AppendMenuItem(editMenu, _L("&Edit"));
+        m_bar_menus.AppendMenuItem(editMenu, _L("&Edit"));
 
-    top_bar->AppendMenuSeparaorItem();
+    m_bar_menus.AppendMenuSeparaorItem();
 
-    top_bar->AppendMenuItem(windowMenu, _L("&Window"));
+    m_bar_menus.AppendMenuItem(windowMenu, _L("&Window"));
     if (viewMenu) 
-        top_bar->AppendMenuItem(viewMenu, _L("&View"));
+        m_bar_menus.AppendMenuItem(viewMenu, _L("&View"));
     
-    top_bar->AppendMenuItem(wxGetApp().get_config_menu(), _L("&Configuration"));
+    m_bar_menus.AppendMenuItem(wxGetApp().get_config_menu(), _L("&Configuration"));
 
-    top_bar->AppendMenuSeparaorItem();
+    m_bar_menus.AppendMenuSeparaorItem();
 
-    top_bar->AppendMenuItem(helpMenu, _L("&Help"));
+    m_bar_menus.AppendMenuItem(helpMenu, _L("&Help"));
 
 #else
 
@@ -2071,6 +1957,13 @@ void MainFrame::load_config(const DynamicPrintConfig& config)
 #endif
 }
 
+void MainFrame::update_search_lines(const std::string search_line)
+{
+    wxString search = from_u8(search_line);
+    m_tabpanel   ->UpdateSearch(search);
+    m_tmp_top_bar->UpdateSearch(search);
+}
+
 void MainFrame::select_tab(Tab* tab)
 {
     if (!tab)
@@ -2095,14 +1988,7 @@ void MainFrame::select_tab(size_t tab/* = size_t(-1)*/)
 
         if (m_tabpanel->GetSelection() != (int)new_selection)
             m_tabpanel->SetSelection(new_selection);
-#ifdef _MSW_DARK_MODE
-        if (wxGetApp().tabs_as_menu()) {
-            if (Tab* cur_tab = dynamic_cast<Tab*>(m_tabpanel->GetPage(new_selection)))
-                update_marker_for_tabs_menu((m_layout == ESettingsLayout::Old ? m_menubar : m_settings_dialog.menubar()), cur_tab->title(), m_layout == ESettingsLayout::Old);
-            else if (tab == 0 && m_layout == ESettingsLayout::Old)
-                m_plater->get_current_canvas3D()->render();
-        }
-#endif
+
         if (tab == 0 && m_layout == ESettingsLayout::Old)
             m_plater->canvas3D()->render();
         else if (was_hidden) {
@@ -2143,26 +2029,11 @@ void MainFrame::select_tab(size_t tab/* = size_t(-1)*/)
         if (m_settings_dialog.IsIconized())
             m_settings_dialog.Iconize(false);
     }
-    else if (m_layout == ESettingsLayout::New) {
-        m_main_sizer->Show(m_plater, tab == 0);
-        tabpanel_was_hidden = !m_main_sizer->IsShown(m_tabpanel);
-        select(tabpanel_was_hidden);
-        m_main_sizer->Show(m_tabpanel, tab != 0);
-
-        // plater should be focused for correct navigation inside search window
-        if (tab == 0)
-            m_plater->SetFocus();
-        Layout();
-    }
     else {
         select(false);
-#ifdef _MSW_DARK_MODE
-        if (wxGetApp().tabs_as_menu() && tab == 0)
-            m_plater->SetFocus();
-#endif
     }
 
-    // When we run application in ESettingsLayout::New or ESettingsLayout::Dlg mode, tabpanel is hidden from the very beginning
+    // When we run application in ESettingsLayout::Dlg mode, tabpanel is hidden from the very beginning
     // and as a result Tab::update_changed_tree_ui() function couldn't update m_is_nonsys_values values,
     // which are used for update TreeCtrl and "revert_buttons".
     // So, force the call of this function for Tabs, if tab panel was hidden
@@ -2233,10 +2104,12 @@ void MainFrame::add_to_recent_projects(const wxString& filename)
 
 void MainFrame::technology_changed()
 {
+    PrinterTechnology pt = plater()->printer_technology();
+    m_tmp_top_bar->SetSettingsButtonTooltip(GetTooltipForSettingsButton(pt));
+
     if (!m_menubar)
         return;
     // update menu titles
-    PrinterTechnology pt = plater()->printer_technology();
     if (int id = m_menubar->FindMenu(pt == ptFFF ? _L("Material Settings") : _L("Filament Settings")); id != wxNOT_FOUND)
         m_menubar->SetMenuLabel(id , pt == ptSLA ? _L("Material Settings") : _L("Filament Settings"));
 
@@ -2318,6 +2191,8 @@ SettingsDialog::SettingsDialog(MainFrame* mainframe)
                 default:break;
                 }
             }
+
+            evt.Skip();
         };
 
         if (evt.IsShown()) {
@@ -2333,14 +2208,11 @@ SettingsDialog::SettingsDialog(MainFrame* mainframe)
     //just hide the Frame on closing
     this->Bind(wxEVT_CLOSE_WINDOW, [this](wxCloseEvent& evt) { this->Hide(); });
 
-#ifdef _MSW_DARK_MODE
-    if (wxGetApp().tabs_as_menu()) {
-        // menubar
-        m_menubar = new wxMenuBar();
-        add_tabs_as_menu(m_menubar, mainframe, this);
-        this->SetMenuBar(m_menubar);
-    }
-#endif
+    this->Bind(wxEVT_SIZE, [this](wxSizeEvent& event) {
+        event.Skip();
+        if (m_tabpanel)
+            m_tabpanel->UpdateSearchSizeAndPosition();
+    });
 
     // initialize layout
     auto sizer = new wxBoxSizer(wxVERTICAL);
@@ -2358,6 +2230,11 @@ SettingsDialog::SettingsDialog(MainFrame* mainframe)
     SetSize(GetMinSize());
 #endif
     Layout();
+
+    Bind(wxEVT_MOVE, [](wxMoveEvent& event) {
+        wxGetApp().searcher().update_dialog_position();
+        event.Skip();
+    });
 }
 
 void SettingsDialog::on_dpi_changed(const wxRect& suggested_rect)
@@ -2369,9 +2246,7 @@ void SettingsDialog::on_dpi_changed(const wxRect& suggested_rect)
     const wxSize& size = wxSize(85 * em, 50 * em);
 
 #ifdef _WIN32
-    // update common mode sizer
-    if (!wxGetApp().tabs_as_menu())
-        dynamic_cast<TopBar*>(m_tabpanel)->Rescale();
+    m_tabpanel->Rescale();
 #endif
 
     // update Tabs
