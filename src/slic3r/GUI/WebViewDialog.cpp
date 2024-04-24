@@ -758,7 +758,6 @@ void PrinterPickWebViewDialog::request_compatible_printers_SLA()
 {
     const Preset& selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
     const std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
-    //const std::string printer_type = wxGetApp().plater()->get_user_account()->get_printer_type_from_name(printer_model_serialized);
     const Preset& selected_material = wxGetApp().preset_bundle->sla_materials.get_selected_preset();
     const std::string material_type_serialized = selected_material.config.option("material_type")->serialize();
     const std::string request = GUI::format(

@@ -303,26 +303,6 @@ bool UserAccount::on_connect_uiid_map_success(const std::string& data, AppConfig
     return on_connect_printers_success(data, app_config, out_printers_changed);
 }
 
-std::string UserAccount::get_model_from_json(const std::string& message) const
-{
-    std::string out;
-    try {
-        std::stringstream ss(message);
-        pt::ptree ptree;
-        pt::read_json(ss, ptree);
-
-        std::string printer_type = parse_tree_for_param(ptree, "printer_type");
-        if (auto pair = printer_type_and_name_table.find(printer_type); pair != printer_type_and_name_table.end()) {
-            out = pair->second;
-        }
-        //assert(!out.empty());
-    }
-    catch (const std::exception& e) {
-        BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
-    }
-    return out;
-}
-
 std::string UserAccount::get_nozzle_from_json(const std::string& message) const
 {
     std::string out;
@@ -379,7 +359,7 @@ void UserAccount::fill_supported_printer_models_from_json(const std::string& jso
         }
         pt::ptree out = parse_tree_for_subtree(ptree, "supported_printer_models");
         if (out.empty()) {
-            BOOST_LOG_TRIVIAL(error) << "Failed to find compatible_printer_type in printer detail.";
+            BOOST_LOG_TRIVIAL(error) << "Failed to find supported_printer_models in printer detail.";
             return;
         }
         for (const auto& sub : out) {
@@ -467,19 +447,5 @@ void UserAccount::fill_material_from_json(const std::string& json, std::vector<s
         BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
     }
 }
-
-
-std::string UserAccount::get_printer_type_from_name(const std::string& printer_name) const
-{
-    
-    for (const auto& pair : printer_type_and_name_table) {
-        if (pair.second == printer_name) {
-            return pair.first;
-        }
-    }
-    assert(true); // This assert means printer_type_and_name_table needs a update
-    return {};
-}
-
 
 }} // namespace slic3r::GUI
