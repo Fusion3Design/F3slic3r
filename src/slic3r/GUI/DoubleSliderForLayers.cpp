@@ -172,7 +172,7 @@ void DSForLayers::draw_ticks(const ImRect& slideable_region)
     //    return;
     //if (m_ticks.empty() || m_mode == MultiExtruder)
     //    return;
-    if (m_ticks.empty())
+    if (m_ticks.empty() || m_draw_mode == dmSlaPrint)
         return;
 
     const ImVec2 tick_border = ImVec2(23.0f, 2.0f) * m_scale;
@@ -359,7 +359,7 @@ void DSForLayers::render_menu()
     else if (m_show_cog_menu)
         ImGui::OpenPopup("cog_menu_popup");
 
-    if (m_allow_editing)
+    if (can_edit())
         render_add_tick_menu();
     render_cog_menu();
 
@@ -501,7 +501,7 @@ void DSForLayers::render_cog_menu()
             if (m_ticks.edit_extruder_sequence(m_ctrl.GetMaxPos(), m_mode))
                 process_ticks_changed();
         }
-        if (m_allow_editing) {
+        if (can_edit()) {
             if (ImGuiPureWrap::menu_item_with_icon(_u8L("Use default colors").c_str(), "", icon_sz, 0, m_ticks.used_default_colors())) {
                 UseDefaultColors(!m_ticks.used_default_colors());
             }
@@ -650,7 +650,7 @@ void DSForLayers::Render(const int canvas_width, const int canvas_height, float 
 
     ImVec2 btn_pos = ImVec2(groove_center_x - 0.5f * action_btn_sz, pos.y - 0.75f * action_btn_sz);
 
-    if (!m_ticks.empty() && m_allow_editing &&
+    if (!m_ticks.empty() && can_edit() &&
         render_button(ImGui::DSRevert, ImGui::DSRevertHovered, "revert", btn_pos, fiRevertIcon))
         discard_all_thicks();
 
@@ -676,7 +676,7 @@ void DSForLayers::Render(const int canvas_width, const int canvas_height, float 
                               m_values[m_ctrl.GetMinPos()], m_values[m_ctrl.GetMaxPos()]))
         process_jump_to_value();
 
-    if (m_allow_editing)
+    if (can_edit())
         render_color_picker();
 }
 
@@ -966,7 +966,7 @@ void DSForLayers::add_code_as_tick(Type type, int selected_extruder/* = -1*/)
 
 void DSForLayers::add_current_tick()
 {
-    if (!m_allow_editing)
+    if (!can_edit())
         return;
 
     const int tick = m_ctrl.GetActivePos();
@@ -1039,6 +1039,11 @@ void DSForLayers::process_jump_to_value()
         else
             SetLowerPos(tick_value);
     }
+}
+
+bool DSForLayers::can_edit() const
+{
+    return m_allow_editing && m_draw_mode != dmSlaPrint;
 }
 
 } // DoubleSlider
