@@ -160,7 +160,7 @@ private:
 
     void        draw_scroll_line(const ImRect& scroll_line, const ImRect& slideable_region);
     void        draw_background(const ImRect& slideable_region);
-    void        draw_label(std::string label, const ImRect& thumb);
+    void        draw_label(std::string label, const ImRect& thumb, bool is_mirrored = false, bool with_border = false);
     void        draw_thumb(const ImVec2& center, bool mark = false);
     bool        draw_slider(int* higher_pos, int* lower_pos,
                             std::string& higher_label, std::string& lower_label,

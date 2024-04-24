@@ -83,11 +83,11 @@ static bool behavior(ImGuiID id, const ImRect& region,
 ImRect ImGuiControl::DrawOptions::groove(const ImVec2& pos, const ImVec2& size, bool is_horizontal) const
 {
     ImVec2 groove_start =   is_horizontal ?
-                            ImVec2(pos.x + thumb_dummy_sz().x, pos.y + size.y - groove_sz().y - dummy_sz().y) :
+                            ImVec2(pos.x + thumb_dummy_sz().x + text_dummy_sz().x, pos.y + size.y - groove_sz().y - dummy_sz().y) :
                             ImVec2(pos.x + size.x - groove_sz().x - dummy_sz().x, pos.y + text_dummy_sz().y);
     ImVec2 groove_size  =   is_horizontal ?
-                            ImVec2(size.x - 2 * thumb_dummy_sz().x - text_dummy_sz().x, groove_sz().y) :
-                            ImVec2(groove_sz().x, size.y - 1.6 * text_dummy_sz().y);
+                            ImVec2(size.x - 2 * (thumb_dummy_sz().x + text_dummy_sz().x), groove_sz().y) :
+                            ImVec2(groove_sz().x, size.y - 2 * text_dummy_sz().y);
 
     return ImRect(groove_start, groove_start + groove_size);
 }
@@ -283,7 +283,7 @@ void ImGuiControl::draw_background(const ImRect& slideable_region)
     ImGui::RenderFrame(groove.Min, groove.Max, groove_bg_clr, false, 0.5 * groove.GetWidth());
 }
 
-void ImGuiControl::draw_label(std::string label, const ImRect& thumb)
+void ImGuiControl::draw_label(std::string label, const ImRect& thumb, bool is_mirrored /*= false*/, bool with_border /*= false*/)
 {
     if (label.empty() || label == "ErrVal")
         return;
@@ -291,20 +291,64 @@ void ImGuiControl::draw_label(std::string label, const ImRect& thumb)
     const ImVec2 thumb_center   = thumb.GetCenter();
     ImVec2 text_padding         = m_draw_opts.text_padding();
     float  rounding             = m_draw_opts.rounding();
-    ImVec2 triangle_offsets[3]  = { ImVec2(2.0f, 0.0f) * m_draw_opts.scale, ImVec2(0.0f, 8.0f) * m_draw_opts.scale, ImVec2(9.0f, 0.0f) * m_draw_opts.scale };
+
+    float triangle_offset_x = 9.f * m_draw_opts.scale;
+    float triangle_offset_y = 8.f * m_draw_opts.scale;
 
     ImVec2 text_content_size    = ImGui::CalcTextSize(label.c_str());
     ImVec2 text_size    = text_content_size + text_padding * 2;
     ImVec2 text_start   = is_horizontal() ?
-                        ImVec2(thumb.Max.x + triangle_offsets[2].x, thumb_center.y - text_size.y) : 
-                        ImVec2(thumb.Min.x - text_size.x - triangle_offsets[2].x, thumb_center.y - text_size.y) ;
+                        ImVec2(thumb.Max.x + triangle_offset_x, thumb_center.y - text_size.y) : 
+                        ImVec2(thumb.Min.x - text_size.x - triangle_offset_x, thumb_center.y - text_size.y) ;
+
+    if (is_mirrored)
+        text_start   = is_horizontal() ?
+                        ImVec2(thumb.Min.x - text_size.x - triangle_offset_x, thumb_center.y - text_size.y) :
+                        ImVec2(thumb.Min.x - text_size.x - triangle_offset_x, thumb_center.y) ;
+
     ImRect text_rect(text_start, text_start + text_size);
 
+    if (with_border) {
+
+        float  rounding_b = 0.75f * rounding;
+        
+        ImRect text_rect_b(text_rect);
+        text_rect_b.Expand(ImVec2(rounding_b, rounding_b));
+
+        float triangle_offset_x_b = triangle_offset_x + rounding_b;
+        float triangle_offset_y_b = triangle_offset_y + rounding_b;
+
+        ImVec2 pos_1 = is_horizontal() ?
+            ImVec2(text_rect_b.Min.x + rounding_b, text_rect_b.Max.y) :
+            ImVec2(text_rect_b.Max.x - rounding_b, text_rect_b.Max.y);
+        ImVec2 pos_2 = is_horizontal() ? pos_1 - ImVec2(triangle_offset_x_b, 0.f) : pos_1 - ImVec2(0.f, triangle_offset_y_b);
+        ImVec2 pos_3 = is_horizontal() ? pos_1 - ImVec2(0.f, triangle_offset_y_b) : pos_1 + ImVec2(triangle_offset_x_b, 0.f);
+
+        if (is_mirrored) {
+            pos_1 = is_horizontal() ?
+                ImVec2(text_rect_b.Max.x - rounding_b - 1, text_rect_b.Max.y - 1) :
+                ImVec2(text_rect_b.Max.x - rounding_b, text_rect_b.Min.y);
+            pos_2 = is_horizontal() ? pos_1 + ImVec2(triangle_offset_x_b, 0.f) : pos_1 + ImVec2(0.f, triangle_offset_y_b);
+            pos_3 = is_horizontal() ? pos_1 - ImVec2(0.f, triangle_offset_y_b) : pos_1 + ImVec2(triangle_offset_x_b, 0.f);
+        }
+
+        ImGui::RenderFrame(text_rect_b.Min, text_rect_b.Max, thumb_bg_clr, true, rounding);
+        ImGui::GetCurrentWindow()->DrawList->AddTriangleFilled(pos_1, pos_2, pos_3, thumb_bg_clr);
+    }
+
     ImVec2 pos_1 = is_horizontal() ?
-                   ImVec2(text_rect.Min.x + triangle_offsets[0].x, text_rect.Max.y - triangle_offsets[0].y) :
-                   text_rect.Max - triangle_offsets[0];
-    ImVec2 pos_2 = is_horizontal() ? pos_1 - triangle_offsets[2] : pos_1 - triangle_offsets[1];
-    ImVec2 pos_3 = is_horizontal() ? pos_1 - triangle_offsets[1] : pos_1 + triangle_offsets[2];
+                   ImVec2(text_rect.Min.x + rounding, text_rect.Max.y) :
+                   ImVec2(text_rect.Max.x - rounding, text_rect.Max.y);
+    ImVec2 pos_2 = is_horizontal() ? pos_1 - ImVec2(triangle_offset_x, 0.f) : pos_1 - ImVec2(0.f, triangle_offset_y);
+    ImVec2 pos_3 = is_horizontal() ? pos_1 - ImVec2(0.f, triangle_offset_y) : pos_1 + ImVec2(triangle_offset_x, 0.f);
+
+    if (is_mirrored) {
+        pos_1 = is_horizontal() ?
+                ImVec2(text_rect.Max.x - rounding-1, text_rect.Max.y-1) :
+                ImVec2(text_rect.Max.x - rounding, text_rect.Min.y);
+        pos_2 = is_horizontal() ? pos_1 + ImVec2(triangle_offset_x, 0.f) : pos_1 + ImVec2(0.f, triangle_offset_y);
+        pos_3 = is_horizontal() ? pos_1 - ImVec2(0.f, triangle_offset_y) : pos_1 + ImVec2(triangle_offset_x, 0.f);
+    }
 
     ImGui::RenderFrame(text_rect.Min, text_rect.Max, tooltip_bg_clr, true, rounding);
     ImGui::GetCurrentWindow()->DrawList->AddTriangleFilled(pos_1, pos_2, pos_3, tooltip_bg_clr);
@@ -490,13 +534,17 @@ bool ImGuiControl::draw_slider( int* higher_pos, int* lower_pos,
     draw_label(higher_label, m_regions.higher_thumb);
 
     if (m_draw_lower_thumb && !m_combine_thumbs) {
+        ImVec2 text_size = ImGui::CalcTextSize(lower_label.c_str()) + m_draw_opts.text_padding() * 2.f;
+        const bool mirror_label = is_horizontal() ? (higher_thumb_center.x - lower_thumb_center.x < text_size.x) :
+                                                    (lower_thumb_center.y - higher_thumb_center.y < text_size.y);
+
         draw_thumb(lower_thumb_center, m_selection == ssLower);
-        draw_label(lower_label, m_regions.lower_thumb);
+        draw_label(lower_label, m_regions.lower_thumb, mirror_label);
     }
 
     // draw label on mouse move
     if (show_move_label)
-        draw_label(get_label_on_move(m_mouse_pos), mouse_pos_rc);
+        draw_label(get_label_on_move(m_mouse_pos), mouse_pos_rc, false, true);
 
     return pos_changed;
 }
