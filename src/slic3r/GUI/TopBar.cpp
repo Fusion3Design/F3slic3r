@@ -333,24 +333,11 @@ void TopBarItemsCtrl::UpdateSearchSizeAndPosition()
 
     int em = em_unit(this);
 
-    int btns_width = 2 * m_btn_margin;
-    if (m_menu_btn)
-        btns_width += m_menu_btn->GetSize().GetWidth();
-    else
-        btns_width += 4 * em;
-
-    if (m_settings_btn)
-        btns_width += m_settings_btn->GetSize().GetWidth() + m_btn_margin;
-    else {
-        for (const Button* btn : m_pageButtons)
-            btns_width += btn->GetSize().GetWidth() + m_btn_margin;
-    }
-
     wxWindow* parent_win = GetParent()->GetParent();
     int top_win_without_sidebar = parent_win->GetSize().GetWidth() - 42 * em;
 
     bool update_bnts{ false };
-    if (top_win_without_sidebar - btns_width < 15 * em) {
+    if (top_win_without_sidebar - m_btns_width < 15 * em) {
         if (!m_collapsed_btns) {
             m_sizer->SetItemMinSize(1, wxSize(20, -1));
             m_collapsed_btns = update_bnts = true;
@@ -386,6 +373,46 @@ wxPoint TopBarItemsCtrl::ButtonWithPopup::get_popup_pos()
     wxPoint pos = this->GetPosition();
     pos.y += this->GetSize().GetHeight() + int(0.2 * wxGetApp().em_unit());
     return pos;
+}
+
+void TopBarItemsCtrl::update_btns_width()
+{
+    int em = em_unit(this);
+
+    m_btns_width = 2 * m_btn_margin;
+    if (m_menu_btn)
+        m_btns_width += m_menu_btn->GetSize().GetWidth();
+    else
+        m_btns_width += 4 * em;
+
+    if (m_settings_btn)
+        m_btns_width += m_settings_btn->GetSize().GetWidth() + m_btn_margin;
+    else {
+        for (const Button* btn : m_pageButtons)
+            m_btns_width += btn->GetSize().GetWidth() + m_btn_margin;
+    }
+
+    // Check min width of parent and change it if needed
+
+    int sizebar_w = 25;
+
+    wxWindow* parent_win = GetParent()->GetParent();
+    int top_win_without_sidebar = parent_win->GetSize().GetWidth() - sizebar_w * em;
+
+    if (top_win_without_sidebar < 0)
+        return;
+
+    wxSize min_sz = parent_win->GetMinSize();
+    if (m_btns_width < (76 - sizebar_w) * em) {
+        if (min_sz.GetWidth() > 76 * em)
+            parent_win->SetMinSize(wxSize(76 * em, 49 * em));
+    }
+    else {
+        wxSize new_size = wxSize(m_btns_width + sizebar_w * em, 49 * em);
+        parent_win->SetMinSize(new_size);
+        if (top_win_without_sidebar < m_btns_width)
+            parent_win->SetSize(new_size);
+    }
 }
 
 TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullptr*/, bool is_main/* = true*/) :
@@ -468,6 +495,8 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
         evt.Enable(user_account ? user_account->is_logged()             : false);
         evt.Check (user_account ? user_account->get_remember_session()  : false);
     }, m_menus->remember_me_item_id);
+
+    update_btns_width();
 }
 
 void TopBarItemsCtrl::UpdateMode()
@@ -496,11 +525,11 @@ void TopBarItemsCtrl::Rescale()
     m_search->SetMinSize(wxSize(4 * em, -1));
     m_search->SetMaxSize(wxSize(42 * em, -1));
     m_search->Rescale();
-    m_sizer->SetItemMinSize(1, wxSize(42 * em, -1));
 
     m_buttons_sizer->SetVGap(m_btn_margin);
     m_buttons_sizer->SetHGap(m_btn_margin);
 
+    update_btns_width();
     UpdateSearchSizeAndPosition();
     m_sizer->Layout();
 }
@@ -565,6 +594,7 @@ bool TopBarItemsCtrl::InsertPage(size_t n, const wxString& text, bool bSelect/* 
     m_buttons_sizer->Insert(n, new wxSizerItem(btn, 0, wxALIGN_CENTER_VERTICAL));
     m_buttons_sizer->SetCols(m_buttons_sizer->GetCols() + 1);
 
+    update_btns_width();
     UpdateSearchSizeAndPosition();
     m_sizer->Layout();
     return true;
@@ -580,6 +610,7 @@ void TopBarItemsCtrl::RemovePage(size_t n)
     this->RemoveChild(btn);
     btn->Destroy();
 
+    update_btns_width();
     UpdateSearchSizeAndPosition();
     m_sizer->Layout();
 }
@@ -588,6 +619,7 @@ void TopBarItemsCtrl::SetPageText(size_t n, const wxString& strText)
 {
     ScalableButton* btn = m_pageButtons[n];
     btn->SetLabel(strText);
+    update_btns_width();
     UpdateSearchSizeAndPosition();
 }
 
@@ -608,7 +640,7 @@ void TopBarItemsCtrl::ShowFull()
         m_account_btn->set_selected(true);
         m_menus->Popup(this, &m_menus->account, m_account_btn->get_popup_pos());
     });
-
+    update_btns_width();
     UpdateSearchSizeAndPosition();
 }
 
@@ -620,7 +652,7 @@ void TopBarItemsCtrl::ShowJustMode()
         m_settings_btn->Hide();
     m_account_btn->Hide();
     m_menus->set_cb_on_user_item(nullptr);
-
+    update_btns_width();
     UpdateSearchSizeAndPosition();
 }
 
