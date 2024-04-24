@@ -238,14 +238,15 @@ bool UserAccount::on_connect_printers_success(const std::string& data, AppConfig
             BOOST_LOG_TRIVIAL(error) << "Missing printer model for printer uuid: " << *printer_uuid;
             continue;
         }
-        const std::string printer_model = m_printer_uuid_map[*printer_uuid];
-        if (new_printer_map.find(printer_model) == new_printer_map.end()) {
-            new_printer_map[printer_model].reserve(static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT));
+        std::pair<std::string, std::string> model_nozzle_pair = m_printer_uuid_map[*printer_uuid];
+
+        if (new_printer_map.find(model_nozzle_pair) == new_printer_map.end()) {
+            new_printer_map[model_nozzle_pair].reserve(static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT));
             for (size_t i = 0; i < static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT); i++) {
-                new_printer_map[printer_model].push_back(0);
+                new_printer_map[model_nozzle_pair].push_back(0);
             }
         }
-        new_printer_map[printer_model][static_cast<size_t>(state)] += 1;
+        new_printer_map[model_nozzle_pair][static_cast<size_t>(state)] += 1;
     }
 
     // compare new and old printer map and update old map into new
@@ -293,7 +294,10 @@ bool UserAccount::on_connect_uiid_map_success(const std::string& data, AppConfig
         if (!printer_model) {
             continue;
         }
-        m_printer_uuid_map[*printer_uuid] = *printer_model;
+        const auto nozzle_diameter_opt = printer_tree.second.get_optional<std::string>("nozzle_diameter");
+        const std::string nozzle_diameter = nozzle_diameter_opt ? *nozzle_diameter_opt : std::string();
+        std::pair<std::string, std::string> model_nozzle_pair = { *printer_model, nozzle_diameter };
+        m_printer_uuid_map[*printer_uuid] = model_nozzle_pair;
     }
     m_communication->on_uuid_map_success();
     return on_connect_printers_success(data, app_config, out_printers_changed);

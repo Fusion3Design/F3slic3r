@@ -890,9 +890,11 @@ static std::string get_connect_state_suffix_for_printer(const Preset& printer_pr
     if (auto printer_state_map = wxGetApp().plater()->get_user_account()->get_printer_state_map();
         !printer_state_map.empty()) {
 
-        for (const auto& [printer_model_id, states] : printer_state_map) {
-            if (printer_model_id == printer_preset.config.opt_string("printer_model")) {
-
+        for (const auto& [printer_model_nozzle_pair, states] : printer_state_map) {
+            if (printer_model_nozzle_pair.first == printer_preset.config.opt_string("printer_model")
+                && (printer_model_nozzle_pair.second.empty() 
+                    || printer_model_nozzle_pair.second == printer_preset.config.opt_string("nozzle_diamenter"))
+                ) {
                 PrinterStatesCount states_cnt = get_printe_states_count(states);
 
                 if (states_cnt.available_cnt > 0)
@@ -912,9 +914,11 @@ static wxString get_connect_info_line(const Preset& printer_preset)
     if (auto printer_state_map = wxGetApp().plater()->get_user_account()->get_printer_state_map();
         !printer_state_map.empty()) {
 
-        for (const auto& [printer_model_id, states] : printer_state_map) {
-            if (printer_model_id == printer_preset.config.opt_string("printer_model")) {
-
+        for (const auto& [printer_model_nozzle_pair, states] : printer_state_map) {
+            if (printer_model_nozzle_pair.first == printer_preset.config.opt_string("printer_model")
+                && (printer_model_nozzle_pair.second.empty()
+                    || printer_model_nozzle_pair.second == printer_preset.config.opt_string("nozzle_diamenter"))
+                ) {
                 PrinterStatesCount states_cnt = get_printe_states_count(states);
 
                 return format_wxstr(_L("Available: %1%, Offline: %2%, Busy: %3%. Total: %4% printers"),
