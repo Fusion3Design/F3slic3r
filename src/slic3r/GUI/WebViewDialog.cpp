@@ -735,16 +735,20 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF()
     //}
     const Preset& selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
     const Preset& selected_filament = wxGetApp().preset_bundle->filaments.get_selected_preset();
-    const std::string nozzle_diameter_serialized = dynamic_cast<const ConfigOptionFloats*>(selected_printer.config.option("nozzle_diameter"))->serialize();
+    std::string nozzle_diameter_serialized = dynamic_cast<const ConfigOptionFloats*>(selected_printer.config.option("nozzle_diameter"))->serialize();
+    // Sending only first nozzle diamenter for now.
+    if (size_t comma = nozzle_diameter_serialized.find(','); comma != std::string::npos)
+        nozzle_diameter_serialized = nozzle_diameter_serialized.substr(0, comma);
+    // Sending only first filament type for now. This should change to array of values
     const std::string filament_type_serialized = selected_filament.config.option("filament_type")->serialize();
     const std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
-    //const std::string printer_type = wxGetApp().plater()->get_user_account()->get_printer_type_from_name(printer_model_serialized);
+   
 
     const std::string request = GUI::format(
         "{"
-        "\"material\": \"%1%\", "
+        "\"printerModel\": \"%3%\", "
         "\"nozzleDiameter\": %2%, "
-        "\"printerModel\": \"%3%\" "
+        "\"material\": \"%1%\" "
         "}", filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized);
 
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.requestCompatiblePrinter(%1%)", request);
