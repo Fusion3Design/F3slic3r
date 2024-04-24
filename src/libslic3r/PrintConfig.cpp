@@ -1332,6 +1332,28 @@ void PrintConfigDef::init_fff_params()
     def->set_default_value(new ConfigOptionString(L("(Unknown)")));
     def->cli = ConfigOptionDef::nocli;
 
+    def = this->add("filament_shrinkage_compensation_xy", coPercents);
+    def->label = L("Shrinkage XY");
+    def->tooltip = L("Enter your filament shrinkage percentages for the X and Y axes here to apply scaling of the object to "
+                     "compensate for shrinkage in the X and Y axes. For example, if you measured 99mm instead of 100mm, "
+                     "then you should put here 1%.");
+    def->sidetext = L("%");
+    def->mode = comAdvanced;
+    def->min = -10.;
+    def->max = 10.;
+    def->set_default_value(new ConfigOptionPercents { 0 });
+
+    def = this->add("filament_shrinkage_compensation_z", coPercents);
+    def->label = L("Shrinkage Z");
+    def->tooltip = L("Enter your filament shrinkage percentages for the Z axis here to apply scaling of the object to "
+                     "compensate for shrinkage in the Z axis. For example, if you measured 99mm instead of 100mm, "
+                     "then you should put here 1%.");
+    def->sidetext = L("%");
+    def->mode = comAdvanced;
+    def->min = -10.;
+    def->max = 10.;
+    def->set_default_value(new ConfigOptionPercents { 0. });
+
     def = this->add("fill_angle", coFloat);
     def->label = L("Fill angle");
     def->category = L("Infill");

@@ -1938,6 +1938,10 @@ void Plater::priv::process_validation_warning(const std::vector<std::string>& wa
         if (text == "_BED_TEMPS_DIFFER")
             text = _u8L("Bed temperatures for the used filaments differ significantly.");
 
+        if (text == "_FILAMENT_SHRINKAGE_DIFFER")
+            text = _u8L("Filament shrinkage will not be used because filament shrinkage "
+                        "for the used filaments differs significantly.");
+
         notification_manager->push_notification(
             NotificationType::ValidateWarning,
             NotificationManager::NotificationLevel::WarningNotificationLevel,

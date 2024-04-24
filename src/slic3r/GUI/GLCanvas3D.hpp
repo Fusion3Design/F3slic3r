@@ -219,6 +219,8 @@ class GLCanvas3D
         SlicingParameters           *m_slicing_parameters{ nullptr };
         std::vector<double>         m_layer_height_profile;
         bool                        m_layer_height_profile_modified{ false };
+        // Shrinkage compensation to apply when we need to use object_max_z with Z compensation.
+        Vec3d                       m_shrinkage_compensation{ Vec3d::Ones() };
 
         mutable float               m_adaptive_quality{ 0.5f };
         mutable HeightProfileSmoothingParams m_smooth_params;
@@ -298,6 +300,8 @@ class GLCanvas3D
         std::string get_tooltip(const GLCanvas3D& canvas) const;
 
         std::pair<SlicingParameters, const std::vector<double>> get_layers_height_data();
+
+        void set_shrinkage_compensation(const Vec3d &shrinkage_compensation) { m_shrinkage_compensation = shrinkage_compensation; };
 
     private:
         bool is_initialized() const;

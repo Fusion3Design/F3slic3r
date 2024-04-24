@@ -910,6 +910,9 @@ public:
     bool is_seam_painted() const { return !this->seam_facets.empty(); }
     bool is_mm_painted() const { return !this->mm_segmentation_facets.empty(); }
 
+    // Returns 0-based indices of extruders painted by multi-material painting gizmo.
+    std::vector<size_t> get_extruders_from_multi_material_painting() const;
+
 protected:
 	friend class Print;
     friend class SLAPrint;
