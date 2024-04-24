@@ -482,12 +482,12 @@ ConnectRequestHandler::~ConnectRequestHandler()
 void ConnectRequestHandler::handle_message(const std::string& message)
 {
     // read msg and choose action
-   /*
-   v0:
-   {"type":"request","detail":{"action":"requestAccessToken"}}
-   v1:
-   {"action":"REQUEST_ACCESS_TOKEN"}
-   */
+    /*
+    v0:
+    {"type":"request","detail":{"action":"requestAccessToken"}}
+    v1:
+    {"action":"REQUEST_ACCESS_TOKEN"}
+    */
     std::string action_string;
     m_message_data = message;
     try {
@@ -554,7 +554,7 @@ ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
 
 void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
 {
-    BOOST_LOG_TRIVIAL(error) << "recieved message from PrusaConnect FE: " << evt.GetString();
+    BOOST_LOG_TRIVIAL(debug) << "recieved message from PrusaConnect FE: " << evt.GetString();
     handle_message(into_u8(evt.GetString()));
 }
 
