@@ -214,7 +214,15 @@ void UserAccountCommunication::set_polling_enabled(bool enabled)
 {
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
-        return m_session->set_polling_enabled(enabled);
+        return m_session->set_polling_action(enabled ? UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS : UserAccountActionID::USER_ACCOUNT_ACTION_DUMMY);
+    }
+}
+
+void UserAccountCommunication::on_uuid_map_success()
+{
+    {
+        std::lock_guard<std::mutex> lock(m_session_mutex);
+        return m_session->set_polling_action(UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_STATUS);
     }
 }
 

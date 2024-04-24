@@ -60,7 +60,8 @@ public:
     std::string get_shared_session_key();
 
     void set_polling_enabled(bool enabled);
-
+    // we have map of uuids and printer_models - set polling action to lightweight STATUS action
+    void on_uuid_map_success();
 private:
     std::unique_ptr<UserAccountSession>     m_session;
     std::thread                             m_thread;

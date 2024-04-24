@@ -152,10 +152,6 @@ void UserAccount::on_communication_fail()
         m_communication->enqueue_test_connection();
         m_fail_counter = 0;
     }
-    // Printer models are called only after login, if it fails, it should repeat
-    if (m_printer_uuid_map.empty()) {
-        enqueue_connect_printer_models_action();
-    }
 }
 
 namespace {
@@ -299,6 +295,7 @@ bool UserAccount::on_connect_uiid_map_success(const std::string& data, AppConfig
         }
         m_printer_uuid_map[*printer_uuid] = *printer_model;
     }
+    m_communication->on_uuid_map_success();
     return on_connect_printers_success(data, app_config, out_printers_changed);
 }
 

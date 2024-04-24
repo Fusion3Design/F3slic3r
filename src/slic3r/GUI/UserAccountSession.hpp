@@ -38,8 +38,8 @@ enum class UserAccountActionID {
     USER_ACCOUNT_ACTION_USER_ID,
     USER_ACCOUNT_ACTION_TEST_ACCESS_TOKEN,
     USER_ACCOUNT_ACTION_TEST_CONNECTION,
-    USER_ACCOUNT_ACTION_CONNECT_STATUS, // status of all printers
-    USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS,
+    USER_ACCOUNT_ACTION_CONNECT_STATUS, // status of all printers by UUID
+    USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS, // status of all printers by UUID with printer_model. Should be called once to save printer models.
     USER_ACCOUNT_ACTION_AVATAR,
 };
 class UserAction
@@ -101,7 +101,7 @@ public:
         , m_access_token(access_token)
         , m_refresh_token(refresh_token)
         , m_shared_session_key(shared_session_key)
-        , m_polling_enabled(polling_enabled)
+        , m_polling_action(polling_enabled ? UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS : UserAccountActionID::USER_ACCOUNT_ACTION_DUMMY)
        
     {
         
@@ -146,7 +146,8 @@ public:
     std::string get_refresh_token() const { return m_refresh_token; }
     std::string get_shared_session_key() const { return m_shared_session_key; }
     
-    void set_polling_enabled(bool enabled) {m_polling_enabled = enabled; }
+    //void set_polling_enabled(bool enabled) {m_polling_action = enabled ? UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS : UserAccountActionID::USER_ACCOUNT_ACTION_DUMMY; }
+    void set_polling_action(UserAccountActionID action) { m_polling_action = action; }
 private:
     
     void enqueue_refresh(const std::string& body);
@@ -159,8 +160,9 @@ private:
     // false prevents action queu to be processed - no communication is done
     // sets to true by init_with_code or enqueue_action call
     bool        m_proccessing_enabled {false}; 
-    // triggers CONNECT_PRINTERS action when woken up on idle
-    bool        m_polling_enabled;
+    // action when woken up on idle - switches between USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS and USER_ACCOUNT_ACTION_CONNECT_STATUS
+    // set to USER_ACCOUNT_ACTION_DUMMY to switch off polling
+    UserAccountActionID m_polling_action;
 
     std::string m_access_token;
     std::string m_refresh_token;
