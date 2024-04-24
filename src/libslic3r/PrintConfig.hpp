@@ -159,6 +159,14 @@ enum class PerimeterGeneratorType
     Arachne
 };
 
+enum class TopOnePerimeterType
+{
+    None,
+    TopSurfaces,
+    TopmostOnly,
+    Count
+};
+
 enum class GCodeThumbnailsFormat {
     PNG, JPG, QOI
 };
@@ -190,7 +198,7 @@ CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(LabelObjectsStyle)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(GCodeThumbnailsFormat)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(ForwardCompatibilitySubstitutionRule)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(PerimeterGeneratorType)
-
+CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(TopOnePerimeterType)
 
 #undef CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS
 
@@ -662,6 +670,9 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloat,                top_solid_min_thickness))
     ((ConfigOptionFloatOrPercent,       top_solid_infill_speed))
     ((ConfigOptionBool,                 wipe_into_infill))
+    // Single perimeter.
+    ((ConfigOptionEnum<TopOnePerimeterType>, top_one_perimeter_type))
+    ((ConfigOptionBool,                 only_one_perimeter_first_layer))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
