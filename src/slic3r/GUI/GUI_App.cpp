@@ -1413,7 +1413,8 @@ bool GUI_App::on_init_inner()
 
     obj_list()->set_min_height();
 
-    update_mode(); // update view mode after fix of the object_list size
+    if (is_editor())
+        update_mode(); // update view mode after fix of the object_list size
 
     show_printer_webview_tab();
 
