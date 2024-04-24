@@ -189,6 +189,25 @@ namespace ImGui
     const wchar_t InfoMarkerSmall          = 0x2716;
     const wchar_t CollapseBtn              = 0x2715;
 
+    // icons for double slider (middle size icons)
+    const wchar_t Lock                     = 0x2801;
+    const wchar_t LockHovered              = 0x2802;
+    const wchar_t Unlock                   = 0x2803;
+    const wchar_t UnlockHovered            = 0x2804;
+    const wchar_t DSRevert                 = 0x2805;
+    const wchar_t DSRevertHovered          = 0x2806;
+    const wchar_t DSSettings               = 0x2807;
+    const wchar_t DSSettingsHovered        = 0x2808;
+    // icons for double slider (small size icons)
+    const wchar_t ErrorTick                = 0x2809;
+    const wchar_t ErrorTickHovered         = 0x280A;
+    const wchar_t PausePrint               = 0x280B;
+    const wchar_t PausePrintHovered        = 0x280C;
+    const wchar_t EditGCode                = 0x280D;
+    const wchar_t EditGCodeHovered         = 0x280E;
+    const wchar_t RemoveTick               = 0x280F;
+    const wchar_t RemoveTickHovered        = 0x2810;
+
     //    void MyFunction(const char* name, const MyMatrix44& v);
 }
 

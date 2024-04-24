@@ -385,6 +385,7 @@ struct Plater::priv
 
     void set_current_canvas_as_dirty();
     GLCanvas3D* get_current_canvas3D();
+    void render_sliders(GLCanvas3D& canvas);
     void unbind_canvas_event_handlers();
     void reset_canvas_volumes();
 
@@ -735,12 +736,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         preview->get_wxglcanvas()->Bind(EVT_GLCANVAS_TAB, [this](SimpleEvent&) { select_next_view_3D(); });
         preview->get_wxglcanvas()->Bind(EVT_GLCANVAS_COLLAPSE_SIDEBAR, [this](SimpleEvent&) { this->q->collapse_sidebar(!this->q->is_sidebar_collapsed());  });
     }
-    preview->get_wxglcanvas()->Bind(EVT_GLCANVAS_JUMP_TO, [this](wxKeyEvent& evt) { preview->jump_layers_slider(evt); });
-    preview->get_wxglcanvas()->Bind(EVT_GLCANVAS_MOVE_SLIDERS, [this](wxKeyEvent& evt) {
-        preview->move_layers_slider(evt);
-        preview->move_moves_slider(evt);
-      });
-    preview->get_wxglcanvas()->Bind(EVT_GLCANVAS_EDIT_COLOR_CHANGE, [this](wxKeyEvent& evt) { preview->edit_layers_slider(evt); });
+
     if (wxGetApp().is_gcode_viewer())
         preview->Bind(EVT_GLCANVAS_RELOAD_FROM_DISK, [this](SimpleEvent&) { this->q->reload_gcode_from_disk(); });
 
@@ -3187,6 +3183,12 @@ void Plater::priv::set_current_canvas_as_dirty()
 GLCanvas3D* Plater::priv::get_current_canvas3D()
 {
     return (current_panel == view3D) ? view3D->get_canvas3d() : ((current_panel == preview) ? preview->get_canvas3d() : nullptr);
+}
+
+void Plater::priv::render_sliders(GLCanvas3D& canvas)
+{
+    if (current_panel == preview)
+        preview->render_sliders(canvas);
 }
 
 void Plater::priv::unbind_canvas_event_handlers()
@@ -6402,6 +6404,11 @@ GLCanvas3D* Plater::get_current_canvas3D()
     return p->get_current_canvas3D();
 }
 
+void Plater::render_sliders(GLCanvas3D& canvas)
+{
+    p->render_sliders(canvas);
+}
+
 static std::string concat_strings(const std::set<std::string> &strings,
                                   const std::string &delim = "\n")
 {
@@ -6686,7 +6693,6 @@ void Plater::msw_rescale()
 
 void Plater::sys_color_changed()
 {
-    p->preview->sys_color_changed();
     p->sidebar->sys_color_changed();
 
     p->menus.sys_color_changed();

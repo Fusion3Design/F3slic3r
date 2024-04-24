@@ -271,6 +271,8 @@ public:
     GLCanvas3D* canvas3D();
     const GLCanvas3D * canvas3D() const;
     GLCanvas3D* get_current_canvas3D();
+
+    void render_sliders(GLCanvas3D& canvas);
     
     void arrange();
     void arrange(Worker &w, bool selected);

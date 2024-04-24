@@ -77,7 +77,6 @@
 #include <float.h>
 #include <algorithm>
 #include <cmath>
-#include "DoubleSlider.hpp"
 
 #include <imgui/imgui_internal.h>
 #include <slic3r/GUI/Gizmos/GLGizmoMmuSegmentation.hpp>
@@ -1019,9 +1018,7 @@ wxDEFINE_EVENT(EVT_GLCANVAS_MOUSE_DRAGGING_FINISHED, SimpleEvent);
 wxDEFINE_EVENT(EVT_GLCANVAS_UPDATE_BED_SHAPE, SimpleEvent);
 wxDEFINE_EVENT(EVT_GLCANVAS_TAB, SimpleEvent);
 wxDEFINE_EVENT(EVT_GLCANVAS_RESETGIZMOS, SimpleEvent);
-wxDEFINE_EVENT(EVT_GLCANVAS_MOVE_SLIDERS, wxKeyEvent);
-wxDEFINE_EVENT(EVT_GLCANVAS_EDIT_COLOR_CHANGE, wxKeyEvent);
-wxDEFINE_EVENT(EVT_GLCANVAS_JUMP_TO, wxKeyEvent);
+wxDEFINE_EVENT(EVT_GLCANVAS_SLIDERS_MANIPULATION, wxKeyEvent);
 wxDEFINE_EVENT(EVT_GLCANVAS_UNDO, SimpleEvent);
 wxDEFINE_EVENT(EVT_GLCANVAS_REDO, SimpleEvent);
 wxDEFINE_EVENT(EVT_GLCANVAS_COLLAPSE_SIDEBAR, SimpleEvent);
@@ -1950,6 +1947,8 @@ void GLCanvas3D::render()
 
     wxGetApp().plater()->get_notification_manager()->render_notifications(*this, get_overlay_window_width());
 
+    wxGetApp().plater()->render_sliders(*this);
+
     wxGetApp().imgui()->render();
 
     m_canvas->SwapBuffers();
@@ -2820,14 +2819,14 @@ void GLCanvas3D::on_char(wxKeyEvent& evt)
         case '6': { select_view("right"); break; }
         case '+': {
             if (dynamic_cast<Preview*>(m_canvas->GetParent()) != nullptr)
-                post_event(wxKeyEvent(EVT_GLCANVAS_EDIT_COLOR_CHANGE, evt));
+                post_event(wxKeyEvent(EVT_GLCANVAS_SLIDERS_MANIPULATION, evt));
             else
                 post_event(Event<int>(EVT_GLCANVAS_INCREASE_INSTANCES, +1));
             break;
         }
         case '-': {
             if (dynamic_cast<Preview*>(m_canvas->GetParent()) != nullptr)
-                post_event(wxKeyEvent(EVT_GLCANVAS_EDIT_COLOR_CHANGE, evt)); 
+                post_event(wxKeyEvent(EVT_GLCANVAS_SLIDERS_MANIPULATION, evt));
             else
                 post_event(Event<int>(EVT_GLCANVAS_INCREASE_INSTANCES, -1)); 
             break;
@@ -2845,7 +2844,7 @@ void GLCanvas3D::on_char(wxKeyEvent& evt)
         case 'g': {
             if ((evt.GetModifiers() & shiftMask) != 0) {
                 if (dynamic_cast<Preview*>(m_canvas->GetParent()) != nullptr)
-                    post_event(wxKeyEvent(EVT_GLCANVAS_JUMP_TO, evt));
+                    post_event(wxKeyEvent(EVT_GLCANVAS_SLIDERS_MANIPULATION, evt));
             }
             break;
         }
@@ -3130,7 +3129,7 @@ void GLCanvas3D::on_key(wxKeyEvent& evt)
                         keyCode == WXK_UP ||
                         keyCode == WXK_DOWN) {
                         if (dynamic_cast<Preview*>(m_canvas->GetParent()) != nullptr)
-                            post_event(wxKeyEvent(EVT_GLCANVAS_MOVE_SLIDERS, evt));
+                            post_event(wxKeyEvent(EVT_GLCANVAS_SLIDERS_MANIPULATION, evt));
                     }
                 }
             }

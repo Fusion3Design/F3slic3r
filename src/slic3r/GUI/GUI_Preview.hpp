@@ -20,16 +20,17 @@ class wxComboBox;
 class wxComboCtrl;
 class wxCheckBox;
 
+namespace DoubleSlider {
+    class DSForGcode;
+    class DSForLayers;
+};
+
 namespace Slic3r {
 
 class DynamicPrintConfig;
 class Print;
 class BackgroundSlicingProcess;
 class Model;
-
-namespace DoubleSlider {
-    class Control;
-};
 
 namespace GUI {
 
@@ -82,8 +83,6 @@ class Preview : public wxPanel
     wxGLCanvas* m_canvas_widget { nullptr };
     GLCanvas3D* m_canvas { nullptr };
     wxBoxSizer* m_left_sizer { nullptr };
-    wxBoxSizer* m_layers_slider_sizer { nullptr };
-    wxPanel* m_bottom_toolbar_panel { nullptr };
 
     DynamicPrintConfig* m_config;
     BackgroundSlicingProcess* m_process;
@@ -97,8 +96,8 @@ class Preview : public wxPanel
 
     bool m_loaded { false };
 
-    DoubleSlider::Control* m_layers_slider{ nullptr };
-    DoubleSlider::Control* m_moves_slider{ nullptr };
+    std::unique_ptr<DoubleSlider::DSForLayers>  m_layers_slider{ nullptr };
+    std::unique_ptr<DoubleSlider::DSForGcode>   m_moves_slider { nullptr };
 
 public:
     enum class OptionType : unsigned int
@@ -135,16 +134,15 @@ public:
     void reload_print();
 
     void msw_rescale();
-    void sys_color_changed();
-    void jump_layers_slider(wxKeyEvent& evt);
-    void move_layers_slider(wxKeyEvent& evt);
-    void edit_layers_slider(wxKeyEvent& evt);
+
+    void render_sliders(GLCanvas3D& canvas);
+    float get_layers_slider_width();
+    float get_moves_slider_height();
 
     bool is_loaded() const { return m_loaded; }
 
     void update_moves_slider(std::optional<int> visible_range_min = std::nullopt, std::optional<int> visible_range_max = std::nullopt);
     void enable_moves_slider(bool enable);
-    void move_moves_slider(wxKeyEvent& evt);
     void hide_layers_slider();
 
     void set_keep_current_preview_type(bool value) { m_keep_current_preview_type = value; }
@@ -160,20 +158,20 @@ private:
     void on_size(wxSizeEvent& evt);
 
     // Create/Update/Reset double slider on 3dPreview
-    wxBoxSizer* create_layers_slider_sizer();
+    void create_sliders();
     void check_layers_slider_values(std::vector<CustomGCode::Item>& ticks_from_model,
         const std::vector<double>& layers_z);
     void reset_layers_slider();
     void update_layers_slider(const std::vector<double>& layers_z, bool keep_z_range = false);
     void update_layers_slider_mode();
     // update vertical DoubleSlider after keyDown in canvas
-    void update_layers_slider_from_canvas(wxKeyEvent& event);
+    void update_sliders_from_canvas(wxKeyEvent& event);
 
     void load_print_as_fff(bool keep_z_range = false);
     void load_print_as_sla();
 
-    void on_layers_slider_scroll_changed(wxCommandEvent& event);
-    void on_moves_slider_scroll_changed(wxCommandEvent& event);
+    void on_layers_slider_scroll_changed();
+    void on_moves_slider_scroll_changed();
 };
 
 } // namespace GUI

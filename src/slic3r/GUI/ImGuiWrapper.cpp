@@ -116,6 +116,26 @@ static const std::map<const wchar_t, std::string> font_icons_large = {
     {ImGui::SlaViewProcessed        , "sla_view_processed"              },
 };
 
+static const std::map<const wchar_t, std::string> font_icons_medium = {
+    {ImGui::Lock                    , "lock_closed"                     },
+    {ImGui::LockHovered             , "lock_closed_f"                   },
+    {ImGui::Unlock                  , "lock_open"                       },
+    {ImGui::UnlockHovered           , "lock_open_f"                     },
+    {ImGui::DSRevert                , "undo"                            },
+    {ImGui::DSRevertHovered         , "undo_f"                          },
+    {ImGui::DSSettings              , "cog"                             },
+    {ImGui::DSSettingsHovered       , "cog_f"                           },
+
+    {ImGui::ErrorTick               , "error_tick"                      },
+    {ImGui::ErrorTickHovered        , "error_tick_f"                    },
+    {ImGui::PausePrint              , "pause_print"                     },
+    {ImGui::PausePrintHovered       , "pause_print_f"                   },
+    {ImGui::EditGCode               , "edit_gcode"                      },
+    {ImGui::EditGCodeHovered        , "edit_gcode_f"                    },
+    {ImGui::RemoveTick              , "colorchange_del"                 },
+    {ImGui::RemoveTickHovered       , "colorchange_del_f"               },
+};
+
 static const std::map<const wchar_t, std::string> font_icons_extra_large = {
     {ImGui::ClippyMarker            , "notification_clippy"             },
 };
@@ -470,7 +490,7 @@ bool ImGuiWrapper::slider_float(const wxString& label, float* v, float v_min, fl
     return this->slider_float(label_utf8.c_str(), v, v_min, v_max, format, power, clamp, tooltip, show_edit_btn);
 }
 
-bool ImGuiWrapper::image_button(const wchar_t icon, const std::string& tooltip)
+bool ImGuiWrapper::image_button(const wchar_t icon, const std::string& tooltip, bool highlight_on_hover/* = true*/)
 {
     const ImGuiIO& io = ImGui::GetIO();
     const ImTextureID tex_id = io.Fonts->TexID;
@@ -481,9 +501,9 @@ bool ImGuiWrapper::image_button(const wchar_t icon, const std::string& tooltip)
     const ImVec2 size = { float(rect->Width), float(rect->Height) };
     const ImVec2 uv0 = ImVec2(float(rect->X) * inv_tex_w, float(rect->Y) * inv_tex_h);
     const ImVec2 uv1 = ImVec2(float(rect->X + rect->Width) * inv_tex_w, float(rect->Y + rect->Height) * inv_tex_h);
-    ImGui::PushStyleColor(ImGuiCol_Button, { 0.25f, 0.25f, 0.25f, 0.0f });
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.4f, 0.4f, 0.4f, 1.0f });
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.25f, 0.25f, 0.25f, 1.0f });
+    ImGui::PushStyleColor(ImGuiCol_Button,        { 0.25f, 0.25f, 0.25f, 0.0f });
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {  0.4f, 0.4f,  0.4f,  highlight_on_hover ? 1.0f : 0.0f });
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  { 0.25f, 0.25f, 0.25f, highlight_on_hover ? 1.0f : 0.0f });
     const bool res = ImGuiPureWrap::image_button(tex_id, size, uv0, uv1);
     ImGui::PopStyleColor(3);
 
@@ -1125,6 +1145,11 @@ void ImGuiWrapper::init_font(bool compress)
         m_custom_glyph_rects_ids[icon.first] =
             io.Fonts->AddCustomRectFontGlyph(font, icon.first, icon_sz, icon_sz, 3.0 * font_scale + icon_sz);
     }
+    const int icon_sz_m = int(1.25 * icon_sz); // default size of medium icon is 20 px
+    for (auto& icon : font_icons_medium) {
+        m_custom_glyph_rects_ids[icon.first] =
+            io.Fonts->AddCustomRectFontGlyph(font, icon.first, icon_sz_m, icon_sz_m, 3.0 * font_scale + icon_sz_m);
+    }
     for (auto& icon : font_icons_large) {
         m_custom_glyph_rects_ids[icon.first] =
             io.Fonts->AddCustomRectFontGlyph(font, icon.first, icon_sz * 2, icon_sz * 2, 3.0 * font_scale + icon_sz * 2);
@@ -1159,6 +1184,10 @@ void ImGuiWrapper::init_font(bool compress)
     // Fill rectangles from the SVG-icons
     for (auto icon : font_icons) {
         load_icon_from_svg(icon, icon_sz);
+    }
+
+    for (auto icon : font_icons_medium) {
+        load_icon_from_svg(icon, icon_sz_m);
     }
 
     icon_sz *= 2; // default size of large icon is 32 px
@@ -1522,6 +1551,7 @@ void ImGuiWrapper::clipboard_set(void* /* user_data */, const char* text)
         wxTheClipboard->Close();
     }
 }
+
 
 
 } // namespace GUI

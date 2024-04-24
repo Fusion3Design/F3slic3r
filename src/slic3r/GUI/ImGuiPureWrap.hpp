@@ -53,6 +53,8 @@ namespace ImGuiPureWrap
     // Use selection = -1 to not mark any option as selected
     bool combo(const std::string& label, const std::vector<std::string>& options, int& selection, ImGuiComboFlags flags = 0, float label_width = 0.0f, float item_width = 0.0f);
 
+    void draw_hexagon(const ImVec2& center, float radius, ImU32 col, float start_angle = 0.f);
+
     void text(const char* label);
     void text(const std::string& label);
     void text(const std::wstring& label);
@@ -145,6 +147,10 @@ namespace ImGuiPureWrap
     bool contain_all_glyphs(const ImFont *font, const std::string &text);
     bool is_chars_in_ranges(const ImWchar *ranges, const char *chars_ptr);
     bool is_char_in_ranges(const ImWchar *ranges, unsigned int letter);
+
+    bool begin_menu(const char* label, bool enabled = true);
+    void end_menu();
+    bool menu_item_with_icon(const char* label, const char* shortcut, ImVec2 icon_size = ImVec2(0, 0), ImU32 icon_color = 0, bool selected = false, bool enabled = true);
 
     const ImVec4 COL_GREY_DARK         = { 0.33f, 0.33f, 0.33f, 1.0f };
     const ImVec4 COL_GREY_LIGHT        = { 0.4f, 0.4f, 0.4f, 1.0f };
