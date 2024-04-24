@@ -392,7 +392,9 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL)
     ,m_menus(menus)
 {
-#ifdef __WINDOWS__
+    wxGetApp().UpdateDarkUI(this);
+
+#ifdef _WIN32
     SetDoubleBuffered(true);
 #endif //__WINDOWS__
     update_margins();
@@ -461,19 +463,11 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
 
     m_sizer->SetItemMinSize(1, wxSize(42 * wxGetApp().em_unit(), -1));
 
-    this->Bind(wxEVT_PAINT, &TopBarItemsCtrl::OnPaint, this);
-
     this->Bind(wxEVT_UPDATE_UI, [](wxUpdateUIEvent& evt) {
         auto user_account = wxGetApp().plater()->get_user_account();
         evt.Enable(user_account ? user_account->is_logged()             : false);
         evt.Check (user_account ? user_account->get_remember_session()  : false);
     }, m_menus->remember_me_item_id);
-}
-
-void TopBarItemsCtrl::OnPaint(wxPaintEvent&)
-{
-    wxGetApp().UpdateDarkUI(this);
-    m_search->Refresh();
 }
 
 void TopBarItemsCtrl::UpdateMode()

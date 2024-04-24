@@ -69,7 +69,6 @@ public:
                     bool is_main = true);
     ~TopBarItemsCtrl() {}
 
-    void OnPaint(wxPaintEvent&);
     void SetSelection(int sel, bool force = false);
     void UpdateMode();
     void Rescale();
