@@ -184,7 +184,7 @@ void WebViewPanel::on_idle(wxIdleEvent& WXUNUSED(evt))
     } else {
         wxSetCursor(wxNullCursor);
 
-        if (m_load_error_page) {
+        if (m_shown && m_load_error_page) {
             m_load_error_page = false;
             load_url(GUI::format_wxstr("file://%1%/web/connection_failed.html", boost::filesystem::path(resources_dir()).generic_string()));
         }
