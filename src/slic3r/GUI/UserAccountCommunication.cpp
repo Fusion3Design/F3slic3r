@@ -316,7 +316,7 @@ void UserAccountCommunication::enqueue_test_connection()
             BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
             return;
         }
-        m_session->enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_TEST_CONNECTION, nullptr, nullptr, {});
+        m_session->enqueue_test_with_refresh();
     }
     wakeup_session_thread();
 }
