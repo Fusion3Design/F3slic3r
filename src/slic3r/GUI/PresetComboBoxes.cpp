@@ -1172,11 +1172,17 @@ void PlaterPresetComboBox::update()
                 bool selected; // is selected
             };
             std::vector<PhysicalPrinterPresetData> preset_data;
+            bool is_selected_some_ph_printer{ false };
             for (PhysicalPrinterCollection::ConstIterator it = ph_printers.begin(); it != ph_printers.end(); ++it) {
                 for (const std::string& preset_name : it->get_preset_names()) {
-                    preset_data.push_back({ wxString::FromUTF8(it->get_full_name(preset_name)).Lower(), preset_name, it->get_full_name(preset_name), ph_printers.is_selected(it, preset_name) });
+                    bool is_selected = ph_printers.is_selected(it, preset_name);
+                    preset_data.push_back({ wxString::FromUTF8(it->get_full_name(preset_name)).Lower(), preset_name, it->get_full_name(preset_name), is_selected });
+                    if (is_selected)
+                        is_selected_some_ph_printer = true;
                 }
             }
+            if (is_selected_some_ph_printer)
+                connect_info->SetLabel(wxEmptyString);
             std::sort(preset_data.begin(), preset_data.end(), [](const PhysicalPrinterPresetData& a, const PhysicalPrinterPresetData& b) {
                 return a.lower_name < b.lower_name;
                 });
