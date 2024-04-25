@@ -295,7 +295,7 @@ bool UserAccount::on_connect_uiid_map_success(const std::string& data, AppConfig
             continue;
         }
         const auto nozzle_diameter_opt = printer_tree.second.get_optional<std::string>("nozzle_diameter");
-        const std::string nozzle_diameter = nozzle_diameter_opt ? *nozzle_diameter_opt : std::string();
+        const std::string nozzle_diameter = (nozzle_diameter_opt && *nozzle_diameter_opt != "0.0") ? *nozzle_diameter_opt : std::string();
         std::pair<std::string, std::string> model_nozzle_pair = { *printer_model, nozzle_diameter };
         m_printer_uuid_map[*printer_uuid] = model_nozzle_pair;
     }

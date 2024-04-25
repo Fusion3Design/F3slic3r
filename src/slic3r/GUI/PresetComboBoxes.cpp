@@ -889,11 +889,18 @@ static std::string get_connect_state_suffix_for_printer(const Preset& printer_pr
     // process real data from Connect
     if (auto printer_state_map = wxGetApp().plater()->get_user_account()->get_printer_state_map();
         !printer_state_map.empty()) {
-
+        // printer_state_map has only one nozzle value. Take a first value from "nozzle_diameter" opt.
+        std::string nozzle_diameter_serialized;
+        if (printer_preset.config.has("nozzle_diameter")) {
+            nozzle_diameter_serialized = dynamic_cast<const ConfigOptionFloats*>(printer_preset.config.option("nozzle_diameter"))->serialize();
+            if (size_t comma = nozzle_diameter_serialized.find(','); comma != std::string::npos)
+                nozzle_diameter_serialized = nozzle_diameter_serialized.substr(0, comma);
+        }
+        
         for (const auto& [printer_model_nozzle_pair, states] : printer_state_map) {
             if (printer_model_nozzle_pair.first == printer_preset.config.opt_string("printer_model")
                 && (printer_model_nozzle_pair.second.empty() 
-                    || printer_model_nozzle_pair.second == printer_preset.config.opt_string("nozzle_diamenter"))
+                    || printer_model_nozzle_pair.second == nozzle_diameter_serialized)
                 ) {
                 PrinterStatesCount states_cnt = get_printe_states_count(states);
 
@@ -913,11 +920,18 @@ static wxString get_connect_info_line(const Preset& printer_preset)
 {
     if (auto printer_state_map = wxGetApp().plater()->get_user_account()->get_printer_state_map();
         !printer_state_map.empty()) {
+        // printer_state_map has only one nozzle value. Take a first value from "nozzle_diameter" opt.
+        std::string nozzle_diameter_serialized;
+        if (printer_preset.config.has("nozzle_diameter")) {
+            nozzle_diameter_serialized = dynamic_cast<const ConfigOptionFloats*>(printer_preset.config.option("nozzle_diameter"))->serialize();
+            if (size_t comma = nozzle_diameter_serialized.find(','); comma != std::string::npos)
+                nozzle_diameter_serialized = nozzle_diameter_serialized.substr(0, comma);
+        }
 
         for (const auto& [printer_model_nozzle_pair, states] : printer_state_map) {
             if (printer_model_nozzle_pair.first == printer_preset.config.opt_string("printer_model")
                 && (printer_model_nozzle_pair.second.empty()
-                    || printer_model_nozzle_pair.second == printer_preset.config.opt_string("nozzle_diamenter"))
+                    || printer_model_nozzle_pair.second == nozzle_diameter_serialized)
                 ) {
                 PrinterStatesCount states_cnt = get_printe_states_count(states);
 
