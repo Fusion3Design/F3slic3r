@@ -296,7 +296,7 @@ bool combo(const std::string& label, const std::vector<std::string>& options, in
     return res;
 }
 
-void draw_hexagon(const ImVec2& center, float radius, ImU32 col, float start_angle)
+void draw_hexagon(const ImVec2& center, float radius, ImU32 col, float start_angle, float rounding)
 {
     if ((col & IM_COL32_A_MASK) == 0)
         return;
@@ -306,7 +306,21 @@ void draw_hexagon(const ImVec2& center, float radius, ImU32 col, float start_ang
     float a_min = start_angle;
     float a_max = start_angle + 2.f * IM_PI;
 
-    window->DrawList->PathArcTo(center, radius, a_min, a_max, 6);
+    if (rounding <= 0) {
+        window->DrawList->PathArcTo(center, radius, a_min, a_max, 6);
+    }
+    else {
+        const float a_delta = IM_PI / 4.f;
+        radius -= rounding;
+
+        for (int i = 0; i <= 6; i++) {
+            float a = a_min + ((float)i / (float)6) * (a_max - a_min);
+            if (a >= 2.f * IM_PI)
+                a -= 2.f * IM_PI;
+            ImVec2 pos = ImVec2(center.x + ImCos(a) * radius, center.y + ImSin(a) * radius);
+            window->DrawList->PathArcTo(pos, rounding, a - a_delta, a + a_delta, 5);
+        }
+    }
     window->DrawList->PathFillConvex(col);
 }
 

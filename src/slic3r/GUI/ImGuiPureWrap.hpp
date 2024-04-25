@@ -53,7 +53,7 @@ namespace ImGuiPureWrap
     // Use selection = -1 to not mark any option as selected
     bool combo(const std::string& label, const std::vector<std::string>& options, int& selection, ImGuiComboFlags flags = 0, float label_width = 0.0f, float item_width = 0.0f);
 
-    void draw_hexagon(const ImVec2& center, float radius, ImU32 col, float start_angle = 0.f);
+    void draw_hexagon(const ImVec2& center, float radius, ImU32 col, float start_angle = 0.f, float rounding = 0.f);
 
     void text(const char* label);
     void text(const std::string& label);

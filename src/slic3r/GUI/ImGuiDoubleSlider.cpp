@@ -360,11 +360,12 @@ void ImGuiControl::draw_thumb(const ImVec2& center, bool mark/* = false*/)
     const float line_width  = 1.5f * m_draw_opts.scale;
     const float radius      = m_draw_opts.thumb_radius();
     const float line_offset = 0.5f * radius;
+    const float rounding    = 1.5f * m_draw_opts.rounding();
 
     const float hexagon_angle = is_horizontal() ? 0.f : IM_PI * 0.5f;
 
-    ImGuiPureWrap::draw_hexagon(center, radius,              border_clr, hexagon_angle);
-    ImGuiPureWrap::draw_hexagon(center, radius - line_width, thumb_bg_clr,        hexagon_angle);
+    ImGuiPureWrap::draw_hexagon(center, radius,              border_clr,    hexagon_angle, rounding);
+    ImGuiPureWrap::draw_hexagon(center, radius - line_width, thumb_bg_clr,  hexagon_angle, rounding);
 
     if (mark) {
         ImGuiWindow* window = ImGui::GetCurrentWindow();
