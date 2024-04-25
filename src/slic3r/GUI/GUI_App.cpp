@@ -3735,7 +3735,7 @@ void GUI_App::search_and_select_filaments(const std::string& material, size_t ex
         if (filament.is_compatible
             && !filament.preset->is_default
             && filament.preset->is_visible
-            && !filament.preset->vendor->templates_profile
+            && (!filament.preset->vendor || !filament.preset->vendor->templates_profile)
             && filament.preset->config.has("filament_type")
             && filament.preset->config.option("filament_type")->serialize() == material
             && select_filament_preset(filament.preset, extruder_index)
@@ -3752,7 +3752,7 @@ void GUI_App::search_and_select_filaments(const std::string& material, size_t ex
     for (const auto& filament : preset_bundle->extruders_filaments[extruder_index]) {
         if (filament.is_compatible
             && !filament.preset->is_default
-            && !filament.preset->vendor->templates_profile
+            && (!filament.preset->vendor || !filament.preset->vendor->templates_profile)
             && filament.preset->config.has("filament_type")
             && filament.preset->config.option("filament_type")->serialize() == material
             && filament.preset->name.compare(0, 9, "Prusament") == 0
