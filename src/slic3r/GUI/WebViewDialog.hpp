@@ -16,7 +16,7 @@ namespace GUI {
 class WebViewPanel : public wxPanel
 {
 public:
-    WebViewPanel(wxWindow *parent, const wxString& default_url);
+    WebViewPanel(wxWindow *parent, const wxString& default_url, const std::string& loading_html = "loading");
     virtual ~WebViewPanel();
 
     void load_url(const wxString& url);
@@ -48,8 +48,6 @@ public:
     void On_enable_context_menu(wxCommandEvent& evt);
     void On_enable_dev_tools(wxCommandEvent& evt);
     void on_close(wxCloseEvent& evt);
-
-    wxTimer * m_LoginUpdateTimer{nullptr};
 
     wxString get_default_url() const { return m_default_url; }
     void set_default_url(const wxString& url) { m_default_url = url; }
@@ -85,8 +83,12 @@ protected:
     wxString m_response_js;
     wxString m_default_url;
 
+    std::string m_loading_html;
     //DECLARE_EVENT_TABLE()
-};
+
+    bool m_load_error_page { false };
+    bool m_shown { false };
+}; 
 
 class ConnectRequestHandler
 {
@@ -146,7 +148,7 @@ private:
 class WebViewDialog : public wxDialog
 {
 public:
-    WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size);
+    WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size, const std::string& loading_html = "loading");
     virtual ~WebViewDialog();
 
     virtual void on_show(wxShowEvent& evt) = 0;
@@ -156,6 +158,7 @@ public:
 
 protected:
     wxWebView* m_browser;
+    std::string m_loading_html;
 };
 
 class PrinterPickWebViewDialog : public WebViewDialog, public ConnectRequestHandler
@@ -167,6 +170,8 @@ public:
 protected:
     void on_request_update_selected_printer_action() override;
     void request_compatible_printers() override;
+    void request_compatible_printers_FFF();
+    void request_compatible_printers_SLA();
     void run_script_bridge(const wxString& script) override { run_script(script); }
 private:
     std::string& m_ret_val;

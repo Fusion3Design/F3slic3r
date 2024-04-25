@@ -84,10 +84,13 @@ boost::filesystem::path UserAccount::get_avatar_path(bool logged) const
     }
 }
 
-
-void UserAccount::enqueue_connect_printers_action()
+void UserAccount::enqueue_connect_printer_models_action()
 {
-    m_communication->enqueue_connect_printers_action();
+    m_communication->enqueue_connect_printer_models_action();
+}
+void UserAccount::enqueue_connect_status_action()
+{
+    m_communication->enqueue_connect_status_action();
 }
 void UserAccount::enqueue_avatar_action()
 {
@@ -137,7 +140,7 @@ bool UserAccount::on_user_id_success(const std::string data, std::string& out_us
         BOOST_LOG_TRIVIAL(error) << "User ID message from PrusaAuth did not contain avatar.";
     }
     // update printers list
-    enqueue_connect_printers_action();
+    enqueue_connect_printer_models_action();
     return true;
 }
 
@@ -157,13 +160,23 @@ namespace {
         for (const auto& section : tree) {
             if (section.first == param) {
                 return section.second.data();
-            } else {
-                if (std::string res = parse_tree_for_param(section.second, param); !res.empty())
-                    return res;
             }
-
+            if (std::string res = parse_tree_for_param(section.second, param); !res.empty()) {
+                return res;
+            }
         }
         return {};
+    }
+
+    void parse_tree_for_param_vector(const pt::ptree& tree, const std::string& param, std::vector<std::string>& results)
+    {
+        for (const auto& section : tree) {
+            if (section.first == param) {
+                results.emplace_back(section.second.data());
+            } else {
+                parse_tree_for_param_vector(section.second, param, results);
+            }
+        }
     }
 
     pt::ptree parse_tree_for_subtree(const pt::ptree& tree, const std::string& param)
@@ -194,51 +207,46 @@ bool UserAccount::on_connect_printers_success(const std::string& data, AppConfig
         BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
         return false;
     }
-    // fill m_printer_map with data from ptree
-    // tree string is in format {"result": [{"printer_type": "1.2.3", "states": [{"printer_state": "OFFLINE", "count": 1}, ...]}, {..}]}
-
+    // tree format: 
+    /*
+    [{
+        "printer_uuid": "972d2ce7-0967-4555-bff2-330c7fa0a4e1",
+            "printer_state" : "IDLE"
+    }, {
+        "printer_uuid": "15d160fd-c7e4-4b5a-9748-f0e531c7e0f5",
+        "printer_state" : "OFFLINE"
+    }]
+    */
     ConnectPrinterStateMap new_printer_map;
-
-    assert(ptree.front().first == "result");
-    for (const auto& printer_tree : ptree.front().second) {
-        // printer_tree is {"printer_type": "1.2.3", "states": [..]}
-        std::string name;
-        ConnectPrinterState state;
-
-        const auto type_opt = printer_tree.second.get_optional<std::string>("printer_model");
-        if (!type_opt) {
+    for (const auto& printer_tree : ptree) {
+        const auto printer_uuid = printer_tree.second.get_optional<std::string>("printer_uuid");
+        if (!printer_uuid) {
             continue;
         }
-        // printer_type is actually printer_name for now
-        name = *type_opt;
-        // printer should not appear twice
-        assert(new_printer_map.find(name) == new_printer_map.end());
-        // prepare all states on 0
-        new_printer_map[name].reserve(static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT));
-        for (size_t i = 0; i < static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT); i++) {
-            new_printer_map[name].push_back(0);
+        const auto printer_state = printer_tree.second.get_optional<std::string>("printer_state");
+        if (!printer_state) {
+            continue;
         }
+        ConnectPrinterState state;
+        if (auto pair = printer_state_table.find(*printer_state); pair != printer_state_table.end()) {
+            state = pair->second;
+        } else {
+            assert(true); // On this assert, printer_state_table needs to be updated with *state_opt and correct ConnectPrinterState
+            continue;
+        }
+        if (m_printer_uuid_map.find(*printer_uuid) == m_printer_uuid_map.end()) {
+            BOOST_LOG_TRIVIAL(error) << "Missing printer model for printer uuid: " << *printer_uuid;
+            continue;
+        }
+        std::pair<std::string, std::string> model_nozzle_pair = m_printer_uuid_map[*printer_uuid];
 
-        for (const auto& section : printer_tree.second) {
-            // section is "printer_type": "1.2.3" OR "states": [..]}
-            if (section.first == "states") {
-                for (const auto& subsection : section.second) {
-                    // subsection is {"printer_state": "OFFLINE", "count": 1}
-                    const auto state_opt = subsection.second.get_optional<std::string>("printer_state");
-                    const auto count_opt = subsection.second.get_optional<int>("count");
-                    if (!state_opt || ! count_opt) {
-                        continue;
-                    }
-                    if (auto pair = printer_state_table.find(*state_opt); pair != printer_state_table.end()) {
-                        state = pair->second;
-                    } else {
-                        assert(true); // On this assert, printer_state_table needs to be updated with *state_opt and correct ConnectPrinterState
-                        continue;
-                    }
-                    new_printer_map[name][static_cast<size_t>(state)] = *count_opt;
-                }
+        if (new_printer_map.find(model_nozzle_pair) == new_printer_map.end()) {
+            new_printer_map[model_nozzle_pair].reserve(static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT));
+            for (size_t i = 0; i < static_cast<size_t>(ConnectPrinterState::CONNECT_PRINTER_STATE_COUNT); i++) {
+                new_printer_map[model_nozzle_pair].push_back(0);
             }
         }
+        new_printer_map[model_nozzle_pair][static_cast<size_t>(state)] += 1;
     }
 
     // compare new and old printer map and update old map into new
@@ -264,24 +272,35 @@ bool UserAccount::on_connect_printers_success(const std::string& data, AppConfig
     return true;
 }
 
-std::string UserAccount::get_model_from_json(const std::string& message) const
+bool UserAccount::on_connect_uiid_map_success(const std::string& data, AppConfig* app_config, bool& out_printers_changed)
 {
-    std::string out;
+    m_printer_uuid_map.clear();
+    pt::ptree ptree;
     try {
-        std::stringstream ss(message);
-        pt::ptree ptree;
+        std::stringstream ss(data);
         pt::read_json(ss, ptree);
-
-        std::string printer_type = parse_tree_for_param(ptree, "printer_type");
-        if (auto pair = printer_type_and_name_table.find(printer_type); pair != printer_type_and_name_table.end()) {
-            out = pair->second;
-        }
-        //assert(!out.empty());
     }
     catch (const std::exception& e) {
         BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
+        return false;
     }
-    return out;
+
+    for (const auto& printer_tree : ptree) {
+        const auto printer_uuid = printer_tree.second.get_optional<std::string>("printer_uuid");
+        if (!printer_uuid) {
+            continue;
+        }
+        const auto printer_model = printer_tree.second.get_optional<std::string>("printer_model");
+        if (!printer_model) {
+            continue;
+        }
+        const auto nozzle_diameter_opt = printer_tree.second.get_optional<std::string>("nozzle_diameter");
+        const std::string nozzle_diameter = nozzle_diameter_opt ? *nozzle_diameter_opt : std::string();
+        std::pair<std::string, std::string> model_nozzle_pair = { *printer_model, nozzle_diameter };
+        m_printer_uuid_map[*printer_uuid] = model_nozzle_pair;
+    }
+    m_communication->on_uuid_map_success();
+    return on_connect_printers_success(data, app_config, out_printers_changed);
 }
 
 std::string UserAccount::get_nozzle_from_json(const std::string& message) const
@@ -297,6 +316,15 @@ std::string UserAccount::get_nozzle_from_json(const std::string& message) const
     }
     catch (const std::exception& e) {
         BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
+    }
+
+    // Get rid of trailing zeros.
+    // This is because somtimes we get "nozzle_diameter":0.40000000000000002
+    // This will return wrong result for f.e. 0.05. But we dont have such profiles right now.
+    if (size_t fist_dot = out.find('.'); fist_dot != std::string::npos) {
+        if (size_t first_zero = out.find('0', fist_dot); first_zero != std::string::npos) {
+            return out.substr(0, first_zero);
+        }
     }
     return out;
 }
@@ -318,20 +346,27 @@ std::string UserAccount::get_keyword_from_json(const std::string& json, const st
     return out;
 }
 
-void UserAccount::fill_compatible_printers_from_json(const std::string& json, std::vector<std::string>& result) const
+void UserAccount::fill_supported_printer_models_from_json(const std::string& json, std::vector<std::string>& result) const
 {
     try {
         std::stringstream ss(json);
         pt::ptree ptree;
         pt::read_json(ss, ptree);
 
-        pt::ptree out = parse_tree_for_subtree(ptree, "printer_type_compatible");
+        std::string printer_model = parse_tree_for_param(ptree, "printer_model");
+        if (!printer_model.empty()) {
+            result.emplace_back(printer_model);
+        }
+        pt::ptree out = parse_tree_for_subtree(ptree, "supported_printer_models");
         if (out.empty()) {
-            BOOST_LOG_TRIVIAL(error) << "Failed to find compatible_printer_type in printer detail.";
+            BOOST_LOG_TRIVIAL(error) << "Failed to find supported_printer_models in printer detail.";
             return;
         }
         for (const auto& sub : out) {
-            result.emplace_back(sub.second.data());
+            if (printer_model != sub.second.data()) {
+                result.emplace_back(sub.second.data());
+            }
+            
         }
     }
     catch (const std::exception& e) {
@@ -339,18 +374,78 @@ void UserAccount::fill_compatible_printers_from_json(const std::string& json, st
     }
 }
 
-
-std::string UserAccount::get_printer_type_from_name(const std::string& printer_name) const
+void UserAccount::fill_material_from_json(const std::string& json, std::vector<std::string>& result) const
 {
-    
-    for (const auto& pair : printer_type_and_name_table) {
-        if (pair.second == printer_name) {
-            return pair.first;
-        }
-    }
-    assert(true); // This assert means printer_type_and_name_table needs a update
-    return {};
-}
 
+    /* option 1: 
+    "slot": {
+			"active": 2,
+			"slots": {
+				"1": {
+					"material": "PLA",
+					"temp": 170,
+					"fan_hotend": 7689,
+					"fan_print": 0
+				},
+				"2": {
+					"material": "PLA",
+					"temp": 225,
+					"fan_hotend": 7798,
+					"fan_print": 6503
+				},
+				"3": {
+					"material": "PLA",
+					"temp": 36,
+					"fan_hotend": 6636,
+					"fan_print": 0
+				},
+				"4": {
+					"material": "PLA",
+					"temp": 35,
+					"fan_hotend": 0,
+					"fan_print": 0
+				},
+				"5": {
+					"material": "PETG",
+					"temp": 136,
+					"fan_hotend": 8132,
+					"fan_print": 0
+				}
+			}
+		}
+    */
+    /* option 2
+        "filament": {
+			"material": "PLA",
+			"bed_temperature": 60,
+			"nozzle_temperature": 210
+		}
+    */
+    // try finding "slot" subtree a use it to
+    // if not found, find "filament" subtree
+    try {
+        std::stringstream ss(json);
+        pt::ptree ptree;
+        pt::read_json(ss, ptree);
+        // find "slot" subtree
+        pt::ptree slot_subtree = parse_tree_for_subtree(ptree, "slot");
+        if (slot_subtree.empty()) {
+            // if not found, find "filament" subtree
+            pt::ptree filament_subtree = parse_tree_for_subtree(ptree, "filament");
+            if (!filament_subtree.empty()) {
+                std::string material = parse_tree_for_param(filament_subtree, "material");
+                if (!material.empty()) {
+                    result.emplace_back(std::move(material));
+                }
+            }
+            return;
+        }
+        // search "slot" subtree for all "material"s
+        parse_tree_for_param_vector(slot_subtree, "material", result);
+    }
+    catch (const std::exception& e) {
+        BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();
+    }
+}
 
 }} // namespace slic3r::GUI

@@ -371,7 +371,9 @@ public:
     void            open_web_page_localized(const std::string &http_address);
     bool            may_switch_to_SLA_preset(const wxString& caption);
     bool            run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage start_page = ConfigWizard::SP_WELCOME);
+#if 0
     void            update_login_dialog();
+#endif // 0
     void            show_desktop_integration_dialog();
     void            show_downloader_registration_dialog();
 
@@ -409,10 +411,14 @@ public:
     void            request_user_login(int online_login) {}
     void            request_user_logout() {}
     int             request_user_unbind(std::string dev_id) { return 0; }
-    void            handle_connect_request_printer_pick(std::string cmd);
+    bool            select_printer_from_connect(const std::string& cmd);
+    void            select_filament_from_connect(const std::string& cmd);
+    void            handle_connect_request_printer_pick(const std::string& cmd);
     void            show_printer_webview_tab();
     // return true if preset vas invisible and we have to installed it to make it selectable
-    bool            select_printer_from_connect(const Preset* printer_preset);
+    bool            select_printer_preset(const Preset* printer_preset);
+    bool            select_filament_preset(const Preset* filament_preset, size_t extruder_index);
+    void            search_and_select_filaments(const std::string& material, size_t extruder_index, std::string& out_message);
     void            handle_script_message(std::string msg) {}
     void            request_model_download(std::string import_json) {}
     void            download_project(std::string project_id) {}
@@ -446,8 +452,9 @@ private:
     // change to vector of items when adding more items that require update
     //wxMenuItem*    m_login_config_menu_item { nullptr };
     std::map< ConfigMenuIDs, wxMenuItem*> m_config_menu_updatable_items;
-
+#if 0
     std::unique_ptr<LoginDialog> m_login_dialog;
+#endif // 0
 };
 
 DECLARE_APP(GUI_App)

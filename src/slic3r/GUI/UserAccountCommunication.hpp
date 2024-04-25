@@ -39,7 +39,8 @@ public:
     void do_logout();
     void do_clear();
     // Trigger function starts various remote operations
-    void enqueue_connect_printers_action();
+    void enqueue_connect_status_action();
+    void enqueue_connect_printer_models_action();
     void enqueue_avatar_action(const std::string& url);
     void enqueue_test_connection();
 
@@ -59,7 +60,8 @@ public:
     std::string get_shared_session_key();
 
     void set_polling_enabled(bool enabled);
-
+    // we have map of uuids and printer_models - set polling action to lightweight STATUS action
+    void on_uuid_map_success();
 private:
     std::unique_ptr<UserAccountSession>     m_session;
     std::thread                             m_thread;

@@ -777,7 +777,7 @@ void MainFrame::remove_connect_webview_tab()
 void MainFrame::show_printer_webview_tab(DynamicPrintConfig* dpc)
 {
     // if physical printer is selected
-    if (dpc) { 
+    if (dpc && dpc->option<ConfigOptionEnum<PrintHostType>>("host_type")->value != htPrusaConnect) {
         std::string url = dpc->opt_string("print_host");
 
         if (url.find("http://") != 0 && url.find("https://") != 0) {

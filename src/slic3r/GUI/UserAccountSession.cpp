@@ -22,7 +22,8 @@ wxDEFINE_EVENT(EVT_OPEN_PRUSAAUTH, OpenPrusaAuthEvent);
 wxDEFINE_EVENT(EVT_UA_LOGGEDOUT, UserAccountSuccessEvent);
 wxDEFINE_EVENT(EVT_UA_ID_USER_SUCCESS, UserAccountSuccessEvent);
 wxDEFINE_EVENT(EVT_UA_SUCCESS, UserAccountSuccessEvent);
-wxDEFINE_EVENT(EVT_UA_PRUSACONNECT_PRINTERS_SUCCESS, UserAccountSuccessEvent);
+wxDEFINE_EVENT(EVT_UA_PRUSACONNECT_STATUS_SUCCESS, UserAccountSuccessEvent);
+wxDEFINE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_MODELS_SUCCESS, UserAccountSuccessEvent);
 wxDEFINE_EVENT(EVT_UA_AVATAR_SUCCESS, UserAccountSuccessEvent); 
 wxDEFINE_EVENT(EVT_UA_FAIL, UserAccountFailEvent);
 wxDEFINE_EVENT(EVT_UA_RESET, UserAccountFailEvent);
@@ -74,11 +75,7 @@ void UserAccountSession::process_action_queue()
         return;
     if (m_priority_action_queue.empty() && m_action_queue.empty()) {
         // update printers periodically
-        if (m_polling_enabled) {
-            enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_STATUS, nullptr, nullptr, {});
-        } else {
-            return;
-        }
+        enqueue_action(m_polling_action, nullptr, nullptr, {});
     }
     // priority queue works even when tokens are empty or broken
     while (!m_priority_action_queue.empty()) {

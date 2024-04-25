@@ -70,6 +70,10 @@ PrintHost* PrintHost::get_print_host(DynamicPrintConfig *config)
             default:          return nullptr;
         }
     } else {
+        const auto opt = config->option<ConfigOptionEnum<PrintHostType>>("host_type");
+        if (opt != nullptr && opt->value == htPrusaConnectNew) {
+            return new PrusaConnectNew(config);
+        }        
         return new SL1Host(config);
     }
 }
