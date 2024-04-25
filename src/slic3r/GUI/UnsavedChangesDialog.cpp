@@ -598,6 +598,29 @@ static std::string get_pure_opt_key(std::string opt_key)
     return opt_key;
 }    
 
+wxDataViewItem DiffModel::GetItemByName(wxString name)
+{
+    // add items
+    for (std::unique_ptr<ModelNode>& preset : m_preset_nodes) {
+        for (std::unique_ptr<ModelNode>& category : preset->GetChildren()) {
+            if (category->text().Contains(name))
+                return wxDataViewItem((void*)category.get());
+
+            for (std::unique_ptr<ModelNode>& group : category->GetChildren()) {
+                if (group->text().Contains(name))
+                    return wxDataViewItem((void*)group.get());
+
+                for (std::unique_ptr<ModelNode>& option : group->GetChildren())
+                    if (option->text().Contains(name))
+                        return wxDataViewItem((void*)option.get());
+            }
+        }
+    }
+
+    return wxDataViewItem(nullptr);
+}
+
+
 // ----------------------------------------------------------------------------
 //                  DiffViewCtrl
 // ----------------------------------------------------------------------------
@@ -742,12 +765,7 @@ void DiffViewCtrl::item_value_changed(wxDataViewEvent& event)
         return;
 
     wxDataViewItem item = event.GetItem();
-
-    model->UpdateItemEnabling(item);
-    Refresh();
-
-    // update an enabling of the "save/move" buttons
-    m_empty_selection = selected_options().empty();
+    update_item_enabling(item);
 }
 
 bool DiffViewCtrl::has_unselected_options()
@@ -757,6 +775,16 @@ bool DiffViewCtrl::has_unselected_options()
             return true;
 
     return false;
+}
+
+void DiffViewCtrl::update_item_enabling(wxDataViewItem item)
+{
+
+    model->UpdateItemEnabling(item);
+    Refresh();
+
+    // update an enabling of the "save/move" buttons
+    m_empty_selection = selected_options().empty();
 }
 
 std::vector<std::string> DiffViewCtrl::options(Preset::Type type, bool selected)
@@ -1299,6 +1327,8 @@ void UnsavedChangesDialog::update_tree(Preset::Type type, PresetCollection* pres
             m_tree->Append("extruders_count", type, _L("General"), _L("Capabilities"), local_label, old_val, mod_val, new_val, category_icon_map.at("General"));
         }
 
+        wxString custom_gcode_local_name = wxEmptyString;
+
         for (const std::string& opt_key : dirty_options) {
             const Search::Option& option = searcher.get_option(opt_key, type);
             if (option.opt_key() != opt_key) {
@@ -1308,9 +1338,22 @@ void UnsavedChangesDialog::update_tree(Preset::Type type, PresetCollection* pres
                 continue;
             }
 
+            if (custom_gcode_local_name.IsEmpty() && boost::nowide::narrow(option.category) == "Custom G-code")
+                custom_gcode_local_name = option.category_local;
+
             m_tree->Append(opt_key, type, option.category_local, option.group_local, option.label_local,
                 get_string_value(opt_key, old_config), get_string_value(opt_key, mod_config), 
                 m_tree->has_new_value_column() ? get_string_value(opt_key, new_config) : "", category_icon_map.at(option.category));
+        }
+
+        // Unselect all Custom-Gcodes
+        if (!custom_gcode_local_name.IsEmpty()) {
+            wxDataViewItem item = m_tree->model->GetItemByName(custom_gcode_local_name);
+            if (item.IsOk()) {
+                wxVariant variant = false;
+                m_tree->model->SetValue(variant, item, DiffModel::colToggle);
+                m_tree->update_item_enabling(item);
+            }
         }
     }
 

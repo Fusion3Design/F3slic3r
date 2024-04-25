@@ -175,6 +175,7 @@ public:
 
     wxDataViewItem  Delete(const wxDataViewItem& item);
     void            Clear();
+    wxDataViewItem  GetItemByName(wxString name);
 
     wxDataViewItem  GetParent(const wxDataViewItem& item) const override;
     unsigned int    GetChildren(const wxDataViewItem& parent, wxDataViewItemArray& array) const override;
@@ -241,6 +242,7 @@ public:
     bool        has_unselected_options();
     bool        has_long_strings() { return m_has_long_strings; }
     bool        has_new_value_column() { return this->GetColumnCount() == DiffModel::colMax; }
+    void        update_item_enabling(wxDataViewItem item);
 
     std::vector<std::string> options(Preset::Type type, bool selected);
     std::vector<std::string> selected_options();
