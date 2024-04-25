@@ -382,14 +382,14 @@ bool OpenGLManager::init_gl()
             // Complain about the OpenGL version.
             wxString message = format_wxstr(
 #if ENABLE_OPENGL_ES
-                _utf8(L("F3Slic3r requires OpenGL ES 2.0 capable graphics driver to run correctly, \n"
-                    "while OpenGL version %s, render %s, vendor %s was detected."))) % s_gl_info.get_version_string() % s_gl_info.get_renderer() % s_gl_info.get_vendor()).str());
+                _L("F3Slic3r requires OpenGL ES 2.0 capable graphics driver to run correctly, \n"
+                    "while OpenGL version %s, render %s, vendor %s was detected.")) % s_gl_info.get_version_string() % s_gl_info.get_renderer() % s_gl_info.get_vendor()).str());
 #elif ENABLE_GL_CORE_PROFILE
-                _utf8(L("F3Slic3r requires OpenGL %s capable graphics driver to run correctly, \n"
-                    "while OpenGL version %s, render %s, vendor %s was detected."))) % (s_gl_info.is_core_profile() ? "3.3" : "2.0") % s_gl_info.get_version_string() % s_gl_info.get_renderer() % s_gl_info.get_vendor()).str());
+                _L("F3Slic3r requires OpenGL %s capable graphics driver to run correctly, \n"
+                    "while OpenGL version %s, render %s, vendor %s was detected."), (s_gl_info.is_core_profile() ? "3.3" : "2.0") , s_gl_info.get_version_string() , s_gl_info.get_renderer() , s_gl_info.get_vendor());
 #else
-                _utf8(L("F3Slic3r requires OpenGL 2.0 capable graphics driver to run correctly, \n"
-                    "while OpenGL version %s, render %s, vendor %s was detected."))) % s_gl_info.get_version_string() % s_gl_info.get_renderer() % s_gl_info.get_vendor()).str());
+                _L("F3Slic3r requires OpenGL 2.0 capable graphics driver to run correctly, \n"
+                    "while OpenGL version %s, render %s, vendor %s was detected.")) % s_gl_info.get_version_string() % s_gl_info.get_renderer() % s_gl_info.get_vendor()).str());
 #endif // ENABLE_OPENGL_ES
             message += "\n";
           	message += _L("You may need to update your graphics card driver.");
@@ -404,8 +404,7 @@ bool OpenGLManager::init_gl()
             // load shaders
             auto [result, error] = m_shaders_manager.init();
             if (!result) {
-                wxString message = from_u8((boost::format(
-                    _utf8(L("Unable to load the following shaders:\n%s"))) % error).str());
+                wxString message = format_wxstr(_L("Unable to load the following shaders:\n%s"), error);
                 wxMessageBox(message, wxString("F3Slic3r - ") + _L("Error loading shaders"), wxOK | wxICON_ERROR);
             }
 #if ENABLE_GL_CORE_PROFILE
