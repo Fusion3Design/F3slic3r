@@ -176,8 +176,8 @@ void NotificationManager::PopNotification::render(GLCanvas3D& canvas, float init
 	ImVec2 win_pos(1.0f * (float)cnv_size.get_width() - right_gap, 1.0f * (float)cnv_size.get_height() - m_top_y);
 
 	if (wxGetApp().plater()->is_preview_shown()) {
-		if (Preview* preview = dynamic_cast<Preview*>(canvas.get_wxglcanvas()->GetParent())) {
-			win_pos.y -= 1.5f * preview->get_moves_slider_height();
+		if (Preview* preview = dynamic_cast<Preview*>(canvas.get_wxglcanvas_parent())) {
+			win_pos.y -= preview->get_moves_slider_height();
 			win_pos.x -= preview->get_layers_slider_width();
 		}
 	}

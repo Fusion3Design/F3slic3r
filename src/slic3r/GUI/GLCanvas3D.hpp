@@ -689,6 +689,8 @@ public:
     wxGLCanvas* get_wxglcanvas() { return m_canvas; }
 	const wxGLCanvas* get_wxglcanvas() const { return m_canvas; }
 
+    wxWindow* get_wxglcanvas_parent();
+
     bool init();
     void post_event(wxEvent &&event);
 

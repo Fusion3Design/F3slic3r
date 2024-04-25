@@ -169,6 +169,7 @@ private:
     void        edit_tick(int tick = -1);
     void        discard_all_thicks();
     void        process_jump_to_value();
+    bool        can_edit() const;
 
     std::string get_label(int pos) const override { return get_label(pos, ltHeightWithLayer); }
 

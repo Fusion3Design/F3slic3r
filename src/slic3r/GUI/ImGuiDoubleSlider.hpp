@@ -100,7 +100,7 @@ private:
     struct DrawOptions {
         float       scale                   { 1.f }; // used for Retina on osx
 
-        ImVec2      dummy_sz()           const { return ImVec2(24.0f, 22.0f) * scale; }
+        ImVec2      dummy_sz()           const { return ImVec2(24.0f, 16.0f) * scale; }
         ImVec2      thumb_dummy_sz()     const { return ImVec2(17.0f, 17.0f) * scale; }
         ImVec2      groove_sz()          const { return ImVec2(4.0f,   4.0f) * scale; }
         ImVec2      draggable_region_sz()const { return ImVec2(20.0f, 19.0f) * scale; }
@@ -160,7 +160,7 @@ private:
 
     void        draw_scroll_line(const ImRect& scroll_line, const ImRect& slideable_region);
     void        draw_background(const ImRect& slideable_region);
-    void        draw_label(std::string label, const ImRect& thumb);
+    void        draw_label(std::string label, const ImRect& thumb, bool is_mirrored = false, bool with_border = false);
     void        draw_thumb(const ImVec2& center, bool mark = false);
     bool        draw_slider(int* higher_pos, int* lower_pos,
                             std::string& higher_label, std::string& lower_label,

@@ -61,7 +61,10 @@ class TopBarItemsCtrl : public wxControl
 
     ::TextInput*    m_search{ nullptr };
 
+    int             m_btns_width{ 0 };
     bool            m_collapsed_btns{ false };
+
+    void            update_btns_width();
 
 public:
     TopBarItemsCtrl(wxWindow* parent,
@@ -69,7 +72,6 @@ public:
                     bool is_main = true);
     ~TopBarItemsCtrl() {}
 
-    void OnPaint(wxPaintEvent&);
     void SetSelection(int sel, bool force = false);
     void UpdateMode();
     void Rescale();
