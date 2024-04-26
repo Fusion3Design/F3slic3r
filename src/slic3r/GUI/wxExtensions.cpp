@@ -859,6 +859,14 @@ ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_p
     if (ext == ".png" || ext == ".jpg") {
         bitmap.LoadFile(path, ext == ".png" ? wxBITMAP_TYPE_PNG : wxBITMAP_TYPE_JPEG);
 
+        // set mask for circle shape
+
+        wxBitmapBundle mask_bmps = *get_bmp_bundle("user_mask", bitmap.GetSize().GetWidth());
+        wxMask* mask = new wxMask(mask_bmps.GetBitmap(bitmap.GetSize()), *wxBLACK);
+        bitmap.SetMask(mask);
+
+        // get allowed scale factors
+
         std::set<double> scales = { 1.0 };
 #ifdef __APPLE__
         scales.emplace(Slic3r::GUI::mac_max_scaling_factor());
@@ -867,6 +875,8 @@ ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_p
         for (size_t disp = 0; disp < disp_cnt; ++disp)
             scales.emplace(wxDisplay(disp).GetScaleFactor());
 #endif
+
+        // create bitmaps for bundle
 
         wxVector<wxBitmap> bmps;
         for (double scale : scales) {

@@ -135,9 +135,9 @@ void TopBarItemsCtrl::Button::render()
         pt.x = text.IsEmpty() ? ((rc.width - szIcon.x) / 2) : em;
         pt.y = (rc.height - szIcon.y) / 2;
 #ifdef __WXGTK3__
-        dc.DrawBitmap(m_bmp_bundle.GetBitmap(szIcon), pt);
+        dc.DrawBitmap(m_bmp_bundle.GetBitmap(szIcon), pt, true);
 #else
-        dc.DrawBitmap(m_bmp_bundle.GetBitmapFor(this), pt);
+        dc.DrawBitmap(m_bmp_bundle.GetBitmapFor(this), pt, true);
 #endif
         pt.x += szIcon.x;
     }
@@ -225,6 +225,7 @@ void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
     auto user_account = wxGetApp().plater()->get_user_account();
     const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymous");   
     m_account_btn->SetLabel(m_collapsed_btns ? "" : user_name);
+    m_account_btn->SetToolTip(user_name);
     const int icon_sz = 24;
 #ifdef __linux__
     if (avatar) {
