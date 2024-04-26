@@ -170,7 +170,7 @@ TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const wxStri
     :TopBarItemsCtrl::Button(parent, label, icon_name, 24, size)
 {
     if (size != wxDefaultSize)
-        m_fixed_width = size.x;
+        m_fixed_width = size.x * 0.1;
     this->SetLabel(label);
 }
 
@@ -193,7 +193,7 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
     const int label_width   = GetTextExtent(text).GetWidth();
     bool resize_and_layout{ false };
     if (m_fixed_width != wxDefaultCoord) {
-        const int text_width    = m_fixed_width - 2 * btn_height;
+        const int text_width = m_fixed_width * em_unit(this) - 2 * btn_height;
         if (label_width > text_width || GetMinSize().GetWidth() <= btn_height) {
             wxWindowDC wdc(this);
             text = wxControl::Ellipsize(text, wdc, wxELLIPSIZE_END, text_width);
@@ -215,7 +215,7 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
 #endif
     ScalableButton::SetLabel(full_label);
     if (resize_and_layout) {
-        SetMinSize(wxSize(m_fixed_width, btn_height));
+        SetMinSize(wxSize(m_fixed_width * em_unit(this), btn_height));
         GetParent()->Layout();
     }
 }
@@ -225,11 +225,12 @@ void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
     auto user_account = wxGetApp().plater()->get_user_account();
     const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymous");   
     m_account_btn->SetLabel(m_collapsed_btns ? "" : user_name);
+    const int icon_sz = 24;
 #ifdef __linux__
     if (avatar) {
         if (user_account->is_logged()) {
             boost::filesystem::path path = user_account->get_avatar_path(true);
-            ScalableBitmap new_logo(this, path, m_account_btn->GetBitmapSize());
+            ScalableBitmap new_logo(this, path, wxSize(icon_sz, icon_sz));
             if (new_logo.IsOk())
                 m_account_btn->SetBitmap_(new_logo);
             else
@@ -243,14 +244,14 @@ void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
     if (avatar) {
         if (user_account->is_logged()) {
             boost::filesystem::path path = user_account->get_avatar_path(true);
-            ScalableBitmap new_logo(this, path, m_account_btn->GetBitmapSize());
+            ScalableBitmap new_logo(this, path, wxSize(icon_sz, icon_sz));
             if (new_logo.IsOk())
                 m_account_btn->SetBitmapBundle(new_logo.bmp());
             else
-                m_account_btn->SetBitmapBundle(*get_bmp_bundle("user", 24));
+                m_account_btn->SetBitmapBundle(*get_bmp_bundle("user", icon_sz));
         }
         else {
-            m_account_btn->SetBitmapBundle(*get_bmp_bundle("user", 24));
+            m_account_btn->SetBitmapBundle(*get_bmp_bundle("user", icon_sz));
         }
     }
 #endif
@@ -365,7 +366,6 @@ void TopBarItemsCtrl::update_margins()
 {
     int em = em_unit(this);
     m_btn_margin  = std::lround(0.9 * em);
-    m_line_margin = std::lround(0.1 * em);
 }
 
 wxPoint TopBarItemsCtrl::ButtonWithPopup::get_popup_pos()
@@ -478,7 +478,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
         m_menus->Popup(this, &m_menus->workspaces, m_workspace_btn->get_popup_pos());
     });
 
-    m_account_btn = new ButtonWithPopup(this, _L("Anonymous"), "user", wxSize(18 * em_unit(this), -1));
+    m_account_btn = new ButtonWithPopup(this, _L("Anonymous"), "user", wxSize(180, -1));
     right_sizer->Add(m_account_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT, m_btn_margin);
     
     m_account_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
@@ -528,6 +528,9 @@ void TopBarItemsCtrl::Rescale()
 
     m_buttons_sizer->SetVGap(m_btn_margin);
     m_buttons_sizer->SetHGap(m_btn_margin);
+
+    // call Layout before update buttons width to process recaling of the buttons
+    m_sizer->Layout();
 
     update_btns_width();
     UpdateSearchSizeAndPosition();

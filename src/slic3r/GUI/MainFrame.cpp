@@ -404,7 +404,7 @@ void MainFrame::update_layout()
     {
         m_plater->Reparent(m_tabpanel);
         m_plater->Layout();
-        m_tabpanel->InsertNewPage(0, m_plater, _L("Plater"), std::string("plater"), true);
+//        m_tabpanel->InsertNewPage(0, m_plater, _L("Plater"), std::string("plater"), true);
 
         m_main_sizer->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 1);
         m_plater->Show();
@@ -475,6 +475,9 @@ void MainFrame::update_layout()
         }
     }
 #endif //__WXMSW__
+
+    if (m_layout == ESettingsLayout::Old)
+        m_tabpanel->InsertNewPage(0, m_plater, _L("Plater"), "", true);
     
     Layout();
     Thaw();
@@ -1050,7 +1053,8 @@ void MainFrame::on_dpi_changed(const wxRect& suggested_rect)
     this->SetFont(this->normal_font());
 
 #ifdef _WIN32
-    // update common mode sizer
+    if (m_tmp_top_bar->IsShown())
+        m_tmp_top_bar->Rescale();
     m_tabpanel->Rescale();
 #endif
 
@@ -1061,6 +1065,10 @@ void MainFrame::on_dpi_changed(const wxRect& suggested_rect)
     if (m_layout != ESettingsLayout::Dlg) // Do not update tabs if the Settings are in the separated dialog
         for (auto tab : wxGetApp().tabs_list)
             tab->msw_rescale();
+
+    wxGetApp().searcher().dlg_msw_rescale();
+
+    return; // #ysFIXME - delete_after_testing - It looks like next code is no need any more
 
     // Workarounds for correct Window rendering after rescale
 
@@ -1082,8 +1090,6 @@ void MainFrame::on_dpi_changed(const wxRect& suggested_rect)
     this->SetSize(sz);
 
     this->Maximize(is_maximized);
-
-    wxGetApp().searcher().dlg_msw_rescale();
 }
 
 void MainFrame::on_sys_color_changed()
@@ -2242,8 +2248,9 @@ void SettingsDialog::on_dpi_changed(const wxRect& suggested_rect)
     if (wxGetApp().is_gcode_viewer())
         return;
 
-    const int& em = em_unit();
-    const wxSize& size = wxSize(85 * em, 50 * em);
+// #ysFIXME - delete_after_testing
+//    const int& em = em_unit();
+//    const wxSize& size = wxSize(85 * em, 50 * em);
 
 #ifdef _WIN32
     m_tabpanel->Rescale();
@@ -2253,9 +2260,10 @@ void SettingsDialog::on_dpi_changed(const wxRect& suggested_rect)
     for (auto tab : wxGetApp().tabs_list)
         tab->msw_rescale();
 
-    SetMinSize(size);
-    Fit();
-    Refresh();
+// #ysFIXME - delete_after_testing
+//    SetMinSize(size);
+//    Fit();
+//    Refresh();
 }
 
 
