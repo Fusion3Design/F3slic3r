@@ -855,15 +855,26 @@ ScalableBitmap::ScalableBitmap(wxWindow* parent, boost::filesystem::path& icon_p
     wxString path = Slic3r::GUI::from_u8(icon_path.string());
     wxBitmap bitmap;
     const std::string ext = icon_path.extension().string();
-    if (ext == ".png") {
-        bitmap.LoadFile(path, wxBITMAP_TYPE_PNG);
-        wxBitmap::Rescale(bitmap, icon_size);
-        m_bmp = wxBitmapBundle(bitmap);
-    }
-    else if (ext == ".jpg") {
-        bitmap.LoadFile(path, wxBITMAP_TYPE_JPEG);
-        wxBitmap::Rescale(bitmap, icon_size);
-        m_bmp = wxBitmapBundle(bitmap);
+
+    if (ext == ".png" || ext == ".jpg") {
+        bitmap.LoadFile(path, ext == ".png" ? wxBITMAP_TYPE_PNG : wxBITMAP_TYPE_JPEG);
+
+        std::set<double> scales = { 1.0 };
+#ifdef __APPLE__
+        scales.emplace(Slic3r::GUI::mac_max_scaling_factor());
+#elif _WIN32
+        size_t disp_cnt = wxDisplay::GetCount();
+        for (size_t disp = 0; disp < disp_cnt; ++disp)
+            scales.emplace(wxDisplay(disp).GetScaleFactor());
+#endif
+
+        wxVector<wxBitmap> bmps;
+        for (double scale : scales) {
+            wxBitmap bmp = bitmap;
+            wxBitmap::Rescale(bmp, icon_size * scale);
+            bmps.push_back(bmp);
+        }
+        m_bmp = wxBitmapBundle::FromBitmaps(bmps);
     }
     else if (ext == ".svg") {
         m_bmp = wxBitmapBundle::FromSVGFile(path, icon_size);
