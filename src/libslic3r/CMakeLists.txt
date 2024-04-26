@@ -177,6 +177,24 @@ set(SLIC3R_SOURCES
     GCode/SpiralVase.hpp
     GCode/SeamPlacer.cpp
     GCode/SeamPlacer.hpp
+    GCode/SeamChoice.cpp
+    GCode/SeamChoice.hpp
+    GCode/SeamPerimeters.cpp
+    GCode/SeamPerimeters.hpp
+    GCode/SeamShells.cpp
+    GCode/SeamShells.hpp
+    GCode/SeamGeometry.cpp
+    GCode/SeamGeometry.hpp
+    GCode/SeamAligned.cpp
+    GCode/SeamAligned.hpp
+    GCode/SeamRear.cpp
+    GCode/SeamRear.hpp
+    GCode/SeamRandom.cpp
+    GCode/SeamRandom.hpp
+    GCode/SeamPainting.cpp
+    GCode/SeamPainting.hpp
+    GCode/ModelVisibility.cpp
+    GCode/ModelVisibility.hpp
     GCode/SmoothPath.cpp
     GCode/SmoothPath.hpp
     GCode/ToolOrdering.cpp
