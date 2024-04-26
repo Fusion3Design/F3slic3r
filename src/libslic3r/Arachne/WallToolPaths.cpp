@@ -13,6 +13,7 @@
 #include "utils/PolylineStitcher.hpp"
 #include "SVG.hpp"
 #include "Utils.hpp"
+#include "ClipperUtils.hpp"
 
 #include <boost/log/trivial.hpp>
 

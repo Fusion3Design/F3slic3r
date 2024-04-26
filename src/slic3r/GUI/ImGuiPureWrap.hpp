@@ -10,6 +10,7 @@
 #include <string_view>
 #include <vector>
 #include <optional>
+#include <functional>
 
 #include <imgui/imgui.h>
 

@@ -1,3 +1,4 @@
+#include <stack>
 #include "PerimeterOrder.hpp"
 
 namespace Slic3r::Arachne::PerimeterOrder {
