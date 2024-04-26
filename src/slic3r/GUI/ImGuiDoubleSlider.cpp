@@ -414,12 +414,12 @@ void ImGuiControl::check_and_correct_thumbs(int* higher_pos, int* lower_pos)
     if (is_horizontal()) {
         if (lower_thumb_center_pos + thumb_radius > higher_thumb_center_pos) { 
             if (m_selection == ssHigher) {
-                m_regions.lower_thumb = m_regions.higher_thumb;
+                m_regions.higher_thumb = m_regions.lower_thumb;
                 m_regions.higher_thumb.TranslateX(thumb_radius);
                 *lower_pos = *higher_pos;
             }
             else {
-                m_regions.higher_thumb = m_regions.lower_thumb;
+                m_regions.lower_thumb = m_regions.higher_thumb;
                 m_regions.lower_thumb.TranslateX(-thumb_radius);
                 *higher_pos = *lower_pos;
             }
@@ -434,7 +434,7 @@ void ImGuiControl::check_and_correct_thumbs(int* higher_pos, int* lower_pos)
             }        
             else {
                 m_regions.higher_thumb = m_regions.lower_thumb;
-                m_regions.lower_thumb.TranslateY(-thumb_radius);
+                m_regions.higher_thumb.TranslateY(-thumb_radius);
                 *higher_pos = *lower_pos;
             }
         }
