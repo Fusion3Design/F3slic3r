@@ -685,6 +685,12 @@ std::string SLAPrint::validate(std::vector<std::string>*) const
         }
     }
 
+    if (!m_material_config.use_tilt.get_at(0) && m_material_config.tower_hop_height_nm.get_at(0) == 0
+        || !m_material_config.use_tilt.get_at(1) && m_material_config.tower_hop_height_nm.get_at(1) == 0)
+        return _u8L("Disabling the 'Use tilt' function causes the object to separate away from the film in the "
+                    "vertical direction only. Therefore, it is necessary to set the 'Tower hop height' parameter "
+                    " to a reasonable minimum value.");
+
     return "";
 }
 
