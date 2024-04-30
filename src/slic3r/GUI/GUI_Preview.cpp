@@ -10,9 +10,7 @@
 #include "GUI_Preview.hpp"
 #include "GUI_App.hpp"
 #include "GUI.hpp"
-#if ENABLE_OPENGL_AUTO_AA_SAMPLES
 #include "GUI_Init.hpp"
-#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 #include "I18N.hpp"
 #include "3DScene.hpp"
 #include "BackgroundSlicingProcess.hpp"
@@ -68,12 +66,8 @@ bool View3D::init(wxWindow* parent, Bed3D& bed, Model* model, DynamicPrintConfig
     if (!Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 /* disable wxTAB_TRAVERSAL */))
         return false;
 
-#if ENABLE_OPENGL_AUTO_AA_SAMPLES
     const GUI_InitParams* const init_params = wxGetApp().init_params;
     m_canvas_widget = OpenGLManager::create_wxglcanvas(*this, (init_params != nullptr) ? init_params->opengl_aa : false);
-#else
-    m_canvas_widget = OpenGLManager::create_wxglcanvas(*this);
-#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
     if (m_canvas_widget == nullptr)
         return false;
 
@@ -217,12 +211,8 @@ bool Preview::init(wxWindow* parent, Bed3D& bed, Model* model)
     SetBackgroundColour(GetParent()->GetBackgroundColour());
 #endif // _WIN32 
 
-#if ENABLE_OPENGL_AUTO_AA_SAMPLES
     const GUI_InitParams* const init_params = wxGetApp().init_params;
     m_canvas_widget = OpenGLManager::create_wxglcanvas(*this, (init_params != nullptr) ? init_params->opengl_aa : false);
-#else
-    m_canvas_widget = OpenGLManager::create_wxglcanvas(*this);
-#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
     if (m_canvas_widget == nullptr)
         return false;
 

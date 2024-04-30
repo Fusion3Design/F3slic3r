@@ -47,9 +47,6 @@
 // Enable smoothing of objects normals
 #define ENABLE_SMOOTH_NORMALS 0
 
-// Enable automatic detection of highest number of samples supported for OpenGL antialising
-#define ENABLE_OPENGL_AUTO_AA_SAMPLES 1
-
 // Enable imgui dialog which allows to set the parameters used to export binarized gcode
 #define ENABLE_BINARIZED_GCODE_DEBUG_WINDOW 0
 

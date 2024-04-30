@@ -131,10 +131,8 @@ void OpenGLManager::GLInfo::detect() const
     if (!GLEW_ARB_compatibility)
         *const_cast<bool*>(&m_core_profile) = true;
 
-#if ENABLE_OPENGL_AUTO_AA_SAMPLES
     int* samples = const_cast<int*>(&m_samples);
     glsafe(::glGetIntegerv(GL_SAMPLES, samples));
-#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 
     *const_cast<bool*>(&m_detected) = true;
 }
@@ -214,9 +212,7 @@ std::string OpenGLManager::GLInfo::to_string(bool for_github) const
     out << b_start << "Renderer:     " << b_end << m_renderer << line_end;
     out << b_start << "GLSL version: " << b_end << m_glsl_version << line_end;
     out << b_start << "Textures compression:       " << b_end << (are_compressed_textures_supported() ? "Enabled" : "Disabled") << line_end;
-#if ENABLE_OPENGL_AUTO_AA_SAMPLES
     out << b_start << "Mutisampling: " << b_end << (can_multisample() ? "Enabled (" + std::to_string(m_samples) + " samples)" : "Disabled") << line_end;
-#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 
     {
 #if SLIC3R_OPENGL_ES
@@ -534,14 +530,9 @@ wxGLContext* OpenGLManager::init_glcontext(wxGLCanvas& canvas, const std::pair<i
     return m_context;
 }
 
-#if ENABLE_OPENGL_AUTO_AA_SAMPLES
 wxGLCanvas* OpenGLManager::create_wxglcanvas(wxWindow& parent, bool enable_auto_aa_samples)
-#else
-wxGLCanvas* OpenGLManager::create_wxglcanvas(wxWindow& parent)
-#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 {
     wxGLAttributes attribList;
-#if ENABLE_OPENGL_AUTO_AA_SAMPLES
     s_multisample = EMultisampleState::Disabled;
     // Disable multi-sampling on ChromeOS, as the OpenGL virtualization swaps Red/Blue channels with multi-sampling enabled,
     // at least on some platforms.
@@ -555,23 +546,12 @@ wxGLCanvas* OpenGLManager::create_wxglcanvas(wxWindow& parent)
             }
         }
     }
-#else
-    attribList.PlatformDefaults().RGBA().DoubleBuffer().MinRGBA(8, 8, 8, 8).Depth(24).SampleBuffers(1).Samplers(4).EndList();
-#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 #ifdef __APPLE__
     // on MAC the method RGBA() has no effect
     attribList.SetNeedsARB(true);
 #endif // __APPLE__
 
-#if ENABLE_OPENGL_AUTO_AA_SAMPLES
-    if (s_multisample != EMultisampleState::Enabled)
-#else
-    if (s_multisample == EMultisampleState::Unknown)
-        detect_multisample(attribList);
-
-    if (!can_multisample())
-#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
-    {
+    if (s_multisample != EMultisampleState::Enabled) {
         attribList.Reset();
         attribList.PlatformDefaults().RGBA().DoubleBuffer().MinRGBA(8, 8, 8, 8).Depth(24).EndList();
 #ifdef __APPLE__
@@ -582,23 +562,6 @@ wxGLCanvas* OpenGLManager::create_wxglcanvas(wxWindow& parent)
 
     return new wxGLCanvas(&parent, attribList, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS);
 }
-
-#if !ENABLE_OPENGL_AUTO_AA_SAMPLES
-void OpenGLManager::detect_multisample(const wxGLAttributes& attribList)
-{
-    int wxVersion = wxMAJOR_VERSION * 10000 + wxMINOR_VERSION * 100 + wxRELEASE_NUMBER;
-    bool enable_multisample = wxVersion >= 30003;
-    s_multisample =
-        enable_multisample &&
-        // Disable multi-sampling on ChromeOS, as the OpenGL virtualization swaps Red/Blue channels with multi-sampling enabled,
-        // at least on some platforms.
-        platform_flavor() != PlatformFlavor::LinuxOnChromium &&
-        wxGLCanvas::IsDisplaySupported(attribList)
-        ? EMultisampleState::Enabled : EMultisampleState::Disabled;
-    // Alternative method: it was working on previous version of wxWidgets but not with the latest, at least on Windows
-    // s_multisample = enable_multisample && wxGLCanvas::IsExtensionSupported("WGL_ARB_multisample");
-}
-#endif // !ENABLE_OPENGL_AUTO_AA_SAMPLES
 
 } // namespace GUI
 } // namespace Slic3r

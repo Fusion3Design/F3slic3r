@@ -38,9 +38,7 @@ struct GUI_InitParams
 		bool                        opengl_debug;
 		bool                        opengl_compatibiity_profile;
 #endif // !SLIC3R_OPENGL_ES
-#if ENABLE_OPENGL_AUTO_AA_SAMPLES
 		bool                        opengl_aa;
-#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 };
 
 int GUI_Run(GUI_InitParams &params);

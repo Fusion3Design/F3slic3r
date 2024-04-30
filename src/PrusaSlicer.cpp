@@ -182,7 +182,6 @@ int CLI::run(int argc, char **argv)
 
 #ifdef SLIC3R_GUI
     std::vector<std::string>::iterator it;
-#if ENABLE_OPENGL_AUTO_AA_SAMPLES
     bool opengl_aa = false;
     it = std::find(m_actions.begin(), m_actions.end(), "opengl-aa");
     if (it != m_actions.end()) {
@@ -190,7 +189,6 @@ int CLI::run(int argc, char **argv)
         opengl_aa = true;
         m_actions.erase(it);
     }
-#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 #if SLIC3R_OPENGL_ES
     // are we starting as gcodeviewer ?
     for (auto it = m_actions.begin(); it != m_actions.end(); ++it) {
@@ -252,11 +250,7 @@ int CLI::run(int argc, char **argv)
 #endif // SLIC3R_OPENGL_ES
 #else // SLIC3R_GUI
     // If there is no GUI, we shall ignore the parameters. Remove them from the list.
-#if ENABLE_OPENGL_AUTO_AA_SAMPLES
     for (const std::string& s : { "opengl-version", "opengl-compatibility", "opengl-debug", "opengl-aa", "gcodeviewer" }) {
-#else
-    for (const std::string& s : { "opengl-version", "opengl-compatibility", "opengl-debug", "gcodeviewer" }) {
-#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
         auto it = std::find(m_actions.cbegin(), m_actions.cend(), s);
         if (it != m_actions.end()) {
             boost::nowide::cerr << "Parameter '" << s << "' is ignored, this PrusaSlicer build is CLI only." << std::endl;
@@ -757,9 +751,7 @@ int CLI::run(int argc, char **argv)
         params.start_downloader = start_downloader;
         params.download_url = download_url;
         params.delete_after_load = delete_after_load;
-#if ENABLE_OPENGL_AUTO_AA_SAMPLES
         params.opengl_aa = opengl_aa;
-#endif // ENABLE_OPENGL_AUTO_AA_SAMPLES
 #if !SLIC3R_OPENGL_ES
         params.opengl_version = opengl_version;
         params.opengl_debug = opengl_debug;
