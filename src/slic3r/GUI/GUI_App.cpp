@@ -13,6 +13,7 @@
 #include "GUI_ObjectManipulation.hpp"
 #include "GUI_Factories.hpp"
 #include "TopBar.hpp"
+#include "UpdatesUIManager.hpp"
 #include "format.hpp"
 
 // Localization headers: include libslic3r version first so everything in this file
@@ -2499,6 +2500,7 @@ wxMenu* GUI_App::get_config_menu()
         local_menu->Append(config_id_base + ConfigMenuWizard, config_wizard_name + dots, config_wizard_tooltip);
         local_menu->Append(config_id_base + ConfigMenuSnapshots, _L("&Configuration Snapshots") + dots, _L("Inspect / activate configuration snapshots"));
         local_menu->Append(config_id_base + ConfigMenuTakeSnapshot, _L("Take Configuration &Snapshot"), _L("Capture a configuration snapshot"));
+        local_menu->Append(config_id_base + ConfigMenuManageUpdateConf, _L("Manage Configuration Updates"), _L("Manage Configuration Updates"));
         local_menu->Append(config_id_base + ConfigMenuUpdateConf, _L("Check for Configuration Updates"), _L("Check for configuration updates"));
         local_menu->Append(config_id_base + ConfigMenuUpdateApp, _L("Check for Application Updates"), _L("Check for new version of application"));
 #if defined(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION) 
@@ -2530,6 +2532,9 @@ wxMenu* GUI_App::get_config_menu()
         case ConfigMenuWizard:
             run_wizard(ConfigWizard::RR_USER);
             break;
+		case ConfigMenuManageUpdateConf:
+			manage_updates();
+			break;
 		case ConfigMenuUpdateConf:
 			check_updates(true);
 			break;
@@ -3385,6 +3390,12 @@ bool GUI_App::config_wizard_startup()
     }
 #endif
     return false;
+}
+
+void GUI_App::manage_updates()
+{
+    ManageUpdatesDialog dlg(plater()->get_preset_archive_database());
+    dlg.ShowModal();
 }
 
 bool GUI_App::check_updates(const bool verbose)

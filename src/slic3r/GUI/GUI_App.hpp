@@ -96,6 +96,7 @@ enum ConfigMenuIDs {
     ConfigMenuWizard,
     ConfigMenuSnapshots,
     ConfigMenuTakeSnapshot,
+    ConfigMenuManageUpdateConf,
     ConfigMenuUpdateConf,
     ConfigMenuUpdateApp,
     ConfigMenuDesktopIntegration,
@@ -441,6 +442,7 @@ private:
     bool            select_language();
 
     bool            config_wizard_startup();
+    void            manage_updates();
     // Returns true if the configuration is fine. 
     // Returns true if the configuration is not compatible and the user decided to rather close the slicer instead of reconfiguring.
 	bool            check_updates(const bool verbose);
