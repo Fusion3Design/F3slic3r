@@ -753,8 +753,6 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     q->Layout();
 
     set_current_panel(wxGetApp().is_editor() ? static_cast<wxPanel*>(view3D) : static_cast<wxPanel*>(preview));
-    if (wxGetApp().is_gcode_viewer())
-        preview->hide_layers_slider();
 
     // updates camera type from .ini file
     camera.enable_update_config_on_type_change(true);

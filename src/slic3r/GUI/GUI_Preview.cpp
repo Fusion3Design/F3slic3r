@@ -534,6 +534,10 @@ void Preview::create_sliders()
     // m_canvas_widget
     m_canvas_widget->Bind(wxEVT_KEY_DOWN,                    &Preview::update_sliders_from_canvas, this);
     m_canvas_widget->Bind(EVT_GLCANVAS_SLIDERS_MANIPULATION, &Preview::update_sliders_from_canvas, this);
+
+    // Hide sliders from the very begibing. Visibility will be set later
+    m_layers_slider->Hide();
+    m_moves_slider->Hide();
 }
 
 // Find an index of a value in a sorted vector, which is in <z-eps, z+eps>.
