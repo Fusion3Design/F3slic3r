@@ -56,6 +56,7 @@ public:
 	virtual bool get_file(const std::string& source_subpath, const boost::filesystem::path& target_path, const std::string& repository_id) const = 0;
 	// Gets file without id check - for not yet encountered vendors only!
 	virtual bool get_ini_no_id(const std::string& source_subpath, const boost::filesystem::path& target_path) const = 0;
+	const RepositoryManifest& get_manifest() const { return m_data; }
 protected:
 	RepositoryManifest m_data;
 };
@@ -110,10 +111,15 @@ public:
 	void set_token(const std::string token) { m_token = token; }
 	void set_local_archives(AppConfig* app_config);
 	void set_archives(const std::string& json_body);
+	const std::vector<std::string>& get_used_archives() const { return m_used_archive_ids; }
+	void set_used_archives(const std::vector<std::string>& used_ids);
+	void add_local_archive(const boost::filesystem::path path);
+	void remove_local_archive(const std::string& id);
 private:
 	wxEvtHandler*               p_evt_handler;
 	boost::filesystem::path	    m_unq_tmp_path;
 	ArchiveRepositoryVector		m_archives;
+	std::vector<std::string>    m_used_archive_ids;
 	std::vector<std::string>	m_local_archive_adresses;
 	std::string					m_token;
 };

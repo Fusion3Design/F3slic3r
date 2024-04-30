@@ -320,6 +320,17 @@ PresetArchiveDatabase::PresetArchiveDatabase(AppConfig* app_config, wxEvtHandler
 	set_local_archives(app_config);
 }
 
+void PresetArchiveDatabase::set_used_archives(const std::vector<std::string>& used_ids)
+{
+	m_used_archive_ids = used_ids;
+}
+void PresetArchiveDatabase::add_local_archive(const boost::filesystem::path path)
+{
+}
+void PresetArchiveDatabase::remove_local_archive(const std::string& id)
+{
+}
+
 void PresetArchiveDatabase::set_archives(const std::string& json_body)
 {
 	m_archives.clear();
@@ -350,30 +361,21 @@ void PresetArchiveDatabase::set_archives(const std::string& json_body)
 			m_archives.emplace_back(std::make_unique<LocalArchiveRepository>(std::move(header_data)));
 		}	
 	}
+	m_used_archive_ids.clear();
+	m_used_archive_ids.reserve(m_archives.size());
+	for (const auto& archive : m_archives) {
+		m_used_archive_ids.emplace_back(archive->get_manifest().id);
+	}
 }
 
 void PresetArchiveDatabase::set_local_archives(AppConfig* app_config)
 {
 	m_local_archive_adresses.clear();
 	std::string opt = app_config->get("local_archives");
-	std::vector<std::string> options;
 	deserialize_string(opt, m_local_archive_adresses);
 }
 
-// test_json is only for testing
 namespace {
-std::string test_json(bool secret)
-{
-	std::string test = "["
-		"{\"name\": \"Prusa Research\", \"id\": \"PrusaResearch\", \"url\": \"https://github.com/kocikdav/PrusaSlicer-settings/raw/master/archive_repos/PrusaResearch\", \"description\": \"Prusa Research\", \"visibility\":\"\"}, "
-		"{\"name\": \"Other Vendors\", \"id\": \"OtherVendors\", \"url\": \"https://github.com/kocikdav/PrusaSlicer-settings/raw/master/archive_repos/OtherVendors\",\"description\": \"Other Vendors\", \"visibility\":\"\"} ";
-	//if (secret) {
-	//	test += ", {\"name\": \"Davit\", \"id\": \"Davit\", \"archive_url\": \"https://github.com/kocikdav/PrusaSlicer-settings/raw/master/other_source\", \"secret\": true}";
-	//}
-	test += "]";
-	return std::move(test);
-}
-
 bool sync_inner(std::string& manifest)
 {
 	bool ret = false;
