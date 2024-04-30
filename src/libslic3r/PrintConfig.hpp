@@ -790,7 +790,6 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloat,               parking_pos_retraction))
     ((ConfigOptionBool,                remaining_times))
     ((ConfigOptionBool,                silent_mode))
-    ((ConfigOptionBool,                heated_chamber))
     ((ConfigOptionFloat,               extra_loading_move))
     ((ConfigOptionFloat,               multimaterial_purging))
     ((ConfigOptionString,              color_change_gcode))

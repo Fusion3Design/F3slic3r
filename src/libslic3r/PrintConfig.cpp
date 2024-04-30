@@ -499,7 +499,8 @@ void PrintConfigDef::init_fff_params()
     def = this->add("chamber_temperature", coInts);
     def->label = L("Nominal");
     def->full_label = L("Chamber temperature");
-    def->tooltip = L("Required chamber temperature for the print. Only used when heated chamber is supported by the printer.");
+    def->tooltip = L("Required chamber temperature for the print.\nWhen set to zero, "
+                     "the nominal chamber temperature is not set in the G-code.");
     def->sidetext = L("°C");
     def->min = 0;
     def->max = 1000;
@@ -509,8 +510,9 @@ void PrintConfigDef::init_fff_params()
     def = this->add("chamber_minimal_temperature", coInts);
     def->label = L("Minimal");
     def->full_label = L("Chamber minimal temperature");
-    def->tooltip = L("Minimal chamber temperature that the printer should wait for before the print starts. This allows "
-                     "to start the print before the nominal chamber temperature is reached.");
+    def->tooltip = L("Minimal chamber temperature that the printer waits for before the print starts. This allows "
+                     "to start the print before the nominal chamber temperature is reached.\nWhen set to zero, "
+                     "the minimal chamber temperature is not set in the G-code.");
     def->sidetext = L("°C");
     def->min = 0;
     def->max = 1000;
@@ -1856,15 +1858,6 @@ void PrintConfigDef::init_fff_params()
     def->height = 5;
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionString(""));
-
-    def = this->add("heated_chamber", coBool);
-    def->label = L("Supports heated chamber");
-    def->tooltip = L("When enabled, G-codes to heat up the chamber will be emitted before and after the Start G-code (unless they are "
-                     "explicitely used in the Start G-code).\n\nThe temperature can be configured in Filament Settings, "
-                     "temperature for the first printing filament will be used. The chamber heating is not turned off "
-                     "at the end, the user is supposed to do it in custom End G-code when they want it.");
-    def->mode = comExpert;
-    def->set_default_value(new ConfigOptionBool(false));
 
     def = this->add("remaining_times", coBool);
     def->label = L("Supports remaining times");

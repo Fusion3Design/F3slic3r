@@ -1899,7 +1899,7 @@ void GCodeGenerator::_print_first_layer_bed_temperature(GCodeOutputStream &file,
 // M191 - Set chamber Temperature and Wait
 void GCodeGenerator::_print_first_layer_chamber_temperature(GCodeOutputStream &file, const Print &print, const std::string &gcode, int temp, bool wait, bool accurate)
 {
-    if (! print.config().heated_chamber)
+    if (temp == 0)
         return;
     bool autoemit = print.config().autoemit_temperature_commands;
     // Is the bed temperature set by the provided custom G-code?
