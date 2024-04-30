@@ -1491,9 +1491,9 @@ void DiffPresetDialog::create_presets_sizer()
             sizer->Add(cb, 1);
             cb->Show(new_type == Preset::TYPE_PRINTER);
         };
-        add_preset_combobox(&presets_left, m_preset_bundle_left.get());
+        add_preset_combobox(&presets_left, &m_preset_bundle_left);
         sizer->Add(equal_bmp, 0, wxRIGHT | wxLEFT | wxALIGN_CENTER_VERTICAL, 5);
-        add_preset_combobox(&presets_right, m_preset_bundle_right.get());
+        add_preset_combobox(&presets_right, &m_preset_bundle_right);
         m_presets_sizer->Add(sizer, 1, wxTOP, 5);
         equal_bmp->Show(new_type == Preset::TYPE_PRINTER);
 
@@ -1503,7 +1503,7 @@ void DiffPresetDialog::create_presets_sizer()
             std::string preset_name = get_selection(presets_left);
             presets_right->update(preset_name); 
             if (m_view_type == Preset::TYPE_INVALID)
-                update_compatibility(preset_name, presets_right->get_type(), m_preset_bundle_right.get());
+                update_compatibility(preset_name, presets_right->get_type(), &m_preset_bundle_right);
             update_tree();
         });
     }
@@ -1669,8 +1669,8 @@ DiffPresetDialog::DiffPresetDialog(MainFrame* mainframe)
 
     assert(wxGetApp().preset_bundle);
 
-    m_preset_bundle_left  = std::make_unique<PresetBundle>(*wxGetApp().preset_bundle);
-    m_preset_bundle_right = std::make_unique<PresetBundle>(*wxGetApp().preset_bundle);
+    m_preset_bundle_left  = *wxGetApp().preset_bundle;
+    m_preset_bundle_right = *wxGetApp().preset_bundle;
 
     // Create UI items
 
@@ -1700,6 +1700,13 @@ void DiffPresetDialog::update_controls_visibility(Preset::Type type /* = Preset:
         preset_combos.presets_right->Show(show);
 
         if (show) {
+            if (cb_type == Preset::TYPE_FILAMENT) {
+                int extruder_id = 0;
+                if (type == Preset::TYPE_FILAMENT)
+                    extruder_id = dynamic_cast<TabFilament*>(wxGetApp().get_tab(Preset::TYPE_FILAMENT))->get_active_extruder();
+                preset_combos.presets_left->set_extruder_idx(extruder_id);
+                preset_combos.presets_right->set_extruder_idx(extruder_id);
+            }
             preset_combos.presets_left->update_from_bundle();
             preset_combos.presets_right->update_from_bundle();
         }
@@ -1710,10 +1717,17 @@ void DiffPresetDialog::update_controls_visibility(Preset::Type type /* = Preset:
 
 void DiffPresetDialog::update_bundles_from_app()
 {
-    *m_preset_bundle_left  = *wxGetApp().preset_bundle;
-    *m_preset_bundle_right = *wxGetApp().preset_bundle;
+    m_preset_bundle_left  = *wxGetApp().preset_bundle;
+    m_preset_bundle_right = *wxGetApp().preset_bundle;
 
-    m_pr_technology = m_preset_bundle_left.get()->printers.get_edited_preset().printer_technology();
+    m_pr_technology = m_preset_bundle_left.printers.get_edited_preset().printer_technology();
+
+    for (auto preset_combos : m_preset_combos) {
+        if (m_view_type == Preset::TYPE_INVALID || m_view_type == preset_combos.presets_left->get_type()) {
+            preset_combos.presets_left->init_from_bundle(&m_preset_bundle_left);
+            preset_combos.presets_right->init_from_bundle(&m_preset_bundle_right);
+        }
+    }
 }
 
 void DiffPresetDialog::show(Preset::Type type /* = Preset::TYPE_INVALID*/)
@@ -1969,7 +1983,7 @@ void DiffPresetDialog::update_compatibility(const std::string& preset_name, Pres
             update_compatible_type(technology_changed, print_tab, true),
             update_compatible_type(technology_changed, false, true));
 
-    bool is_left_presets = preset_bundle == m_preset_bundle_left.get();
+    bool is_left_presets = preset_bundle == &m_preset_bundle_left;
     PrinterTechnology pr_tech = preset_bundle->printers.get_selected_preset().printer_technology();
 
     // update preset comboboxes
@@ -1987,10 +2001,10 @@ void DiffPresetDialog::update_compatibility(const std::string& preset_name, Pres
     }
 
     if (technology_changed &&
-        m_preset_bundle_left.get()->printers.get_selected_preset().printer_technology() ==
-        m_preset_bundle_right.get()->printers.get_selected_preset().printer_technology())
+        m_preset_bundle_left.printers.get_selected_preset().printer_technology() ==
+        m_preset_bundle_right.printers.get_selected_preset().printer_technology())
     {
-        m_pr_technology = m_preset_bundle_left.get()->printers.get_edited_preset().printer_technology();
+        m_pr_technology = m_preset_bundle_left.printers.get_edited_preset().printer_technology();
         update_controls_visibility();
     }
 }
@@ -2009,7 +2023,7 @@ bool DiffPresetDialog::is_save_confirmed()
     }
 
     if (!types_for_save.empty()) {
-        SavePresetDialog save_dlg(this, types_for_save, _u8L("Modified"), m_preset_bundle_right.get());
+        SavePresetDialog save_dlg(this, types_for_save, _u8L("Modified"), false, &m_preset_bundle_right);
         if (save_dlg.ShowModal() != wxID_OK)
             return false;
 
@@ -2051,8 +2065,8 @@ void DiffPresetDialog::button_event(Action act)
                 MessageDialog(this, UnsavedChangesDialog::msg_success_saved_modifications(saved_cnt)).ShowModal();
                 update_bundles_from_app();
                 for (const auto& preset : presets_to_save) {
-                    m_preset_bundle_left->get_presets(preset.type).select_preset_by_name(preset.from_name, true);
-                    m_preset_bundle_right->get_presets(preset.type).select_preset_by_name(preset.new_name, true);
+                    m_preset_bundle_left.get_presets(preset.type).select_preset_by_name(preset.from_name, true);
+                    m_preset_bundle_right.get_presets(preset.type).select_preset_by_name(preset.new_name, true);
                 }
                 update_presets(m_view_type, false);
             }

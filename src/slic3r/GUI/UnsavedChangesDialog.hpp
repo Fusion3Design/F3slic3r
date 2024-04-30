@@ -361,8 +361,8 @@ class DiffPresetDialog : public DPIDialog
 
     Preset::Type            m_view_type         { Preset::TYPE_INVALID };
     PrinterTechnology       m_pr_technology;
-    std::unique_ptr<PresetBundle>   m_preset_bundle_left;
-    std::unique_ptr<PresetBundle>   m_preset_bundle_right;
+    PresetBundle            m_preset_bundle_left;
+    PresetBundle            m_preset_bundle_right;
 
     void create_buttons();
     void create_edit_sizer();
