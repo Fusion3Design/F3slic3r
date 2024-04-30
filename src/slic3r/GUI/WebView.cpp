@@ -21,8 +21,7 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, const wxString& url)
     if (webView) {
         wxString correct_url = url.empty() ? wxString("") : wxURI(url).BuildURI();
 
-#ifdef __WIN32__
-        webView->SetUserAgent(wxString::Format("PrusaSlicer/v%s", SLIC3R_VERSION));
+#ifdef __WIN32_
         webView->Create(parent, wxID_ANY, correct_url, wxDefaultPosition, wxDefaultSize);
         //We register the wxfs:// protocol for testing purposes
         //webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewArchiveHandler("wxfs")));
@@ -34,7 +33,6 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, const wxString& url)
         // And the memory: file system
         //webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewFSHandler("memory")));
         webView->Create(parent, wxID_ANY, correct_url, wxDefaultPosition, wxDefaultSize);
-        webView->SetUserAgent(wxString::Format("PrusaSlicer/v%s", SLIC3R_VERSION));
 #endif
 #ifndef __WIN32__
         Slic3r::GUI::wxGetApp().CallAfter([webView] {
