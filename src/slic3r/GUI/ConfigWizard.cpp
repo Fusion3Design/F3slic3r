@@ -65,6 +65,9 @@
 #include "format.hpp"
 #include "MsgDialog.hpp"
 #include "UnsavedChangesDialog.hpp"
+#include "UpdatesUIManager.hpp"
+#include "PresetArchiveDatabase.hpp"
+#include "Plater.hpp" // #ysFIXME - implement getter for preset_archive_database from GetApp()???
 #include "slic3r/Utils/AppUpdater.hpp"
 #include "slic3r/GUI/I18N.hpp"
 #include "slic3r/Config/Version.hpp"
@@ -606,6 +609,29 @@ void PageWelcome::set_run_reason(ConfigWizard::RunReason run_reason)
 #endif
 }
 
+PageUpdateManager::PageUpdateManager(ConfigWizard* parent)
+    : ConfigWizardPage(parent, _L("Manage Configuration Updates"), _L("Configuration Manager"))
+{
+    this->SetFont(wxGetApp().normal_font());
+
+    const int em = em_unit(this);
+
+    m_manager = std::make_unique<UIManager>(this, wxGetApp().plater()->get_preset_archive_database(), em);
+
+    auto sizer = m_manager->get_sizer();
+
+    ScalableButton* btn = new ScalableButton(this, wxID_ANY, "", "  " + _L("Confirm configuration update") + "  ");
+    btn->SetFont(wxGetApp().bold_font());
+    wxGetApp().UpdateDarkUI(btn, true);
+    btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) { 
+        m_manager->set_used_archives(); 
+        wizard_p()->set_config_updated_from_archive(true);
+    });
+
+    sizer->Add(btn, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, em);
+
+    append(sizer, 0, wxTOP, 2 * em);
+}
 
 PagePrinters::PagePrinters(ConfigWizard *parent,
     wxString title,
@@ -2392,6 +2418,11 @@ void ConfigWizard::priv::load_pages()
 
     index->add_page(page_welcome);
 
+    if (!m_is_config_updated_from_archive) {
+        index->add_page(page_update_manager);
+    }
+    else {
+
     // Printers
     if (!only_sla_mode)
         index->add_page(page_fff);
@@ -2448,7 +2479,16 @@ void ConfigWizard::priv::load_pages()
 #endif // _WIN32
     index->add_page(page_mode);
 
-    index->go_to(former_active);   // Will restore the active item/page if possible
+    }
+
+    if (m_is_config_updated_from_archive && former_active == page_update_manager)
+        index->go_to(1);// next page after Welcome
+    else
+        index->go_to(former_active);   // Will restore the active item/page if possible
+
+    // set visibility for "Select all..." and "Finish" buttons
+    btn_sel_all->Show(m_is_config_updated_from_archive);
+    btn_finish ->Show(m_is_config_updated_from_archive);
 
     q->Layout();
 // This Refresh() is needed to avoid ugly artifacts after printer selection, when no one vendor was selected from the very beginnig
@@ -3333,6 +3373,12 @@ bool ConfigWizard::priv::check_sla_selected()
     return ret;
 }
 
+void ConfigWizard::priv::set_config_updated_from_archive(bool is_updated) 
+{
+    m_is_config_updated_from_archive = is_updated;
+    load_pages();
+}
+
 
 // Public
 
@@ -3399,7 +3445,7 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     const VendorProfile *vendor_prusa = prusa_it->second.vendor_profile;
 
     p->add_page(p->page_welcome = new PageWelcome(this));
-
+    p->add_page(p->page_update_manager = new PageUpdateManager(this));
     
     p->page_fff = new PagePrinters(this, _L("Prusa FFF Technology Printers"), "Prusa FFF", *vendor_prusa, 0, T_FFF);
     p->only_sla_mode = !p->page_fff->has_printers;
