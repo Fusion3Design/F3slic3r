@@ -19,6 +19,7 @@
 #include "libslic3r/miniz_extension.hpp"
 #include "libslic3r/LocalesUtils.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
+#include "libslic3r/Utils/JsonUtils.hpp"
 
 #include "SLAArchiveReader.hpp"
 #include "SLAArchiveFormatRegistry.hpp"
@@ -52,22 +53,42 @@ std::string to_ini(const ConfMap &m)
     return ret;
 }
 
-namespace pt = boost::property_tree;
-
-static std::string write_json_with_post_process(const pt::ptree& ptree)
+static std::string get_key(const std::string& opt_key)
 {
-    std::stringstream oss;
-    pt::write_json(oss, ptree);
+    static const std::set<std::string> ms_opts = {
+      "delay_before_exposure"
+    , "delay_after_exposure"
+    , "tilt_down_offset_delay"
+    , "tilt_up_offset_delay"
+    , "tilt_down_delay"
+    , "tilt_up_delay"
+    };
+    
+    static const std::set<std::string> nm_opts = {
+       "tower_hop_height"
+    };
+    
+    static const std::set<std::string> speed_opts = {
+      "tower_speed"
+    , "tilt_down_initial_speed"
+    , "tilt_down_finish_speed"
+    , "tilt_up_initial_speed"
+    , "tilt_up_finish_speed"
+    };
 
-    // fix json-out to show node values as a string just for string nodes
-    std::regex reg("\\\"([0-9]+\\.{0,1}[0-9]*)\\\""); // code is borrowed from https://stackoverflow.com/questions/2855741/why-does-boost-property-tree-write-json-save-everything-as-string-is-it-possibl
-    std::string result = std::regex_replace(oss.str(), reg, "$1");
+    if (ms_opts.find(opt_key) != ms_opts.end())
+        return opt_key + "_ms";
 
-    boost::replace_all(result, "\"true\"",  "true");
-    boost::replace_all(result, "\"false\"", "false");
+    if (nm_opts.find(opt_key) != nm_opts.end())
+        return opt_key + "_nm";
 
-    return result;
+    if (speed_opts.find(opt_key) != speed_opts.end())
+        return boost::replace_all_copy(opt_key, "_speed", "_profile");
+
+    return opt_key;
 }
+
+namespace pt = boost::property_tree;
 
 std::string to_json(const SLAPrint& print, const ConfMap &m)
 {
@@ -76,8 +97,8 @@ std::string to_json(const SLAPrint& print, const ConfMap &m)
     pt::ptree below_node;
     pt::ptree above_node;
 
-    const t_config_enum_names& tilt_enum_names  = ConfigOptionEnum<TiltProfiles>::get_enum_names();
-    const t_config_enum_names& tower_enum_names = ConfigOptionEnum<TowerProfiles>::get_enum_names();
+    const t_config_enum_names& tilt_enum_names  = ConfigOptionEnum< TiltSpeeds>::get_enum_names();
+    const t_config_enum_names& tower_enum_names = ConfigOptionEnum<TowerSpeeds>::get_enum_names();
 
     for (const std::string& opt_key : tilt_options()) {
         const ConfigOption* opt = cfg.option(opt_key);
@@ -87,28 +108,28 @@ std::string to_json(const SLAPrint& print, const ConfMap &m)
         case coFloats: {
             auto values = static_cast<const ConfigOptionFloats*>(opt);
             // those options have to be exported in ms instead of s
-            below_node.put<double>(opt_key, int(1000 * values->get_at(0)));
-            above_node.put<double>(opt_key, int(1000 * values->get_at(1)));
+            below_node.put<double>(get_key(opt_key), int(1000 * values->get_at(0)));
+            above_node.put<double>(get_key(opt_key), int(1000 * values->get_at(1)));
         }
         break;
         case coInts: {
             auto values = static_cast<const ConfigOptionInts*>(opt);
-            int koef = opt_key == "tower_hop_height_nm" ? 1000000 : 1;
-            below_node.put<int>(opt_key, koef * values->get_at(0));
-            above_node.put<int>(opt_key, koef * values->get_at(1));
+            int koef = opt_key == "tower_hop_height" ? 1000000 : 1;
+            below_node.put<int>(get_key(opt_key), koef * values->get_at(0));
+            above_node.put<int>(get_key(opt_key), koef * values->get_at(1));
         }
         break;
         case coBools: {
             auto values = static_cast<const ConfigOptionBools*>(opt);
-            below_node.put<bool>(opt_key, values->get_at(0));
-            above_node.put<bool>(opt_key, values->get_at(1));
+            below_node.put<bool>(get_key(opt_key), values->get_at(0));
+            above_node.put<bool>(get_key(opt_key), values->get_at(1));
         }
         break;
         case coEnums: {
-            const t_config_enum_names& enum_names = opt_key == "tower_profile" ? tower_enum_names : tilt_enum_names;
-            auto values = static_cast<const ConfigOptionEnums<TiltProfiles>*>(opt);
-            below_node.put(opt_key, enum_names[values->get_at(0)]);
-            above_node.put(opt_key, enum_names[values->get_at(1)]);
+            const t_config_enum_names& enum_names = opt_key == "tower_speed" ? tower_enum_names : tilt_enum_names;
+            auto values = static_cast<const ConfigOptionEnums<TiltSpeeds>*>(opt);
+            below_node.put(get_key(opt_key), enum_names[values->get_at(0)]);
+            above_node.put(get_key(opt_key), enum_names[values->get_at(1)]);
         }
         break;
         case coNone:
