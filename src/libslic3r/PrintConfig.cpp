@@ -265,38 +265,38 @@ static t_config_enum_values s_keys_map_TopOnePerimeterType {
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TopOnePerimeterType)
 
-static const t_config_enum_values s_keys_map_TowerProfiles{
-    { "layer1",  tpLayer1    },
-    { "layer2",  tpLayer2    },
-    { "layer3",  tpLayer3    },
-    { "layer4",  tpLayer4    },
-    { "layer5",  tpLayer5    },
-    { "layer8",  tpLayer8    },
-    { "layer11", tpLayer11   },
-    { "layer14", tpLayer14   },
-    { "layer18", tpLayer18   },
-    { "layer22", tpLayer22   },
-    { "layer24", tpLayer24   },
+static const t_config_enum_values s_keys_map_TowerSpeeds{
+    { "layer1",  tsLayer1    },
+    { "layer2",  tsLayer2    },
+    { "layer3",  tsLayer3    },
+    { "layer4",  tsLayer4    },
+    { "layer5",  tsLayer5    },
+    { "layer8",  tsLayer8    },
+    { "layer11", tsLayer11   },
+    { "layer14", tsLayer14   },
+    { "layer18", tsLayer18   },
+    { "layer22", tsLayer22   },
+    { "layer24", tsLayer24   },
 };
-CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TowerProfiles)
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TowerSpeeds)
 
-static const t_config_enum_values s_keys_map_TiltProfiles{
-    { "move120",    tpMove120    },
-    { "layer200",   tpLayer200   },
-    { "move300",    tpMove300    },
-    { "layer400",   tpLayer400   },
-    { "layer600",   tpLayer600   },
-    { "layer800",   tpLayer800   },
-    { "layer1000",  tpLayer1000  },
-    { "layer1250",  tpLayer1250  },
-    { "layer1500",  tpLayer1500  },
-    { "layer1750",  tpLayer1750  },
-    { "layer2000",  tpLayer2000  },
-    { "layer2250",  tpLayer2250  },
-    { "move5120",   tpMove5120   },
-    { "move8000",   tpMove8000   },
+static const t_config_enum_values s_keys_map_TiltSpeeds{
+    { "move120",    tsMove120    },
+    { "layer200",   tsLayer200   },
+    { "move300",    tsMove300    },
+    { "layer400",   tsLayer400   },
+    { "layer600",   tsLayer600   },
+    { "layer800",   tsLayer800   },
+    { "layer1000",  tsLayer1000  },
+    { "layer1250",  tsLayer1250  },
+    { "layer1500",  tsLayer1500  },
+    { "layer1750",  tsLayer1750  },
+    { "layer2000",  tsLayer2000  },
+    { "layer2250",  tsLayer2250  },
+    { "move5120",   tsMove5120   },
+    { "move8000",   tsMove8000   },
 };
-CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TiltProfiles)
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TiltSpeeds)
 
 static void assign_printer_technology_to_unknown(t_optiondef_map &options, PrinterTechnology printer_technology)
 {
@@ -4509,7 +4509,7 @@ void PrintConfigDef::init_sla_tilt_params()
 {
     ConfigOptionDef* def;
 
-    def = this->add("delay_before_exposure_ms", coFloats);
+    def = this->add("delay_before_exposure", coFloats);
     def->full_label = L("Delay before exposure");
     def->tooltip = L("Delay before exposure after previous layer separation.");
     def->sidetext = L("s");
@@ -4518,7 +4518,7 @@ void PrintConfigDef::init_sla_tilt_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats({ 3., 3.}));
 
-    def = this->add("delay_after_exposure_ms", coFloats);
+    def = this->add("delay_after_exposure", coFloats);
     def->full_label = L("Delay after exposure");
     def->tooltip = L("Delay after exposure before layer separation.");
     def->sidetext = L("s");
@@ -4527,7 +4527,7 @@ void PrintConfigDef::init_sla_tilt_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloats({ 0., 0.}));
 
-    def = this->add("tower_hop_height_nm", coInts);
+    def = this->add("tower_hop_height", coInts);
     def->full_label = L("Tower hop height");
     def->tooltip = L("The height of the tower raise.");
     def->sidetext = L("mm");
@@ -4536,12 +4536,12 @@ void PrintConfigDef::init_sla_tilt_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInts({ 0, 0}));
 
-    def = this->add("tower_profile", coEnums); 
+    def = this->add("tower_speed", coEnums); 
     def->full_label = L("Tower speed");
     def->tooltip = L("Tower speed used for tower raise.");
     def->mode = comExpert;
     def->sidetext = L("mm/s");
-    def->set_enum<TowerProfiles>({
+    def->set_enum<TowerSpeeds>({
         { "layer1",  "1"  },
         { "layer2",  "2"  },
         { "layer3",  "3"  },
@@ -4554,9 +4554,9 @@ void PrintConfigDef::init_sla_tilt_params()
         { "layer22", "22" },
         { "layer24", "24" },
     });
-    def->set_default_value(new ConfigOptionEnums<TowerProfiles>({ tpLayer22, tpLayer22 }));
+    def->set_default_value(new ConfigOptionEnums<TowerSpeeds>({ tsLayer22, tsLayer22 }));
 
-    const std::initializer_list<std::pair<std::string_view, std::string_view>> tilt_profiles_il = {
+    const std::initializer_list<std::pair<std::string_view, std::string_view>> tilt_speeds_il = {
         { "move120",    "120"   },
         { "layer200",   "200"   },
         { "move300",    "300"   },
@@ -4573,37 +4573,37 @@ void PrintConfigDef::init_sla_tilt_params()
         { "move8000",   "8000"  },
     };
 
-    def = this->add("tilt_down_initial_profile", coEnums); 
+    def = this->add("tilt_down_initial_speed", coEnums); 
     def->full_label = L("Tilt down initial speed");
     def->tooltip = L("Tilt speed used for an initial portion of tilt down move.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
-    def->set_enum<TiltProfiles>(tilt_profiles_il);
-    def->set_default_value(new ConfigOptionEnums<TiltProfiles>({ tpLayer1750, tpLayer1750 }));
+    def->set_enum<TiltSpeeds>(tilt_speeds_il);
+    def->set_default_value(new ConfigOptionEnums<TiltSpeeds>({ tsLayer1750, tsLayer1750 }));
 
-    def = this->add("tilt_down_finish_profile", coEnums); 
+    def = this->add("tilt_down_finish_speed", coEnums); 
     def->full_label = L("Tilt down finish speed");
     def->tooltip = L("Tilt speed used for the rest of the tilt down move.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
-    def->set_enum<TiltProfiles>(tilt_profiles_il);
-    def->set_default_value(new ConfigOptionEnums<TiltProfiles>({ tpLayer1750, tpLayer1750 }));
+    def->set_enum<TiltSpeeds>(tilt_speeds_il);
+    def->set_default_value(new ConfigOptionEnums<TiltSpeeds>({ tsLayer1750, tsLayer1750 }));
 
-    def = this->add("tilt_up_initial_profile", coEnums); 
+    def = this->add("tilt_up_initial_speed", coEnums); 
     def->full_label = L("Tilt up initial speed");
     def->tooltip = L("Tilt speed used for an initial portion of tilt up move.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
-    def->set_enum<TiltProfiles>(tilt_profiles_il);
-    def->set_default_value(new ConfigOptionEnums<TiltProfiles>({ tpMove8000, tpMove8000 }));
+    def->set_enum<TiltSpeeds>(tilt_speeds_il);
+    def->set_default_value(new ConfigOptionEnums<TiltSpeeds>({ tsMove8000, tsMove8000 }));
 
-    def = this->add("tilt_up_finish_profile", coEnums); 
+    def = this->add("tilt_up_finish_speed", coEnums); 
     def->full_label = L("Tilt up finish speed");
     def->tooltip = L("Tilt speed used for the rest of the tilt-up.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
-    def->set_enum<TiltProfiles>(tilt_profiles_il);
-    def->set_default_value(new ConfigOptionEnums<TiltProfiles>({ tpLayer1750, tpLayer1750 }));
+    def->set_enum<TiltSpeeds>(tilt_speeds_il);
+    def->set_default_value(new ConfigOptionEnums<TiltSpeeds>({ tsLayer1750, tsLayer1750 }));
 
     def = this->add("use_tilt", coBools);
     def->full_label = L("Use tilt");
@@ -4620,7 +4620,7 @@ void PrintConfigDef::init_sla_tilt_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInts({ 0, 0 }));
 
-    def = this->add("tilt_down_offset_delay_ms", coFloats);
+    def = this->add("tilt_down_offset_delay", coFloats);
     def->full_label = L("Tilt down offset delay");
     def->tooltip = L("Delay after the tilt reaches 'tilt_down_offset_steps' position.");
     def->sidetext = L("s");
@@ -4637,7 +4637,7 @@ void PrintConfigDef::init_sla_tilt_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInts({ 1, 1 }));
 
-    def = this->add("tilt_down_delay_ms", coFloats);
+    def = this->add("tilt_down_delay", coFloats);
     def->full_label = L("Tilt down delay");
     def->tooltip = L("The delay between tilt-down cycles.");
     def->sidetext = L("s");
@@ -4655,7 +4655,7 @@ void PrintConfigDef::init_sla_tilt_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInts({ 1200, 1200 }));
 
-    def = this->add("tilt_up_offset_delay_ms", coFloats);
+    def = this->add("tilt_up_offset_delay", coFloats);
     def->full_label = L("Tilt up offset delay");
     def->tooltip = L("Delay after the tilt reaches 'tilt_up_offset_steps' position.");
     def->sidetext = L("s");
@@ -4672,7 +4672,7 @@ void PrintConfigDef::init_sla_tilt_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionInts({ 1, 1 }));
 
-    def = this->add("tilt_up_delay_ms", coFloats);
+    def = this->add("tilt_up_delay", coFloats);
     def->full_label = L("Tilt up delay");
     def->tooltip = L("The delay between tilt-up cycles.");
     def->sidetext = L("s");
@@ -4959,23 +4959,23 @@ void DynamicPrintConfig::normalize_fdm()
 }
 
 static std::vector<std::string> s_Preset_sla_tilt_options{
-     "delay_before_exposure_ms"
-    ,"delay_after_exposure_ms"
-    ,"tower_hop_height_nm"
-    ,"tower_profile"
+     "delay_before_exposure"
+    ,"delay_after_exposure"
+    ,"tower_hop_height"
+    ,"tower_speed"
     ,"use_tilt"
-    ,"tilt_down_initial_profile"
+    ,"tilt_down_initial_speed"
     ,"tilt_down_offset_steps"
-    ,"tilt_down_offset_delay_ms"
-    ,"tilt_down_finish_profile"
+    ,"tilt_down_offset_delay"
+    ,"tilt_down_finish_speed"
     ,"tilt_down_cycles"
-    ,"tilt_down_delay_ms"
-    ,"tilt_up_initial_profile"
+    ,"tilt_down_delay"
+    ,"tilt_up_initial_speed"
     ,"tilt_up_offset_steps"
-    ,"tilt_up_offset_delay_ms"
-    ,"tilt_up_finish_profile"
+    ,"tilt_up_offset_delay"
+    ,"tilt_up_finish_speed"
     ,"tilt_up_cycles"
-    ,"tilt_up_delay_ms"
+    ,"tilt_up_delay"
 };
 
 const std::vector<std::string>& tilt_options() { return s_Preset_sla_tilt_options; }
@@ -4985,21 +4985,21 @@ const std::vector<std::string>& tilt_options() { return s_Preset_sla_tilt_option
 
 const std::map<std::string, ConfigOptionFloats> tilt_options_floats_defs =
 {
-    {"delay_before_exposure_ms",    ConfigOptionFloats({ 3., 3., 0., 1., 3.5, 3.5, 0., 0. }) } ,
-    {"delay_after_exposure_ms",     ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
-    {"tilt_down_offset_delay_ms",   ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
-    {"tilt_down_delay_ms",          ConfigOptionFloats({ 0., 0., 0., 0.5, 0., 0., 0., 0. }) } ,
-    {"tilt_up_offset_delay_ms",     ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
-    {"tilt_up_delay_ms",            ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
+    {"delay_before_exposure",    ConfigOptionFloats({ 3., 3., 0., 1., 3.5, 3.5, 0., 0. }) } ,
+    {"delay_after_exposure",     ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
+    {"tilt_down_offset_delay",   ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
+    {"tilt_down_delay",          ConfigOptionFloats({ 0., 0., 0., 0.5, 0., 0., 0., 0. }) } ,
+    {"tilt_up_offset_delay",     ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
+    {"tilt_up_delay",            ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
 };
 
 const std::map<std::string, ConfigOptionInts> tilt_options_ints_defs =
 {
-    {"tower_hop_height_nm",         ConfigOptionInts({ 0, 0, 0, 0, 5, 5, 0, 0 }) } ,
-    {"tilt_down_offset_steps",      ConfigOptionInts({ 0, 0, 0, 0, 2200, 2200, 0, 0 }) } ,
-    {"tilt_down_cycles",            ConfigOptionInts({ 1, 1, 1, 1, 1, 1, 0, 0 }) } ,
-    {"tilt_up_offset_steps",        ConfigOptionInts({ 1200, 1200, 600, 600, 2200, 2200, 0, 0 }) } ,
-    {"tilt_up_cycles",              ConfigOptionInts({ 1, 1, 1, 1, 1, 1, 0, 0 }) } ,
+    {"tower_hop_height",         ConfigOptionInts({ 0, 0, 0, 0, 5, 5, 0, 0 }) } ,
+    {"tilt_down_offset_steps",   ConfigOptionInts({ 0, 0, 0, 0, 2200, 2200, 0, 0 }) } ,
+    {"tilt_down_cycles",         ConfigOptionInts({ 1, 1, 1, 1, 1, 1, 0, 0 }) } ,
+    {"tilt_up_offset_steps",     ConfigOptionInts({ 1200, 1200, 600, 600, 2200, 2200, 0, 0 }) } ,
+    {"tilt_up_cycles",           ConfigOptionInts({ 1, 1, 1, 1, 1, 1, 0, 0 }) } ,
 };
 
 const std::map<std::string, ConfigOptionBools> tilt_options_bools_defs =
@@ -5007,17 +5007,17 @@ const std::map<std::string, ConfigOptionBools> tilt_options_bools_defs =
     {"use_tilt",                    ConfigOptionBools({ true, true, true, true, true, true, false, false })} ,
 };
 
-const std::map<std::string, ConfigOptionEnums<TowerProfiles>> tower_tilt_options_enums_defs =
+const std::map<std::string, ConfigOptionEnums<TowerSpeeds>> tower_tilt_options_enums_defs =
 {
-    {"tower_profile",               ConfigOptionEnums<TowerProfiles>({ tpLayer22, tpLayer22, tpLayer22, tpLayer22, tpLayer2, tpLayer2, tpLayer1, tpLayer1 })} ,
+    {"tower_speed",               ConfigOptionEnums<TowerSpeeds>({ tsLayer22, tsLayer22, tsLayer22, tsLayer22, tsLayer2, tsLayer2, tsLayer1, tsLayer1 })} ,
 };
 
-const std::map<std::string, ConfigOptionEnums<TiltProfiles>> tilt_options_enums_defs =
+const std::map<std::string, ConfigOptionEnums<TiltSpeeds>> tilt_options_enums_defs =
 {
-    {"tilt_down_initial_profile",   ConfigOptionEnums<TiltProfiles>({ tpLayer1750, tpLayer1750, tpLayer1750, tpLayer1750, tpLayer800, tpLayer800, tpMove120, tpMove120 }) } ,
-    {"tilt_down_finish_profile",    ConfigOptionEnums<TiltProfiles>({ tpLayer1750, tpLayer1750, tpMove8000, tpLayer1750, tpLayer1750, tpLayer1750, tpMove120, tpMove120 }) } ,
-    {"tilt_up_initial_profile",     ConfigOptionEnums<TiltProfiles>({ tpMove8000, tpMove8000, tpMove8000, tpMove8000, tpLayer1750, tpLayer1750, tpMove120, tpMove120 }) } ,
-    {"tilt_up_finish_profile",      ConfigOptionEnums<TiltProfiles>({ tpLayer1750, tpLayer1750, tpLayer1750, tpLayer1750, tpLayer800, tpLayer800, tpMove120, tpMove120 }) } ,
+    {"tilt_down_initial_speed",   ConfigOptionEnums<TiltSpeeds>({ tsLayer1750, tsLayer1750, tsLayer1750, tsLayer1750, tsLayer800, tsLayer800, tsMove120, tsMove120 }) } ,
+    {"tilt_down_finish_speed",    ConfigOptionEnums<TiltSpeeds>({ tsLayer1750, tsLayer1750, tsMove8000, tsLayer1750, tsLayer1750, tsLayer1750, tsMove120, tsMove120 }) } ,
+    {"tilt_up_initial_speed",     ConfigOptionEnums<TiltSpeeds>({ tsMove8000, tsMove8000, tsMove8000, tsMove8000, tsLayer1750, tsLayer1750, tsMove120, tsMove120 }) } ,
+    {"tilt_up_finish_speed",      ConfigOptionEnums<TiltSpeeds>({ tsLayer1750, tsLayer1750, tsLayer1750, tsLayer1750, tsLayer800, tsLayer800, tsMove120, tsMove120 }) } ,
 };
 
 // Default values containe option pair of values (Below and Above) for each titl modes 
@@ -5025,21 +5025,21 @@ const std::map<std::string, ConfigOptionEnums<TiltProfiles>> tilt_options_enums_
 
 const std::map<std::string, ConfigOptionFloats> tilt_options_floats_sl1_defs =
 {
-    {"delay_before_exposure_ms",    ConfigOptionFloats({ 3., 3., 0., 1., 3.5, 3.5, 0., 0. }) } ,
-    {"delay_after_exposure_ms",     ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
-    {"tilt_down_offset_delay_ms",   ConfigOptionFloats({ 1., 1., 0., 0., 0., 0., 0., 0. }) } ,
-    {"tilt_down_delay_ms",          ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
-    {"tilt_up_offset_delay_ms",     ConfigOptionFloats({ 0., 0., 0., 0., 1., 1., 0., 0. }) } ,
-    {"tilt_up_delay_ms",            ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
+    {"delay_before_exposure",    ConfigOptionFloats({ 3., 3., 0., 1., 3.5, 3.5, 0., 0. }) } ,
+    {"delay_after_exposure",     ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
+    {"tilt_down_offset_delay",   ConfigOptionFloats({ 1., 1., 0., 0., 0., 0., 0., 0. }) } ,
+    {"tilt_down_delay",          ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
+    {"tilt_up_offset_delay",     ConfigOptionFloats({ 0., 0., 0., 0., 1., 1., 0., 0. }) } ,
+    {"tilt_up_delay",            ConfigOptionFloats({ 0., 0., 0., 0., 0., 0., 0., 0. }) } ,
 };
 
 const std::map<std::string, ConfigOptionInts> tilt_options_ints_sl1_defs =
 {
-    {"tower_hop_height_nm",         ConfigOptionInts({ 0, 0, 0, 0, 5, 5, 0, 0 }) } ,
-    {"tilt_down_offset_steps",      ConfigOptionInts({ 650, 650, 0, 0, 2200, 2200, 0, 0 }) } ,
-    {"tilt_down_cycles",            ConfigOptionInts({ 1, 1, 1, 1, 1, 1, 0, 0 }) } ,
-    {"tilt_up_offset_steps",        ConfigOptionInts({ 400, 400, 400, 400, 2200, 2200, 0, 0 }) } ,
-    {"tilt_up_cycles",              ConfigOptionInts({ 1, 1, 1, 1, 1, 1, 0, 0 }) } ,
+    {"tower_hop_height",         ConfigOptionInts({ 0, 0, 0, 0, 5, 5, 0, 0 }) } ,
+    {"tilt_down_offset_steps",   ConfigOptionInts({ 650, 650, 0, 0, 2200, 2200, 0, 0 }) } ,
+    {"tilt_down_cycles",         ConfigOptionInts({ 1, 1, 1, 1, 1, 1, 0, 0 }) } ,
+    {"tilt_up_offset_steps",     ConfigOptionInts({ 400, 400, 400, 400, 2200, 2200, 0, 0 }) } ,
+    {"tilt_up_cycles",           ConfigOptionInts({ 1, 1, 1, 1, 1, 1, 0, 0 }) } ,
 };
 
 const std::map<std::string, ConfigOptionBools> tilt_options_bools_sl1_defs =
@@ -5048,17 +5048,17 @@ const std::map<std::string, ConfigOptionBools> tilt_options_bools_sl1_defs =
 };
 
 
-const std::map<std::string, ConfigOptionEnums<TowerProfiles>> tower_tilt_options_enums_sl1_defs =
+const std::map<std::string, ConfigOptionEnums<TowerSpeeds>> tower_tilt_options_enums_sl1_defs =
 {
-    {"tower_profile",               ConfigOptionEnums<TowerProfiles>({ tpLayer22, tpLayer22, tpLayer22, tpLayer22, tpLayer2, tpLayer2, tpLayer1, tpLayer1 })} ,
+    {"tower_speed",               ConfigOptionEnums<TowerSpeeds>({ tsLayer22, tsLayer22, tsLayer22, tsLayer22, tsLayer2, tsLayer2, tsLayer1, tsLayer1 })} ,
 };
 
-const std::map<std::string, ConfigOptionEnums<TiltProfiles>> tilt_options_enums_sl1_defs =
+const std::map<std::string, ConfigOptionEnums<TiltSpeeds>> tilt_options_enums_sl1_defs =
 {
-    {"tilt_down_initial_profile",   ConfigOptionEnums<TiltProfiles>({ tpLayer400, tpLayer400, tpLayer400, tpLayer400, tpLayer600, tpLayer600, tpMove120, tpMove120 }) } ,
-    {"tilt_down_finish_profile",    ConfigOptionEnums<TiltProfiles>({ tpLayer1500, tpLayer1500, tpLayer1750, tpLayer1500, tpLayer1500, tpLayer1500, tpMove120, tpMove120 }) } ,
-    {"tilt_up_initial_profile",     ConfigOptionEnums<TiltProfiles>({ tpMove5120, tpMove5120, tpMove5120, tpMove5120, tpLayer1500, tpLayer1500, tpMove120, tpMove120 }) } ,
-    {"tilt_up_finish_profile",      ConfigOptionEnums<TiltProfiles>({ tpLayer400, tpLayer400, tpLayer400, tpLayer400, tpLayer600, tpLayer600, tpMove120, tpMove120 }) } ,
+    {"tilt_down_initial_speed",   ConfigOptionEnums<TiltSpeeds>({ tsLayer400, tsLayer400, tsLayer400, tsLayer400, tsLayer600, tsLayer600, tsMove120, tsMove120 }) } ,
+    {"tilt_down_finish_speed",    ConfigOptionEnums<TiltSpeeds>({ tsLayer1500, tsLayer1500, tsLayer1750, tsLayer1500, tsLayer1500, tsLayer1500, tsMove120, tsMove120 }) } ,
+    {"tilt_up_initial_speed",     ConfigOptionEnums<TiltSpeeds>({ tsMove5120, tsMove5120, tsMove5120, tsMove5120, tsLayer1500, tsLayer1500, tsMove120, tsMove120 }) } ,
+    {"tilt_up_finish_speed",      ConfigOptionEnums<TiltSpeeds>({ tsLayer400, tsLayer400, tsLayer400, tsLayer400, tsLayer600, tsLayer600, tsMove120, tsMove120 }) } ,
 };
 
 void  handle_legacy_sla(DynamicPrintConfig &config)
@@ -5085,7 +5085,7 @@ void  handle_legacy_sla(DynamicPrintConfig &config)
     // Load default tilt options in config in respect to the print speed, if config is loaded from old PS
 
     if (config.has("material_print_speed") &&
-        !config.has("tilt_down_offset_delay_ms") // Config from old PS doesn't contain any of tilt options, so check it
+        !config.has("tilt_down_offset_delay") // Config from old PS doesn't contain any of tilt options, so check it
         ) {
         int tilt_mode = config.option("material_print_speed")->getInt();
 
@@ -5094,8 +5094,8 @@ void  handle_legacy_sla(DynamicPrintConfig &config)
         const std::map<std::string, ConfigOptionFloats> floats_defs = is_sl1_model ? tilt_options_floats_sl1_defs : tilt_options_floats_defs;
         const std::map<std::string, ConfigOptionInts>   ints_defs   = is_sl1_model ? tilt_options_ints_sl1_defs : tilt_options_ints_defs;
         const std::map<std::string, ConfigOptionBools>  bools_defs  = is_sl1_model ? tilt_options_bools_sl1_defs : tilt_options_bools_defs;
-        const std::map<std::string, ConfigOptionEnums<TowerProfiles>>   tower_enums_defs = is_sl1_model ? tower_tilt_options_enums_sl1_defs : tower_tilt_options_enums_defs;
-        const std::map<std::string, ConfigOptionEnums<TiltProfiles>>    tilt_enums_defs  = is_sl1_model ? tilt_options_enums_sl1_defs : tilt_options_enums_defs;
+        const std::map<std::string, ConfigOptionEnums<TowerSpeeds>>   tower_enums_defs = is_sl1_model ? tower_tilt_options_enums_sl1_defs : tower_tilt_options_enums_defs;
+        const std::map<std::string, ConfigOptionEnums<TiltSpeeds>>    tilt_enums_defs  = is_sl1_model ? tilt_options_enums_sl1_defs : tilt_options_enums_defs;
 
         for (const std::string& opt_key : s_Preset_sla_tilt_options) {
             switch (config.def()->get(opt_key)->type) {
@@ -5122,7 +5122,7 @@ void  handle_legacy_sla(DynamicPrintConfig &config)
                 break;
             case coEnums: {
                 int val1, val2;
-                if (opt_key == "tower_profile") {
+                if (opt_key == "tower_speed") {
                     auto values = tower_enums_defs.at(opt_key);
                     val1 = values.get_at(2 * tilt_mode);
                     val2 = values.get_at(2 * tilt_mode + 1);

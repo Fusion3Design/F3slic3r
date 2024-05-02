@@ -5463,18 +5463,18 @@ static boost::any get_def_config_value(const DynamicPrintConfig& config, const s
 }
 
 std::vector<std::string> disable_tilt_options = {
-         "tilt_down_initial_profile"
+         "tilt_down_initial_speed"
         ,"tilt_down_offset_steps"
-        ,"tilt_down_offset_delay_ms"
-        ,"tilt_down_finish_profile"
+        ,"tilt_down_offset_delay"
+        ,"tilt_down_finish_speed"
         ,"tilt_down_cycles"
-        ,"tilt_down_delay_ms"
-        ,"tilt_up_initial_profile"
+        ,"tilt_down_delay"
+        ,"tilt_up_initial_speed"
         ,"tilt_up_offset_steps"
-        ,"tilt_up_offset_delay_ms"
-        ,"tilt_up_finish_profile"
+        ,"tilt_up_offset_delay"
+        ,"tilt_up_finish_speed"
         ,"tilt_up_cycles"
-        ,"tilt_up_delay_ms"
+        ,"tilt_up_delay"
 };
 
 void TabSLAMaterial::toggle_tilt_options(bool is_above)

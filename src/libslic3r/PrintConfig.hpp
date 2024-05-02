@@ -171,35 +171,35 @@ enum class GCodeThumbnailsFormat {
     PNG, JPG, QOI
 };
 
-enum TowerProfiles : int {
-    tpLayer1,
-    tpLayer2,
-    tpLayer3,
-    tpLayer4,
-    tpLayer5,
-    tpLayer8,
-    tpLayer11,
-    tpLayer14,
-    tpLayer18, 
-    tpLayer22,
-    tpLayer24,
+enum TowerSpeeds : int {
+    tsLayer1,
+    tsLayer2,
+    tsLayer3,
+    tsLayer4,
+    tsLayer5,
+    tsLayer8,
+    tsLayer11,
+    tsLayer14,
+    tsLayer18, 
+    tsLayer22,
+    tsLayer24,
 };
 
-enum TiltProfiles : int {
-    tpMove120,
-    tpLayer200,
-    tpMove300,
-    tpLayer400,
-    tpLayer600,
-    tpLayer800,
-    tpLayer1000,
-    tpLayer1250,
-    tpLayer1500,
-    tpLayer1750,
-    tpLayer2000,
-    tpLayer2250,
-    tpMove5120,
-    tpMove8000,
+enum TiltSpeeds : int {
+    tsMove120,
+    tsLayer200,
+    tsMove300,
+    tsLayer400,
+    tsLayer600,
+    tsLayer800,
+    tsLayer1000,
+    tsLayer1250,
+    tsLayer1500,
+    tsLayer1750,
+    tsLayer2000,
+    tsLayer2250,
+    tsMove5120,
+    tsMove8000,
 };
 
 #define CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NAME) \
@@ -1190,23 +1190,23 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloat,                       area_fill))
 
     //tilt params
-    ((ConfigOptionFloats,                      delay_before_exposure_ms))
-    ((ConfigOptionFloats,                      delay_after_exposure_ms))
-    ((ConfigOptionInts,                        tower_hop_height_nm))
-    ((ConfigOptionEnums<TowerProfiles>,        tower_profile))
+    ((ConfigOptionFloats,                      delay_before_exposure))
+    ((ConfigOptionFloats,                      delay_after_exposure))
+    ((ConfigOptionInts,                        tower_hop_height))
+    ((ConfigOptionEnums<TowerSpeeds>,          tower_speed))
     ((ConfigOptionBools,                       use_tilt))
-    ((ConfigOptionEnums<TiltProfiles>,         tilt_down_initial_profile))
+    ((ConfigOptionEnums<TiltSpeeds>,           tilt_down_initial_speed))
     ((ConfigOptionInts,                        tilt_down_offset_steps))
-    ((ConfigOptionFloats,                      tilt_down_offset_delay_ms))
-    ((ConfigOptionEnums<TiltProfiles>,         tilt_down_finish_profile))
+    ((ConfigOptionFloats,                      tilt_down_offset_delay))
+    ((ConfigOptionEnums<TiltSpeeds>,           tilt_down_finish_speed))
     ((ConfigOptionInts,                        tilt_down_cycles))
-    ((ConfigOptionFloats,                      tilt_down_delay_ms))
-    ((ConfigOptionEnums<TiltProfiles>,         tilt_up_initial_profile))
+    ((ConfigOptionFloats,                      tilt_down_delay))
+    ((ConfigOptionEnums<TiltSpeeds>,           tilt_up_initial_speed))
     ((ConfigOptionInts,                        tilt_up_offset_steps))
-    ((ConfigOptionFloats,                      tilt_up_offset_delay_ms))
-    ((ConfigOptionEnums<TiltProfiles>,         tilt_up_finish_profile))
+    ((ConfigOptionFloats,                      tilt_up_offset_delay))
+    ((ConfigOptionEnums<TiltSpeeds>,           tilt_up_finish_speed))
     ((ConfigOptionInts,                        tilt_up_cycles))
-    ((ConfigOptionFloats,                      tilt_up_delay_ms))
+    ((ConfigOptionFloats,                      tilt_up_delay))
 )
 
 PRINT_CONFIG_CLASS_DEFINE(
