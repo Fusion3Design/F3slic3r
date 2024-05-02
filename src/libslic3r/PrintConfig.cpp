@@ -4537,8 +4537,8 @@ void PrintConfigDef::init_sla_tilt_params()
     def->set_default_value(new ConfigOptionInts({ 0, 0}));
 
     def = this->add("tower_profile", coEnums); 
-    def->full_label = L("Tower profile");
-    def->tooltip = L("Tower profile used for tower raise.");
+    def->full_label = L("Tower speed");
+    def->tooltip = L("Tower speed used for tower raise.");
     def->mode = comExpert;
     def->sidetext = L("mm/s");
     def->set_enum<TowerProfiles>({
@@ -4574,32 +4574,32 @@ void PrintConfigDef::init_sla_tilt_params()
     };
 
     def = this->add("tilt_down_initial_profile", coEnums); 
-    def->full_label = L("Tilt down initial profile");
-    def->tooltip = L("Tilt profile used for an initial portion of tilt down move.");
+    def->full_label = L("Tilt down initial speed");
+    def->tooltip = L("Tilt speed used for an initial portion of tilt down move.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
     def->set_enum<TiltProfiles>(tilt_profiles_il);
     def->set_default_value(new ConfigOptionEnums<TiltProfiles>({ tpLayer1750, tpLayer1750 }));
 
     def = this->add("tilt_down_finish_profile", coEnums); 
-    def->full_label = L("Tilt down finish profile");
-    def->tooltip = L("Tilt profile used for the rest of the tilt down move.");
+    def->full_label = L("Tilt down finish speed");
+    def->tooltip = L("Tilt speed used for the rest of the tilt down move.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
     def->set_enum<TiltProfiles>(tilt_profiles_il);
     def->set_default_value(new ConfigOptionEnums<TiltProfiles>({ tpLayer1750, tpLayer1750 }));
 
     def = this->add("tilt_up_initial_profile", coEnums); 
-    def->full_label = L("Tilt up initial profile");
-    def->tooltip = L("Tilt profile used for an initial portion of tilt up move.");
+    def->full_label = L("Tilt up initial speed");
+    def->tooltip = L("Tilt speed used for an initial portion of tilt up move.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
     def->set_enum<TiltProfiles>(tilt_profiles_il);
     def->set_default_value(new ConfigOptionEnums<TiltProfiles>({ tpMove8000, tpMove8000 }));
 
     def = this->add("tilt_up_finish_profile", coEnums); 
-    def->full_label = L("Tilt up finish profile");
-    def->tooltip = L("Tilt profile used for the rest of the tilt-up.");
+    def->full_label = L("Tilt up finish speed");
+    def->tooltip = L("Tilt speed used for the rest of the tilt-up.");
     def->mode = comExpert;
     def->sidetext = L("μ-steps/s");
     def->set_enum<TiltProfiles>(tilt_profiles_il);
