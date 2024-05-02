@@ -546,7 +546,7 @@ void ConnectRequestHandler::on_request_config()
 }
 
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
-    : WebViewPanel(parent, L"https://connect.prusa3d.com/connect-slicer-app/", "connect_loading")
+    : WebViewPanel(parent, L"https://connect.prusa3d.com/", "connect_loading")
 {  
 }
 
@@ -1036,7 +1036,7 @@ void WebViewDialog::run_script(const wxString& javascript)
 
 PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val)
     : WebViewDialog(parent
-        , L"https://connect.prusa3d.com/connect-slicer-app/printer-list"
+        , L"https://connect.prusa3d.com/slicer-select-printer"
         , _L("Choose a printer")
         , wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit()))
         , "connect_loading")
