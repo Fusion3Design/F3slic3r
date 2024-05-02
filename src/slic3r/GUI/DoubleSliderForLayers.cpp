@@ -530,7 +530,8 @@ bool DSForLayers::render_button(const wchar_t btn_icon, const wchar_t btn_icon_h
                         | ImGuiWindowFlags_NoMove
                         | ImGuiWindowFlags_NoResize
                         | ImGuiWindowFlags_NoScrollbar
-                        | ImGuiWindowFlags_NoScrollWithMouse;
+                        | ImGuiWindowFlags_NoScrollWithMouse
+                        | ImGuiWindowFlags_NoFocusOnAppearing;
 
     ImGuiPureWrap::set_next_window_pos(pos.x, pos.y, ImGuiCond_Always);
     std::string win_name = label_id + "##btn_win";
