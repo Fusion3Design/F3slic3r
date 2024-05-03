@@ -647,6 +647,8 @@ void DSForLayers::Render(const int canvas_width, const int canvas_height, float 
         // discard all getters dialogs
         m_show_get_jump_value = false;
     }
+    else if (m_ctrl.IsLClickOnThumb())
+        add_code_as_tick(ColorChange);
 
     // draw action buttons
 
