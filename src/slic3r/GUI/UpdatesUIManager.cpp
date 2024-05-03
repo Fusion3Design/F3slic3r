@@ -10,6 +10,7 @@
 #include "GUI.hpp"
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
+#include "MsgDialog.hpp"
 #include "format.hpp"
 
 #include "Widgets/CheckBox.hpp"
@@ -71,6 +72,8 @@ void UIManager::fill_entries()
             assert(selected_it != selected_repos.end());
             bool is_selected = selected_it->second;
             m_online_entries.push_back({is_selected, archive->get_uuid(), data.name, data.description, data.visibility });
+            if (is_selected)
+                m_online_selections.emplace(archive->get_uuid());
         } 
         else {
             // offline repo
@@ -78,6 +81,8 @@ void UIManager::fill_entries()
             assert(selected_it != selected_repos.end());
             bool is_selected = selected_it->second;
             m_offline_entries.push_back({is_selected, archive->get_uuid(), data.name, data.description, data.source_path.filename().string(), fs::exists(data.source_path)});
+            if (is_selected)
+                m_offline_selections.emplace(archive->get_uuid());
         }
     }
 
@@ -200,14 +205,32 @@ void UIManager::fill_grids()
 void UIManager::update()
 {
     fill_entries();
+
+    wxWindowUpdateLocker freeze_guard(m_parent);
+
     fill_grids();
 
-    m_main_sizer->Layout();
+    m_parent->GetSizer()->Layout();
+
+    if (wxDialog* dlg = dynamic_cast<wxDialog*>(m_parent)) {
+        m_parent->Layout();
+        m_parent->Refresh();
+        dlg->Fit();
+    }
+    else if (wxWindow* top_parent = m_parent->GetParent()) {
+        top_parent->Layout();
+        top_parent->Refresh();
+    }
 }
 
 void UIManager::remove_offline_repos(const std::string& id)
 {
     m_pad->remove_local_archive(id);
+
+    if (wxDialog* dlg = dynamic_cast<wxDialog*>(m_parent)) {
+        // Invalidate min_size for correct next Layout()
+        dlg->SetMinSize(wxDefaultSize);
+    }
 
     update();
 }
@@ -233,7 +256,7 @@ void UIManager::load_offline_repos()
             std::string msg;
             if (!m_pad->add_local_archive(input_path, msg))
             {
-                // Finish me.
+                ErrorDialog(m_parent, msg, false).ShowModal();
             }
         }
         catch (fs::filesystem_error const& e) {
@@ -254,7 +277,7 @@ void UIManager::set_selected_repositories()
 
     std::string msg;
     if (!m_pad->set_selected_repositories(used_ids, msg)) {
-        // Finish me.
+        ErrorDialog(m_parent, msg, false).ShowModal();
     }
 }
 
