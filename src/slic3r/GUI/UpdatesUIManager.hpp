@@ -67,7 +67,7 @@ public:
     ~UIManager() {}
 
     wxSizer*    get_sizer() { return m_main_sizer; }
-    void        set_used_archives();
+    void        set_selected_repositories();
 };
 
 class ManageUpdatesDialog : public DPIDialog

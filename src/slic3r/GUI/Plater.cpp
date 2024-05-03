@@ -994,7 +994,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     }
 
     this->q->Bind(EVT_PRESET_ARCHIVE_DATABASE_SYNC_DONE, [this](Event<ArchiveRepositorySyncData>& evt) {
-        preset_archive_database->set_archives(evt.data.json);
+        preset_archive_database->read_server_manifest(evt.data.json);
         wxGetApp().start_preset_updater(evt.data.force_updater);
     });
 

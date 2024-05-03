@@ -34,10 +34,10 @@ public:
 	~PresetUpdater();
 
 	// If either version check or config updating is enabled, get the appropriate data in the background and cache it.
-	void sync(const PresetBundle *preset_bundle, wxEvtHandler* evt_handler, const ArchiveRepositoryVector& repositories);
+	void sync(const PresetBundle *preset_bundle, wxEvtHandler* evt_handler, const ArchiveRepositoryVector& repositories, const std::map<std::string, bool>& selected_repo_uuids);
 	void cancel_sync();
 
-	void sync_blocking(const PresetBundle* preset_bundle, wxEvtHandler* evt_handler, const ArchiveRepositoryVector& repositories);
+	void sync_blocking(const PresetBundle* preset_bundle, wxEvtHandler* evt_handler, const ArchiveRepositoryVector& repositories, const std::map<std::string, bool>& selected_repo_uuids);
 
 	// If version check is enabled, check if chaced online slic3r version is newer, notify if so.
 	void slic3r_update_notify();

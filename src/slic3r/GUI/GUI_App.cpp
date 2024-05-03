@@ -3162,7 +3162,7 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
     }
 #endif // 0
     // Do blocking sync on every start of wizard, so user is always offered recent profiles.
-    preset_updater->sync_blocking(preset_bundle, this, plater()->get_preset_archive_database()->get_archives());
+    preset_updater->sync_blocking(preset_bundle, this, plater()->get_preset_archive_database()->get_archive_repositories(), plater()->get_preset_archive_database()->get_selected_repositories_uuid());
     // Offer update installation (of already installed profiles) only when run by user.
     if (reason == ConfigWizard::RR_USER) {   
         preset_updater->update_index_db();
@@ -3880,7 +3880,7 @@ void GUI_App::start_preset_updater(bool forced)
         return;
     }
     this->preset_updater->cancel_sync();
-    this->preset_updater->sync(preset_bundle, this, plater()->get_preset_archive_database()->get_archives());
+    this->preset_updater->sync(preset_bundle, this, plater()->get_preset_archive_database()->get_archive_repositories(), plater()->get_preset_archive_database()->get_selected_repositories_uuid());
     m_started_preset_updater = true;
 }
 } // GUI

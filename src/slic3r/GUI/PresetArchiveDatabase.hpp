@@ -3,6 +3,8 @@
 
 #include "Event.hpp"
 
+#include <boost/uuid/uuid_generators.hpp>
+
 #include <string>
 #include <vector>
 #include <memory>
@@ -43,11 +45,12 @@ public:
 		std::string description;
 		std::string visibility;
 		// not read from manifest json
-		boost::filesystem::path local_path;
+		boost::filesystem::path tmp_path; // Where archive is unzziped. Created each app run. 
+		boost::filesystem::path source_path; // Path given by user. Stored between app runs.
 		bool        m_secret { false };
 	};
 	// Use std::move when calling constructor.
-	ArchiveRepository(RepositoryManifest&& data) : m_data(std::move(data)) {}
+	ArchiveRepository(const std::string& uuid, RepositoryManifest&& data) : m_data(std::move(data)), m_uuid(uuid) {}
 	virtual ~ArchiveRepository() {}
 	// Gets vendor_indices.zip to target_path
 	virtual bool get_archive(const boost::filesystem::path& target_path) const = 0;
@@ -57,16 +60,16 @@ public:
 	// Gets file without id check - for not yet encountered vendors only!
 	virtual bool get_ini_no_id(const std::string& source_subpath, const boost::filesystem::path& target_path) const = 0;
 	const RepositoryManifest& get_manifest() const { return m_data; }
+	std::string get_uuid() const { return m_uuid; }
 protected:
 	RepositoryManifest m_data;
+	std::string m_uuid;
 };
-
-typedef std::vector<std::unique_ptr<const ArchiveRepository>> ArchiveRepositoryVector;
 
 class OnlineArchiveRepository : public ArchiveRepository
 {
 public:
-	OnlineArchiveRepository(RepositoryManifest&& data) : ArchiveRepository(std::move(data)) 
+	OnlineArchiveRepository(const std::string& uuid, RepositoryManifest&& data) : ArchiveRepository(uuid, std::move(data))
 	{
 		if (m_data.url.back() != '/') {
 			m_data.url += "/";
@@ -87,7 +90,7 @@ private:
 class LocalArchiveRepository : public ArchiveRepository
 {
 public:
-	LocalArchiveRepository(RepositoryManifest&& data) : ArchiveRepository(std::move(data)) {}
+	LocalArchiveRepository(const std::string& uuid, RepositoryManifest&& data) : ArchiveRepository(uuid, std::move(data)) {}
 	// Gets vendor_indices.zip to target_path.
 	bool get_archive(const boost::filesystem::path& target_path) const override;
 	// Gets file if repository_id arg matches m_id.
@@ -99,29 +102,39 @@ public:
 private:
 	bool get_file_inner(const boost::filesystem::path& source_path, const boost::filesystem::path& target_path) const;
 };
+
+typedef std::vector<std::unique_ptr<const ArchiveRepository>> ArchiveRepositoryVector;
+
 class PresetArchiveDatabase
 {
 public:
 	PresetArchiveDatabase(AppConfig* app_config, wxEvtHandler* evt_handler);
 	~PresetArchiveDatabase() {}
 	
-	const ArchiveRepositoryVector& get_archives() const { return m_archives; }
+	const ArchiveRepositoryVector& get_archive_repositories() const { return m_archive_repositories; }
 	void sync();
 	void sync_blocking();
 	void set_token(const std::string token) { m_token = token; }
-	void set_local_archives(AppConfig* app_config);
-	void set_archives(const std::string& json_body);
-	const std::vector<std::string>& get_used_archives() const { return m_used_archive_ids; }
-	void set_used_archives(const std::vector<std::string>& used_ids);
-	void add_local_archive(const boost::filesystem::path path);
-	void remove_local_archive(const std::string& id);
+	//void set_local_archives(AppConfig* app_config);
+	void read_server_manifest(const std::string& json_body);
+	const std::map<std::string, bool>& get_selected_repositories_uuid() const { assert(m_selected_repositories_uuid.size() == m_archive_repositories.size()); return m_selected_repositories_uuid; }
+	bool set_selected_repositories(const std::vector<std::string>& used_uuids, std::string& msg);
+	bool add_local_archive(const boost::filesystem::path path, std::string& msg);
+	void remove_local_archive(const std::string& uuid);
 private:
-	wxEvtHandler*               p_evt_handler;
-	boost::filesystem::path	    m_unq_tmp_path;
-	ArchiveRepositoryVector		m_archives;
-	std::vector<std::string>    m_used_archive_ids;
-	std::vector<std::string>	m_local_archive_adresses;
-	std::string					m_token;
+	void load_app_manifest_json();
+	void save_app_manifest_json() const;
+	void clear_online_repos();
+	bool is_selected(const std::string& id) const;
+	std::string get_stored_manifest_path() const;
+	void consolidate_selected_uuids_map();
+	std::string get_next_uuid();
+	wxEvtHandler*					p_evt_handler;
+	boost::filesystem::path			m_unq_tmp_path;
+	ArchiveRepositoryVector			m_archive_repositories;
+	std::map<std::string, bool>		m_selected_repositories_uuid;
+	std::string						m_token;
+	boost::uuids::random_generator	m_uuid_generator;
 };
 
 }} // Slic3r::GUI

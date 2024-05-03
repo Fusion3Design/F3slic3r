@@ -60,20 +60,24 @@ void UIManager::fill_entries()
     m_online_entries.clear();
     m_offline_entries.clear();
 
-    const ArchiveRepositoryVector&  archs       = m_pad->get_archives();
-    const std::vector<std::string>& used_archs  = m_pad->get_used_archives();
+    const ArchiveRepositoryVector&  archs               = m_pad->get_archive_repositories();
+    const std::map<std::string, bool>& selected_repos   = m_pad->get_selected_repositories_uuid();
 
     for (const auto& archive : archs) {
         const auto& data = archive->get_manifest();
-        if (data.local_path.empty()) {
+        if (data.source_path.empty()) {
             // online repo
-            bool is_used = std::find(used_archs.begin(), used_archs.end(), data.id) != used_archs.end();
-            m_online_entries.push_back({is_used, data.id, data.name, data.description, data.visibility });
+            auto selected_it = selected_repos.find(archive->get_uuid());
+            assert(selected_it != selected_repos.end());
+            bool is_selected = selected_it->second;
+            m_online_entries.push_back({is_selected, archive->get_uuid(), data.name, data.description, data.visibility });
         } 
         else {
             // offline repo
-            bool is_used = std::find(used_archs.begin(), used_archs.end(), data.id) != used_archs.end();
-            m_offline_entries.push_back({is_used, data.id, data.name, data.description, data.local_path.filename().string(), fs::exists(data.local_path)});
+            auto selected_it = selected_repos.find(archive->get_uuid());
+            assert(selected_it != selected_repos.end());
+            bool is_selected = selected_it->second;
+            m_offline_entries.push_back({is_selected, archive->get_uuid(), data.name, data.description, data.source_path.filename().string(), fs::exists(data.source_path)});
         }
     }
 
@@ -143,13 +147,13 @@ void UIManager::fill_grids()
 
         // header
 
-        for (const wxString& l : std::initializer_list<wxString>{ _L("Use"), _L("Name"), _L("Descrition"), "", _L("Sourse file"), "" }) {
+        for (const wxString& l : std::initializer_list<wxString>{ _L("Use"), _L("Name"), _L("Descrition"), "", _L("Source file"), "" }) {
             auto text = new wxStaticText(m_parent, wxID_ANY, l);
             text->SetFont(wxGetApp().bold_font());
             add(text);
         }
 
-        // data
+        // data1
 
         for (const auto& entry : m_offline_entries)
         {
@@ -226,7 +230,11 @@ void UIManager::load_offline_repos()
         std::string input_file = into_u8(input_files.Item(i));
         try {
             fs::path input_path = fs::path(input_file);
-            m_pad->add_local_archive(input_path);
+            std::string msg;
+            if (!m_pad->add_local_archive(input_path, msg))
+            {
+                // Finish me.
+            }
         }
         catch (fs::filesystem_error const& e) {
             std::cerr << e.what() << '\n';
@@ -236,7 +244,7 @@ void UIManager::load_offline_repos()
     update();
 }
 
-void UIManager::set_used_archives()
+void UIManager::set_selected_repositories()
 {
     std::vector<std::string> used_ids;
     for (const std::string& id : m_online_selections)
@@ -244,7 +252,10 @@ void UIManager::set_used_archives()
     for (const std::string& id : m_offline_selections)
         used_ids.push_back(id);
 
-    m_pad->set_used_archives(used_ids);
+    std::string msg;
+    if (!m_pad->set_selected_repositories(used_ids, msg)) {
+        // Finish me.
+    }
 }
 
 
@@ -286,7 +297,7 @@ void ManageUpdatesDialog::onCloseDialog(wxEvent &)
 
 void ManageUpdatesDialog::onOkDialog(wxEvent&)
 {
-    m_manager->set_used_archives();
+    m_manager->set_selected_repositories();
     this->EndModal(wxID_CLOSE);
 }
 

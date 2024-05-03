@@ -624,7 +624,7 @@ PageUpdateManager::PageUpdateManager(ConfigWizard* parent)
     btn->SetFont(wxGetApp().bold_font());
     wxGetApp().UpdateDarkUI(btn, true);
     btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) { 
-        m_manager->set_used_archives(); 
+        m_manager->set_selected_repositories(); 
         wizard_p()->set_config_updated_from_archive(true);
     });
 

@@ -1142,15 +1142,19 @@ PresetUpdater::~PresetUpdater()
 	}
 }
 
-void PresetUpdater::sync(const PresetBundle *preset_bundle, wxEvtHandler* evt_handler, const ArchiveRepositoryVector& repositories)
+void PresetUpdater::sync(const PresetBundle *preset_bundle, wxEvtHandler* evt_handler, const ArchiveRepositoryVector& repositories, const std::map<std::string, bool>& selected_repo_uuids)
 {
 	p->set_download_prefs(GUI::wxGetApp().app_config);
 	if (!p->enabled_config_update) { return; }
 	
-    p->thread = std::thread([this, &vendors = preset_bundle->vendors, &repositories, evt_handler]() {
+    p->thread = std::thread([this, &vendors = preset_bundle->vendors, &repositories, &selected_repo_uuids, evt_handler]() {
 		this->p->prune_tmps();
 		for(const auto& archive : repositories) {
-			this->p->sync_config(vendors, *archive);
+			auto it = selected_repo_uuids.find(archive->get_uuid());
+			assert(it != selected_repo_uuids.end());
+			if (it->second) {
+				this->p->sync_config(vendors, *archive);
+			}
 		}
 		wxCommandEvent* evt = new wxCommandEvent(EVT_CONFIG_UPDATER_SYNC_DONE);
 		evt_handler->QueueEvent(evt);
@@ -1168,14 +1172,18 @@ void PresetUpdater::cancel_sync()
 	p->cancel = false;
 }
 
-void PresetUpdater::sync_blocking(const PresetBundle* preset_bundle, wxEvtHandler* evt_handler, const ArchiveRepositoryVector& repositories)
+void PresetUpdater::sync_blocking(const PresetBundle* preset_bundle, wxEvtHandler* evt_handler, const ArchiveRepositoryVector& repositories, const std::map<std::string, bool>& selected_repo_uuids)
 {
 	p->set_download_prefs(GUI::wxGetApp().app_config);
 	if (!p->enabled_config_update) { return; }
 
 	this->p->prune_tmps();
 	for (const auto& archive : repositories) {
-		this->p->sync_config(preset_bundle->vendors, *archive);
+		auto it = selected_repo_uuids.find(archive->get_uuid());
+		assert(it != selected_repo_uuids.end());
+		if (it->second) {
+			this->p->sync_config(preset_bundle->vendors, *archive);
+		}
 	}
 	wxCommandEvent* evt = new wxCommandEvent(EVT_CONFIG_UPDATER_SYNC_DONE);
 	evt_handler->QueueEvent(evt);
