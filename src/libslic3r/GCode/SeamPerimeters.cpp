@@ -269,6 +269,7 @@ Perimeter::PointTrees get_kd_trees(
 Perimeter::Perimeter(
     const double slice_z,
     const std::size_t layer_index,
+    const bool is_hole,
     std::vector<Vec2d> &&positions,
     std::vector<double> &&angles,
     std::vector<PointType> &&point_types,
@@ -277,6 +278,7 @@ Perimeter::Perimeter(
 )
     : slice_z(slice_z)
     , layer_index(layer_index)
+    , is_hole(is_hole)
     , positions(std::move(positions))
     , angles(std::move(angles))
     , index_to_coord(IndexToCoord{tcb::span{this->positions}})
@@ -304,6 +306,7 @@ Perimeter Perimeter::create_degenerate(
     Perimeter perimeter{
         slice_z,
         layer_index,
+        false,
         std::move(points),
         std::move(angles),
         std::move(point_types),
@@ -368,9 +371,12 @@ Perimeter Perimeter::create(
         Impl::get_angle_types(smooth_angles, params.convex_threshold, params.concave_threshold)};
     angle_types = Impl::merge_angle_types(angle_types, smooth_angle_types, perimeter_points, params.smooth_angle_arm_length);
 
+    const bool is_hole{polygon.is_clockwise()};
+
     return Perimeter{
         layer_info.slice_z,
         layer_info.index,
+        is_hole,
         std::move(perimeter_points),
         std::move(angles),
         std::move(point_types),

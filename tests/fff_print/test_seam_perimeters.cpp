@@ -76,6 +76,7 @@ TEST_CASE("Perimeter constructs KD trees", "[Seams][SeamPerimeters]") {
     Perimeters::Perimeter perimeter{
         3.0,
         2,
+        false,
         std::move(positions),
         std::move(angles),
         std::move(point_types),

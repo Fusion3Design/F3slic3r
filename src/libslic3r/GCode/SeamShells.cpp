@@ -19,10 +19,11 @@ BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimet
                 external_perimeter.island_boundary_bounding_boxes
             )};
 
+            const bool is_hole{choosen_index != 0};
             const Polygon &adjacent_boundary{
-                choosen_index == 0 ? external_perimeter.island_boundary.contour :
-                                     external_perimeter.island_boundary.holes[choosen_index - 1]};
-            return BoundedPolygon{adjacent_boundary, external_perimeter.island_boundary_bounding_boxes[choosen_index]};
+                !is_hole ? external_perimeter.island_boundary.contour :
+                           external_perimeter.island_boundary.holes[choosen_index - 1]};
+            return BoundedPolygon{adjacent_boundary, external_perimeter.island_boundary_bounding_boxes[choosen_index], is_hole};
         }
     );
     return result;

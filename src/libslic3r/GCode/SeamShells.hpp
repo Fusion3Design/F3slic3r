@@ -20,6 +20,7 @@ namespace Slic3r::Seams::Shells::Impl {
 struct BoundedPolygon {
     Polygon polygon;
     BoundingBox bounding_box;
+    bool is_hole{false};
 };
 
 using BoundedPolygons = std::vector<BoundedPolygon>;

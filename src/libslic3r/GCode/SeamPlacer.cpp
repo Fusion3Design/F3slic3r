@@ -298,6 +298,21 @@ std::pair<SeamChoice, std::size_t> place_seam_near(
     return {choice, choice_index};
 }
 
+int get_perimeter_count(const Layer *layer){
+    int count{0};
+    for (const LayerRegion *layer_region : layer->regions()) {
+        for (const ExtrusionEntity *ex_entity : layer_region->perimeters()) {
+            if (ex_entity->is_collection()) { //collection of inner, outer, and overhang perimeters
+                count += static_cast<const ExtrusionEntityCollection*>(ex_entity)->entities.size();
+            }
+            else {
+                count += 1;
+            }
+        }
+    }
+    return count;
+}
+
 Point Placer::place_seam(const Layer *layer, const ExtrusionLoop &loop, const Point &last_pos) const {
     const PrintObject *po = layer->object();
     // Must not be called with supprot layer.
@@ -311,12 +326,33 @@ Point Placer::place_seam(const Layer *layer, const ExtrusionLoop &loop, const Po
     const bool do_staggering{this->params.staggered_inner_seams && loop.role() == ExtrusionRole::Perimeter};
     const double loop_width{loop.paths.empty() ? 0.0 : loop.paths.front().width()};
 
+
     if (this->params.seam_preference == spNearest) {
         const std::vector<BoundedPerimeter> &perimeters{this->perimeters_per_layer.at(po)[layer_index]};
         const auto [seam_choice, perimeter_index] = place_seam_near(perimeters, loop, last_pos, this->params.max_nearest_detour);
         return finalize_seam_position(loop_polygon, seam_choice, perimeters[perimeter_index].perimeter, loop_width, do_staggering);
     } else {
-        const SeamPerimeterChoice &seam_perimeter_choice{choose_closest_seam(this->seams_per_object.at(po)[layer_index], loop_polygon)};
+        const std::vector<SeamPerimeterChoice> &seams_on_perimeters{this->seams_per_object.at(po)[layer_index]};
+
+        // Special case.
+        // If there are only two perimeters and the current perimeter is hole (clockwise).
+        const int perimeter_count{get_perimeter_count(layer)};
+        const bool has_2_or_3_perimeters{perimeter_count == 2 || perimeter_count == 3};
+        if (has_2_or_3_perimeters) {
+            if (seams_on_perimeters.size() == 2 &&
+                seams_on_perimeters[0].perimeter.is_hole !=
+                    seams_on_perimeters[1].perimeter.is_hole) {
+                const SeamPerimeterChoice &seam_perimeter_choice{
+                    seams_on_perimeters[0].perimeter.is_hole ? seams_on_perimeters[1] :
+                                                               seams_on_perimeters[0]};
+                return finalize_seam_position(
+                    loop_polygon, seam_perimeter_choice.choice, seam_perimeter_choice.perimeter,
+                    loop_width, do_staggering
+                );
+            }
+        }
+
+        const SeamPerimeterChoice &seam_perimeter_choice{choose_closest_seam(seams_on_perimeters, loop_polygon)};
         return finalize_seam_position(loop_polygon, seam_perimeter_choice.choice, seam_perimeter_choice.perimeter, loop_width, do_staggering);
     }
 }
