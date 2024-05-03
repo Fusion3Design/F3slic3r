@@ -2512,11 +2512,14 @@ bool TabFilament::select_preset_by_name(const std::string &name_w_suffix, bool f
 bool TabFilament::save_current_preset(const std::string &new_name, bool detach)
 {
     m_preset_bundle->cache_extruder_filaments_names();
-    const bool is_saved = Tab::save_current_preset(new_name, detach);
-    if (is_saved) {
+    const bool is_saved = Tab::save_current_preset(new_name, detach);// Note: is_saved is "true", if preset with new_name was saved as new preset
+
+    // Reset extruder_filaments only if preset with new_name was saved as new preset
+    if (is_saved)
         m_preset_bundle->reset_extruder_filaments();
-        m_preset_bundle->extruders_filaments[m_active_extruder].select_filament(m_presets->get_idx_selected());
-    }
+
+    // Saved preset have to be selected for active extruder in any case 
+    m_preset_bundle->extruders_filaments[m_active_extruder].select_filament(m_presets->get_idx_selected());
     return is_saved;
 }
 
