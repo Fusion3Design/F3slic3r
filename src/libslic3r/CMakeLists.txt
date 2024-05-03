@@ -482,7 +482,6 @@ set(SLIC3R_SOURCES
     Arachne/BeadingStrategy/WideningBeadingStrategy.hpp
     Arachne/BeadingStrategy/WideningBeadingStrategy.cpp
     Arachne/utils/ExtrusionJunction.hpp
-    Arachne/utils/ExtrusionJunction.cpp
     Arachne/utils/ExtrusionLine.hpp
     Arachne/utils/ExtrusionLine.cpp
     Arachne/utils/HalfEdge.hpp
@@ -500,6 +499,8 @@ set(SLIC3R_SOURCES
     Geometry/Voronoi.cpp
     Geometry/VoronoiUtils.hpp
     Geometry/VoronoiUtils.cpp
+    Arachne/PerimeterOrder.hpp
+    Arachne/PerimeterOrder.cpp
     Arachne/SkeletalTrapezoidation.hpp
     Arachne/SkeletalTrapezoidation.cpp
     Arachne/SkeletalTrapezoidationEdge.hpp
