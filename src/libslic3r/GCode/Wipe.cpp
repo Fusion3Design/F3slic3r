@@ -211,7 +211,7 @@ std::optional<Point> wipe_hide_seam(const SmoothPath &path, bool is_hole, double
                     // Wipe move cannot be calculated, the loop is not long enough. This should not happen due to the longer_than() test above.
                     return {};
             }
-            if (std::optional<Point> p = sample_path_point_at_distance_from_end(path, wipe_length); p)
+            if (std::optional<Point> p = sample_path_point_at_distance_from_start(path, wipe_length); p)
                 p_prev = *p;
             else
                 // Wipe move cannot be calculated, the loop is not long enough. This should not happen due to the longer_than() test above.
@@ -231,7 +231,7 @@ std::optional<Point> wipe_hide_seam(const SmoothPath &path, bool is_hole, double
         }
         // Rotate the forward segment inside by 1/3 of the wedge angle.
         auto v_rotated = Eigen::Rotation2D(angle_inside) * (p_next - p_current).cast<double>().normalized();
-        return std::make_optional<Point>(p_current + (v_rotated * wipe_length).cast<coord_t>());
+        return p_current + (v_rotated * wipe_length).cast<coord_t>();
     }
 
     return {};
