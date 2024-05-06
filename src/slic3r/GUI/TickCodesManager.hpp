@@ -7,6 +7,8 @@
 
 #include "libslic3r/CustomGCode.hpp"
 
+#include <array>
+#include <functional>
 #include <vector>
 #include <set>
 

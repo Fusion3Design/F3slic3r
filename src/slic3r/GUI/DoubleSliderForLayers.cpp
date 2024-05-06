@@ -8,6 +8,9 @@
 #include "libslic3r/format.hpp" // -> format()
 #include "I18N.hpp"
 
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/split.hpp>
 #include <cmath>
 
 #include "ImGuiWrapper.hpp"

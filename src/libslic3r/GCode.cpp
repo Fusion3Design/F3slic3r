@@ -1232,7 +1232,9 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
 
     // Collect custom seam data from all objects.
     std::function<void(void)> throw_if_canceled_func = [&print]() { print.throw_if_canceled();};
-    m_seam_placer.init(print, throw_if_canceled_func);
+
+    const Seams::Params params{Seams::Placer::get_params(print.full_print_config())};
+    m_seam_placer.init(print.objects(), params, throw_if_canceled_func);
 
     if (! (has_wipe_tower && print.config().single_extruder_multi_material_priming)) {
         // Set initial extruder only after custom start G-code.
@@ -2953,7 +2955,7 @@ std::string GCodeGenerator::extrude_loop(const ExtrusionLoop &loop_src, const GC
     Point seam_point = this->last_position.has_value() ? *this->last_position : Point::Zero();
     if (!m_config.spiral_vase && comment_is_perimeter(description)) {
         assert(m_layer != nullptr);
-        seam_point = m_seam_placer.place_seam(m_layer, loop_src, m_config.external_perimeters_first, seam_point);
+        seam_point = m_seam_placer.place_seam(m_layer, loop_src, seam_point);
     }
     // Because the G-code export has 1um resolution, don't generate segments shorter than 1.5 microns,
     // thus empty path segments will not be produced by G-code export.
