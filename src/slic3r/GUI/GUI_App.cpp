@@ -3681,6 +3681,7 @@ bool GUI_App::select_printer_from_connect(const std::string& msg)
 {
     // parse message
     std::string model_name = plater()->get_user_account()->get_keyword_from_json(msg, "printer_model");
+    std::string uuid = plater()->get_user_account()->get_keyword_from_json(msg, "uuid");
     if (model_name.empty()) {
         std::vector<std::string> compatible_printers;
         plater()->get_user_account()->fill_supported_printer_models_from_json(msg, compatible_printers);
@@ -3707,6 +3708,7 @@ bool GUI_App::select_printer_from_connect(const std::string& msg)
         NotificationType::SelectPrinterFromConnect
         , printer_preset ? NotificationManager::NotificationLevel::ImportantNotificationLevel : NotificationManager::NotificationLevel::WarningNotificationLevel
         , out);
+    plater()->get_user_account()->set_current_printer_uuid_from_connect(uuid);
     return printer_preset;
 }
 

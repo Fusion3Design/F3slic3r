@@ -72,6 +72,8 @@ public:
 
     const std::map<std::string, ConnectPrinterState>& get_printer_state_table() const { return printer_state_table; }
 
+    void        set_current_printer_uuid_from_connect(const std::string& uuid) { m_current_printer_uuid_from_connect = uuid; }
+    std::string get_current_printer_uuid_from_connect() const { return m_current_printer_uuid_from_connect; }
 private:
     void set_username(const std::string& username);
    
@@ -85,6 +87,8 @@ private:
     std::string                         m_username;
     size_t                              m_fail_counter { 0 };
     std::string                         m_avatar_extension;    
+
+    std::string                         m_current_printer_uuid_from_connect;
 
     const std::map<std::string, ConnectPrinterState> printer_state_table = {
         {"OFFLINE"  , ConnectPrinterState::CONNECT_PRINTER_OFFLINE},
