@@ -964,6 +964,10 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
            boost::filesystem::path path = user_account->get_avatar_path(true);
            FILE* file; 
            file = fopen(path.string().c_str(), "wb");
+           if (file == NULL) {
+               BOOST_LOG_TRIVIAL(error) << "Failed to create file to store avatar picture at: " << path;
+               return;
+           }
            fwrite(evt.data.c_str(), 1, evt.data.size(), file);
            fclose(file);
            this->main_frame->refresh_account_menu(true);
