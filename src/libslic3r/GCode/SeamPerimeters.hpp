@@ -127,6 +127,7 @@ struct Perimeter
     Perimeter(
         const double slice_z,
         const std::size_t layer_index,
+        const bool is_hole,
         std::vector<Vec2d> &&positions,
         std::vector<double> &&angles,
         std::vector<PointType> &&point_types,
@@ -147,6 +148,7 @@ struct Perimeter
 
     bool is_degenerate{false};
     double slice_z{};
+    bool is_hole{false};
     std::size_t layer_index{};
     std::vector<Vec2d> positions{};
     std::vector<double> angles{};

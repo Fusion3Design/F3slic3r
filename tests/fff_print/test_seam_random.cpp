@@ -23,6 +23,7 @@ Perimeters::Perimeter get_perimeter() {
     return {
         slice_z,
         layer_index,
+        false,
         std::move(positions),
         std::move(angles),
         std::move(point_types),
