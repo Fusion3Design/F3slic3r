@@ -76,7 +76,6 @@ protected:
     wxMenuItem* m_context_menu;
     wxMenuItem* m_dev_tools;
 #endif
-    long m_zoomFactor;
 
     // Last executed JavaScript snippet, for convenience.
     wxString m_javascript;
@@ -89,6 +88,71 @@ protected:
     bool m_load_error_page { false };
     bool m_shown { false };
 }; 
+
+
+class WebViewDialog : public wxDialog
+{
+public:
+    WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size, const std::string& loading_html = "loading");
+    virtual ~WebViewDialog();
+
+    virtual void on_show(wxShowEvent& evt) = 0;
+    virtual void on_script_message(wxWebViewEvent& evt) = 0;
+
+    void on_idle(wxIdleEvent& evt);
+    void on_url(wxCommandEvent& evt);
+    void on_back_button(wxCommandEvent& evt);
+    void on_forward_button(wxCommandEvent& evt);
+    void on_stop_button(wxCommandEvent& evt);
+    void on_reload_button(wxCommandEvent& evt);
+
+    void on_view_source_request(wxCommandEvent& evt);
+    void on_view_text_request(wxCommandEvent& evt);
+    void on_tools_clicked(wxCommandEvent& evt);
+    void on_error(wxWebViewEvent& evt);
+
+    void on_run_script_custom(wxCommandEvent& evt);
+    void on_add_user_script(wxCommandEvent& evt);
+    void on_set_custom_user_agent(wxCommandEvent& evt);
+    void on_clear_selection(wxCommandEvent& evt);
+    void on_delete_selection(wxCommandEvent& evt);
+    void on_select_all(wxCommandEvent& evt);
+    void On_enable_context_menu(wxCommandEvent& evt);
+    void On_enable_dev_tools(wxCommandEvent& evt);
+    void on_close(wxCloseEvent& evt);
+
+    void run_script(const wxString& javascript);
+   
+    void load_error_page();
+
+protected:
+    wxWebView* m_browser;
+    std::string m_loading_html;
+
+    bool m_load_error_page{ false };
+#ifdef DEBUG_URL_PANEL
+
+    wxBoxSizer* bSizer_toolbar;
+    wxButton* m_button_back;
+    wxButton* m_button_forward;
+    wxButton* m_button_stop;
+    wxButton* m_button_reload;
+    wxTextCtrl* m_url;
+    wxButton* m_button_tools;
+
+    wxMenu* m_tools_menu;
+    wxMenuItem* m_script_custom;
+
+    wxStaticText* m_info_text;
+
+    wxMenuItem* m_context_menu;
+    wxMenuItem* m_dev_tools;
+#endif
+    // Last executed JavaScript snippet, for convenience.
+    wxString m_javascript;
+    wxString m_response_js;
+    wxString m_default_url;
+};
 
 class ConnectRequestHandler
 {
@@ -144,7 +208,7 @@ private:
     bool m_api_key_sent {false};
 };
 
-
+/*
 class WebViewDialog : public wxDialog
 {
 public:
@@ -160,7 +224,7 @@ protected:
     wxWebView* m_browser;
     std::string m_loading_html;
 };
-
+*/
 class PrinterPickWebViewDialog : public WebViewDialog, public ConnectRequestHandler
 {
 public:

@@ -95,8 +95,6 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const 
     m_dev_tools = m_tools_menu->AppendCheckItem(wxID_ANY, _L("Enable Dev Tools"));
 
 #endif
-    //Zoom
-    m_zoomFactor = 100;
 
     Bind(wxEVT_SHOW, &WebViewPanel::on_show, this);
 
@@ -438,7 +436,7 @@ case type: \
         WX_ERROR_CASE(wxWEBVIEW_NAV_ERR_OTHER);
     }
 
-    BOOST_LOG_TRIVIAL(error) << "WebView error: " << category;
+    BOOST_LOG_TRIVIAL(error) << "WebViewPanel error: " << category;
     load_error_page();
 #ifdef DEBUG_URL_PANEL
     m_info->ShowMessage(_L("An error occurred loading ") + evt.GetURL() + "\n" +
@@ -655,6 +653,40 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
     , m_loading_html(loading_html)
 {
     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
+#ifdef DEBUG_URL_PANEL
+    // Create the button
+    bSizer_toolbar = new wxBoxSizer(wxHORIZONTAL);
+
+    m_button_back = new wxButton(this, wxID_ANY, wxT("Back"), wxDefaultPosition, wxDefaultSize, 0);
+    m_button_back->Enable(false);
+    bSizer_toolbar->Add(m_button_back, 0, wxALL, 5);
+
+    m_button_forward = new wxButton(this, wxID_ANY, wxT("Forward"), wxDefaultPosition, wxDefaultSize, 0);
+    m_button_forward->Enable(false);
+    bSizer_toolbar->Add(m_button_forward, 0, wxALL, 5);
+
+    m_button_stop = new wxButton(this, wxID_ANY, wxT("Stop"), wxDefaultPosition, wxDefaultSize, 0);
+
+    bSizer_toolbar->Add(m_button_stop, 0, wxALL, 5);
+
+    m_button_reload = new wxButton(this, wxID_ANY, wxT("Reload"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer_toolbar->Add(m_button_reload, 0, wxALL, 5);
+
+    m_url = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+    bSizer_toolbar->Add(m_url, 1, wxALL | wxEXPAND, 5);
+
+    m_button_tools = new wxButton(this, wxID_ANY, wxT("Tools"), wxDefaultPosition, wxDefaultSize, 0);
+    bSizer_toolbar->Add(m_button_tools, 0, wxALL, 5);
+
+    // Create panel for find toolbar.
+    wxPanel* panel = new wxPanel(this);
+    topsizer->Add(bSizer_toolbar, 0, wxEXPAND, 0);
+    topsizer->Add(panel, wxSizerFlags().Expand());
+
+    // Create sizer for panel.
+    wxBoxSizer* panel_sizer = new wxBoxSizer(wxVERTICAL);
+    panel->SetSizer(panel_sizer);
+#endif
     topsizer->SetMinSize(size);
     SetSizerAndFit(topsizer);
 
@@ -668,19 +700,337 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
 
     topsizer->Add(m_browser, wxSizerFlags().Expand().Proportion(1));
 
+#ifdef DEBUG_URL_PANEL
+    // Create the Tools menu
+    m_tools_menu = new wxMenu();
+    wxMenuItem* viewSource = m_tools_menu->Append(wxID_ANY, _L("View Source"));
+    wxMenuItem* viewText = m_tools_menu->Append(wxID_ANY, _L("View Text"));
+    m_tools_menu->AppendSeparator();
+
+    wxMenu* script_menu = new wxMenu;
+
+    m_script_custom = script_menu->Append(wxID_ANY, "Custom script");
+    m_tools_menu->AppendSubMenu(script_menu, _L("Run Script"));
+    wxMenuItem* addUserScript = m_tools_menu->Append(wxID_ANY, _L("Add user script"));
+    wxMenuItem* setCustomUserAgent = m_tools_menu->Append(wxID_ANY, _L("Set custom user agent"));
+
+    m_context_menu = m_tools_menu->AppendCheckItem(wxID_ANY, _L("Enable Context Menu"));
+    m_dev_tools = m_tools_menu->AppendCheckItem(wxID_ANY, _L("Enable Dev Tools"));
+
+#endif
+    
     Bind(wxEVT_SHOW, &WebViewDialog::on_show, this);
     Bind(wxEVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED, &WebViewDialog::on_script_message, this, m_browser->GetId());
+    
+    // Connect the webview events
+    Bind(wxEVT_WEBVIEW_ERROR, &WebViewDialog::on_error, this, m_browser->GetId());
+    //Connect the idle events
+    Bind(wxEVT_IDLE, &WebViewDialog::on_idle, this);
+    Bind(wxEVT_CLOSE_WINDOW, &WebViewDialog::on_close, this);
+#ifdef DEBUG_URL_PANEL
+    // Connect the button events
+    Bind(wxEVT_BUTTON, &WebViewDialog::on_back_button, this, m_button_back->GetId());
+    Bind(wxEVT_BUTTON, &WebViewDialog::on_forward_button, this, m_button_forward->GetId());
+    Bind(wxEVT_BUTTON, &WebViewDialog::on_stop_button, this, m_button_stop->GetId());
+    Bind(wxEVT_BUTTON, &WebViewDialog::on_reload_button, this, m_button_reload->GetId());
+    Bind(wxEVT_BUTTON, &WebViewDialog::on_tools_clicked, this, m_button_tools->GetId());
+    Bind(wxEVT_TEXT_ENTER, &WebViewDialog::on_url, this, m_url->GetId());
+    
+    // Connect the menu events
+    Bind(wxEVT_MENU, &WebViewDialog::on_view_source_request, this, viewSource->GetId());
+    Bind(wxEVT_MENU, &WebViewDialog::on_view_text_request, this, viewText->GetId());
+    Bind(wxEVT_MENU, &WebViewDialog::On_enable_context_menu, this, m_context_menu->GetId());
+    Bind(wxEVT_MENU, &WebViewDialog::On_enable_dev_tools, this, m_dev_tools->GetId());
+
+    Bind(wxEVT_MENU, &WebViewDialog::on_run_script_custom, this, m_script_custom->GetId());
+    Bind(wxEVT_MENU, &WebViewDialog::on_add_user_script, this, addUserScript->GetId());
+#endif
 
     m_browser->LoadURL(url);   
+#ifdef DEBUG_URL_PANEL
+    m_url->SetLabelText(url);
+#endif
 }
 WebViewDialog::~WebViewDialog()
 {
 }
 
+
+
+
+
+void WebViewDialog::on_idle(wxIdleEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+    if (m_browser->IsBusy()) {
+        wxSetCursor(wxCURSOR_ARROWWAIT);
+    }  else {
+        wxSetCursor(wxNullCursor);
+        if (m_load_error_page) {
+            m_load_error_page = false;
+            m_browser->LoadURL(GUI::format_wxstr("file://%1%/web/connection_failed.html", boost::filesystem::path(resources_dir()).generic_string()));
+        }
+    }
+#ifdef DEBUG_URL_PANEL
+    m_button_stop->Enable(m_browser->IsBusy());
+#endif
+}
+
+/**
+    * Callback invoked when user entered an URL and pressed enter
+    */
+void WebViewDialog::on_url(wxCommandEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+#ifdef DEBUG_URL_PANEL
+    m_browser->LoadURL(m_url->GetValue());
+    m_browser->SetFocus();
+#endif
+}
+
+/**
+    * Callback invoked when user pressed the "back" button
+    */
+void WebViewDialog::on_back_button(wxCommandEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+    m_browser->GoBack();
+}
+
+/**
+    * Callback invoked when user pressed the "forward" button
+    */
+void WebViewDialog::on_forward_button(wxCommandEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+    m_browser->GoForward();
+}
+
+/**
+    * Callback invoked when user pressed the "stop" button
+    */
+void WebViewDialog::on_stop_button(wxCommandEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+    m_browser->Stop();
+}
+
+/**
+    * Callback invoked when user pressed the "reload" button
+    */
+void WebViewDialog::on_reload_button(wxCommandEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+    m_browser->Reload();
+}
+
+void WebViewDialog::on_close(wxCloseEvent& evt)
+{
+    this->Hide();
+}
+
+void WebViewDialog::on_script_message(wxWebViewEvent& evt)
+{
+}
+
+/**
+    * Invoked when user selects the "View Source" menu item
+    */
+void WebViewDialog::on_view_source_request(wxCommandEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+
+    SourceViewDialog dlg(this, m_browser->GetPageSource());
+    dlg.ShowModal();
+}
+
+/**
+    * Invoked when user selects the "View Text" menu item
+    */
+void WebViewDialog::on_view_text_request(wxCommandEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+
+    wxDialog textViewDialog(this, wxID_ANY, "Page Text",
+        wxDefaultPosition, wxSize(700, 500),
+        wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+
+    wxTextCtrl* text = new wxTextCtrl(this, wxID_ANY, m_browser->GetPageText(),
+        wxDefaultPosition, wxDefaultSize,
+        wxTE_MULTILINE |
+        wxTE_RICH |
+        wxTE_READONLY);
+
+    wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
+    sizer->Add(text, 1, wxEXPAND);
+    SetSizer(sizer);
+    textViewDialog.ShowModal();
+}
+
+/**
+    * Invoked when user selects the "Menu" item
+    */
+void WebViewDialog::on_tools_clicked(wxCommandEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+
+#ifdef DEBUG_URL_PANEL
+    m_context_menu->Check(m_browser->IsContextMenuEnabled());
+    m_dev_tools->Check(m_browser->IsAccessToDevToolsEnabled());
+
+    wxPoint position = ScreenToClient(wxGetMousePosition());
+    PopupMenu(m_tools_menu, position.x, position.y);
+#endif
+}
+
+
+void WebViewDialog::on_run_script_custom(wxCommandEvent& WXUNUSED(evt))
+{
+    wxTextEntryDialog dialog
+    (
+        this,
+        "Please enter JavaScript code to execute",
+        wxGetTextFromUserPromptStr,
+        m_javascript,
+        wxOK | wxCANCEL | wxCENTRE | wxTE_MULTILINE
+    );
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+
+    run_script(dialog.GetValue());
+}
+
+void WebViewDialog::on_add_user_script(wxCommandEvent& WXUNUSED(evt))
+{
+    wxString userScript = "window.wx_test_var = 'wxWidgets webview sample';";
+    wxTextEntryDialog dialog
+    (
+        this,
+        "Enter the JavaScript code to run as the initialization script that runs before any script in the HTML document.",
+        wxGetTextFromUserPromptStr,
+        userScript,
+        wxOK | wxCANCEL | wxCENTRE | wxTE_MULTILINE
+    );
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+
+    if (!m_browser->AddUserScript(dialog.GetValue()))
+        wxLogError("Could not add user script");
+}
+
+void WebViewDialog::on_set_custom_user_agent(wxCommandEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+
+    wxString customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.1 Mobile/15E148 Safari/604.1";
+    wxTextEntryDialog dialog
+    (
+        this,
+        "Enter the custom user agent string you would like to use.",
+        wxGetTextFromUserPromptStr,
+        customUserAgent,
+        wxOK | wxCANCEL | wxCENTRE
+    );
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+
+    if (!m_browser->SetUserAgent(customUserAgent))
+        wxLogError("Could not set custom user agent");
+}
+
+void WebViewDialog::on_clear_selection(wxCommandEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+
+    m_browser->ClearSelection();
+}
+
+void WebViewDialog::on_delete_selection(wxCommandEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+
+    m_browser->DeleteSelection();
+}
+
+void WebViewDialog::on_select_all(wxCommandEvent& WXUNUSED(evt))
+{
+    if (!m_browser)
+        return;
+
+    m_browser->SelectAll();
+}
+
+void WebViewDialog::On_enable_context_menu(wxCommandEvent& evt)
+{
+    if (!m_browser)
+        return;
+
+    m_browser->EnableContextMenu(evt.IsChecked());
+}
+void WebViewDialog::On_enable_dev_tools(wxCommandEvent& evt)
+{
+    if (!m_browser)
+        return;
+
+    m_browser->EnableAccessToDevTools(evt.IsChecked());
+}
+
+/**
+    * Callback invoked when a loading error occurs
+    */
+void WebViewDialog::on_error(wxWebViewEvent& evt)
+{
+#define WX_ERROR_CASE(type) \
+case type: \
+    category = #type; \
+    break;
+
+    wxString category;
+    switch (evt.GetInt())
+    {
+        WX_ERROR_CASE(wxWEBVIEW_NAV_ERR_CONNECTION);
+        WX_ERROR_CASE(wxWEBVIEW_NAV_ERR_CERTIFICATE);
+        WX_ERROR_CASE(wxWEBVIEW_NAV_ERR_AUTH);
+        WX_ERROR_CASE(wxWEBVIEW_NAV_ERR_SECURITY);
+        WX_ERROR_CASE(wxWEBVIEW_NAV_ERR_NOT_FOUND);
+        WX_ERROR_CASE(wxWEBVIEW_NAV_ERR_REQUEST);
+        WX_ERROR_CASE(wxWEBVIEW_NAV_ERR_USER_CANCELLED);
+        WX_ERROR_CASE(wxWEBVIEW_NAV_ERR_OTHER);
+    }
+
+    BOOST_LOG_TRIVIAL(error) << "WebViewDialog error: " << category;
+    load_error_page();
+}
+
+void WebViewDialog::load_error_page()
+{
+    if (!m_browser)
+        return;
+
+    m_browser->Stop();
+    m_load_error_page = true;
+}
+
 void WebViewDialog::run_script(const wxString& javascript)
 {
-    if (!m_browser) 
+    if (!m_browser)
         return;
+    // Remember the script we run in any case, so the next time the user opens
+    // the "Run Script" dialog box, it is shown there for convenient updating.
+    m_javascript = javascript;
+    BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript;
     m_browser->RunScriptAsync(javascript);
 }
 
