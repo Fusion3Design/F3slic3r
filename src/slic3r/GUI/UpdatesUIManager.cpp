@@ -61,6 +61,9 @@ void UIManager::fill_entries()
     m_online_entries.clear();
     m_offline_entries.clear();
 
+    m_online_selections.clear();
+    m_offline_selections.clear();
+
     const ArchiveRepositoryVector&  archs               = m_pad->get_archive_repositories();
     const std::map<std::string, bool>& selected_repos   = m_pad->get_selected_repositories_uuid();
 
@@ -267,7 +270,7 @@ void UIManager::load_offline_repos()
     update();
 }
 
-void UIManager::set_selected_repositories()
+bool UIManager::set_selected_repositories()
 {
     std::vector<std::string> used_ids;
     for (const std::string& id : m_online_selections)
@@ -276,9 +279,13 @@ void UIManager::set_selected_repositories()
         used_ids.push_back(id);
 
     std::string msg;
-    if (!m_pad->set_selected_repositories(used_ids, msg)) {
-        ErrorDialog(m_parent, msg, false).ShowModal();
-    }
+    if (m_pad->set_selected_repositories(used_ids, msg))
+        return true;
+
+    ErrorDialog(m_parent, msg, false).ShowModal();
+    // update selection on UI
+    update();
+    return false;
 }
 
 
@@ -320,8 +327,8 @@ void ManageUpdatesDialog::onCloseDialog(wxEvent &)
 
 void ManageUpdatesDialog::onOkDialog(wxEvent&)
 {
-    m_manager->set_selected_repositories();
-    this->EndModal(wxID_CLOSE);
+    if (m_manager->set_selected_repositories())
+        this->EndModal(wxID_CLOSE);
 }
 
 } // namespace GUI
