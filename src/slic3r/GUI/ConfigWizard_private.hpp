@@ -120,6 +120,7 @@ struct PrinterPicker: wxPanel
     };
 
     const std::string vendor_id;
+    const std::string vendor_repo_id;
     std::vector<Checkbox*> cboxes;
     std::vector<Checkbox*> cboxes_alt;
 
@@ -147,7 +148,7 @@ struct ConfigWizardPage: wxPanel
     ConfigWizard *parent;
     const wxString shortname;
     wxBoxSizer *content;
-    const unsigned indent;
+    unsigned indent;
 
     ConfigWizardPage(ConfigWizard *parent, wxString title, wxString shortname, unsigned indent = 0);
     virtual ~ConfigWizardPage();
@@ -161,6 +162,7 @@ struct ConfigWizardPage: wxPanel
 
     wxStaticText* append_text(wxString text);
     void append_spacer(int space);
+    void incr_indent()                     { if (indent > 0) indent--; }
 
     ConfigWizard::priv *wizard_p() const { return parent->p.get(); }
 
@@ -208,6 +210,7 @@ struct PagePrinters: ConfigWizardPage
     std::set<std::string> get_selected_models();
 
     std::string get_vendor_id() const { return printer_pickers.empty() ? "" : printer_pickers[0]->vendor_id; }
+    std::string get_vendor_repo_id() const { return printer_pickers.empty() ? "" : printer_pickers[0]->vendor_repo_id; }
 
     virtual void set_run_reason(ConfigWizard::RunReason run_reason) override;
 
@@ -479,7 +482,7 @@ struct PageMode: ConfigWizardPage
 
 struct PageVendors: ConfigWizardPage
 {
-    PageVendors(ConfigWizard *parent);
+    PageVendors(ConfigWizard *parent, std::string repos_id = std::string());
 };
 
 struct PageFirmware: ConfigWizardPage
@@ -625,8 +628,6 @@ struct ConfigWizard::priv
 
     PageWelcome      *page_welcome = nullptr;
     PageUpdateManager*page_update_manager = nullptr;
-    PagePrinters     *page_fff = nullptr;
-    PagePrinters     *page_msla = nullptr;
     PageMaterials    *page_filaments = nullptr;
     PageMaterials    *page_sla_materials = nullptr;
     PageCustom       *page_custom = nullptr;
@@ -637,8 +638,6 @@ struct ConfigWizard::priv
     PageFilesAssociation* page_files_association = nullptr;
 #endif // _WIN32
     PageMode         *page_mode = nullptr;
-    PageVendors      *page_vendors = nullptr;
-    Pages3rdparty     pages_3rdparty;
 
     // Custom setup pages
     PageFirmware     *page_firmware = nullptr;
@@ -647,7 +646,17 @@ struct ConfigWizard::priv
     PageTemperatures *page_temps = nullptr;
     PageBuildVolume* page_bvolume = nullptr;
 
-    bool             m_is_config_updated_from_archive{ false };
+    std::vector<PagePrinters*>  pages_fff;
+    std::vector<PagePrinters*>  pages_msla;
+
+    struct Repository {
+        std::string     id_name;
+        PageVendors*    vendor_page{ nullptr };
+        Pages3rdparty   printers_pages;
+    };
+    std::vector<Repository>     repositories;
+
+    bool                        is_config_from_archive{ false };
 
     // Pointers to all pages (regardless or whether currently part of the ConfigWizardIndex)
     std::vector<ConfigWizardPage*> all_pages;
@@ -666,7 +675,6 @@ struct ConfigWizard::priv
     void add_page(ConfigWizardPage *page);
     void enable_next(bool enable);
     void set_start_page(ConfigWizard::StartPage start_page);
-    void create_3rdparty_pages();
     void set_run_reason(RunReason run_reason);
     void update_materials(Technology technology);
 
@@ -689,6 +697,9 @@ struct ConfigWizard::priv
 
     int em() const { return index->em(); }
     void set_config_updated_from_archive(bool is_updated);
+
+    void clear_printer_pages();
+    void load_pages_from_archive();
 };
 
 }
