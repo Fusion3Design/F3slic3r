@@ -360,7 +360,7 @@ bool PresetArchiveDatabase::set_selected_repositories(const std::vector<std::str
 	return true;
 }
 
-bool PresetArchiveDatabase::add_local_archive(const boost::filesystem::path path, std::string& msg)
+std::string PresetArchiveDatabase::add_local_archive(const boost::filesystem::path path, std::string& msg)
 {
 	if (auto it = std::find_if(m_archive_repositories.begin(), m_archive_repositories.end(), [path](const std::unique_ptr<const ArchiveRepository>& ptr) {
 		return ptr->get_manifest().source_path == path;
@@ -368,21 +368,21 @@ bool PresetArchiveDatabase::add_local_archive(const boost::filesystem::path path
 	{
 		msg = GUI::format(_L("Failed to add local archive %1%. Path already used."), path);
 		BOOST_LOG_TRIVIAL(error) << msg;
-		return false;
+		return std::string();
 	}
 	std::string uuid = get_next_uuid();
 	ArchiveRepository::RepositoryManifest header_data;
 	if (!extract_local_archive_repository(uuid, path, m_unq_tmp_path, header_data)) {
 		msg = GUI::format(_L("Failed to extract local archive %1%."), path);
 		BOOST_LOG_TRIVIAL(error) << msg;
-		return false;
+		return std::string();
 	}
 	// Solve if it can be set true first.
 	m_selected_repositories_uuid[uuid] = false;
 	m_archive_repositories.emplace_back(std::make_unique<LocalArchiveRepository>(uuid, std::move(header_data)));
 
 	save_app_manifest_json();
-	return true;
+	return uuid;
 }
 void PresetArchiveDatabase::remove_local_archive(const std::string& uuid)
 {

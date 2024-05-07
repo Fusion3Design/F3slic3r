@@ -52,52 +52,37 @@ UIManager::UIManager(wxWindow* parent, PresetArchiveDatabase* pad, int em) :
 
     m_main_sizer->Add(m_offline_sizer, 0, wxALL, 2 * em);
 
-    fill_entries();
+    fill_entries(true);
     fill_grids();
 }
 
-void UIManager::fill_entries()
+void UIManager::fill_entries(bool init_selection/* = false*/)
 {
     m_online_entries.clear();
     m_offline_entries.clear();
-
-    m_online_selections.clear();
-    m_offline_selections.clear();
 
     const ArchiveRepositoryVector&  archs               = m_pad->get_archive_repositories();
     const std::map<std::string, bool>& selected_repos   = m_pad->get_selected_repositories_uuid();
 
     for (const auto& archive : archs) {
-        const auto& data = archive->get_manifest();
+        const std::string&  uuid   = archive->get_uuid();
+        auto                sel_it = selected_repos.find(uuid);
+        assert(sel_it != selected_repos.end());
+        if (init_selection && sel_it->second)
+            m_selected_uuids.emplace(uuid);
+
+        const bool  is_selected = m_selected_uuids.find(uuid) != m_selected_uuids.end();
+        const auto& data        = archive->get_manifest();
+
         if (data.source_path.empty()) {
             // online repo
-            auto selected_it = selected_repos.find(archive->get_uuid());
-            assert(selected_it != selected_repos.end());
-            bool is_selected = selected_it->second;
-            m_online_entries.push_back({is_selected, archive->get_uuid(), data.name, data.description, data.visibility });
-            if (is_selected)
-                m_online_selections.emplace(archive->get_uuid());
-        } 
+            m_online_entries.push_back({ is_selected, uuid, data.name, data.description, data.visibility });
+        }
         else {
             // offline repo
-            auto selected_it = selected_repos.find(archive->get_uuid());
-            assert(selected_it != selected_repos.end());
-            bool is_selected = selected_it->second;
-            m_offline_entries.push_back({is_selected, archive->get_uuid(), data.name, data.description, data.source_path.filename().string(), fs::exists(data.source_path)});
-            if (is_selected)
-                m_offline_selections.emplace(archive->get_uuid());
+            m_offline_entries.push_back({ is_selected, uuid, data.name, data.description, data.source_path.filename().string(), fs::exists(data.source_path) });
         }
     }
-
-#if 0 // ysFIXME_delete 
-    // Next code is just for testing
-
-    if (m_offline_entries.empty())
-        m_offline_entries = {
-            {true,  "333", "Prusa AFS"    , "Prusa FDM Prusa FDM Prusa FDM" , "/path/field/file1.zip", false},
-            {false, "444", "Prusa Trilab" , "Prusa sla Prusa sla Prusa sla" , "/path/field/file2.zip", true},
-        };
-#endif
 }
 
 
@@ -129,9 +114,9 @@ void UIManager::fill_grids()
             CheckBox::SetValue(chb, entry.use);
             chb->Bind(wxEVT_CHECKBOX, [this, chb, &entry](wxCommandEvent e) {
                 if (CheckBox::GetValue(chb))
-                    m_online_selections.emplace(entry.id);
+                    m_selected_uuids.emplace(entry.id);
                 else
-                    m_online_selections.erase(entry.id);
+                    m_selected_uuids.erase(entry.id);
                 });
             add(chb);
 
@@ -169,9 +154,9 @@ void UIManager::fill_grids()
             CheckBox::SetValue(chb, entry.use);
             chb->Bind(wxEVT_CHECKBOX, [this, chb, &entry](wxCommandEvent e) {
                 if (CheckBox::GetValue(chb))
-                    m_offline_selections.emplace(entry.id);
+                    m_selected_uuids.emplace(entry.id);
                 else
-                    m_offline_selections.erase(entry.id);
+                    m_selected_uuids.erase(entry.id);
                 });
             add(chb);
 
@@ -229,6 +214,7 @@ void UIManager::update()
 void UIManager::remove_offline_repos(const std::string& id)
 {
     m_pad->remove_local_archive(id);
+    m_selected_uuids.erase(id);
 
     if (wxDialog* dlg = dynamic_cast<wxDialog*>(m_parent)) {
         // Invalidate min_size for correct next Layout()
@@ -257,26 +243,25 @@ void UIManager::load_offline_repos()
         try {
             fs::path input_path = fs::path(input_file);
             std::string msg;
-            if (!m_pad->add_local_archive(input_path, msg))
-            {
+            std::string uuid = m_pad->add_local_archive(input_path, msg);
+            if (uuid.empty()) {
                 ErrorDialog(m_parent, msg, false).ShowModal();
+            }
+            else {
+                m_selected_uuids.emplace(uuid);
+                update();
             }
         }
         catch (fs::filesystem_error const& e) {
             std::cerr << e.what() << '\n';
         }
     }
-
-    update();
 }
 
 bool UIManager::set_selected_repositories()
 {
     std::vector<std::string> used_ids;
-    for (const std::string& id : m_online_selections)
-        used_ids.push_back(id);
-    for (const std::string& id : m_offline_selections)
-        used_ids.push_back(id);
+    std::copy(m_selected_uuids.begin(), m_selected_uuids.end(), std::back_inserter(used_ids));
 
     std::string msg;
     if (m_pad->set_selected_repositories(used_ids, msg))

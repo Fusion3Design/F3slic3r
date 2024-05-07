@@ -50,10 +50,9 @@ class UIManager
     std::vector<OnlineEntry>    m_online_entries;
     std::vector<OfflineEntry>   m_offline_entries;
 
-    std::set<std::string>       m_online_selections;
-    std::set<std::string>       m_offline_selections;
+    std::set<std::string>       m_selected_uuids;
 
-    void fill_entries();
+    void fill_entries(bool init_selection = false);
     void fill_grids();
 
     void update();
