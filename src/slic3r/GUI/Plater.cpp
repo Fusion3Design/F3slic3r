@@ -963,7 +963,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         this->q->Bind(EVT_UA_AVATAR_SUCCESS, [this](UserAccountSuccessEvent& evt) {
            boost::filesystem::path path = user_account->get_avatar_path(true);
            FILE* file; 
-           file = fopen(path.string().c_str(), "wb");
+           file = boost::nowide::fopen(path.generic_string().c_str(), "wb");
            if (file == NULL) {
                BOOST_LOG_TRIVIAL(error) << "Failed to create file to store avatar picture at: " << path;
                return;

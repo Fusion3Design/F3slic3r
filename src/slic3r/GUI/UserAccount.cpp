@@ -79,7 +79,7 @@ boost::filesystem::path UserAccount::get_avatar_path(bool logged) const
 {
     if (logged) {
         const std::string filename = "prusaslicer-avatar-" + m_instance_hash + m_avatar_extension;
-        return GUI::into_path(wxStandardPaths::Get().GetTempDir()) / filename;
+        return into_path(wxStandardPaths::Get().GetTempDir()) / filename;
     } else {
         return  boost::filesystem::path(resources_dir()) / "icons" / "user.svg";
     }
