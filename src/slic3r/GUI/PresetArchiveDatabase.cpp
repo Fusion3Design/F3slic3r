@@ -26,8 +26,6 @@ namespace fs = boost::filesystem;
 namespace Slic3r {
 namespace GUI {
 
-wxDEFINE_EVENT(EVT_PRESET_ARCHIVE_DATABASE_SYNC_DONE, Event<ArchiveRepositorySyncData>);
-
 static const char* TMP_EXTENSION = ".download";
 
 namespace {
@@ -99,7 +97,6 @@ bool extract_repository_header(const pt::ptree& ptree, ArchiveRepository::Reposi
 	}
 	if (const auto visibility = ptree.get_optional<std::string>("visibility"); visibility) {
 		data.visibility = *visibility;
-		data.m_secret = data.visibility.empty();
 	}
 	return true;
 }
@@ -226,6 +223,7 @@ bool OnlineArchiveRepository::get_file_inner(const std::string& url, const fs::p
 	auto http = Http::get(url);
     add_authorization_header(http);
     http
+		.timeout_max(30)
 		.on_progress([](Http::Progress, bool& cancel) {
 			//if (cancel) { cancel = true; }
 		})
@@ -626,7 +624,7 @@ std::string PresetArchiveDatabase::get_next_uuid()
 }
 
 namespace {
-bool sync_inner(std::string& manifest)
+bool sync_inner(const std::string& token, std::string& manifest)
 {
 	bool ret = false;
 #ifdef SLIC3R_REPO_URL
@@ -634,9 +632,11 @@ bool sync_inner(std::string& manifest)
 #else
     std::string url = "http://10.24.3.3:8001/v1/repos";
 #endif
+	// TODO: use token
     auto http = Http::get(std::move(url));
     add_authorization_header(http);
     http
+		.timeout_max(30)
 		.on_error([&](std::string body, std::string error, unsigned http_status) {
 			BOOST_LOG_TRIVIAL(error) << "Failed to get online archive repository manifests: "<< body << " ; " << error << " ; " << http_status;
 			ret = false;
@@ -649,27 +649,33 @@ bool sync_inner(std::string& manifest)
 	return ret;
 }
 }
-
-
-void PresetArchiveDatabase::sync()
+/*
+bool PresetArchiveDatabase::sync_blocking_with_token(const std::string& user_account_token)
 {
-	
-	std::thread thread([this]() {
-		std::string manifest;
-		if (!sync_inner(manifest))
-			return;
-		// Force update when logged in (token not empty).
-		wxQueueEvent(this->p_evt_handler, new Event<ArchiveRepositorySyncData>(EVT_PRESET_ARCHIVE_DATABASE_SYNC_DONE, {std::move(manifest), !m_token.empty()}));
-	});
-	thread.join();
+	bool ret_val = m_token != user_account_token && !user_account_token.empty();
+	m_token = user_account_token;
+	sync_blocking();
+	return ret_val;
 }
-
+*/
 void PresetArchiveDatabase::sync_blocking()
 {
+	if (m_wizard_lock) {
+		m_staged_sync = true;
+	}
 	std::string manifest;
-	if (!sync_inner(manifest))
+	if (!sync_inner(m_token, manifest))
 		return;
 	read_server_manifest(std::move(manifest));
+}
+
+void PresetArchiveDatabase::set_wizard_lock(bool lock) 
+{ 
+	m_wizard_lock = lock; 
+	if (m_staged_sync) {
+		sync_blocking();
+	}
+	m_staged_sync = false;
 }
 
 }} // Slic3r::GUI

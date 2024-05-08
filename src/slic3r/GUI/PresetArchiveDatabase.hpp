@@ -17,15 +17,6 @@ namespace Slic3r {
 class AppConfig;
 namespace GUI {
 
-struct ArchiveRepositorySyncData
-{
-	std::string json;
-	bool force_updater;
-};
-
-wxDECLARE_EVENT(EVT_PRESET_ARCHIVE_DATABASE_SYNC_DONE, Event<ArchiveRepositorySyncData>);
-
-
 struct ArchiveRepositoryGetFileArgs {
 	boost::filesystem::path target_path;
 	
@@ -47,7 +38,6 @@ public:
 		// not read from manifest json
 		boost::filesystem::path tmp_path; // Where archive is unzziped. Created each app run. 
 		boost::filesystem::path source_path; // Path given by user. Stored between app runs.
-		bool        m_secret { false };
 	};
 	// Use std::move when calling constructor.
 	ArchiveRepository(const std::string& uuid, RepositoryManifest&& data) : m_data(std::move(data)), m_uuid(uuid) {}
@@ -112,15 +102,19 @@ public:
 	~PresetArchiveDatabase() {}
 	
 	const ArchiveRepositoryVector& get_archive_repositories() const { return m_archive_repositories; }
-	void sync();
+	// Sync does download manifest for online repos.
+	// returns true if preset update should be forced - if access token has changed, there might be new repositories or it is a first call
+	//bool sync_blocking_with_token(const std::string& user_account_token);
+	void set_access_token(const std::string& token) { m_token = token; }
 	void sync_blocking();
-	void set_token(const std::string token) { m_token = token; }
 	//void set_local_archives(AppConfig* app_config);
 	void read_server_manifest(const std::string& json_body);
 	const std::map<std::string, bool>& get_selected_repositories_uuid() const { assert(m_selected_repositories_uuid.size() == m_archive_repositories.size()); return m_selected_repositories_uuid; }
 	bool set_selected_repositories(const std::vector<std::string>& used_uuids, std::string& msg);
 	std::string add_local_archive(const boost::filesystem::path path, std::string& msg);
 	void remove_local_archive(const std::string& uuid);
+	// should be called only from main UI thread.
+	void set_wizard_lock(bool lock);
 private:
 	void load_app_manifest_json();
 	void save_app_manifest_json() const;
@@ -135,6 +129,8 @@ private:
 	std::map<std::string, bool>		m_selected_repositories_uuid;
 	std::string						m_token;
 	boost::uuids::random_generator	m_uuid_generator;
+	bool							m_wizard_lock { false };
+	bool							m_staged_sync { false };
 };
 
 }} // Slic3r::GUI

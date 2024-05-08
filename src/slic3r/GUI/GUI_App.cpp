@@ -834,10 +834,10 @@ void GUI_App::post_init()
             return;
 #endif
         CallAfter([this] {
-            // preset_updater->sync downloads profile updates on background so it must begin after config wizard finished.
-            // its call was moved to start_preset_updater method
             bool cw_showed = this->config_wizard_startup();
             if (! cw_showed) {
+                // preset_updater->sync downloads profile updates on background so it must begin after config wizard finished.
+                this->preset_updater->sync(preset_bundle, this, plater()->get_preset_archive_database()->get_archive_repositories(), plater()->get_preset_archive_database()->get_selected_repositories_uuid());
                 // The CallAfter is needed as well, without it, GL extensions did not show.
                 // Also, we only want to show this when the wizard does not, so the new user
                 // sees something else than "we want something" on the first start.
@@ -3161,6 +3161,8 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
         plater()->get_preset_archive_database()->sync_blocking();
     }
 #endif // 0
+    plater()->get_preset_archive_database()->set_wizard_lock(true);
+    plater()->get_preset_archive_database()->sync_blocking();
     // Do blocking sync on every start of wizard, so user is always offered recent profiles.
     preset_updater->sync_blocking(preset_bundle, this, plater()->get_preset_archive_database()->get_archive_repositories(), plater()->get_preset_archive_database()->get_selected_repositories_uuid());
     // Offer update installation (of already installed profiles) only when run by user.
@@ -3187,7 +3189,7 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
         if (preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA)
             may_switch_to_SLA_preset(_L("Configuration is editing from ConfigWizard"));
     }
-
+    plater()->get_preset_archive_database()->set_wizard_lock(false);
     return res;
 }
 
@@ -3873,7 +3875,7 @@ void GUI_App::show_printer_webview_tab()
 {
     mainframe->show_printer_webview_tab(preset_bundle->physical_printers.get_selected_printer_config());
 }
-
+/*
 void GUI_App::start_preset_updater(bool forced)
 {
     if (m_started_preset_updater && !forced) {
@@ -3883,5 +3885,6 @@ void GUI_App::start_preset_updater(bool forced)
     this->preset_updater->sync(preset_bundle, this, plater()->get_preset_archive_database()->get_archive_repositories(), plater()->get_preset_archive_database()->get_selected_repositories_uuid());
     m_started_preset_updater = true;
 }
+*/
 } // GUI
 } //Slic3r

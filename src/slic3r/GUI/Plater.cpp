@@ -906,8 +906,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                 wxGetApp().update_login_dialog();
 #endif // 0
                 this->show_action_buttons(this->ready_to_slice);
-            preset_archive_database->set_token("ABCD");
-            preset_archive_database->sync();
+                preset_archive_database->set_access_token(user_account->get_access_token());
+ 
             } else {
                 // data were corrupt and username was not retrieved
                 // procced as if EVT_UA_RESET was recieved
@@ -920,6 +920,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                 this->main_frame->refresh_account_menu(true);
                 // Update sidebar printer status
                 sidebar->update_printer_presets_combobox();
+                preset_archive_database->set_access_token({});
             }
         
         });
@@ -933,9 +934,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->main_frame->refresh_account_menu(true);
             // Update sidebar printer status
             sidebar->update_printer_presets_combobox();
-        preset_archive_database->set_token({});
-        preset_archive_database->sync();
-        });
+            preset_archive_database->set_access_token({});
+            });
         this->q->Bind(EVT_UA_FAIL, [this](UserAccountFailEvent& evt) {
             BOOST_LOG_TRIVIAL(error) << "Failed communication with Prusa Account: " << evt.data;
             user_account->on_communication_fail();
@@ -992,11 +992,6 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->notification_manager->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::WarningNotificationLevel, msg);
         });
     }
-
-    this->q->Bind(EVT_PRESET_ARCHIVE_DATABASE_SYNC_DONE, [this](Event<ArchiveRepositorySyncData>& evt) {
-        preset_archive_database->read_server_manifest(evt.data.json);
-        wxGetApp().start_preset_updater(evt.data.force_updater);
-    });
 
 	wxGetApp().other_instance_message_handler()->init(this->q);
 

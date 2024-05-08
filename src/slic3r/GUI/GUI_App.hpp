@@ -428,8 +428,6 @@ public:
     void            request_open_project(std::string project_id) {}
     void            request_remove_project(std::string project_id) {}
 
-    void            start_preset_updater(bool forced);
-
 private:
     bool            on_init_inner();
 	void            init_app_config();
@@ -454,7 +452,6 @@ private:
 
     bool                    m_wifi_config_dialog_shown { false };
     bool                    m_wifi_config_dialog_was_declined { false };
-    bool                    m_started_preset_updater { false };
     // change to vector of items when adding more items that require update
     //wxMenuItem*    m_login_config_menu_item { nullptr };
     std::map< ConfigMenuIDs, wxMenuItem*> m_config_menu_updatable_items;
