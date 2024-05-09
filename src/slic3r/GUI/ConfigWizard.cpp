@@ -686,6 +686,52 @@ void PagePrinters::select_all(bool select, bool alternates)
     }
 }
 
+void PagePrinters::unselect_all_presets()
+{
+    assert(!printer_pickers.empty());
+    const std::string vendor_id = printer_pickers[0]->vendor_id;
+
+    PresetBundle* preset_bundle{ nullptr };
+    for (const auto& [bundle_name, bundle] : wizard_p()->bundles) {
+        if (bundle_name == vendor_id) {
+            preset_bundle = bundle.preset_bundle.get();
+            break; 
+        }
+    }
+    assert(preset_bundle);
+
+    auto unselect = [preset_bundle](const std::string& vendor_id, const std::string& model, const std::string& variant) {
+        for (auto& preset : preset_bundle->printers) {
+            if (preset.config.opt_string("printer_model") == model
+                && preset.config.opt_string("printer_variant") == variant) {
+                preset.is_visible = false;
+            }
+        }
+    };
+
+    // unselect presets in preset bundle, if related model and variant was checked in Picker
+    for (auto picker : printer_pickers) {
+        for (const auto& cb : picker->cboxes) {
+            if (cb->GetValue())
+                unselect(picker->vendor_id, cb->model, cb->variant);
+        }
+
+        for (const auto& cb : picker->cboxes_alt) {
+            if (cb->GetValue())
+                unselect(picker->vendor_id, cb->model, cb->variant);
+        }
+    }
+
+    // remove vendor from appconfig_new
+    AppConfig* appconfig = &wizard_p()->appconfig_new;
+
+    AppConfig::VendorMap new_vendors = appconfig->vendors();
+    if (new_vendors.find(vendor_id) != new_vendors.end()) {
+        new_vendors.erase(vendor_id);
+        appconfig->set_vendors(new_vendors);
+    }
+}
+
 int PagePrinters::get_width() const
 {
     return std::accumulate(printer_pickers.begin(), printer_pickers.end(), 0,
@@ -2444,7 +2490,7 @@ void ConfigWizard::priv::load_pages()
         if (!only_sla_mode) {
 
             for (const auto& repos : repositories) {
-                index->add_page(repos.vendor_page);
+                index->add_page(repos.vendors_page);
 
                 // Copy pages names from map to vector, so we can sort it without case sensitivity
                 std::vector<std::pair<std::wstring, std::string>> sorted_vendors;
@@ -3409,6 +3455,26 @@ void ConfigWizard::priv::set_config_updated_from_archive(bool is_updated)
     load_pages_from_archive();
 }
 
+bool ConfigWizard::priv::any_installed_vendor_for_repo(const std::string& repo_id, std::vector<const VendorProfile*>& vendors_for_repo)
+{
+    // fill vendors_for_repo
+    for (const auto& pair : bundles) {
+        if (pair.second.vendor_profile->repo_id != repo_id)
+            continue;
+        vendors_for_repo.emplace_back(pair.second.vendor_profile);
+    }
+
+    // check if any of vendor is installed
+    const auto& appconf_vendors = appconfig_new.vendors();
+    for (const VendorProfile* vendor : vendors_for_repo) {
+        if (vendor && !vendor->templates_profile)
+            if (appconf_vendors.find(vendor->id) != appconf_vendors.end())
+                return true;
+    }
+
+    return false;
+}
+
 static void unselect(PagePrinters* page)
 {
     const PresetArchiveDatabase*        pad             = wxGetApp().plater()->get_preset_archive_database();
@@ -3425,23 +3491,32 @@ static void unselect(PagePrinters* page)
     }
 
     if (unselect_all)
-        page->select_all(false);
+        page->unselect_all_presets();
 }
 
 void ConfigWizard::priv::clear_printer_pages()
 {
-    for (PagePrinters* page : pages_fff)
+    auto delelete_page = [this](PagePrinters* page) {
+        // unselect page to correct process those changes in app_config
         unselect(page);
+
+        // remove page
+        hscroll->RemoveChild(page);// Under OSX call of Reparent(nullptr) causes a crash, so as a workaround use RemoveChild() instead
+        page->Destroy();
+    };
+
+    for (PagePrinters* page : pages_fff)
+        delelete_page(page);
     pages_fff.clear();
 
     for (PagePrinters* page : pages_msla)
-        unselect(page);
+        delelete_page(page);
     pages_msla.clear();
 
     for (Repository& repo : repositories)
         for (auto& [name, printers] : repo.printers_pages) {
-            if (printers.first ) unselect(printers.first );
-            if (printers.second) unselect(printers.second);
+            if (printers.first ) delelete_page(printers.first);
+            if (printers.second) delelete_page(printers.second);
         }
     repositories.clear();
 }
@@ -3467,17 +3542,21 @@ void ConfigWizard::priv::load_pages_from_archive()
     bool is_primary_printer_page_set = false;
 
     for (const auto& archive : archs) {
-        if (!pad->is_selected_archive(archive->get_uuid()))
+        const auto& data = archive->get_manifest();
+        const bool is_selected_arch     = pad->is_selected_archive(archive->get_uuid());
+
+        std::vector<const VendorProfile*> vendors;
+        const bool any_installed_vendor = any_installed_vendor_for_repo(data.id, vendors);
+
+        const bool is_already_added_repo = std::find(repositories.begin(), repositories.end(), data.id) != repositories.end();
+
+        if (is_already_added_repo || (!is_selected_arch && !any_installed_vendor))
             continue;
 
-        const auto& data = archive->get_manifest();
 
         Pages3rdparty     pages;
 
-        for (auto const& [vendor_name, bundle] : bundles) {
-            const VendorProfile* vendor = bundle.vendor_profile;
-            if (bundle.vendor_profile->repo_id != data.id)
-                continue;
+        for (const VendorProfile* vendor : vendors) {
 
             bool is_fff_technology = false;
             bool is_sla_technology = false;
@@ -3488,6 +3567,8 @@ void ConfigWizard::priv::load_pages_from_archive()
                     is_fff_technology = true;
                 if (!is_sla_technology && model.technology == ptSLA)
                     is_sla_technology = true;
+                if (is_fff_technology && is_sla_technology)
+                    break;
             }
             
             PagePrinters* pageFFF = nullptr;
@@ -3538,7 +3619,7 @@ void ConfigWizard::priv::load_pages_from_archive()
             repositories.push_back({ data.id, nullptr, pages});
 
             PageVendors* page_vendors = new PageVendors(q, data.id);
-            repositories[repositories.size() - 1].vendor_page = page_vendors;
+            repositories[repositories.size() - 1].vendors_page = page_vendors;
 
             add_page(page_vendors);
         }

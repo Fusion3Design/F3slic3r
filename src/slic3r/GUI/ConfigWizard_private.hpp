@@ -212,6 +212,9 @@ struct PagePrinters: ConfigWizardPage
     std::string get_vendor_id() const { return printer_pickers.empty() ? "" : printer_pickers[0]->vendor_id; }
     std::string get_vendor_repo_id() const { return printer_pickers.empty() ? "" : printer_pickers[0]->vendor_repo_id; }
 
+    // unselect all printers in appconfig_new and bundles
+    void unselect_all_presets();
+
     virtual void set_run_reason(ConfigWizard::RunReason run_reason) override;
 
     bool has_printers { false };
@@ -650,8 +653,10 @@ struct ConfigWizard::priv
     std::vector<PagePrinters*>  pages_msla;
 
     struct Repository {
+        bool operator==(const std::string& other_id_name) const { return other_id_name == this->id_name; }
+
         std::string     id_name;
-        PageVendors*    vendor_page{ nullptr };
+        PageVendors*    vendors_page{ nullptr };
         Pages3rdparty   printers_pages;
     };
     std::vector<Repository>     repositories;
@@ -697,6 +702,10 @@ struct ConfigWizard::priv
 
     int em() const { return index->em(); }
     void set_config_updated_from_archive(bool is_updated);
+
+    // Fills vendors_for_repo in respect to repo_id
+    // and return true if any of vendors_for_repo is installed (is in app_config)
+    bool any_installed_vendor_for_repo(const std::string& repo_id, std::vector<const VendorProfile*>& );
 
     void clear_printer_pages();
     void load_pages_from_archive();
