@@ -3413,14 +3413,12 @@ static void unselect(PagePrinters* page)
 {
     const PresetArchiveDatabase*        pad             = wxGetApp().plater()->get_preset_archive_database();
     const ArchiveRepositoryVector&      archs           = pad->get_archive_repositories();
-    const std::map<std::string, bool>&  selected_repos  = pad->get_selected_repositories_uuid();
 
     bool unselect_all = true;
 
     for (const auto& archive : archs) {
         if (page->get_vendor_repo_id() == archive->get_manifest().id) {
-            auto selected_it = selected_repos.find(archive->get_uuid());
-            if (selected_it->second)
+            if (pad->is_selected_archive(archive->get_uuid()))
                 unselect_all = false;
             //break; ! don't break here, because there can be several archives with same repo_id
         }
@@ -3463,18 +3461,13 @@ void ConfigWizard::priv::load_pages_from_archive()
 
     auto pad = wxGetApp().plater()->get_preset_archive_database();
 
-    const ArchiveRepositoryVector&      archs           = pad->get_archive_repositories();
-    const std::map<std::string, bool>&  selected_repos  = pad->get_selected_repositories_uuid();
-
-    assert(archs.size() == selected_repos.size());
+    const ArchiveRepositoryVector& archs = pad->get_archive_repositories();
 
     only_sla_mode = true;
     bool is_primary_printer_page_set = false;
 
     for (const auto& archive : archs) {
-        auto selected_it = selected_repos.find(archive->get_uuid());
-        assert(selected_it != selected_repos.end());
-        if (!selected_it->second)
+        if (!pad->is_selected_archive(archive->get_uuid()))
             continue;
 
         const auto& data = archive->get_manifest();

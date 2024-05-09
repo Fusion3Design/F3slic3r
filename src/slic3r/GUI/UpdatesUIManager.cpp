@@ -61,14 +61,10 @@ void UIManager::fill_entries(bool init_selection/* = false*/)
     m_online_entries.clear();
     m_offline_entries.clear();
 
-    const ArchiveRepositoryVector&  archs               = m_pad->get_archive_repositories();
-    const std::map<std::string, bool>& selected_repos   = m_pad->get_selected_repositories_uuid();
-
+    const ArchiveRepositoryVector&  archs = m_pad->get_archive_repositories();
     for (const auto& archive : archs) {
         const std::string&  uuid   = archive->get_uuid();
-        auto                sel_it = selected_repos.find(uuid);
-        assert(sel_it != selected_repos.end());
-        if (init_selection && sel_it->second)
+        if (init_selection && m_pad->is_selected_archive(uuid))
             m_selected_uuids.emplace(uuid);
 
         const bool  is_selected = m_selected_uuids.find(uuid) != m_selected_uuids.end();

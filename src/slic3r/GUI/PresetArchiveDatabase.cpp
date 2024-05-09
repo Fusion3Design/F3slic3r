@@ -595,6 +595,12 @@ void PresetArchiveDatabase::read_server_manifest(const std::string& json_body)
 	save_app_manifest_json();
 }
 
+bool PresetArchiveDatabase::is_selected_archive(const std::string& uuid) const
+{
+	auto selected_it = m_selected_repositories_uuid.find(uuid);
+	assert(selected_it != m_selected_repositories_uuid.end());
+	return selected_it->second;
+}
 
 void PresetArchiveDatabase::consolidate_selected_uuids_map()
 {
