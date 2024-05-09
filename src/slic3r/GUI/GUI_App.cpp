@@ -3163,14 +3163,6 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
 #endif // 0
     plater()->get_preset_archive_database()->set_wizard_lock(true);
     plater()->get_preset_archive_database()->sync_blocking();
-    // Do blocking sync on every start of wizard, so user is always offered recent profiles.
-    preset_updater->sync_blocking(preset_bundle, this, plater()->get_preset_archive_database()->get_archive_repositories(), plater()->get_preset_archive_database()->get_selected_repositories_uuid());
-    // Offer update installation (of already installed profiles) only when run by user.
-    if (reason == ConfigWizard::RR_USER) {   
-        preset_updater->update_index_db();
-        if (preset_updater->config_update(app_config->orig_version(), PresetUpdater::UpdateParams::FORCED_BEFORE_WIZARD) == PresetUpdater::R_ALL_CANCELED)
-            return false;
-    }
 
     auto wizard = new ConfigWizard(mainframe);
     const bool res = wizard->run(reason, start_page);
@@ -3875,16 +3867,6 @@ void GUI_App::show_printer_webview_tab()
 {
     mainframe->show_printer_webview_tab(preset_bundle->physical_printers.get_selected_printer_config());
 }
-/*
-void GUI_App::start_preset_updater(bool forced)
-{
-    if (m_started_preset_updater && !forced) {
-        return;
-    }
-    this->preset_updater->cancel_sync();
-    this->preset_updater->sync(preset_bundle, this, plater()->get_preset_archive_database()->get_archive_repositories(), plater()->get_preset_archive_database()->get_selected_repositories_uuid());
-    m_started_preset_updater = true;
-}
-*/
+
 } // GUI
 } //Slic3r

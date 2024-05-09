@@ -102,9 +102,6 @@ public:
 	~PresetArchiveDatabase() {}
 	
 	const ArchiveRepositoryVector& get_archive_repositories() const { return m_archive_repositories; }
-	// Sync does download manifest for online repos.
-	// returns true if preset update should be forced - if access token has changed, there might be new repositories or it is a first call
-	//bool sync_blocking_with_token(const std::string& user_account_token);
 	void set_access_token(const std::string& token) { m_token = token; }
 	void sync_blocking();
 	//void set_local_archives(AppConfig* app_config);
@@ -118,10 +115,11 @@ public:
 	void set_wizard_lock(bool lock);
 private:
 	void load_app_manifest_json();
+	void copy_initial_manifest();
 	void save_app_manifest_json() const;
 	void clear_online_repos();
 	bool is_selected(const std::string& id) const;
-	std::string get_stored_manifest_path() const;
+	boost::filesystem::path get_stored_manifest_path() const;
 	void consolidate_selected_uuids_map();
 	std::string get_next_uuid();
 	wxEvtHandler*					p_evt_handler;

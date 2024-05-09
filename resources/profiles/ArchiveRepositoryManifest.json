@@ -1,0 +1,9 @@
+[{
+	"name": "Production",
+	"description": "Production repository",
+	"visibility": "",
+	"id": "prod",
+	"url": "http://10.24.3.3:8001/v1/repos/prod/",
+	"index_url": "http://10.24.3.3:8001/v1/repos/prod/vendor_indices.zip",
+	"selected" : 1
+}]

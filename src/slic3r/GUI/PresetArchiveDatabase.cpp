@@ -318,6 +318,7 @@ bool LocalArchiveRepository::get_archive(const fs::path& target_path) const
 PresetArchiveDatabase::PresetArchiveDatabase(AppConfig* app_config, wxEvtHandler* evt_handler)
 	: p_evt_handler(evt_handler)
 {
+	// 
 	boost::system::error_code ec;
 	m_unq_tmp_path = fs::temp_directory_path() / fs::unique_path();
 	fs::create_directories(m_unq_tmp_path, ec);
@@ -402,8 +403,11 @@ void PresetArchiveDatabase::remove_local_archive(const std::string& uuid)
 
 void PresetArchiveDatabase::load_app_manifest_json()
 {
-	std::string path = get_stored_manifest_path();
-	std::ifstream file(path);
+	const fs::path path = get_stored_manifest_path();
+	if (!fs::exists(path)) {
+		copy_initial_manifest();
+	}
+	std::ifstream file(path.string());
 	std::string data;
 	if (file.is_open()) {
 		std::string line;
@@ -467,6 +471,23 @@ void PresetArchiveDatabase::load_app_manifest_json()
 		BOOST_LOG_TRIVIAL(error) << "Failed to read archives JSON. " << e.what();
 	}
 }
+
+void PresetArchiveDatabase::copy_initial_manifest()
+{
+	const fs::path target_path = get_stored_manifest_path();
+	const fs::path source_path = fs::path(resources_dir()) / "profiles" / "ArchiveRepositoryManifest.json";
+	assert(fs::exists(source_path));
+	std::string error_message;
+	CopyFileResult cfr = Slic3r::copy_file(source_path.string(), target_path.string(), error_message, false);
+	assert(cfr == CopyFileResult::SUCCESS);
+	if (cfr != CopyFileResult::SUCCESS) {
+		BOOST_LOG_TRIVIAL(error) << "Failed to copy ArchiveRepositoryManifest.json from resources.";
+		return;
+	}
+	static constexpr const auto perms = fs::owner_read | fs::owner_write | fs::group_read | fs::others_read;
+	fs::permissions(target_path, perms);
+}
+
 void PresetArchiveDatabase::save_app_manifest_json() const
 {
 	/*
@@ -516,7 +537,7 @@ void PresetArchiveDatabase::save_app_manifest_json() const
 	}
 	data += "]";
 
-	std::string path = get_stored_manifest_path();
+	std::string path = get_stored_manifest_path().string();
 	std::ofstream file(path);
 	if (file.is_open()) {
 		file << data;
@@ -527,9 +548,9 @@ void PresetArchiveDatabase::save_app_manifest_json() const
 	}
 }
 
-std::string PresetArchiveDatabase::get_stored_manifest_path() const
+fs::path PresetArchiveDatabase::get_stored_manifest_path() const
 {
-	return (boost::filesystem::path(Slic3r::data_dir()) / "ArchiveRepositoryManifest.json").make_preferred().string();
+	return (boost::filesystem::path(Slic3r::data_dir()) / "ArchiveRepositoryManifest.json").make_preferred();
 }
 
 bool PresetArchiveDatabase::is_selected(const std::string& uuid) const
@@ -655,15 +676,7 @@ bool sync_inner(const std::string& token, std::string& manifest)
 	return ret;
 }
 }
-/*
-bool PresetArchiveDatabase::sync_blocking_with_token(const std::string& user_account_token)
-{
-	bool ret_val = m_token != user_account_token && !user_account_token.empty();
-	m_token = user_account_token;
-	sync_blocking();
-	return ret_val;
-}
-*/
+
 void PresetArchiveDatabase::sync_blocking()
 {
 	if (m_wizard_lock) {
