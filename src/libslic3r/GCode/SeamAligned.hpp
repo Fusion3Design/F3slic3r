@@ -83,6 +83,7 @@ private:
 struct Params {
     double max_detour{};
     double jump_visibility_threshold{};
+    double continuity_modifier{};
 };
 
 std::vector<std::vector<SeamPerimeterChoice>> get_object_seams(

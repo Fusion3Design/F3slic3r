@@ -420,7 +420,9 @@ std::vector<ShellSeamCandidates> get_shells_seam_candidates(
 
 std::vector<SeamChoice> get_shell_seam(
     const Shells::Shell<> &shell,
-    std::vector<SeamCandidate> seam_candidates
+    std::vector<SeamCandidate> seam_candidates,
+    const Perimeters::Perimeter::OptionalPointTree &previous_points,
+    const Params &params
 ) {
     std::vector<SeamChoice> seam;
     double visibility{std::numeric_limits<double>::infinity()};
@@ -429,8 +431,27 @@ std::vector<SeamChoice> get_shell_seam(
         using Perimeters::Perimeter, Perimeters::AngleType;
 
         SeamCandidate seam_candidate{seam_candidates[i]};
+        const Vec2d first_point{seam_candidate.choices.front().position};
 
-        double seam_candidate_visibility{0.0};
+        std::optional<Vec2d> closest_point;
+        if (previous_points) {
+            std::size_t closest_point_index{find_closest_point(*previous_points, first_point)};
+            Vec2d point;
+            point.x() = previous_points->coordinate(closest_point_index, 0);
+            point.y() = previous_points->coordinate(closest_point_index, 1);
+            closest_point = point;
+        }
+
+        std::optional<double> previous_distance;
+        if (closest_point) {
+            previous_distance = (*closest_point - first_point).norm();
+        }
+        const bool is_near_previous{closest_point && *previous_distance < params.max_detour};
+
+        double seam_candidate_visibility{
+            is_near_previous ? -params.continuity_modifier *
+                    (params.max_detour - *previous_distance) / params.max_detour :
+                               0.0};
         for (std::size_t slice_index{}; slice_index < shell.size(); ++slice_index) {
             seam_candidate_visibility += seam_candidate.visibilities[slice_index];
         }
@@ -476,8 +497,29 @@ std::vector<std::vector<SeamPerimeterChoice>> get_object_seams(
     for (std::size_t shell_index{0}; shell_index < shells.size(); ++shell_index) {
         Shells::Shell<> &shell{shells[shell_index]};
 
+        if (shell.empty()) {
+            continue;
+        }
+
+        const std::size_t layer_index{shell.front().layer_index};
+        tcb::span<const SeamPerimeterChoice> previous_seams{
+            layer_index == 0 ?  tcb::span<const SeamPerimeterChoice>{} : layer_seams[layer_index - 1]};
+        std::vector<Vec2d> previous_seams_positions;
+        std::transform(
+            previous_seams.begin(), previous_seams.end(),
+            std::back_inserter(previous_seams_positions),
+            [](const SeamPerimeterChoice &seam) { return seam.choice.position; }
+        );
+
+        Perimeters::Perimeter::OptionalPointTree previous_seams_positions_tree;
+        const Perimeters::Perimeter::IndexToCoord index_to_coord{previous_seams_positions};
+        if (!previous_seams_positions.empty()) {
+            previous_seams_positions_tree =
+                Perimeters::Perimeter::PointTree{index_to_coord, index_to_coord.positions.size()};
+        }
+
         std::vector<SeamChoice> seam{
-            Aligned::get_shell_seam(shell, seam_candidates[shell_index])};
+            Aligned::get_shell_seam(shell, seam_candidates[shell_index], previous_seams_positions_tree, params)};
 
         for (std::size_t perimeter_id{}; perimeter_id < shell.size(); ++perimeter_id) {
             const SeamChoice &choice{seam[perimeter_id]};

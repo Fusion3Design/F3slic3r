@@ -100,6 +100,7 @@ Params Placer::get_params(const DynamicPrintConfig &config) {
     params.random_seed = 1653710332u;
 
     params.aligned.max_detour = 1.0;
+    params.aligned.continuity_modifier = 2.0;
     params.convex_visibility_modifier = 1.1;
     params.concave_visibility_modifier = 0.9;
     params.perimeter.overhang_threshold = Slic3r::Geometry::deg2rad(55.0);
