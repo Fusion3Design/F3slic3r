@@ -31,8 +31,6 @@ enum FocusedItem {
     fiCogIcon,
     fiColorBand,
     fiActionIcon,
-    fiLowerThumb,
-    fiHigherThumb,
     fiSmartWipeTower,
     fiTick
 };
@@ -138,6 +136,7 @@ private:
     bool        m_allow_editing         { true };
     bool        m_show_estimated_times  { false };
     bool        m_show_cog_menu         { false };
+    bool        m_show_edit_menu        { false };
 
     DrawMode    m_draw_mode             { dmRegular };
     Mode        m_mode                  { SingleExtruder };
@@ -163,6 +162,7 @@ private:
     void        draw_ticks(const ImRect& slideable_region);
     void        render_menu();
     void        render_cog_menu();
+    void        render_edit_menu();
     bool        render_button(const wchar_t btn_icon, const wchar_t btn_icon_hovered, const std::string& label_id, const ImVec2& pos, FocusedItem focus, int tick = -1);
 
     void        add_code_as_tick(Type type, int selected_extruder = -1);
@@ -188,7 +188,7 @@ private:
     std::string m_selectable_color;
 
     void        render_add_tick_menu();
-    void        render_multi_extruders_menu();
+    bool        render_multi_extruders_menu(bool switch_current_code = false);
     bool        render_jump_to_window(const ImVec2& pos, double* active_value, double min_z, double max_z);
     void        render_color_picker();
 
