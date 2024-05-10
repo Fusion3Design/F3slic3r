@@ -113,7 +113,6 @@ class TickCodeManager
     ExtrudersSequence           m_extruders_sequence;
 
     bool            has_tick_with_code(Type type);
-    bool            has_tick(int tick);
 
     std::string     get_color_for_tick(TickCode tick, Type type, const int extruder);
 
@@ -149,6 +148,7 @@ public:
 
     void set_ticks(const Info& custom_gcode_per_print_z);
 
+    bool has_tick(int tick);
     bool add_tick(const int tick, Type type, int extruder, double print_z);
     bool edit_tick(std::set<TickCode>::iterator it, double print_z);
     void switch_code(Type type_from, Type type_to);

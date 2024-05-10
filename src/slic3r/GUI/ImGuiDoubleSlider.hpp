@@ -84,7 +84,7 @@ public:
     ImRect  GetActiveThumbRect() const;
 
     bool    IsRClickOnThumb() const     { return m_rclick_on_selected_thumb; }
-    bool    IsLClickOnThumb() const     { return m_lclick_on_selected_thumb; }
+    bool    IsLClickOnThumb();
 
     bool    is_horizontal() const       { return !(m_flags & ImGuiSliderFlags_Vertical); }
     bool    render();
