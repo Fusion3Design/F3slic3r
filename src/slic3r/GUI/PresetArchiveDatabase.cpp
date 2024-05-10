@@ -43,7 +43,7 @@ bool unzip_repository(const fs::path& source_path, const fs::path& target_path)
 		mz_zip_archive_file_stat file_stat;
 		if (!mz_zip_reader_file_stat(&archive, i, &file_stat)) {
 			BOOST_LOG_TRIVIAL(error) << "Failed to get file stat for file #" << i << " in the zip archive. Ending Unzipping.";
-			mz_zip_reader_end(&archive);
+			close_zip_reader(&archive);
 			return false;
 		}
 		fs::path extracted_path = target_path / file_stat.m_filename;
@@ -57,11 +57,11 @@ bool unzip_repository(const fs::path& source_path, const fs::path& target_path)
 		// Extract file
 		if (!mz_zip_reader_extract_to_file(&archive, i, extracted_path.string().c_str(), 0)) {
 			BOOST_LOG_TRIVIAL(error) << "Failed to extract file #" << i << " from the zip archive. Ending Unzipping.";
-			mz_zip_reader_end(&archive);
+			close_zip_reader(&archive);
 			return false;
 		}
 	}
-	mz_zip_reader_end(&archive);
+	close_zip_reader(&archive);
 	return true;
 }
 
