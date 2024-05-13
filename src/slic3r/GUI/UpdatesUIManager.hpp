@@ -51,6 +51,7 @@ class RepositoryUpdateUIManager
     std::vector<OfflineEntry>   m_offline_entries;
 
     std::set<std::string>       m_selected_uuids;
+    bool                        m_is_selection_changed{false};
 
     void fill_entries(bool init_selection = false);
     void fill_grids();
@@ -59,6 +60,7 @@ class RepositoryUpdateUIManager
 
     void remove_offline_repos(const std::string& id);
     void load_offline_repos();
+    void check_selection();
 
 public:
     RepositoryUpdateUIManager() {}
@@ -67,6 +69,8 @@ public:
 
     wxSizer*    get_sizer() { return m_main_sizer; }
     bool        set_selected_repositories();
+    bool        is_selection_changed() const { return m_is_selection_changed; }
+    bool        has_selections()       const { return !m_selected_uuids.empty(); }
 };
 
 class ManagePresetRepositoriesDialog : public DPIDialog

@@ -113,6 +113,7 @@ void RepositoryUpdateUIManager::fill_grids()
                     m_selected_uuids.emplace(entry.id);
                 else
                     m_selected_uuids.erase(entry.id);
+                check_selection();
                 });
             add(chb);
 
@@ -153,6 +154,7 @@ void RepositoryUpdateUIManager::fill_grids()
                     m_selected_uuids.emplace(entry.id);
                 else
                     m_selected_uuids.erase(entry.id);
+                check_selection();
                 });
             add(chb);
 
@@ -211,6 +213,7 @@ void RepositoryUpdateUIManager::remove_offline_repos(const std::string& id)
 {
     m_pad->remove_local_archive(id);
     m_selected_uuids.erase(id);
+    check_selection();
 
     if (wxDialog* dlg = dynamic_cast<wxDialog*>(m_parent)) {
         // Invalidate min_size for correct next Layout()
@@ -245,6 +248,7 @@ void RepositoryUpdateUIManager::load_offline_repos()
             }
             else {
                 m_selected_uuids.emplace(uuid);
+                check_selection();
                 update();
             }
         }
@@ -260,15 +264,30 @@ bool RepositoryUpdateUIManager::set_selected_repositories()
     std::copy(m_selected_uuids.begin(), m_selected_uuids.end(), std::back_inserter(used_ids));
 
     std::string msg;
-    if (m_pad->set_selected_repositories(used_ids, msg))
+
+    if (m_pad->set_selected_repositories(used_ids, msg)) {
+        check_selection();
         return true;
+    }
 
     ErrorDialog(m_parent, msg, false).ShowModal();
     // update selection on UI
     update();
+    check_selection();
     return false;
 }
 
+void RepositoryUpdateUIManager::check_selection()
+{
+    for (const auto& [uuid, is_selected] : m_pad->get_selected_repositories_uuid() )
+        if (is_selected && m_selected_uuids.find(uuid) == m_selected_uuids.end() ||
+            !is_selected && m_selected_uuids.find(uuid) != m_selected_uuids.end()) {
+            m_is_selection_changed = true;
+            return;
+        }
+
+    m_is_selection_changed = false;
+}
 
 ManagePresetRepositoriesDialog::ManagePresetRepositoriesDialog(PresetArchiveDatabase* pad)
     : DPIDialog(static_cast<wxWindow*>(wxGetApp().mainframe), wxID_ANY,
@@ -289,6 +308,11 @@ ManagePresetRepositoriesDialog::ManagePresetRepositoriesDialog(PresetArchiveData
     this->Bind(wxEVT_BUTTON, &ManagePresetRepositoriesDialog::onCloseDialog, this, wxID_CLOSE);
     this->Bind(wxEVT_BUTTON, &ManagePresetRepositoriesDialog::onOkDialog, this, wxID_OK);
     sizer->Add(buttons, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, em);
+
+
+    buttons->GetAffirmativeButton()->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& event) {
+        event.Enable(m_manager->is_selection_changed() && m_manager->has_selections());
+    });
 
     SetSizer(sizer);
     sizer->SetSizeHints(this);

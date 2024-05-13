@@ -662,6 +662,7 @@ struct ConfigWizard::priv
     std::vector<Repository>     repositories;
 
     bool                        is_config_from_archive{ false };
+    bool                        is_actual_archive_selection{ true };
 
     // Pointers to all pages (regardless or whether currently part of the ConfigWizardIndex)
     std::vector<ConfigWizardPage*> all_pages;

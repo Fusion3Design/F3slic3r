@@ -648,6 +648,12 @@ PageUpdateManager::PageUpdateManager(ConfigWizard* parent_in)
         if (m_manager->set_selected_repositories())
             wizard_p()->set_config_updated_from_archive(true);
     });
+    btn->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& event) {
+        const bool is_actual_archive_selection = wizard_p()->is_actual_archive_selection;
+        const bool is_selection_changed        = m_manager->is_selection_changed();
+        const bool has_selections              = m_manager->has_selections();
+        event.Enable(!is_actual_archive_selection || (is_selection_changed && has_selections));
+    });
 
     sizer->Add(btn, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, em);
 
@@ -3583,6 +3589,8 @@ void ConfigWizard::priv::load_pages_from_archive()
     only_sla_mode = true;
     bool is_primary_printer_page_set = false;
 
+    is_actual_archive_selection = true;
+
     for (const auto& archive : archs) {
         const auto& data = archive->get_manifest();
         const bool is_selected_arch     = pad->is_selected_repository_by_uuid(archive->get_uuid());
@@ -3595,6 +3603,11 @@ void ConfigWizard::priv::load_pages_from_archive()
         if (is_already_added_repo || (!is_selected_arch && !any_installed_vendor))
             continue;
 
+        if (!is_selected_arch && any_installed_vendor) {
+            // ys/dkFIXME - There is a case, when local and web archives have a same repo_id and 
+            // some of them isn't selected but is processed as first
+            is_actual_archive_selection = false;
+        }
 
         Pages3rdparty     pages;
 
