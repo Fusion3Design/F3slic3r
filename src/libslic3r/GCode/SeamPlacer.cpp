@@ -118,7 +118,7 @@ Params Placer::get_params(const DynamicPrintConfig &config) {
     params.perimeter.embedding_threshold = 0.5;
     params.perimeter.painting_radius = 0.1;
     params.perimeter.simplification_epsilon = 0.001;
-    params.perimeter.smooth_angle_arm_length = 0.5;
+    params.perimeter.smooth_angle_arm_length = 0.2;
     params.perimeter.sharp_angle_arm_length = 0.05;
 
     params.visibility.raycasting_visibility_samples_count = 30000;
