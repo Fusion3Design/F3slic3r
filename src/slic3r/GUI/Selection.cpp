@@ -832,8 +832,14 @@ std::pair<BoundingBoxf3, Transform3d> Selection::get_bounding_box_in_reference_s
         const GLVolume& vol = *get_volume(id);
         const Transform3d vol_world_rafo = vol.world_matrix();
         const TriangleMesh* mesh = vol.convex_hull();
-        if (mesh == nullptr)
+        if (mesh == nullptr) {
+            // workaround to avoid a crash, see spe-2295 -> Crash when re-cutting with dowel connectors
+            const int obj_id = vol.object_idx();
+            const int vol_id = vol.volume_idx();
+            if (m_model->objects[obj_id]->volumes.size() <= vol_id)
+                continue;
             mesh = &m_model->objects[vol.object_idx()]->volumes[vol.volume_idx()]->mesh();
+        }
         assert(mesh != nullptr);
         for (const stl_vertex& v : mesh->its.vertices) {
             const Vec3d world_v = vol_world_rafo * v.cast<double>();
