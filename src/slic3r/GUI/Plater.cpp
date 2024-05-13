@@ -5899,7 +5899,7 @@ void Plater::connect_gcode()
         return;
     }
     BOOST_LOG_TRIVIAL(debug) << "Message from Printer pick webview: " << dialog_msg;
-
+    /*
     PresetBundle* preset_bundle = wxGetApp().preset_bundle;
     // Connect data
     std::vector<std::string> compatible_printers;
@@ -6037,14 +6037,49 @@ void Plater::connect_gcode()
         show_error(this, _L("Failed to select a printer. Missing data (uuid and team id) for chosen printer."));
         return;
     }
+    */
+
+/*
+{
+ set_ready: boolean, // uzivatel potvrdil ze je tiskarne ready a muze se tisknout, pouziva se pro tisknout ted a odlozeny tisk
+ position: -1 | 0, // -1 = posledni ve fronte, 0 = prvni ve fronte
+ wait_until: number | undefined, // timestamp pro odlozeny tisk
+
+ file_name: string, // tady budeme predavat jak se uzivatel rozhodl soubor pojmenovat, kdyz ho neprejmenuje, tak vratime to stejne co nam predtim posle slicer
+ printer_uuid: string // uuid vybrane tiskarny
+}
+*/
+    const Preset* selected_printer_preset = &wxGetApp().preset_bundle->printers.get_selected_preset();
+    /*
+    bool set_ready;
+    int position;
+    int wait_until;
+    std::string filename;
+    std::string printer_uuid;
+    std::string team_id;
+    */
+    bool set_ready = true;
+    int position = -1;
+    int wait_until = 0;
+    std::string filename = "print.bgcode";
+    std::string printer_uuid = "1234-1234-1234-1234";
+    std::string team_id = "1234";
+
     PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *selected_printer_preset);
     ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnectNew));
     // use existing structures to pass data
     ph_printer.config.opt_string("printhost_apikey") = team_id;
-    ph_printer.config.opt_string("print_host") = uuid;
+    ph_printer.config.opt_string("print_host") = printer_uuid;
     DynamicPrintConfig* physical_printer_config = &ph_printer.config;
 
-    send_gcode_inner(physical_printer_config);
+    PrintHostJob upload_job(physical_printer_config);
+    assert(!upload_job.empty());
+
+    upload_job.upload_data.upload_path = filename;
+    upload_job.upload_data.post_action = PrintHostPostUploadAction::None;
+
+    p->export_gcode(fs::path(), false, std::move(upload_job));
+
 }
 
 void Plater::send_gcode()
