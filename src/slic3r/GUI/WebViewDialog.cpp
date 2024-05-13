@@ -1063,6 +1063,7 @@ void PrinterPickWebViewDialog::on_script_message(wxWebViewEvent& evt)
 void PrinterPickWebViewDialog::on_request_update_selected_printer_action()
 {
     m_ret_val = m_message_data;
+    m_browser->RemoveScriptMessageHandler("_prusaSlicer");
     this->EndModal(wxID_OK);
 }
 

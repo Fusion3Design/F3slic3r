@@ -5877,9 +5877,13 @@ void Plater::connect_gcode()
 {
     assert(p->user_account->is_logged());
     std::string  dialog_msg;
-    if(PrinterPickWebViewDialog(this, dialog_msg).ShowModal() != wxID_OK) {
-        return;
-    }
+    {
+        //PrinterPickWebViewDialog* dialog = new PrinterPickWebViewDialog(this, dialog_msg);
+        PrinterPickWebViewDialog dialog(this, dialog_msg);
+        if (dialog.ShowModal() != wxID_OK) {
+            return;
+        }
+    }   
     if (dialog_msg.empty())  {
         show_error(this, _L("Failed to select a printer. PrusaConnect did not return a value."));
         return;
