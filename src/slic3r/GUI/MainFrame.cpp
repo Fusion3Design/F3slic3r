@@ -749,6 +749,7 @@ void MainFrame::create_preset_tabs()
 void MainFrame::add_connect_webview_tab()
 {
     if (m_connect_webview_added) {
+        m_connect_webview->resend_config();
         return;
     }
     // parameters of InsertNewPage (to prevent ambigous overloaded function)
