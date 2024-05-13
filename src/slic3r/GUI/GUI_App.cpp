@@ -3727,10 +3727,28 @@ bool GUI_App::select_filament_preset(const Preset* preset, size_t extruder_index
 }
 void GUI_App::search_and_select_filaments(const std::string& material, size_t extruder_index, std::string& out_message)
 {
-    const DynamicPrintConfig& config = preset_bundle->extruders_filaments[extruder_index].get_selected_preset()->config;
+    const Preset* preset = preset_bundle->extruders_filaments[extruder_index].get_selected_preset();
     // selected is ok
-    if (config.has("filament_type") && config.option("filament_type")->serialize() == material) {
+    if (!preset->is_default && preset->config.has("filament_type") && preset->config.option("filament_type")->serialize() == material) {
         return;
+    }
+    // find installed compatible filament that is Prusa with suitable type and select it
+    for (const auto& filament : preset_bundle->extruders_filaments[extruder_index]) {
+        if (filament.is_compatible
+            && !filament.preset->is_default
+            && filament.preset->is_visible
+            && (!filament.preset->vendor || !filament.preset->vendor->templates_profile)
+            && filament.preset->config.has("filament_type")
+            && filament.preset->config.option("filament_type")->serialize() == material
+            && filament.preset->name.compare(0, 9, "Prusament") == 0
+            && select_filament_preset(filament.preset, extruder_index)
+            )
+        {
+            out_message += /*(extruder_count == 1)
+                ? GUI::format(_L("Selected Filament:\n%1%"), filament_preset.preset->name)
+                : */GUI::format(_L("Extruder %1%: Selected Filament %2%\n"), extruder_index + 1, filament.preset->name);
+            return;
+        }
     }
     // find first installed compatible filament with suitable type and select it
     for (const auto& filament : preset_bundle->extruders_filaments[extruder_index]) {
@@ -3800,7 +3818,15 @@ void GUI_App::select_filament_from_connect(const std::string& msg)
     }
 }
 
-void GUI_App::handle_connect_request_printer_pick(const std::string& msg) 
+void GUI_App::handle_connect_request_printer_select(const std::string& msg) 
+{
+    // Here comes code from ConnectWebViewPanel
+    // It only contains uuid of a printer to be selected
+    // Lets queue it and wait on result. The result is send via event to plater, where it is send to handle_connect_request_printer_select_inner
+    std::string uuid = plater()->get_user_account()->get_keyword_from_json(msg, "uuid");
+    plater()->get_user_account()->enqueue_printer_data_action(uuid);
+}
+void GUI_App::handle_connect_request_printer_select_inner(const std::string & msg)
 {
     BOOST_LOG_TRIVIAL(debug) << "Handling web request: " << msg;
     // return to plater

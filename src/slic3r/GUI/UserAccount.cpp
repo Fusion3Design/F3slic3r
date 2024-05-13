@@ -97,6 +97,10 @@ void UserAccount::enqueue_avatar_action()
 {
     m_communication->enqueue_avatar_action(m_account_user_data["avatar"]);
 }
+void UserAccount::enqueue_printer_data_action(const std::string& uuid)
+{
+    m_communication->enqueue_printer_data_action(uuid);
+}
 
 bool UserAccount::on_login_code_recieved(const std::string& url_message)
 {

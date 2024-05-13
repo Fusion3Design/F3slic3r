@@ -975,6 +975,16 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
            wxGetApp().update_login_dialog();
 #endif // 0    
         }); 
+        this->q->Bind(EVT_UA_PRUSACONNECT_PRINTER_DATA_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+            wxGetApp().handle_connect_request_printer_select_inner(evt.data);
+        });
+        this->q->Bind(EVT_UA_PRUSACONNECT_PRINTER_DATA_FAIL, [this](UserAccountFailEvent& evt) {
+            BOOST_LOG_TRIVIAL(error) << "Failed communication with Prusa Account: " << evt.data;
+            user_account->on_communication_fail();
+            std::string msg = _u8L("Failed to select printer from PrusaConnect.");
+            this->notification_manager->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
+            this->notification_manager->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::WarningNotificationLevel, msg);
+        });
     }
 
 	wxGetApp().other_instance_message_handler()->init(this->q);

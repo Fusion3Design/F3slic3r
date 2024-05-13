@@ -43,6 +43,7 @@ public:
     void enqueue_connect_printer_models_action();
     void enqueue_avatar_action(const std::string& url);
     void enqueue_test_connection();
+    void enqueue_printer_data_action(const std::string& uuid);
 
     // Callbacks - called from UI after receiving Event from Session thread. Some might use Session thread.
     // 

@@ -333,6 +333,21 @@ void UserAccountCommunication::enqueue_avatar_action(const std::string& url)
     }
     wakeup_session_thread();
 }
+
+void UserAccountCommunication::enqueue_printer_data_action(const std::string& uuid)
+{
+    {
+        std::lock_guard<std::mutex> lock(m_session_mutex);
+        if (!m_session->is_initialized()) {
+            BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
+            return;
+        }
+        m_session->enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_DATA_FROM_UUID, nullptr, nullptr, uuid);
+    }
+    wakeup_session_thread();
+}
+
+
 void UserAccountCommunication::init_session_thread()
 {
     m_thread = std::thread([this]() {

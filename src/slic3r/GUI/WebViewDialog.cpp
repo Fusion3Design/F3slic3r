@@ -570,7 +570,7 @@ void ConnectWebViewPanel::sys_color_changed()
 void ConnectWebViewPanel::on_request_update_selected_printer_action()
 {
     assert(!m_message_data.empty());
-    wxGetApp().handle_connect_request_printer_pick(m_message_data);
+    wxGetApp().handle_connect_request_printer_select(m_message_data);
 }
 
 
