@@ -23,7 +23,7 @@ struct ProjectionFixture
     double extrusion_width{0.2};
 
     ProjectionFixture() {
-        extrusions.emplace_back(extrusion_path.bounding_box(), extrusion_width, island_boundary);
+        extrusions.emplace_back(Polygon{extrusion_path}, extrusion_path.bounding_box(), extrusion_width, island_boundary);
     }
 };
 
@@ -33,11 +33,29 @@ TEST_CASE_METHOD(ProjectionFixture, "Project to geometry matches", "[Seams][Seam
     boundary_polygon.scale(1.0 + extrusion_width / 2.0 + 0.1);
     island_boundary.contour = boundary_polygon;
 
-    Shells::Impl::BoundedPolygons result{Shells::Impl::project_to_geometry(extrusions)};
+    Shells::Impl::BoundedPolygons result{Shells::Impl::project_to_geometry(extrusions, 5.0)};
     REQUIRE(result.size() == 1);
     REQUIRE(result[0].polygon.size() == 4);
     // Boundary polygon is picked.
     CHECK(result[0].polygon[0].x() == Approx(scaled(-(1.0 + extrusion_width / 2.0 + 0.1))));
+}
+
+TEST_CASE_METHOD(ProjectionFixture, "Project to geometry does not match", "[Seams][SeamShells]") {
+    Polygon boundary_polygon{extrusion_path};
+
+    // Island boundary is far from the extrusion.
+    boundary_polygon.scale(5.0);
+
+    island_boundary.contour = boundary_polygon;
+
+    Shells::Impl::BoundedPolygons result{Shells::Impl::project_to_geometry(extrusions, 1.0)};
+    REQUIRE(result.size() == 1);
+    REQUIRE(result[0].polygon.size() == 4);
+
+    const Polygon expanded{expand(extrusions.front().polygon, extrusion_width / 2.0).front()};
+
+    // The extrusion is expanded and returned.
+    CHECK(result[0].polygon == expanded);
 }
 
 void serialize_shells(
@@ -69,5 +87,5 @@ TEST_CASE_METHOD(Test::SeamsFixture, "Create shells", "[Seams][SeamShells][Integ
         serialize_shells(csv, shell_polygons, print->full_print_config().opt_float("layer_height"));
     }
 
-    CHECK(shell_polygons.size() == 39);
+    CHECK(shell_polygons.size() == 36);
 }

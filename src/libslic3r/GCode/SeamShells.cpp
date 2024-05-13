@@ -5,7 +5,7 @@
 
 namespace Slic3r::Seams::Shells::Impl {
 
-BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimeters) {
+BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimeters, const double max_bb_distance) {
     BoundedPolygons result;
     result.reserve(external_perimeters.size());
 
@@ -13,11 +13,25 @@ BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimet
 
     transform(
         external_perimeters.begin(), external_perimeters.end(), back_inserter(result),
-        [](const Geometry::Extrusion &external_perimeter) {
+        [&](const Geometry::Extrusion &external_perimeter) {
             const auto [choosen_index, _]{Geometry::pick_closest_bounding_box(
                 external_perimeter.bounding_box,
                 external_perimeter.island_boundary_bounding_boxes
             )};
+
+            const double distance{Geometry::bounding_box_distance(
+                external_perimeter.island_boundary_bounding_boxes[choosen_index],
+                external_perimeter.bounding_box
+            )};
+
+            if (distance > max_bb_distance) {
+                Polygons expanded_extrusion{expand(external_perimeter.polygon, external_perimeter.width / 2.0)};
+                if (!expanded_extrusion.empty()) {
+                    return BoundedPolygon{
+                        expanded_extrusion.front(), expanded_extrusion.front().bounding_box(), external_perimeter.polygon.is_clockwise()
+                    };
+                }
+            }
 
             const bool is_hole{choosen_index != 0};
             const Polygon &adjacent_boundary{
@@ -29,11 +43,11 @@ BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimet
     return result;
 }
 
-std::vector<BoundedPolygons> project_to_geometry(const std::vector<Geometry::Extrusions> &extrusions) {
+std::vector<BoundedPolygons> project_to_geometry(const std::vector<Geometry::Extrusions> &extrusions, const double max_bb_distance) {
     std::vector<BoundedPolygons> result(extrusions.size());
 
     for (std::size_t layer_index{0}; layer_index < extrusions.size(); ++layer_index) {
-        result[layer_index] = project_to_geometry(extrusions[layer_index]);
+        result[layer_index] = project_to_geometry(extrusions[layer_index], max_bb_distance);
     }
 
     return result;
@@ -61,7 +75,7 @@ namespace Slic3r::Seams::Shells {
 Shells<Polygon> create_shells(
     const std::vector<Geometry::Extrusions> &extrusions, const double max_distance
 ) {
-    std::vector<Impl::BoundedPolygons> projected{Impl::project_to_geometry(extrusions)};
+    std::vector<Impl::BoundedPolygons> projected{Impl::project_to_geometry(extrusions, max_distance)};
 
     std::vector<std::size_t> layer_sizes;
     layer_sizes.reserve(projected.size());

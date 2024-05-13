@@ -18,13 +18,19 @@ namespace Slic3r::Seams::Geometry {
 
 struct Extrusion
 {
-    Extrusion(BoundingBox bounding_box, const double width, const ExPolygon &island_boundary);
+    Extrusion(
+        Polygon &&polygon,
+        BoundingBox bounding_box,
+        const double width,
+        const ExPolygon &island_boundary
+    );
 
     Extrusion(const Extrusion &) = delete;
     Extrusion(Extrusion &&) = default;
     Extrusion &operator=(const Extrusion &) = delete;
     Extrusion &operator=(Extrusion &&) = delete;
 
+    Polygon polygon;
     BoundingBox bounding_box;
     double width;
     const ExPolygon &island_boundary;
@@ -150,6 +156,8 @@ std::vector<double> get_overhangs(
 
 // Measured from outside, convex is positive
 std::vector<double> get_vertex_angles(const std::vector<Vec2d> &points, const double min_arm_length);
+
+double bounding_box_distance(const BoundingBox &a, const BoundingBox &b);
 
 std::pair<std::size_t, double> pick_closest_bounding_box(
     const BoundingBox &to, const BoundingBoxes &choose_from

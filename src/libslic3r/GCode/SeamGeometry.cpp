@@ -127,9 +127,16 @@ std::pair<Mapping, std::size_t> get_mapping(
     return {result, new_bucket_id};
 }
 
-Extrusion::Extrusion(BoundingBox bounding_box, const double width, const ExPolygon &island_boundary)
-    : bounding_box(std::move(bounding_box)), width(width), island_boundary(island_boundary) {
-
+Extrusion::Extrusion(
+    Polygon &&polygon,
+    BoundingBox bounding_box,
+    const double width,
+    const ExPolygon &island_boundary
+)
+    : polygon(polygon)
+    , bounding_box(std::move(bounding_box))
+    , width(width)
+    , island_boundary(island_boundary) {
     this->island_boundary_bounding_boxes.push_back(island_boundary.contour.bounding_box());
 
     std::transform(
@@ -149,9 +156,10 @@ Geometry::Extrusions get_external_perimeters(const Slic3r::Layer &layer, const L
             )};
             for (const ExtrusionEntity *entity : *collection) {
                 if (entity->role().is_external_perimeter()) {
-                    const BoundingBox bounding_box{entity->as_polyline().points};
+                    Polygon polygon{entity->as_polyline().points};
+                    const BoundingBox bounding_box{polygon.bounding_box()};
                     const double width{layer_region.flow(FlowRole::frExternalPerimeter).width()};
-                    result.emplace_back(bounding_box, width, island.boundary);
+                    result.emplace_back(std::move(polygon), bounding_box, width, island.boundary);
                 }
             }
         }
@@ -325,6 +333,12 @@ std::vector<double> get_vertex_angles(const std::vector<Vec2d> &points, const do
     return result;
 }
 
+double bounding_box_distance(const BoundingBox &a, const BoundingBox &b) {
+    const double bb_max_distance{unscaled(Point{a.max - b.max}).norm()};
+    const double bb_min_distance{unscaled(Point{a.min - b.min}).norm()};
+    return std::max(bb_max_distance, bb_min_distance);
+}
+
 std::pair<std::size_t, double> pick_closest_bounding_box(
     const BoundingBox &to, const BoundingBoxes &choose_from
 ) {
@@ -333,9 +347,7 @@ std::pair<std::size_t, double> pick_closest_bounding_box(
 
     for (std::size_t i{0}; i < choose_from.size(); ++i) {
         const BoundingBox &candidate{choose_from[i]};
-        const double bb_max_distance{unscaled(Point{candidate.max - to.max}).norm()};
-        const double bb_min_distance{unscaled(Point{candidate.min - to.min}).norm()};
-        const double distance{std::max(bb_max_distance, bb_min_distance)};
+        const double distance{bounding_box_distance(candidate, to)};
 
         if (distance < min_distance) {
             choosen_index = i;

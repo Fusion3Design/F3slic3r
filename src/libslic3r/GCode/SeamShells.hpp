@@ -25,21 +25,7 @@ struct BoundedPolygon {
 
 using BoundedPolygons = std::vector<BoundedPolygon>;
 
-/**
- * Project extrusion path to the original mesh.
- *
- * Takes the extrusion path and finds the closest polygon to it in
- * the extruison island boundary.
- *
- * Then it expands the extrusion path so it roughly tracks the island boundary
- * and check that all points in expanded extrusion path are within a reasonable
- * distance (extrusion width) from the closes polygon.
- *
- * If the expanded extrusion path matches the boundary it returns the
- * closeset polygon from the island boundary. Otherwise it returns
- * the expanded extrusion.
- */
-BoundedPolygons project_to_geometry(const Geometry::Extrusions &extrusions);
+BoundedPolygons project_to_geometry(const Geometry::Extrusions &extrusions, const double max_bb_distance);
 }
 
 namespace Slic3r::Seams::Shells {
