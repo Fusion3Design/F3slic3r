@@ -254,7 +254,6 @@ static PerimeterExtrusions extract_ordered_perimeter_extrusions(const PerimeterE
     }
 
     const std::vector<size_t> grouped_extrusion_order = order_of_grouped_perimeter_extrusions_to_minimize_distances(Point::Zero(), grouped_extrusions);
-    assert(grouped_extrusion_order.size() == grouped_ordered_extrusions.size());
 
     PerimeterExtrusions ordered_extrusions;
     for (size_t order_idx : grouped_extrusion_order) {
