@@ -1916,9 +1916,14 @@ void Plater::priv::process_validation_warning(const std::vector<std::string>& wa
     if (warnings.empty())
         notification_manager->close_notification_of_type(NotificationType::ValidateWarning);
 
-    for (std::string text :  warnings) {
-        std::string hypertext = "";
-        std::function<bool(wxEvtHandler*)> action_fn = [](wxEvtHandler*){ return false; };
+    // Always close warnings BedTemperaturesDiffer and ShrinkageCompensationsDiffer before next processing.
+    notification_manager->close_notification_of_type(NotificationType::BedTemperaturesDiffer);
+    notification_manager->close_notification_of_type(NotificationType::ShrinkageCompensationsDiffer);
+
+    for (std::string text : warnings) {
+        std::string                        hypertext         = "";
+        NotificationType                   notification_type = NotificationType::ValidateWarning;
+        std::function<bool(wxEvtHandler*)> action_fn         = [](wxEvtHandler*){ return false; };
 
         if (text == "_SUPPORTS_OFF") {
             text = _u8L("An object has custom support enforcers which will not be used "
@@ -1934,16 +1939,17 @@ void Plater::priv::process_validation_warning(const std::vector<std::string>& wa
                 print_tab->on_value_change("support_material_auto", config.opt_bool("support_material_auto"));
                 return true;
             };
+        } else if (text == "_BED_TEMPS_DIFFER") {
+            text              = _u8L("Bed temperatures for the used filaments differ significantly.");
+            notification_type = NotificationType::BedTemperaturesDiffer;
+        } else if (text == "_FILAMENT_SHRINKAGE_DIFFER") {
+            text              = _u8L("Filament shrinkage will not be used because filament shrinkage "
+                                     "for the used filaments differs significantly.");
+            notification_type = NotificationType::ShrinkageCompensationsDiffer;
         }
-        if (text == "_BED_TEMPS_DIFFER")
-            text = _u8L("Bed temperatures for the used filaments differ significantly.");
-
-        if (text == "_FILAMENT_SHRINKAGE_DIFFER")
-            text = _u8L("Filament shrinkage will not be used because filament shrinkage "
-                        "for the used filaments differs significantly.");
 
         notification_manager->push_notification(
-            NotificationType::ValidateWarning,
+            notification_type,
             NotificationManager::NotificationLevel::WarningNotificationLevel,
             _u8L("WARNING:") + "\n" + text, hypertext, action_fn
         );
