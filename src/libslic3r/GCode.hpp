@@ -305,6 +305,15 @@ private:
         // For sequential print, the instance of the object to be printing has to be defined.
         const size_t                                     single_object_instance_idx);
 
+    std::string extrude_perimeters(
+        const Print &print,
+        const Layer *layer,
+        const LayerIsland &island,
+        const std::vector<const ExtrusionEntity *> &perimeters,
+        const InstanceToPrint &print_instance,
+        const GCode::SmoothPathCache &smooth_path_cache
+    );
+
     // This function will be called for each printing extruder, possibly twice: First for wiping extrusions, second for normal extrusions.
     void process_layer_single_object(
         // output

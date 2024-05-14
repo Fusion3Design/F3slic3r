@@ -2745,6 +2745,40 @@ std::vector<const ExtrusionEntity *> extract_perimeter_extrusions(
     return result;
 }
 
+std::string GCodeGenerator::extrude_perimeters(
+    const Print &print,
+    const Layer *layer,
+    const LayerIsland &island,
+    const std::vector<const ExtrusionEntity *> &perimeters,
+    const InstanceToPrint &print_instance,
+    const GCode::SmoothPathCache &smooth_path_cache
+) {
+    const LayerRegion &layerm = *layer->get_region(island.perimeters.region());
+    // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be
+    // unique to a PrintObject, they would not identify the content of PrintRegion
+    // accross the whole print uniquely. Translate to a Print specific PrintRegion.
+    const PrintRegion &region = print.get_print_region(
+        layerm.region().print_region_id()
+    );
+
+    if (!perimeters.empty()) {
+        m_config.apply(region.config());
+    }
+
+    std::string gcode{};
+
+    for (const ExtrusionEntity *ee : perimeters) {
+        // Don't reorder, don't flip.
+        gcode += this->extrude_entity(
+            {*ee, false}, smooth_path_cache, comment_perimeter, -1.
+        );
+        this->m_travel_obstacle_tracker.mark_extruded(
+            ee, print_instance.object_layer_to_print_id, print_instance.instance_id
+        );
+    }
+    return gcode;
+};
+
 void GCodeGenerator::process_layer_single_object(
     // output
     std::string              &gcode, 
@@ -2877,37 +2911,6 @@ void GCodeGenerator::process_layer_single_object(
             //FIXME order islands?
             // Sequential tool path ordering of multiple parts within the same object, aka. perimeter tracking (#5511)
             for (const LayerIsland &island : lslice.islands) {
-                auto process_perimeters = [&]() {
-                    const LayerRegion &layerm = *layer->get_region(island.perimeters.region());
-                    // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be
-                    // unique to a PrintObject, they would not identify the content of PrintRegion
-                    // accross the whole print uniquely. Translate to a Print specific PrintRegion.
-                    const PrintRegion &region = print.get_print_region(
-                        layerm.region().print_region_id()
-                    );
-                    bool first = true;
-                    std::vector<const ExtrusionEntity *> perimeters{extract_perimeter_extrusions(
-                        print, layer, island, layer_tools, print_instance.instance_id, extruder_id,
-                        print_wipe_extrusions
-                    )};
-
-                    for (const ExtrusionEntity *ee : perimeters) {
-                        // This may not apply to Arachne, but maybe the Arachne gap fill should
-                        // disable reverse as well? assert(! eec->can_reverse());
-                        if (first) {
-                            first = false;
-                            init_layer_delayed();
-                            m_config.apply(region.config());
-                        }
-                        // Don't reorder, don't flip.
-                        gcode += this->extrude_entity(
-                            {*ee, false}, smooth_path_cache, comment_perimeter, -1.
-                        );
-                        m_travel_obstacle_tracker.mark_extruded(
-                            ee, print_instance.object_layer_to_print_id, print_instance.instance_id
-                        );
-                    }
-                };
                 auto process_infill = [&]() {
                     for (auto it = island.fills.begin(); it != island.fills.end();) {
                         // Gather range of fill ranges with the same region.
@@ -2918,11 +2921,27 @@ void GCodeGenerator::process_layer_single_object(
                         it = it_end;
                     }
                 };
+
+                const std::vector<const ExtrusionEntity *> perimeters{extract_perimeter_extrusions(
+                    print, layer, island, layer_tools, print_instance.instance_id, extruder_id,
+                    print_wipe_extrusions
+                )};
+
+                if (!perimeters.empty()) {
+                    init_layer_delayed();
+                }
+
                 if (print.config().infill_first) {
                     process_infill();
-                    process_perimeters();
+                    if (!perimeters.empty()) {
+                        init_layer_delayed();
+                    }
+                    gcode += this->extrude_perimeters(print, layer, island, perimeters, print_instance, smooth_path_cache);
                 } else {
-                    process_perimeters();
+                    if (!perimeters.empty()) {
+                        init_layer_delayed();
+                    }
+                    gcode += this->extrude_perimeters(print, layer, island, perimeters, print_instance, smooth_path_cache);
                     process_infill();
                 }
             }
