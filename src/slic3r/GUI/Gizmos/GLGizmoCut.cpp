@@ -8,6 +8,7 @@
 #include <GL/glew.h>
 
 #include <algorithm>
+#include <boost/nowide/convert.hpp>
 #include <wx/progdlg.h>
 #include <boost/nowide/convert.hpp>
 
