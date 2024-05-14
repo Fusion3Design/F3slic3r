@@ -2899,12 +2899,22 @@ void GCodeGenerator::process_layer_single_object(
                     m_config.apply(region.config());
                     const auto extrusion_name = ironing ? "ironing"sv : "infill"sv;
                     const Point* start_near = this->last_position ? &(*(this->last_position)) : nullptr;
-                    for (const ExtrusionEntityReference &fill : chain_extrusion_references(temp_fill_extrusions, start_near))
+
+                    std::vector<ExtrusionEntityReference> sorted_extrusions;
+
+                    for (const ExtrusionEntityReference &fill : chain_extrusion_references(temp_fill_extrusions, start_near)) {
                         if (auto *eec = dynamic_cast<const ExtrusionEntityCollection*>(&fill.extrusion_entity()); eec) {
-                            for (const ExtrusionEntityReference &ee : chain_extrusion_references(*eec, start_near, fill.flipped()))
-                                gcode += this->extrude_entity(ee, smooth_path_cache, extrusion_name);
-                        } else
-                            gcode += this->extrude_entity(fill, smooth_path_cache, extrusion_name);
+                            for (const ExtrusionEntityReference &ee : chain_extrusion_references(*eec, start_near, fill.flipped())) {
+                                sorted_extrusions.push_back(ee);
+                            }
+                        } else {
+                            sorted_extrusions.push_back(fill);
+                        }
+                    }
+
+                    for (const ExtrusionEntityReference &ee : sorted_extrusions) {
+                        gcode += this->extrude_entity(ee, smooth_path_cache, extrusion_name);
+                    }
                 }
             };
 
