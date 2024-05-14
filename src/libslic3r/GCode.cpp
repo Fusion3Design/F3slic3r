@@ -2652,7 +2652,7 @@ int get_extruder_id(
     return extruder_id;
 }
 
-ExtrusionEntitiesPtr extract_fill_extrusions(
+ExtrusionEntitiesPtr extract_infill_extrusions(
     const Layer *layer,
     const PrintRegion &region,
     const ExtrusionEntityCollection &fills,
@@ -2814,6 +2814,61 @@ std::string GCodeGenerator::extrude_infill_range(
     return gcode;
 };
 
+struct InfillRange {
+    std::vector<ExtrusionEntityReference> items;
+    const PrintRegion &region;
+};
+
+std::vector<InfillRange> extract_infill_ranges(
+    const Print &print,
+    const Layer *layer,
+    const LayerTools &layer_tools,
+    const std::size_t instance_id,
+    const LayerIsland island,
+    const bool overriden,
+    const bool ironing,
+    const int extruder_id,
+    std::optional<Point> previous_position
+) {
+    std::vector<InfillRange> result;
+    for (auto it = island.fills.begin(); it != island.fills.end();) {
+        // Gather range of fill ranges with the same region.
+        auto it_end = it;
+        for (++ it_end; it_end != island.fills.end() && it->region() == it_end->region(); ++ it_end) ;
+        const LayerRegion &layerm = *layer->get_region(it->region());
+        // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be unique to a PrintObject, they would not
+        // identify the content of PrintRegion accross the whole print uniquely. Translate to a Print specific PrintRegion.
+        const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
+
+        const Point* start_near = previous_position ? &(*(previous_position)) : nullptr;
+
+        ExtrusionEntitiesPtr temp_fill_extrusions{extract_infill_extrusions(
+            layer,
+            region,
+            layerm.fills(),
+            it,
+            it_end,
+            layer_tools,
+            instance_id,
+            extruder_id,
+            overriden,
+            ironing
+        )};
+
+        const std::vector<ExtrusionEntityReference> sorted_extrusions{sort_fill_extrusions(temp_fill_extrusions, start_near)};
+
+        result.push_back({sorted_extrusions, region});
+
+        if (! sorted_extrusions.empty()) {
+            previous_position = sorted_extrusions.back().flipped() ?
+                sorted_extrusions.back().extrusion_entity().first_point() :
+                sorted_extrusions.back().extrusion_entity().last_point();
+        }
+        it = it_end;
+    }
+    return result;
+}
+
 void GCodeGenerator::process_layer_single_object(
     // output
     std::string              &gcode,
@@ -2908,51 +2963,32 @@ void GCodeGenerator::process_layer_single_object(
     m_object_layer_over_raft = layer_to_print.object_layer && layer_to_print.object_layer->id() > 0 &&
         print_object.slicing_parameters().raft_layers() == layer_to_print.object_layer->id();
 
-    if (const Layer *layer = layer_to_print.object_layer; layer)
+    if (const Layer *layer = layer_to_print.object_layer; layer) {
         for (size_t idx : layer->lslice_indices_sorted_by_print_order) {
             const LayerSlice &lslice = layer->lslices_ex[idx];
 
             //FIXME order islands?
             // Sequential tool path ordering of multiple parts within the same object, aka. perimeter tracking (#5511)
+
+
             for (const LayerIsland &island : lslice.islands) {
-                auto process_infill = [&]() {
-                    std::optional<Point> previous_position{this->last_position};
-                    for (auto it = island.fills.begin(); it != island.fills.end();) {
-                        // Gather range of fill ranges with the same region.
-                        auto it_end = it;
-                        for (++ it_end; it_end != island.fills.end() && it->region() == it_end->region(); ++ it_end) ;
-                        const LayerRegion &layerm = *layer->get_region(it->region());
-                        // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be unique to a PrintObject, they would not
-                        // identify the content of PrintRegion accross the whole print uniquely. Translate to a Print specific PrintRegion.
-                        const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
-
-                        const Point* start_near = previous_position ? &(*(previous_position)) : nullptr;
-
-                        ExtrusionEntitiesPtr temp_fill_extrusions{extract_fill_extrusions(
-                            layer,
-                            region,
-                            layerm.fills(),
-                            it,
-                            it_end,
-                            layer_tools,
-                            print_instance.instance_id,
-                            extruder_id,
-                            print_wipe_extrusions,
-                            false
-                        )};
-
-                        const std::vector<ExtrusionEntityReference> sorted_extrusions{sort_fill_extrusions(temp_fill_extrusions, start_near)};
-
-                        if (!sorted_extrusions.empty()) {
+                auto process_infill = [&](const std::optional<Point> previous_position) {
+                    const std::vector<InfillRange> infill_ranges{extract_infill_ranges(
+                        print,
+                        layer,
+                        layer_tools,
+                        print_instance.instance_id,
+                        island,
+                        print_wipe_extrusions,
+                        false,
+                        extruder_id,
+                        previous_position
+                    )};
+                    for (const InfillRange &infill_range : infill_ranges) {
+                        if (!infill_range.items.empty()) {
                             init_layer_delayed();
-
-                            previous_position = sorted_extrusions.back().flipped() ?
-                                sorted_extrusions.back().extrusion_entity().first_point() :
-                                sorted_extrusions.back().extrusion_entity().last_point();
                         }
-
-                        gcode += this->extrude_infill_range(sorted_extrusions, region, "infill", smooth_path_cache);
-                        it = it_end;
+                        gcode += this->extrude_infill_range(infill_range.items, infill_range.region, "infill", smooth_path_cache);
                     }
                 };
 
@@ -2961,12 +2997,8 @@ void GCodeGenerator::process_layer_single_object(
                     print_wipe_extrusions
                 )};
 
-                if (!perimeters.empty()) {
-                    init_layer_delayed();
-                }
-
                 if (print.config().infill_first) {
-                    process_infill();
+                    process_infill(this->last_position);
                     if (!perimeters.empty()) {
                         init_layer_delayed();
                     }
@@ -2976,7 +3008,7 @@ void GCodeGenerator::process_layer_single_object(
                         init_layer_delayed();
                     }
                     gcode += this->extrude_perimeters(print, layer, island, perimeters, print_instance, smooth_path_cache);
-                    process_infill();
+                    process_infill(this->last_position);
                 }
             }
             // ironing
@@ -2984,46 +3016,26 @@ void GCodeGenerator::process_layer_single_object(
             // First Ironing changes extrusion rate quickly, second single ironing may be done over multiple perimeter regions.
             // Ironing in a second phase is safer, but it may be less efficient.
             for (const LayerIsland &island : lslice.islands) {
-                std::optional<Point> previous_position{this->last_position};
-                for (auto it = island.fills.begin(); it != island.fills.end();) {
-                    // Gather range of fill ranges with the same region.
-                    auto it_end = it;
-                    for (++ it_end; it_end != island.fills.end() && it->region() == it_end->region(); ++ it_end) ;
-                    const LayerRegion &layerm = *layer->get_region(it->region());
-                    // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be unique to a PrintObject, they would not
-                    // identify the content of PrintRegion accross the whole print uniquely. Translate to a Print specific PrintRegion.
-                    const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
-
-                    const Point* start_near = previous_position ? &(*(previous_position)) : nullptr;
-
-                    ExtrusionEntitiesPtr temp_fill_extrusions{extract_fill_extrusions(
-                        layer,
-                        region,
-                        layerm.fills(),
-                        it,
-                        it_end,
-                        layer_tools,
-                        print_instance.instance_id,
-                        extruder_id,
-                        print_wipe_extrusions,
-                        true
-                    )};
-
-                    const std::vector<ExtrusionEntityReference> sorted_extrusions{sort_fill_extrusions(temp_fill_extrusions, start_near)};
-
-                    if (! sorted_extrusions.empty()) {
+                const std::vector<InfillRange> ironing_ranges{extract_infill_ranges(
+                    print,
+                    layer,
+                    layer_tools,
+                    print_instance.instance_id,
+                    island,
+                    print_wipe_extrusions,
+                    true,
+                    extruder_id,
+                    this->last_position
+                )};
+                for (const InfillRange &ironing_range : ironing_ranges) {
+                    if (!ironing_range.items.empty()) {
                         init_layer_delayed();
-
-                        previous_position = sorted_extrusions.back().flipped() ?
-                            sorted_extrusions.back().extrusion_entity().first_point() :
-                            sorted_extrusions.back().extrusion_entity().last_point();
                     }
-
-                    gcode += this->extrude_infill_range(sorted_extrusions, region, "ironing", smooth_path_cache);
-                    it = it_end;
+                    gcode += this->extrude_infill_range(ironing_range.items, ironing_range.region, "ironing", smooth_path_cache);
                 }
             }
         }
+    }
 }
 
 void GCodeGenerator::apply_print_config(const PrintConfig &print_config)
