@@ -2628,6 +2628,81 @@ static inline bool comment_is_perimeter(const std::string_view comment) {
     return comment.data() == comment_perimeter.data() && comment.size() == comment_perimeter.size();
 }
 
+bool is_overriden(const ExtrusionEntityCollection *eec, const LayerTools &layer_tools, const std::size_t instance_id) {
+    return layer_tools.wiping_extrusions().get_extruder_override(eec, instance_id) > -1;
+}
+
+int get_extruder_id(
+    const ExtrusionEntityCollection *eec,
+    const LayerTools &layer_tools,
+    const PrintRegion &region,
+    const std::size_t instance_id
+) {
+    if (is_overriden(eec, layer_tools, instance_id)) {
+        return layer_tools.wiping_extrusions().get_extruder_override(eec, instance_id);
+    }
+
+    const int extruder_id = layer_tools.extruder(*eec, region);
+    if (! layer_tools.has_extruder(extruder_id)) {
+        // Extruder is not in layer_tools - we'll print it by last extruder on this layer (could
+        // happen e.g. when a wiping object is taller than others - dontcare extruders are
+        // eradicated from layer_tools)
+        return layer_tools.extruders.back();
+    }
+    return extruder_id;
+}
+
+ExtrusionEntitiesPtr extract_fill_extrusions(
+    const Layer *layer,
+    const ExtrusionEntityCollection &fills,
+    LayerExtrusionRanges::const_iterator begin,
+    LayerExtrusionRanges::const_iterator end,
+    const LayerTools &layer_tools,
+    const std::size_t instance_id,
+    const int extruder_id,
+    const bool overriden,
+    const bool ironing
+) {
+    ExtrusionEntitiesPtr result;
+    for (auto it = begin; it != end; ++ it) {
+        assert(it->region() == begin->region());
+        const LayerExtrusionRange &range{*it};
+        for (uint32_t fill_id : range) {
+            assert(dynamic_cast<ExtrusionEntityCollection*>(fills.entities[fill_id]));
+
+            auto *eec{static_cast<ExtrusionEntityCollection*>(fills.entities[fill_id])};
+            if (eec == nullptr) {
+                continue;
+            }
+            if (eec->entities.empty()) {
+                continue;
+            }
+            if ((eec->role() == ExtrusionRole::Ironing) != ironing) {
+                continue;
+            }
+            if (is_overriden(eec, layer_tools, instance_id) != overriden) {
+                continue;
+            }
+
+            const LayerRegion &layer_region{*layer->get_region(it->region())};
+            const PrintRegion &region{layer_region.region()};
+            if (get_extruder_id(eec, layer_tools, region, instance_id) != extruder_id) {
+                continue;
+            }
+
+            if (eec->can_reverse()) {
+                // Flatten the infill collection for better path planning.
+                for (auto *ee : eec->entities) {
+                    result.emplace_back(ee);
+                }
+            } else {
+                result.emplace_back(eec);
+            }
+        }
+    }
+    return result;
+}
+
 void GCodeGenerator::process_layer_single_object(
     // output
     std::string              &gcode, 
@@ -2742,7 +2817,6 @@ void GCodeGenerator::process_layer_single_object(
             extruder_override_id < 0 && int(extruder_id) == correct_extruder_id;
     };
 
-    ExtrusionEntitiesPtr temp_fill_extrusions;
     if (const Layer *layer = layer_to_print.object_layer; layer)
         for (size_t idx : layer->lslice_indices_sorted_by_print_order) {
             const LayerSlice &lslice = layer->lslices_ex[idx];
@@ -2752,22 +2826,17 @@ void GCodeGenerator::process_layer_single_object(
                 // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be unique to a PrintObject, they would not
                 // identify the content of PrintRegion accross the whole print uniquely. Translate to a Print specific PrintRegion.
                 const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
-                temp_fill_extrusions.clear();
-                for (auto it_fill_range = it_fill_ranges_begin; it_fill_range != it_fill_ranges_end; ++ it_fill_range) {
-                    assert(it_fill_range->region() == it_fill_ranges_begin->region());
-                    for (uint32_t fill_id : *it_fill_range) {
-                        assert(dynamic_cast<ExtrusionEntityCollection*>(fills.entities[fill_id]));
-                        if (auto *eec = static_cast<ExtrusionEntityCollection*>(fills.entities[fill_id]);
-                            (eec->role() == ExtrusionRole::Ironing) == ironing && shall_print_this_extrusion_collection(eec, region)) {
-                            if (eec->can_reverse())
-                                // Flatten the infill collection for better path planning.
-                                for (auto *ee : eec->entities)
-                                    temp_fill_extrusions.emplace_back(ee);
-                            else
-                                temp_fill_extrusions.emplace_back(eec);
-                        }
-                    }
-                }
+                ExtrusionEntitiesPtr temp_fill_extrusions{extract_fill_extrusions(
+                    layer,
+                    fills,
+                    it_fill_ranges_begin,
+                    it_fill_ranges_end,
+                    layer_tools,
+                    print_instance.instance_id,
+                    extruder_id,
+                    print_wipe_extrusions,
+                    ironing
+                )};
                 if (! temp_fill_extrusions.empty()) {
                     init_layer_delayed();
                     m_config.apply(region.config());
