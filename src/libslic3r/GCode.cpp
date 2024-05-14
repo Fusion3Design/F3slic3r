@@ -2986,6 +2986,10 @@ void GCodeGenerator::process_layer_single_object(
                     print_wipe_extrusions
                 )};
 
+                if (!perimeters.empty()) {
+                    init_layer_delayed();
+                }
+
                 if (print.config().infill_first) {
                     const std::vector<GCode::InfillRange> infill_ranges{GCode::extract_infill_ranges(
                         print,
@@ -3002,14 +3006,8 @@ void GCodeGenerator::process_layer_single_object(
                         init_layer_delayed();
                     }
                     gcode += this->extrude_infill_ranges(infill_ranges, "infill", smooth_path_cache);
-                    if (!perimeters.empty()) {
-                        init_layer_delayed();
-                    }
                     gcode += this->extrude_perimeters(print, layer, island, perimeters, print_instance, smooth_path_cache);
                 } else {
-                    if (!perimeters.empty()) {
-                        init_layer_delayed();
-                    }
                     gcode += this->extrude_perimeters(print, layer, island, perimeters, print_instance, smooth_path_cache);
 
                     const std::vector<GCode::InfillRange> infill_ranges{GCode::extract_infill_ranges(
