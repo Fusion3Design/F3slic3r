@@ -257,6 +257,16 @@ ImRect ImGuiControl::GetActiveThumbRect() const
     return m_selection == ssLower ? m_regions.lower_thumb : m_regions.higher_thumb;
 }
 
+bool ImGuiControl::IsLClickOnThumb()
+{
+    if (m_lclick_on_selected_thumb) {
+        // discard left mouse click at list its value is checked to avoud reuse it on next frame
+        m_lclick_on_selected_thumb = false;
+        return true;
+    }
+    return false;
+}
+
 void ImGuiControl::draw_scroll_line(const ImRect& scroll_line, const ImRect& slideable_region)
 {
     if (m_cb_draw_scroll_line)
@@ -514,6 +524,17 @@ bool ImGuiControl::draw_slider( int* higher_pos, int* lower_pos,
     if ((!ImGui::ItemHoverable(active_thumb, id) && context.IO.MouseClicked[1]) ||
         context.IO.MouseClicked[0])
         m_rclick_on_selected_thumb = false;
+
+    // detect left click on selected thumb
+    if (ImGui::ItemHoverable(active_thumb, id) && !pos_changed) {
+        ImVec2 active_thumb_center = active_thumb.GetCenter();
+        if (context.IO.MouseClicked[0])
+            m_active_thumb_center_on_lcklick = active_thumb_center;
+        if (context.IO.MouseReleased[0] && 
+            (m_active_thumb_center_on_lcklick.y == active_thumb_center.y) && 
+            (m_active_thumb_center_on_lcklick.x == active_thumb_center.x)     )
+            m_lclick_on_selected_thumb = true;
+    }
 
     // render slider
 

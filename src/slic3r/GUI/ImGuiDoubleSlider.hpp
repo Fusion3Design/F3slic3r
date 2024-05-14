@@ -84,6 +84,7 @@ public:
     ImRect  GetActiveThumbRect() const;
 
     bool    IsRClickOnThumb() const     { return m_rclick_on_selected_thumb; }
+    bool    IsLClickOnThumb();
 
     bool    is_horizontal() const       { return !(m_flags & ImGuiSliderFlags_Vertical); }
     bool    render();
@@ -138,6 +139,8 @@ private:
     int             m_mouse_pos;
 
     bool            m_rclick_on_selected_thumb{ false };
+    bool            m_lclick_on_selected_thumb{ false };
+    ImVec2          m_active_thumb_center_on_lcklick;
 
     bool            m_draw_lower_thumb{ true };
     bool            m_combine_thumbs  { false };
