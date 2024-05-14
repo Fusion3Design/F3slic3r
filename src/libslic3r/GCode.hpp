@@ -314,6 +314,13 @@ private:
         const GCode::SmoothPathCache &smooth_path_cache
     );
 
+    std::string extrude_infill_range(
+        const std::vector<ExtrusionEntityReference> &sorted_extrusions,
+        const PrintRegion &region,
+        const std::string &extrusion_name,
+        const GCode::SmoothPathCache &smooth_path_cache
+    );
+
     // This function will be called for each printing extruder, possibly twice: First for wiping extrusions, second for normal extrusions.
     void process_layer_single_object(
         // output
