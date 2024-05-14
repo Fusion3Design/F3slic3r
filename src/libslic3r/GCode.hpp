@@ -113,6 +113,11 @@ struct PrintObjectInstance
     bool operator!=(const PrintObjectInstance &other) const { return !(*this == other); }
 };
 
+struct InfillRange {
+    std::vector<ExtrusionEntityReference> items;
+    const PrintRegion &region;
+};
+
 } // namespace GCode
 
 class GCodeGenerator {
@@ -318,6 +323,12 @@ private:
         const std::vector<ExtrusionEntityReference> &sorted_extrusions,
         const PrintRegion &region,
         const std::string &extrusion_name,
+        const GCode::SmoothPathCache &smooth_path_cache
+    );
+
+    std::string extrude_infill_ranges(
+        const std::vector<GCode::InfillRange> &infill_ranges,
+        const std::string &commment,
         const GCode::SmoothPathCache &smooth_path_cache
     );
 
