@@ -2916,6 +2916,7 @@ void GCodeGenerator::process_layer_single_object(
             // Sequential tool path ordering of multiple parts within the same object, aka. perimeter tracking (#5511)
             for (const LayerIsland &island : lslice.islands) {
                 auto process_infill = [&]() {
+                    std::optional<Point> previous_position{this->last_position};
                     for (auto it = island.fills.begin(); it != island.fills.end();) {
                         // Gather range of fill ranges with the same region.
                         auto it_end = it;
@@ -2925,7 +2926,7 @@ void GCodeGenerator::process_layer_single_object(
                         // identify the content of PrintRegion accross the whole print uniquely. Translate to a Print specific PrintRegion.
                         const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
 
-                        const Point* start_near = this->last_position ? &(*(this->last_position)) : nullptr;
+                        const Point* start_near = previous_position ? &(*(previous_position)) : nullptr;
 
                         ExtrusionEntitiesPtr temp_fill_extrusions{extract_fill_extrusions(
                             layer,
@@ -2944,6 +2945,10 @@ void GCodeGenerator::process_layer_single_object(
 
                         if (!sorted_extrusions.empty()) {
                             init_layer_delayed();
+
+                            previous_position = sorted_extrusions.back().flipped() ?
+                                sorted_extrusions.back().extrusion_entity().first_point() :
+                                sorted_extrusions.back().extrusion_entity().last_point();
                         }
 
                         gcode += this->extrude_infill_range(sorted_extrusions, region, "infill", smooth_path_cache);
@@ -2979,6 +2984,7 @@ void GCodeGenerator::process_layer_single_object(
             // First Ironing changes extrusion rate quickly, second single ironing may be done over multiple perimeter regions.
             // Ironing in a second phase is safer, but it may be less efficient.
             for (const LayerIsland &island : lslice.islands) {
+                std::optional<Point> previous_position{this->last_position};
                 for (auto it = island.fills.begin(); it != island.fills.end();) {
                     // Gather range of fill ranges with the same region.
                     auto it_end = it;
@@ -2988,7 +2994,7 @@ void GCodeGenerator::process_layer_single_object(
                     // identify the content of PrintRegion accross the whole print uniquely. Translate to a Print specific PrintRegion.
                     const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
 
-                    const Point* start_near = this->last_position ? &(*(this->last_position)) : nullptr;
+                    const Point* start_near = previous_position ? &(*(previous_position)) : nullptr;
 
                     ExtrusionEntitiesPtr temp_fill_extrusions{extract_fill_extrusions(
                         layer,
@@ -3007,6 +3013,10 @@ void GCodeGenerator::process_layer_single_object(
 
                     if (! sorted_extrusions.empty()) {
                         init_layer_delayed();
+
+                        previous_position = sorted_extrusions.back().flipped() ?
+                            sorted_extrusions.back().extrusion_entity().first_point() :
+                            sorted_extrusions.back().extrusion_entity().last_point();
                     }
 
                     gcode += this->extrude_infill_range(sorted_extrusions, region, "ironing", smooth_path_cache);
