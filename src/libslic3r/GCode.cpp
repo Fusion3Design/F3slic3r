@@ -2654,6 +2654,7 @@ int get_extruder_id(
 
 ExtrusionEntitiesPtr extract_fill_extrusions(
     const Layer *layer,
+    const PrintRegion &region,
     const ExtrusionEntityCollection &fills,
     LayerExtrusionRanges::const_iterator begin,
     LayerExtrusionRanges::const_iterator end,
@@ -2684,8 +2685,6 @@ ExtrusionEntitiesPtr extract_fill_extrusions(
                 continue;
             }
 
-            const LayerRegion &layer_region{*layer->get_region(it->region())};
-            const PrintRegion &region{layer_region.region()};
             if (get_extruder_id(eec, layer_tools, region, instance_id) != extruder_id) {
                 continue;
             }
@@ -2700,6 +2699,49 @@ ExtrusionEntitiesPtr extract_fill_extrusions(
             }
         }
     }
+    return result;
+}
+
+std::vector<const ExtrusionEntity *> extract_perimeter_extrusions(
+    const Print &print,
+    const Layer *layer,
+    const LayerIsland &island,
+    const LayerTools &layer_tools,
+    const std::size_t instance_id,
+    const int extruder_id,
+    const bool overriden
+) {
+    std::vector<const ExtrusionEntity *> result;
+
+    const LayerRegion &layerm = *layer->get_region(island.perimeters.region());
+    // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be unique to a PrintObject, they would not
+    // identify the content of PrintRegion accross the whole print uniquely. Translate to a Print specific PrintRegion.
+    const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
+
+    for (uint32_t perimeter_id : island.perimeters) {
+        // Extrusions inside islands are expected to be ordered already.
+        // Don't reorder them.
+        assert(dynamic_cast<const ExtrusionEntityCollection*>(layerm.perimeters().entities[perimeter_id]));
+        const auto *eec = static_cast<const ExtrusionEntityCollection*>(layerm.perimeters().entities[perimeter_id]);
+        if (eec == nullptr) {
+            continue;
+        }
+        if (eec->entities.empty()) {
+            continue;
+        }
+        if (is_overriden(eec, layer_tools, instance_id) != overriden) {
+            continue;
+        }
+
+        if (get_extruder_id(eec, layer_tools, region, instance_id) != extruder_id) {
+            continue;
+        }
+
+        for (const ExtrusionEntity *ee : *eec) {
+            result.push_back(ee);
+        }
+    }
+
     return result;
 }
 
@@ -2797,26 +2839,6 @@ void GCodeGenerator::process_layer_single_object(
     m_object_layer_over_raft = layer_to_print.object_layer && layer_to_print.object_layer->id() > 0 &&
         print_object.slicing_parameters().raft_layers() == layer_to_print.object_layer->id();
 
-    // Check whether this ExtrusionEntityCollection should be printed now with extruder_id, given print_wipe_extrusions
-    // (wipe extrusions are printed before regular extrusions).
-    auto shall_print_this_extrusion_collection = [extruder_id, instance_id = print_instance.instance_id, &layer_tools, is_anything_overridden, print_wipe_extrusions](const ExtrusionEntityCollection *eec, const PrintRegion &region) -> bool {
-        assert(eec != nullptr);
-        if (eec->entities.empty())
-            // This shouldn't happen. FIXME why? but first_point() would fail.
-            return false;
-        // This extrusion is part of certain Region, which tells us which extruder should be used for it:
-        int correct_extruder_id = layer_tools.extruder(*eec, region);
-        if (! layer_tools.has_extruder(correct_extruder_id)) {
-            // this entity is not overridden, but its extruder is not in layer_tools - we'll print it
-            // by last extruder on this layer (could happen e.g. when a wiping object is taller than others - dontcare extruders are eradicated from layer_tools)
-            correct_extruder_id = layer_tools.extruders.back();
-        }
-        int extruder_override_id = is_anything_overridden ? layer_tools.wiping_extrusions().get_extruder_override(eec, instance_id) : -1;
-        return print_wipe_extrusions ?
-            extruder_override_id == int(extruder_id) :
-            extruder_override_id < 0 && int(extruder_id) == correct_extruder_id;
-    };
-
     if (const Layer *layer = layer_to_print.object_layer; layer)
         for (size_t idx : layer->lslice_indices_sorted_by_print_order) {
             const LayerSlice &lslice = layer->lslices_ex[idx];
@@ -2828,6 +2850,7 @@ void GCodeGenerator::process_layer_single_object(
                 const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
                 ExtrusionEntitiesPtr temp_fill_extrusions{extract_fill_extrusions(
                     layer,
+                    region,
                     fills,
                     it_fill_ranges_begin,
                     it_fill_ranges_end,
@@ -2856,29 +2879,33 @@ void GCodeGenerator::process_layer_single_object(
             for (const LayerIsland &island : lslice.islands) {
                 auto process_perimeters = [&]() {
                     const LayerRegion &layerm = *layer->get_region(island.perimeters.region());
-                    // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be unique to a PrintObject, they would not
-                    // identify the content of PrintRegion accross the whole print uniquely. Translate to a Print specific PrintRegion.
-                    const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
+                    // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be
+                    // unique to a PrintObject, they would not identify the content of PrintRegion
+                    // accross the whole print uniquely. Translate to a Print specific PrintRegion.
+                    const PrintRegion &region = print.get_print_region(
+                        layerm.region().print_region_id()
+                    );
                     bool first = true;
-                    for (uint32_t perimeter_id : island.perimeters) {
-                        // Extrusions inside islands are expected to be ordered already.
-                        // Don't reorder them.
-                        assert(dynamic_cast<const ExtrusionEntityCollection*>(layerm.perimeters().entities[perimeter_id]));
-                        if (const auto *eec = static_cast<const ExtrusionEntityCollection*>(layerm.perimeters().entities[perimeter_id]);
-                            shall_print_this_extrusion_collection(eec, region)) {
-                            // This may not apply to Arachne, but maybe the Arachne gap fill should disable reverse as well?
-                            // assert(! eec->can_reverse());
-                            if (first) {
-                                first = false;
-                                init_layer_delayed();
-                                m_config.apply(region.config());
-                            }
-                            for (const ExtrusionEntity *ee : *eec) {
-                                // Don't reorder, don't flip.
-                                gcode += this->extrude_entity({*ee, false}, smooth_path_cache, comment_perimeter, -1.);
-                                m_travel_obstacle_tracker.mark_extruded(ee, print_instance.object_layer_to_print_id, print_instance.instance_id);
-                            }
+                    std::vector<const ExtrusionEntity *> perimeters{extract_perimeter_extrusions(
+                        print, layer, island, layer_tools, print_instance.instance_id, extruder_id,
+                        print_wipe_extrusions
+                    )};
+
+                    for (const ExtrusionEntity *ee : perimeters) {
+                        // This may not apply to Arachne, but maybe the Arachne gap fill should
+                        // disable reverse as well? assert(! eec->can_reverse());
+                        if (first) {
+                            first = false;
+                            init_layer_delayed();
+                            m_config.apply(region.config());
                         }
+                        // Don't reorder, don't flip.
+                        gcode += this->extrude_entity(
+                            {*ee, false}, smooth_path_cache, comment_perimeter, -1.
+                        );
+                        m_travel_obstacle_tracker.mark_extruded(
+                            ee, print_instance.object_layer_to_print_id, print_instance.instance_id
+                        );
                     }
                 };
                 auto process_infill = [&]() {
