@@ -59,11 +59,6 @@ void TopBarMenus::ApplyWorkspacesMenu()
 
 void TopBarMenus::CreateAccountMenu()
 {
-    m_user_item = append_menu_item(&account, wxID_ANY, "", "",
-        [this](wxCommandEvent& e) { if (m_cb_on_user_item) m_cb_on_user_item(); }, get_bmp_bundle("user", 16));
-
-    account.AppendSeparator();
-
     remember_me_item_id = wxWindow::NewControlId();
     append_menu_check_item(&account, remember_me_item_id, _L("Remember me"), "" , 
         [](wxCommandEvent&) { wxGetApp().plater()->get_user_account()->toggle_remember_session(); } , nullptr);
@@ -85,10 +80,6 @@ void TopBarMenus::UpdateAccountMenu(Slic3r::GUI::UserAccount* user_account)
         m_login_item->SetItemLabel(is_logged ? _L("Prusa Account Log out") : _L("Prusa Account Log in"));
         m_login_item->SetBitmap(is_logged ? *get_bmp_bundle("logout", 16) : *get_bmp_bundle("login", 16));
     }
-
-    const wxString user_name = is_logged ? from_u8(user_account->get_username()) : _L("Anonymous");
-    if (m_user_item)
-        m_user_item->SetItemLabel(user_name);
 }
 
 void TopBarMenus::Popup(TopBarItemsCtrl* popup_ctrl, wxMenu* menu, wxPoint pos)

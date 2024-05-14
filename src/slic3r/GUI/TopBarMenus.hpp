@@ -15,7 +15,6 @@ class UserAccount;
 class TopBarMenus
 {
     // Prusa Account menu items
-    wxMenuItem*             m_user_item         { nullptr };
     wxMenuItem*             m_login_item        { nullptr };
 
     TopBarItemsCtrl*        m_popup_ctrl        { nullptr };
