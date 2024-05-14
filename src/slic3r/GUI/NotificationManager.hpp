@@ -136,6 +136,10 @@ enum class NotificationType
 	SelectFilamentFromConnect,
 	// Debug notification for connect communication
 	PrusaConnectPrinters,
+    // Notification that bed temperatures for the used filaments differ significantly.
+    BedTemperaturesDiffer,
+    // Notification that shrinkage compensations for the used filaments differ.
+    ShrinkageCompensationsDiffer,
 };
 
 class NotificationManager

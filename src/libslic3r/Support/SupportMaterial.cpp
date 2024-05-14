@@ -1106,8 +1106,8 @@ struct SupportAnnotations
         buildplate_covered(buildplate_covered)
     {
         // Append custom supports.
-        object.project_and_append_custom_facets(false, EnforcerBlockerType::ENFORCER, enforcers_layers);
-        object.project_and_append_custom_facets(false, EnforcerBlockerType::BLOCKER, blockers_layers);
+        object.project_and_append_custom_facets(false, TriangleStateType::ENFORCER, enforcers_layers);
+        object.project_and_append_custom_facets(false, TriangleStateType::BLOCKER, blockers_layers);
     }
 
     std::vector<Polygons>         enforcers_layers;

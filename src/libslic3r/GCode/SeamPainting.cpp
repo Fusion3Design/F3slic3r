@@ -7,12 +7,12 @@ Painting::Painting(const Transform3d &obj_transform, const ModelVolumePtrs &volu
             auto model_transformation = obj_transform * mv->get_matrix();
 
             indexed_triangle_set enforcers = mv->seam_facets
-                                                 .get_facets(*mv, EnforcerBlockerType::ENFORCER);
+                                                 .get_facets(*mv, TriangleStateType::ENFORCER);
             its_transform(enforcers, model_transformation);
             its_merge(this->enforcers, enforcers);
 
             indexed_triangle_set blockers = mv->seam_facets
-                                                .get_facets(*mv, EnforcerBlockerType::BLOCKER);
+                                                .get_facets(*mv, TriangleStateType::BLOCKER);
             its_transform(blockers, model_transformation);
             its_merge(this->blockers, blockers);
         }

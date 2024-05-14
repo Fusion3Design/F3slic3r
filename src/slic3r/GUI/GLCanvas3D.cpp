@@ -628,11 +628,10 @@ void GLCanvas3D::LayersEditing::accept_changes(GLCanvas3D& canvas)
     m_layer_height_profile_modified = false;
 }
 
-void GLCanvas3D::LayersEditing::update_slicing_parameters()
-{
-	  if (m_slicing_parameters == nullptr) {
-        m_slicing_parameters = new SlicingParameters();
-        *m_slicing_parameters = PrintObject::slicing_parameters(*m_config, *m_model_object, m_object_max_z);
+void GLCanvas3D::LayersEditing::update_slicing_parameters() {
+	if (m_slicing_parameters == nullptr) {
+		m_slicing_parameters = new SlicingParameters();
+        *m_slicing_parameters = PrintObject::slicing_parameters(*m_config, *m_model_object, m_object_max_z, m_shrinkage_compensation);
     }
 }
 
@@ -1605,9 +1604,11 @@ void GLCanvas3D::set_config(const DynamicPrintConfig* config)
     m_config = config;
     m_layers_editing.set_config(config);
 
-    if (config) {
-        PrinterTechnology ptech = current_printer_technology();
+    const PrinterTechnology ptech = current_printer_technology();
+    if (const Print *print = fff_print(); ptech == ptFFF && print != nullptr)
+        m_layers_editing.set_shrinkage_compensation(fff_print()->shrinkage_compensation());
 
+    if (config) {
         auto slot = ArrangeSettingsDb_AppCfg::slotFFF;
 
         if (ptech == ptSLA) {
@@ -3200,9 +3201,9 @@ void GLCanvas3D::on_mouse_wheel(wxMouseEvent& evt)
         }
     }
 
-    // If Undo/Redo list is opened, 
+    // If Undo/Redo list is opened,
     // update them according to the event
-    if (m_undoredo_toolbar.is_item_pressed("undo")  || 
+    if (m_undoredo_toolbar.is_item_pressed("undo")  ||
         m_undoredo_toolbar.is_item_pressed("redo")) {
         m_mouse_wheel = int((double)evt.GetWheelRotation() / (double)evt.GetWheelDelta());
         return;

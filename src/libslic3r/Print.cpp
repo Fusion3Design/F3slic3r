@@ -209,7 +209,9 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
             // Spiral Vase forces different kind of slicing than the normal model:
             // In Spiral Vase mode, holes are closed and only the largest area contour is kept at each layer.
             // Therefore toggling the Spiral Vase on / off requires complete reslicing.
-            || opt_key == "spiral_vase") {
+            || opt_key == "spiral_vase"
+            || opt_key == "filament_shrinkage_compensation_xy"
+            || opt_key == "filament_shrinkage_compensation_z") {
             osteps.emplace_back(posSlice);
         } else if (
                opt_key == "complete_objects"
@@ -525,6 +527,9 @@ std::string Print::validate(std::vector<std::string>* warnings) const
                     goto DONE;
                 }
         DONE:;
+
+        if (!this->has_same_shrinkage_compensations())
+            warnings->emplace_back("_FILAMENT_SHRINKAGE_DIFFER");
     }
 
     if (m_objects.empty())
@@ -584,12 +589,19 @@ std::string Print::validate(std::vector<std::string>* warnings) const
         //FIXME It is quite expensive to generate object layers just to get the print height!
         if (auto layers = generate_object_layers(print_object.slicing_parameters(), layer_height_profile(print_object_idx));
             ! layers.empty() && layers.back() > this->config().max_print_height + EPSILON) {
-            return
-                // Test whether the last slicing plane is below or above the print volume.
-                0.5 * (layers[layers.size() - 2] + layers.back()) > this->config().max_print_height + EPSILON ?
-                format(_u8L("The object %1% exceeds the maximum build volume height."), print_object.model_object()->name) :
-                format(_u8L("While the object %1% itself fits the build volume, its last layer exceeds the maximum build volume height."), print_object.model_object()->name) +
-                " " + _u8L("You might want to reduce the size of your model or change current print settings and retry.");
+
+            const double shrinkage_compensation_z = this->shrinkage_compensation().z();
+            if (shrinkage_compensation_z != 1. && layers.back() > (this->config().max_print_height / shrinkage_compensation_z + EPSILON)) {
+                // The object exceeds the maximum build volume height because of shrinkage compensation.
+                return format(_u8L("While the object %1% itself fits the build volume, it exceeds the maximum build volume height because of material shrinkage compensation."), print_object.model_object()->name);
+            } else if (0.5 * (layers[layers.size() - 2] + layers.back()) > this->config().max_print_height + EPSILON) {
+                // The last slicing plane is below the print volume.
+                return format(_u8L("The object %1% exceeds the maximum build volume height."), print_object.model_object()->name);
+            } else {
+                // The last slicing plane is above the print volume.
+                return format(_u8L("While the object %1% itself fits the build volume, its last layer exceeds the maximum build volume height."), print_object.model_object()->name) +
+                    " " + _u8L("You might want to reduce the size of your model or change current print settings and retry.");
+            }
         }
     }
 
@@ -760,7 +772,7 @@ std::string Print::validate(std::vector<std::string>* warnings) const
             if (! object->has_support() && warnings) {
                 for (const ModelVolume* mv : object->model_object()->volumes) {
                     bool has_enforcers = mv->is_support_enforcer() || 
-                        (mv->is_model_part() && mv->supported_facets.has_facets(*mv, EnforcerBlockerType::ENFORCER));
+                        (mv->is_model_part() && mv->supported_facets.has_facets(*mv, TriangleStateType::ENFORCER));
                     if (has_enforcers) {
                         warnings->emplace_back("_SUPPORTS_OFF");
                         break;
@@ -1616,6 +1628,40 @@ std::string Print::output_filename(const std::string &filename_base) const
         output_filename_format.erase(output_filename_format.end()-6);
 
     return this->PrintBase::output_filename(output_filename_format, ".gcode", filename_base, &config);
+}
+
+// Returns if all used filaments have same shrinkage compensations.
+bool Print::has_same_shrinkage_compensations() const {
+    const std::vector<unsigned int> extruders = this->extruders();
+    if (extruders.empty())
+        return false;
+
+    const double filament_shrinkage_compensation_xy = m_config.filament_shrinkage_compensation_xy.get_at(extruders.front());
+    const double filament_shrinkage_compensation_z  = m_config.filament_shrinkage_compensation_z.get_at(extruders.front());
+
+    for (unsigned int extruder : extruders) {
+        if (filament_shrinkage_compensation_xy != m_config.filament_shrinkage_compensation_xy.get_at(extruder) ||
+            filament_shrinkage_compensation_z  != m_config.filament_shrinkage_compensation_z.get_at(extruder)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Returns scaling for each axis representing shrinkage compensations in each axis.
+Vec3d Print::shrinkage_compensation() const
+{
+    if (!this->has_same_shrinkage_compensations())
+        return Vec3d::Ones();
+
+    const unsigned int first_extruder          = this->extruders().front();
+    const double       xy_compensation_percent = std::clamp(m_config.filament_shrinkage_compensation_xy.get_at(first_extruder), -99., 99.);
+    const double       z_compensation_percent  = std::clamp(m_config.filament_shrinkage_compensation_z.get_at(first_extruder), -99., 99.);
+    const double       xy_compensation         = 100. / (100. - xy_compensation_percent);
+    const double       z_compensation          = 100. / (100. - z_compensation_percent);
+
+    return { xy_compensation, xy_compensation, z_compensation };
 }
 
 const std::string PrintStatistics::FilamentUsedG     = "filament used [g]";
