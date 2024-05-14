@@ -1211,9 +1211,9 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     DoExport::init_ooze_prevention(print, m_ooze_prevention);
 
     std::string start_gcode = this->placeholder_parser_process("start_gcode", print.config().start_gcode.value, initial_extruder_id);
-    // Set bed temperature if the start G-code does not contain any bed temp control G-codes.
+
+    this->_print_first_layer_chamber_temperature(file, print, start_gcode, config().chamber_temperature.get_at(initial_extruder_id), false, false);
     this->_print_first_layer_bed_temperature(file, print, start_gcode, initial_extruder_id, true);
-    // Set extruder(s) temperature before and after start G-code.
     this->_print_first_layer_extruder_temperatures(file, print, start_gcode, initial_extruder_id, false);
 
     // adds tag for processor
@@ -1223,6 +1223,8 @@ void GCodeGenerator::_do_export(Print& print, GCodeOutputStream &file, Thumbnail
     file.writeln(start_gcode);
 
     this->_print_first_layer_extruder_temperatures(file, print, start_gcode, initial_extruder_id, true);
+    this->_print_first_layer_chamber_temperature(file, print, start_gcode, config().chamber_minimal_temperature.get_at(initial_extruder_id), true, false);
+    this->_print_first_layer_chamber_temperature(file, print, start_gcode, config().chamber_temperature.get_at(initial_extruder_id), false, false);
     print.throw_if_canceled();
 
     // Set other general things.
@@ -1888,6 +1890,31 @@ void GCodeGenerator::_print_first_layer_bed_temperature(GCodeOutputStream &file,
     if (autoemit && ! temp_set_by_gcode)
         file.write(set_temp_gcode);
 }
+
+
+
+// Write chamber temperatures into the G-code.
+// Only do that if the start G-code does not already contain any M-code controlling chamber temperature.
+// M141 - Set chamber Temperature
+// M191 - Set chamber Temperature and Wait
+void GCodeGenerator::_print_first_layer_chamber_temperature(GCodeOutputStream &file, const Print &print, const std::string &gcode, int temp, bool wait, bool accurate)
+{
+    if (temp == 0)
+        return;
+    bool autoemit = print.config().autoemit_temperature_commands;
+    // Is the bed temperature set by the provided custom G-code?
+    int  temp_by_gcode     = -1;
+    bool temp_set_by_gcode = custom_gcode_sets_temperature(gcode, 141, 191, false, temp_by_gcode);
+    if (autoemit && temp_set_by_gcode && temp_by_gcode >= 0 && temp_by_gcode < 1000)
+        temp = temp_by_gcode;
+    // Always call m_writer.set_bed_temperature() so it will set the internal "current" state of the bed temp as if
+    // the custom start G-code emited these.
+    std::string set_temp_gcode = m_writer.set_chamber_temperature(temp, wait, accurate);
+    if (autoemit && ! temp_set_by_gcode)
+        file.write(set_temp_gcode);
+}
+
+
 
 // Write 1st layer extruder temperatures into the G-code.
 // Only do that if the start G-code does not already contain any M-code controlling an extruder temperature.
