@@ -2864,6 +2864,11 @@ struct SliceExtrusions {
     std::vector<GCode::InfillRange> ironing_extrusions;
 };
 
+struct LayerExtrusions {
+    ExtrusionEntitiesPtr support_extrusions;
+    std::vector<SliceExtrusions> slices_extrusions;
+};
+
 std::optional<Point> get_last_position(const std::vector<GCode::InfillRange> &infill_ranges){
     if (!infill_ranges.empty() && !infill_ranges.back().items.empty()) {
         const ExtrusionEntityReference &last_infill{infill_ranges.back().items.back()};
@@ -2994,6 +2999,57 @@ std::vector<SliceExtrusions> get_sorted_extrusions(
     return result;
 }
 
+ExtrusionEntitiesPtr get_support_extrusions(
+    const unsigned int extruder_id,
+    const GCode::ObjectLayerToPrint &layer_to_print,
+    const LayerTools &layer_tools,
+    const GCode::SmoothPathCache &smooth_path_cache,
+    const bool print_wipe_extrusions,
+    unsigned int support_extruder,
+    unsigned int interface_extruder,
+    const ConfigOptionBools &is_soluable
+) {
+    if (const SupportLayer &support_layer = *layer_to_print.support_layer; ! support_layer.support_fills.entities.empty()) {
+        ExtrusionRole   role               = support_layer.support_fills.role();
+        bool            has_support        = role.is_mixed() || role.is_support_base();
+        bool            has_interface      = role.is_mixed() || role.is_support_interface();
+        // Extruder ID of the support base. -1 if "don't care".
+        // Shall the support be printed with the active extruder, preferably with non-soluble, to avoid tool changes?
+        bool            support_dontcare   = support_extruder == std::numeric_limits<unsigned int>::max();
+        // Extruder ID of the support interface. -1 if "don't care".
+        // Shall the support interface be printed with the active extruder, preferably with non-soluble, to avoid tool changes?
+        bool            interface_dontcare = interface_extruder == std::numeric_limits<unsigned int>::max();
+        if (support_dontcare || interface_dontcare) {
+            // Some support will be printed with "don't care" material, preferably non-soluble.
+            // Is the current extruder assigned a soluble filament?
+            auto it_nonsoluble = std::find_if(layer_tools.extruders.begin(), layer_tools.extruders.end(),
+                [&is_soluable](unsigned int extruder_id) { return ! is_soluable.get_at(extruder_id); });
+            // There should be a non-soluble extruder available.
+            assert(it_nonsoluble != layer_tools.extruders.end());
+            unsigned int dontcare_extruder = it_nonsoluble == layer_tools.extruders.end() ? layer_tools.extruders.front() : *it_nonsoluble;
+            if (support_dontcare)
+                support_extruder = dontcare_extruder;
+            if (interface_dontcare)
+                interface_extruder = dontcare_extruder;
+        }
+        bool extrude_support   = has_support && support_extruder == extruder_id;
+        bool extrude_interface = has_interface && interface_extruder == extruder_id;
+        if (extrude_support || extrude_interface) {
+            ExtrusionEntitiesPtr        entities_cache;
+            const ExtrusionEntitiesPtr &entities = extrude_support && extrude_interface ? support_layer.support_fills.entities : entities_cache;
+            if (! extrude_support || ! extrude_interface) {
+                auto role = extrude_support ? ExtrusionRole::SupportMaterial : ExtrusionRole::SupportMaterialInterface;
+                entities_cache.reserve(support_layer.support_fills.entities.size());
+                for (ExtrusionEntity *ee : support_layer.support_fills.entities)
+                    if (ee->role() == role)
+                        entities_cache.emplace_back(ee);
+            }
+            return entities;
+        }
+    }
+    return {};
+}
+
 void GCodeGenerator::process_layer_single_object(
     // output
     std::string              &gcode,
@@ -3038,51 +3094,24 @@ void GCodeGenerator::process_layer_single_object(
     const PrintObject &print_object = print_instance.print_object;
     const Print       &print        = *print_object.print();
 
-    if (! print_wipe_extrusions && layer_to_print.support_layer != nullptr)
-        if (const SupportLayer &support_layer = *layer_to_print.support_layer; ! support_layer.support_fills.entities.empty()) {
-            ExtrusionRole   role               = support_layer.support_fills.role();
-            bool            has_support        = role.is_mixed() || role.is_support_base();
-            bool            has_interface      = role.is_mixed() || role.is_support_interface();
-            // Extruder ID of the support base. -1 if "don't care".
-            unsigned int    support_extruder   = print_object.config().support_material_extruder.value - 1;
-            // Shall the support be printed with the active extruder, preferably with non-soluble, to avoid tool changes?
-            bool            support_dontcare   = support_extruder == std::numeric_limits<unsigned int>::max();
-            // Extruder ID of the support interface. -1 if "don't care".
-            unsigned int    interface_extruder = print_object.config().support_material_interface_extruder.value - 1;
-            // Shall the support interface be printed with the active extruder, preferably with non-soluble, to avoid tool changes?
-            bool            interface_dontcare = interface_extruder == std::numeric_limits<unsigned int>::max();
-            if (support_dontcare || interface_dontcare) {
-                // Some support will be printed with "don't care" material, preferably non-soluble.
-                // Is the current extruder assigned a soluble filament?
-                auto it_nonsoluble = std::find_if(layer_tools.extruders.begin(), layer_tools.extruders.end(), 
-                    [&soluble = std::as_const(print.config().filament_soluble)](unsigned int extruder_id) { return ! soluble.get_at(extruder_id); });
-                // There should be a non-soluble extruder available.
-                assert(it_nonsoluble != layer_tools.extruders.end());
-                unsigned int dontcare_extruder = it_nonsoluble == layer_tools.extruders.end() ? layer_tools.extruders.front() : *it_nonsoluble;
-                if (support_dontcare)
-                    support_extruder = dontcare_extruder;
-                if (interface_dontcare)
-                    interface_extruder = dontcare_extruder;
-            }
-            bool extrude_support   = has_support && support_extruder == extruder_id;
-            bool extrude_interface = has_interface && interface_extruder == extruder_id;
-            if (extrude_support || extrude_interface) {
-                init_layer_delayed();
-                m_layer = layer_to_print.support_layer;
-                m_object_layer_over_raft = false;
-                ExtrusionEntitiesPtr        entities_cache;
-                const ExtrusionEntitiesPtr &entities = extrude_support && extrude_interface ? support_layer.support_fills.entities : entities_cache;
-                if (! extrude_support || ! extrude_interface) {
-                    auto role = extrude_support ? ExtrusionRole::SupportMaterial : ExtrusionRole::SupportMaterialInterface;
-                    entities_cache.reserve(support_layer.support_fills.entities.size());
-                    for (ExtrusionEntity *ee : support_layer.support_fills.entities)
-                        if (ee->role() == role)
-                            entities_cache.emplace_back(ee);
-                }
-                gcode += this->extrude_support(chain_extrusion_references(entities), smooth_path_cache);
-            }
+    if (! print_wipe_extrusions && layer_to_print.support_layer != nullptr) {
+        const ExtrusionEntitiesPtr support_extrusions{get_support_extrusions(
+            extruder_id,
+            layer_to_print,
+            layer_tools,
+            smooth_path_cache,
+            print_wipe_extrusions,
+            print_object.config().support_material_extruder.value - 1,
+            print_object.config().support_material_interface_extruder.value - 1,
+            print.config().filament_soluble
+        )};
+        if (!support_extrusions.empty()) {
+            init_layer_delayed();
+            m_layer = layer_to_print.support_layer;
+            m_object_layer_over_raft = false;
+            gcode += this->extrude_support(chain_extrusion_references(support_extrusions), smooth_path_cache);
         }
-
+    }
 
     m_layer = layer_to_print.layer();
     // To control print speed of the 1st object layer printed over raft interface.
@@ -3119,19 +3148,20 @@ void GCodeGenerator::process_layer_single_object(
 
         for (const SliceExtrusions &slice_extrusions : sorted_extrusions) {
             for (const IslandExtrusions &island_extrusions : slice_extrusions.common_extrusions) {
-                if (!island_extrusions.perimeters.empty()) {
-                    init_layer_delayed();
-                }
-
                 if (print.config().infill_first) {
                     if (!island_extrusions.infill_ranges.empty()) {
                         init_layer_delayed();
                     }
                     gcode += this->extrude_infill_ranges(island_extrusions.infill_ranges, "infill", smooth_path_cache);
+                    if (!island_extrusions.perimeters.empty()) {
+                        init_layer_delayed();
+                    }
                     gcode += this->extrude_perimeters(print, layer, *island_extrusions.region, island_extrusions.perimeters, print_instance, smooth_path_cache);
                 } else {
+                    if (!island_extrusions.perimeters.empty()) {
+                        init_layer_delayed();
+                    }
                     gcode += this->extrude_perimeters(print, layer, *island_extrusions.region, island_extrusions.perimeters, print_instance, smooth_path_cache);
-
                     if (!island_extrusions.infill_ranges.empty()) {
                         init_layer_delayed();
                     }
@@ -3142,7 +3172,6 @@ void GCodeGenerator::process_layer_single_object(
             if (!slice_extrusions.ironing_extrusions.empty()) {
                 init_layer_delayed();
             }
-
             gcode += this->extrude_infill_ranges(slice_extrusions.ironing_extrusions, "ironing", smooth_path_cache);
         }
     }
