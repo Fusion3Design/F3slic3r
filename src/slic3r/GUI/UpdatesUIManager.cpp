@@ -64,7 +64,7 @@ void UIManager::fill_entries(bool init_selection/* = false*/)
     const ArchiveRepositoryVector&  archs = m_pad->get_archive_repositories();
     for (const auto& archive : archs) {
         const std::string&  uuid   = archive->get_uuid();
-        if (init_selection && m_pad->is_selected_archive(uuid))
+        if (init_selection && m_pad->is_selected_repository_by_uuid(uuid))
             m_selected_uuids.emplace(uuid);
 
         const bool  is_selected = m_selected_uuids.find(uuid) != m_selected_uuids.end();

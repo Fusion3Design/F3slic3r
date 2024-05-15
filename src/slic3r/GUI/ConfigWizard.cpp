@@ -129,6 +129,7 @@ BundleMap BundleMap::load()
 {
     BundleMap res;
 
+    const PresetArchiveDatabase* pad = wxGetApp().plater()->get_preset_archive_database();
     const auto vendor_dir = (boost::filesystem::path(Slic3r::data_dir()) / "vendor").make_preferred();
     const auto archive_dir = (boost::filesystem::path(Slic3r::data_dir()) / "cache" / "vendor").make_preferred();
     const auto rsrc_vendor_dir = (boost::filesystem::path(resources_dir()) / "profiles").make_preferred();
@@ -197,6 +198,96 @@ BundleMap BundleMap::load()
                 }
                 const auto recommended = recommended_it->config_version;
                 VendorProfile vp;
+                // Check if in selected repo.
+                try {
+                    vp = VendorProfile::from_ini(dir_entry, false);
+                }
+                catch (const std::exception& e) {
+                    BOOST_LOG_TRIVIAL(error) << format("Could not load bundle %1% due to corrupted profile file %2%. Message: %3%", id, dir_entry.path().string(), e.what());
+                    continue;
+                }
+                if (vp.repo_id.empty() || !pad->is_selected_repository_by_id(vp.repo_id)) {
+                    continue;
+                }
+                // Don't load
+                if (vp.config_version > recommended)
+                    continue;
+                // Load full VP.
+                try {
+                    vp = VendorProfile::from_ini(dir_entry, true);
+                }
+                catch (const std::exception& e) {
+                    BOOST_LOG_TRIVIAL(error) << format("Could not load bundle %1% due to corrupted profile file %2%. Message: %3%", id, dir_entry.path().string(), e.what());
+                    continue;
+                }
+                Bundle bundle;
+                if (bundle.load(dir_entry.path(), dir.second))
+                    res.emplace(std::move(id), std::move(bundle));
+            }
+        }
+    }
+
+    return res;
+}
+#if 0
+// Reload is a mockup of a function that takes existing BundleMap and reshapes it into current form.
+// It would be called after calling preset_updater->sync_blocking() and preset_updater->config_update() instead of fully loading it from scratch.
+// Some entries will stop existing because its repositories were unselected.
+// Missing: Entries that changed location: e.g. newer ini is now ready in archive_dir, while previously it was in rsrc_vendor_dir
+void BundleMap::reload(BundleMap& res)
+{
+    const auto vendor_dir = (boost::filesystem::path(Slic3r::data_dir()) / "vendor").make_preferred();
+    const auto archive_dir = (boost::filesystem::path(Slic3r::data_dir()) / "cache" / "vendor").make_preferred();
+    const auto rsrc_vendor_dir = (boost::filesystem::path(resources_dir()) / "profiles").make_preferred();
+    const auto cache_dir = boost::filesystem::path(Slic3r::data_dir()) / "cache"; // for Index
+    
+    // Load the other bundles in the datadir/vendor directory
+    // and then additionally from datadir/cache/vendor (archive) and resources/profiles.
+    // Should we concider case where archive has older profiles than resources (shouldnt happen)? -> YES, it happens during re-configuration when running older PS after newer version
+    typedef std::pair<const fs::path&, BundleLocation> DirData;
+    std::vector<DirData> dir_list{ {vendor_dir, BundleLocation::IN_VENDOR},  {archive_dir, BundleLocation::IN_ARCHIVE},  {rsrc_vendor_dir, BundleLocation::IN_RESOURCES} };
+    for (auto dir : dir_list) {
+        if (!fs::exists(dir.first))
+            continue;
+        for (const auto& dir_entry : boost::filesystem::directory_iterator(dir.first)) {
+            if (Slic3r::is_ini_file(dir_entry)) {
+                std::string id = dir_entry.path().stem().string();  // stem() = filename() without the trailing ".ini" part
+
+                // Don't load this bundle if we've already loaded it.
+                if (res.find(id) != res.end()) { continue; }
+
+                // Fresh index should be in archive_dir, otherwise look for it in cache 
+                // Then if not in archive or cache - it could be 3rd party profile that user just copied to vendor folder (both ini and cache)
+
+                fs::path idx_path(archive_dir / (id + ".idx"));
+                if (!boost::filesystem::exists(idx_path)) {
+                    BOOST_LOG_TRIVIAL(error) << format("Missing index %1% when loading bundle %2%. Going to search for it in cache folder.", idx_path.string(), id);
+                    idx_path = fs::path(cache_dir / (id + ".idx"));
+                }
+                if (!boost::filesystem::exists(idx_path)) {
+                    BOOST_LOG_TRIVIAL(error) << format("Missing index %1% when loading bundle %2%. Going to search for it in vendor folder. Is it a 3rd party profile?", idx_path.string(), id);
+                    idx_path = fs::path(vendor_dir / (id + ".idx"));
+                }
+                if (!boost::filesystem::exists(idx_path)) {
+                    BOOST_LOG_TRIVIAL(error) << format("Could not load bundle %1% due to missing index %2%.", id, idx_path.string());
+                    continue;
+                }
+
+                Slic3r::GUI::Config::Index index;
+                try {
+                    index.load(idx_path);
+                }
+                catch (const std::exception& /* err */) {
+                    BOOST_LOG_TRIVIAL(error) << format("Could not load bundle %1% due to invalid index %2%.", id, idx_path.string());
+                    continue;
+                }
+                const auto recommended_it = index.recommended();
+                if (recommended_it == index.end()) {
+                    BOOST_LOG_TRIVIAL(error) << format("Could not load bundle %1% due to no recommended version in index %2%.", id, idx_path.string());
+                    continue;
+                }
+                const auto recommended = recommended_it->config_version;
+                VendorProfile vp;
                 try {
                     vp = VendorProfile::from_ini(dir_entry, true);
                 }
@@ -215,8 +306,32 @@ BundleMap BundleMap::load()
         }
     }
 
-    return res;
+    // Delete no longer existing entries and not used repos
+    const PresetArchiveDatabase* pad = wxGetApp().plater()->get_preset_archive_database();
+    std::vector<std::string> to_erease;
+    for (const auto& entry : res) {
+        fs::path ini_path;
+        switch (entry.second.location) {
+        case IN_VENDOR: ini_path = vendor_dir / (entry.first + ".ini"); break;
+        case IN_ARCHIVE: ini_path = archive_dir / (entry.first + ".ini"); break;
+        case IN_RESOURCES: ini_path = rsrc_vendor_dir / (entry.first + ".ini");  break;
+        default: assert(true);
+        }
+        if (!fs::exists(ini_path)) {
+            to_erease.emplace_back(entry.first);
+            continue;
+        }
+        if (entry.second.vendor_profile->repo_id.empty() || !pad->is_selected_repository_by_id(entry.second.vendor_profile->repo_id))
+        {
+            to_erease.emplace_back(entry.first);
+        }
+    }
+    for (const std::string& id : to_erease)
+    {
+        res.erase(id);
+    }
 }
+#endif // 0
 
 Bundle& BundleMap::prusa_bundle()
 {
@@ -3451,6 +3566,25 @@ bool ConfigWizard::priv::check_sla_selected()
 
 void ConfigWizard::priv::set_config_updated_from_archive(bool is_updated) 
 {
+    // is updated is false if this is first call since ConfigWizard::run and RunReason is not RR_USER
+    if (is_updated)
+    {
+        // THIS IS NOT A MAIN THREAD!
+         
+        // This set with preset_updater used to be done in GUI_App::run_wizard before ConfigWizard::run()
+        GUI_App& app = wxGetApp();
+        // Do blocking sync on every change of archive repos, so user is always offered recent profiles.
+        app.preset_updater->sync_blocking(app.preset_bundle, &app, app.plater()->get_preset_archive_database()->get_archive_repositories(), app.plater()->get_preset_archive_database()->get_selected_repositories_uuid());
+        // Offer update installation. It used to be offered only when wizard run reason was RR_USER.
+        app.preset_updater->update_index_db();
+        app.preset_updater->config_update(app.app_config->orig_version(), PresetUpdater::UpdateParams::SHOW_TEXT_BOX);
+
+        // We have now probably changed data. We need to rebuild or database from which wizards constructs.
+        // DK: Im not sure if we should do full load_vendors. or only load BundleMap::load().
+        // also see BundleMap::reload().
+        load_vendors();
+    }
+
     is_config_from_archive = is_updated;
     load_pages_from_archive();
 }
@@ -3484,7 +3618,7 @@ static void unselect(PagePrinters* page)
 
     for (const auto& archive : archs) {
         if (page->get_vendor_repo_id() == archive->get_manifest().id) {
-            if (pad->is_selected_archive(archive->get_uuid()))
+            if (pad->is_selected_repository_by_uuid(archive->get_uuid()))
                 unselect_all = false;
             //break; ! don't break here, because there can be several archives with same repo_id
         }
@@ -3543,7 +3677,7 @@ void ConfigWizard::priv::load_pages_from_archive()
 
     for (const auto& archive : archs) {
         const auto& data = archive->get_manifest();
-        const bool is_selected_arch     = pad->is_selected_archive(archive->get_uuid());
+        const bool is_selected_arch     = pad->is_selected_repository_by_uuid(archive->get_uuid());
 
         std::vector<const VendorProfile*> vendors;
         const bool any_installed_vendor = any_installed_vendor_for_repo(data.id, vendors);

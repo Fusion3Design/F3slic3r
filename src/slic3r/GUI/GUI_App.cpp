@@ -834,10 +834,11 @@ void GUI_App::post_init()
             return;
 #endif
         CallAfter([this] {
+            // preset_updater->sync downloads profile updates and than via event checks updates and incompatible presets. We need to run it on startup.
+            // start before cw so it is canceled by cw if needed?
+            this->preset_updater->sync(preset_bundle, this, plater()->get_preset_archive_database()->get_archive_repositories(), plater()->get_preset_archive_database()->get_selected_repositories_uuid());
             bool cw_showed = this->config_wizard_startup();
             if (! cw_showed) {
-                // preset_updater->sync downloads profile updates on background so it must begin after config wizard finished.
-                this->preset_updater->sync(preset_bundle, this, plater()->get_preset_archive_database()->get_archive_repositories(), plater()->get_preset_archive_database()->get_selected_repositories_uuid());
                 // The CallAfter is needed as well, without it, GL extensions did not show.
                 // Also, we only want to show this when the wizard does not, so the new user
                 // sees something else than "we want something" on the first start.
@@ -946,6 +947,71 @@ void GUI_App::init_app_config()
                         "\n\n%1%\n\n%2%", app_config->config_path(), error));
             }
         }
+    }
+}
+
+void GUI_App::legacy_app_config_vendor_check()
+{
+    // Expected state: 
+    // User runs 2.8.0+ for the first time. They have Prusa SLA printers installed.
+    // Prusa SLA printers moved from PrusaResearch.ini to PrusaResearchSLA.ini
+    // We expect this is detected and fixed on the first run, when PrusaResearchSLA is not installed yet.
+    // Steps:
+    // Move the printers in appconfig to PrusaResearchSLA
+    // Moving the printers is not enough. The new ini PrusaResearchSLA needs to be installed.
+    // But we cannot install bundles without preset updater.
+    // So we just move it to the vendor folder. Since all profiles are named the same, it should not be a problem.
+    // Preset updater should be doing blocking update over PrusaResearch.ini. Then all should be ok.
+
+    const std::vector<std::string> prusaslicer_moved_to_sla = { "SL1", "SL1S" };
+    const std::map<std::string, std::map<std::string, std::set<std::string>>>& vendor_map = app_config->vendors();
+    bool found_legacy_printers = false;
+    if (const auto& vendor_it = vendor_map.find("PrusaResearch"); vendor_it != vendor_map.end()) {
+        for (const std::string& model : prusaslicer_moved_to_sla) {
+            if (const auto& it = vendor_it->second.find(model); it != vendor_it->second.end()) {
+                BOOST_LOG_TRIVIAL(error) << "found " << model;
+                found_legacy_printers = true;
+                break;
+            }
+        }
+    }
+    if (!found_legacy_printers) {
+        return;
+    }
+    bool found_prusa_sla_vendor = vendor_map.find("PrusaResearchSLA") != vendor_map.end();
+    // make a deep copy of vendor map with moved printers
+    std::map<std::string, std::map<std::string, std::set<std::string>>> new_vendor_map;
+    for (const auto& vendor : vendor_map) {
+        for (const auto& model : vendor.second) {
+            if (vendor.first == "PrusaResearch" && std::find(prusaslicer_moved_to_sla.begin(), prusaslicer_moved_to_sla.end(), model.first) != prusaslicer_moved_to_sla.end()) {
+                for (const std::string& variant : model.second) {
+                    new_vendor_map["PrusaResearchSLA"][model.first].emplace(variant);
+                }
+            } else {
+                for (const std::string& variant : model.second) {
+                    new_vendor_map[vendor.first][model.first].emplace(variant);
+                }
+            }
+        }
+    }
+    app_config->set_vendors(new_vendor_map);
+    
+    if (found_prusa_sla_vendor) {
+        // The vendor was present in appconfig, we do nothing with its ini file.
+        return;
+    }
+
+    // copy PrusaResearchSLA ini file to vendors
+    const boost::filesystem::path prusa_sla_in_resources = boost::filesystem::path(Slic3r::resources_dir()) / "profiles" / "PrusaResearchSLA.ini";
+    assert(boost::filesystem::exists(prusa_sla_in_resources));
+    const boost::filesystem::path prusa_sla_in_vendors = boost::filesystem::path(Slic3r::data_dir()) / "vendor" / "PrusaResearchSLA.ini";
+    if (boost::filesystem::exists(prusa_sla_in_vendors)) {
+        return;
+    }
+    std::string message;
+    CopyFileResult cfr = copy_file(prusa_sla_in_resources.string(), prusa_sla_in_vendors.string(), message, false);
+    if (cfr != SUCCESS) {
+        BOOST_LOG_TRIVIAL(error) << "Failed to copy file " << prusa_sla_in_resources << " to " << prusa_sla_in_vendors << ": " << message;
     }
 }
 
@@ -1383,6 +1449,9 @@ bool GUI_App::on_init_inner()
     // hide settings tabs after first Layout
     if (is_editor())
         mainframe->select_tab(size_t(0));
+
+    // Call this check only after appconfig was loaded to mainframe, otherwise there will be duplicity error.
+    legacy_app_config_vendor_check();
 
     sidebar().obj_list()->init_objects(); // propagate model objects to object list
     update_mode(); // mode sizer doesn't exist anymore, so we came update mode here, before load_current_presets
@@ -3156,10 +3225,6 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
         // Destructor does not call Destroy.
         m_login_dialog.reset();
     }
-    // Update archive db if login status changed, otherwise we expect to have archive db on date.
-    if (user_was_logged != plater()->get_user_account()->is_logged()) {
-        plater()->get_preset_archive_database()->sync_blocking();
-    }
 #endif // 0
     plater()->get_preset_archive_database()->set_wizard_lock(true);
     plater()->get_preset_archive_database()->sync_blocking();
@@ -3394,6 +3459,19 @@ void GUI_App::manage_updates()
 
 bool GUI_App::check_updates(const bool verbose)
 {	
+    // verbose means - not run after startup, but by user
+    if (verbose) {
+        // do preset_updater sync so if user runs slicer for a long time, check for updates actually delivers updates.
+        // for preset_updater sync we need to sync archive database first
+        plater()->get_preset_archive_database()->sync_blocking();
+        // and we can have user to select the repos they want (thats additional dialog)
+        manage_updates();
+        // then its time for preset_updater sync 
+        // BE CAREFUL! sync and sync_blocking sends event that calls check_updates(false)
+        preset_updater->sync_blocking(preset_bundle, this, plater()->get_preset_archive_database()->get_archive_repositories(), plater()->get_preset_archive_database()->get_selected_repositories_uuid());
+        // and then we check updates
+    }
+
 	PresetUpdater::UpdateResult updater_result;
 	try {
         preset_updater->update_index_db();

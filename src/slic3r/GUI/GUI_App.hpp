@@ -434,6 +434,7 @@ private:
     // returns old config path to copy from if such exists,
     // returns an empty string if such config path does not exists or if it cannot be loaded.
     std::string     check_older_app_config(Semver current_version, bool backup);
+    void            legacy_app_config_vendor_check();
     void            window_pos_save(wxTopLevelWindow* window, const std::string &name);
     void            window_pos_restore(wxTopLevelWindow* window, const std::string &name, bool default_maximized = false);
     void            window_pos_sanitize(wxTopLevelWindow* window);

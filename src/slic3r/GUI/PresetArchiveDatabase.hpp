@@ -106,7 +106,8 @@ public:
 	void sync_blocking();
 	//void set_local_archives(AppConfig* app_config);
 	void read_server_manifest(const std::string& json_body);
-	bool is_selected_archive(const std::string& uuid) const;
+	bool is_selected_repository_by_uuid(const std::string& uuid) const;
+	bool is_selected_repository_by_id(const std::string& repo_id) const;
 	const std::map<std::string, bool>& get_selected_repositories_uuid() const { assert(m_selected_repositories_uuid.size() == m_archive_repositories.size()); return m_selected_repositories_uuid; }
 	bool set_selected_repositories(const std::vector<std::string>& used_uuids, std::string& msg);
 	std::string add_local_archive(const boost::filesystem::path path, std::string& msg);

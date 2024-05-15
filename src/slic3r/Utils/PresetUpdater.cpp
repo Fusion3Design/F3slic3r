@@ -186,6 +186,7 @@ struct PresetUpdater::priv
 	void set_download_prefs(const AppConfig *app_config);
 	//bool get_file(const std::string &url, const fs::path &target_path) const;
 	void prune_tmps() const;
+	void clear_cache_vendor() const;
 	void sync_config(const VendorMap& vendors, const GUI::ArchiveRepository& archive);
 
 	void check_install_indices() const;
@@ -271,6 +272,18 @@ void PresetUpdater::priv::prune_tmps() const
 			BOOST_LOG_TRIVIAL(debug) << "Cache prune: " << dir_entry.path().string();
 			fs::remove(dir_entry.path());
 		}
+}
+// Remove all files in cache/vendor
+void PresetUpdater::priv::clear_cache_vendor() const
+{
+	boost::system::error_code ec;
+	for (auto& dir_entry : boost::filesystem::directory_iterator(cache_vendor_path)) {
+		fs::remove(dir_entry.path(), ec);
+		if (ec) {
+			BOOST_LOG_TRIVIAL(error) << "Failed to remove " << dir_entry << " during cache cleanup. Reason: " << ec.what();
+			ec.clear();
+		}
+	}
 }
 
 // gets resource to cache/<vendor_name>/
@@ -1148,6 +1161,7 @@ void PresetUpdater::sync(const PresetBundle *preset_bundle, wxEvtHandler* evt_ha
 	if (!p->enabled_config_update) { return; }
 	
     p->thread = std::thread([this, &vendors = preset_bundle->vendors, &repositories, &selected_repo_uuids, evt_handler]() {
+		this->p->clear_cache_vendor();
 		this->p->prune_tmps();
 		for(const auto& archive : repositories) {
 			auto it = selected_repo_uuids.find(archive->get_uuid());
@@ -1177,6 +1191,7 @@ void PresetUpdater::sync_blocking(const PresetBundle* preset_bundle, wxEvtHandle
 	p->set_download_prefs(GUI::wxGetApp().app_config);
 	if (!p->enabled_config_update) { return; }
 
+	this->p->clear_cache_vendor();
 	this->p->prune_tmps();
 	for (const auto& archive : repositories) {
 		auto it = selected_repo_uuids.find(archive->get_uuid());

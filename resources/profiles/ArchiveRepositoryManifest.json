@@ -1,9 +1,17 @@
 [{
-	"name": "Production",
-	"description": "Production repository",
+	"name": "Prusa FFF",
+	"description": "Prusa FFF printers",
 	"visibility": "",
-	"id": "prod",
-	"url": "http://10.24.3.3:8001/v1/repos/prod/",
-	"index_url": "http://10.24.3.3:8001/v1/repos/prod/vendor_indices.zip",
+	"id": "prusa-fff",
+	"url": "http://10.24.3.3:8001/v1/repos/prusa-fff",
+	"index_url": "http://10.24.3.3:8001/v1/repos/prusa-fff/vendor_indices.zip",
+	"selected" : 1
+}, {
+	"name": "Prusa SLA",
+	"description": "Prusa SLA printers",
+	"visibility": "",
+	"id": "prusa-sla",
+	"url": "http://10.24.3.3:8001/v1/repos/prusa-sla",
+	"index_url": "http://10.24.3.3:8001/v1/repos/prusa-sla/vendor_indices.zip",
 	"selected" : 1
 }]

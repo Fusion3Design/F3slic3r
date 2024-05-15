@@ -161,7 +161,8 @@ VendorProfile VendorProfile::from_ini(const ptree &tree, const boost::filesystem
         res.repo_id = repo_id->second.data();
     } else {
         // For backward compatibility assume all profiles without repo_id are from "prod" repo
-        res.repo_id = "prod";
+        // DK: "No, dont!"
+        res.repo_id = "";
     }
 
     if (! load_all) {

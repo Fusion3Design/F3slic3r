@@ -616,13 +616,22 @@ void PresetArchiveDatabase::read_server_manifest(const std::string& json_body)
 	save_app_manifest_json();
 }
 
-bool PresetArchiveDatabase::is_selected_archive(const std::string& uuid) const
+bool PresetArchiveDatabase::is_selected_repository_by_uuid(const std::string& uuid) const
 {
 	auto selected_it = m_selected_repositories_uuid.find(uuid);
 	assert(selected_it != m_selected_repositories_uuid.end());
 	return selected_it->second;
 }
-
+bool PresetArchiveDatabase::is_selected_repository_by_id(const std::string& repo_id) const
+{
+	assert(!repo_id.empty());
+	for (const auto& repo_ptr : m_archive_repositories) {
+		if (repo_ptr->get_manifest().id == repo_id) {
+			return true;
+		}
+	}
+	return false;
+}
 void PresetArchiveDatabase::consolidate_selected_uuids_map()
 {
 	//std::vector<std::unique_ptr<const ArchiveRepository>> m_archive_repositories;
@@ -681,6 +690,7 @@ void PresetArchiveDatabase::sync_blocking()
 {
 	if (m_wizard_lock) {
 		m_staged_sync = true;
+		return;
 	}
 	std::string manifest;
 	if (!sync_inner(m_token, manifest))
@@ -690,7 +700,7 @@ void PresetArchiveDatabase::sync_blocking()
 
 void PresetArchiveDatabase::set_wizard_lock(bool lock) 
 { 
-	m_wizard_lock = lock; 
+	m_wizard_lock = lock;
 	if (m_staged_sync) {
 		sync_blocking();
 	}
