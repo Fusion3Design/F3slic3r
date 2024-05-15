@@ -6119,6 +6119,32 @@ void Plater::send_gcode()
     send_gcode_inner(physical_printer_config);
 }
 
+std::string Plater::get_upload_filename()
+{
+    // Obtain default output path
+    fs::path default_output_file;
+    try {
+        // Update the background processing, so that the placeholder parser will get the correct values for the ouput file template.
+        // Also if there is something wrong with the current configuration, a pop-up dialog will be shown and the export will not be performed.
+        unsigned int state = this->p->update_restart_background_process(false, false);
+        if (state & priv::UPDATE_BACKGROUND_PROCESS_INVALID)
+            return {};
+        default_output_file = this->p->background_process.output_filepath_for_project(into_path(get_project_filename(".3mf")));
+    }
+    catch (const Slic3r::PlaceholderParserError& ex) {
+        // Show the error with monospaced font.
+        show_error(this, ex.what(), true);
+        return {};
+    }
+    catch (const std::exception& ex) {
+        show_error(this, ex.what(), false);
+        return {};
+    }
+    default_output_file = fs::path(Slic3r::fold_utf8_to_ascii(default_output_file.string()));
+
+    return default_output_file.string();
+}
+
 void Plater::send_gcode_inner(DynamicPrintConfig* physical_printer_config)
 {
     PrintHostJob upload_job(physical_printer_config);

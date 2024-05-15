@@ -164,12 +164,12 @@ public:
     void resend_config();
 protected:
     // action callbacs stored in m_actions
-    virtual void on_request_access_token();
-    virtual void on_request_config();
-    virtual void on_request_select_printer() = 0;
-    virtual void on_request_print() = 0;
+    virtual void on_connect_action_request_access_token();
+    virtual void on_connect_action_request_config();
+    virtual void on_connect_action_select_printer() = 0;
+    virtual void on_connect_action_print() = 0;
     virtual void run_script_bridge(const wxString& script) = 0;
-    virtual void request_compatible_printers() = 0;
+    virtual void on_connect_action_webapp_ready() = 0;
 
     std::map<std::string, std::function<void(void)>> m_actions;
     std::string m_message_data;
@@ -184,9 +184,9 @@ public:
     void logout();
     void sys_color_changed() override;
 protected:
-    void on_request_select_printer() override;
-    void on_request_print() override;
-    void request_compatible_printers() override {}
+    void on_connect_action_select_printer() override;
+    void on_connect_action_print() override;
+    void on_connect_action_webapp_ready() override {}
     void run_script_bridge(const wxString& script) override {run_script(script); }
 };
 
@@ -234,9 +234,9 @@ public:
     void on_show(wxShowEvent& evt) override;
     void on_script_message(wxWebViewEvent& evt) override;
 protected:
-    void on_request_select_printer() override;
-    void on_request_print() override;
-    void request_compatible_printers() override;
+    void on_connect_action_select_printer() override;
+    void on_connect_action_print() override;
+    void on_connect_action_webapp_ready() override;
     void request_compatible_printers_FFF();
     void request_compatible_printers_SLA();
     void run_script_bridge(const wxString& script) override { run_script(script); }

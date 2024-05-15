@@ -227,6 +227,7 @@ public:
     void send_gcode_inner(DynamicPrintConfig* physical_printer_config);
 	void eject_drive();
     void connect_gcode();
+    std::string get_upload_filename();
 
     void take_snapshot(const std::string &snapshot_name);
     void take_snapshot(const wxString &snapshot_name);

@@ -469,12 +469,13 @@ SourceViewDialog::SourceViewDialog(wxWindow* parent, wxString source) :
 
 ConnectRequestHandler::ConnectRequestHandler()
 {
-    m_actions["REQUEST_ACCESS_TOKEN"] = std::bind(&ConnectRequestHandler::on_request_access_token, this);
-    m_actions["REQUEST_CONFIG"] = std::bind(&ConnectRequestHandler::on_request_config, this);
-    m_actions["WEBAPP_READY"] = std::bind(&ConnectRequestHandler::request_compatible_printers, this);
-    m_actions["SELECT_PRINTER"] = std::bind(&ConnectRequestHandler::on_request_select_printer, this);
-    m_actions["PRINT"] = std::bind(&ConnectRequestHandler::on_request_print, this);
-    m_actions["REQUEST_SELECTED_PRINTER"] = std::bind(&ConnectRequestHandler::on_request_print, this);
+    m_actions["REQUEST_ACCESS_TOKEN"] = std::bind(&ConnectRequestHandler::on_connect_action_request_access_token, this);
+    m_actions["REQUEST_CONFIG"] = std::bind(&ConnectRequestHandler::on_connect_action_request_config, this);
+    m_actions["WEBAPP_READY"] = std::bind(&ConnectRequestHandler::on_connect_action_webapp_ready, this);
+    m_actions["SELECT_PRINTER"] = std::bind(&ConnectRequestHandler::on_connect_action_select_printer, this);
+    m_actions["PRINT"] = std::bind(&ConnectRequestHandler::on_connect_action_print, this);
+    // obsolete
+    //m_actions["REQUEST_SELECTED_PRINTER"] = std::bind(&ConnectRequestHandler::on_connect_action_print, this);
 }
 ConnectRequestHandler::~ConnectRequestHandler()
 {
@@ -516,17 +517,17 @@ void ConnectRequestHandler::handle_message(const std::string& message)
 
 void ConnectRequestHandler::resend_config()
 {
-    on_request_config();
+    on_connect_action_request_config();
 }
 
-void ConnectRequestHandler::on_request_access_token()
+void ConnectRequestHandler::on_connect_action_request_access_token()
 {
     std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.setAccessToken(\'%1%\')", token);
     run_script_bridge(script);
 }
 
-void ConnectRequestHandler::on_request_config()
+void ConnectRequestHandler::on_connect_action_request_config()
 {
     /*
     accessToken?: string;
@@ -535,7 +536,6 @@ void ConnectRequestHandler::on_request_config()
     language?: ConnectLanguage;
     sessionId?: string;
     */
-    
     const std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
     //const std::string sesh = wxGetApp().plater()->get_user_account()->get_shared_session_key();
     const std::string dark_mode = wxGetApp().dark_mode() ? "DARK" : "LIGHT";
@@ -569,12 +569,12 @@ void ConnectWebViewPanel::sys_color_changed()
     resend_config();
 }
 
-void ConnectWebViewPanel::on_request_select_printer()
+void ConnectWebViewPanel::on_connect_action_select_printer()
 {
     assert(!m_message_data.empty());
     wxGetApp().handle_connect_request_printer_select(m_message_data);
 }
-void ConnectWebViewPanel::on_request_print()
+void ConnectWebViewPanel::on_connect_action_print()
 {
     // PRINT request is not defined for ConnectWebViewPanel
     assert(true);
@@ -1066,19 +1066,19 @@ void PrinterPickWebViewDialog::on_script_message(wxWebViewEvent& evt)
     handle_message(into_u8(evt.GetString()));
 }
 
-void PrinterPickWebViewDialog::on_request_select_printer()
+void PrinterPickWebViewDialog::on_connect_action_select_printer()
 {
     // SELECT_PRINTER request is not defined for PrinterPickWebViewDialog
     assert(true);
 }
-void PrinterPickWebViewDialog::on_request_print()
+void PrinterPickWebViewDialog::on_connect_action_print()
 {
     m_ret_val = m_message_data;
     m_browser->RemoveScriptMessageHandler("_prusaSlicer");
     this->EndModal(wxID_OK);
 }
 
-void PrinterPickWebViewDialog::request_compatible_printers()
+void PrinterPickWebViewDialog::on_connect_action_webapp_ready()
 {
     
     if (Preset::printer_technology(wxGetApp().preset_bundle->printers.get_selected_preset().config) == ptFFF) {
@@ -1094,6 +1094,7 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF()
     //material: Material;
     //nozzleDiameter: number;
     //printerType: string;
+    //filename: string;
     //}
     const Preset& selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
     const Preset& selected_filament = wxGetApp().preset_bundle->filaments.get_selected_preset();
@@ -1102,14 +1103,15 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF()
     const std::string filament_type_serialized = selected_filament.config.option("filament_type")->serialize();
     const std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
     const std::string uuid = wxGetApp().plater()->get_user_account()->get_current_printer_uuid_from_connect();
-
+    const std::string filename = wxGetApp().plater()->get_upload_filename();
     const std::string request = GUI::format(
         "{"
         "\"printerUuid\": \"%4%\", "
         "\"printerModel\": \"%3%\", "
         "\"nozzleDiameter\": %2%, "
-        "\"material\": \"%1%\" "
-        "}", filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid);
+        "\"material\": \"%1%\", "
+        "\"filename\": \"%5%\" "
+        "}", filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid, filename);
 
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.requestCompatiblePrinter(%1%)", request);
     run_script(script);
@@ -1121,12 +1123,14 @@ void PrinterPickWebViewDialog::request_compatible_printers_SLA()
     const Preset& selected_material = wxGetApp().preset_bundle->sla_materials.get_selected_preset();
     const std::string material_type_serialized = selected_material.config.option("material_type")->serialize();
     const std::string uuid = wxGetApp().plater()->get_user_account()->get_current_printer_uuid_from_connect();
+    const std::string filename = wxGetApp().plater()->get_upload_filename();
     const std::string request = GUI::format(
         "{"
         "\"printerUuid\": \"%3%\", "
         "\"material\": \"%1%\", "
-        "\"printerModel\": \"%2%\" "
-        "}", material_type_serialized, printer_model_serialized, uuid);
+        "\"printerModel\": \"%2%\", "
+        "\"filename\": \"%4%\" "
+        "}", material_type_serialized, printer_model_serialized, uuid, filename);
 
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.requestCompatiblePrinter(%1%)", request);
     run_script(script);
