@@ -976,6 +976,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
 #endif // 0    
         }); 
         this->q->Bind(EVT_UA_PRUSACONNECT_PRINTER_DATA_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+            this->user_account->set_current_printer_data(evt.data);
             wxGetApp().handle_connect_request_printer_select_inner(evt.data);
         });
         this->q->Bind(EVT_UA_PRUSACONNECT_PRINTER_DATA_FAIL, [this](UserAccountFailEvent& evt) {

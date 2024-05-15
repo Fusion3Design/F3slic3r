@@ -1102,7 +1102,7 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF()
     // Sending only first filament type for now. This should change to array of values
     const std::string filament_type_serialized = selected_filament.config.option("filament_type")->serialize();
     const std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
-    const std::string uuid = wxGetApp().plater()->get_user_account()->get_current_printer_uuid_from_connect();
+    const std::string uuid = wxGetApp().plater()->get_user_account()->get_current_printer_uuid_from_connect(printer_model_serialized);
     const std::string filename = wxGetApp().plater()->get_upload_filename();
     const std::string request = GUI::format(
         "{"
@@ -1122,7 +1122,7 @@ void PrinterPickWebViewDialog::request_compatible_printers_SLA()
     const std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
     const Preset& selected_material = wxGetApp().preset_bundle->sla_materials.get_selected_preset();
     const std::string material_type_serialized = selected_material.config.option("material_type")->serialize();
-    const std::string uuid = wxGetApp().plater()->get_user_account()->get_current_printer_uuid_from_connect();
+    const std::string uuid = wxGetApp().plater()->get_user_account()->get_current_printer_uuid_from_connect(printer_model_serialized);
     const std::string filename = wxGetApp().plater()->get_upload_filename();
     const std::string request = GUI::format(
         "{"
