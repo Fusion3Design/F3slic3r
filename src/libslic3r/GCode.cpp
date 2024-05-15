@@ -2751,13 +2751,9 @@ std::vector<ExtrusionEntityReference> sort_fill_extrusions(const ExtrusionEntiti
 std::vector<InfillRange> extract_infill_ranges(
     const Print &print,
     const Layer *layer,
-    const LayerTools &layer_tools,
-    const std::size_t instance_id,
     const LayerIsland island,
-    const bool overriden,
-    const bool ironing,
-    const int extruder_id,
-    std::optional<Point> previous_position
+    std::optional<Point> previous_position,
+    const std::function<bool(const ExtrusionEntityCollection*)> &predicate
 ) {
     std::vector<InfillRange> result;
     for (auto it = island.fills.begin(); it != island.fills.end();) {
@@ -2777,22 +2773,7 @@ std::vector<InfillRange> extract_infill_ranges(
             layerm.fills(),
             it,
             it_end,
-            [&](const ExtrusionEntityCollection *entity_collection){
-                if (entity_collection->entities.empty()) {
-                    return false;
-                }
-                if ((entity_collection->role() == ExtrusionRole::Ironing) != ironing) {
-                    return false;
-                }
-                if (is_overriden(entity_collection, layer_tools, instance_id) != overriden) {
-                    return false;
-                }
-
-                if (get_extruder_id(entity_collection, layer_tools, region, instance_id) != extruder_id) {
-                    return false;
-                }
-                return true;
-            }
+            predicate
         )};
 
         const std::vector<ExtrusionEntityReference> sorted_extrusions{sort_fill_extrusions(extrusions, start_near)};
@@ -2919,6 +2900,23 @@ std::vector<SliceExtrusions> get_sorted_extrusions(const Print &print, const Lay
                 layerm.region().print_region_id()
             );
 
+            const auto predicate = [&](const ExtrusionEntityCollection *entity_collection){
+                if (entity_collection->entities.empty()) {
+                    return false;
+                }
+                if (entity_collection->role() == ExtrusionRole::Ironing) {
+                    return false;
+                }
+                if (GCode::is_overriden(entity_collection, layer_tools, print_instance_id) != overriden) {
+                    return false;
+                }
+
+                if (GCode::get_extruder_id(entity_collection, layer_tools, region, print_instance_id) != extruder_id) {
+                    return false;
+                }
+                return true;
+            };
+
             sorted_extrusions.back().common_extrusions.push_back(IslandExtrusions{&region});
             IslandExtrusions &island_extrusions{sorted_extrusions.back().common_extrusions.back()};
 
@@ -2930,13 +2928,9 @@ std::vector<SliceExtrusions> get_sorted_extrusions(const Print &print, const Lay
                 const std::vector<GCode::InfillRange> infill_ranges{GCode::extract_infill_ranges(
                     print,
                     layer,
-                    layer_tools,
-                    print_instance_id,
                     island,
-                    overriden,
-                    false,
-                    extruder_id,
-                    previous_position
+                    previous_position,
+                    predicate
                 )};
                 island_extrusions.infill_ranges = infill_ranges;
                 if (!infill_ranges.empty() && !infill_ranges.back().items.empty()) {
@@ -2966,13 +2960,9 @@ std::vector<SliceExtrusions> get_sorted_extrusions(const Print &print, const Lay
                 const std::vector<GCode::InfillRange> infill_ranges{GCode::extract_infill_ranges(
                     print,
                     layer,
-                    layer_tools,
-                    print_instance_id,
                     island,
-                    overriden,
-                    false,
-                    extruder_id,
-                    previous_position
+                    previous_position,
+                    predicate
                 )};
                 island_extrusions.infill_ranges = infill_ranges;
                 if (!infill_ranges.empty() && !infill_ranges.back().items.empty()) {
@@ -2986,16 +2976,37 @@ std::vector<SliceExtrusions> get_sorted_extrusions(const Print &print, const Lay
         // First Ironing changes extrusion rate quickly, second single ironing may be done over multiple perimeter regions.
         // Ironing in a second phase is safer, but it may be less efficient.
         for (const LayerIsland &island : lslice.islands) {
+            const LayerRegion &layerm = *layer->get_region(island.perimeters.region());
+            // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be
+            // unique to a PrintObject, they would not identify the content of PrintRegion
+            // accross the whole print uniquely. Translate to a Print specific PrintRegion.
+            const PrintRegion &region = print.get_print_region(
+                layerm.region().print_region_id()
+            );
+
+            const auto predicate = [&](const ExtrusionEntityCollection *entity_collection){
+                if (entity_collection->entities.empty()) {
+                    return false;
+                }
+                if (entity_collection->role() != ExtrusionRole::Ironing) {
+                    return false;
+                }
+                if (GCode::is_overriden(entity_collection, layer_tools, print_instance_id) != overriden) {
+                    return false;
+                }
+
+                if (GCode::get_extruder_id(entity_collection, layer_tools, region, print_instance_id) != extruder_id) {
+                    return false;
+                }
+                return true;
+            };
+
             const std::vector<GCode::InfillRange> ironing_ranges{GCode::extract_infill_ranges(
                 print,
                 layer,
-                layer_tools,
-                print_instance_id,
                 island,
-                overriden,
-                true,
-                extruder_id,
-                previous_position
+                previous_position,
+                predicate
             )};
             sorted_extrusions.back().ironing_extrusions.insert(sorted_extrusions.back().ironing_extrusions.end(), ironing_ranges.begin(), ironing_ranges.end());
 
