@@ -3049,6 +3049,63 @@ ExtrusionEntitiesPtr get_support_extrusions(
     return {};
 }
 
+LayerExtrusions get_layer_extrusions(
+    const Print &print,
+    const unsigned int extruder_id,
+    const GCode::ObjectLayerToPrint &layer_to_print,
+    const LayerTools &layer_tools,
+    const GCode::SmoothPathCache &smooth_path_cache,
+    const Seams::Placer &seam_placer,
+    const bool print_wipe_extrusions,
+    unsigned int support_extruder,
+    unsigned int interface_extruder,
+    const ConfigOptionBools &is_soluable,
+    const std::size_t print_instance_id,
+    std::optional<Point> previous_position,
+    const bool spiral_vase
+) {
+    LayerExtrusions result;
+    if (! print_wipe_extrusions && layer_to_print.support_layer != nullptr) {
+        result.support_extrusions = get_support_extrusions(
+            extruder_id,
+            layer_to_print,
+            layer_tools,
+            smooth_path_cache,
+            print_wipe_extrusions,
+            support_extruder,
+            interface_extruder,
+            is_soluable
+        );
+        previous_position = get_last_position(result.support_extrusions);
+    }
+
+    if (const Layer *layer = layer_to_print.object_layer; layer) {
+        const auto predicate = [&](const ExtrusionEntityCollection &entity_collection, const PrintRegion &region){
+            if (entity_collection.entities.empty()) {
+                return false;
+            }
+            if (GCode::is_overriden(entity_collection, layer_tools, print_instance_id) != print_wipe_extrusions) {
+                return false;
+            }
+
+            if (GCode::get_extruder_id(entity_collection, layer_tools, region, print_instance_id) != extruder_id) {
+                return false;
+            }
+            return true;
+        };
+
+        result.slices_extrusions = get_slices_extrusions(
+            print,
+            layer,
+            seam_placer,
+            previous_position,
+            spiral_vase,
+            predicate
+        );
+    }
+    return result;
+}
+
 void GCodeGenerator::process_layer_single_object(
     // output
     std::string              &gcode,
@@ -3057,13 +3114,13 @@ void GCodeGenerator::process_layer_single_object(
     // What object and instance is going to be printed.
     const InstanceToPrint    &print_instance,
     // and the object & support layer of the above.
-    const ObjectLayerToPrint &layer_to_print, 
+    const ObjectLayerToPrint &layer_to_print,
     // Container for extruder overrides (when wiping into object or infill).
     const LayerTools         &layer_tools,
     // Optional smooth path interpolating extrusion polylines.
     const GCode::SmoothPathCache &smooth_path_cache,
     // Is any extrusion possibly marked as wiping extrusion?
-    const bool                is_anything_overridden, 
+    const bool                is_anything_overridden,
     // Round 1 (wiping into object or infill) or round 2 (normal extrusions).
     const bool                print_wipe_extrusions)
 {
@@ -3072,47 +3129,21 @@ void GCodeGenerator::process_layer_single_object(
     const PrintObject &print_object = print_instance.print_object;
     const Print       &print        = *print_object.print();
 
-    ExtrusionEntitiesPtr support_extrusions;
-    if (! print_wipe_extrusions && layer_to_print.support_layer != nullptr) {
-        support_extrusions = get_support_extrusions(
-            extruder_id,
-            layer_to_print,
-            layer_tools,
-            smooth_path_cache,
-            print_wipe_extrusions,
-            print_object.config().support_material_extruder.value - 1,
-            print_object.config().support_material_interface_extruder.value - 1,
-            print.config().filament_soluble
-        );
-        previous_position = get_last_position(support_extrusions);
-    }
-
-    std::vector<SliceExtrusions> slices_extrusions;
-
-    if (const Layer *layer = layer_to_print.object_layer; layer) {
-        const auto predicate = [&](const ExtrusionEntityCollection &entity_collection, const PrintRegion &region){
-            if (entity_collection.entities.empty()) {
-                return false;
-            }
-            if (GCode::is_overriden(entity_collection, layer_tools, print_instance.instance_id) != print_wipe_extrusions) {
-                return false;
-            }
-
-            if (GCode::get_extruder_id(entity_collection, layer_tools, region, print_instance.instance_id) != extruder_id) {
-                return false;
-            }
-            return true;
-        };
-
-        slices_extrusions = get_slices_extrusions(
-            print,
-            layer,
-            this->m_seam_placer,
-            previous_position,
-            m_config.spiral_vase,
-            predicate
-        );
-    }
+    const LayerExtrusions layer_extrusions{get_layer_extrusions(
+        print,
+        extruder_id,
+        layer_to_print,
+        layer_tools,
+        smooth_path_cache,
+        this->m_seam_placer,
+        print_wipe_extrusions,
+        print_object.config().support_material_extruder.value - 1,
+        print_object.config().support_material_interface_extruder.value - 1,
+        print.config().filament_soluble,
+        print_instance.instance_id,
+        previous_position,
+        m_config.spiral_vase
+    )};
 
     bool     first     = true;
     // Delay layer initialization as many layers may not print with all extruders.
@@ -3137,11 +3168,11 @@ void GCodeGenerator::process_layer_single_object(
         }
     };
 
-    if (!support_extrusions.empty()) {
+    if (!layer_extrusions.support_extrusions.empty()) {
         init_layer_delayed();
         m_layer = layer_to_print.support_layer;
         m_object_layer_over_raft = false;
-        gcode += this->extrude_support(chain_extrusion_references(support_extrusions), smooth_path_cache);
+        gcode += this->extrude_support(chain_extrusion_references(layer_extrusions.support_extrusions), smooth_path_cache);
     }
 
     m_layer = layer_to_print.layer();
@@ -3149,7 +3180,7 @@ void GCodeGenerator::process_layer_single_object(
     m_object_layer_over_raft = layer_to_print.object_layer && layer_to_print.object_layer->id() > 0 &&
         print_object.slicing_parameters().raft_layers() == layer_to_print.object_layer->id();
 
-    for (const SliceExtrusions &slice_extrusions : slices_extrusions) {
+    for (const SliceExtrusions &slice_extrusions : layer_extrusions.slices_extrusions) {
         for (const IslandExtrusions &island_extrusions : slice_extrusions.common_extrusions) {
             if (print.config().infill_first) {
                 if (!island_extrusions.infill_ranges.empty()) {
