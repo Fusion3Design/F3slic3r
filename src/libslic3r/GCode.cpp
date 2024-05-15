@@ -2630,21 +2630,21 @@ static inline bool comment_is_perimeter(const std::string_view comment) {
 
 namespace GCode {
 
-bool is_overriden(const ExtrusionEntityCollection *eec, const LayerTools &layer_tools, const std::size_t instance_id) {
-    return layer_tools.wiping_extrusions().get_extruder_override(eec, instance_id) > -1;
+bool is_overriden(const ExtrusionEntityCollection &eec, const LayerTools &layer_tools, const std::size_t instance_id) {
+    return layer_tools.wiping_extrusions().get_extruder_override(&eec, instance_id) > -1;
 }
 
 int get_extruder_id(
-    const ExtrusionEntityCollection *eec,
+    const ExtrusionEntityCollection &eec,
     const LayerTools &layer_tools,
     const PrintRegion &region,
     const std::size_t instance_id
 ) {
     if (is_overriden(eec, layer_tools, instance_id)) {
-        return layer_tools.wiping_extrusions().get_extruder_override(eec, instance_id);
+        return layer_tools.wiping_extrusions().get_extruder_override(&eec, instance_id);
     }
 
-    const int extruder_id = layer_tools.extruder(*eec, region);
+    const int extruder_id = layer_tools.extruder(eec, region);
     if (! layer_tools.has_extruder(extruder_id)) {
         // Extruder is not in layer_tools - we'll print it by last extruder on this layer (could
         // happen e.g. when a wiping object is taller than others - dontcare extruders are
@@ -2654,13 +2654,15 @@ int get_extruder_id(
     return extruder_id;
 }
 
+using ExtractEntityPredicate = std::function<bool(const ExtrusionEntityCollection&, const PrintRegion&)>;
+
 ExtrusionEntitiesPtr extract_infill_extrusions(
     const Layer *layer,
     const PrintRegion &region,
     const ExtrusionEntityCollection &fills,
     LayerExtrusionRanges::const_iterator begin,
     LayerExtrusionRanges::const_iterator end,
-    const std::function<bool(const ExtrusionEntityCollection*)> &predicate
+    const ExtractEntityPredicate &predicate
 ) {
     ExtrusionEntitiesPtr result;
     for (auto it = begin; it != end; ++ it) {
@@ -2670,7 +2672,7 @@ ExtrusionEntitiesPtr extract_infill_extrusions(
             assert(dynamic_cast<ExtrusionEntityCollection*>(fills.entities[fill_id]));
 
             auto *eec{static_cast<ExtrusionEntityCollection*>(fills.entities[fill_id])};
-            if (eec == nullptr || !predicate(eec)) {
+            if (eec == nullptr || !predicate(*eec, region)) {
                 continue;
             }
 
@@ -2691,16 +2693,11 @@ std::vector<ExtrusionEntity *> extract_perimeter_extrusions(
     const Print &print,
     const Layer *layer,
     const LayerIsland &island,
-    const LayerTools &layer_tools,
-    const std::size_t instance_id,
-    const int extruder_id,
-    const bool overriden
+    const ExtractEntityPredicate &predicate
 ) {
     std::vector<ExtrusionEntity *> result;
 
     const LayerRegion &layerm = *layer->get_region(island.perimeters.region());
-    // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be unique to a PrintObject, they would not
-    // identify the content of PrintRegion accross the whole print uniquely. Translate to a Print specific PrintRegion.
     const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
 
     for (uint32_t perimeter_id : island.perimeters) {
@@ -2708,17 +2705,7 @@ std::vector<ExtrusionEntity *> extract_perimeter_extrusions(
         // Don't reorder them.
         assert(dynamic_cast<ExtrusionEntityCollection*>(layerm.perimeters().entities[perimeter_id]));
         auto *eec = static_cast<ExtrusionEntityCollection*>(layerm.perimeters().entities[perimeter_id]);
-        if (eec == nullptr) {
-            continue;
-        }
-        if (eec->entities.empty()) {
-            continue;
-        }
-        if (is_overriden(eec, layer_tools, instance_id) != overriden) {
-            continue;
-        }
-
-        if (get_extruder_id(eec, layer_tools, region, instance_id) != extruder_id) {
+        if (eec == nullptr || !predicate(*eec, region)) {
             continue;
         }
 
@@ -2753,7 +2740,7 @@ std::vector<InfillRange> extract_infill_ranges(
     const Layer *layer,
     const LayerIsland island,
     std::optional<Point> previous_position,
-    const std::function<bool(const ExtrusionEntityCollection*)> &predicate
+    const ExtractEntityPredicate &predicate
 ) {
     std::vector<InfillRange> result;
     for (auto it = island.fills.begin(); it != island.fills.end();) {
@@ -2900,11 +2887,11 @@ std::vector<SliceExtrusions> get_sorted_extrusions(const Print &print, const Lay
                 layerm.region().print_region_id()
             );
 
-            const auto predicate = [&](const ExtrusionEntityCollection *entity_collection){
-                if (entity_collection->entities.empty()) {
+            const auto predicate = [&](const ExtrusionEntityCollection &entity_collection, const PrintRegion &region){
+                if (entity_collection.entities.empty()) {
                     return false;
                 }
-                if (entity_collection->role() == ExtrusionRole::Ironing) {
+                if (entity_collection.role() == ExtrusionRole::Ironing) {
                     return false;
                 }
                 if (GCode::is_overriden(entity_collection, layer_tools, print_instance_id) != overriden) {
@@ -2920,9 +2907,22 @@ std::vector<SliceExtrusions> get_sorted_extrusions(const Print &print, const Lay
             sorted_extrusions.back().common_extrusions.push_back(IslandExtrusions{&region});
             IslandExtrusions &island_extrusions{sorted_extrusions.back().common_extrusions.back()};
 
+            const auto perimeters_predicate = [&](const ExtrusionEntityCollection &eec, const PrintRegion& region){
+                if (eec.entities.empty()) {
+                    return false;
+                }
+                if (GCode::is_overriden(eec, layer_tools, print_instance_id) != overriden) {
+                    return false;
+                }
+
+                if (GCode::get_extruder_id(eec, layer_tools, region, print_instance_id) != extruder_id) {
+                    return false;
+                }
+                return true;
+            };
+
             const std::vector<ExtrusionEntity *> perimeters{GCode::extract_perimeter_extrusions(
-                print, layer, island, layer_tools, print_instance_id, extruder_id,
-                overriden
+                print, layer, island, perimeters_predicate
             )};
             if (print.config().infill_first) {
                 const std::vector<GCode::InfillRange> infill_ranges{GCode::extract_infill_ranges(
@@ -2976,19 +2976,11 @@ std::vector<SliceExtrusions> get_sorted_extrusions(const Print &print, const Lay
         // First Ironing changes extrusion rate quickly, second single ironing may be done over multiple perimeter regions.
         // Ironing in a second phase is safer, but it may be less efficient.
         for (const LayerIsland &island : lslice.islands) {
-            const LayerRegion &layerm = *layer->get_region(island.perimeters.region());
-            // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be
-            // unique to a PrintObject, they would not identify the content of PrintRegion
-            // accross the whole print uniquely. Translate to a Print specific PrintRegion.
-            const PrintRegion &region = print.get_print_region(
-                layerm.region().print_region_id()
-            );
-
-            const auto predicate = [&](const ExtrusionEntityCollection *entity_collection){
-                if (entity_collection->entities.empty()) {
+            const auto predicate = [&](const ExtrusionEntityCollection &entity_collection, const PrintRegion &region){
+                if (entity_collection.entities.empty()) {
                     return false;
                 }
-                if (entity_collection->role() != ExtrusionRole::Ironing) {
+                if (entity_collection.role() != ExtrusionRole::Ironing) {
                     return false;
                 }
                 if (GCode::is_overriden(entity_collection, layer_tools, print_instance_id) != overriden) {
