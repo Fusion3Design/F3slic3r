@@ -1343,20 +1343,58 @@ bool GLGizmoEmboss::process(bool make_snapshot)
     return true;
 }
 
+namespace {
+// IMPROVE: Move to Point.hpp and rename to is_approx()
+// NOTE: Point has its own epsilon :-(
+template<typename T, int I, int J>
+inline bool is_approx2(
+    const Eigen::Matrix<T, I, J, Eigen::DontAlign> &m1,
+    const Eigen::Matrix<T, I, J, Eigen::DontAlign> &m2,
+    T epsilon = static_cast<T>(EPSILON)
+) {
+    for (size_t i = 0; i < I; i++)
+        for (size_t j = 0; j < J; j++)
+            if (!is_approx(m1(i, j), m2(i, j), epsilon))
+                return false;
+
+    return true;
+}
+}
+
 void GLGizmoEmboss::close()
 {
-    // remove volume when text is empty
     if (m_volume != nullptr && 
-        m_volume->text_configuration.has_value() &&
-        is_text_empty(m_text)) {
-        Plater &p = *wxGetApp().plater();
-        // is the text object?
-        if (m_volume->is_the_only_one_part()) {
-            // delete whole object
-            p.remove(m_parent.get_selection().get_object_idx());
-        } else {
-            // delete text volume
-            p.remove_selected();
+        m_volume->text_configuration.has_value() ){
+        
+        // remove volume when text is empty
+        if (is_text_empty(m_text)) {
+            Plater &p = *wxGetApp().plater();
+            // is the text object?
+            if (m_volume->is_the_only_one_part()) {
+                // delete whole object
+                p.remove(m_parent.get_selection().get_object_idx());
+            } else {
+                // delete text volume
+                p.remove_selected();
+            }
+        }
+
+        // Fix phanthom transformation
+        //   appear when right click into scene during edit Rotation in input (click "Edit" button)
+        const GLVolume *gl_volume_ptr = m_parent.get_selection().get_first_volume();
+        if (gl_volume_ptr != nullptr) {
+            const Transform3d &v_tr = m_volume->get_matrix();
+            const Transform3d &gl_v_tr = gl_volume_ptr->get_volume_transformation().get_matrix();
+
+            const Matrix3d &v_rot = v_tr.linear();
+            const Matrix3d &gl_v_rot = gl_v_tr.linear();
+            const Vec3d &v_move = v_tr.translation();
+            const Vec3d &gl_v_move = gl_v_tr.translation();
+            if (!is_approx2(v_rot, gl_v_rot)) { 
+                m_parent.do_rotate(rotation_snapshot_name);
+            } else if (!is_approx2(v_move, gl_v_move)){
+                m_parent.do_move(move_snapshot_name);
+            }
         }
     }
 
