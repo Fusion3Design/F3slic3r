@@ -2902,6 +2902,118 @@ struct SliceExtrusions {
     std::vector<GCode::InfillRange> ironing_extrusions;
 };
 
+std::vector<SliceExtrusions> get_sorted_extrusions(const Print &print, const Layer* layer,
+    const std::size_t print_instance_id,
+    const LayerTools &layer_tools,
+    const Seams::Placer &seam_placer,
+    const bool overriden,
+    std::optional<Point> previous_position,
+    const int extruder_id,
+    const bool spiral_vase
+) {
+    std::vector<SliceExtrusions> sorted_extrusions;
+
+    for (size_t idx : layer->lslice_indices_sorted_by_print_order) {
+        const LayerSlice &lslice = layer->lslices_ex[idx];
+        sorted_extrusions.emplace_back();
+        for (const LayerIsland &island : lslice.islands) {
+            const LayerRegion &layerm = *layer->get_region(island.perimeters.region());
+            // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be
+            // unique to a PrintObject, they would not identify the content of PrintRegion
+            // accross the whole print uniquely. Translate to a Print specific PrintRegion.
+            const PrintRegion &region = print.get_print_region(
+                layerm.region().print_region_id()
+            );
+
+            sorted_extrusions.back().common_extrusions.push_back(IslandExtrusions{&region});
+            IslandExtrusions &island_extrusions{sorted_extrusions.back().common_extrusions.back()};
+
+            const std::vector<ExtrusionEntity *> perimeters{GCode::extract_perimeter_extrusions(
+                print, layer, island, layer_tools, print_instance_id, extruder_id,
+                overriden
+            )};
+            if (print.config().infill_first) {
+                const std::vector<GCode::InfillRange> infill_ranges{GCode::extract_infill_ranges(
+                    print,
+                    layer,
+                    layer_tools,
+                    print_instance_id,
+                    island,
+                    overriden,
+                    false,
+                    extruder_id,
+                    previous_position
+                )};
+                island_extrusions.infill_ranges = infill_ranges;
+                if (!infill_ranges.empty() && !infill_ranges.back().items.empty()) {
+                    const ExtrusionEntityReference &last_infill{infill_ranges.back().items.back()};
+                    previous_position = last_infill.flipped() ? last_infill.extrusion_entity().first_point() : last_infill.extrusion_entity().last_point();
+                }
+
+                place_seams(layer, seam_placer, perimeters, previous_position, spiral_vase);
+                island_extrusions.perimeters = perimeters;
+
+                if (!perimeters.empty()) {
+                    auto last_perimeter{static_cast<const ExtrusionLoop *>(perimeters.back())};
+                    if (last_perimeter != nullptr) {
+                        previous_position = last_perimeter->seam;
+                    }
+                }
+            } else {
+                place_seams(layer, seam_placer, perimeters, previous_position, spiral_vase);
+                island_extrusions.perimeters = perimeters;
+
+                if (!perimeters.empty()) {
+                    auto last_perimeter{static_cast<const ExtrusionLoop *>(perimeters.back())};
+                    if (last_perimeter != nullptr) {
+                        previous_position = last_perimeter->seam;
+                    }
+                }
+                const std::vector<GCode::InfillRange> infill_ranges{GCode::extract_infill_ranges(
+                    print,
+                    layer,
+                    layer_tools,
+                    print_instance_id,
+                    island,
+                    overriden,
+                    false,
+                    extruder_id,
+                    previous_position
+                )};
+                island_extrusions.infill_ranges = infill_ranges;
+                if (!infill_ranges.empty() && !infill_ranges.back().items.empty()) {
+                    const ExtrusionEntityReference &last_infill{infill_ranges.back().items.back()};
+                    previous_position = last_infill.flipped() ? last_infill.extrusion_entity().first_point() : last_infill.extrusion_entity().last_point();
+                }
+            }
+        }
+        // ironing
+        //FIXME move ironing into the loop above over LayerIslands?
+        // First Ironing changes extrusion rate quickly, second single ironing may be done over multiple perimeter regions.
+        // Ironing in a second phase is safer, but it may be less efficient.
+        for (const LayerIsland &island : lslice.islands) {
+            const std::vector<GCode::InfillRange> ironing_ranges{GCode::extract_infill_ranges(
+                print,
+                layer,
+                layer_tools,
+                print_instance_id,
+                island,
+                overriden,
+                true,
+                extruder_id,
+                previous_position
+            )};
+            sorted_extrusions.back().ironing_extrusions.insert(sorted_extrusions.back().ironing_extrusions.end(), ironing_ranges.begin(), ironing_ranges.end());
+
+            if (!ironing_ranges.empty() && !ironing_ranges.back().items.empty()) {
+                const ExtrusionEntityReference &last_infill{ironing_ranges.back().items.back()};
+                previous_position = last_infill.flipped() ? last_infill.extrusion_entity().first_point() : last_infill.extrusion_entity().last_point();
+            }
+        }
+    }
+    return sorted_extrusions;
+}
+
 void GCodeGenerator::process_layer_single_object(
     // output
     std::string              &gcode,
@@ -2999,107 +3111,19 @@ void GCodeGenerator::process_layer_single_object(
 
     std::optional<Point> previous_position{this->last_position};
 
-    std::vector<SliceExtrusions> sorted_extrusions;
 
     if (const Layer *layer = layer_to_print.object_layer; layer) {
-        for (size_t idx : layer->lslice_indices_sorted_by_print_order) {
-            const LayerSlice &lslice = layer->lslices_ex[idx];
-            sorted_extrusions.emplace_back();
-            for (const LayerIsland &island : lslice.islands) {
-                const LayerRegion &layerm = *layer->get_region(island.perimeters.region());
-                // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be
-                // unique to a PrintObject, they would not identify the content of PrintRegion
-                // accross the whole print uniquely. Translate to a Print specific PrintRegion.
-                const PrintRegion &region = print.get_print_region(
-                    layerm.region().print_region_id()
-                );
-
-                sorted_extrusions.back().common_extrusions.push_back(IslandExtrusions{&region});
-                IslandExtrusions &island_extrusions{sorted_extrusions.back().common_extrusions.back()};
-
-                const std::vector<ExtrusionEntity *> perimeters{GCode::extract_perimeter_extrusions(
-                    print, layer, island, layer_tools, print_instance.instance_id, extruder_id,
-                    print_wipe_extrusions
-                )};
-                if (print.config().infill_first) {
-                    const std::vector<GCode::InfillRange> infill_ranges{GCode::extract_infill_ranges(
-                        print,
-                        layer,
-                        layer_tools,
-                        print_instance.instance_id,
-                        island,
-                        print_wipe_extrusions,
-                        false,
-                        extruder_id,
-                        previous_position
-                    )};
-                    island_extrusions.infill_ranges = infill_ranges;
-                    if (!infill_ranges.empty() && !infill_ranges.back().items.empty()) {
-                        const ExtrusionEntityReference &last_infill{infill_ranges.back().items.back()};
-                        previous_position = last_infill.flipped() ? last_infill.extrusion_entity().first_point() : last_infill.extrusion_entity().last_point();
-                    }
-
-                    place_seams(layer, this->m_seam_placer, perimeters, previous_position, this->m_config.spiral_vase);
-                    island_extrusions.perimeters = perimeters;
-
-                    if (!perimeters.empty()) {
-                        auto last_perimeter{static_cast<const ExtrusionLoop *>(perimeters.back())};
-                        if (last_perimeter != nullptr) {
-                            previous_position = last_perimeter->seam;
-                        }
-                    }
-                } else {
-                    place_seams(layer, this->m_seam_placer, perimeters, previous_position, this->m_config.spiral_vase);
-                    island_extrusions.perimeters = perimeters;
-
-                    if (!perimeters.empty()) {
-                        auto last_perimeter{static_cast<const ExtrusionLoop *>(perimeters.back())};
-                        if (last_perimeter != nullptr) {
-                            previous_position = last_perimeter->seam;
-                        }
-                    }
-                    const std::vector<GCode::InfillRange> infill_ranges{GCode::extract_infill_ranges(
-                        print,
-                        layer,
-                        layer_tools,
-                        print_instance.instance_id,
-                        island,
-                        print_wipe_extrusions,
-                        false,
-                        extruder_id,
-                        previous_position
-                    )};
-                    island_extrusions.infill_ranges = infill_ranges;
-                    if (!infill_ranges.empty() && !infill_ranges.back().items.empty()) {
-                        const ExtrusionEntityReference &last_infill{infill_ranges.back().items.back()};
-                        previous_position = last_infill.flipped() ? last_infill.extrusion_entity().first_point() : last_infill.extrusion_entity().last_point();
-                    }
-                }
-            }
-            // ironing
-            //FIXME move ironing into the loop above over LayerIslands?
-            // First Ironing changes extrusion rate quickly, second single ironing may be done over multiple perimeter regions.
-            // Ironing in a second phase is safer, but it may be less efficient.
-            for (const LayerIsland &island : lslice.islands) {
-                const std::vector<GCode::InfillRange> ironing_ranges{GCode::extract_infill_ranges(
-                    print,
-                    layer,
-                    layer_tools,
-                    print_instance.instance_id,
-                    island,
-                    print_wipe_extrusions,
-                    true,
-                    extruder_id,
-                    previous_position
-                )};
-                sorted_extrusions.back().ironing_extrusions.insert(sorted_extrusions.back().ironing_extrusions.end(), ironing_ranges.begin(), ironing_ranges.end());
-
-                if (!ironing_ranges.empty() && !ironing_ranges.back().items.empty()) {
-                    const ExtrusionEntityReference &last_infill{ironing_ranges.back().items.back()};
-                    previous_position = last_infill.flipped() ? last_infill.extrusion_entity().first_point() : last_infill.extrusion_entity().last_point();
-                }
-            }
-        }
+        const std::vector<SliceExtrusions> sorted_extrusions{get_sorted_extrusions(
+            print,
+            layer,
+            print_instance.instance_id,
+            layer_tools,
+            this->m_seam_placer,
+            print_wipe_extrusions,
+            previous_position,
+            extruder_id,
+            m_config.spiral_vase
+        )};
 
         for (const SliceExtrusions &slice_extrusions : sorted_extrusions) {
             for (const IslandExtrusions &island_extrusions : slice_extrusions.common_extrusions) {
