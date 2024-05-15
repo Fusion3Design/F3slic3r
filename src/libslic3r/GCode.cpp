@@ -2704,7 +2704,7 @@ ExtrusionEntitiesPtr extract_infill_extrusions(
     return result;
 }
 
-std::vector<const ExtrusionEntity *> extract_perimeter_extrusions(
+std::vector<ExtrusionEntity *> extract_perimeter_extrusions(
     const Print &print,
     const Layer *layer,
     const LayerIsland &island,
@@ -2713,7 +2713,7 @@ std::vector<const ExtrusionEntity *> extract_perimeter_extrusions(
     const int extruder_id,
     const bool overriden
 ) {
-    std::vector<const ExtrusionEntity *> result;
+    std::vector<ExtrusionEntity *> result;
 
     const LayerRegion &layerm = *layer->get_region(island.perimeters.region());
     // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be unique to a PrintObject, they would not
@@ -2723,8 +2723,8 @@ std::vector<const ExtrusionEntity *> extract_perimeter_extrusions(
     for (uint32_t perimeter_id : island.perimeters) {
         // Extrusions inside islands are expected to be ordered already.
         // Don't reorder them.
-        assert(dynamic_cast<const ExtrusionEntityCollection*>(layerm.perimeters().entities[perimeter_id]));
-        const auto *eec = static_cast<const ExtrusionEntityCollection*>(layerm.perimeters().entities[perimeter_id]);
+        assert(dynamic_cast<ExtrusionEntityCollection*>(layerm.perimeters().entities[perimeter_id]));
+        auto *eec = static_cast<ExtrusionEntityCollection*>(layerm.perimeters().entities[perimeter_id]);
         if (eec == nullptr) {
             continue;
         }
@@ -2739,7 +2739,7 @@ std::vector<const ExtrusionEntity *> extract_perimeter_extrusions(
             continue;
         }
 
-        for (const ExtrusionEntity *ee : *eec) {
+        for (ExtrusionEntity *ee : *eec) {
             result.push_back(ee);
         }
     }
@@ -2813,6 +2813,25 @@ std::vector<InfillRange> extract_infill_ranges(
     }
     return result;
 }
+} // namespace GCode
+
+void GCodeGenerator::place_seams(
+    const std::vector<ExtrusionEntity *> &perimeters, std::optional<Point> previous_position
+) {
+    std::vector<const ExtrusionEntity *> result;
+    result.reserve(perimeters.size());
+
+    for (ExtrusionEntity* perimeter : perimeters) {
+        auto loop{static_cast<ExtrusionLoop *>(perimeter)};
+
+        Point seam_point{previous_position ? *previous_position : Point::Zero()};
+        if (!m_config.spiral_vase && loop != nullptr) {
+            assert(m_layer != nullptr);
+            seam_point = this->m_seam_placer.place_seam(m_layer, *loop, seam_point);
+            loop->seam = seam_point;
+        }
+        previous_position = seam_point;
+    }
 }
 
 std::string GCodeGenerator::extrude_infill_range(
@@ -2850,7 +2869,7 @@ std::string GCodeGenerator::extrude_perimeters(
     const Print &print,
     const Layer *layer,
     const LayerIsland &island,
-    const std::vector<const ExtrusionEntity *> &perimeters,
+    const std::vector<ExtrusionEntity *> &perimeters,
     const InstanceToPrint &print_instance,
     const GCode::SmoothPathCache &smooth_path_cache
 ) {
@@ -2969,6 +2988,8 @@ void GCodeGenerator::process_layer_single_object(
             }
         }
 
+    std::optional<Point> previous_position{this->last_position};
+
     m_layer = layer_to_print.layer();
     // To control print speed of the 1st object layer printed over raft interface.
     m_object_layer_over_raft = layer_to_print.object_layer && layer_to_print.object_layer->id() > 0 &&
@@ -2981,7 +3002,7 @@ void GCodeGenerator::process_layer_single_object(
             //FIXME order islands?
             // Sequential tool path ordering of multiple parts within the same object, aka. perimeter tracking (#5511)
             for (const LayerIsland &island : lslice.islands) {
-                const std::vector<const ExtrusionEntity *> perimeters{GCode::extract_perimeter_extrusions(
+                const std::vector<ExtrusionEntity *> perimeters{GCode::extract_perimeter_extrusions(
                     print, layer, island, layer_tools, print_instance.instance_id, extruder_id,
                     print_wipe_extrusions
                 )};
@@ -3000,14 +3021,35 @@ void GCodeGenerator::process_layer_single_object(
                         print_wipe_extrusions,
                         false,
                         extruder_id,
-                        this->last_position
+                        previous_position
                     )};
                     if (!infill_ranges.empty()) {
                         init_layer_delayed();
                     }
                     gcode += this->extrude_infill_ranges(infill_ranges, "infill", smooth_path_cache);
+                    if (!infill_ranges.empty() && !infill_ranges.back().items.empty()) {
+                        const ExtrusionEntityReference &last_infill{infill_ranges.back().items.back()};
+                        previous_position = last_infill.flipped() ? last_infill.extrusion_entity().first_point() : last_infill.extrusion_entity().last_point();
+                    }
+
+                    this->place_seams(perimeters, previous_position);
+                    if (!perimeters.empty()) {
+                        auto last_perimeter{static_cast<const ExtrusionLoop *>(perimeters.back())};
+                        if (last_perimeter != nullptr) {
+                            previous_position = last_perimeter->seam;
+                        }
+                    }
                     gcode += this->extrude_perimeters(print, layer, island, perimeters, print_instance, smooth_path_cache);
                 } else {
+                    this->place_seams(perimeters, previous_position);
+
+                    if (!perimeters.empty()) {
+                        auto last_perimeter{static_cast<const ExtrusionLoop *>(perimeters.back())};
+                        if (last_perimeter != nullptr) {
+                            previous_position = last_perimeter->seam;
+                        }
+                    }
+
                     gcode += this->extrude_perimeters(print, layer, island, perimeters, print_instance, smooth_path_cache);
 
                     const std::vector<GCode::InfillRange> infill_ranges{GCode::extract_infill_ranges(
@@ -3019,10 +3061,14 @@ void GCodeGenerator::process_layer_single_object(
                         print_wipe_extrusions,
                         false,
                         extruder_id,
-                        this->last_position
+                        previous_position
                     )};
                     if (!infill_ranges.empty()) {
                         init_layer_delayed();
+                    }
+                    if (!infill_ranges.empty() && !infill_ranges.back().items.empty()) {
+                        const ExtrusionEntityReference &last_infill{infill_ranges.back().items.back()};
+                        previous_position = last_infill.flipped() ? last_infill.extrusion_entity().first_point() : last_infill.extrusion_entity().last_point();
                     }
                     gcode += this->extrude_infill_ranges(infill_ranges, "infill", smooth_path_cache);
                 }
@@ -3041,11 +3087,16 @@ void GCodeGenerator::process_layer_single_object(
                     print_wipe_extrusions,
                     true,
                     extruder_id,
-                    this->last_position
+                    previous_position
                 )};
 
                 if (!ironing_ranges.empty()) {
                     init_layer_delayed();
+                }
+
+                if (!ironing_ranges.empty() && !ironing_ranges.back().items.empty()) {
+                    const ExtrusionEntityReference &last_infill{ironing_ranges.back().items.back()};
+                    previous_position = last_infill.flipped() ? last_infill.extrusion_entity().first_point() : last_infill.extrusion_entity().last_point();
                 }
                 gcode += this->extrude_infill_ranges(ironing_ranges, "ironing", smooth_path_cache);
             }
@@ -3190,7 +3241,7 @@ std::string GCodeGenerator::extrude_loop(const ExtrusionLoop &loop_src, const GC
     Point seam_point = this->last_position.has_value() ? *this->last_position : Point::Zero();
     if (!m_config.spiral_vase && comment_is_perimeter(description)) {
         assert(m_layer != nullptr);
-        seam_point = m_seam_placer.place_seam(m_layer, loop_src, seam_point);
+        seam_point = loop_src.seam;
     }
     // Because the G-code export has 1um resolution, don't generate segments shorter than 1.5 microns,
     // thus empty path segments will not be produced by G-code export.

@@ -298,7 +298,8 @@ class ExtrusionLoop : public ExtrusionEntity
 {
 public:
     ExtrusionPaths paths;
-    
+    Point seam{Point::Zero()};
+
     ExtrusionLoop() = default;
     ExtrusionLoop(ExtrusionLoopRole role) : m_loop_role(role) {}
     ExtrusionLoop(const ExtrusionPaths &paths, ExtrusionLoopRole role = elrDefault) : paths(paths), m_loop_role(role) {}
