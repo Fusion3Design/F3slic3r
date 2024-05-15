@@ -2660,11 +2660,7 @@ ExtrusionEntitiesPtr extract_infill_extrusions(
     const ExtrusionEntityCollection &fills,
     LayerExtrusionRanges::const_iterator begin,
     LayerExtrusionRanges::const_iterator end,
-    const LayerTools &layer_tools,
-    const std::size_t instance_id,
-    const int extruder_id,
-    const bool overriden,
-    const bool ironing
+    const std::function<bool(const ExtrusionEntityCollection*)> &predicate
 ) {
     ExtrusionEntitiesPtr result;
     for (auto it = begin; it != end; ++ it) {
@@ -2674,20 +2670,7 @@ ExtrusionEntitiesPtr extract_infill_extrusions(
             assert(dynamic_cast<ExtrusionEntityCollection*>(fills.entities[fill_id]));
 
             auto *eec{static_cast<ExtrusionEntityCollection*>(fills.entities[fill_id])};
-            if (eec == nullptr) {
-                continue;
-            }
-            if (eec->entities.empty()) {
-                continue;
-            }
-            if ((eec->role() == ExtrusionRole::Ironing) != ironing) {
-                continue;
-            }
-            if (is_overriden(eec, layer_tools, instance_id) != overriden) {
-                continue;
-            }
-
-            if (get_extruder_id(eec, layer_tools, region, instance_id) != extruder_id) {
+            if (eec == nullptr || !predicate(eec)) {
                 continue;
             }
 
@@ -2788,20 +2771,31 @@ std::vector<InfillRange> extract_infill_ranges(
 
         const Point* start_near = previous_position ? &(*(previous_position)) : nullptr;
 
-        ExtrusionEntitiesPtr temp_fill_extrusions{extract_infill_extrusions(
+        ExtrusionEntitiesPtr extrusions{extract_infill_extrusions(
             layer,
             region,
             layerm.fills(),
             it,
             it_end,
-            layer_tools,
-            instance_id,
-            extruder_id,
-            overriden,
-            ironing
+            [&](const ExtrusionEntityCollection *entity_collection){
+                if (entity_collection->entities.empty()) {
+                    return false;
+                }
+                if ((entity_collection->role() == ExtrusionRole::Ironing) != ironing) {
+                    return false;
+                }
+                if (is_overriden(entity_collection, layer_tools, instance_id) != overriden) {
+                    return false;
+                }
+
+                if (get_extruder_id(entity_collection, layer_tools, region, instance_id) != extruder_id) {
+                    return false;
+                }
+                return true;
+            }
         )};
 
-        const std::vector<ExtrusionEntityReference> sorted_extrusions{sort_fill_extrusions(temp_fill_extrusions, start_near)};
+        const std::vector<ExtrusionEntityReference> sorted_extrusions{sort_fill_extrusions(extrusions, start_near)};
 
         if (! sorted_extrusions.empty()) {
             result.push_back({sorted_extrusions, &region});
