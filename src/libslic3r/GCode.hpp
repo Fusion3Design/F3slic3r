@@ -115,7 +115,7 @@ struct PrintObjectInstance
 
 struct InfillRange {
     std::vector<ExtrusionEntityReference> items;
-    const PrintRegion &region;
+    const PrintRegion *region;
 };
 
 } // namespace GCode
@@ -310,14 +310,10 @@ private:
         // For sequential print, the instance of the object to be printing has to be defined.
         const size_t                                     single_object_instance_idx);
 
-    void place_seams(
-        const std::vector<ExtrusionEntity *> &perimeters, std::optional<Point> previous_position
-    );
-
     std::string extrude_perimeters(
         const Print &print,
         const Layer *layer,
-        const LayerIsland &island,
+        const PrintRegion &region,
         const std::vector<ExtrusionEntity *> &perimeters,
         const InstanceToPrint &print_instance,
         const GCode::SmoothPathCache &smooth_path_cache
