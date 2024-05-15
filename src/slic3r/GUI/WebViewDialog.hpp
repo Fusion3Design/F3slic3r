@@ -166,7 +166,8 @@ protected:
     // action callbacs stored in m_actions
     virtual void on_request_access_token();
     virtual void on_request_config();
-    virtual void on_request_update_selected_printer_action() = 0;
+    virtual void on_request_select_printer() = 0;
+    virtual void on_request_print() = 0;
     virtual void run_script_bridge(const wxString& script) = 0;
     virtual void request_compatible_printers() = 0;
 
@@ -183,7 +184,8 @@ public:
     void logout();
     void sys_color_changed() override;
 protected:
-    void on_request_update_selected_printer_action() override;
+    void on_request_select_printer() override;
+    void on_request_print() override;
     void request_compatible_printers() override {}
     void run_script_bridge(const wxString& script) override {run_script(script); }
 };
@@ -232,7 +234,8 @@ public:
     void on_show(wxShowEvent& evt) override;
     void on_script_message(wxWebViewEvent& evt) override;
 protected:
-    void on_request_update_selected_printer_action() override;
+    void on_request_select_printer() override;
+    void on_request_print() override;
     void request_compatible_printers() override;
     void request_compatible_printers_FFF();
     void request_compatible_printers_SLA();

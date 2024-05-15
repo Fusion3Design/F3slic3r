@@ -471,8 +471,10 @@ ConnectRequestHandler::ConnectRequestHandler()
 {
     m_actions["REQUEST_ACCESS_TOKEN"] = std::bind(&ConnectRequestHandler::on_request_access_token, this);
     m_actions["REQUEST_CONFIG"] = std::bind(&ConnectRequestHandler::on_request_config, this);
-    m_actions["UPDATE_SELECTED_PRINTER"] = std::bind(&ConnectRequestHandler::on_request_update_selected_printer_action, this);
     m_actions["WEBAPP_READY"] = std::bind(&ConnectRequestHandler::request_compatible_printers, this);
+    m_actions["SELECT_PRINTER"] = std::bind(&ConnectRequestHandler::on_request_select_printer, this);
+    m_actions["PRINT"] = std::bind(&ConnectRequestHandler::on_request_print, this);
+    m_actions["REQUEST_SELECTED_PRINTER"] = std::bind(&ConnectRequestHandler::on_request_print, this);
 }
 ConnectRequestHandler::~ConnectRequestHandler()
 {
@@ -567,12 +569,16 @@ void ConnectWebViewPanel::sys_color_changed()
     resend_config();
 }
 
-void ConnectWebViewPanel::on_request_update_selected_printer_action()
+void ConnectWebViewPanel::on_request_select_printer()
 {
     assert(!m_message_data.empty());
     wxGetApp().handle_connect_request_printer_select(m_message_data);
 }
-
+void ConnectWebViewPanel::on_request_print()
+{
+    // PRINT request is not defined for ConnectWebViewPanel
+    assert(true);
+}
 
 PrinterWebViewPanel::PrinterWebViewPanel(wxWindow* parent, const wxString& default_url)
     : WebViewPanel(parent, default_url)
@@ -1060,7 +1066,12 @@ void PrinterPickWebViewDialog::on_script_message(wxWebViewEvent& evt)
     handle_message(into_u8(evt.GetString()));
 }
 
-void PrinterPickWebViewDialog::on_request_update_selected_printer_action()
+void PrinterPickWebViewDialog::on_request_select_printer()
+{
+    // SELECT_PRINTER request is not defined for PrinterPickWebViewDialog
+    assert(true);
+}
+void PrinterPickWebViewDialog::on_request_print()
 {
     m_ret_val = m_message_data;
     m_browser->RemoveScriptMessageHandler("_prusaSlicer");
