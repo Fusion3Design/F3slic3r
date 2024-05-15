@@ -2865,29 +2865,13 @@ struct SliceExtrusions {
 };
 
 std::vector<SliceExtrusions> get_sorted_extrusions(const Print &print, const Layer* layer,
-    const std::size_t print_instance_id,
-    const LayerTools &layer_tools,
     const Seams::Placer &seam_placer,
-    const bool overriden,
     std::optional<Point> previous_position,
-    const int extruder_id,
-    const bool spiral_vase
+    const bool spiral_vase,
+    const GCode::ExtractEntityPredicate &predicate
 ) {
     std::vector<SliceExtrusions> sorted_extrusions;
 
-    const auto predicate = [&](const ExtrusionEntityCollection &entity_collection, const PrintRegion &region){
-        if (entity_collection.entities.empty()) {
-            return false;
-        }
-        if (GCode::is_overriden(entity_collection, layer_tools, print_instance_id) != overriden) {
-            return false;
-        }
-
-        if (GCode::get_extruder_id(entity_collection, layer_tools, region, print_instance_id) != extruder_id) {
-            return false;
-        }
-        return true;
-    };
 
     for (size_t idx : layer->lslice_indices_sorted_by_print_order) {
         const LayerSlice &lslice = layer->lslices_ex[idx];
@@ -3084,16 +3068,28 @@ void GCodeGenerator::process_layer_single_object(
 
 
     if (const Layer *layer = layer_to_print.object_layer; layer) {
+
+        const auto predicate = [&](const ExtrusionEntityCollection &entity_collection, const PrintRegion &region){
+            if (entity_collection.entities.empty()) {
+                return false;
+            }
+            if (GCode::is_overriden(entity_collection, layer_tools, print_instance.instance_id) != print_wipe_extrusions) {
+                return false;
+            }
+
+            if (GCode::get_extruder_id(entity_collection, layer_tools, region, print_instance.instance_id) != extruder_id) {
+                return false;
+            }
+            return true;
+        };
+
         const std::vector<SliceExtrusions> sorted_extrusions{get_sorted_extrusions(
             print,
             layer,
-            print_instance.instance_id,
-            layer_tools,
             this->m_seam_placer,
-            print_wipe_extrusions,
             previous_position,
-            extruder_id,
-            m_config.spiral_vase
+            m_config.spiral_vase,
+            predicate
         )};
 
         for (const SliceExtrusions &slice_extrusions : sorted_extrusions) {
