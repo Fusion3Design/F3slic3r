@@ -312,7 +312,6 @@ private:
 
     std::string extrude_perimeters(
         const Print &print,
-        const Layer *layer,
         const PrintRegion &region,
         const std::vector<ExtrusionEntity *> &perimeters,
         const InstanceToPrint &print_instance,
@@ -349,7 +348,8 @@ private:
         // Is any extrusion possibly marked as wiping extrusion?
         const bool                is_anything_overridden, 
         // Round 1 (wiping into object or infill) or round 2 (normal extrusions).
-        const bool                print_wipe_extrusions);
+        const bool                print_wipe_extrusions
+    );
 
     std::string     extrude_support(const ExtrusionEntityReferences &support_fills, const GCode::SmoothPathCache &smooth_path_cache);
     std::string generate_travel_gcode(
