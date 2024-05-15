@@ -1343,24 +1343,6 @@ bool GLGizmoEmboss::process(bool make_snapshot)
     return true;
 }
 
-namespace {
-// IMPROVE: Move to Point.hpp and rename to is_approx()
-// NOTE: Point has its own epsilon :-(
-template<typename T, int I, int J>
-inline bool is_approx2(
-    const Eigen::Matrix<T, I, J, Eigen::DontAlign> &m1,
-    const Eigen::Matrix<T, I, J, Eigen::DontAlign> &m2,
-    T epsilon = static_cast<T>(EPSILON)
-) {
-    for (size_t i = 0; i < I; i++)
-        for (size_t j = 0; j < J; j++)
-            if (!is_approx(m1(i, j), m2(i, j), epsilon))
-                return false;
-
-    return true;
-}
-}
-
 void GLGizmoEmboss::close()
 {
     if (m_volume != nullptr && 
@@ -1390,9 +1372,9 @@ void GLGizmoEmboss::close()
             const Matrix3d &gl_v_rot = gl_v_tr.linear();
             const Vec3d &v_move = v_tr.translation();
             const Vec3d &gl_v_move = gl_v_tr.translation();
-            if (!is_approx2(v_rot, gl_v_rot)) { 
+            if (!is_approx(v_rot, gl_v_rot)) { 
                 m_parent.do_rotate(rotation_snapshot_name);
-            } else if (!is_approx2(v_move, gl_v_move)){
+            } else if (!is_approx(v_move, gl_v_move)){
                 m_parent.do_move(move_snapshot_name);
             }
         }
