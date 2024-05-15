@@ -62,14 +62,6 @@ bool GLGizmoMmuSegmentation::on_is_activable() const
     return GLGizmoPainterBase::on_is_activable() && wxGetApp().extruders_edited_cnt() > 1;
 }
 
-std::vector<ColorRGBA> get_extruders_colors()
-{
-    std::vector<std::string> colors = Slic3r::GUI::wxGetApp().plater()->get_extruder_colors_from_plater_config();
-    std::vector<ColorRGBA> ret;
-    decode_colors(colors, ret);
-    return ret;
-}
-
 static std::vector<std::string> get_extruders_names()
 {
     size_t                   extruders_count = wxGetApp().extruders_edited_cnt();
@@ -98,7 +90,7 @@ static std::vector<int> get_extruder_id_for_volumes(const ModelObject &model_obj
 void GLGizmoMmuSegmentation::init_extruders_data()
 {
     m_original_extruders_names     = get_extruders_names();
-    m_original_extruders_colors    = get_extruders_colors();
+    m_original_extruders_colors    = wxGetApp().plater()->get_extruder_colors_from_plater_config();
     m_modified_extruders_colors    = m_original_extruders_colors;
     m_first_selected_extruder_idx  = 0;
     m_second_selected_extruder_idx = 1;
@@ -160,7 +152,7 @@ void GLGizmoMmuSegmentation::data_changed(bool is_serializing)
 
     ModelObject *model_object         = m_c->selection_info()->model_object();
     if (int prev_extruders_count = int(m_original_extruders_colors.size());
-        prev_extruders_count != wxGetApp().extruders_edited_cnt() || get_extruders_colors() != m_original_extruders_colors) {
+        prev_extruders_count != wxGetApp().extruders_edited_cnt() || wxGetApp().plater()->get_extruder_colors_from_plater_config() != m_original_extruders_colors) {
         if (wxGetApp().extruders_edited_cnt() > int(GLGizmoMmuSegmentation::EXTRUDERS_LIMIT))
             show_notification_extruders_limit_exceeded();
 
@@ -544,7 +536,7 @@ void GLGizmoMmuSegmentation::init_model_triangle_selectors()
         // This mesh does not account for the possible Z up SLA offset.
         const TriangleMesh *mesh = &mv->mesh();
 
-        size_t extruder_idx = get_extruder_color_idx(*mv, extruders_count);
+        const size_t extruder_idx = ModelVolume::get_extruder_color_idx(*mv, extruders_count);
         m_triangle_selectors.emplace_back(std::make_unique<TriangleSelectorMmGui>(*mesh, m_modified_extruders_colors, m_original_extruders_colors[extruder_idx]));
         // Reset of TriangleSelector is done inside TriangleSelectorMmGUI's constructor, so we don't need it to perform it again in deserialize().
         m_triangle_selectors.back()->deserialize(mv->mm_segmentation_facets.get_data(), false);
@@ -560,7 +552,7 @@ void GLGizmoMmuSegmentation::update_from_model_object()
     // Extruder colors need to be reloaded before calling init_model_triangle_selectors to render painted triangles
     // using colors from loaded 3MF and not from printer profile in Slicer.
     if (int prev_extruders_count = int(m_original_extruders_colors.size());
-        prev_extruders_count != wxGetApp().extruders_edited_cnt() || get_extruders_colors() != m_original_extruders_colors)
+        prev_extruders_count != wxGetApp().extruders_edited_cnt() || wxGetApp().plater()->get_extruder_colors_from_plater_config() != m_original_extruders_colors)
         this->init_extruders_data();
 
     this->init_model_triangle_selectors();

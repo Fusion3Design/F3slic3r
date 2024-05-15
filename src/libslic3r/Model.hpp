@@ -913,6 +913,11 @@ public:
     // Returns 0-based indices of extruders painted by multi-material painting gizmo.
     std::vector<size_t> get_extruders_from_multi_material_painting() const;
 
+    static size_t get_extruder_color_idx(const ModelVolume& model_volume, const int extruders_count) {
+        const int extruder_id = model_volume.extruder_id();
+        return (extruder_id <= 0 || extruder_id > extruders_count) ? 0 : extruder_id - 1;
+    }
+
 protected:
 	friend class Print;
     friend class SLAPrint;

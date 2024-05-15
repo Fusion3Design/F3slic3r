@@ -6308,7 +6308,7 @@ void Plater::on_activate(bool active)
 }
 
 // Get vector of extruder colors considering filament color, if extruder color is undefined.
-std::vector<std::string> Plater::get_extruder_colors_from_plater_config(const GCodeProcessorResult* const result) const
+std::vector<std::string> Plater::get_extruder_color_strings_from_plater_config(const GCodeProcessorResult* const result) const
 {
     if (wxGetApp().is_gcode_viewer() && result != nullptr)
         return result->extruder_colors;
@@ -6334,9 +6334,9 @@ std::vector<std::string> Plater::get_extruder_colors_from_plater_config(const GC
 /* Get vector of colors used for rendering of a Preview scene in "Color print" mode
  * It consists of extruder colors and colors, saved in model.custom_gcode_per_print_z
  */
-std::vector<std::string> Plater::get_colors_for_color_print(const GCodeProcessorResult* const result) const
+std::vector<std::string> Plater::get_color_strings_for_color_print(const GCodeProcessorResult* const result) const
 {
-    std::vector<std::string> colors = get_extruder_colors_from_plater_config(result);
+    std::vector<std::string> colors = get_extruder_color_strings_from_plater_config(result);
     colors.reserve(colors.size() + p->model.custom_gcode_per_print_z.gcodes.size());
 
     if (wxGetApp().is_gcode_viewer() && result != nullptr) {
@@ -6353,6 +6353,22 @@ std::vector<std::string> Plater::get_colors_for_color_print(const GCodeProcessor
     }
 
     return colors;
+}
+
+std::vector<ColorRGBA> Plater::get_extruder_colors_from_plater_config() const
+{
+    std::vector<std::string> colors = get_extruder_color_strings_from_plater_config();
+    std::vector<ColorRGBA> ret;
+    decode_colors(colors, ret);
+    return ret;
+}
+
+std::vector<ColorRGBA> Plater::get_colors_for_color_print() const
+{
+    std::vector<std::string> colors = get_color_strings_for_color_print();
+    std::vector<ColorRGBA> ret;
+    decode_colors(colors, ret);
+    return ret;
 }
 
 wxString Plater::get_project_filename(const wxString& extension) const

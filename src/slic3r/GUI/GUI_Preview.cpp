@@ -419,7 +419,7 @@ void Preview::create_sliders()
         });
 
         m_layers_slider->set_callback_on_get_extruder_colors([]()               -> std::vector<std::string> {
-            return wxGetApp().plater()->get_extruder_colors_from_plater_config();
+            return wxGetApp().plater()->get_extruder_color_strings_from_plater_config();
         });
 
         m_layers_slider->set_callback_on_get_print([]()                         -> const Print& {
@@ -603,7 +603,7 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
     check_layers_slider_values(ticks_info_from_model.gcodes, layers_z);
 
     //first of all update extruder colors to avoid crash, when we are switching printer preset from MM to SM
-    m_layers_slider->SetExtruderColors(plater->get_extruder_colors_from_plater_config(wxGetApp().is_editor() ? nullptr : m_gcode_result));
+    m_layers_slider->SetExtruderColors(plater->get_extruder_color_strings_from_plater_config(wxGetApp().is_editor() ? nullptr : m_gcode_result));
     m_layers_slider->SetSliderValues(layers_z);
     assert(m_layers_slider->GetMinPos() == 0);
 
@@ -933,12 +933,12 @@ void Preview::load_print_as_fff(bool keep_z_range)
     const bool gcode_preview_data_valid = !m_gcode_result->moves.empty();
     const bool is_pregcode_preview = !gcode_preview_data_valid && wxGetApp().is_editor();
 
-    const std::vector<std::string> tool_colors = wxGetApp().plater()->get_extruder_colors_from_plater_config(m_gcode_result);
+    const std::vector<std::string> tool_colors = wxGetApp().plater()->get_extruder_color_strings_from_plater_config(m_gcode_result);
     const std::vector<CustomGCode::Item>& color_print_values = wxGetApp().is_editor() ?
         wxGetApp().plater()->model().custom_gcode_per_print_z.gcodes : m_gcode_result->custom_gcode_per_print_z;
     std::vector<std::string> color_print_colors;
     if (!color_print_values.empty()) {
-        color_print_colors = wxGetApp().plater()->get_colors_for_color_print(m_gcode_result);
+        color_print_colors = wxGetApp().plater()->get_color_strings_for_color_print(m_gcode_result);
         color_print_colors.push_back("#808080"); // gray color for pause print or custom G-code 
     }
 
