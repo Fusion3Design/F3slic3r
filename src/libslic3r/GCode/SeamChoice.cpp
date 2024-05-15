@@ -18,6 +18,9 @@ std::optional<SeamChoice> maybe_choose_seam_point(
                 return seam_choice;
             }
         }
+        if (!Perimeters::extract_points(perimeter, point_type).empty()) {
+            return std::nullopt;
+        }
     }
 
     return std::nullopt;

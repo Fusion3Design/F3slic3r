@@ -13,6 +13,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "Point.hpp"
 #include "libslic3r.h"
 #include "Utils.hpp"
 

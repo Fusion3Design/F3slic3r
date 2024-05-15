@@ -236,26 +236,14 @@ double VisibilityCalculator::get_angle_visibility_modifier(
     return -angle_smooth_weight;
 }
 
-std::vector<Vec2d> extract_points(
-    const Perimeters::Perimeter &perimeter, const Perimeters::PointType point_type
-) {
-    std::vector<Vec2d> result;
-    for (std::size_t i{0}; i < perimeter.positions.size(); ++i) {
-        if (perimeter.point_types[i] == point_type) {
-            result.push_back(perimeter.positions[i]);
-        }
-    }
-    return result;
-}
-
 std::vector<Vec2d> get_starting_positions(const Shells::Shell<> &shell) {
     const Perimeters::Perimeter &perimeter{shell.front().boundary};
 
-    std::vector<Vec2d> enforcers{extract_points(perimeter, Perimeters::PointType::enforcer)};
+    std::vector<Vec2d> enforcers{Perimeters::extract_points(perimeter, Perimeters::PointType::enforcer)};
     if (!enforcers.empty()) {
         return enforcers;
     }
-    std::vector<Vec2d> common{extract_points(perimeter, Perimeters::PointType::common)};
+    std::vector<Vec2d> common{Perimeters::extract_points(perimeter, Perimeters::PointType::common)};
     if (!common.empty()) {
         return common;
     }
