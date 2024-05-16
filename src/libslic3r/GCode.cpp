@@ -2977,8 +2977,10 @@ static constexpr const double min_gcode_segment_length = 0.002;
 
 std::string GCodeGenerator::extrude_loop(const ExtrusionLoop &loop_src, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed)
 {
-    // Extrude all loops CCW.
-    bool is_hole = loop_src.is_clockwise();
+    // Extrude all loops CCW unless CW movements are prefered.
+    const bool is_hole      = loop_src.is_clockwise();
+    const bool reverse_loop = m_config.prefer_clockwise_movements ? !is_hole : is_hole;
+
     Point seam_point = this->last_position.has_value() ? *this->last_position : Point::Zero();
     if (!m_config.spiral_vase && comment_is_perimeter(description)) {
         assert(m_layer != nullptr);
@@ -2986,8 +2988,7 @@ std::string GCodeGenerator::extrude_loop(const ExtrusionLoop &loop_src, const GC
     }
     // Because the G-code export has 1um resolution, don't generate segments shorter than 1.5 microns,
     // thus empty path segments will not be produced by G-code export.
-    GCode::SmoothPath smooth_path = smooth_path_cache.resolve_or_fit_split_with_seam(
-        loop_src, is_hole, m_scaled_resolution, seam_point, scaled<double>(0.0015));
+    GCode::SmoothPath smooth_path = smooth_path_cache.resolve_or_fit_split_with_seam(loop_src, reverse_loop, m_scaled_resolution, seam_point, scaled<double>(0.0015));
 
     // Clip the path to avoid the extruder to get exactly on the first point of the loop;
     // if polyline was shorter than the clipping distance we'd get a null polyline, so
@@ -3018,7 +3019,7 @@ std::string GCodeGenerator::extrude_loop(const ExtrusionLoop &loop_src, const GC
     } else if (loop_src.paths.back().role().is_external_perimeter() && m_layer != nullptr && m_config.perimeters.value > 1) {
         // Only wipe inside if the wipe along the perimeter is disabled.
         // Make a little move inwards before leaving loop.
-        if (std::optional<Point> pt = wipe_hide_seam(smooth_path, is_hole, scale_(EXTRUDER_CONFIG(nozzle_diameter))); pt) {
+        if (std::optional<Point> pt = wipe_hide_seam(smooth_path, reverse_loop, scale_(EXTRUDER_CONFIG(nozzle_diameter))); pt) {
             // Generate the seam hiding travel move.
             gcode += m_writer.travel_to_xy(this->point_to_gcode(*pt), "move inwards before travel");
             this->last_position = *pt;
@@ -3033,9 +3034,10 @@ std::string GCodeGenerator::extrude_skirt(
     const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed)
 {
     assert(loop_src.is_counter_clockwise());
+    const bool reverse_loop = m_config.prefer_clockwise_movements;
+
     Point seam_point = this->last_position.has_value() ? *this->last_position : Point::Zero();
-    GCode::SmoothPath smooth_path = smooth_path_cache.resolve_or_fit_split_with_seam(
-        loop_src, false, m_scaled_resolution, seam_point, scaled<double>(0.0015));
+    GCode::SmoothPath smooth_path = smooth_path_cache.resolve_or_fit_split_with_seam(loop_src, reverse_loop, m_scaled_resolution, seam_point, scaled<double>(0.0015));
 
     // Clip the path to avoid the extruder to get exactly on the first point of the loop;
     // if polyline was shorter than the clipping distance we'd get a null polyline, so

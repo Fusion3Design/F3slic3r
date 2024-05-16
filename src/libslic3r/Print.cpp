@@ -211,7 +211,8 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
             // Therefore toggling the Spiral Vase on / off requires complete reslicing.
             || opt_key == "spiral_vase"
             || opt_key == "filament_shrinkage_compensation_xy"
-            || opt_key == "filament_shrinkage_compensation_z") {
+            || opt_key == "filament_shrinkage_compensation_z"
+            || opt_key == "prefer_clockwise_movements") {
             osteps.emplace_back(posSlice);
         } else if (
                opt_key == "complete_objects"

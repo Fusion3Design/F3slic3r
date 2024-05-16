@@ -308,19 +308,25 @@ ThickPolylines make_fill_polylines(
                 for (Arachne::VariableWidthLines &loop : loops) {
                     if (loop.empty())
                         continue;
+
                     for (const Arachne::ExtrusionLine &wall : loop)
                         all_extrusions.emplace_back(&wall);
                 }
 
                 for (const Arachne::ExtrusionLine *extrusion : all_extrusions) {
-                    if (extrusion->junctions.size() < 2) {
+                    if (extrusion->junctions.size() < 2)
                         continue;
-                    }
+
                     ThickPolyline thick_polyline = Arachne::to_thick_polyline(*extrusion);
                     if (extrusion->is_closed) {
+                        // Arachne produces contour with clockwise orientation and holes with counterclockwise orientation.
+                        if (const bool extrusion_reverse = params.prefer_clockwise_movements ? !extrusion->is_contour() : extrusion->is_contour(); extrusion_reverse)
+                            thick_polyline.reverse();
+
                         thick_polyline.start_at_index(nearest_point_index(thick_polyline.points, ex_bb.min));
                         thick_polyline.clip_end(scaled_spacing * 0.5);
                     }
+
                     if (thick_polyline.is_valid() && thick_polyline.length() > 0 && thick_polyline.points.size() > 1) {
                         thick_polylines.push_back(thick_polyline);
                     }

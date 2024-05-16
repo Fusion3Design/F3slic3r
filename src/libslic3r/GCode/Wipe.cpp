@@ -187,7 +187,7 @@ std::string Wipe::wipe(GCodeGenerator &gcodegen, bool toolchange)
 // Make a little move inwards before leaving loop after path was extruded,
 // thus the current extruder position is at the end of a path and the path
 // may not be closed in case the loop was clipped to hide a seam.
-std::optional<Point> wipe_hide_seam(const SmoothPath &path, bool is_hole, double wipe_length)
+std::optional<Point> wipe_hide_seam(const SmoothPath &path, const bool path_reversed, const double wipe_length)
 {
     assert(! path.empty());
     assert(path.front().path.size() >= 2);
@@ -222,7 +222,7 @@ std::optional<Point> wipe_hide_seam(const SmoothPath &path, bool is_hole, double
         double angle_inside = angle(p_next - p_current, p_prev - p_current);
         assert(angle_inside >= -M_PI && angle_inside <= M_PI);
         // 3rd of this angle will be taken, thus make the angle monotonic before interpolation.
-        if (is_hole) {
+        if (path_reversed) {
             if (angle_inside > 0)
                 angle_inside -= 2.0 * M_PI;
         } else {

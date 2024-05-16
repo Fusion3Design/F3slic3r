@@ -3366,6 +3366,13 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(true));
 
+    def = this->add("prefer_clockwise_movements", coBool);
+    def->label = L("Prefer clockwise movements");
+    def->tooltip = L("This setting makes the printer print loops clockwise instead of counterclockwise. "
+                     "Most printers don't need to print loops clockwise.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("wipe", coBools);
     def->label = L("Wipe while retracting");
     def->tooltip = L("This flag will move the nozzle while retracting to minimize the possible blob "
