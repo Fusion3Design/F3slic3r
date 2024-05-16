@@ -6092,7 +6092,7 @@ void Plater::connect_gcode()
     upload_job.upload_data.set_ready = set_ready;
     upload_job.upload_data.position = position;
     upload_job.upload_data.wait_until = wait_until;
-    upload_job.upload_data.upload_path = filename + ".bgcode";
+    upload_job.upload_data.upload_path = filename;
     upload_job.upload_data.post_action = PrintHostPostUploadAction::None;
 
     p->export_gcode(fs::path(), false, std::move(upload_job));
@@ -6159,7 +6159,7 @@ std::string Plater::get_upload_filename()
     }
     default_output_file = fs::path(Slic3r::fold_utf8_to_ascii(default_output_file.string()));
 
-    return default_output_file.string();
+    return default_output_file.filename().string();
 }
 
 void Plater::send_gcode_inner(DynamicPrintConfig* physical_printer_config)
