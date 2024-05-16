@@ -2283,351 +2283,6 @@ std::string GCodeGenerator::generate_ramping_layer_change_gcode(
     return travel_gcode;
 }
 
-// In sequential mode, process_layer is called once per each object and its copy,
-// therefore layers will contain a single entry and single_object_instance_idx will point to the copy of the object.
-// In non-sequential mode, process_layer is called per each print_z height with all object and support layers accumulated.
-// For multi-material prints, this routine minimizes extruder switches by gathering extruder specific extrusion paths
-// and performing the extruder specific extrusions together.
-LayerResult GCodeGenerator::process_layer(
-    const Print                    			&print,
-    // Set of object & print layers of the same PrintObject and with the same print_z.
-    const ObjectsLayerToPrint           	&layers,
-    const LayerTools        		        &layer_tools,
-    const GCode::SmoothPathCaches           &smooth_path_caches,
-    const bool                               last_layer,
-    // Pairs of PrintObject index and its instance index.
-    const std::vector<const PrintInstance*> *ordering,
-    // If set to size_t(-1), then print all copies of all objects.
-    // Otherwise print a single copy of a single object.
-    const size_t                     		 single_object_instance_idx)
-{
-    assert(! layers.empty());
-    // Either printing all copies of all objects, or just a single copy of a single object.
-    assert(single_object_instance_idx == size_t(-1) || layers.size() == 1);
-
-    // First object, support and raft layer, if available.
-    const Layer         *object_layer  = nullptr;
-    const SupportLayer  *support_layer = nullptr;
-    const SupportLayer  *raft_layer    = nullptr;
-    for (const ObjectLayerToPrint &l : layers) {
-        if (l.object_layer && ! object_layer)
-            object_layer = l.object_layer;
-        if (l.support_layer) {
-            if (! support_layer)
-                support_layer = l.support_layer;
-            if (! raft_layer && support_layer->id() < support_layer->object()->slicing_parameters().raft_layers())
-                raft_layer = support_layer;
-        }
-    }
-    const Layer  &layer = (object_layer != nullptr) ? *object_layer : *support_layer;
-    LayerResult   result { {}, layer.id(), false, last_layer, false};
-    if (layer_tools.extruders.empty())
-        // Nothing to extrude.
-        return result;
-
-    // Extract 1st object_layer and support_layer of this set of layers with an equal print_z.
-    coordf_t             print_z       = layer.print_z + m_config.z_offset.value;
-    bool                 first_layer   = layer.id() == 0;
-    unsigned int         first_extruder_id = layer_tools.extruders.front();
-
-    const std::vector<InstanceToPrint> instances_to_print{sort_print_object_instances(layers, ordering, single_object_instance_idx)};
-    const PrintInstance* first_instance{instances_to_print.empty() ? nullptr : &instances_to_print.front().print_object.instances()[instances_to_print.front().instance_id]};
-    m_label_objects.update(first_instance);
-
-
-    // Initialize config with the 1st object to be printed at this layer.
-    m_config.apply(layer.object()->config(), true);
-
-    // Check whether it is possible to apply the spiral vase logic for this layer.
-    // Just a reminder: A spiral vase mode is allowed for a single object, single material print only.
-    m_enable_loop_clipping = true;
-    if (m_spiral_vase && layers.size() == 1 && support_layer == nullptr) {
-        bool enable = (layer.id() > 0 || !print.has_brim()) && (layer.id() >= (size_t)print.config().skirt_height.value && ! print.has_infinite_skirt());
-        if (enable) {
-            for (const LayerRegion *layer_region : layer.regions())
-                if (size_t(layer_region->region().config().bottom_solid_layers.value) > layer.id() ||
-                    layer_region->perimeters().items_count() > 1u ||
-                    layer_region->fills().items_count() > 0) {
-                    enable = false;
-                    break;
-                }
-        }
-        result.spiral_vase_enable = enable;
-        // If we're going to apply spiralvase to this layer, disable loop clipping.
-        m_enable_loop_clipping = !enable;
-    }
-
-
-    std::string gcode;
-    assert(is_decimal_separator_point()); // for the sprintfs
-
-    // add tag for processor
-    gcode += ";" + GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Layer_Change) + "\n";
-    // export layer z
-    gcode += std::string(";Z:") + float_to_string_decimal_point(print_z) + "\n";
-
-    // export layer height
-    float height = first_layer ? static_cast<float>(print_z) : static_cast<float>(print_z) - m_last_layer_z;
-    gcode += std::string(";") + GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Height)
-        + float_to_string_decimal_point(height) + "\n";
-
-    // update caches
-    const coordf_t previous_layer_z{m_last_layer_z};
-    m_last_layer_z = static_cast<float>(print_z);
-    m_max_layer_z  = std::max(m_max_layer_z, m_last_layer_z);
-    m_last_height = height;
-    m_current_layer_first_position = std::nullopt;
-    m_already_unretracted = false;
-
-    // Set new layer - this will change Z and force a retraction if retract_layer_change is enabled.
-    if (!first_layer && ! print.config().before_layer_gcode.value.empty()) {
-        DynamicConfig config;
-        config.set_key_value("layer_num",   new ConfigOptionInt(m_layer_index + 1));
-        config.set_key_value("layer_z",     new ConfigOptionFloat(print_z));
-        config.set_key_value("max_layer_z", new ConfigOptionFloat(m_max_layer_z));
-        gcode += this->placeholder_parser_process("before_layer_gcode",
-            print.config().before_layer_gcode.value, m_writer.extruder()->id(), &config)
-            + "\n";
-    }
-    gcode += this->change_layer(previous_layer_z, print_z, result.spiral_vase_enable); // this will increase m_layer_index
-    m_layer = &layer;
-    if (this->line_distancer_is_required(layer_tools.extruders) && this->m_layer != nullptr && this->m_layer->lower_layer != nullptr)
-        m_travel_obstacle_tracker.init_layer(layer, layers);
-
-    m_object_layer_over_raft = false;
-    if (!first_layer && ! print.config().layer_gcode.value.empty()) {
-        DynamicConfig config;
-        config.set_key_value("layer_num", new ConfigOptionInt(m_layer_index));
-        config.set_key_value("layer_z",   new ConfigOptionFloat(print_z));
-        config.set_key_value("max_layer_z", new ConfigOptionFloat(m_max_layer_z));
-        gcode += this->placeholder_parser_process("layer_gcode",
-            print.config().layer_gcode.value, m_writer.extruder()->id(), &config)
-            + "\n";
-    }
-
-    if (! first_layer && ! m_second_layer_things_done) {
-        // Transition from 1st to 2nd layer. Adjust nozzle temperatures as prescribed by the nozzle dependent
-        // first_layer_temperature vs. temperature settings.
-        for (const Extruder &extruder : m_writer.extruders()) {
-            if (print.config().single_extruder_multi_material.value || m_ooze_prevention.enable) {
-                // In single extruder multi material mode, set the temperature for the current extruder only.
-                // The same applies when ooze prevention is enabled.
-                if (extruder.id() != m_writer.extruder()->id())
-                    continue;
-            }
-            int temperature = print.config().temperature.get_at(extruder.id());
-            if (temperature > 0 && (temperature != print.config().first_layer_temperature.get_at(extruder.id())))
-                gcode += m_writer.set_temperature(temperature, false, extruder.id());
-        }
-        gcode += m_writer.set_bed_temperature(print.config().bed_temperature.get_at(first_extruder_id));
-        // Mark the temperature transition from 1st to 2nd layer to be finished.
-        m_second_layer_things_done = true;
-    }
-
-    // Map from extruder ID to <begin, end> index of skirt loops to be extruded with that extruder.
-    std::map<unsigned int, std::pair<size_t, size_t>> skirt_loops_per_extruder;
-
-    // Extrude skirt at the print_z of the raft layers and normal object layers
-    // not at the print_z of the interlaced support material layers.
-    skirt_loops_per_extruder = first_layer ?
-        Skirt::make_skirt_loops_per_extruder_1st_layer(print, layer_tools, m_skirt_done) :
-        Skirt::make_skirt_loops_per_extruder_other_layers(print, layer_tools, m_skirt_done);
-
-    if (this->config().avoid_crossing_curled_overhangs) {
-        m_avoid_crossing_curled_overhangs.clear();
-        for (const ObjectLayerToPrint &layer_to_print : layers) {
-            if (layer_to_print.object() == nullptr)
-                continue;
-            for (const auto &instance : layer_to_print.object()->instances()) {
-                m_avoid_crossing_curled_overhangs.add_obstacles(layer_to_print.object_layer, instance.shift);
-                m_avoid_crossing_curled_overhangs.add_obstacles(layer_to_print.support_layer, instance.shift);
-            }
-        }
-    }
-
-    const bool has_custom_gcode_to_emit     = single_object_instance_idx == size_t(-1) && layer_tools.custom_gcode != nullptr;
-    const int  extruder_id_for_custom_gcode = int(layer_tools.extruder_needed_for_color_changer) - 1;
-
-    if (has_custom_gcode_to_emit && extruder_id_for_custom_gcode == -1) {
-        // Normal (non-sequential) print with some custom code without picking a specific extruder before it.
-        // If we don't need to pick a specific extruder before the color change, we can just emit a custom g-code.
-        // Otherwise, we will emit the g-code after picking the specific extruder.
-
-        std::string custom_gcode = ProcessLayer::emit_custom_gcode_per_print_z(*this, *layer_tools.custom_gcode, m_writer.extruder()->id(), first_extruder_id, print.config());
-        if (layer_tools.custom_gcode->type == CustomGCode::ColorChange) {
-            // We have a color change to do on this layer, but we want to do it immediately before the first extrusion instead of now, in order to fix GH #2672.
-            m_pending_pre_extrusion_gcode = custom_gcode;
-        } else {
-            gcode += custom_gcode;
-        }
-    }
-
-    // Extrude the skirt, brim, support, perimeters, infill ordered by the extruders.
-    for (unsigned int extruder_id : layer_tools.extruders)
-    {
-        gcode += (layer_tools.has_wipe_tower && m_wipe_tower) ?
-            m_wipe_tower->tool_change(*this, extruder_id, extruder_id == layer_tools.extruders.back()) :
-            this->set_extruder(extruder_id, print_z);
-
-        // let analyzer tag generator aware of a role type change
-        if (layer_tools.has_wipe_tower && m_wipe_tower)
-            m_last_processor_extrusion_role = GCodeExtrusionRole::WipeTower;
-
-        if (has_custom_gcode_to_emit && extruder_id_for_custom_gcode == int(extruder_id)) {
-            assert(m_writer.extruder()->id() == extruder_id_for_custom_gcode);
-            assert(m_pending_pre_extrusion_gcode.empty());
-            // Now we have picked the right extruder, so we can emit the custom g-code.
-            gcode += ProcessLayer::emit_custom_gcode_per_print_z(*this, *layer_tools.custom_gcode, m_writer.extruder()->id(), first_extruder_id, print.config());
-        }
-
-        if (auto loops_it = skirt_loops_per_extruder.find(extruder_id); loops_it != skirt_loops_per_extruder.end()) {
-            if (!this->m_config.complete_objects.value) {
-                gcode += this->m_label_objects.maybe_stop_instance();
-            }
-            this->m_label_objects.update(nullptr);
-
-            const std::pair<size_t, size_t> loops = loops_it->second;
-            this->set_origin(0., 0.);
-            m_avoid_crossing_perimeters.use_external_mp();
-            Flow layer_skirt_flow = print.skirt_flow().with_height(float(m_skirt_done.back() - (m_skirt_done.size() == 1 ? 0. : m_skirt_done[m_skirt_done.size() - 2])));
-            double mm3_per_mm = layer_skirt_flow.mm3_per_mm();
-            for (size_t i = loops.first; i < loops.second; ++i) {
-                // Adjust flow according to this layer's layer height.
-                //FIXME using the support_material_speed of the 1st object printed.
-                gcode += this->extrude_skirt(dynamic_cast<const ExtrusionLoop&>(*print.skirt().entities[i]),
-                    // Override of skirt extrusion parameters. extrude_skirt() will fill in the extrusion width.
-                    ExtrusionFlow{ mm3_per_mm, 0., layer_skirt_flow.height() },
-                    smooth_path_caches.global(), "skirt"sv, m_config.support_material_speed.value);
-            }
-            m_avoid_crossing_perimeters.use_external_mp(false);
-            // Allow a straight travel move to the first object point if this is the first layer (but don't in next layers).
-            if (first_layer && loops.first == 0)
-                m_avoid_crossing_perimeters.disable_once();
-        }
-
-        // Extrude brim with the extruder of the 1st region.
-        if (! m_brim_done) {
-
-            if (!this->m_config.complete_objects.value) {
-                gcode += this->m_label_objects.maybe_stop_instance();
-            }
-            this->m_label_objects.update(nullptr);
-
-            this->set_origin(0., 0.);
-            m_avoid_crossing_perimeters.use_external_mp();
-            for (const ExtrusionEntity *ee : print.brim().entities)
-                gcode += this->extrude_entity({ *ee, false }, smooth_path_caches.global(), "brim"sv, m_config.support_material_speed.value);
-            m_brim_done = true;
-            m_avoid_crossing_perimeters.use_external_mp(false);
-            // Allow a straight travel move to the first object point.
-            m_avoid_crossing_perimeters.disable_once();
-        }
-        this->m_label_objects.update(first_instance);
-
-        // We are almost ready to print. However, we must go through all the objects twice to print the the overridden extrusions first (infill/perimeter wiping feature):
-        bool is_anything_overridden = layer_tools.wiping_extrusions().is_anything_overridden();
-        if (is_anything_overridden) {
-            // Extrude wipes.
-            size_t gcode_size_old = gcode.size();
-            for (const InstanceToPrint &instance : instances_to_print)
-                this->process_layer_single_object(
-                    gcode, extruder_id, instance,
-                    layers[instance.object_layer_to_print_id], layer_tools, smooth_path_caches.layer_local(),
-                    is_anything_overridden, true /* print_wipe_extrusions */);
-            if (gcode_size_old < gcode.size())
-                gcode+="; PURGING FINISHED\n";
-        }
-        // Extrude normal extrusions.
-        for (const InstanceToPrint &instance : instances_to_print)
-            this->process_layer_single_object(
-                gcode, extruder_id, instance,
-                layers[instance.object_layer_to_print_id], layer_tools, smooth_path_caches.layer_local(),
-                is_anything_overridden, false /* print_wipe_extrusions */);
-    }
-
-
-    // During layer change the starting position of next layer is now known.
-    // The solution is thus to emplace a temporary tag to the gcode, cache the postion and
-    // replace the tag later. The tag is Layer_Change_Travel, the cached position is
-    // m_current_layer_first_position and it is replaced here.
-    const std::string tag = GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Layer_Change_Travel);
-    std::string layer_change_gcode;
-    const bool do_ramping_layer_change = (
-        m_previous_layer_last_position
-        && m_current_layer_first_position
-        && m_layer_change_extruder_id
-        && !result.spiral_vase_enable
-        && print_z > previous_layer_z
-        && this->m_config.travel_ramping_lift.get_at(*m_layer_change_extruder_id)
-        && this->m_config.travel_slope.get_at(*m_layer_change_extruder_id) > 0
-        && this->m_config.travel_slope.get_at(*m_layer_change_extruder_id) < 90
-    );
-    if (first_layer) {
-        layer_change_gcode = ""; // Explicit for readability.
-    } else if (do_ramping_layer_change) {
-        const Vec3d &from{*m_previous_layer_last_position};
-        const Vec3d &to{*m_current_layer_first_position};
-        layer_change_gcode = this->get_ramping_layer_change_gcode(from, to, *m_layer_change_extruder_id);
-    } else {
-        layer_change_gcode = this->writer().get_travel_to_z_gcode(print_z, "simple layer change");
-    }
-
-    const auto keep_retraciton{[&](){
-        if (!do_ramping_layer_change) {
-            return true;
-        }
-        const double travel_length{(*m_current_layer_first_position - *m_previous_layer_last_position_before_wipe).norm()};
-        if (this->m_config.retract_before_travel.get_at(*m_layer_change_extruder_id) < travel_length) {
-            // Travel is long, keep retraction.
-            return true;
-        }
-        return false;
-    }};
-
-    bool removed_retraction{false};
-    if (this->m_config.travel_ramping_lift.get_at(*m_layer_change_extruder_id) && !result.spiral_vase_enable) {
-        const std::string retraction_start_tag = GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Layer_Change_Retraction_Start);
-        const std::string retraction_end_tag = GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Layer_Change_Retraction_End);
-
-        if (keep_retraciton()) {
-            boost::algorithm::replace_first(gcode, retraction_start_tag, "");
-            boost::algorithm::replace_first(gcode, retraction_end_tag, "");
-        } else {
-            const std::size_t start{gcode.find(retraction_start_tag)};
-            const std::size_t end_tag_start{gcode.find(retraction_end_tag)};
-            const std::size_t end{end_tag_start + retraction_end_tag.size()};
-            gcode.replace(start, end - start, "");
-
-            layer_change_gcode = this->get_ramping_layer_change_gcode(*m_previous_layer_last_position_before_wipe, *m_current_layer_first_position, *m_layer_change_extruder_id);
-
-            removed_retraction = true;
-        }
-    }
-
-    if (removed_retraction) {
-        const std::size_t start{gcode.find("FIRST_UNRETRACT")};
-        const std::size_t end{gcode.find("\n", start)};
-        gcode.replace(start, end - start, "");
-    } else {
-        boost::algorithm::replace_first(gcode,"FIRST_UNRETRACT", "");
-    }
-
-    boost::algorithm::replace_first(gcode, tag, layer_change_gcode);
-
-    BOOST_LOG_TRIVIAL(trace) << "Exported layer " << layer.id() << " print_z " << print_z <<
-    log_memory_info();
-
-    result.gcode = std::move(gcode);
-    result.cooling_buffer_flush = object_layer || raft_layer || last_layer;
-    return result;
-}
-
-static const auto comment_perimeter = "perimeter"sv;
-// Comparing string_view pointer & length for speed.
-static inline bool comment_is_perimeter(const std::string_view comment) {
-    return comment.data() == comment_perimeter.data() && comment.size() == comment_perimeter.size();
-}
-
 namespace GCode {
 
 bool is_overriden(const ExtrusionEntityCollection &eec, const LayerTools &layer_tools, const std::size_t instance_id) {
@@ -2827,6 +2482,12 @@ std::string GCodeGenerator::extrude_infill_ranges(
     return gcode;
 }
 
+static const auto comment_perimeter = "perimeter"sv;
+// Comparing string_view pointer & length for speed.
+static inline bool comment_is_perimeter(const std::string_view comment) {
+    return comment.data() == comment_perimeter.data() && comment.size() == comment_perimeter.size();
+}
+
 std::string GCodeGenerator::extrude_perimeters(
     const Print &print,
     const PrintRegion &region,
@@ -2863,11 +2524,6 @@ struct SliceExtrusions {
     std::vector<GCode::InfillRange> ironing_extrusions;
 };
 
-struct LayerExtrusions {
-    ExtrusionEntityReferences support_extrusions;
-    std::vector<SliceExtrusions> slices_extrusions;
-};
-
 std::optional<Point> get_last_position(const std::vector<GCode::InfillRange> &infill_ranges) {
     if (!infill_ranges.empty() && !infill_ranges.back().items.empty()) {
         const ExtrusionEntityReference &last_infill{infill_ranges.back().items.back()};
@@ -2894,6 +2550,31 @@ std::optional<Point> get_last_position(const std::vector<ExtrusionEntity *> &per
         }
     }
     return std::nullopt;
+}
+
+std::optional<Point> get_last_position(const std::vector<SliceExtrusions> &slice_extrusions, const bool infill_first) {
+    if (slice_extrusions.empty()) {
+        return {};
+    }
+    const SliceExtrusions &last_slice{slice_extrusions.back()};
+    if (!last_slice.ironing_extrusions.empty()) {
+        return get_last_position(slice_extrusions.back().ironing_extrusions);
+    }
+    if (last_slice.common_extrusions.empty()) {
+        return {};
+    }
+    const IslandExtrusions last_island{last_slice.common_extrusions.back()};
+    if (infill_first) {
+        if (!last_island.perimeters.empty()) {
+            return get_last_position(last_island.perimeters);
+        }
+        return get_last_position(last_island.infill_ranges);
+    } else {
+        if (!last_island.infill_ranges.empty()) {
+            return get_last_position(last_island.infill_ranges);
+        }
+        return get_last_position(last_island.perimeters);
+    }
 }
 
 std::vector<IslandExtrusions> extract_island_extrusions(
@@ -3029,24 +2710,26 @@ unsigned translate_support_extruder(
 ExtrusionEntityReferences get_support_extrusions(
     const unsigned int extruder_id,
     const GCode::ObjectLayerToPrint &layer_to_print,
-    const LayerTools &layer_tools,
     unsigned int support_extruder,
-    unsigned int interface_extruder,
-    const ConfigOptionBools &is_soluable
+    unsigned int interface_extruder
 ) {
-    if (const SupportLayer &support_layer = *layer_to_print.support_layer; ! support_layer.support_fills.entities.empty()) {
-        ExtrusionRole   role               = support_layer.support_fills.role();
-        bool            has_support        = role.is_mixed() || role.is_support_base();
-        bool            has_interface      = role.is_mixed() || role.is_support_interface();
+    if (const SupportLayer &support_layer = *layer_to_print.support_layer;
+        !support_layer.support_fills.entities.empty()) {
+        ExtrusionRole role = support_layer.support_fills.role();
+        bool has_support = role.is_mixed() || role.is_support_base();
+        bool has_interface = role.is_mixed() || role.is_support_interface();
 
-        bool extrude_support   = has_support && support_extruder == extruder_id;
+        bool extrude_support = has_support && support_extruder == extruder_id;
         bool extrude_interface = has_interface && interface_extruder == extruder_id;
 
         if (extrude_support || extrude_interface) {
-            ExtrusionEntitiesPtr        entities_cache;
-            const ExtrusionEntitiesPtr &entities = extrude_support && extrude_interface ? support_layer.support_fills.entities : entities_cache;
-            if (! extrude_support || ! extrude_interface) {
-                auto role = extrude_support ? ExtrusionRole::SupportMaterial : ExtrusionRole::SupportMaterialInterface;
+            ExtrusionEntitiesPtr entities_cache;
+            const ExtrusionEntitiesPtr &entities = extrude_support && extrude_interface ?
+                support_layer.support_fills.entities :
+                entities_cache;
+            if (!extrude_support || !extrude_interface) {
+                auto role = extrude_support ? ExtrusionRole::SupportMaterial :
+                                              ExtrusionRole::SupportMaterialInterface;
                 entities_cache.reserve(support_layer.support_fills.entities.size());
                 for (ExtrusionEntity *ee : support_layer.support_fills.entities)
                     if (ee->role() == role)
@@ -3058,58 +2741,420 @@ ExtrusionEntityReferences get_support_extrusions(
     return {};
 }
 
-LayerExtrusions get_layer_extrusions(
-    const Print &print,
-    const unsigned int extruder_id,
-    const GCode::ObjectLayerToPrint &layer_to_print,
-    const LayerTools &layer_tools,
-    const GCode::SmoothPathCache &smooth_path_cache,
-    const Seams::Placer &seam_placer,
-    const bool print_wipe_extrusions,
-    unsigned int support_extruder,
-    unsigned int interface_extruder,
-    const ConfigOptionBools &is_soluable,
-    const std::size_t print_instance_id,
-    std::optional<Point> previous_position,
-    const bool spiral_vase
-) {
-    LayerExtrusions result;
-    if (! print_wipe_extrusions && layer_to_print.support_layer != nullptr) {
-        result.support_extrusions = get_support_extrusions(
-            extruder_id,
-            layer_to_print,
-            layer_tools,
-            support_extruder,
-            interface_extruder,
-            is_soluable
-        );
-        previous_position = get_last_position(result.support_extrusions);
+// In sequential mode, process_layer is called once per each object and its copy,
+// therefore layers will contain a single entry and single_object_instance_idx will point to the copy of the object.
+// In non-sequential mode, process_layer is called per each print_z height with all object and support layers accumulated.
+// For multi-material prints, this routine minimizes extruder switches by gathering extruder specific extrusion paths
+// and performing the extruder specific extrusions together.
+LayerResult GCodeGenerator::process_layer(
+    const Print                    			&print,
+    // Set of object & print layers of the same PrintObject and with the same print_z.
+    const ObjectsLayerToPrint           	&layers,
+    const LayerTools        		        &layer_tools,
+    const GCode::SmoothPathCaches           &smooth_path_caches,
+    const bool                               last_layer,
+    // Pairs of PrintObject index and its instance index.
+    const std::vector<const PrintInstance*> *ordering,
+    // If set to size_t(-1), then print all copies of all objects.
+    // Otherwise print a single copy of a single object.
+    const size_t                     		 single_object_instance_idx)
+{
+    assert(! layers.empty());
+    // Either printing all copies of all objects, or just a single copy of a single object.
+    assert(single_object_instance_idx == size_t(-1) || layers.size() == 1);
+
+    // First object, support and raft layer, if available.
+    const Layer         *object_layer  = nullptr;
+    const SupportLayer  *support_layer = nullptr;
+    const SupportLayer  *raft_layer    = nullptr;
+    for (const ObjectLayerToPrint &l : layers) {
+        if (l.object_layer && ! object_layer)
+            object_layer = l.object_layer;
+        if (l.support_layer) {
+            if (! support_layer)
+                support_layer = l.support_layer;
+            if (! raft_layer && support_layer->id() < support_layer->object()->slicing_parameters().raft_layers())
+                raft_layer = support_layer;
+        }
+    }
+    const Layer  &layer = (object_layer != nullptr) ? *object_layer : *support_layer;
+    LayerResult   result { {}, layer.id(), false, last_layer, false};
+    if (layer_tools.extruders.empty())
+        // Nothing to extrude.
+        return result;
+
+    // Extract 1st object_layer and support_layer of this set of layers with an equal print_z.
+    coordf_t             print_z       = layer.print_z + m_config.z_offset.value;
+    bool                 first_layer   = layer.id() == 0;
+    unsigned int         first_extruder_id = layer_tools.extruders.front();
+
+    const std::vector<InstanceToPrint> instances_to_print{sort_print_object_instances(layers, ordering, single_object_instance_idx)};
+    const PrintInstance* first_instance{instances_to_print.empty() ? nullptr : &instances_to_print.front().print_object.instances()[instances_to_print.front().instance_id]};
+    m_label_objects.update(first_instance);
+
+
+    // Initialize config with the 1st object to be printed at this layer.
+    m_config.apply(layer.object()->config(), true);
+
+    // Check whether it is possible to apply the spiral vase logic for this layer.
+    // Just a reminder: A spiral vase mode is allowed for a single object, single material print only.
+    m_enable_loop_clipping = true;
+    if (m_spiral_vase && layers.size() == 1 && support_layer == nullptr) {
+        bool enable = (layer.id() > 0 || !print.has_brim()) && (layer.id() >= (size_t)print.config().skirt_height.value && ! print.has_infinite_skirt());
+        if (enable) {
+            for (const LayerRegion *layer_region : layer.regions())
+                if (size_t(layer_region->region().config().bottom_solid_layers.value) > layer.id() ||
+                    layer_region->perimeters().items_count() > 1u ||
+                    layer_region->fills().items_count() > 0) {
+                    enable = false;
+                    break;
+                }
+        }
+        result.spiral_vase_enable = enable;
+        // If we're going to apply spiralvase to this layer, disable loop clipping.
+        m_enable_loop_clipping = !enable;
     }
 
-    if (const Layer *layer = layer_to_print.object_layer; layer) {
-        const auto predicate = [&](const ExtrusionEntityCollection &entity_collection, const PrintRegion &region){
-            if (entity_collection.entities.empty()) {
-                return false;
+
+    std::string gcode;
+    assert(is_decimal_separator_point()); // for the sprintfs
+
+    // add tag for processor
+    gcode += ";" + GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Layer_Change) + "\n";
+    // export layer z
+    gcode += std::string(";Z:") + float_to_string_decimal_point(print_z) + "\n";
+
+    // export layer height
+    float height = first_layer ? static_cast<float>(print_z) : static_cast<float>(print_z) - m_last_layer_z;
+    gcode += std::string(";") + GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Height)
+        + float_to_string_decimal_point(height) + "\n";
+
+    // update caches
+    const coordf_t previous_layer_z{m_last_layer_z};
+    m_last_layer_z = static_cast<float>(print_z);
+    m_max_layer_z  = std::max(m_max_layer_z, m_last_layer_z);
+    m_last_height = height;
+    m_current_layer_first_position = std::nullopt;
+    m_already_unretracted = false;
+
+    // Set new layer - this will change Z and force a retraction if retract_layer_change is enabled.
+    if (!first_layer && ! print.config().before_layer_gcode.value.empty()) {
+        DynamicConfig config;
+        config.set_key_value("layer_num",   new ConfigOptionInt(m_layer_index + 1));
+        config.set_key_value("layer_z",     new ConfigOptionFloat(print_z));
+        config.set_key_value("max_layer_z", new ConfigOptionFloat(m_max_layer_z));
+        gcode += this->placeholder_parser_process("before_layer_gcode",
+            print.config().before_layer_gcode.value, m_writer.extruder()->id(), &config)
+            + "\n";
+    }
+    gcode += this->change_layer(previous_layer_z, print_z, result.spiral_vase_enable); // this will increase m_layer_index
+    m_layer = &layer;
+    if (this->line_distancer_is_required(layer_tools.extruders) && this->m_layer != nullptr && this->m_layer->lower_layer != nullptr)
+        m_travel_obstacle_tracker.init_layer(layer, layers);
+
+    m_object_layer_over_raft = false;
+    if (!first_layer && ! print.config().layer_gcode.value.empty()) {
+        DynamicConfig config;
+        config.set_key_value("layer_num", new ConfigOptionInt(m_layer_index));
+        config.set_key_value("layer_z",   new ConfigOptionFloat(print_z));
+        config.set_key_value("max_layer_z", new ConfigOptionFloat(m_max_layer_z));
+        gcode += this->placeholder_parser_process("layer_gcode",
+            print.config().layer_gcode.value, m_writer.extruder()->id(), &config)
+            + "\n";
+    }
+
+    if (! first_layer && ! m_second_layer_things_done) {
+        // Transition from 1st to 2nd layer. Adjust nozzle temperatures as prescribed by the nozzle dependent
+        // first_layer_temperature vs. temperature settings.
+        for (const Extruder &extruder : m_writer.extruders()) {
+            if (print.config().single_extruder_multi_material.value || m_ooze_prevention.enable) {
+                // In single extruder multi material mode, set the temperature for the current extruder only.
+                // The same applies when ooze prevention is enabled.
+                if (extruder.id() != m_writer.extruder()->id())
+                    continue;
             }
-            if (GCode::is_overriden(entity_collection, layer_tools, print_instance_id) != print_wipe_extrusions) {
-                return false;
+            int temperature = print.config().temperature.get_at(extruder.id());
+            if (temperature > 0 && (temperature != print.config().first_layer_temperature.get_at(extruder.id())))
+                gcode += m_writer.set_temperature(temperature, false, extruder.id());
+        }
+        gcode += m_writer.set_bed_temperature(print.config().bed_temperature.get_at(first_extruder_id));
+        // Mark the temperature transition from 1st to 2nd layer to be finished.
+        m_second_layer_things_done = true;
+    }
+
+    // Map from extruder ID to <begin, end> index of skirt loops to be extruded with that extruder.
+    std::map<unsigned int, std::pair<size_t, size_t>> skirt_loops_per_extruder;
+
+    // Extrude skirt at the print_z of the raft layers and normal object layers
+    // not at the print_z of the interlaced support material layers.
+    skirt_loops_per_extruder = first_layer ?
+        Skirt::make_skirt_loops_per_extruder_1st_layer(print, layer_tools, m_skirt_done) :
+        Skirt::make_skirt_loops_per_extruder_other_layers(print, layer_tools, m_skirt_done);
+
+    if (this->config().avoid_crossing_curled_overhangs) {
+        m_avoid_crossing_curled_overhangs.clear();
+        for (const ObjectLayerToPrint &layer_to_print : layers) {
+            if (layer_to_print.object() == nullptr)
+                continue;
+            for (const auto &instance : layer_to_print.object()->instances()) {
+                m_avoid_crossing_curled_overhangs.add_obstacles(layer_to_print.object_layer, instance.shift);
+                m_avoid_crossing_curled_overhangs.add_obstacles(layer_to_print.support_layer, instance.shift);
+            }
+        }
+    }
+
+    const bool has_custom_gcode_to_emit     = single_object_instance_idx == size_t(-1) && layer_tools.custom_gcode != nullptr;
+    const int  extruder_id_for_custom_gcode = int(layer_tools.extruder_needed_for_color_changer) - 1;
+
+    if (has_custom_gcode_to_emit && extruder_id_for_custom_gcode == -1) {
+        // Normal (non-sequential) print with some custom code without picking a specific extruder before it.
+        // If we don't need to pick a specific extruder before the color change, we can just emit a custom g-code.
+        // Otherwise, we will emit the g-code after picking the specific extruder.
+
+        std::string custom_gcode = ProcessLayer::emit_custom_gcode_per_print_z(*this, *layer_tools.custom_gcode, m_writer.extruder()->id(), first_extruder_id, print.config());
+        if (layer_tools.custom_gcode->type == CustomGCode::ColorChange) {
+            // We have a color change to do on this layer, but we want to do it immediately before the first extrusion instead of now, in order to fix GH #2672.
+            m_pending_pre_extrusion_gcode = custom_gcode;
+        } else {
+            gcode += custom_gcode;
+        }
+    }
+
+    // Extrude the skirt, brim, support, perimeters, infill ordered by the extruders.
+    for (unsigned int extruder_id : layer_tools.extruders)
+    {
+        gcode += (layer_tools.has_wipe_tower && m_wipe_tower) ?
+            m_wipe_tower->tool_change(*this, extruder_id, extruder_id == layer_tools.extruders.back()) :
+            this->set_extruder(extruder_id, print_z);
+
+        // let analyzer tag generator aware of a role type change
+        if (layer_tools.has_wipe_tower && m_wipe_tower)
+            m_last_processor_extrusion_role = GCodeExtrusionRole::WipeTower;
+
+        if (has_custom_gcode_to_emit && extruder_id_for_custom_gcode == int(extruder_id)) {
+            assert(m_writer.extruder()->id() == extruder_id_for_custom_gcode);
+            assert(m_pending_pre_extrusion_gcode.empty());
+            // Now we have picked the right extruder, so we can emit the custom g-code.
+            gcode += ProcessLayer::emit_custom_gcode_per_print_z(*this, *layer_tools.custom_gcode, m_writer.extruder()->id(), first_extruder_id, print.config());
+        }
+
+        std::vector<std::pair<std::size_t, const ExtrusionEntity *>> skirt;
+        if (auto loops_it = skirt_loops_per_extruder.find(extruder_id); loops_it != skirt_loops_per_extruder.end()) {
+            const std::pair<size_t, size_t> loops = loops_it->second;
+            for (std::size_t i = loops.first; i < loops.second; ++i) {
+                skirt.emplace_back(i, print.skirt().entities[i]);
+            }
+        }
+
+        if (!skirt.empty()) {
+            if (!this->m_config.complete_objects.value) {
+                gcode += this->m_label_objects.maybe_stop_instance();
+            }
+            this->m_label_objects.update(nullptr);
+
+            this->set_origin(0., 0.);
+            m_avoid_crossing_perimeters.use_external_mp();
+            Flow layer_skirt_flow = print.skirt_flow().with_height(float(m_skirt_done.back() - (m_skirt_done.size() == 1 ? 0. : m_skirt_done[m_skirt_done.size() - 2])));
+            double mm3_per_mm = layer_skirt_flow.mm3_per_mm();
+            for (const auto&[_, loop_entity] : skirt) {
+                // Adjust flow according to this layer's layer height.
+                //FIXME using the support_material_speed of the 1st object printed.
+                gcode += this->extrude_skirt(dynamic_cast<const ExtrusionLoop&>(*loop_entity),
+                    // Override of skirt extrusion parameters. extrude_skirt() will fill in the extrusion width.
+                    ExtrusionFlow{ mm3_per_mm, 0., layer_skirt_flow.height() },
+                    smooth_path_caches.global(), "skirt"sv, m_config.support_material_speed.value);
+            }
+            m_avoid_crossing_perimeters.use_external_mp(false);
+            // Allow a straight travel move to the first object point if this is the first layer (but don't in next layers).
+            if (first_layer && skirt.front().first == 0)
+                m_avoid_crossing_perimeters.disable_once();
+        }
+
+        // Extrude brim with the extruder of the 1st region.
+        if (! m_brim_done) {
+
+            if (!this->m_config.complete_objects.value) {
+                gcode += this->m_label_objects.maybe_stop_instance();
+            }
+            this->m_label_objects.update(nullptr);
+
+            this->set_origin(0., 0.);
+            m_avoid_crossing_perimeters.use_external_mp();
+            for (const ExtrusionEntity *ee : print.brim().entities)
+                gcode += this->extrude_entity({ *ee, false }, smooth_path_caches.global(), "brim"sv, m_config.support_material_speed.value);
+            m_brim_done = true;
+            m_avoid_crossing_perimeters.use_external_mp(false);
+            // Allow a straight travel move to the first object point.
+            m_avoid_crossing_perimeters.disable_once();
+        }
+        this->m_label_objects.update(first_instance);
+
+        std::optional<Point> previous_position{this->last_position};
+
+        // We are almost ready to print. However, we must go through all the objects twice to print the the overridden extrusions first (infill/perimeter wiping feature):
+        bool is_anything_overridden = layer_tools.wiping_extrusions().is_anything_overridden();
+        if (is_anything_overridden) {
+            // Extrude wipes.
+            size_t gcode_size_old = gcode.size();
+            for (const InstanceToPrint &instance : instances_to_print) {
+                std::vector<SliceExtrusions> slices_extrusions;
+                if (const Layer *layer = layers[instance.object_layer_to_print_id].object_layer; layer) {
+                    const auto predicate = [&](const ExtrusionEntityCollection &entity_collection, const PrintRegion &region){
+                        if (entity_collection.entities.empty()) {
+                            return false;
+                        }
+                        if (!GCode::is_overriden(entity_collection, layer_tools, instance.instance_id)) {
+                            return false;
+                        }
+
+                        if (GCode::get_extruder_id(entity_collection, layer_tools, region, instance.instance_id) != extruder_id) {
+                            return false;
+                        }
+                        return true;
+                    };
+
+                    slices_extrusions = get_slices_extrusions(
+                        print,
+                        layer,
+                        this->m_seam_placer,
+                        previous_position,
+                        m_config.spiral_vase,
+                        predicate
+                    );
+                    previous_position = get_last_position(slices_extrusions, print.config().infill_first);
+                }
+
+                this->process_layer_single_object(
+                    gcode, extruder_id, instance,
+                    layers[instance.object_layer_to_print_id], layer_tools, smooth_path_caches.layer_local(),
+                    is_anything_overridden, true /* print_wipe_extrusions */, {}, slices_extrusions);
+            }
+            if (gcode_size_old < gcode.size()) {
+                gcode+="; PURGING FINISHED\n";
+            }
+        }
+        // Extrude normal extrusions.
+        for (const InstanceToPrint &instance : instances_to_print) {
+            ExtrusionEntityReferences support_extrusions;
+
+            if (layers[instance.object_layer_to_print_id].support_layer != nullptr) {
+                support_extrusions = get_support_extrusions(
+                    extruder_id,
+                    layers[instance.object_layer_to_print_id],
+                    translate_support_extruder(instance.print_object.config().support_material_extruder.value, layer_tools, print.config().filament_soluble),
+                    translate_support_extruder(instance.print_object.config().support_material_interface_extruder.value, layer_tools, print.config().filament_soluble)
+                );
+                previous_position = get_last_position(support_extrusions);
             }
 
-            if (GCode::get_extruder_id(entity_collection, layer_tools, region, print_instance_id) != extruder_id) {
-                return false;
+            std::vector<SliceExtrusions> slices_extrusions;
+            if (const Layer *layer = layers[instance.object_layer_to_print_id].object_layer; layer) {
+                const auto predicate = [&](const ExtrusionEntityCollection &entity_collection, const PrintRegion &region){
+                    if (entity_collection.entities.empty()) {
+                        return false;
+                    }
+                    if (GCode::is_overriden(entity_collection, layer_tools, instance.instance_id)) {
+                        return false;
+                    }
+
+                    if (GCode::get_extruder_id(entity_collection, layer_tools, region, instance.instance_id) != extruder_id) {
+                        return false;
+                    }
+                    return true;
+                };
+
+                slices_extrusions = get_slices_extrusions(
+                    print,
+                    layer,
+                    this->m_seam_placer,
+                    previous_position,
+                    m_config.spiral_vase,
+                    predicate
+                );
+                previous_position = get_last_position(slices_extrusions, print.config().infill_first);
             }
+
+            this->process_layer_single_object(
+                gcode, extruder_id, instance,
+                layers[instance.object_layer_to_print_id], layer_tools, smooth_path_caches.layer_local(),
+                is_anything_overridden, false /* print_wipe_extrusions */, support_extrusions, slices_extrusions);
+        }
+    }
+
+
+    // During layer change the starting position of next layer is now known.
+    // The solution is thus to emplace a temporary tag to the gcode, cache the postion and
+    // replace the tag later. The tag is Layer_Change_Travel, the cached position is
+    // m_current_layer_first_position and it is replaced here.
+    const std::string tag = GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Layer_Change_Travel);
+    std::string layer_change_gcode;
+    const bool do_ramping_layer_change = (
+        m_previous_layer_last_position
+        && m_current_layer_first_position
+        && m_layer_change_extruder_id
+        && !result.spiral_vase_enable
+        && print_z > previous_layer_z
+        && this->m_config.travel_ramping_lift.get_at(*m_layer_change_extruder_id)
+        && this->m_config.travel_slope.get_at(*m_layer_change_extruder_id) > 0
+        && this->m_config.travel_slope.get_at(*m_layer_change_extruder_id) < 90
+    );
+    if (first_layer) {
+        layer_change_gcode = ""; // Explicit for readability.
+    } else if (do_ramping_layer_change) {
+        const Vec3d &from{*m_previous_layer_last_position};
+        const Vec3d &to{*m_current_layer_first_position};
+        layer_change_gcode = this->get_ramping_layer_change_gcode(from, to, *m_layer_change_extruder_id);
+    } else {
+        layer_change_gcode = this->writer().get_travel_to_z_gcode(print_z, "simple layer change");
+    }
+
+    const auto keep_retraciton{[&](){
+        if (!do_ramping_layer_change) {
             return true;
-        };
+        }
+        const double travel_length{(*m_current_layer_first_position - *m_previous_layer_last_position_before_wipe).norm()};
+        if (this->m_config.retract_before_travel.get_at(*m_layer_change_extruder_id) < travel_length) {
+            // Travel is long, keep retraction.
+            return true;
+        }
+        return false;
+    }};
 
-        result.slices_extrusions = get_slices_extrusions(
-            print,
-            layer,
-            seam_placer,
-            previous_position,
-            spiral_vase,
-            predicate
-        );
+    bool removed_retraction{false};
+    if (this->m_config.travel_ramping_lift.get_at(*m_layer_change_extruder_id) && !result.spiral_vase_enable) {
+        const std::string retraction_start_tag = GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Layer_Change_Retraction_Start);
+        const std::string retraction_end_tag = GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Layer_Change_Retraction_End);
+
+        if (keep_retraciton()) {
+            boost::algorithm::replace_first(gcode, retraction_start_tag, "");
+            boost::algorithm::replace_first(gcode, retraction_end_tag, "");
+        } else {
+            const std::size_t start{gcode.find(retraction_start_tag)};
+            const std::size_t end_tag_start{gcode.find(retraction_end_tag)};
+            const std::size_t end{end_tag_start + retraction_end_tag.size()};
+            gcode.replace(start, end - start, "");
+
+            layer_change_gcode = this->get_ramping_layer_change_gcode(*m_previous_layer_last_position_before_wipe, *m_current_layer_first_position, *m_layer_change_extruder_id);
+
+            removed_retraction = true;
+        }
     }
+
+    if (removed_retraction) {
+        const std::size_t start{gcode.find("FIRST_UNRETRACT")};
+        const std::size_t end{gcode.find("\n", start)};
+        gcode.replace(start, end - start, "");
+    } else {
+        boost::algorithm::replace_first(gcode,"FIRST_UNRETRACT", "");
+    }
+
+    boost::algorithm::replace_first(gcode, tag, layer_change_gcode);
+
+    BOOST_LOG_TRIVIAL(trace) << "Exported layer " << layer.id() << " print_z " << print_z <<
+    log_memory_info();
+
+    result.gcode = std::move(gcode);
+    result.cooling_buffer_flush = object_layer || raft_layer || last_layer;
     return result;
 }
 
@@ -3129,28 +3174,13 @@ void GCodeGenerator::process_layer_single_object(
     // Is any extrusion possibly marked as wiping extrusion?
     const bool                is_anything_overridden,
     // Round 1 (wiping into object or infill) or round 2 (normal extrusions).
-    const bool                print_wipe_extrusions)
+    const bool                print_wipe_extrusions,
+    const ExtrusionEntityReferences &support_extrusions,
+    const std::vector<SliceExtrusions> &slices_extrusions
+)
 {
-    std::optional<Point> previous_position{this->last_position};
-
     const PrintObject &print_object = print_instance.print_object;
     const Print       &print        = *print_object.print();
-
-    const LayerExtrusions layer_extrusions{get_layer_extrusions(
-        print,
-        extruder_id,
-        layer_to_print,
-        layer_tools,
-        smooth_path_cache,
-        this->m_seam_placer,
-        print_wipe_extrusions,
-        translate_support_extruder(print_object.config().support_material_extruder.value, layer_tools, print.config().filament_soluble),
-        translate_support_extruder(print_object.config().support_material_interface_extruder.value, layer_tools, print.config().filament_soluble),
-        print.config().filament_soluble,
-        print_instance.instance_id,
-        previous_position,
-        m_config.spiral_vase
-    )};
 
     bool     first     = true;
     // Delay layer initialization as many layers may not print with all extruders.
@@ -3175,11 +3205,11 @@ void GCodeGenerator::process_layer_single_object(
         }
     };
 
-    if (!layer_extrusions.support_extrusions.empty()) {
+    if (!support_extrusions.empty()) {
         init_layer_delayed();
         m_layer = layer_to_print.support_layer;
         m_object_layer_over_raft = false;
-        gcode += this->extrude_support(layer_extrusions.support_extrusions, smooth_path_cache);
+        gcode += this->extrude_support(support_extrusions, smooth_path_cache);
     }
 
     m_layer = layer_to_print.layer();
@@ -3187,7 +3217,7 @@ void GCodeGenerator::process_layer_single_object(
     m_object_layer_over_raft = layer_to_print.object_layer && layer_to_print.object_layer->id() > 0 &&
         print_object.slicing_parameters().raft_layers() == layer_to_print.object_layer->id();
 
-    for (const SliceExtrusions &slice_extrusions : layer_extrusions.slices_extrusions) {
+    for (const SliceExtrusions &slice_extrusions : slices_extrusions) {
         for (const IslandExtrusions &island_extrusions : slice_extrusions.common_extrusions) {
             if (print.config().infill_first) {
                 if (!island_extrusions.infill_ranges.empty()) {
