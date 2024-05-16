@@ -90,7 +90,7 @@ bool PrusaConnectNew::init_upload(PrintHostUpload upload_data, std::string& out)
     const std::string name = get_name();
     const std::string file_size = std::to_string(size);
     const std::string access_token = GUI::wxGetApp().plater()->get_user_account()->get_access_token();
-    const std::string upload_path = upload_data.upload_path.generic_string();
+    //const std::string upload_path = upload_data.upload_path.generic_string();
     const std::string upload_filename = upload_data.upload_path.filename().string();
     std::string url = GUI::format("%1%/app/users/teams/%2%/uploads", get_host(), m_team_id);
     const std::string request_body_json = GUI::format(
@@ -103,7 +103,7 @@ bool PrusaConnectNew::init_upload(PrintHostUpload upload_data, std::string& out)
         "}"
         , upload_filename
         , file_size
-        , upload_data.storage + "/" + upload_path
+        , upload_data.upload_path.string()
         , m_uuid
     );
 

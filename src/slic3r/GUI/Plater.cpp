@@ -6092,7 +6092,7 @@ void Plater::connect_gcode()
     upload_job.upload_data.set_ready = set_ready;
     upload_job.upload_data.position = position;
     upload_job.upload_data.wait_until = wait_until;
-    upload_job.upload_data.upload_path = filename;
+    upload_job.upload_data.upload_path = boost::filesystem::path(filename);
 
     p->export_gcode(fs::path(), false, std::move(upload_job));
 
