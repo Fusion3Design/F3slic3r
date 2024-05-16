@@ -157,8 +157,6 @@ bool PrusaConnectNew::upload(PrintHostUpload upload_data, ProgressFn progress_fn
     const std::string name = get_name();
     const std::string access_token = GUI::wxGetApp().plater()->get_user_account()->get_access_token();
     const std::string escaped_upload_path = upload_data.storage + "/" + escape_path_by_element(upload_data.upload_path.string());
-    const std::string to_print = upload_data.post_action == PrintHostPostUploadAction::StartPrint ? "true" : "false";
-    const std::string to_queue = upload_data.post_action == PrintHostPostUploadAction::QueuePrint ? "true" : "false";
     const std::string set_ready = upload_data.set_ready.empty() ? "" : "&set_ready=" + upload_data.set_ready;
     const std::string position = upload_data.position.empty() ? "" : "&position=" + upload_data.position;
     const std::string wait_until = upload_data.wait_until.empty() ? "" : "&wait_until=" + upload_data.wait_until;
@@ -168,12 +166,10 @@ bool PrusaConnectNew::upload(PrintHostUpload upload_data, ProgressFn progress_fn
         "&force=true"
         "&printer_uuid=%4%"
         "&path=%5%"
-        "&to_print=%6%"
-        "&to_queue=%7%"
+        "%6%"
+        "%7%"
         "%8%"
-        "%9%"
-        "%10%"
-        , get_host(), m_team_id, upload_id, m_uuid, escaped_upload_path, to_print, to_queue, set_ready, position, wait_until);
+        , get_host(), m_team_id, upload_id, m_uuid, escaped_upload_path, set_ready, position, wait_until);
     bool res = true;
 
     BOOST_LOG_TRIVIAL(info) << boost::format("%1%: Uploading file %2% at %3%, filename: %4%, path: %5%, print: %6%")
