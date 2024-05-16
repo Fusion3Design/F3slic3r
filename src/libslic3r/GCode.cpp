@@ -3032,6 +3032,8 @@ LayerResult GCodeGenerator::process_layer(
             gcode += ProcessLayer::emit_custom_gcode_per_print_z(*this, *layer_tools.custom_gcode, m_writer.extruder()->id(), first_extruder_id, print.config());
         }
 
+        std::optional<Point> previous_position{this->last_position};
+
         std::vector<std::pair<std::size_t, const ExtrusionEntity *>> skirt;
         if (auto loops_it = skirt_loops_per_extruder.find(extruder_id); loops_it != skirt_loops_per_extruder.end()) {
             const std::pair<size_t, size_t> loops = loops_it->second;
@@ -3039,6 +3041,25 @@ LayerResult GCodeGenerator::process_layer(
                 skirt.emplace_back(i, print.skirt().entities[i]);
             }
         }
+        ExtrusionEntitiesPtr brim;
+        if (!m_brim_done) {
+            brim = print.brim().entities;
+            previous_position = get_last_position(brim);
+        }
+
+        bool is_anything_overridden = layer_tools.wiping_extrusions().is_anything_overridden();
+        std::vector<std::vector<SliceExtrusions>> overriden_extrusions;
+        if (is_anything_overridden) {
+            overriden_extrusions = get_overriden_extrusions(
+                print, layers, layer_tools, instances_to_print, this->m_seam_placer,
+                this->m_config.spiral_vase, extruder_id, previous_position
+            );
+        }
+
+        const std::vector<NormalExtrusions> normal_extrusions{get_normal_extrusions(
+            print, layers, layer_tools, instances_to_print, this->m_seam_placer,
+            this->m_config.spiral_vase, extruder_id, previous_position
+        )};
 
         if (!skirt.empty()) {
             if (!this->m_config.complete_objects.value) {
@@ -3064,8 +3085,9 @@ LayerResult GCodeGenerator::process_layer(
                 m_avoid_crossing_perimeters.disable_once();
         }
 
+
         // Extrude brim with the extruder of the 1st region.
-        if (! m_brim_done) {
+        if (!brim.empty()) {
 
             if (!this->m_config.complete_objects.value) {
                 gcode += this->m_label_objects.maybe_stop_instance();
@@ -3074,30 +3096,15 @@ LayerResult GCodeGenerator::process_layer(
 
             this->set_origin(0., 0.);
             m_avoid_crossing_perimeters.use_external_mp();
-            for (const ExtrusionEntity *ee : print.brim().entities)
+            for (const ExtrusionEntity *ee : brim) {
                 gcode += this->extrude_entity({ *ee, false }, smooth_path_caches.global(), "brim"sv, m_config.support_material_speed.value);
+            }
             m_brim_done = true;
             m_avoid_crossing_perimeters.use_external_mp(false);
             // Allow a straight travel move to the first object point.
             m_avoid_crossing_perimeters.disable_once();
         }
         this->m_label_objects.update(first_instance);
-
-        std::optional<Point> previous_position{this->last_position};
-
-        bool is_anything_overridden = layer_tools.wiping_extrusions().is_anything_overridden();
-        std::vector<std::vector<SliceExtrusions>> overriden_extrusions;
-        if (is_anything_overridden) {
-            overriden_extrusions = get_overriden_extrusions(
-                print, layers, layer_tools, instances_to_print, this->m_seam_placer,
-                this->m_config.spiral_vase, extruder_id, previous_position
-            );
-        }
-        const std::vector<NormalExtrusions> normal_extrusions{get_normal_extrusions(
-            print, layers, layer_tools, instances_to_print, this->m_seam_placer,
-            this->m_config.spiral_vase, extruder_id, previous_position
-        )};
-
 
         // We are almost ready to print. However, we must go through all the objects twice to print the the overridden extrusions first (infill/perimeter wiping feature):
         if (!overriden_extrusions.empty()) {
