@@ -121,6 +121,18 @@ struct InfillRange {
 
 } // namespace GCode
 
+struct InstanceToPrint
+{
+    InstanceToPrint(size_t object_layer_to_print_id, const PrintObject &print_object, size_t instance_id) :
+        object_layer_to_print_id(object_layer_to_print_id), print_object(print_object), instance_id(instance_id) {}
+
+    // Index into std::vector<ObjectLayerToPrint>, which contains Object and Support layers for the current print_z, collected for a single object, or for possibly multiple objects with multiple instances.
+    const size_t             object_layer_to_print_id;
+    const PrintObject       &print_object;
+    // Instance idx of the copy of a print object.
+    const size_t             instance_id;
+};
+
 class GCodeGenerator {
 
 public:
@@ -291,18 +303,6 @@ private:
     std::string     extrude_multi_path(const ExtrusionMultiPath &multipath, bool reverse, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed = -1.);
     std::string     extrude_path(const ExtrusionPath &path, bool reverse, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed = -1.);
 
-    struct InstanceToPrint
-    {
-        InstanceToPrint(size_t object_layer_to_print_id, const PrintObject &print_object, size_t instance_id) :
-            object_layer_to_print_id(object_layer_to_print_id), print_object(print_object), instance_id(instance_id) {}
-
-        // Index into std::vector<ObjectLayerToPrint>, which contains Object and Support layers for the current print_z, collected for a single object, or for possibly multiple objects with multiple instances.
-        const size_t             object_layer_to_print_id;
-        const PrintObject       &print_object;
-        // Instance idx of the copy of a print object.
-        const size_t             instance_id;
-    };
-
     std::vector<InstanceToPrint> sort_print_object_instances(
         // Object and Support layers for the current print_z, collected for a single object, or for possibly multiple objects with multiple instances.
         const std::vector<ObjectLayerToPrint>           &layers,
@@ -334,22 +334,10 @@ private:
 
     // This function will be called for each printing extruder, possibly twice: First for wiping extrusions, second for normal extrusions.
     void process_layer_single_object(
-        // output
-        std::string              &gcode, 
-        // Index of the extruder currently active.
-        const unsigned int        extruder_id,
-        // What object and instance is going to be printed.
-        const InstanceToPrint    &print_instance,
-        // and the object & support layer of the above.
-        const ObjectLayerToPrint &layer_to_print, 
-        // Container for extruder overrides (when wiping into object or infill).
-        const LayerTools         &layer_tools,
-        // Optional smooth path interpolating extrusion polylines.
+        std::string &gcode,
+        const InstanceToPrint &print_instance,
+        const ObjectLayerToPrint &layer_to_print,
         const GCode::SmoothPathCache &smooth_path_cache,
-        // Is any extrusion possibly marked as wiping extrusion?
-        const bool                is_anything_overridden, 
-        // Round 1 (wiping into object or infill) or round 2 (normal extrusions).
-        const bool                print_wipe_extrusions,
         const ExtrusionEntityReferences &support_extrusions,
         const std::vector<SliceExtrusions> &slices_extrusions
     );
