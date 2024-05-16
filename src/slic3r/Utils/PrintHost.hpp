@@ -41,6 +41,10 @@ struct PrintHostUpload
     std::string storage;
 
     PrintHostPostUploadAction post_action { PrintHostPostUploadAction::None };
+
+    std::string set_ready;
+    std::string position;
+    std::string wait_until;
 };
 
 class PrintHost

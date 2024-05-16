@@ -6059,12 +6059,12 @@ void Plater::connect_gcode()
     std::string printer_uuid;
     std::string team_id;
     */
-    bool set_ready = true;
-    int position = -1;
-    int wait_until = 0;
-    std::string filename = "print.bgcode";
-    std::string printer_uuid = "1234-1234-1234-1234";
-    std::string team_id = "1234";
+    std::string set_ready = p->user_account->get_keyword_from_json(dialog_msg, "set_ready");
+    std::string position = p->user_account->get_keyword_from_json(dialog_msg, "position");
+    std::string wait_until = p->user_account->get_keyword_from_json(dialog_msg, "wait_until");
+    std::string filename = p->user_account->get_keyword_from_json(dialog_msg, "filename");
+    std::string printer_uuid = p->user_account->get_keyword_from_json(dialog_msg, "printer_uuid");
+    std::string team_id = p->user_account->get_keyword_from_json(dialog_msg, "team_id");
 
     PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *selected_printer_preset);
     ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnectNew));
@@ -6075,8 +6075,24 @@ void Plater::connect_gcode()
 
     PrintHostJob upload_job(physical_printer_config);
     assert(!upload_job.empty());
-
-    upload_job.upload_data.upload_path = filename;
+    /*
+    wxArrayString storage_paths;
+    wxArrayString storage_names;
+    {
+        wxBusyCursor wait;
+        try {
+            upload_job.printhost->get_storage(storage_paths, storage_names);
+        }
+        catch (const Slic3r::IOError& ex) {
+            show_error(this, ex.what(), false);
+            return;
+        }
+    }
+    */
+    upload_job.upload_data.set_ready = set_ready;
+    upload_job.upload_data.position = position;
+    upload_job.upload_data.wait_until = wait_until;
+    upload_job.upload_data.upload_path = filename + ".bgcode";
     upload_job.upload_data.post_action = PrintHostPostUploadAction::None;
 
     p->export_gcode(fs::path(), false, std::move(upload_job));
