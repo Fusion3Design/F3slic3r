@@ -2864,14 +2864,24 @@ struct SliceExtrusions {
 };
 
 struct LayerExtrusions {
-    ExtrusionEntitiesPtr support_extrusions;
+    ExtrusionEntityReferences support_extrusions;
     std::vector<SliceExtrusions> slices_extrusions;
 };
 
-std::optional<Point> get_last_position(const std::vector<GCode::InfillRange> &infill_ranges){
+std::optional<Point> get_last_position(const std::vector<GCode::InfillRange> &infill_ranges) {
     if (!infill_ranges.empty() && !infill_ranges.back().items.empty()) {
         const ExtrusionEntityReference &last_infill{infill_ranges.back().items.back()};
-        return last_infill.flipped() ? last_infill.extrusion_entity().first_point() : last_infill.extrusion_entity().last_point();
+        return last_infill.flipped() ? last_infill.extrusion_entity().first_point() :
+                                       last_infill.extrusion_entity().last_point();
+    }
+    return std::nullopt;
+}
+
+std::optional<Point> get_last_position(const ExtrusionEntityReferences &extrusions) {
+    if (!extrusions.empty()) {
+        const ExtrusionEntityReference &last_extrusion{extrusions.back()};
+        return last_extrusion.flipped() ? last_extrusion.extrusion_entity().first_point() :
+                                          last_extrusion.extrusion_entity().last_point();
     }
     return std::nullopt;
 }
@@ -2998,12 +3008,28 @@ std::vector<SliceExtrusions> get_slices_extrusions(
     return result;
 }
 
-ExtrusionEntitiesPtr get_support_extrusions(
+unsigned translate_support_extruder(
+    const int configured_extruder,
+    const LayerTools &layer_tools,
+    const ConfigOptionBools &is_soluable
+) {
+    if (configured_extruder <= 0) {
+        // Some support will be printed with "don't care" material, preferably non-soluble.
+        // Is the current extruder assigned a soluble filament?
+        auto it_nonsoluble = std::find_if(layer_tools.extruders.begin(), layer_tools.extruders.end(),
+            [&is_soluable](unsigned int extruder_id) { return ! is_soluable.get_at(extruder_id); });
+        // There should be a non-soluble extruder available.
+        assert(it_nonsoluble != layer_tools.extruders.end());
+        return it_nonsoluble == layer_tools.extruders.end() ? layer_tools.extruders.front() : *it_nonsoluble;
+    } else {
+        return configured_extruder - 1;
+    }
+}
+
+ExtrusionEntityReferences get_support_extrusions(
     const unsigned int extruder_id,
     const GCode::ObjectLayerToPrint &layer_to_print,
     const LayerTools &layer_tools,
-    const GCode::SmoothPathCache &smooth_path_cache,
-    const bool print_wipe_extrusions,
     unsigned int support_extruder,
     unsigned int interface_extruder,
     const ConfigOptionBools &is_soluable
@@ -3012,27 +3038,10 @@ ExtrusionEntitiesPtr get_support_extrusions(
         ExtrusionRole   role               = support_layer.support_fills.role();
         bool            has_support        = role.is_mixed() || role.is_support_base();
         bool            has_interface      = role.is_mixed() || role.is_support_interface();
-        // Extruder ID of the support base. -1 if "don't care".
-        // Shall the support be printed with the active extruder, preferably with non-soluble, to avoid tool changes?
-        bool            support_dontcare   = support_extruder == std::numeric_limits<unsigned int>::max();
-        // Extruder ID of the support interface. -1 if "don't care".
-        // Shall the support interface be printed with the active extruder, preferably with non-soluble, to avoid tool changes?
-        bool            interface_dontcare = interface_extruder == std::numeric_limits<unsigned int>::max();
-        if (support_dontcare || interface_dontcare) {
-            // Some support will be printed with "don't care" material, preferably non-soluble.
-            // Is the current extruder assigned a soluble filament?
-            auto it_nonsoluble = std::find_if(layer_tools.extruders.begin(), layer_tools.extruders.end(),
-                [&is_soluable](unsigned int extruder_id) { return ! is_soluable.get_at(extruder_id); });
-            // There should be a non-soluble extruder available.
-            assert(it_nonsoluble != layer_tools.extruders.end());
-            unsigned int dontcare_extruder = it_nonsoluble == layer_tools.extruders.end() ? layer_tools.extruders.front() : *it_nonsoluble;
-            if (support_dontcare)
-                support_extruder = dontcare_extruder;
-            if (interface_dontcare)
-                interface_extruder = dontcare_extruder;
-        }
+
         bool extrude_support   = has_support && support_extruder == extruder_id;
         bool extrude_interface = has_interface && interface_extruder == extruder_id;
+
         if (extrude_support || extrude_interface) {
             ExtrusionEntitiesPtr        entities_cache;
             const ExtrusionEntitiesPtr &entities = extrude_support && extrude_interface ? support_layer.support_fills.entities : entities_cache;
@@ -3043,7 +3052,7 @@ ExtrusionEntitiesPtr get_support_extrusions(
                     if (ee->role() == role)
                         entities_cache.emplace_back(ee);
             }
-            return entities;
+            return chain_extrusion_references(entities);
         }
     }
     return {};
@@ -3070,8 +3079,6 @@ LayerExtrusions get_layer_extrusions(
             extruder_id,
             layer_to_print,
             layer_tools,
-            smooth_path_cache,
-            print_wipe_extrusions,
             support_extruder,
             interface_extruder,
             is_soluable
@@ -3137,8 +3144,8 @@ void GCodeGenerator::process_layer_single_object(
         smooth_path_cache,
         this->m_seam_placer,
         print_wipe_extrusions,
-        print_object.config().support_material_extruder.value - 1,
-        print_object.config().support_material_interface_extruder.value - 1,
+        translate_support_extruder(print_object.config().support_material_extruder.value, layer_tools, print.config().filament_soluble),
+        translate_support_extruder(print_object.config().support_material_interface_extruder.value, layer_tools, print.config().filament_soluble),
         print.config().filament_soluble,
         print_instance.instance_id,
         previous_position,
@@ -3172,7 +3179,7 @@ void GCodeGenerator::process_layer_single_object(
         init_layer_delayed();
         m_layer = layer_to_print.support_layer;
         m_object_layer_over_raft = false;
-        gcode += this->extrude_support(chain_extrusion_references(layer_extrusions.support_extrusions), smooth_path_cache);
+        gcode += this->extrude_support(layer_extrusions.support_extrusions, smooth_path_cache);
     }
 
     m_layer = layer_to_print.layer();
