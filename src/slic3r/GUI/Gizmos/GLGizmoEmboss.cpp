@@ -2936,9 +2936,15 @@ void GLGizmoEmboss::draw_char_gap()
     bool exist_change = false;
     if (rev_slider(tr_char_gap, char_gap, def_char_gap, undo_tooltip,
             min_max_char_gap, units_fmt, tooltip)) {
-        char_gap_font_point = static_cast<int>(std::round(char_gap / scale));
-        if (*char_gap_font_point == 0)
+        int char_gap_font_point_new = static_cast<int>(std::round(char_gap / scale));
+        if (char_gap_font_point_new == char_gap_font_point.value_or(0))
+            // appear when emboss job throw error - e.g. no volume (no symbol font) 
+            // -> cause infinit loop call of process()
+            return; // no change 
+        else if (char_gap_font_point_new == 0)
             char_gap_font_point.reset();
+        else
+            char_gap_font_point = char_gap_font_point_new;
 
         if (m_job_cancel != nullptr) m_job_cancel->store(true);
         const std::optional<int> &volume_char_gap = m_volume->text_configuration->style.prop.char_gap;
@@ -2997,9 +3003,15 @@ void GLGizmoEmboss::draw_line_gap() {
     bool exist_change = false;
     if (rev_slider(tr_line_gap, line_gap, def_line_gap, undo_tooltip,
             min_max_line_gap, units_fmt, tooltip)) {
-        line_gap_font_point = static_cast<int>(std::round(line_gap/scale));
-        if (line_gap_font_point == 0)
+        int line_gap_font_point_new = static_cast<int>(std::round(line_gap / scale));
+        if (line_gap_font_point_new == line_gap_font_point.value_or(0))
+            // appear when emboss job throw error - e.g. no volume (no symbol font)
+            // -> cause infinit loop call of process()
+            return; // no change
+        else if (line_gap_font_point_new == 0)
             line_gap_font_point.reset();
+        else
+            line_gap_font_point = line_gap_font_point_new;
 
         if (m_job_cancel != nullptr) m_job_cancel->store(true);
         const std::optional<int> &volume_line_gap = m_volume->text_configuration->style.prop.line_gap;
@@ -3060,11 +3072,15 @@ void GLGizmoEmboss::draw_boldness(){
     bool exist_change = false;
     if (rev_slider(tr_boldness, boldness, def_boldness, undo_tooltip,
         min_max_boldness, units_fmt, tooltip)){
-
-        if (is_approx(boldness, 0.f))
+        float boldness_font_point_new = static_cast<float>(std::round(boldness / scale));
+        if (is_approx(boldness_font_point_new, boldness_font_point.value_or(0.f)))
+            // appear when emboss job throw error - e.g. no volume (no symbol font) 
+            // -> cause infinit loop call of process()
+            return; // no change         
+        else if (is_approx(boldness_font_point_new, 0.f))
             boldness_font_point.reset();
         else
-            boldness_font_point = static_cast<float>(std::round(boldness / scale));
+            boldness_font_point = boldness_font_point_new;
 
         if (m_job_cancel != nullptr) m_job_cancel->store(true);
         const std::optional<float> &volume_boldness = m_volume->text_configuration->style.prop.boldness;
