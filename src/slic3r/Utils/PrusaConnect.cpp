@@ -103,7 +103,7 @@ bool PrusaConnectNew::init_upload(PrintHostUpload upload_data, std::string& out)
         "}"
         , upload_filename
         , file_size
-        , upload_data.upload_path.string()
+        , upload_data.connect_path
         , m_uuid
     );
 

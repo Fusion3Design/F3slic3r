@@ -45,6 +45,7 @@ struct PrintHostUpload
     std::string set_ready;
     std::string position;
     std::string wait_until;
+    std::string connect_path;
 };
 
 class PrintHost

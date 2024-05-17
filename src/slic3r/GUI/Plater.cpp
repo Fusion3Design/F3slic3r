@@ -5889,7 +5889,6 @@ void Plater::connect_gcode()
     assert(p->user_account->is_logged());
     std::string  dialog_msg;
     {
-        //PrinterPickWebViewDialog* dialog = new PrinterPickWebViewDialog(this, dialog_msg);
         PrinterPickWebViewDialog dialog(this, dialog_msg);
         if (dialog.ShowModal() != wxID_OK) {
             return;
@@ -5900,171 +5899,24 @@ void Plater::connect_gcode()
         return;
     }
     BOOST_LOG_TRIVIAL(debug) << "Message from Printer pick webview: " << dialog_msg;
-    /*
-    PresetBundle* preset_bundle = wxGetApp().preset_bundle;
-    // Connect data
-    std::vector<std::string> compatible_printers;
-    p->user_account->fill_supported_printer_models_from_json(dialog_msg, compatible_printers);
-    std::string connect_nozzle = p->user_account->get_nozzle_from_json(dialog_msg);
-
-    std::vector<std::string> connect_materials;
-    p->user_account->fill_material_from_json(dialog_msg, connect_materials);
-
-    std::vector<const Preset*> compatible_printer_presets;
-    for (const std::string& cp : compatible_printers) {
-        const Preset* found_preset = preset_bundle->printers.find_system_preset_by_model_and_variant(cp, connect_nozzle);
-        if (found_preset) {
-            compatible_printer_presets.emplace_back(found_preset);
-        }
-    }
-    if (compatible_printer_presets.empty()) {
-        show_error(this, _L("No compatible printer presets found."));
-        return;
-    }
-    // Selected profiles
-    const Preset* selected_printer_preset = &preset_bundle->printers.get_selected_preset();
-    const std::string selected_printer_model_serialized = selected_printer_preset->config.option("printer_model")->serialize();
-    
-    bool selected_filament_ok = true;
-    if (Preset::printer_technology(selected_printer_preset->config) == ptFFF) {
-        size_t extruder_count = preset_bundle->extruders_filaments.size();
-        for (size_t i = 0; i < extruder_count; i++) {
-            if (connect_materials.size() <= i) {
-                selected_filament_ok = false;
-                break;
-            }
-            const Preset* selected_filament_preset = preset_bundle->extruders_filaments[i].get_selected_preset();
-            if (selected_filament_preset && selected_filament_preset->config.has("filament_type")
-                && selected_filament_preset->config.option("filament_type")->serialize() != connect_materials[i])
-            {
-                selected_filament_ok = false;
-                break;
-            }
-        }
-    }
-    
-    
-    bool is_first = compatible_printer_presets.front()->name == selected_printer_preset->name;
-    bool found = false;
-    for (const Preset* connect_preset : compatible_printer_presets) {
-        if (!connect_preset) {
-            continue;
-        }
-        if (selected_printer_preset->name == connect_preset->name) {
-            found = true;
-            break;
-        }
-    }
-    // Dialog to select action
-    if (!found) {
-        wxString line1 = _L("The printer you've selected for upload is not compatible with profiles selected for slicing.");
-        wxString line2 = GUI::format_wxstr(_L("PrusaSlicer Profile:\n%1%"), selected_printer_preset->name);
-        wxString line3 = _L("Known profiles compatible with printer selected for upload:");
-        wxString printers_line;
-        for (const Preset* connect_preset : compatible_printer_presets) {
-            if (!connect_preset) {
-                continue;
-            }
-            printers_line += GUI::format_wxstr(_L("\n%1%"), connect_preset->name);
-        }
-        wxString line4 = _L("Do you still wish to upload?");
-        wxString message = GUI::format_wxstr("%1%\n\n%2%\n\n%3%%4%\n\n%5%", line1, line2, line3, printers_line,line4);
-        MessageDialog msg_dialog(this, message, _L("Do you wish to upload?"), wxYES_NO);
-        auto modal_res = msg_dialog.ShowModal();
-        if (modal_res != wxID_YES) {
-            return;
-        }
-    } else if (!is_first) {
-        wxString line1 = _L("The printer you've selected for upload might not be compatible with profiles selected for slicing.");
-        wxString line2 = GUI::format_wxstr(_L("PrusaSlicer Profile:\n%1%"), selected_printer_preset->name);
-        wxString line3 = _L("Known profiles compatible with printer selected for upload:");
-        wxString printers_line;
-        for (const Preset* connect_preset : compatible_printer_presets) {
-            if (!connect_preset) {
-                continue;
-            }
-            printers_line += GUI::format_wxstr(_L("\n%1%"), connect_preset->name);
-        }
-        wxString line4 = _L("Do you still wish to upload?");
-        wxString message = GUI::format_wxstr("%1%\n\n%2%\n\n%3%%4%\n\n%5%", line1, line2, line3, printers_line, line4);
-        MessageDialog msg_dialog(this, message, _L("Do you wish to upload?"), wxYES_NO);
-        auto modal_res = msg_dialog.ShowModal();
-        if (modal_res != wxID_YES) {
-            return;
-        }
-    }
-    
-    if (!connect_materials.empty() && !selected_filament_ok) {
-        wxString line1 = _L("The printer you've selected has different filament type than filament profile selected for slicing.");
-        wxString connect_filament_types = "\n";
-        for (size_t i = 0; i < connect_materials.size(); i++) {
-            connect_filament_types += GUI::format_wxstr(_L("Extruder %1%: %2%\n"), i + 1, connect_materials[i]);
-        }
-        wxString line2 = GUI::format_wxstr(_L("PrusaConnect Filament Type: %1%"), connect_filament_types);
-        
-        wxString selected_filament_types = "\n";
-        for (size_t i = 0; i < preset_bundle->extruders_filaments.size(); i++) {
-            const Preset* selected_filament_preset = preset_bundle->extruders_filaments[i].get_selected_preset();
-            std::string filament_serialized;
-            if (selected_filament_preset && selected_filament_preset->config.has("filament_type")) {
-                filament_serialized = selected_filament_preset->config.option("filament_type")->serialize();
-            }
-            selected_filament_types += GUI::format_wxstr(_L("Extruder %1%: %2%\n"), i + 1, filament_serialized);
-        }
-        wxString line3 = GUI::format_wxstr(_L("PrusaSlicer Filament Type: %1%"), selected_filament_types);
-        wxString line4 = _L("Do you still wish to upload?");
-        wxString message = GUI::format_wxstr("%1%\n\n%2%\n%3%\n\n%4%", line1, line2, line3, line4);
-        MessageDialog msg_dialog(this, message, _L("Do you wish to upload?"), wxYES_NO);
-        auto modal_res = msg_dialog.ShowModal();
-        if (modal_res != wxID_YES) {
-            return;
-        }
-    }
-
-    const std::string connect_state = p->user_account->get_keyword_from_json(dialog_msg, "connect_state");
-    const std::string printer_state = p->user_account->get_keyword_from_json(dialog_msg, "printer_state");
-    const std::map<std::string, ConnectPrinterState>& printer_state_table = p->user_account->get_printer_state_table();
-    const auto state = printer_state_table.find(connect_state);
-    assert(state != printer_state_table.end());
-    // TODO: all states that does not allow to upload 
-    if (state->second == ConnectPrinterState::CONNECT_PRINTER_OFFLINE) {
-        show_error(this, _L("Failed to select a printer. Chosen printer is in offline state."));
-        return;
-    }
-
-    const std::string uuid = p->user_account->get_keyword_from_json(dialog_msg, "uuid");
-    const std::string team_id = p->user_account->get_keyword_from_json(dialog_msg, "team_id");
-    if (uuid.empty() || team_id.empty()) {
-        show_error(this, _L("Failed to select a printer. Missing data (uuid and team id) for chosen printer."));
-        return;
-    }
-    */
 
 /*
 {
  set_ready: boolean, // uzivatel potvrdil ze je tiskarne ready a muze se tisknout, pouziva se pro tisknout ted a odlozeny tisk
  position: -1 | 0, // -1 = posledni ve fronte, 0 = prvni ve fronte
  wait_until: number | undefined, // timestamp pro odlozeny tisk
-
  file_name: string, // tady budeme predavat jak se uzivatel rozhodl soubor pojmenovat, kdyz ho neprejmenuje, tak vratime to stejne co nam predtim posle slicer
  printer_uuid: string // uuid vybrane tiskarny
 }
 */
     const Preset* selected_printer_preset = &wxGetApp().preset_bundle->printers.get_selected_preset();
-    /*
-    bool set_ready;
-    int position;
-    int wait_until;
-    std::string filename;
-    std::string printer_uuid;
-    std::string team_id;
-    */
-    std::string set_ready = p->user_account->get_keyword_from_json(dialog_msg, "set_ready");
-    std::string position = p->user_account->get_keyword_from_json(dialog_msg, "position");
-    std::string wait_until = p->user_account->get_keyword_from_json(dialog_msg, "wait_until");
-    std::string filename = p->user_account->get_keyword_from_json(dialog_msg, "filename");
-    std::string printer_uuid = p->user_account->get_keyword_from_json(dialog_msg, "printer_uuid");
-    std::string team_id = p->user_account->get_keyword_from_json(dialog_msg, "team_id");
+
+    const std::string set_ready = p->user_account->get_keyword_from_json(dialog_msg, "set_ready");
+    const std::string position = p->user_account->get_keyword_from_json(dialog_msg, "position");
+    const std::string wait_until = p->user_account->get_keyword_from_json(dialog_msg, "wait_until");
+    const std::string filename = p->user_account->get_keyword_from_json(dialog_msg, "filename");
+    const std::string printer_uuid = p->user_account->get_keyword_from_json(dialog_msg, "printer_uuid");
+    const std::string team_id = p->user_account->get_keyword_from_json(dialog_msg, "team_id");
 
     PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *selected_printer_preset);
     ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnectNew));
@@ -6075,24 +5927,12 @@ void Plater::connect_gcode()
 
     PrintHostJob upload_job(physical_printer_config);
     assert(!upload_job.empty());
-    /*
-    wxArrayString storage_paths;
-    wxArrayString storage_names;
-    {
-        wxBusyCursor wait;
-        try {
-            upload_job.printhost->get_storage(storage_paths, storage_names);
-        }
-        catch (const Slic3r::IOError& ex) {
-            show_error(this, ex.what(), false);
-            return;
-        }
-    }
-    */
+
     upload_job.upload_data.set_ready = set_ready;
     upload_job.upload_data.position = position;
     upload_job.upload_data.wait_until = wait_until;
     upload_job.upload_data.upload_path = boost::filesystem::path(filename);
+    upload_job.upload_data.connect_path = filename;
 
     p->export_gcode(fs::path(), false, std::move(upload_job));
 
