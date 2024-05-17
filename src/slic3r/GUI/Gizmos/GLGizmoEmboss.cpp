@@ -3589,7 +3589,8 @@ std::unique_ptr<DataBase> create_emboss_data_base(const std::string             
 
     DataBase base(volume_name, cancel);
     base.is_outside = is_outside;
-    base.text_lines = text_lines.get_lines();
+    if (style.prop.per_glyph) // lines are already created when hover checkbox per_glyph
+        base.text_lines = text_lines.get_lines();
     base.from_surface = style.distance;
 
     FontFileWithCache &font = style_manager.get_font_file_with_cache();
