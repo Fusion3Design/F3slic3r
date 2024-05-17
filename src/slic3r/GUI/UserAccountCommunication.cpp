@@ -355,7 +355,7 @@ void UserAccountCommunication::init_session_thread()
             // Wait for 5 seconds or wakeup call
             {
                 std::unique_lock<std::mutex> lck(m_thread_stop_mutex);      
-                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(5), [this] { return m_thread_stop || m_thread_wakeup; });
+                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(10), [this] { return m_thread_stop || m_thread_wakeup; });
             }
             if (m_thread_stop)
                 // Stop the worker thread.
