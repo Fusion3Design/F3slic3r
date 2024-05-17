@@ -4,11 +4,10 @@
 #include <libslic3r/Polyline.hpp>
 #include <libslic3r/EdgeGrid.hpp>
 #include <libslic3r/Geometry/VoronoiOffset.hpp>
-#include <libslic3r/Geometry/VoronoiVisualUtils.hpp>
 
 #include <numeric>
 
-// #define VORONOI_DEBUG_OUT
+//#define VORONOI_DEBUG_OUT
 
 #ifdef VORONOI_DEBUG_OUT
 #include <libslic3r/Geometry/VoronoiVisualUtils.hpp>
@@ -337,7 +336,7 @@ TEST_CASE("Voronoi division by zero 12903", "[Voronoi]")
 // Funny sample from a dental industry?
 // Vojtech confirms this test fails and rightly so, because the input data contain self intersections.
 // This test is suppressed.
-TEST_CASE("Voronoi NaN coordinates 12139", "[Voronoi][!hide][!mayfail]")
+TEST_CASE("Voronoi NaN coordinates 12139", "[Voronoi]")
 {
     Lines lines = {
         { {  260500,1564400 }, { 261040,1562960 } },
@@ -1921,23 +1920,6 @@ TEST_CASE("Voronoi skeleton", "[VoronoiSkeleton]")
     REQUIRE(! skeleton_edges.empty());
 }
 
-// Simple detection with complexity N^2 if there is any point in the input polygons that doesn't have Voronoi vertex.
-[[maybe_unused]] static bool has_missing_voronoi_vertices(const Polygons &polygons, const VD &vd)
-{
-    auto are_equal = [](const VD::vertex_type v, const Point &p) { return (Vec2d(v.x(), v.y()) - p.cast<double>()).norm() <= SCALED_EPSILON; };
-
-    Points            poly_points = to_points(polygons);
-    std::vector<bool> found_vertices(poly_points.size());
-    for (const Point &point : poly_points)
-        for (const auto &vertex : vd.vertices())
-            if (are_equal(vertex, point)) {
-                found_vertices[&point - &poly_points.front()] = true;
-                break;
-            }
-
-    return std::find(found_vertices.begin(), found_vertices.end(), false) != found_vertices.end();
-}
-
 // This case is composed of one square polygon, and one of the edges is divided into two parts by a point that lies on this edge.
 // In some applications, this point is unnecessary and can be removed (merge two parts to one edge). But for the case of
 // multi-material segmentation, these points are necessary. In this case, Voronoi vertex for the point, which divides the edge
@@ -1952,11 +1934,8 @@ TEST_CASE("Voronoi missing vertex 1", "[VoronoiMissingVertex1]")
         {-25000000,  25000000},
         {-25000000, -25000000},
         {-12412500, -25000000},
-//        {- 1650000, -25000000},
         { 25000000, -25000000}
     };
-
-//    poly.rotate(PI / 6);
 
     REQUIRE(poly.area() > 0.);
     REQUIRE(intersecting_edges({poly}).empty());
@@ -1968,7 +1947,7 @@ TEST_CASE("Voronoi missing vertex 1", "[VoronoiMissingVertex1]")
     dump_voronoi_to_svg(debug_out_path("voronoi-missing-vertex1-out.svg").c_str(), vd, Points(), lines);
 #endif
 
-//    REQUIRE(!has_missing_voronoi_vertices({poly}, vd));
+    REQUIRE(vd.is_valid());
 }
 
 // This case is composed of two square polygons (contour and hole), and again one of the edges is divided into two parts by a
@@ -1995,8 +1974,6 @@ TEST_CASE("Voronoi missing vertex 2", "[VoronoiMissingVertex2]")
         }
     };
 
-//    polygons_rotate(poly, PI / 6);
-
     double area = std::accumulate(poly.begin(), poly.end(), 0., [](double a, auto &poly) { return a + poly.area(); });
     REQUIRE(area > 0.);
     REQUIRE(intersecting_edges(poly).empty());
@@ -2008,7 +1985,7 @@ TEST_CASE("Voronoi missing vertex 2", "[VoronoiMissingVertex2]")
     dump_voronoi_to_svg(debug_out_path("voronoi-missing-vertex2-out.svg").c_str(), vd, Points(), lines);
 #endif
 
-//    REQUIRE(!has_missing_voronoi_vertices(poly, vd));
+    REQUIRE(vd.is_valid());
 }
 
 // This case is composed of two polygons, and again one of the edges is divided into two parts by a point that lies on this edge,
@@ -2039,9 +2016,6 @@ TEST_CASE("Voronoi missing vertex 3", "[VoronoiMissingVertex3]")
     REQUIRE(area > 0.);
     REQUIRE(intersecting_edges(poly).empty());
 
-    //    polygons_rotate(poly, PI/180);
-    //    polygons_rotate(poly, PI/6);
-
     VD vd;
     Lines lines = to_lines(poly);
     vd.construct_voronoi(lines.begin(), lines.end());
@@ -2049,7 +2023,7 @@ TEST_CASE("Voronoi missing vertex 3", "[VoronoiMissingVertex3]")
     dump_voronoi_to_svg(debug_out_path("voronoi-missing-vertex3-out.svg").c_str(), vd, Points(), lines);
 #endif
 
-//    REQUIRE(!has_missing_voronoi_vertices(poly, vd));
+    REQUIRE(vd.is_valid());
 }
 
 TEST_CASE("Voronoi missing vertex 4", "[VoronoiMissingVertex4]")
@@ -2094,6 +2068,9 @@ TEST_CASE("Voronoi missing vertex 4", "[VoronoiMissingVertex4]")
     dump_voronoi_to_svg(debug_out_path("voronoi-missing-vertex4-1-out.svg").c_str(), vd_1, Points(), lines_1);
     dump_voronoi_to_svg(debug_out_path("voronoi-missing-vertex4-2-out.svg").c_str(), vd_2, Points(), lines_2);
 #endif
+
+    REQUIRE(vd_1.is_valid());
+    REQUIRE(vd_2.is_valid());
 }
 
 // In this case, the Voronoi vertex (146873, -146873) is included twice.
@@ -2114,8 +2091,6 @@ TEST_CASE("Duplicate Voronoi vertices", "[Voronoi]")
         { 25000000,  10790627},
     };
 
-//    poly.rotate(PI / 6);
-
     REQUIRE(poly.area() > 0.);
     REQUIRE(intersecting_edges({poly}).empty());
 
@@ -2126,16 +2101,7 @@ TEST_CASE("Duplicate Voronoi vertices", "[Voronoi]")
     dump_voronoi_to_svg(debug_out_path("voronoi-duplicate-vertices-out.svg").c_str(), vd, Points(), lines);
 #endif
 
-    [[maybe_unused]] auto has_duplicate_vertices = [](const VD &vd) -> bool {
-        std::vector<Vec2d> vertices;
-        for (const auto &vertex : vd.vertices())
-            vertices.emplace_back(Vec2d(vertex.x(), vertex.y()));
-
-        std::sort(vertices.begin(), vertices.end(), [](const Vec2d &l, const Vec2d &r) { return l.x() < r.x() || (l.x() == r.x() && l.y() < r.y()); });
-        return std::unique(vertices.begin(), vertices.end()) != vertices.end();
-    };
-
-//    REQUIRE(!has_duplicate_vertices(vd));
+    REQUIRE(vd.is_valid());
 }
 
 // In this case, there are three very close Voronoi vertices like in the previous test case after rotation. There is also one
@@ -2154,8 +2120,6 @@ TEST_CASE("Intersecting Voronoi edges", "[Voronoi]")
         { 25000000, -  146873},
     };
 
-//    poly.rotate(PI / 6);
-
     REQUIRE(poly.area() > 0.);
     REQUIRE(intersecting_edges({poly}).empty());
 
@@ -2166,38 +2130,7 @@ TEST_CASE("Intersecting Voronoi edges", "[Voronoi]")
     dump_voronoi_to_svg(debug_out_path("voronoi-intersecting-edges-out.svg").c_str(), vd, Points(), lines);
 #endif
 
-    [[maybe_unused]] auto has_intersecting_edges = [](const Polygon &poly, const VD &vd) -> bool {
-        BoundingBox  bbox         = get_extents(poly);
-        const double bbox_dim_max = double(std::max(bbox.size().x(), bbox.size().y()));
-
-        std::vector<Voronoi::Internal::segment_type> segments;
-        for (const Line &line : to_lines(poly))
-            segments.emplace_back(Voronoi::Internal::point_type(double(line.a.x()), double(line.a.y())),
-                                  Voronoi::Internal::point_type(double(line.b.x()), double(line.b.y())));
-
-        Lines edges;
-        for (const auto &edge : vd.edges())
-            if (edge.cell()->source_index() < edge.twin()->cell()->source_index()) {
-                if (edge.is_finite()) {
-                    edges.emplace_back(Point(coord_t(edge.vertex0()->x()), coord_t(edge.vertex0()->y())),
-                                       Point(coord_t(edge.vertex1()->x()), coord_t(edge.vertex1()->y())));
-                } else if (edge.is_infinite()) {
-                    std::vector<Voronoi::Internal::point_type> samples;
-                    Voronoi::Internal::clip_infinite_edge(poly.points, segments, edge, bbox_dim_max, &samples);
-                    if (!samples.empty())
-                        edges.emplace_back(Point(coord_t(samples[0].x()), coord_t(samples[0].y())), Point(coord_t(samples[1].x()), coord_t(samples[1].y())));
-                }
-            }
-
-        Point intersect_point;
-        for (auto first_it = edges.begin(); first_it != edges.end(); ++first_it)
-            for (auto second_it = first_it + 1; second_it != edges.end(); ++second_it)
-                if (first_it->intersection(*second_it, &intersect_point) && first_it->a != intersect_point && first_it->b != intersect_point)
-                    return true;
-        return false;
-    };
-
-//    REQUIRE(!has_intersecting_edges(poly, vd));
+    REQUIRE(vd.is_valid());
 }
 
 // In this case resulting Voronoi diagram is not planar. This case was distilled from GH issue #8474.
@@ -2216,8 +2149,6 @@ TEST_CASE("Non-planar voronoi diagram", "[VoronoiNonPlanar]")
         { 5500000,  40000000},
     };
 
-//    poly.rotate(PI / 6);
-
     REQUIRE(poly.area() > 0.);
     REQUIRE(intersecting_edges({poly}).empty());
 
@@ -2228,7 +2159,7 @@ TEST_CASE("Non-planar voronoi diagram", "[VoronoiNonPlanar]")
     dump_voronoi_to_svg(debug_out_path("voronoi-non-planar-out.svg").c_str(), vd, Points(), lines);
 #endif
 
-//    REQUIRE(Geometry::VoronoiUtilsCgal::is_voronoi_diagram_planar_intersection(vd));
+    REQUIRE(vd.is_valid());
 }
 
 // This case is extracted from SPE-1729, where several ExPolygon with very thin lines
