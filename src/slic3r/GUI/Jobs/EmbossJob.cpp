@@ -197,7 +197,7 @@ TriangleMesh create_default_mesh();
 /// <param name="mesh">New mesh data</param>
 /// <param name="data">Text configuration, ...</param>
 /// <param name="mesh">Transformation of volume</param>
-void update_volume(TriangleMesh &&mesh, const DataUpdate &data, const Transform3d *tr = nullptr);
+void final_update_volume(TriangleMesh &&mesh, const DataUpdate &data, const Transform3d *tr = nullptr);
 
 /// <summary>
 /// Update name in right panel
@@ -414,7 +414,7 @@ void UpdateJob::finalize(bool canceled, std::exception_ptr &eptr)
 {
     if (!::finalize(canceled, eptr, *m_input.base))
         return;
-    ::update_volume(std::move(m_result), m_input);
+    ::final_update_volume(std::move(m_result), m_input);
 }
 
 void UpdateJob::update_volume(ModelVolume *volume, TriangleMesh &&mesh, const DataBase &base)
@@ -496,7 +496,7 @@ void UpdateSurfaceVolumeJob::finalize(bool canceled, std::exception_ptr &eptr)
 
     // when start using surface it is wanted to move text origin on surface of model
     // also when repeteadly move above surface result position should match
-    ::update_volume(std::move(m_result), m_input, &m_input.transform);
+    ::final_update_volume(std::move(m_result), m_input, &m_input.transform);
 }
 
 namespace {
@@ -1015,7 +1015,7 @@ void update_name_in_list(const ObjectList& object_list, const ModelVolume& volum
     object_list.update_name_in_list(object_index, volume_index);
 }
 
-void update_volume(TriangleMesh &&mesh, const DataUpdate &data, const Transform3d *tr)
+void final_update_volume(TriangleMesh &&mesh, const DataUpdate &data, const Transform3d *tr)
 {
     // for sure that some object will be created
     if (mesh.its.empty())
@@ -1039,7 +1039,12 @@ void update_volume(TriangleMesh &&mesh, const DataUpdate &data, const Transform3
     if (volume == nullptr)
         return;
 
-    if (tr) {
+    if (data.trmat.has_value()) {
+        assert(tr == nullptr);
+        tr = &(*data.trmat);
+    }
+
+    if (tr != nullptr) {
         volume->set_transformation(*tr);
     } else {
         // apply fix matrix made by store to .3mf
@@ -1048,7 +1053,6 @@ void update_volume(TriangleMesh &&mesh, const DataUpdate &data, const Transform3
         if (emboss_shape.has_value() && emboss_shape->fix_3mf_tr.has_value())
             volume->set_transformation(volume->get_matrix() * emboss_shape->fix_3mf_tr->inverse());
     }
-
     UpdateJob::update_volume(volume, std::move(mesh), *data.base);
 }
 

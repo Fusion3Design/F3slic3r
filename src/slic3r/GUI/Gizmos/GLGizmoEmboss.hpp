@@ -116,7 +116,7 @@ private:
     void reset_volume();
 
     // create volume from text - main functionality
-    bool process(bool make_snapshot = true);
+    bool process(bool make_snapshot = true, std::optional<Transform3d> volume_transformation = std::nullopt);
     void close();
     void draw_window();
     void draw_text_input();

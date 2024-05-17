@@ -1351,8 +1351,7 @@ namespace {
 bool is_text_empty(std::string_view text) { return text.empty() || text.find_first_not_of(" \n\t\r") == std::string::npos; }
 } // namespace
 
-bool GLGizmoEmboss::process(bool make_snapshot)
-{
+bool GLGizmoEmboss::process(bool make_snapshot, std::optional<Transform3d> volume_transformation) {
     // no volume is selected -> selection from right panel
     assert(m_volume != nullptr);
     if (m_volume == nullptr) return false;
@@ -1365,7 +1364,7 @@ bool GLGizmoEmboss::process(bool make_snapshot)
 
     const Selection& selection = m_parent.get_selection();
     DataBasePtr base = create_emboss_data_base(m_text, m_style_manager, m_text_lines, selection, m_volume->type(), m_job_cancel);
-    DataUpdate  data{std::move(base), m_volume->id(), make_snapshot};
+    DataUpdate data{std::move(base), m_volume->id(), make_snapshot, volume_transformation};
 
     // check valid count of text lines
     assert(data.base->text_lines.empty() || data.base->text_lines.size() == get_count_lines(m_text));
@@ -2201,8 +2200,11 @@ void GLGizmoEmboss::draw_delete_style_button() {
 }
 
 namespace {
-// FIX IT: It should not change volume position before successfull change volume by process
-void fix_transformation(const StyleManager::Style &from, const StyleManager::Style &to, GLCanvas3D &canvas) {
+// When during change style is need to change transformation it calculate it
+std::optional<Transform3d> fix_transformation(
+    const StyleManager::Style &from, const StyleManager::Style &to, GLCanvas3D &canvas
+) {
+    bool exist_transformation = false;
     // fix Z rotation when exists difference in styles
     const std::optional<float> &f_angle_opt = from.angle;
     const std::optional<float> &t_angle_opt = to.angle;
@@ -2210,9 +2212,9 @@ void fix_transformation(const StyleManager::Style &from, const StyleManager::Sty
         // fix rotation
         float f_angle = f_angle_opt.value_or(.0f);
         float t_angle = t_angle_opt.value_or(.0f);
+        // Rotate only UI
         do_local_z_rotate(canvas.get_selection(), t_angle - f_angle);
-        std::string no_snapshot;
-        canvas.do_rotate(no_snapshot);
+        exist_transformation = true;
     }
 
     // fix distance (Z move) when exists difference in styles
@@ -2221,10 +2223,33 @@ void fix_transformation(const StyleManager::Style &from, const StyleManager::Sty
     if (!is_approx(f_move_opt, t_move_opt)) {
         float f_move = f_move_opt.value_or(.0f);
         float t_move = t_move_opt.value_or(.0f);
+        // Move only UI
         do_local_z_move(canvas.get_selection(), t_move - f_move);
-        std::string no_snapshot;
-        canvas.do_move(no_snapshot);
+        exist_transformation = true;
     }
+
+    if (!exist_transformation)
+        return std::nullopt;
+
+    const GLVolume* gl_volume = canvas.get_selection().get_first_volume();
+    assert(gl_volume != nullptr);
+    if (gl_volume == nullptr)
+        return std::nullopt;
+
+    const Transform3d &tr = gl_volume->get_volume_transformation().get_matrix();
+
+    // exist fix matrix made by store to .3mf
+    const ModelVolume* volume = get_model_volume(*gl_volume, canvas.get_model()->objects);
+    assert(volume != nullptr);
+    if (volume == nullptr)
+        return tr;
+    const std::optional<EmbossShape> &emboss_shape = volume->emboss_shape;
+    assert(emboss_shape.has_value());
+    if (emboss_shape.has_value() && emboss_shape->fix_3mf_tr.has_value())
+        return tr * emboss_shape->fix_3mf_tr->inverse();
+
+    // no fix matrix just return transformation
+    return tr;
 }
 } // namesapce
 
@@ -2332,8 +2357,7 @@ void GLGizmoEmboss::draw_style_list() {
         StyleManager::Style cur_s = current_style;  // copy
         StyleManager::Style new_s = style;    // copy
         if (m_style_manager.load_style(*selected_style_index)) {
-            ::fix_transformation(cur_s, new_s, m_parent);
-            process();
+            process(true, ::fix_transformation(cur_s, new_s, m_parent));
         } else {
             wxString title   = _L("Not valid style.");
             wxString message = GUI::format_wxstr(_L("Style \"%1%\" can't be used and will be removed from a list."), style.name);

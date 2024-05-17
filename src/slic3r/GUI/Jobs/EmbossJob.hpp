@@ -124,6 +124,10 @@ struct DataUpdate
 
     // Used for prevent flooding Undo/Redo stack on slider.
     bool make_snapshot;
+
+    // Transformation of volume after update volume shape
+    // NOTE: Add for style change, because it change rotation and distance from surface
+    std::optional<Transform3d> trmat;
 };
 
 /// <summary>
