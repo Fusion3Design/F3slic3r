@@ -1313,8 +1313,8 @@ void PrintConfigDef::init_fff_params()
         { "60", "60%" },
         { "70", "70%" },
         { "80", "80%" },
-        { "90", "90%" },
-        { "100", "100%" }
+        { "90", "90%" }
+        //{ "100", "100%" }
     });
     def->set_default_value(new ConfigOptionPercent(20));
 
