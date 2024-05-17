@@ -1198,15 +1198,13 @@ int Emboss::get_line_height(const FontFile &font, const FontProp &prop) {
 
 namespace {
 ExPolygons letter2shapes(
-    wchar_t letter, Point &cursor, FontFileWithCache &font_with_cache, const FontProp &font_prop, fontinfo_opt& font_info_cache)
-{
-    assert(font_with_cache.has_value());
-    if (!font_with_cache.has_value())
-        return {};
-
-    Glyphs &cache = *font_with_cache.cache;
-    const FontFile &font  = *font_with_cache.font_file;
-
+    wchar_t letter,
+    Point &cursor,
+    const FontFile &font,
+    Glyphs &cache,
+    const FontProp &font_prop,
+    fontinfo_opt &font_info_cache
+) {
     if (letter == '\n') {
         cursor.x() = 0;
         // 2d shape has opposit direction of y
@@ -1320,12 +1318,16 @@ void align_shape(ExPolygonsWithIds &shapes, const std::wstring &text, const Font
 
 ExPolygonsWithIds Emboss::text2vshapes(FontFileWithCache &font_with_cache, const std::wstring& text, const FontProp &font_prop, const std::function<bool()>& was_canceled){
     assert(font_with_cache.has_value());
+    if (!font_with_cache.has_value())
+        return {};
+
     const FontFile &font = *font_with_cache.font_file;
     unsigned int font_index = font_prop.collection_number.value_or(0);
     if (!is_valid(font, font_index))
         return {};
 
-    unsigned counter = 0;
+    std::shared_ptr<Glyphs> cache = font_with_cache.cache; // copy pointer
+    unsigned counter = CANCEL_CHECK-1; // it is needed to validate using of cache
     Point cursor(0, 0);
 
     fontinfo_opt font_info_cache;  
@@ -1338,7 +1340,7 @@ ExPolygonsWithIds Emboss::text2vshapes(FontFileWithCache &font_with_cache, const
                 return {};
         }
         unsigned id = static_cast<unsigned>(letter);
-        result.push_back({id, letter2shapes(letter, cursor, font_with_cache, font_prop, font_info_cache)});
+        result.push_back({id, letter2shapes(letter, cursor, font, *cache, font_prop, font_info_cache)});
     }
 
     align_shape(result, text, font_prop, font);
