@@ -184,21 +184,18 @@ struct PresetUpdater::priv
 	priv();
 
 	void set_download_prefs(const AppConfig *app_config);
-	//bool get_file(const std::string &url, const fs::path &target_path) const;
 	void prune_tmps() const;
 	void clear_cache_vendor() const;
 	void sync_config(const VendorMap& vendors, const GUI::ArchiveRepository& archive);
 
 	void check_install_indices() const;
 	Updates get_config_updates(const Semver& old_slic3r_version) const;
-	bool perform_updates(Updates &&updates, bool snapshot = true) const;
+	bool perform_updates(Updates &&updates, const ArchiveRepositoryVector& repositories, bool snapshot = true) const;
 	void set_waiting_updates(Updates u);
 	// checks existence and downloads resource to cache
 	void get_missing_resource(const GUI::ArchiveRepository& archive, const std::string& vendor, const std::string& filename, const std::string& repository_id_from_ini) const;
 	// checks existence and downloads resource to vendor or copy from cache to vendor
 	void get_or_copy_missing_resource(const GUI::ArchiveRepository& archive, const std::string& vendor, const std::string& filename, const std::string& repository_id_from_ini) const;
-	// checks existence and copies resource to vendor from cache to vendor
-	void copy_missing_resource(const std::string& vendor, const std::string& filename, const std::string& url) const;
 	void update_index_db();
 };
 
@@ -228,41 +225,6 @@ void PresetUpdater::priv::set_download_prefs(const AppConfig *app_config)
 	version_check_url = app_config->version_check_url();
 	enabled_config_update = app_config->get_bool("preset_update") && !app_config->legacy_datadir();
 }
-
-// Downloads a file (http get operation). Cancels if the Updater is being destroyed.
-//bool PresetUpdater::priv::get_file(const std::string &url, const fs::path &target_path) const
-//{
-//	bool res = false;
-//	fs::path tmp_path = target_path;
-//	tmp_path += format(".%1%%2%", get_current_pid(), TMP_EXTENSION);
-//
-//	BOOST_LOG_TRIVIAL(info) << format("Get: `%1%`\n\t-> `%2%`\n\tvia tmp path `%3%`",
-//		url,
-//		target_path.string(),
-//		tmp_path.string());
-//
-//	Http::get(url)
-//        .on_progress([](Http::Progress, bool &cancel) {
-//			if (cancel) { cancel = true; }
-//		})
-//		.on_error([&](std::string body, std::string error, unsigned http_status) {
-//			(void)body;
-//			BOOST_LOG_TRIVIAL(error) << format("Error getting: `%1%`: HTTP %2%, %3%",
-//				url,
-//				http_status,
-//				error);
-//		})
-//		.on_complete([&](std::string body, unsigned /* http_status */) {
-//			fs::fstream file(tmp_path, std::ios::out | std::ios::binary | std::ios::trunc);
-//			file.write(body.c_str(), body.size());
-//			file.close();
-//			fs::rename(tmp_path, target_path);
-//			res = true;
-//		})
-//		.perform_sync();
-//
-//	return res;
-//}
 
 // Remove leftover paritally downloaded files, if any.
 void PresetUpdater::priv::prune_tmps() const
@@ -356,35 +318,6 @@ void PresetUpdater::priv::get_or_copy_missing_resource(const GUI::ArchiveReposit
 		archive.get_file(resource_subpath, file_in_vendor, repository_id_from_ini);
 		return;
 	}
-	BOOST_LOG_TRIVIAL(debug) << "Copiing: " << file_in_cache << " to " << file_in_vendor;
-	copy_file_fix(file_in_cache, file_in_vendor);
-}
-// gets resource to vendor/<vendor_name>/
-void PresetUpdater::priv::copy_missing_resource(const std::string& vendor, const std::string& filename, const std::string& url) const
-{
-	if (filename.empty() || vendor.empty())
-		return;
-
-	const fs::path file_in_vendor(vendor_path / (vendor + "/" + filename));
-	const fs::path file_in_rsrc(rsrc_path / (vendor + "/" + filename));
-	const fs::path file_in_cache(cache_path / (vendor + "/" + filename));
-
-	if (fs::exists(file_in_vendor)) { // Already in vendor. No need to do anything.
-		BOOST_LOG_TRIVIAL(info) << "Resource " << vendor << " / " << filename << " found in vendor folder. No need to download.";
-		return;
-	}
-	if (fs::exists(file_in_rsrc)) { // In resources dir since installation. No need to do anything.
-		BOOST_LOG_TRIVIAL(info) << "Resource " << vendor << " / " << filename << " found in resources folder. No need to download.";
-		return;
-	}
-	if (!fs::exists(file_in_cache)) { // No file to copy. Bad!
-		BOOST_LOG_TRIVIAL(error) << "Resource " << vendor << " / " << filename << " not found!";
-		return;
-	}
-
-	if (!fs::exists(file_in_vendor.parent_path())) // create vendor_name dir in vendor 
-		fs::create_directory(file_in_vendor.parent_path());
-
 	BOOST_LOG_TRIVIAL(debug) << "Copiing: " << file_in_cache << " to " << file_in_vendor;
 	copy_file_fix(file_in_cache, file_in_vendor);
 }
@@ -788,14 +721,14 @@ void PresetUpdater::priv::sync_config(const VendorMap& vendors, const GUI::Archi
 			}
 			for (const auto& model : vp.models) {
 				for (const std::string& res : { model.bed_texture, model.bed_model, model.thumbnail }) {
-					if (!model.thumbnail.empty()) {
+					if (!res.empty()) {
 						try
 						{
 							get_or_copy_missing_resource(archive_repository, vp.id, res, vp.repo_id);
 						}
 						catch (const std::exception& e)
 						{
-							BOOST_LOG_TRIVIAL(error) << "Failed to get " << model.thumbnail << " for " << vp.id << " " << model.id << ": " << e.what();
+							BOOST_LOG_TRIVIAL(error) << "Failed to get " << res << " for " << vp.id << " " << model.id << ": " << e.what();
 						}
 					}
 					if (cancel)
@@ -1029,7 +962,7 @@ Updates PresetUpdater::priv::get_config_updates(const Semver &old_slic3r_version
 	return updates;
 }
 
-bool PresetUpdater::priv::perform_updates(Updates &&updates, bool snapshot) const
+bool PresetUpdater::priv::perform_updates(Updates &&updates, const ArchiveRepositoryVector& repositories, bool snapshot) const
 {
 	if (updates.incompats.size() > 0) {
 		if (snapshot) {
@@ -1116,7 +1049,12 @@ bool PresetUpdater::priv::perform_updates(Updates &&updates, bool snapshot) cons
 						continue;
 					try
 					{
-						copy_missing_resource(vp.id, resource, vp.config_update_url);
+                        auto it = std::find_if(repositories.begin(), repositories.end(), [&vp](const auto& i){ return vp.repo_id == i->get_manifest().id; });
+                        if (it != repositories.end())
+                            get_or_copy_missing_resource(*(*it), vp.id, resource, vp.repo_id);
+                        else {
+                            BOOST_LOG_TRIVIAL(error) << "Failed to prepare " << resource << " for " << vp.id << " " << model.id << ": Missing record for repository with repo_id " << vp.repo_id;
+                        }
 					}
 					catch (const std::exception& e)
 					{
@@ -1159,7 +1097,7 @@ void PresetUpdater::sync(const PresetBundle *preset_bundle, wxEvtHandler* evt_ha
 {
 	p->set_download_prefs(GUI::wxGetApp().app_config);
 	if (!p->enabled_config_update) { return; }
-	
+
     p->thread = std::thread([this, &vendors = preset_bundle->vendors, &repositories, &selected_repo_uuids, evt_handler]() {
 		this->p->clear_cache_vendor();
 		this->p->prune_tmps();
@@ -1247,7 +1185,7 @@ static bool reload_configs_update_gui()
 	return true;
 }
 
-PresetUpdater::UpdateResult PresetUpdater::config_update(const Semver& old_slic3r_version, UpdateParams params) const
+PresetUpdater::UpdateResult PresetUpdater::config_update(const Semver& old_slic3r_version, UpdateParams params, const ArchiveRepositoryVector& repositories) const
 {
  	if (! p->enabled_config_update) { return R_NOOP; }
 
@@ -1281,7 +1219,7 @@ PresetUpdater::UpdateResult PresetUpdater::config_update(const Semver& old_slic3
 
 			// This effectively removes the incompatible bundles:
 			// (snapshot is taken beforehand)
-			if (! p->perform_updates(std::move(updates)) ||
+			if (! p->perform_updates(std::move(updates), repositories) ||
 				! GUI::wxGetApp().run_wizard(GUI::ConfigWizard::RR_DATA_INCOMPAT))
 				return R_INCOMPAT_EXIT;
 
@@ -1323,7 +1261,7 @@ PresetUpdater::UpdateResult PresetUpdater::config_update(const Semver& old_slic3
 			const auto res = dlg.ShowModal();
 			if (res == wxID_OK) {
 				BOOST_LOG_TRIVIAL(info) << "User wants to update...";
-				if (! p->perform_updates(std::move(updates)) ||
+				if (! p->perform_updates(std::move(updates), repositories) ||
 					! reload_configs_update_gui())
 					return R_INCOMPAT_EXIT;
 				return R_UPDATE_INSTALLED;
@@ -1366,7 +1304,7 @@ PresetUpdater::UpdateResult PresetUpdater::config_update(const Semver& old_slic3
 			const auto res = dlg.ShowModal();
 			if (res == wxID_OK) {
 				BOOST_LOG_TRIVIAL(debug) << "User agreed to perform the update";
-				if (! p->perform_updates(std::move(updates)) ||
+				if (! p->perform_updates(std::move(updates), repositories) ||
 					! reload_configs_update_gui())
 					return R_ALL_CANCELED;
 				return R_UPDATE_INSTALLED;
@@ -1387,7 +1325,7 @@ PresetUpdater::UpdateResult PresetUpdater::config_update(const Semver& old_slic3
 	return R_NOOP;
 }
 
-bool PresetUpdater::install_bundles_rsrc_or_cache_vendor(std::vector<std::string> bundles, bool snapshot) const
+bool PresetUpdater::install_bundles_rsrc_or_cache_vendor(std::vector<std::string> bundles, const ArchiveRepositoryVector& repositories, bool snapshot) const
 {
 	Updates updates;
 
@@ -1490,10 +1428,10 @@ bool PresetUpdater::install_bundles_rsrc_or_cache_vendor(std::vector<std::string
 		}
 	}
 
-	return p->perform_updates(std::move(updates), snapshot);
+	return p->perform_updates(std::move(updates), repositories, snapshot);
 }
 
-void PresetUpdater::on_update_notification_confirm()
+void PresetUpdater::on_update_notification_confirm(const ArchiveRepositoryVector& repositories)
 {
 	if (!p->has_waiting_updates)
 		return;
@@ -1516,7 +1454,7 @@ void PresetUpdater::on_update_notification_confirm()
 	const auto res = dlg.ShowModal();
 	if (res == wxID_OK) {
 		BOOST_LOG_TRIVIAL(debug) << "User agreed to perform the update";
-		if (p->perform_updates(std::move(p->waiting_updates)) &&
+		if (p->perform_updates(std::move(p->waiting_updates), repositories) &&
 			reload_configs_update_gui()) {
 			p->has_waiting_updates = false;
 		}

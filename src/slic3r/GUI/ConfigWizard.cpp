@@ -3354,8 +3354,9 @@ bool ConfigWizard::priv::apply_config(AppConfig *app_config, PresetBundle *prese
     if (install_bundles.size() > 0) {
         // Install bundles from resources or cache / vendor.
         // Don't create snapshot - we've already done that above if applicable.
-        
-        bool install_result = updater->install_bundles_rsrc_or_cache_vendor(std::move(install_bundles), false);
+        GUI_App& app = wxGetApp();
+        const auto* archive_db = app.plater()->get_preset_archive_database();
+        bool install_result = updater->install_bundles_rsrc_or_cache_vendor(std::move(install_bundles), archive_db->get_archive_repositories(), false);
         if (!install_result)
             return false;
     } else {
@@ -3574,10 +3575,11 @@ void ConfigWizard::priv::set_config_updated_from_archive(bool is_updated)
         // This set with preset_updater used to be done in GUI_App::run_wizard before ConfigWizard::run()
         GUI_App& app = wxGetApp();
         // Do blocking sync on every change of archive repos, so user is always offered recent profiles.
-        app.preset_updater->sync_blocking(app.preset_bundle, &app, app.plater()->get_preset_archive_database()->get_archive_repositories(), app.plater()->get_preset_archive_database()->get_selected_repositories_uuid());
+        const ArchiveRepositoryVector &repos = app.plater()->get_preset_archive_database()->get_archive_repositories();
+        app.preset_updater->sync_blocking(app.preset_bundle, &app, repos, app.plater()->get_preset_archive_database()->get_selected_repositories_uuid());
         // Offer update installation. It used to be offered only when wizard run reason was RR_USER.
         app.preset_updater->update_index_db();
-        app.preset_updater->config_update(app.app_config->orig_version(), PresetUpdater::UpdateParams::SHOW_TEXT_BOX);
+        app.preset_updater->config_update(app.app_config->orig_version(), PresetUpdater::UpdateParams::SHOW_TEXT_BOX, repos);
 
         // We have now probably changed data. We need to rebuild or database from which wizards constructs.
         // DK: Im not sure if we should do full load_vendors. or only load BundleMap::load().
