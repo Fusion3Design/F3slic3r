@@ -3098,9 +3098,9 @@ void GLGizmoEmboss::draw_skew()
         apply(skew, limits.skew.values);
         if (m_job_cancel != nullptr) m_job_cancel->store(true);
         const std::optional<float> &volume_skew = m_volume->text_configuration->style.prop.skew;
-        if (is_approx(skew.value_or(0.f), volume_skew.value_or(0.f))) {
+        if (!is_approx(skew.value_or(0.f), volume_skew.value_or(0.f))) {
             // glyph shape is modified by skew
-            m_style_manager.clear_glyphs_cache(); 
+            m_style_manager.clear_glyphs_cache();
             exist_change = true;
         }
     }
