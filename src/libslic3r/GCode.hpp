@@ -15,6 +15,7 @@
 #ifndef slic3r_GCode_hpp_
 #define slic3r_GCode_hpp_
 
+#include "libslic3r/GCode/ExtrusionOrder.hpp"
 #include "libslic3r/GCode/ExtrusionProcessor.hpp"
 #include "JumpPointSearch.hpp"
 #include "libslic3r.h"
@@ -54,7 +55,6 @@ namespace Slic3r {
 // Forward declarations.
 class GCodeGenerator;
 struct WipeTowerData;
-struct SliceExtrusions;
 
 namespace { struct Item; }
 struct PrintInstance;
@@ -93,18 +93,6 @@ struct LayerResult {
 };
 
 namespace GCode {
-// Object and support extrusions of the same PrintObject at the same print_z.
-// public, so that it could be accessed by free helper functions from GCode.cpp
-struct ObjectLayerToPrint
-{
-    ObjectLayerToPrint() : object_layer(nullptr), support_layer(nullptr) {}
-    const Layer* 		object_layer;
-    const SupportLayer* support_layer;
-    const Layer* 		layer()   const { return (object_layer != nullptr) ? object_layer : support_layer; }
-    const PrintObject* 	object()  const { return (this->layer() != nullptr) ? this->layer()->object() : nullptr; }
-    coordf_t            print_z() const { return (object_layer != nullptr && support_layer != nullptr) ? 0.5 * (object_layer->print_z + support_layer->print_z) : this->layer()->print_z; }
-};
-
 struct PrintObjectInstance
 {
     const PrintObject *print_object = nullptr;
@@ -114,24 +102,7 @@ struct PrintObjectInstance
     bool operator!=(const PrintObjectInstance &other) const { return !(*this == other); }
 };
 
-struct InfillRange {
-    std::vector<ExtrusionEntityReference> items;
-    const PrintRegion *region;
-};
-
 } // namespace GCode
-
-struct InstanceToPrint
-{
-    InstanceToPrint(size_t object_layer_to_print_id, const PrintObject &print_object, size_t instance_id) :
-        object_layer_to_print_id(object_layer_to_print_id), print_object(print_object), instance_id(instance_id) {}
-
-    // Index into std::vector<ObjectLayerToPrint>, which contains Object and Support layers for the current print_z, collected for a single object, or for possibly multiple objects with multiple instances.
-    const size_t             object_layer_to_print_id;
-    const PrintObject       &print_object;
-    // Instance idx of the copy of a print object.
-    const size_t             instance_id;
-};
 
 class GCodeGenerator {
 
@@ -196,11 +167,16 @@ public:
     static void encode_full_config(const Print& print, std::vector<std::pair<std::string, std::string>>& config);
 
     using ObjectLayerToPrint  = GCode::ObjectLayerToPrint;
-    using ObjectsLayerToPrint = std::vector<GCode::ObjectLayerToPrint>;
+    using ObjectsLayerToPrint = GCode::ObjectsLayerToPrint;
 
     std::optional<Point> last_position;
 
 private:
+    using InstanceToPrint = GCode::InstanceToPrint;
+    using InfillRange = GCode::ExtrusionOrder::InfillRange;
+    using SliceExtrusions = GCode::ExtrusionOrder::SliceExtrusions;
+    using IslandExtrusions = GCode::ExtrusionOrder::IslandExtrusions;
+
     class GCodeOutputStream {
     public:
         GCodeOutputStream(FILE *f, GCodeProcessor &processor) : f(f), m_processor(processor) {}
@@ -215,7 +191,7 @@ private:
 
         bool is_open() const { return f; }
         bool is_error() const;
-        
+
         void flush();
         void close();
 
@@ -327,7 +303,7 @@ private:
     );
 
     std::string extrude_infill_ranges(
-        const std::vector<GCode::InfillRange> &infill_ranges,
+        const std::vector<InfillRange> &infill_ranges,
         const std::string &commment,
         const GCode::SmoothPathCache &smooth_path_cache
     );
