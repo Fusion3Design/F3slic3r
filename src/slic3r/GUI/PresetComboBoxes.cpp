@@ -962,11 +962,10 @@ static wxString get_connect_info_line(const Preset& printer_preset)
             {
                 PrinterStatesCount states_cnt = get_printe_states_count(states);
 
-                return format_wxstr(_L("Available: %1%, Offline: %2%, Busy: %3%. Total: %4% printers"),
+                return format_wxstr(_L("Available: %1%, Offline: %2%, Busy: %3%"),
                                     format("<b><span color=\"green\">%1%</span></b>" , states_cnt.available_cnt), 
                                     format("<b><span color=\"red\">%1%</span></b>"   , states_cnt.offline_cnt),
-                                    format("<b><span color=\"yellow\">%1%</span></b>", states_cnt.busy_cnt),
-                                    format("<b>%1%</b>", states_cnt.total));
+                                    format("<b><span color=\"yellow\">%1%</span></b>", states_cnt.busy_cnt));
             }
         }
     }
