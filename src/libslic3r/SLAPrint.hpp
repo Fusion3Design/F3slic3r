@@ -406,6 +406,7 @@ struct SLAPrintStatistics
 {
     SLAPrintStatistics() { clear(); }
     double                          estimated_print_time;
+    double                          estimated_print_time_tolerance;
     double                          objects_used_material;
     double                          support_used_material;
     size_t                          slow_layers_count;
@@ -424,6 +425,7 @@ struct SLAPrintStatistics
 
     void clear() {
         estimated_print_time = 0.;
+        estimated_print_time_tolerance = 0.;
         objects_used_material = 0.;
         support_used_material = 0.;
         slow_layers_count = 0;
