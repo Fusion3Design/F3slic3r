@@ -22,10 +22,11 @@ namespace Slic3r {
 namespace GUI {
 
 
-WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const std::string& loading_html/* = "loading"*/)
+WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const std::vector<std::string>& message_handler_names, const std::string& loading_html/* = "loading"*/)
         : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
         , m_default_url (default_url)
         , m_loading_html(loading_html)
+        , m_script_message_hadler_names(message_handler_names)
  {
     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
 #ifdef DEBUG_URL_PANEL
@@ -70,7 +71,7 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const 
     SetSizer(topsizer);
 
     // Create the webview
-    m_browser = WebView::CreateWebView(this, /*m_default_url*/ GUI::format_wxstr("file://%1%/web/%2%.html", boost::filesystem::path(resources_dir()).generic_string(), m_loading_html));
+    m_browser = WebView::CreateWebView(this, /*m_default_url*/ GUI::format_wxstr("file://%1%/web/%2%.html", boost::filesystem::path(resources_dir()).generic_string(), m_loading_html), m_script_message_hadler_names);
     if (!m_browser) {
         wxStaticText* text = new wxStaticText(this, wxID_ANY, _L("Failed to load a web browser."));
         topsizer->Add(text, 0, wxALIGN_LEFT | wxBOTTOM, 10);
@@ -122,8 +123,6 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const 
 #endif
     //Connect the idle events
     Bind(wxEVT_IDLE, &WebViewPanel::on_idle, this);
-    Bind(wxEVT_CLOSE_WINDOW, &WebViewPanel::on_close, this);
-
  }
 
 WebViewPanel::~WebViewPanel()
@@ -243,11 +242,6 @@ void WebViewPanel::on_reload_button(wxCommandEvent& WXUNUSED(evt))
     if (!m_browser)
         return;
     m_browser->Reload();
-}
-
-void WebViewPanel::on_close(wxCloseEvent& evt)
-{
-    this->Hide();
 }
 
 void WebViewPanel::on_script_message(wxWebViewEvent& evt)
@@ -548,7 +542,7 @@ void ConnectRequestHandler::on_connect_action_request_config()
 }
 
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
-    : WebViewPanel(parent, L"https://connect.prusa3d.com/", "connect_loading")
+    : WebViewPanel(parent, L"https://connect.prusa3d.com/", { "_prusaSlicer" }, "connect_loading")
 {  
 }
 
@@ -581,7 +575,7 @@ void ConnectWebViewPanel::on_connect_action_print()
 }
 
 PrinterWebViewPanel::PrinterWebViewPanel(wxWindow* parent, const wxString& default_url)
-    : WebViewPanel(parent, default_url)
+    : WebViewPanel(parent, default_url, {})
 {
     if (!m_browser)
         return;
@@ -654,9 +648,10 @@ void PrinterWebViewPanel::sys_color_changed()
 {
 }
 
-WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size, const std::string& loading_html/* = "loading"*/)
+WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size, const std::vector<std::string>& message_handler_names, const std::string& loading_html/* = "loading"*/)
     : wxDialog(parent, wxID_ANY, dialog_name, wxDefaultPosition, size, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
     , m_loading_html(loading_html)
+    , m_script_message_hadler_names (message_handler_names)
 {
     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
 #ifdef DEBUG_URL_PANEL
@@ -697,7 +692,7 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
     SetSizerAndFit(topsizer);
 
     // Create the webview
-    m_browser = WebView::CreateWebView(this, GUI::format_wxstr("file://%1%/web/%2%.html", boost::filesystem::path(resources_dir()).generic_string(), m_loading_html));
+    m_browser = WebView::CreateWebView(this, GUI::format_wxstr("file://%1%/web/%2%.html", boost::filesystem::path(resources_dir()).generic_string(), m_loading_html), m_script_message_hadler_names);
     if (!m_browser) {
         wxStaticText* text = new wxStaticText(this, wxID_ANY, _L("Failed to load a web browser."));
         topsizer->Add(text, 0, wxALIGN_LEFT | wxBOTTOM, 10);
@@ -732,7 +727,6 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
     Bind(wxEVT_WEBVIEW_ERROR, &WebViewDialog::on_error, this, m_browser->GetId());
     //Connect the idle events
     Bind(wxEVT_IDLE, &WebViewDialog::on_idle, this);
-    Bind(wxEVT_CLOSE_WINDOW, &WebViewDialog::on_close, this);
 #ifdef DEBUG_URL_PANEL
     // Connect the button events
     Bind(wxEVT_BUTTON, &WebViewDialog::on_back_button, this, m_button_back->GetId());
@@ -752,6 +746,8 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
     Bind(wxEVT_MENU, &WebViewDialog::on_add_user_script, this, addUserScript->GetId());
 #endif
 
+    Bind(wxEVT_CLOSE_WINDOW, ([this](wxCloseEvent& evt) { EndModal(wxID_CANCEL); }));
+
     m_browser->LoadURL(url);   
 #ifdef DEBUG_URL_PANEL
     m_url->SetLabelText(url);
@@ -760,10 +756,6 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
 WebViewDialog::~WebViewDialog()
 {
 }
-
-
-
-
 
 void WebViewDialog::on_idle(wxIdleEvent& WXUNUSED(evt))
 {
@@ -834,11 +826,6 @@ void WebViewDialog::on_reload_button(wxCommandEvent& WXUNUSED(evt))
     if (!m_browser)
         return;
     m_browser->Reload();
-}
-
-void WebViewDialog::on_close(wxCloseEvent& evt)
-{
-    this->Hide();
 }
 
 void WebViewDialog::on_script_message(wxWebViewEvent& evt)
@@ -1040,11 +1027,23 @@ void WebViewDialog::run_script(const wxString& javascript)
     m_browser->RunScriptAsync(javascript);
 }
 
+void WebViewDialog::EndModal(int retCode)
+{
+    if (m_browser) {
+        for (const std::string& handler : m_script_message_hadler_names) {
+            m_browser->RemoveScriptMessageHandler(GUI::into_u8(handler));
+        }
+    }
+    
+    wxDialog::EndModal(retCode);
+}
+
 PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val)
     : WebViewDialog(parent
         , L"https://connect.prusa3d.com/slicer-select-printer"
         , _L("Choose a printer")
         , wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit()))
+        ,{"_prusaSlicer"}
         , "connect_loading")
     , m_ret_val(ret_val)
 {
@@ -1074,7 +1073,6 @@ void PrinterPickWebViewDialog::on_connect_action_select_printer()
 void PrinterPickWebViewDialog::on_connect_action_print()
 {
     m_ret_val = m_message_data;
-    m_browser->RemoveScriptMessageHandler("_prusaSlicer");
     this->EndModal(wxID_OK);
 }
 
