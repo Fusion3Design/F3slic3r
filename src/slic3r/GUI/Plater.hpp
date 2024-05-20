@@ -253,7 +253,7 @@ public:
     void force_filament_cb_update();
     void force_print_bed_update();
     // On activating the parent window.
-    void on_activate();
+    void on_activate(bool active);
     std::vector<std::string> get_extruder_colors_from_plater_config(const GCodeProcessorResult* const result = nullptr) const;
     std::vector<std::string> get_colors_for_color_print(const GCodeProcessorResult* const result = nullptr) const;
 

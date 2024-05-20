@@ -6300,9 +6300,12 @@ void Plater::force_print_bed_update()
 	p->config->opt_string("printer_model", true) = "\x01\x00\x01";
 }
 
-void Plater::on_activate()
+void Plater::on_activate(bool active)
 {
-	this->p->show_delayed_error_message();
+    this->p->user_account->on_activate_window(active);
+    if (active) {
+	    this->p->show_delayed_error_message();
+    }
 }
 
 // Get vector of extruder colors considering filament color, if extruder color is undefined.

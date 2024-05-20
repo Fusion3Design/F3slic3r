@@ -272,8 +272,8 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
     //FIXME it seems this method is not called on application start-up, at least not on Windows. Why?
     // The same applies to wxEVT_CREATE, it is not being called on startup on Windows.
     Bind(wxEVT_ACTIVATE, [this](wxActivateEvent& event) {
-        if (m_plater != nullptr && event.GetActive())
-            m_plater->on_activate();
+        if (m_plater != nullptr)
+            m_plater->on_activate(event.GetActive());
         event.Skip();
     });
 

@@ -360,6 +360,10 @@ void UserAccountCommunication::init_session_thread()
             if (m_thread_stop)
                 // Stop the worker thread.
                 break;
+            // Do not process_action_queue if window is not active and thread was not forced to wakeup
+            if (!m_window_is_active && !m_thread_wakeup) {
+                continue;
+            }
             m_thread_wakeup = false;
             {
                 std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -367,6 +371,12 @@ void UserAccountCommunication::init_session_thread()
             }
         }
     });
+}
+
+void UserAccountCommunication::on_activate_window(bool active)
+{
+    std::lock_guard<std::mutex> lck(m_thread_stop_mutex);
+    m_window_is_active = active;
 }
 
 void UserAccountCommunication::wakeup_session_thread()

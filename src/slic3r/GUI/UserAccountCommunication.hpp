@@ -51,6 +51,7 @@ public:
     // Exchanges code for tokens and shared_session_key
     void on_login_code_recieved(const std::string& url_message);
 
+    void on_activate_window(bool active);
 
     void set_username(const std::string& username);
     void set_remember_session(bool b);
@@ -71,6 +72,7 @@ private:
     std::condition_variable                 m_thread_stop_condition;
     bool                                    m_thread_stop { false };
     bool                                    m_thread_wakeup{ false };
+    bool                                    m_window_is_active{ true };
     std::string                             m_code_verifier;
     wxEvtHandler*                           m_evt_handler;
     AppConfig*                              m_app_config;
