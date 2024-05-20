@@ -5413,11 +5413,17 @@ void TabSLAMaterial::build_tilt_group(Slic3r::GUI::PageShp page)
 {
     // Legend
     std::vector<std::pair<std::string, std::string>> legend_columns = {
-        {L("Below"), L("Values in this column are applied when layer area is smaller than area_fill.")},
-        {L("Above"), L("Values in this column are applied when layer area is larger than area_fill.")},
+        // TRN: This is a label of a column of parameters in settings to be used when the area is below certain threshold.
+        {L("Below"),
+        L("Values in this column are applied when layer area is smaller than area_fill.")},
+        // TRN: This is a label of a column of parameters in settings to be used when the area is above certain threshold.
+        {L("Above"),
+        L("Values in this column are applied when layer area is larger than area_fill.")},
     };
     create_legend(page, legend_columns, comExpert/*, true*/);
 
+    // TRN: 'Profile' in this context denotes a group of parameters used to configure
+    //      layer separation procedure for SLA printers.
     auto optgroup = page->new_optgroup(L("Profile settings"));
     optgroup->on_change = [this, optgroup](const t_config_option_key& key, boost::any value)
     {

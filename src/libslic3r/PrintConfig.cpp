@@ -3985,9 +3985,9 @@ void PrintConfigDef::init_sla_params()
 
     def = this->add("area_fill", coFloat);
     def->label = L("Area fill");
-    def->tooltip = L("The percentage of the bed area.\nIf the area of a particular layer is smaller than 'area_fill', "
-                     "then 'Below area fill' parameters are used to determine the layer separation (tearing) procedure. "
-                     "Otherwise 'Above area fill parameters are used.");
+    def->tooltip = L("The value is expressed as a percentage of the bed area. If the area of a particular layer "
+                     "is smaller than 'area_fill', then 'Below area fill' parameters are used to determine the "
+                     "layer separation (tearing) procedure. Otherwise 'Above area fill' parameters are used.");
     def->sidetext = L("%");
     def->min = 0;
     def->mode = comAdvanced;
@@ -4613,7 +4613,7 @@ void PrintConfigDef::init_sla_tilt_params()
 
     def = this->add("tilt_down_offset_steps", coInts);
     def->full_label = L("Tilt down offset steps");
-    def->tooltip = L("Number of steps to move down from the calibrated (horizontal) position with 'tilt_down_initial_profile'.");
+    def->tooltip = L("Number of steps to move down from the calibrated (horizontal) position with 'tilt_down_initial_speed'.");
     def->sidetext = L("μ-steps");
     def->min = 0;
     def->max = 10000;
