@@ -1130,20 +1130,10 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     double supports_volume(0.0);
     double models_volume(0.0);
 
-    double estim_time(0.0);
-    std::vector<std::pair<coord_t, double>> layers_times; // level and time
-    std::vector<std::pair<coord_t, double>> layers_areas; // level and area
-    layers_times.reserve(printer_input.size());
-    layers_areas.reserve(printer_input.size());
-
-    size_t slow_layers = 0;
-    size_t fast_layers = 0;
+    std::vector<std::tuple<double, double, bool, double, double>> layers_info; // time, area, is_fast, models_volume, supports_volume
+    layers_info.resize(printer_input.size());
 
     const double delta_fade_time = (init_exp_time - exp_time) / (fade_layers_cnt + 1);
-    double fade_layer_time = init_exp_time;
-
-    execution::SpinningMutex<ExecutionTBB> mutex;
-    using Lock = std::lock_guard<decltype(mutex)>;
 
     // Going to parallel:
     auto printlayerfn = [this,
@@ -1151,8 +1141,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
             area_fill, display_area, exp_time, init_exp_time, fast_tilt, slow_tilt, hv_tilt, material_config, delta_fade_time, is_prusa_print, first_slow_layers, below, above,
 
             // write vars
-            &mutex, &models_volume, &supports_volume, &estim_time, &slow_layers,
-            &fast_layers, &fade_layer_time, &layers_times, &layers_areas](size_t sliced_layer_cnt)
+            &layers_info](size_t sliced_layer_cnt)
     {
         PrintLayer &layer = m_print->m_printer_input[sliced_layer_cnt];
 
@@ -1202,9 +1191,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
         for (const ExPolygon& polygon : model_polygons)
             layer_model_area += area(polygon);
 
-        if (layer_model_area < 0 || layer_model_area > 0) {
-            Lock lck(mutex); models_volume += layer_model_area * l_height;
-        }
+        const double models_volume = (layer_model_area < 0 || layer_model_area > 0) ? layer_model_area * l_height : 0.;
 
         if(!supports_polygons.empty()) {
             if(model_polygons.empty()) supports_polygons = union_ex(supports_polygons);
@@ -1216,11 +1203,8 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
         for (const ExPolygon& polygon : supports_polygons)
             layer_support_area += area(polygon);
 
-        if (layer_support_area < 0 || layer_support_area > 0) {
-            Lock lck(mutex); supports_volume += layer_support_area * l_height;
-        }
-
-        double layer_area = layer_model_area + layer_support_area;
+        const double supports_volume = (layer_support_area < 0 || layer_support_area > 0) ? layer_support_area * l_height : 0.;
+        const double layer_area = layer_model_area + layer_support_area;
 
         // Here we can save the expensively calculated polygons for printing
         ExPolygons trslices;
@@ -1233,86 +1217,52 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
         // Calculation of the printing time
         // + Calculation of the slow and fast layers to the future controlling those values on FW
         double layer_times = 0.0;
+        bool is_fast_layer = false;
 
         if (is_prusa_print) {
-            const bool is_fast_layer = sliced_layer_cnt < first_slow_layers || layer_area <= display_area * area_fill;
+            is_fast_layer = sliced_layer_cnt < first_slow_layers || layer_area <= display_area * area_fill;
+            const int l_height_nm = 1000000 * l_height;
 
-            { Lock lck(mutex);
+            layer_times = layer_peel_move_time(l_height_nm, is_fast_layer ? below : above) +
+                            (is_fast_layer ? below : above).delay_before_exposure_ms +
+                            (is_fast_layer ? below : above).delay_after_exposure_ms +
+                            refresh_delay_ms * 5 +                  // ~ 5x frame display wait
+                            124;                                    // Magical constant to compensate remaining computation delay in exposure thread
 
-                const int l_height_nm = 1000000 * l_height;
-
-                if (is_fast_layer) {
-                    fast_layers++;
-                    layer_times = layer_peel_move_time(l_height_nm, below) +
-                                  below.delay_before_exposure_ms +
-                                  below.delay_after_exposure_ms +
-                                  refresh_delay_ms * 5 +                  // ~ 5x frame display wait
-                                  124;                                    // Magical constant to compensate remaining computation delay in exposure thread
-                }
-                else {
-                    slow_layers++;
-                    layer_times = layer_peel_move_time(l_height_nm, above) +
-                                  above.delay_before_exposure_ms +
-                                  above.delay_after_exposure_ms +
-                                  refresh_delay_ms * 5 +                  // ~ 5x frame display wait
-                                  124;                                    // Magical constant to compensate remaining computation delay in exposure thread
-                }
-
-                // All before calculations are made in ms, but we need it in s
-                layer_times *= 0.001;
-
-                layers_times.emplace_back(layer.level(), layer_times);
-                estim_time += layer_times;
-                layers_areas.emplace_back(layer.level(), layer_area * SCALING_FACTOR * SCALING_FACTOR);
-            }
-
+            layer_times *= 0.001; // All before calculations are made in ms, but we need it in s
         }
         else {
-            const bool is_fast_layer = layer_area <= display_area*area_fill;
+            is_fast_layer = layer_area <= display_area*area_fill;
             const double tilt_time = material_config.material_print_speed == slamsSlow              ? slow_tilt :
                                      material_config.material_print_speed == slamsHighViscosity     ? hv_tilt   :
                                      is_fast_layer ? fast_tilt : slow_tilt;
 
-            { Lock lck(mutex);
-                if (is_fast_layer)
-                    fast_layers++;
-                else
-                    slow_layers++;
-                if (sliced_layer_cnt < 3)
-                    layer_times += init_exp_time;
-                else if (fade_layer_time > exp_time) {
-                    fade_layer_time -= delta_fade_time;
-                    layer_times += fade_layer_time;
-                }
-                else
-                    layer_times += exp_time;
-                layer_times += tilt_time;
+            layer_times += tilt_time;
 
-                //// Per layer times (magical constants cuclulated from FW)
+            //// Per layer times (magical constants cuclulated from FW)
+            static double exposure_safe_delay_before{ 3.0 };
+            static double exposure_high_viscosity_delay_before{ 3.5 };
+            static double exposure_slow_move_delay_before{ 1.0 };
 
-                static double exposure_safe_delay_before{ 3.0 };
-                static double exposure_high_viscosity_delay_before{ 3.5 };
-                static double exposure_slow_move_delay_before{ 1.0 };
+            if (material_config.material_print_speed == slamsSlow)
+                layer_times += exposure_safe_delay_before;
+            else if (material_config.material_print_speed == slamsHighViscosity)
+                layer_times += exposure_high_viscosity_delay_before;
+            else if (!is_fast_layer)
+                layer_times += exposure_slow_move_delay_before;
 
-                if (material_config.material_print_speed == slamsSlow)
-                    layer_times += exposure_safe_delay_before;
-                else if (material_config.material_print_speed == slamsHighViscosity)
-                    layer_times += exposure_high_viscosity_delay_before;
-                else if (!is_fast_layer)
-                    layer_times += exposure_slow_move_delay_before;
-
-                // Increase layer time for "magic constants" from FW
-                layer_times += (
-                    l_height * 5  // tower move
-                    + 120 / 1000  // Magical constant to compensate remaining computation delay in exposure thread
-                );
-
-                layers_times.emplace_back(layer.level(), layer_times);
-                estim_time += layer_times;
-                layers_areas.emplace_back(layer.level(), layer_area * SCALING_FACTOR * SCALING_FACTOR);
-            }
-
+            // Increase layer time for "magic constants" from FW
+            layer_times += (
+                l_height * 5  // tower move
+                + 120 / 1000  // Magical constant to compensate remaining computation delay in exposure thread
+            );
         }
+
+        // We are done with tilt time, but we haven't added the exposure time yet.
+        layer_times += std::max(exp_time, init_exp_time - sliced_layer_cnt * delta_fade_time);
+
+        // Collect values for this layer.
+        layers_info[sliced_layer_cnt] = std::make_tuple(layer_times, layer_area * SCALING_FACTOR * SCALING_FACTOR, is_fast_layer, models_volume, supports_volume);
     };
 
     // sequential version for debugging:
@@ -1320,31 +1270,26 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     execution::for_each(ex_tbb, size_t(0), printer_input.size(), printlayerfn,
                         execution::max_concurrency(ex_tbb));
 
-    auto SCALING2 = SCALING_FACTOR * SCALING_FACTOR;
-    print_statistics.support_used_material = supports_volume * SCALING2;
-    print_statistics.objects_used_material = models_volume  * SCALING2;
+    print_statistics.clear();
 
-    // Estimated printing time
-    // A layers count o the highest object
     if (printer_input.size() == 0)
         print_statistics.estimated_print_time = NaNd;
     else {
-        print_statistics.estimated_print_time = estim_time;
-
-        // Times and areas vectors were filled in parallel, they need to be sorted first.
-        // The print statistics will contain only the values (in the correct order).
-        std::sort(layers_times.begin(), layers_times.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
-        std::sort(layers_areas.begin(), layers_areas.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
-        print_statistics.layers_times_running_total.clear();
-        for (size_t i=0; i<layers_times.size(); ++i)
-            print_statistics.layers_times_running_total.emplace_back(layers_times[i].second + (i==0 ? 0. : print_statistics.layers_times_running_total[i-1]));
-        print_statistics.layers_areas.clear();
-        for (const auto& [level, area] : layers_areas)
+        size_t i=0;
+        for (const auto& [time, area, is_fast, models_volume, supports_volume] : layers_info) {
+            print_statistics.fast_layers_count += int(is_fast);
+            print_statistics.slow_layers_count += int(! is_fast);
             print_statistics.layers_areas.emplace_back(area);
+            print_statistics.estimated_print_time += time;
+            print_statistics.layers_times_running_total.emplace_back(time + (i==0 ? 0. : print_statistics.layers_times_running_total[i-1]));
+            print_statistics.objects_used_material += models_volume  * SCALING_FACTOR * SCALING_FACTOR;
+            print_statistics.support_used_material += supports_volume * SCALING_FACTOR * SCALING_FACTOR;
+            ++i;
+        }
+        if (is_prusa_print)
+            // For our SLA printers, we add an error of the estimate:
+            print_statistics.estimated_print_time_tolerance = 0.03 * print_statistics.estimated_print_time;
     }
-
-    print_statistics.fast_layers_count = fast_layers;
-    print_statistics.slow_layers_count = slow_layers;
 
     report_status(-2, "", SlicingStatus::RELOAD_SLA_PREVIEW);
 }

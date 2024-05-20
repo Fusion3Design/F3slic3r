@@ -5413,12 +5413,12 @@ void TabSLAMaterial::build_tilt_group(Slic3r::GUI::PageShp page)
 {
     // Legend
     std::vector<std::pair<std::string, std::string>> legend_columns = {
-        {L("Below"), L("Values in this column are for ???")},
-        {L("Above"), L("Values in this column are for ???")},
+        {L("Below"), L("Values in this column are applied when layer area is smaller than area_fill.")},
+        {L("Above"), L("Values in this column are applied when layer area is larger than area_fill.")},
     };
     create_legend(page, legend_columns, comExpert/*, true*/);
 
-    auto optgroup = page->new_optgroup(L("Tilt profiles"));
+    auto optgroup = page->new_optgroup(L("Profile settings"));
     optgroup->on_change = [this, optgroup](const t_config_option_key& key, boost::any value)
     {
         if (key.find_first_of("use_tilt") == 0)
@@ -5482,7 +5482,7 @@ void TabSLAMaterial::toggle_tilt_options(bool is_above)
     if (m_active_page && m_active_page->title() == "Material printing profile")
     {
         int column_id = is_above ? 0 : 1;
-        auto optgroup = m_active_page->get_optgroup("Tilt profiles");
+        auto optgroup = m_active_page->get_optgroup("Profile settings");
         bool use_tilt = boost::any_cast<bool>(optgroup->get_config_value(*m_config, "use_tilt", column_id));
 
         for (const std::string& opt_key : disable_tilt_options) {
@@ -5540,11 +5540,11 @@ void TabSLAMaterial::sys_color_changed()
 void TabSLAMaterial::update_sla_prusa_specific_visibility()
 {
     if (m_active_page && m_active_page->title() == "Material printing profile") {
-        for (auto& title : { "", "Tilt profiles" }) {
+        for (auto& title : { "", "Profile settings" }) {
             auto og_it = std::find_if(m_active_page->m_optgroups.begin(), m_active_page->m_optgroups.end(), 
                          [title](const ConfigOptionsGroupShp og) { return og->title == title; });
             if (og_it != m_active_page->m_optgroups.end())
-                og_it->get()->Show(m_mode == comExpert && is_prusa_printer());
+                og_it->get()->Show(m_mode >= comAdvanced && is_prusa_printer());
         }
 
         auto og_it = std::find_if(m_active_page->m_optgroups.begin(), m_active_page->m_optgroups.end(), 

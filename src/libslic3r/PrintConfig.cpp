@@ -3990,7 +3990,7 @@ void PrintConfigDef::init_sla_params()
                      "Otherwise 'Above area fill parameters are used.");
     def->sidetext = L("%");
     def->min = 0;
-    def->mode = comExpert;
+    def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(35.));
 
     def = this->add("relative_correction", coFloats);
@@ -4515,7 +4515,7 @@ void PrintConfigDef::init_sla_tilt_params()
     def->sidetext = L("s");
     def->min = 0;
     def->max = 30;
-    def->mode = comExpert;
+    def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats({ 3., 3.}));
 
     def = this->add("delay_after_exposure", coFloats);
@@ -4524,7 +4524,7 @@ void PrintConfigDef::init_sla_tilt_params()
     def->sidetext = L("s");
     def->min = 0;
     def->max = 30;
-    def->mode = comExpert;
+    def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats({ 0., 0.}));
 
     def = this->add("tower_hop_height", coInts);
