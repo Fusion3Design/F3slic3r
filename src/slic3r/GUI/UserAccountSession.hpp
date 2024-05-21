@@ -23,8 +23,10 @@ wxDECLARE_EVENT(EVT_UA_SUCCESS, UserAccountSuccessEvent);
 wxDECLARE_EVENT(EVT_UA_PRUSACONNECT_STATUS_SUCCESS, UserAccountSuccessEvent);
 wxDECLARE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_MODELS_SUCCESS, UserAccountSuccessEvent);
 wxDECLARE_EVENT(EVT_UA_AVATAR_SUCCESS, UserAccountSuccessEvent);
+wxDECLARE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_DATA_SUCCESS, UserAccountSuccessEvent);
 wxDECLARE_EVENT(EVT_UA_FAIL, UserAccountFailEvent); // Soft fail - clears only after some number of fails
 wxDECLARE_EVENT(EVT_UA_RESET, UserAccountFailEvent); // Hard fail - clears all
+wxDECLARE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_DATA_FAIL, UserAccountFailEvent); // Failed to get data for printer to select, soft fail, action does not repeat
 
 
 typedef std::function<void(const std::string& body)> UserActionSuccessFn;
@@ -41,6 +43,7 @@ enum class UserAccountActionID {
     USER_ACCOUNT_ACTION_CONNECT_STATUS, // status of all printers by UUID
     USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS, // status of all printers by UUID with printer_model. Should be called once to save printer models.
     USER_ACCOUNT_ACTION_AVATAR,
+    USER_ACCOUNT_ACTION_CONNECT_DATA_FROM_UUID,
 };
 class UserAction
 {
@@ -115,6 +118,7 @@ public:
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_STATUS] = std::make_unique<UserActionGetWithEvent>("CONNECT_STATUS", "https://connect.prusa3d.com/slicer/status", EVT_UA_PRUSACONNECT_STATUS_SUCCESS, EVT_UA_FAIL);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS] = std::make_unique<UserActionGetWithEvent>("CONNECT_PRINTER_MODELS", "https://connect.prusa3d.com/slicer/printer_list", EVT_UA_PRUSACONNECT_PRINTER_MODELS_SUCCESS, EVT_UA_FAIL);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_AVATAR] = std::make_unique<UserActionGetWithEvent>("AVATAR", "https://media.printables.com/media/", EVT_UA_AVATAR_SUCCESS, EVT_UA_FAIL);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_DATA_FROM_UUID] = std::make_unique<UserActionGetWithEvent>("USER_ACCOUNT_ACTION_CONNECT_DATA_FROM_UUID", "https://connect.prusa3d.com/app/printers/", EVT_UA_PRUSACONNECT_PRINTER_DATA_SUCCESS, EVT_UA_FAIL);
     }
     ~UserAccountSession()
     {
@@ -126,6 +130,7 @@ public:
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_TEST_CONNECTION].reset(nullptr);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_STATUS].reset(nullptr);
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_AVATAR].reset(nullptr);
+        m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_DATA_FROM_UUID].reset(nullptr);
     }
     void clear() {
         m_access_token.clear();

@@ -413,7 +413,8 @@ public:
     int             request_user_unbind(std::string dev_id) { return 0; }
     bool            select_printer_from_connect(const std::string& cmd);
     void            select_filament_from_connect(const std::string& cmd);
-    void            handle_connect_request_printer_pick(const std::string& cmd);
+    void            handle_connect_request_printer_select(const std::string& cmd);
+    void            handle_connect_request_printer_select_inner(const std::string& cmd);
     void            show_printer_webview_tab();
     // return true if preset vas invisible and we have to installed it to make it selectable
     bool            select_printer_preset(const Preset* printer_preset);

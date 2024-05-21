@@ -45,7 +45,7 @@ public:
     void enqueue_connect_status_action();
     void enqueue_connect_printer_models_action();
     void enqueue_avatar_action();
-
+    void enqueue_printer_data_action(const std::string& uuid);
     // Clears all data and connections, called on logout or EVT_UA_RESET
     void clear();
 
@@ -57,6 +57,8 @@ public:
     void on_communication_fail();
     bool on_connect_printers_success(const std::string& data, AppConfig* app_config, bool& out_printers_changed);
     bool on_connect_uiid_map_success(const std::string& data, AppConfig* app_config, bool& out_printers_changed);
+
+    void on_activate_window(bool active) { m_communication->on_activate_window(active); }
 
     std::string get_username() const { return m_username; }
     std::string get_access_token();
@@ -72,6 +74,10 @@ public:
 
     const std::map<std::string, ConnectPrinterState>& get_printer_state_table() const { return printer_state_table; }
 
+    void        set_current_printer_uuid_from_connect(const std::string& uuid) { m_current_printer_uuid_from_connect = uuid; }
+    std::string get_current_printer_uuid_from_connect(const std::string& selected_printer_id) const;
+
+    void        set_current_printer_data(const std::string& data) { m_current_printer_data_json_from_connect = data; }
 private:
     void set_username(const std::string& username);
    
@@ -85,6 +91,9 @@ private:
     std::string                         m_username;
     size_t                              m_fail_counter { 0 };
     std::string                         m_avatar_extension;    
+
+    std::string                         m_current_printer_uuid_from_connect;
+    std::string                         m_current_printer_data_json_from_connect;
 
     const std::map<std::string, ConnectPrinterState> printer_state_table = {
         {"OFFLINE"  , ConnectPrinterState::CONNECT_PRINTER_OFFLINE},

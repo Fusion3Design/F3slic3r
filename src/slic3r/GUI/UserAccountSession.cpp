@@ -25,8 +25,10 @@ wxDEFINE_EVENT(EVT_UA_SUCCESS, UserAccountSuccessEvent);
 wxDEFINE_EVENT(EVT_UA_PRUSACONNECT_STATUS_SUCCESS, UserAccountSuccessEvent);
 wxDEFINE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_MODELS_SUCCESS, UserAccountSuccessEvent);
 wxDEFINE_EVENT(EVT_UA_AVATAR_SUCCESS, UserAccountSuccessEvent); 
+wxDEFINE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_DATA_SUCCESS, UserAccountSuccessEvent);
 wxDEFINE_EVENT(EVT_UA_FAIL, UserAccountFailEvent);
 wxDEFINE_EVENT(EVT_UA_RESET, UserAccountFailEvent);
+wxDEFINE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_DATA_FAIL, UserAccountFailEvent);
 
 void UserActionPost::perform(/*UNUSED*/ wxEvtHandler* evt_handler, /*UNUSED*/ const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) const
 {

@@ -1,6 +1,7 @@
 #include "UserAccount.hpp"
 
 #include "format.hpp"
+#include "GUI.hpp"
 
 #include "libslic3r/Utils.hpp"
 
@@ -78,7 +79,7 @@ boost::filesystem::path UserAccount::get_avatar_path(bool logged) const
 {
     if (logged) {
         const std::string filename = "prusaslicer-avatar-" + m_instance_hash + m_avatar_extension;
-        return boost::filesystem::path(wxStandardPaths::Get().GetTempDir().utf8_str().data()) / filename;
+        return into_path(wxStandardPaths::Get().GetTempDir()) / filename;
     } else {
         return  boost::filesystem::path(resources_dir()) / "icons" / "user.svg";
     }
@@ -95,6 +96,10 @@ void UserAccount::enqueue_connect_status_action()
 void UserAccount::enqueue_avatar_action()
 {
     m_communication->enqueue_avatar_action(m_account_user_data["avatar"]);
+}
+void UserAccount::enqueue_printer_data_action(const std::string& uuid)
+{
+    m_communication->enqueue_printer_data_action(uuid);
 }
 
 bool UserAccount::on_login_code_recieved(const std::string& url_message)
@@ -192,6 +197,24 @@ namespace {
 
         }
         return pt::ptree();
+    }
+
+    void fill_supported_printer_models_from_json_inner(const pt::ptree& ptree, std::vector<std::string>& result) {
+        std::string printer_model = parse_tree_for_param(ptree, "printer_model");
+        if (!printer_model.empty()) {
+            result.emplace_back(printer_model);
+        }
+        pt::ptree out = parse_tree_for_subtree(ptree, "supported_printer_models");
+        if (out.empty()) {
+            BOOST_LOG_TRIVIAL(error) << "Failed to find supported_printer_models in printer detail.";
+            return;
+        }
+        for (const auto& sub : out) {
+            if (printer_model != sub.second.data()) {
+                result.emplace_back(sub.second.data());
+            }
+
+        }
     }
 }
 
@@ -303,6 +326,36 @@ bool UserAccount::on_connect_uiid_map_success(const std::string& data, AppConfig
     return on_connect_printers_success(data, app_config, out_printers_changed);
 }
 
+std::string UserAccount::get_current_printer_uuid_from_connect(const std::string& selected_printer_id) const
+{
+    if (m_current_printer_data_json_from_connect.empty() || m_current_printer_uuid_from_connect.empty()) {
+        return {};
+    }
+
+    pt::ptree ptree;
+    try {
+        std::stringstream ss(m_current_printer_data_json_from_connect);
+        pt::read_json(ss, ptree);
+    }
+    catch (const std::exception& e) {
+        BOOST_LOG_TRIVIAL(error) << "Could not parse Printer data from Connect. " << e.what();
+        return {};
+    }
+
+    std::string data_uuid = parse_tree_for_param(ptree, "uuid");
+    assert(data_uuid == m_current_printer_uuid_from_connect);
+
+    //std::string model_name = parse_tree_for_param(ptree, "printer_model");
+    std::vector<std::string> compatible_printers;
+    fill_supported_printer_models_from_json_inner(ptree, compatible_printers);
+    if (compatible_printers.empty()) {
+        return {};
+    }
+    
+    return std::find(compatible_printers.begin(), compatible_printers.end(), selected_printer_id) == compatible_printers.end() ? "" : m_current_printer_uuid_from_connect;
+}
+
+
 std::string UserAccount::get_nozzle_from_json(const std::string& message) const
 {
     std::string out;
@@ -353,21 +406,7 @@ void UserAccount::fill_supported_printer_models_from_json(const std::string& jso
         pt::ptree ptree;
         pt::read_json(ss, ptree);
 
-        std::string printer_model = parse_tree_for_param(ptree, "printer_model");
-        if (!printer_model.empty()) {
-            result.emplace_back(printer_model);
-        }
-        pt::ptree out = parse_tree_for_subtree(ptree, "supported_printer_models");
-        if (out.empty()) {
-            BOOST_LOG_TRIVIAL(error) << "Failed to find supported_printer_models in printer detail.";
-            return;
-        }
-        for (const auto& sub : out) {
-            if (printer_model != sub.second.data()) {
-                result.emplace_back(sub.second.data());
-            }
-            
-        }
+        fill_supported_printer_models_from_json_inner(ptree, result);
     }
     catch (const std::exception& e) {
         BOOST_LOG_TRIVIAL(error) << "Could not parse prusaconnect message. " << e.what();

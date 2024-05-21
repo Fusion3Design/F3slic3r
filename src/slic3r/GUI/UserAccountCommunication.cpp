@@ -333,6 +333,21 @@ void UserAccountCommunication::enqueue_avatar_action(const std::string& url)
     }
     wakeup_session_thread();
 }
+
+void UserAccountCommunication::enqueue_printer_data_action(const std::string& uuid)
+{
+    {
+        std::lock_guard<std::mutex> lock(m_session_mutex);
+        if (!m_session->is_initialized()) {
+            BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
+            return;
+        }
+        m_session->enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_DATA_FROM_UUID, nullptr, nullptr, uuid);
+    }
+    wakeup_session_thread();
+}
+
+
 void UserAccountCommunication::init_session_thread()
 {
     m_thread = std::thread([this]() {
@@ -340,11 +355,15 @@ void UserAccountCommunication::init_session_thread()
             // Wait for 5 seconds or wakeup call
             {
                 std::unique_lock<std::mutex> lck(m_thread_stop_mutex);      
-                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(5), [this] { return m_thread_stop || m_thread_wakeup; });
+                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(10), [this] { return m_thread_stop || m_thread_wakeup; });
             }
             if (m_thread_stop)
                 // Stop the worker thread.
                 break;
+            // Do not process_action_queue if window is not active and thread was not forced to wakeup
+            if (!m_window_is_active && !m_thread_wakeup) {
+                continue;
+            }
             m_thread_wakeup = false;
             {
                 std::lock_guard<std::mutex> lock(m_session_mutex);
@@ -352,6 +371,12 @@ void UserAccountCommunication::init_session_thread()
             }
         }
     });
+}
+
+void UserAccountCommunication::on_activate_window(bool active)
+{
+    std::lock_guard<std::mutex> lck(m_thread_stop_mutex);
+    m_window_is_active = active;
 }
 
 void UserAccountCommunication::wakeup_session_thread()

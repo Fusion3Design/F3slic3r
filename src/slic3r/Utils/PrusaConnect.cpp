@@ -90,8 +90,8 @@ bool PrusaConnectNew::init_upload(PrintHostUpload upload_data, std::string& out)
     const std::string name = get_name();
     const std::string file_size = std::to_string(size);
     const std::string access_token = GUI::wxGetApp().plater()->get_user_account()->get_access_token();
-    const std::string escaped_upload_path = escape_path_by_element(upload_data.upload_path);
-    const std::string escaped_upload_filename = escape_path_by_element(upload_data.upload_path.filename());
+    //const std::string upload_path = upload_data.upload_path.generic_string();
+    const std::string upload_filename = upload_data.upload_path.filename().string();
     std::string url = GUI::format("%1%/app/users/teams/%2%/uploads", get_host(), m_team_id);
     const std::string request_body_json = GUI::format(
         "{"
@@ -101,9 +101,9 @@ bool PrusaConnectNew::init_upload(PrintHostUpload upload_data, std::string& out)
             "\"force\": true, "
             "\"printer_uuid\": \"%4%\""
         "}"
-        , escaped_upload_filename
+        , upload_filename
         , file_size
-        , upload_data.storage + "/" + escaped_upload_path
+        , upload_data.upload_path.generic_string()
         , m_uuid
     );
 
@@ -156,10 +156,20 @@ bool PrusaConnectNew::upload(PrintHostUpload upload_data, ProgressFn progress_fn
     }
     const std::string name = get_name();
     const std::string access_token = GUI::wxGetApp().plater()->get_user_account()->get_access_token();
-    const std::string escaped_upload_path = escape_string(upload_data.storage + "/" + upload_data.upload_path.string());
-    const std::string to_print = upload_data.post_action == PrintHostPostUploadAction::StartPrint ? "true" : "false";
-    const std::string to_queue = upload_data.post_action == PrintHostPostUploadAction::QueuePrint ? "true" : "false";
-    std::string url = GUI::format("%1%/app/teams/%2%/files/raw?upload_id=%3%&force=true&printer_uuid=%4%&path=%5%&to_print=%6%&to_queue=%7%", get_host(), m_team_id, upload_id, m_uuid, escaped_upload_path, to_print, to_queue);
+    const std::string escaped_upload_path = upload_data.storage + "/" + escape_path_by_element(upload_data.upload_path.string());
+    const std::string set_ready = upload_data.set_ready.empty() ? "" : "&set_ready=" + upload_data.set_ready;
+    const std::string position = upload_data.position.empty() ? "" : "&position=" + upload_data.position;
+    const std::string wait_until = upload_data.wait_until.empty() ? "" : "&wait_until=" + upload_data.wait_until;
+    const std::string url = GUI::format(
+        "%1%/app/teams/%2%/files/raw"
+        "?upload_id=%3%"
+        "&force=true"
+        "&printer_uuid=%4%"
+        "&path=%5%"
+        "%6%"
+        "%7%"
+        "%8%"
+        , get_host(), m_team_id, upload_id, m_uuid, escaped_upload_path, set_ready, position, wait_until);
     bool res = true;
 
     BOOST_LOG_TRIVIAL(info) << boost::format("%1%: Uploading file %2% at %3%, filename: %4%, path: %5%, print: %6%")

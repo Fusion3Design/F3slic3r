@@ -272,8 +272,8 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
     //FIXME it seems this method is not called on application start-up, at least not on Windows. Why?
     // The same applies to wxEVT_CREATE, it is not being called on startup on Windows.
     Bind(wxEVT_ACTIVATE, [this](wxActivateEvent& event) {
-        if (m_plater != nullptr && event.GetActive())
-            m_plater->on_activate();
+        if (m_plater != nullptr)
+            m_plater->on_activate(event.GetActive());
         event.Skip();
     });
 
@@ -404,17 +404,11 @@ void MainFrame::update_layout()
     {
         m_plater->Reparent(m_tabpanel);
         m_plater->Layout();
-//        m_tabpanel->InsertNewPage(0, m_plater, _L("Plater"), std::string("plater"), true);
 
         m_main_sizer->Add(m_tabpanel, 1, wxEXPAND | wxTOP, 1);
         m_plater->Show();
         m_tabpanel->ShowFull();
         m_tmp_top_bar->Hide();
-
-        // update Tabs
-        if (old_layout == ESettingsLayout::Dlg)
-            if (int sel = m_tabpanel->GetSelection(); sel != wxNOT_FOUND)
-                m_tabpanel->SetSelection(sel+1);// call SetSelection to correct layout after switching from Dlg to Old mode
         break;
     }
     case ESettingsLayout::Dlg:
@@ -749,6 +743,7 @@ void MainFrame::create_preset_tabs()
 void MainFrame::add_connect_webview_tab()
 {
     if (m_connect_webview_added) {
+        m_connect_webview->resend_config();
         return;
     }
     // parameters of InsertNewPage (to prevent ambigous overloaded function)

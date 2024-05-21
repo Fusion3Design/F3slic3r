@@ -1,12 +1,13 @@
 #include "WebView.hpp"
 #include "slic3r/GUI/GUI_App.hpp"
+#include "slic3r/GUI/GUI.hpp"
 
 #include <wx/uri.h>
 #include <wx/webview.h>
 
 #include <boost/log/trivial.hpp>
 
-wxWebView* WebView::CreateWebView(wxWindow * parent, const wxString& url)
+wxWebView* WebView::CreateWebView(wxWindow * parent, const wxString& url, std::vector<std::string>& message_handlers)
 {
 #if wxUSE_WEBVIEW_EDGE
     bool backend_available = wxWebView::IsBackendAvailable(wxWebViewBackendEdge);
@@ -21,8 +22,8 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, const wxString& url)
     if (webView) {
         wxString correct_url = url.empty() ? wxString("") : wxURI(url).BuildURI();
 
-#ifdef __WIN32__
-        webView->SetUserAgent(wxString::Format("PrusaSlicer/v%s", SLIC3R_VERSION));
+#ifdef __WIN32_
+        webView->SetUserAgent(SLIC3R_APP_FULL_NAME);
         webView->Create(parent, wxID_ANY, correct_url, wxDefaultPosition, wxDefaultSize);
         //We register the wxfs:// protocol for testing purposes
         //webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewArchiveHandler("wxfs")));
@@ -34,15 +35,17 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, const wxString& url)
         // And the memory: file system
         //webView->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new wxWebViewFSHandler("memory")));
         webView->Create(parent, wxID_ANY, correct_url, wxDefaultPosition, wxDefaultSize);
-        webView->SetUserAgent(wxString::Format("PrusaSlicer/v%s", SLIC3R_VERSION));
+        webView->SetUserAgent(wxString::FromUTF8(SLIC3R_APP_FULL_NAME));
 #endif
 #ifndef __WIN32__
-        Slic3r::GUI::wxGetApp().CallAfter([webView] {
+        Slic3r::GUI::wxGetApp().CallAfter([message_handlers, webView] {
 #endif
-        if (!webView->AddScriptMessageHandler("_prusaSlicer")) {
-            // TODO: dialog to user !!!
-            //wxLogError("Could not add script message handler");
-            BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << "Could not add script message handler";
+        for (const std::string& handler : message_handlers) {
+            if (!webView->AddScriptMessageHandler(Slic3r::GUI::into_u8(handler))) {
+                // TODO: dialog to user !!!
+                //wxLogError("Could not add script message handler");
+                BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << "Could not add script message handler " << handler;
+            }
         }
 #ifndef __WIN32__
         });

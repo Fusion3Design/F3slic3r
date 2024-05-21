@@ -16,7 +16,7 @@ namespace GUI {
 class WebViewPanel : public wxPanel
 {
 public:
-    WebViewPanel(wxWindow *parent, const wxString& default_url, const std::string& loading_html = "loading");
+    WebViewPanel(wxWindow *parent, const wxString& default_url, const std::vector<std::string>& message_handler_names, const std::string& loading_html = "loading");
     virtual ~WebViewPanel();
 
     void load_url(const wxString& url);
@@ -47,7 +47,6 @@ public:
     void on_select_all(wxCommandEvent& evt);
     void On_enable_context_menu(wxCommandEvent& evt);
     void On_enable_dev_tools(wxCommandEvent& evt);
-    void on_close(wxCloseEvent& evt);
 
     wxString get_default_url() const { return m_default_url; }
     void set_default_url(const wxString& url) { m_default_url = url; }
@@ -55,7 +54,7 @@ public:
     virtual void sys_color_changed();
 protected:
 
-    wxWebView* m_browser;
+    wxWebView* m_browser { nullptr };
     bool m_load_default_url { false };
 #ifdef DEBUG_URL_PANEL
     
@@ -76,7 +75,6 @@ protected:
     wxMenuItem* m_context_menu;
     wxMenuItem* m_dev_tools;
 #endif
-    long m_zoomFactor;
 
     // Last executed JavaScript snippet, for convenience.
     wxString m_javascript;
@@ -88,7 +86,76 @@ protected:
 
     bool m_load_error_page { false };
     bool m_shown { false };
+
+    std::vector<std::string> m_script_message_hadler_names;
 }; 
+
+
+class WebViewDialog : public wxDialog
+{
+public:
+    WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size, const std::vector<std::string>& message_handler_names, const std::string& loading_html = "loading");
+    virtual ~WebViewDialog();
+
+    virtual void on_show(wxShowEvent& evt) = 0;
+    virtual void on_script_message(wxWebViewEvent& evt) = 0;
+
+    void on_idle(wxIdleEvent& evt);
+    void on_url(wxCommandEvent& evt);
+    void on_back_button(wxCommandEvent& evt);
+    void on_forward_button(wxCommandEvent& evt);
+    void on_stop_button(wxCommandEvent& evt);
+    void on_reload_button(wxCommandEvent& evt);
+
+    void on_view_source_request(wxCommandEvent& evt);
+    void on_view_text_request(wxCommandEvent& evt);
+    void on_tools_clicked(wxCommandEvent& evt);
+    void on_error(wxWebViewEvent& evt);
+
+    void on_run_script_custom(wxCommandEvent& evt);
+    void on_add_user_script(wxCommandEvent& evt);
+    void on_set_custom_user_agent(wxCommandEvent& evt);
+    void on_clear_selection(wxCommandEvent& evt);
+    void on_delete_selection(wxCommandEvent& evt);
+    void on_select_all(wxCommandEvent& evt);
+    void On_enable_context_menu(wxCommandEvent& evt);
+    void On_enable_dev_tools(wxCommandEvent& evt);
+
+    void run_script(const wxString& javascript);
+   
+    void load_error_page();
+
+    virtual void EndModal(int retCode) wxOVERRIDE;
+protected:
+    wxWebView* m_browser {nullptr};
+    std::string m_loading_html;
+
+    bool m_load_error_page{ false };
+#ifdef DEBUG_URL_PANEL
+
+    wxBoxSizer* bSizer_toolbar;
+    wxButton* m_button_back;
+    wxButton* m_button_forward;
+    wxButton* m_button_stop;
+    wxButton* m_button_reload;
+    wxTextCtrl* m_url;
+    wxButton* m_button_tools;
+
+    wxMenu* m_tools_menu;
+    wxMenuItem* m_script_custom;
+
+    wxStaticText* m_info_text;
+
+    wxMenuItem* m_context_menu;
+    wxMenuItem* m_dev_tools;
+#endif
+    // Last executed JavaScript snippet, for convenience.
+    wxString m_javascript;
+    wxString m_response_js;
+    wxString m_default_url;
+
+    std::vector<std::string> m_script_message_hadler_names;
+};
 
 class ConnectRequestHandler
 {
@@ -100,11 +167,12 @@ public:
     void resend_config();
 protected:
     // action callbacs stored in m_actions
-    virtual void on_request_access_token();
-    virtual void on_request_config();
-    virtual void on_request_update_selected_printer_action() = 0;
+    virtual void on_connect_action_request_access_token();
+    virtual void on_connect_action_request_config();
+    virtual void on_connect_action_select_printer() = 0;
+    virtual void on_connect_action_print() = 0;
     virtual void run_script_bridge(const wxString& script) = 0;
-    virtual void request_compatible_printers() = 0;
+    virtual void on_connect_action_webapp_ready() = 0;
 
     std::map<std::string, std::function<void(void)>> m_actions;
     std::string m_message_data;
@@ -119,8 +187,9 @@ public:
     void logout();
     void sys_color_changed() override;
 protected:
-    void on_request_update_selected_printer_action() override;
-    void request_compatible_printers() override {}
+    void on_connect_action_select_printer() override;
+    void on_connect_action_print() override;
+    void on_connect_action_webapp_ready() override {}
     void run_script_bridge(const wxString& script) override {run_script(script); }
 };
 
@@ -144,23 +213,6 @@ private:
     bool m_api_key_sent {false};
 };
 
-
-class WebViewDialog : public wxDialog
-{
-public:
-    WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size, const std::string& loading_html = "loading");
-    virtual ~WebViewDialog();
-
-    virtual void on_show(wxShowEvent& evt) = 0;
-    virtual void on_script_message(wxWebViewEvent& evt) = 0;
-
-    void run_script(const wxString& javascript);
-
-protected:
-    wxWebView* m_browser;
-    std::string m_loading_html;
-};
-
 class PrinterPickWebViewDialog : public WebViewDialog, public ConnectRequestHandler
 {
 public:
@@ -168,11 +220,13 @@ public:
     void on_show(wxShowEvent& evt) override;
     void on_script_message(wxWebViewEvent& evt) override;
 protected:
-    void on_request_update_selected_printer_action() override;
-    void request_compatible_printers() override;
+    void on_connect_action_select_printer() override;
+    void on_connect_action_print() override;
+    void on_connect_action_webapp_ready() override;
     void request_compatible_printers_FFF();
     void request_compatible_printers_SLA();
     void run_script_bridge(const wxString& script) override { run_script(script); }
+
 private:
     std::string& m_ret_val;
 };
