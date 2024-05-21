@@ -163,7 +163,18 @@ public:
     ~PlaterPresetComboBox();
 
     ScalableButton* edit_btn { nullptr };
-    wxGenericStaticText*   connect_info { nullptr };
+
+#ifdef _WIN32
+    wxBoxSizer*             connect_info_sizer      { nullptr };
+    wxGenericStaticText*    connect_available_info  { nullptr };
+    wxGenericStaticText*    connect_printing_info   { nullptr };
+    wxGenericStaticText*    connect_offline_info    { nullptr };
+#else
+    wxFlexGridSizer*        connect_info_sizer      { nullptr };
+    wxStaticText*           connect_available_info  { nullptr };
+    wxStaticText*           connect_printing_info   { nullptr };
+    wxStaticText*           connect_offline_info    { nullptr };
+#endif
 
     void switch_to_tab();
     void change_extruder_color();

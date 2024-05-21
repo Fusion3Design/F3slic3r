@@ -670,12 +670,6 @@ bool PresetComboBox::selection_is_changed_according_to_physical_printers()
 // ***  PlaterPresetComboBox  ***
 // ---------------------------------
 
-static bool is_active_connect()
-{
-    auto user_account = wxGetApp().plater()->get_user_account();
-    return user_account && user_account->is_logged();
-}
-
 PlaterPresetComboBox::PlaterPresetComboBox(wxWindow *parent, Preset::Type preset_type) :
     PresetComboBox(parent, preset_type, wxSize(15 * wxGetApp().em_unit(), -1))
 {
@@ -716,8 +710,47 @@ PlaterPresetComboBox::PlaterPresetComboBox(wxWindow *parent, Preset::Type preset
             switch_to_tab();
     });
 
-    if (m_type == Preset::TYPE_PRINTER)
-        connect_info = new wxGenericStaticText(parent, wxID_ANY, /*"Info about <b>Connect</b> for printer preset"*/ "");
+    if (m_type == Preset::TYPE_PRINTER) {
+
+#ifdef _WIN32
+        connect_info_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+        connect_available_info = new wxGenericStaticText(parent, wxID_ANY, /*"Info about <b>Connect</b> for printer preset"*/ "");
+        connect_offline_info   = new wxGenericStaticText(parent, wxID_ANY, /*"Info about <b>Connect</b> for printer preset"*/ "");
+        connect_printing_info  = new wxGenericStaticText(parent, wxID_ANY, /*"Info about <b>Connect</b> for printer preset"*/ "");
+
+        connect_info_sizer->Add(new wxStaticBitmap(parent, wxID_ANY, *get_bmp_bundle("connect_status", 14, 14, "#5CD800")), 0, wxALIGN_CENTER_VERTICAL);
+        connect_info_sizer->Add(connect_available_info, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+
+        connect_info_sizer->Add(new wxStaticBitmap(parent, wxID_ANY, *get_bmp_bundle("connect_status", 14, 14, "#FB3636")), 0, wxALIGN_CENTER_VERTICAL);
+        connect_info_sizer->Add(connect_offline_info, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+
+        connect_info_sizer->Add(new wxStaticBitmap(parent, wxID_ANY, *get_bmp_bundle("connect_status", 14, 14, "#2E9BFF")), 0, wxALIGN_CENTER_VERTICAL);
+        connect_info_sizer->Add(connect_printing_info, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+#else
+        connect_info_sizer = new wxFlexGridSizer(9, 10, 0);
+        connect_info_sizer->SetFlexibleDirection(wxBOTH);
+
+        connect_available_info = new wxStaticText(parent, wxID_ANY, "0");
+        connect_offline_info   = new wxStaticText(parent, wxID_ANY, "0");
+        connect_printing_info  = new wxStaticText(parent, wxID_ANY, "0");
+        connect_available_info->SetFont(wxGetApp().bold_font());
+        connect_offline_info  ->SetFont(wxGetApp().bold_font());
+        connect_printing_info ->SetFont(wxGetApp().bold_font());
+
+        connect_info_sizer->Add(new wxStaticBitmap(parent, wxID_ANY, *get_bmp_bundle("connect_status", 14, 14, "#5CD800")), 0, wxALIGN_CENTER_VERTICAL | wxTOP, 1);
+        connect_info_sizer->Add(connect_available_info, 0, wxALIGN_CENTER_VERTICAL);
+        connect_info_sizer->Add(new wxStaticText(parent, wxID_ANY, _L("available")), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+
+        connect_info_sizer->Add(new wxStaticBitmap(parent, wxID_ANY, *get_bmp_bundle("connect_status", 14, 14, "#FB3636")), 0, wxALIGN_CENTER_VERTICAL | wxTOP, 1);
+        connect_info_sizer->Add(connect_offline_info, 0, wxALIGN_CENTER_VERTICAL);
+        connect_info_sizer->Add(new wxStaticText(parent, wxID_ANY, _L("offline")), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+
+        connect_info_sizer->Add(new wxStaticBitmap(parent, wxID_ANY, *get_bmp_bundle("connect_status", 14, 14, "#2E9BFF")), 0, wxALIGN_CENTER_VERTICAL | wxTOP, 1);
+        connect_info_sizer->Add(connect_printing_info, 0, wxALIGN_CENTER_VERTICAL);
+        connect_info_sizer->Add(new wxStaticText(parent, wxID_ANY, _L("printing")), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+#endif
+    }
 }
 
 PlaterPresetComboBox::~PlaterPresetComboBox()
@@ -951,7 +984,16 @@ static std::string get_connect_state_suffix_for_printer(const Preset& printer_pr
     return "";
 }
 
-static wxString get_connect_info_line(const Preset& printer_preset)
+static bool fill_data_to_connect_info_line(  const Preset& printer_preset,
+#ifdef _WIN32
+                                            wxGenericStaticText* connect_available_info,
+                                            wxGenericStaticText* connect_offline_info,
+                                            wxGenericStaticText* connect_printing_info)
+#else
+                                            wxStaticText* connect_available_info,
+                                            wxStaticText* connect_offline_info,
+                                            wxStaticText* connect_printing_info)
+#endif
 {
     if (auto printer_state_map = wxGetApp().plater()->get_user_account()->get_printer_state_map();
         !printer_state_map.empty()) {
@@ -962,14 +1004,20 @@ static wxString get_connect_info_line(const Preset& printer_preset)
             {
                 PrinterStatesCount states_cnt = get_printe_states_count(states);
 
-                return format_wxstr(_L("Available: %1%, Offline: %2%, Busy: %3%"),
-                                    format("<b><span color=\"green\">%1%</span></b>" , states_cnt.available_cnt), 
-                                    format("<b><span color=\"red\">%1%</span></b>"   , states_cnt.offline_cnt),
-                                    format("<b><span color=\"yellow\">%1%</span></b>", states_cnt.busy_cnt));
+#ifdef _WIN32
+                connect_available_info->SetLabelMarkup(format_wxstr("%1% %2%", format("<b>%1%</b>", states_cnt.available_cnt), _L("available")));
+                connect_offline_info  ->SetLabelMarkup(format_wxstr("%1% %2%", format("<b>%1%</b>", states_cnt.offline_cnt),   _L("offline")));
+                connect_printing_info ->SetLabelMarkup(format_wxstr("%1% %2%", format("<b>%1%</b>", states_cnt.busy_cnt),      _L("printing")));
+#else
+                connect_available_info->SetLabel(format_wxstr("%1% ", states_cnt.available_cnt));
+                connect_offline_info  ->SetLabel(format_wxstr("%1% ", states_cnt.offline_cnt));
+                connect_printing_info ->SetLabel(format_wxstr("%1% ", states_cnt.busy_cnt));
+#endif
+                return true;
             }
         }
     }
-    return " "; // to correct update of strinh height don't use empty string
+    return false;
 }
 
 // Only the compatible presets are shown.
@@ -1047,7 +1095,7 @@ void PlaterPresetComboBox::update()
         if (m_type == Preset::TYPE_PRINTER) {
             bitmap_type_name = bitmap_key += get_connect_state_suffix_for_printer(preset);
             if (is_selected)
-                connect_info->SetLabelMarkup(get_connect_info_line(preset));
+                connect_info_sizer->Show(fill_data_to_connect_info_line(preset, connect_available_info, connect_offline_info, connect_printing_info));
         }
 
         bool single_bar = false;
@@ -1165,7 +1213,7 @@ void PlaterPresetComboBox::update()
                 }
             }
             if (is_selected_some_ph_printer)
-                connect_info->SetLabel(wxEmptyString);
+                connect_info_sizer->Show(false);
             std::sort(preset_data.begin(), preset_data.end(), [](const PhysicalPrinterPresetData& a, const PhysicalPrinterPresetData& b) {
                 return a.lower_name < b.lower_name;
                 });
@@ -1184,8 +1232,6 @@ void PlaterPresetComboBox::update()
                 validate_selection(data.selected);
             }
         }
-
-        connect_info->Show(is_active_connect());
     }
 
     if (m_type == Preset::TYPE_PRINTER || m_type == Preset::TYPE_FILAMENT || m_type == Preset::TYPE_SLA_MATERIAL) {
@@ -1239,8 +1285,12 @@ void PlaterPresetComboBox::sys_color_changed()
 {
     PresetComboBox::sys_color_changed();
     edit_btn->sys_color_changed();
-    if (connect_info)
-        wxGetApp().UpdateDarkUI(connect_info);
+
+    if (connect_info_sizer) {
+        wxGetApp().UpdateDarkUI(connect_available_info);
+        wxGetApp().UpdateDarkUI(connect_printing_info);
+        wxGetApp().UpdateDarkUI(connect_offline_info);
+    }
 }
 
 // ---------------------------------

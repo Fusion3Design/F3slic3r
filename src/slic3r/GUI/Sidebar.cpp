@@ -379,9 +379,11 @@ Sidebar::Sidebar(Plater *parent)
                 wxBOTTOM, 1);
                 (void)margin_5; // supress unused capture warning
 #endif // __WXGTK3__
-            if ((*combo)->connect_info)
-                sizer_presets->Add((*combo)->connect_info, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT | wxBOTTOM,
-                    int(0.3 * wxGetApp().em_unit()));
+            if ((*combo)->connect_info_sizer) {
+                auto tmp_h_sizer = new wxBoxSizer(wxHORIZONTAL);
+                tmp_h_sizer->Add((*combo)->connect_info_sizer, 1, wxEXPAND);
+                sizer_presets->Add(tmp_h_sizer, 0, wxBOTTOM, int(0.3 * wxGetApp().em_unit()));
+            }
         } else {
             sizer_filaments->Add(combo_and_btn_sizer, 0, wxEXPAND |
 #ifdef __WXGTK3__
