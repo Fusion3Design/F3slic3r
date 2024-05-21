@@ -689,7 +689,7 @@ std::string SLAPrint::validate(std::vector<std::string>*) const
         || !m_material_config.use_tilt.get_at(1) && m_material_config.tower_hop_height.get_at(1) == 0)
         return _u8L("Disabling the 'Use tilt' function causes the object to separate away from the film in the "
                     "vertical direction only. Therefore, it is necessary to set the 'Tower hop height' parameter "
-                    " to a reasonable minimum value.");
+                    "to reasonable value. The recommended value is 5 mm.");
 
     return "";
 }
@@ -845,24 +845,6 @@ bool SLAPrint::invalidate_state_by_config_options(const std::vector<t_config_opt
         "elefant_foot_compensation"sv,
         "elefant_foot_min_width"sv,
         "gamma_correction"sv,
-        // tilt params
-        "delay_before_exposure"sv,
-        "delay_after_exposure"sv,
-        "tower_hop_height"sv,
-        "tower_speed"sv,
-        "use_tilt"sv,
-        "tilt_down_initial_speed"sv,
-        "tilt_down_offset_steps"sv,
-        "tilt_down_offset_delay"sv,
-        "tilt_down_finish_speed"sv,
-        "tilt_down_cycles"sv,
-        "tilt_down_delay"sv,
-        "tilt_up_initial_speed"sv,
-        "tilt_up_offset_steps"sv,
-        "tilt_up_offset_delay"sv,
-        "tilt_up_finish_speed"sv,
-        "tilt_up_cycles"sv,
-        "tilt_up_delay"sv,
     };
 
     // Cache the plenty of parameters, which influence the final rasterization only,
@@ -883,6 +865,25 @@ bool SLAPrint::invalidate_state_by_config_options(const std::vector<t_config_opt
         "display_orientation"sv,
         "sla_archive_format"sv,
         "sla_output_precision"sv
+        // tilt params
+        "delay_before_exposure"sv,
+        "delay_after_exposure"sv,
+        "tower_hop_height"sv,
+        "tower_speed"sv,
+        "use_tilt"sv,
+        "tilt_down_initial_speed"sv,
+        "tilt_down_offset_steps"sv,
+        "tilt_down_offset_delay"sv,
+        "tilt_down_finish_speed"sv,
+        "tilt_down_cycles"sv,
+        "tilt_down_delay"sv,
+        "tilt_up_initial_speed"sv,
+        "tilt_up_offset_steps"sv,
+        "tilt_up_offset_delay"sv,
+        "tilt_up_finish_speed"sv,
+        "tilt_up_cycles"sv,
+        "tilt_up_delay"sv,
+        "area_fill"sv,
     };
 
     static StaticSet steps_ignore = {
@@ -893,7 +894,6 @@ bool SLAPrint::invalidate_state_by_config_options(const std::vector<t_config_opt
         "fast_tilt_time"sv,
         "slow_tilt_time"sv,
         "high_viscosity_tilt_time"sv,
-        "area_fill"sv,
         "bottle_cost"sv,
         "bottle_volume"sv,
         "bottle_weight"sv,
