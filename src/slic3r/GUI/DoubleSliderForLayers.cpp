@@ -203,6 +203,10 @@ void DSForLayers::draw_ticks(const ImRect& slideable_region)
 
         if (ImGui::IsMouseHoveringRect(tick_hover_box.Min, tick_hover_box.Max)) {
             ImGui::RenderFrame(tick_hover_box.Min, tick_hover_box.Max, tick_hovered_clr, false);
+            if (tick_it->type == ColorChange || tick_it->type == ToolChange) {
+                m_focus = fiTick;
+                ImGuiPureWrap::tooltip(get_tooltip(tick_it->tick), ImGui::GetFontSize() * 20.f);
+            }
             break;
         }
         ++tick_it;
@@ -228,22 +232,22 @@ void DSForLayers::draw_ticks(const ImRect& slideable_region)
         bool activate_this_tick = false;
         if (tick_it == active_tick_it && m_allow_editing) {
             // delete tick
-            if (render_button(ImGui::RemoveTick, ImGui::RemoveTickHovered, btn_label, icon_pos, m_ctrl.IsActiveHigherThumb() ? fiHigherThumb : fiLowerThumb, tick_it->tick)) {
+            if (render_button(ImGui::RemoveTick, ImGui::RemoveTickHovered, btn_label, icon_pos, fiActionIcon, tick_it->tick)) {
                 m_ticks.ticks.erase(tick_it);
                 process_ticks_changed();
                 break;
             }
         }        
         else if (m_draw_mode != dmRegular)// if we have non-regular draw mode, all ticks should be marked with error icon
-            activate_this_tick = render_button(ImGui::ErrorTick, ImGui::ErrorTickHovered, btn_label, icon_pos, fiActionIcon, tick_it->tick);
+            activate_this_tick = render_button(ImGui::ErrorTick, ImGui::ErrorTickHovered, btn_label, icon_pos, fiTick, tick_it->tick);
         else if (tick_it->type == ColorChange || tick_it->type == ToolChange) {
             if (m_ticks.is_conflict_tick(*tick_it, m_mode, m_values[tick_it->tick]))
-                activate_this_tick = render_button(ImGui::ErrorTick, ImGui::ErrorTickHovered, btn_label, icon_pos, fiActionIcon, tick_it->tick);
+                activate_this_tick = render_button(ImGui::ErrorTick, ImGui::ErrorTickHovered, btn_label, icon_pos, fiTick, tick_it->tick);
         }
         else if (tick_it->type == CustomGCode::PausePrint)
-            activate_this_tick = render_button(ImGui::PausePrint, ImGui::PausePrintHovered, btn_label, icon_pos, fiActionIcon, tick_it->tick);
+            activate_this_tick = render_button(ImGui::PausePrint, ImGui::PausePrintHovered, btn_label, icon_pos, fiTick, tick_it->tick);
         else
-            activate_this_tick = render_button(ImGui::EditGCode, ImGui::EditGCodeHovered, btn_label, icon_pos, fiActionIcon, tick_it->tick);
+            activate_this_tick = render_button(ImGui::EditGCode, ImGui::EditGCodeHovered, btn_label, icon_pos, fiTick, tick_it->tick);
 
         if (activate_this_tick) {
             m_ctrl.IsActiveHigherThumb() ? SetHigherPos(tick_it->tick) : SetLowerPos(tick_it->tick);
@@ -297,10 +301,14 @@ void DSForLayers::draw_colored_band(const ImRect& groove, const ImRect& slideabl
     ImRect main_band = ImRect(blank_rect);
     main_band.Expand(blank_padding);
 
-    auto draw_band = [](const ImU32& clr, const ImRect& band_rc) {
+    auto draw_band = [this](const ImU32& clr, const ImRect& band_rc) {
         ImGui::RenderFrame(band_rc.Min, band_rc.Max, clr, false, band_rc.GetWidth() * 0.5);
         //cover round corner
         ImGui::RenderFrame(ImVec2(band_rc.Min.x, band_rc.Max.y - band_rc.GetWidth() * 0.5), band_rc.Max, clr, false);
+
+        // add tooltip
+        if (ImGui::IsMouseHoveringRect(band_rc.Min, band_rc.Max))
+            m_focus = fiColorBand;
     };
 
     auto draw_main_band = [&main_band](const ImU32& clr) {
@@ -315,6 +323,8 @@ void DSForLayers::draw_colored_band(const ImRect& groove, const ImRect& slideabl
 
     static float tick_pos;
     std::set<TickCode>::const_iterator tick_it = m_ticks.ticks.begin();
+
+    int rclicked_tick = -1;
     while (tick_it != m_ticks.ticks.end())
     {
         //get position from tick
@@ -337,12 +347,26 @@ void DSForLayers::draw_colored_band(const ImRect& groove, const ImRect& slideabl
                     ImU32 band_clr = IM_COL32(rgba[0] * 255.0f, rgba[1] * 255.0f, rgba[2] * 255.0f, rgba[3] * 255.0f);
                     if (tick_it->tick == 0)
                         draw_main_band(band_clr);
-                    else
+                    else {
                         draw_band(band_clr, band_rect);
+
+                        ImGuiContext& g = *GImGui;
+                        if (ImGui::IsMouseHoveringRect(band_rect.Min, band_rect.Max) && 
+                            g.IO.MouseClicked[1] && !m_ctrl.IsRClickOnThumb()) {
+                            rclicked_tick = tick_it->tick;
+                        }
+                    }
                 }
             }
         }
         tick_it++;
+    }
+
+    if (m_focus == fiColorBand) {
+        if (rclicked_tick > 0)
+            edit_tick(rclicked_tick);
+        else if (auto tip = get_tooltip(); !tip.empty())
+            ImGuiPureWrap::tooltip(tip, ImGui::GetFontSize() * 20.f);
     }
 }
 
@@ -361,10 +385,13 @@ void DSForLayers::render_menu()
         ImGui::OpenPopup("slider_add_tick_menu_popup");
     else if (m_show_cog_menu)
         ImGui::OpenPopup("cog_menu_popup");
+    else if (m_show_edit_menu)
+        ImGui::OpenPopup("edit_menu_popup");
 
     if (can_edit())
         render_add_tick_menu();
     render_cog_menu();
+    render_edit_menu();
 
     ImGui::PopStyleColor(1);
     ImGui::PopStyleVar(4);
@@ -373,6 +400,7 @@ void DSForLayers::render_menu()
     if (context.IO.MouseReleased[0]) {
         m_show_just_color_change_menu = false;
         m_show_cog_menu = false;
+        m_show_edit_menu = false;
     }
 }
 
@@ -416,8 +444,10 @@ void DSForLayers::render_add_tick_menu()
     }
 }
 
-void DSForLayers::render_multi_extruders_menu()
+bool DSForLayers::render_multi_extruders_menu(bool switch_current_code/* = false*/)
 {
+    bool ret = false;
+
     std::vector<std::string> colors;
     if (m_cb_get_extruder_colors)
         colors = m_cb_get_extruder_colors();
@@ -428,7 +458,7 @@ void DSForLayers::render_multi_extruders_menu()
         const int tick = m_ctrl.GetActivePos();
 
         if (m_mode == MultiAsSingle) {
-            const std::string menu_name = _u8L("Change extruder");
+            const std::string menu_name = switch_current_code ? _u8L("Switch code to Change extruder") : _u8L("Change extruder");
             if (ImGuiPureWrap::begin_menu(menu_name.c_str())) {
                 std::array<int, 2> active_extruders = m_ticks.get_active_extruders_for_tick(tick, m_mode);
                 for (int i = 1; i <= extruders_cnt; i++) {
@@ -439,14 +469,18 @@ void DSForLayers::render_multi_extruders_menu()
 
                     std::array<float, 4> rgba = decode_color_to_float_array(colors[i - 1]);
                     ImU32                icon_clr = IM_COL32(rgba[0] * 255.0f, rgba[1] * 255.0f, rgba[2] * 255.0f, rgba[3] * 255.0f);
-                    if (ImGuiPureWrap::menu_item_with_icon(item_name.c_str(), "", ImVec2(14, 14) * m_scale, icon_clr, false, !is_active_extruder))
+                    if (ImGuiPureWrap::menu_item_with_icon(item_name.c_str(), "", ImVec2(14, 14) * m_scale, icon_clr, false, !is_active_extruder)) {
                         add_code_as_tick(ToolChange, i);
+                        ret = true;
+                    }
                 }
                 ImGuiPureWrap::end_menu();
             }
         }
  
-        const std::string menu_name = format(_u8L("Add color change (%1%) for:"), gcode(ColorChange));
+        const std::string menu_name =   switch_current_code ?
+                                        format(_u8L("Switch code to Color change (%1%) for:"), gcode(ColorChange)) :
+                                        format(_u8L("Add color change (%1%) for:"), gcode(ColorChange));
         if (ImGuiPureWrap::begin_menu(menu_name.c_str())) {
             std::set<int> used_extruders_for_tick = m_ticks.get_used_extruders_for_tick(tick, m_values[tick]);
 
@@ -457,12 +491,15 @@ void DSForLayers::render_multi_extruders_menu()
                 if (is_used_extruder)
                     item_name += " (" + _u8L("used") + ")";
 
-                if (ImGuiPureWrap::menu_item_with_icon(item_name.c_str(), ""))
+                if (ImGuiPureWrap::menu_item_with_icon(item_name.c_str(), "")) {
                     add_code_as_tick(ColorChange, i);
+                    ret = true;
+                }
             }
             ImGuiPureWrap::end_menu();
         }
     }
+    return ret;
 }
 
 void DSForLayers::render_color_picker()
@@ -519,6 +556,50 @@ void DSForLayers::render_cog_menu()
     }
 }
 
+void DSForLayers::render_edit_menu()
+{
+    if (!m_show_edit_menu)
+        return;
+
+    const ImVec2 icon_sz = ImVec2(14, 14);
+    if (m_ticks.has_tick(m_ctrl.GetActivePos()) && ImGui::BeginPopup("edit_menu_popup")) {
+        std::set<TickCode>::iterator it = m_ticks.ticks.find(TickCode{ m_ctrl.GetActivePos()});
+
+        if (it->type == ToolChange) {
+            if (render_multi_extruders_menu(true)) {
+                ImGui::EndPopup();
+                return;
+            }
+        }
+        else {
+            std::string edit_item_name = it->type == CustomGCode::ColorChange ? _u8L("Edit color") :
+                                         it->type == CustomGCode::PausePrint  ? _u8L("Edit pause print message") :
+                                                                                _u8L("Edit custom G-code");
+            if (ImGuiPureWrap::menu_item_with_icon(edit_item_name.c_str(), "")) {
+                edit_tick();
+                ImGui::EndPopup();
+                return;
+            }
+        }
+
+        if (it->type == ColorChange && m_mode == MultiAsSingle) {
+            if (render_multi_extruders_menu(true)) {
+                ImGui::EndPopup();
+                return;
+            }
+        }
+
+        std::string delete_item_name =  it->type == CustomGCode::ColorChange ? _u8L("Delete color change") :
+                                        it->type == CustomGCode::ToolChange  ? _u8L("Delete tool change") :
+                                        it->type == CustomGCode::PausePrint  ? _u8L("Delete pause print") :
+                                                                               _u8L("Delete custom G-code");
+        if (ImGuiPureWrap::menu_item_with_icon(delete_item_name.c_str(), ""))
+            delete_current_tick();
+
+        ImGui::EndPopup();
+    }
+}
+
 bool DSForLayers::render_button(const wchar_t btn_icon, const wchar_t btn_icon_hovered, const std::string& label_id, const ImVec2& pos, FocusedItem focus, int tick /*= -1*/)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_WindowBorderSize, 0);
@@ -546,6 +627,9 @@ bool DSForLayers::render_button(const wchar_t btn_icon, const wchar_t btn_icon_h
     std::string tooltip = m_allow_editing ? get_tooltip(tick) : "";
     ImGui::SetCursorPos(ImVec2(0, 0));
     const bool ret = m_imgui->image_button(g.HoveredWindow == g.CurrentWindow ? btn_icon_hovered : btn_icon, tooltip, false);
+
+    if (tick > 0 && tick == m_ctrl.GetActivePos() && g.HoveredWindow == g.CurrentWindow && g.IO.MouseClicked[1])
+        m_show_edit_menu = true;
 
     ImGuiPureWrap::end();
 
@@ -814,7 +898,7 @@ std::string DSForLayers::get_tooltip(int tick/*=-1*/)
                             "or Set ruler mode")) % "(Shift + G)").str();
     }
     if (m_focus == fiColorBand)
-        return m_mode != SingleExtruder ? "" :
+        return m_mode != SingleExtruder || !can_edit() ? "" :
                _u8L("Edit current color - Right click the colored slider segment");
     if (m_focus == fiSmartWipeTower)
         return _u8L("This is wipe tower layer");
@@ -884,7 +968,7 @@ std::string DSForLayers::get_tooltip(int tick/*=-1*/)
         };
         tooltip +=  
         	tick_code_it->type == ColorChange ?
-        		(m_mode == SingleExtruder ?
+        		(m_mode == SingleExtruder && tick_code_it->extruder==1 ?
                 	format(_u8L("Color change (\"%1%\")"), gcode(ColorChange)) :
                     format(_u8L("Color change (\"%1%\") for Extruder %2%"), gcode(ColorChange), tick_code_it->extruder)) :
 	            tick_code_it->type == CustomGCode::PausePrint ?

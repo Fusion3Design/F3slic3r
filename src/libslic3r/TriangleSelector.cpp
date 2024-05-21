@@ -1560,7 +1560,7 @@ TriangleSelector::TriangleSplittingData TriangleSelector::serialize() const {
             } else {
                 // In case this is leaf, we better save information about its state.
                 int n = int(tr.get_state());
-                if (n < static_cast<size_t>(TriangleStateType::Count))
+                if (n < static_cast<int>(TriangleStateType::Count))
                     data.used_states[n] = true;
 
                 if (n >= 3) {

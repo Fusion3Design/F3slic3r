@@ -1048,7 +1048,7 @@ void MainFrame::on_dpi_changed(const wxRect& suggested_rect)
     this->SetFont(this->normal_font());
 
 #ifdef _WIN32
-    if (m_tmp_top_bar->IsShown())
+    if (m_tmp_top_bar && m_tmp_top_bar->IsShown())
         m_tmp_top_bar->Rescale();
     m_tabpanel->Rescale();
 #endif

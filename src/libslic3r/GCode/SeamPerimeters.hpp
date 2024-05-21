@@ -185,6 +185,19 @@ inline std::size_t get_layer_count(
     }
     return layer_count;
 }
+
+inline std::vector<Vec2d> extract_points(
+    const Perimeters::Perimeter &perimeter, const Perimeters::PointType point_type
+) {
+    std::vector<Vec2d> result;
+    for (std::size_t i{0}; i < perimeter.positions.size(); ++i) {
+        if (perimeter.point_types[i] == point_type) {
+            result.push_back(perimeter.positions[i]);
+        }
+    }
+    return result;
+}
+
 } // namespace Slic3r::Seams::Perimeters
 
 #endif // libslic3r_SeamPerimeters_hpp_
