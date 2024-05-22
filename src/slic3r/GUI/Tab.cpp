@@ -5472,43 +5472,12 @@ void TabSLAMaterial::build_tilt_group(Slic3r::GUI::PageShp page)
     {
         if (key.find_first_of("use_tilt") == 0)
             toggle_tilt_options(key == "use_tilt#0");
-
             update_dirty();
             update();
     };
 
     for (const std::string& opt_key : tilt_options())
         append_tilt_options_line(optgroup, opt_key);
-}
-
-static boost::any get_def_config_value(const DynamicPrintConfig& config, const std::string& opt_key, int idx)
-{
-    boost::any ret;
-
-    const ConfigOptionDef* opt = config.def()->get(opt_key);
-    auto def_values = opt->default_value;
-    if (def_values) {
-        switch (def_values->type()) {
-        case coFloats: {
-            double val = static_cast<const ConfigOptionFloats*>(def_values.get())->get_at(idx);
-            ret = double_to_string(val);
-        }
-        break;
-        case coInts:
-            ret = static_cast<const ConfigOptionInts*>(def_values.get())->get_at(idx);
-            break;
-        case coBools:
-            ret = static_cast<const ConfigOptionBools*>(def_values.get())->get_at(idx);
-            break;
-        case coEnums:
-            ret = static_cast<const ConfigOptionEnumsGeneric*>(def_values.get())->get_at(idx);
-            break;
-        case coNone:
-        default:
-            break;
-        }
-    }
-    return ret;
 }
 
 std::vector<std::string> disable_tilt_options = {

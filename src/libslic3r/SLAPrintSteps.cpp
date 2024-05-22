@@ -1127,9 +1127,6 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
     const auto height         = scaled<double>(printer_config.display_height.getFloat());
     const double display_area = width*height;
 
-    double supports_volume(0.0);
-    double models_volume(0.0);
-
     std::vector<std::tuple<double, double, bool, double, double>> layers_info; // time, area, is_fast, models_volume, supports_volume
     layers_info.resize(printer_input.size());
 
@@ -1220,7 +1217,7 @@ void SLAPrint::Steps::merge_slices_and_eval_stats() {
         bool is_fast_layer = false;
 
         if (is_prusa_print) {
-            is_fast_layer = sliced_layer_cnt < first_slow_layers || layer_area <= display_area * area_fill;
+            is_fast_layer = int(sliced_layer_cnt) < first_slow_layers || layer_area <= display_area * area_fill;
             const int l_height_nm = 1000000 * l_height;
 
             layer_times = layer_peel_move_time(l_height_nm, is_fast_layer ? below : above) +
