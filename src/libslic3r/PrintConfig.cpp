@@ -3984,10 +3984,10 @@ void PrintConfigDef::init_sla_params()
     def->set_default_value(new ConfigOptionFloat(10.));
 
     def = this->add("area_fill", coFloat);
-    def->label = L("Area fill");
+    def->label = L("Area fill threshold");
     def->tooltip = L("The value is expressed as a percentage of the bed area. If the area of a particular layer "
-                     "is smaller than 'area_fill', then 'Below area fill' parameters are used to determine the "
-                     "layer separation (tearing) procedure. Otherwise 'Above area fill' parameters are used.");
+                     "is smaller than 'area_fill', then 'Below area fill threshold' parameters are used to determine the "
+                     "layer separation (tearing) procedure. Otherwise 'Above area fill threshold' parameters are used.");
     def->sidetext = L("%");
     def->min = 0;
     def->mode = comAdvanced;
