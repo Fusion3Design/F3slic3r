@@ -387,7 +387,6 @@ void MainFrame::update_layout()
                                  layout   == ESettingsLayout::Dlg       ? State::toDlg      : State::noUpdate;
 #endif //__WXMSW__
 
-    ESettingsLayout old_layout = m_layout;
     m_layout = layout;
 
     // From the very beginning the Print settings should be selected

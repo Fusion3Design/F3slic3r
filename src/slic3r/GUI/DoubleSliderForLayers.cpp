@@ -561,7 +561,6 @@ void DSForLayers::render_edit_menu()
     if (!m_show_edit_menu)
         return;
 
-    const ImVec2 icon_sz = ImVec2(14, 14);
     if (m_ticks.has_tick(m_ctrl.GetActivePos()) && ImGui::BeginPopup("edit_menu_popup")) {
         std::set<TickCode>::iterator it = m_ticks.ticks.find(TickCode{ m_ctrl.GetActivePos()});
 

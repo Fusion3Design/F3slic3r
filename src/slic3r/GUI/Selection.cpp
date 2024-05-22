@@ -836,7 +836,7 @@ std::pair<BoundingBoxf3, Transform3d> Selection::get_bounding_box_in_reference_s
             // workaround to avoid a crash, see spe-2295 -> Crash when re-cutting with dowel connectors
             const int obj_id = vol.object_idx();
             const int vol_id = vol.volume_idx();
-            if (m_model->objects[obj_id]->volumes.size() <= vol_id)
+            if (int(m_model->objects[obj_id]->volumes.size()) <= vol_id)
                 continue;
             mesh = &m_model->objects[vol.object_idx()]->volumes[vol.volume_idx()]->mesh();
         }
