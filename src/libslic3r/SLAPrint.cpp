@@ -223,6 +223,7 @@ static t_config_option_keys print_config_diffs(const StaticPrintConfig     &curr
         "relative_correction_y"sv,
         "relative_correction_z"sv,
         "elefant_foot_compensation"sv,
+        "absolute_correction"sv,
     };
 
     static constexpr auto material_ow_prefix = "material_ow_";
@@ -908,6 +909,7 @@ bool SLAPrint::invalidate_state_by_config_options(const std::vector<t_config_opt
         "material_ow_branchingsupport_head_width"sv,
         "material_ow_elefant_foot_compensation"sv,
         "material_ow_support_points_density_relative"sv,
+        "material_ow_absolute_correction"sv,
         "material_ow_relative_correction_x"sv,
         "material_ow_relative_correction_y"sv,
         "material_ow_relative_correction_z"sv,

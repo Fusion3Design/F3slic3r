@@ -5694,6 +5694,7 @@ std::vector<std::pair<std::string, std::vector<std::string>>> material_overrides
         "support_points_density_relative"
     }},
     {"Corrections", {
+        "absolute_correction",
         "relative_correction",
         "elefant_foot_compensation"
     }}
