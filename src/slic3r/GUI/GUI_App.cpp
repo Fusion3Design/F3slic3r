@@ -2569,7 +2569,6 @@ wxMenu* GUI_App::get_config_menu()
         local_menu->Append(config_id_base + ConfigMenuWizard, config_wizard_name + dots, config_wizard_tooltip);
         local_menu->Append(config_id_base + ConfigMenuSnapshots, _L("&Configuration Snapshots") + dots, _L("Inspect / activate configuration snapshots"));
         local_menu->Append(config_id_base + ConfigMenuTakeSnapshot, _L("Take Configuration &Snapshot"), _L("Capture a configuration snapshot"));
-        local_menu->Append(config_id_base + ConfigMenuManageUpdateConf, _L("Manage Configuration Updates"), _L("Manage Configuration Updates"));
         local_menu->Append(config_id_base + ConfigMenuUpdateConf, _L("Check for Configuration Updates"), _L("Check for configuration updates"));
         local_menu->Append(config_id_base + ConfigMenuUpdateApp, _L("Check for Application Updates"), _L("Check for new version of application"));
 #if defined(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION) 
@@ -2601,9 +2600,6 @@ wxMenu* GUI_App::get_config_menu()
         case ConfigMenuWizard:
             run_wizard(ConfigWizard::RR_USER);
             break;
-		case ConfigMenuManageUpdateConf:
-			manage_updates();
-			break;
 		case ConfigMenuUpdateConf:
 			check_updates(true);
 			break;
@@ -3226,7 +3222,6 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
         m_login_dialog.reset();
     }
 #endif // 0
-    plater()->get_preset_archive_database()->set_wizard_lock(true);
     plater()->get_preset_archive_database()->sync_blocking();
 
     auto wizard = new ConfigWizard(mainframe);
@@ -3246,7 +3241,6 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
         if (preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA)
             may_switch_to_SLA_preset(_L("Configuration is editing from ConfigWizard"));
     }
-    plater()->get_preset_archive_database()->set_wizard_lock(false);
     return res;
 }
 
@@ -3451,23 +3445,22 @@ bool GUI_App::config_wizard_startup()
     return false;
 }
 
-void GUI_App::manage_updates()
+void GUI_App::manage_preset_repositiories()
 {
-    ManageUpdatesDialog dlg(plater()->get_preset_archive_database());
+    ManagePresetRepositoriesDialog dlg(plater()->get_preset_archive_database());
     dlg.ShowModal();
 }
 
-bool GUI_App::check_updates(const bool verbose)
+bool GUI_App::check_updates(const bool invoked_automatically)
 {	
     // verbose means - not run after startup, but by user
-    if (verbose) {
+    if (invoked_automatically) {
         // do preset_updater sync so if user runs slicer for a long time, check for updates actually delivers updates.
         // for preset_updater sync we need to sync archive database first
         plater()->get_preset_archive_database()->sync_blocking();
         // and we can have user to select the repos they want (thats additional dialog)
-        manage_updates();
+        manage_preset_repositiories();
         // then its time for preset_updater sync 
-        // BE CAREFUL! sync and sync_blocking sends event that calls check_updates(false)
         preset_updater->sync_blocking(preset_bundle, this, plater()->get_preset_archive_database()->get_archive_repositories(), plater()->get_preset_archive_database()->get_selected_repositories_uuid());
         // and then we check updates
     }
@@ -3475,7 +3468,7 @@ bool GUI_App::check_updates(const bool verbose)
 	PresetUpdater::UpdateResult updater_result;
 	try {
         preset_updater->update_index_db();
-		updater_result = preset_updater->config_update(app_config->orig_version(), verbose ? PresetUpdater::UpdateParams::SHOW_TEXT_BOX : PresetUpdater::UpdateParams::SHOW_NOTIFICATION, plater()->get_preset_archive_database()->get_archive_repositories());
+		updater_result = preset_updater->config_update(app_config->orig_version(), invoked_automatically ? PresetUpdater::UpdateParams::SHOW_TEXT_BOX : PresetUpdater::UpdateParams::SHOW_NOTIFICATION, plater()->get_preset_archive_database()->get_archive_repositories());
 		if (updater_result == PresetUpdater::R_INCOMPAT_EXIT) {
 			mainframe->Close();
             // Applicaiton is closing.
@@ -3484,7 +3477,7 @@ bool GUI_App::check_updates(const bool verbose)
 		else if (updater_result == PresetUpdater::R_INCOMPAT_CONFIGURED) {
             m_app_conf_exists = true;
 		}
-		else if (verbose && updater_result == PresetUpdater::R_NOOP) {
+		else if (invoked_automatically && updater_result == PresetUpdater::R_NOOP) {
 			MsgNoUpdates dlg;
 			dlg.ShowModal();
 		}

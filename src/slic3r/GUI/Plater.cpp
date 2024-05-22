@@ -909,7 +909,6 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                 wxGetApp().update_login_dialog();
 #endif // 0
                 this->show_action_buttons(this->ready_to_slice);
-                preset_archive_database->set_access_token(user_account->get_access_token());
  
             } else {
                 // data were corrupt and username was not retrieved
@@ -923,7 +922,6 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                 this->main_frame->refresh_account_menu(true);
                 // Update sidebar printer status
                 sidebar->update_printer_presets_combobox();
-                preset_archive_database->set_access_token({});
             }
         
         });
@@ -937,7 +935,6 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->main_frame->refresh_account_menu(true);
             // Update sidebar printer status
             sidebar->update_printer_presets_combobox();
-            preset_archive_database->set_access_token({});
             });
         this->q->Bind(EVT_UA_FAIL, [this](UserAccountFailEvent& evt) {
             BOOST_LOG_TRIVIAL(error) << "Failed communication with Prusa Account: " << evt.data;

@@ -286,11 +286,7 @@ void PresetUpdater::priv::get_missing_resource(const GUI::ArchiveRepository& arc
 // gets resource to vendor/<vendor_name>/
 void PresetUpdater::priv::get_or_copy_missing_resource(const GUI::ArchiveRepository& archive, const std::string& vendor, const std::string& filename, const std::string& repository_id_from_ini) const
 {
-	assert(!filename.empty() && !vendor.empty() /*&& !repository_id_from_ini.empty()*/);
-	//if (filename.empty() || vendor.empty()) {
-	//	BOOST_LOG_TRIVIAL(error) << "PresetUpdater::get_or_copy_missing_resource - wrong input. vendor: " << vendor << " filename: " << filename;
-	//	return;
-	//}
+	assert(!filename.empty() && !vendor.empty());
 
 	const fs::path file_in_vendor(vendor_path / (vendor + "/" + filename));
 	const fs::path file_in_rsrc(rsrc_path / (vendor + "/" + filename));
@@ -337,7 +333,7 @@ void PresetUpdater::priv::sync_config(const VendorMap& vendors, const GUI::Archi
 		return;
 	}
 	if (cancel) { 
-		return; 
+		return;
 	}
 
 	enum class VendorStatus
@@ -1138,8 +1134,6 @@ void PresetUpdater::sync_blocking(const PresetBundle* preset_bundle, wxEvtHandle
 			this->p->sync_config(preset_bundle->vendors, *archive);
 		}
 	}
-	wxCommandEvent* evt = new wxCommandEvent(EVT_CONFIG_UPDATER_SYNC_DONE);
-	evt_handler->QueueEvent(evt);
 }
 
 void PresetUpdater::slic3r_update_notify()

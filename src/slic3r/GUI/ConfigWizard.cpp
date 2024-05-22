@@ -171,11 +171,11 @@ BundleMap BundleMap::load()
                 
                 fs::path idx_path (archive_dir / (id + ".idx"));
                 if (!boost::filesystem::exists(idx_path)) {
-                    BOOST_LOG_TRIVIAL(error) << format("Missing index %1% when loading bundle %2%. Going to search for it in cache folder.", idx_path.string(), id);
+                    BOOST_LOG_TRIVIAL(info) << format("Missing index %1% when loading bundle %2%. Going to search for it in cache folder.", idx_path.string(), id);
                     idx_path = fs::path(cache_dir / (id + ".idx"));
                 }
                 if (!boost::filesystem::exists(idx_path)) {
-                    BOOST_LOG_TRIVIAL(error) << format("Missing index %1% when loading bundle %2%. Going to search for it in vendor folder. Is it a 3rd party profile?", idx_path.string(), id);
+                    BOOST_LOG_TRIVIAL(info) << format("Missing index %1% when loading bundle %2%. Going to search for it in vendor folder. Is it a 3rd party profile?", idx_path.string(), id);
                     idx_path = fs::path(vendor_dir / (id + ".idx"));
                 }
                 if (!boost::filesystem::exists(idx_path)) {
@@ -229,109 +229,6 @@ BundleMap BundleMap::load()
 
     return res;
 }
-#if 0
-// Reload is a mockup of a function that takes existing BundleMap and reshapes it into current form.
-// It would be called after calling preset_updater->sync_blocking() and preset_updater->config_update() instead of fully loading it from scratch.
-// Some entries will stop existing because its repositories were unselected.
-// Missing: Entries that changed location: e.g. newer ini is now ready in archive_dir, while previously it was in rsrc_vendor_dir
-void BundleMap::reload(BundleMap& res)
-{
-    const auto vendor_dir = (boost::filesystem::path(Slic3r::data_dir()) / "vendor").make_preferred();
-    const auto archive_dir = (boost::filesystem::path(Slic3r::data_dir()) / "cache" / "vendor").make_preferred();
-    const auto rsrc_vendor_dir = (boost::filesystem::path(resources_dir()) / "profiles").make_preferred();
-    const auto cache_dir = boost::filesystem::path(Slic3r::data_dir()) / "cache"; // for Index
-    
-    // Load the other bundles in the datadir/vendor directory
-    // and then additionally from datadir/cache/vendor (archive) and resources/profiles.
-    // Should we concider case where archive has older profiles than resources (shouldnt happen)? -> YES, it happens during re-configuration when running older PS after newer version
-    typedef std::pair<const fs::path&, BundleLocation> DirData;
-    std::vector<DirData> dir_list{ {vendor_dir, BundleLocation::IN_VENDOR},  {archive_dir, BundleLocation::IN_ARCHIVE},  {rsrc_vendor_dir, BundleLocation::IN_RESOURCES} };
-    for (auto dir : dir_list) {
-        if (!fs::exists(dir.first))
-            continue;
-        for (const auto& dir_entry : boost::filesystem::directory_iterator(dir.first)) {
-            if (Slic3r::is_ini_file(dir_entry)) {
-                std::string id = dir_entry.path().stem().string();  // stem() = filename() without the trailing ".ini" part
-
-                // Don't load this bundle if we've already loaded it.
-                if (res.find(id) != res.end()) { continue; }
-
-                // Fresh index should be in archive_dir, otherwise look for it in cache 
-                // Then if not in archive or cache - it could be 3rd party profile that user just copied to vendor folder (both ini and cache)
-
-                fs::path idx_path(archive_dir / (id + ".idx"));
-                if (!boost::filesystem::exists(idx_path)) {
-                    BOOST_LOG_TRIVIAL(error) << format("Missing index %1% when loading bundle %2%. Going to search for it in cache folder.", idx_path.string(), id);
-                    idx_path = fs::path(cache_dir / (id + ".idx"));
-                }
-                if (!boost::filesystem::exists(idx_path)) {
-                    BOOST_LOG_TRIVIAL(error) << format("Missing index %1% when loading bundle %2%. Going to search for it in vendor folder. Is it a 3rd party profile?", idx_path.string(), id);
-                    idx_path = fs::path(vendor_dir / (id + ".idx"));
-                }
-                if (!boost::filesystem::exists(idx_path)) {
-                    BOOST_LOG_TRIVIAL(error) << format("Could not load bundle %1% due to missing index %2%.", id, idx_path.string());
-                    continue;
-                }
-
-                Slic3r::GUI::Config::Index index;
-                try {
-                    index.load(idx_path);
-                }
-                catch (const std::exception& /* err */) {
-                    BOOST_LOG_TRIVIAL(error) << format("Could not load bundle %1% due to invalid index %2%.", id, idx_path.string());
-                    continue;
-                }
-                const auto recommended_it = index.recommended();
-                if (recommended_it == index.end()) {
-                    BOOST_LOG_TRIVIAL(error) << format("Could not load bundle %1% due to no recommended version in index %2%.", id, idx_path.string());
-                    continue;
-                }
-                const auto recommended = recommended_it->config_version;
-                VendorProfile vp;
-                try {
-                    vp = VendorProfile::from_ini(dir_entry, true);
-                }
-                catch (const std::exception& e) {
-                    BOOST_LOG_TRIVIAL(error) << format("Could not load bundle %1% due to corrupted profile file %2%. Message: %3%", id, dir_entry.path().string(), e.what());
-                    continue;
-                }
-                // Don't load
-                if (vp.config_version > recommended)
-                    continue;
-
-                Bundle bundle;
-                if (bundle.load(dir_entry.path(), dir.second))
-                    res.emplace(std::move(id), std::move(bundle));
-            }
-        }
-    }
-
-    // Delete no longer existing entries and not used repos
-    const PresetArchiveDatabase* pad = wxGetApp().plater()->get_preset_archive_database();
-    std::vector<std::string> to_erease;
-    for (const auto& entry : res) {
-        fs::path ini_path;
-        switch (entry.second.location) {
-        case IN_VENDOR: ini_path = vendor_dir / (entry.first + ".ini"); break;
-        case IN_ARCHIVE: ini_path = archive_dir / (entry.first + ".ini"); break;
-        case IN_RESOURCES: ini_path = rsrc_vendor_dir / (entry.first + ".ini");  break;
-        default: assert(true);
-        }
-        if (!fs::exists(ini_path)) {
-            to_erease.emplace_back(entry.first);
-            continue;
-        }
-        if (entry.second.vendor_profile->repo_id.empty() || !pad->is_selected_repository_by_id(entry.second.vendor_profile->repo_id))
-        {
-            to_erease.emplace_back(entry.first);
-        }
-    }
-    for (const std::string& id : to_erease)
-    {
-        res.erase(id);
-    }
-}
-#endif // 0
 
 Bundle& BundleMap::prusa_bundle()
 {
@@ -732,11 +629,11 @@ PageUpdateManager::PageUpdateManager(ConfigWizard* parent_in)
 
     const int em = em_unit(this);
 
-    m_manager = std::make_unique<UIManager>(this, wxGetApp().plater()->get_preset_archive_database(), em);
+    m_manager = std::make_unique<RepositoryUpdateUIManager>(this, wxGetApp().plater()->get_preset_archive_database(), em);
 
     auto sizer = m_manager->get_sizer();
 
-    ScalableButton* btn = new ScalableButton(this, wxID_ANY, "", "  " + _L("Confirm configuration update") + "  ");
+    wxButton* btn = new wxButton(this, wxID_ANY, "  " + _L("Confirm configuration update") + "  ");
     btn->SetFont(wxGetApp().bold_font());
     wxGetApp().UpdateDarkUI(btn, true);
     btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) { 

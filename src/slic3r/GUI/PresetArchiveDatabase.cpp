@@ -660,15 +660,14 @@ std::string PresetArchiveDatabase::get_next_uuid()
 }
 
 namespace {
-bool sync_inner(const std::string& token, std::string& manifest)
+bool sync_inner(std::string& manifest)
 {
 	bool ret = false;
 #ifdef SLIC3R_REPO_URL
     std::string url = SLIC3R_REPO_URL;
 #else
-    std::string url = "http://10.24.3.3:8001/v1/repos";
+    std::string url = "https://preset-repo-api-stage.prusa3d.com/v1/repos";
 #endif
-	// TODO: use token
     auto http = Http::get(std::move(url));
     add_authorization_header(http);
     http
@@ -688,23 +687,11 @@ bool sync_inner(const std::string& token, std::string& manifest)
 
 void PresetArchiveDatabase::sync_blocking()
 {
-	if (m_wizard_lock) {
-		m_staged_sync = true;
-		return;
-	}
+	BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << " " << std::this_thread::get_id();
 	std::string manifest;
-	if (!sync_inner(m_token, manifest))
+	if (!sync_inner(manifest))
 		return;
 	read_server_manifest(std::move(manifest));
-}
-
-void PresetArchiveDatabase::set_wizard_lock(bool lock) 
-{ 
-	m_wizard_lock = lock;
-	if (m_staged_sync) {
-		sync_blocking();
-	}
-	m_staged_sync = false;
 }
 
 }} // Slic3r::GUI

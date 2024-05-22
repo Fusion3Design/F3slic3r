@@ -96,7 +96,6 @@ enum ConfigMenuIDs {
     ConfigMenuWizard,
     ConfigMenuSnapshots,
     ConfigMenuTakeSnapshot,
-    ConfigMenuManageUpdateConf,
     ConfigMenuUpdateConf,
     ConfigMenuUpdateApp,
     ConfigMenuDesktopIntegration,
@@ -441,10 +440,10 @@ private:
     bool            select_language();
 
     bool            config_wizard_startup();
-    void            manage_updates();
+    void            manage_preset_repositiories();
     // Returns true if the configuration is fine. 
     // Returns true if the configuration is not compatible and the user decided to rather close the slicer instead of reconfiguring.
-	bool            check_updates(const bool verbose);
+	bool            check_updates(const bool invoked_automatically);
     void            on_version_read(wxCommandEvent& evt);
     // if the data from version file are already downloaded, shows dialogs to start download of new version of app
     void            app_updater(bool from_user);

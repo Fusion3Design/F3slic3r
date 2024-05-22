@@ -97,7 +97,7 @@ struct BundleMap : std::map<std::string /* = vendor ID */, Bundle>
 
 struct Materials;
 
-class UIManager;
+class RepositoryUpdateUIManager;
 
 struct PrinterPickerEvent;
 
@@ -187,7 +187,7 @@ struct PageWelcome: ConfigWizardPage
 
 struct PageUpdateManager : ConfigWizardPage
 {
-    std::unique_ptr<UIManager>  m_manager;
+    std::unique_ptr<RepositoryUpdateUIManager>  m_manager;
 
     PageUpdateManager(ConfigWizard* parent);
 };

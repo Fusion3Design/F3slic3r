@@ -20,7 +20,7 @@ namespace fs = boost::filesystem;
 namespace Slic3r { 
 namespace GUI {
 
-UIManager::UIManager(wxWindow* parent, PresetArchiveDatabase* pad, int em) :
+RepositoryUpdateUIManager::RepositoryUpdateUIManager(wxWindow* parent, PresetArchiveDatabase* pad, int em) :
     m_parent(parent)
     ,m_pad(pad)
     ,m_main_sizer(new wxBoxSizer(wxVERTICAL))
@@ -56,7 +56,7 @@ UIManager::UIManager(wxWindow* parent, PresetArchiveDatabase* pad, int em) :
     fill_grids();
 }
 
-void UIManager::fill_entries(bool init_selection/* = false*/)
+void RepositoryUpdateUIManager::fill_entries(bool init_selection/* = false*/)
 {
     m_online_entries.clear();
     m_offline_entries.clear();
@@ -82,7 +82,7 @@ void UIManager::fill_entries(bool init_selection/* = false*/)
 }
 
 
-void UIManager::fill_grids()
+void RepositoryUpdateUIManager::fill_grids()
 {
     // clear grids
     m_online_sizer->Clear(true);
@@ -169,7 +169,7 @@ void UIManager::fill_grids()
             add(new wxStaticText(m_parent, wxID_ANY, from_u8(entry.source)));
 
             {
-                ScalableButton* btn = new ScalableButton(m_parent, wxID_ANY, "", "  " + _L("Remove") + "  ");
+                wxButton* btn = new wxButton(m_parent, wxID_ANY, "  " + _L("Remove") + "  ");
                 wxGetApp().UpdateDarkUI(btn, true);
                 btn->Bind(wxEVT_BUTTON, [this, &entry](wxCommandEvent& event) { remove_offline_repos(entry.id); });
                 add(btn);
@@ -178,7 +178,7 @@ void UIManager::fill_grids()
     }
 
     {
-        ScalableButton* btn = new ScalableButton(m_parent, wxID_ANY, "", "  " + _L("Load") + "...  ");
+        wxButton* btn = new wxButton(m_parent, wxID_ANY, "  " + _L("Load") + "...  ");
         wxGetApp().UpdateDarkUI(btn, true);
         btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) { load_offline_repos(); });
         m_offline_sizer->Add(btn);
@@ -186,7 +186,7 @@ void UIManager::fill_grids()
 
 }
 
-void UIManager::update()
+void RepositoryUpdateUIManager::update()
 {
     fill_entries();
 
@@ -207,7 +207,7 @@ void UIManager::update()
     }
 }
 
-void UIManager::remove_offline_repos(const std::string& id)
+void RepositoryUpdateUIManager::remove_offline_repos(const std::string& id)
 {
     m_pad->remove_local_archive(id);
     m_selected_uuids.erase(id);
@@ -220,10 +220,10 @@ void UIManager::remove_offline_repos(const std::string& id)
     update();
 }
 
-void UIManager::load_offline_repos()
+void RepositoryUpdateUIManager::load_offline_repos()
 {
     wxArrayString input_files;
-    wxFileDialog dialog(m_parent, _L("Choose one or more YIP-files") + ":",
+    wxFileDialog dialog(m_parent, _L("Choose one or more ZIP-files") + ":",
         from_u8(wxGetApp().app_config->get_last_dir()), "",
         file_wildcards(FT_ZIP), wxFD_OPEN | /*wxFD_MULTIPLE | */wxFD_FILE_MUST_EXIST);
 
@@ -254,7 +254,7 @@ void UIManager::load_offline_repos()
     }
 }
 
-bool UIManager::set_selected_repositories()
+bool RepositoryUpdateUIManager::set_selected_repositories()
 {
     std::vector<std::string> used_ids;
     std::copy(m_selected_uuids.begin(), m_selected_uuids.end(), std::back_inserter(used_ids));
@@ -270,7 +270,7 @@ bool UIManager::set_selected_repositories()
 }
 
 
-ManageUpdatesDialog::ManageUpdatesDialog(PresetArchiveDatabase* pad)
+ManagePresetRepositoriesDialog::ManagePresetRepositoriesDialog(PresetArchiveDatabase* pad)
     : DPIDialog(static_cast<wxWindow*>(wxGetApp().mainframe), wxID_ANY,
         format_wxstr("%1% - %2%", SLIC3R_APP_NAME, _L("Manage Updates")),
         wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
@@ -278,7 +278,7 @@ ManageUpdatesDialog::ManageUpdatesDialog(PresetArchiveDatabase* pad)
     this->SetFont(wxGetApp().normal_font());
     const int em = em_unit();
 
-    m_manager = std::make_unique<UIManager>(this, pad, em);
+    m_manager = std::make_unique<RepositoryUpdateUIManager>(this, pad, em);
 
     auto sizer = m_manager->get_sizer();
 
@@ -286,27 +286,27 @@ ManageUpdatesDialog::ManageUpdatesDialog(PresetArchiveDatabase* pad)
     wxGetApp().SetWindowVariantForButton(buttons->GetCancelButton());
     wxGetApp().UpdateDlgDarkUI(this, true);
     this->SetEscapeId(wxID_CLOSE);
-    this->Bind(wxEVT_BUTTON, &ManageUpdatesDialog::onCloseDialog, this, wxID_CLOSE);
-    this->Bind(wxEVT_BUTTON, &ManageUpdatesDialog::onOkDialog, this, wxID_OK);
+    this->Bind(wxEVT_BUTTON, &ManagePresetRepositoriesDialog::onCloseDialog, this, wxID_CLOSE);
+    this->Bind(wxEVT_BUTTON, &ManagePresetRepositoriesDialog::onOkDialog, this, wxID_OK);
     sizer->Add(buttons, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, em);
 
     SetSizer(sizer);
     sizer->SetSizeHints(this);
 }
 
-void ManageUpdatesDialog::on_dpi_changed(const wxRect &suggested_rect)
+void ManagePresetRepositoriesDialog::on_dpi_changed(const wxRect &suggested_rect)
 {
     SetMinSize(GetBestSize());
     Fit();
     Refresh();
 }
 
-void ManageUpdatesDialog::onCloseDialog(wxEvent &)
+void ManagePresetRepositoriesDialog::onCloseDialog(wxEvent &)
 {
      this->EndModal(wxID_CLOSE);
 }
 
-void ManageUpdatesDialog::onOkDialog(wxEvent&)
+void ManagePresetRepositoriesDialog::onOkDialog(wxEvent&)
 {
     if (m_manager->set_selected_repositories())
         this->EndModal(wxID_CLOSE);

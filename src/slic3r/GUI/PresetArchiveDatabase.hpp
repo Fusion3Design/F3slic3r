@@ -100,23 +100,20 @@ class PresetArchiveDatabase
 public:
 	PresetArchiveDatabase(AppConfig* app_config, wxEvtHandler* evt_handler);
 	~PresetArchiveDatabase() {}
-	
-	const ArchiveRepositoryVector& get_archive_repositories() const { return m_archive_repositories; }
-	void set_access_token(const std::string& token) { m_token = token; }
+
 	void sync_blocking();
-	//void set_local_archives(AppConfig* app_config);
-	void read_server_manifest(const std::string& json_body);
+
+	const ArchiveRepositoryVector& get_archive_repositories() const { return m_archive_repositories; }
 	bool is_selected_repository_by_uuid(const std::string& uuid) const;
 	bool is_selected_repository_by_id(const std::string& repo_id) const;
 	const std::map<std::string, bool>& get_selected_repositories_uuid() const { assert(m_selected_repositories_uuid.size() == m_archive_repositories.size()); return m_selected_repositories_uuid; }
 	bool set_selected_repositories(const std::vector<std::string>& used_uuids, std::string& msg);
 	std::string add_local_archive(const boost::filesystem::path path, std::string& msg);
 	void remove_local_archive(const std::string& uuid);
-	// should be called only from main UI thread.
-	void set_wizard_lock(bool lock);
 private:
 	void load_app_manifest_json();
 	void copy_initial_manifest();
+	void read_server_manifest(const std::string& json_body);
 	void save_app_manifest_json() const;
 	void clear_online_repos();
 	bool is_selected(const std::string& id) const;
@@ -127,10 +124,7 @@ private:
 	boost::filesystem::path			m_unq_tmp_path;
 	ArchiveRepositoryVector			m_archive_repositories;
 	std::map<std::string, bool>		m_selected_repositories_uuid;
-	std::string						m_token;
 	boost::uuids::random_generator	m_uuid_generator;
-	bool							m_wizard_lock { false };
-	bool							m_staged_sync { false };
 };
 
 }} // Slic3r::GUI

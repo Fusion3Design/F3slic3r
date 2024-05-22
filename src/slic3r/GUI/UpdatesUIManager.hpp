@@ -15,7 +15,7 @@ namespace GUI {
 
 class PresetArchiveDatabase;
 
-class UIManager
+class RepositoryUpdateUIManager
 {
     struct OnlineEntry {
         OnlineEntry(bool use, const std::string &id, const std::string &name, const std::string &description, const std::string &visibility) :
@@ -61,26 +61,26 @@ class UIManager
     void load_offline_repos();
 
 public:
-    UIManager() {}
-    UIManager(wxWindow* parent, PresetArchiveDatabase* pad, int em);
-    ~UIManager() {}
+    RepositoryUpdateUIManager() {}
+    RepositoryUpdateUIManager(wxWindow* parent, PresetArchiveDatabase* pad, int em);
+    ~RepositoryUpdateUIManager() {}
 
     wxSizer*    get_sizer() { return m_main_sizer; }
     bool        set_selected_repositories();
 };
 
-class ManageUpdatesDialog : public DPIDialog
+class ManagePresetRepositoriesDialog : public DPIDialog
 {
 public:
-    ManageUpdatesDialog(PresetArchiveDatabase* pad);
-    ~ManageUpdatesDialog() {}
+    ManagePresetRepositoriesDialog(PresetArchiveDatabase* pad);
+    ~ManagePresetRepositoriesDialog() {}
 
 protected:
     void on_dpi_changed(const wxRect &suggested_rect) override;
     
 private:
 
-    std::unique_ptr<UIManager> m_manager    { nullptr };
+    std::unique_ptr<RepositoryUpdateUIManager> m_manager    { nullptr };
 
     void onCloseDialog(wxEvent &);
     void onOkDialog(wxEvent &);
