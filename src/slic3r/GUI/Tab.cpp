@@ -5598,10 +5598,6 @@ static std::vector<std::string> get_override_opt_kyes_for_line(const std::string
         for (auto& prefix : { "", "branching" })
             opt_keys.push_back(preprefix + prefix + key);
     }
-    else if (key == "relative_correction") {
-        for (auto& axis : { "x", "y", "z" })
-            opt_keys.push_back(preprefix + key + "_" + char(axis[0]));
-    }
     else
         opt_keys.push_back(preprefix + key);
 
@@ -5614,17 +5610,7 @@ void TabSLAMaterial::create_line_with_near_label_widget(ConfigOptionsGroupShp op
         add_options_into_line(optgroup, { {"", L("Default")}, {"branching", L("Branching")} }, key, "material_ow_");
     else {
         const std::string opt_key = std::string("material_ow_") + key;
-        if (key == "relative_correction") {
-            Line line = Line{ m_preset_bundle->printers.get_edited_preset().config.def()->get("relative_correction")->full_label, "" };
-            for (auto& axis : { "X", "Y", "Z" }) {
-                auto opt = optgroup->get_option(opt_key + "_" + char(std::tolower(axis[0])));
-                opt.opt.label = axis;
-                line.append_option(opt);
-            }
-            optgroup->append_line(line);
-        }
-        else
-            optgroup->append_single_option_line(opt_key);
+        optgroup->append_single_option_line(opt_key);
     }
 
     Line* line = optgroup->get_last_line();
@@ -5671,7 +5657,6 @@ std::vector<std::pair<std::string, std::vector<std::string>>> material_overrides
     }},
     {"Corrections", {
         "absolute_correction",
-        "relative_correction",
         "elefant_foot_compensation"
     }}
 };

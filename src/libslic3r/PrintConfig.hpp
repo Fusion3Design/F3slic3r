@@ -1185,9 +1185,6 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionIntNullable,                 material_ow_support_points_density_relative))
     ((ConfigOptionFloatNullable,               material_ow_elefant_foot_compensation))
     ((ConfigOptionFloatNullable,               material_ow_absolute_correction))
-    ((ConfigOptionFloatNullable,               material_ow_relative_correction_x))
-    ((ConfigOptionFloatNullable,               material_ow_relative_correction_y))
-    ((ConfigOptionFloatNullable,               material_ow_relative_correction_z))
     ((ConfigOptionFloat,                       area_fill))
 
     //tilt params

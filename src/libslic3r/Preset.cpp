@@ -625,9 +625,6 @@ static std::vector<std::string> s_Preset_sla_material_options {
 
     "material_ow_support_points_density_relative",
     "material_ow_absolute_correction",
-    "material_ow_relative_correction_x",
-    "material_ow_relative_correction_y",
-    "material_ow_relative_correction_z",
     "material_ow_elefant_foot_compensation"
 };
 
