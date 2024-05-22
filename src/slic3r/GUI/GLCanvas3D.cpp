@@ -6257,7 +6257,7 @@ static void render_sla_layer_legend(const SLAPrint& print, int layer_idx, int cn
     const std::vector<double>& areas = print.print_statistics().layers_areas;
     const std::vector<double>& times = print.print_statistics().layers_times_running_total;
     const double display_area        = print.printer_config().display_height * print.printer_config().display_width;
-    if (layer_idx >= 0 && layer_idx < areas.size()) {
+    if (layer_idx >= 0 && layer_idx < int(areas.size())) {
         const double area = areas[layer_idx];
         const double time = times[layer_idx] - (layer_idx == 0 ? 0. : times[layer_idx-1]);
         const double time_until_layer = times[layer_idx];
@@ -6267,13 +6267,18 @@ static void render_sla_layer_legend(const SLAPrint& print, int layer_idx, int cn
         ImGui::SetNextWindowBgAlpha(0.6f);
 
         ImGuiPureWrap::begin(_u8L("Layer statistics"), ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing);
-        ImGui::Text(_u8L("Layer area: %.0f mm²").c_str(), area);
+        // FIXME: The snprintf would better be replaced by GUI::format, but I don't want to
+        // touch translated strings before the release.
+        char text[50];
+        snprintf(text, 50, _u8L("Layer area: %.0f mm²").c_str(), area);
+        ImGui::Text("%s", text);
         int area_percent_int = int(std::round(100. * area/display_area));
-        ImGui::Text(GUI::format(_u8L("Area fill: %1% %%%%"), area_percent_int == 0 ? "<1" : std::to_string(area_percent_int)).c_str());
+        snprintf(text, 50, GUI::format(_u8L("Area fill: %1% %%%%"), area_percent_int == 0 ? "<1" : std::to_string(area_percent_int)).c_str());
+        ImGui::Text("%s", text);
         ImGui::Separator();
-        ImGui::Text(GUI::format(_u8L("Layer time: %1%"), get_time_dhms(time)).c_str());
+        ImGui::Text("%s", GUI::format(_u8L("Layer time: %1%"), get_time_dhms(time)).c_str());
         std::string buffer_str = _u8L("Time since start: %1%"); 
-        ImGui::Text(GUI::format(buffer_str, get_time_dhms(time_until_layer)).c_str());
+        ImGui::Text("%s", GUI::format(buffer_str, get_time_dhms(time_until_layer)).c_str());
 
         // The dummy control below uses the assumption that the total time string will be the longest
         // and forces the width of the window large enough so it does not resize depending on the current value.
