@@ -6267,14 +6267,9 @@ static void render_sla_layer_legend(const SLAPrint& print, int layer_idx, int cn
         ImGui::SetNextWindowBgAlpha(0.6f);
 
         ImGuiPureWrap::begin(_u8L("Layer statistics"), ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing);
-        // FIXME: The snprintf would better be replaced by GUI::format, but I don't want to
-        // touch translated strings before the release.
-        char text[50];
-        snprintf(text, 50, _u8L("Layer area: %.0f mm²").c_str(), area);
-        ImGui::Text("%s", text);
+        ImGui::Text("%s", GUI::format(_u8L("Layer area: %1% mm²"), int(0.1 + std::round(area))).c_str());
         int area_percent_int = int(std::round(100. * area/display_area));
-        snprintf(text, 50, GUI::format(_u8L("Area fill: %1% %%%%"), area_percent_int == 0 ? "<1" : std::to_string(area_percent_int)).c_str());
-        ImGui::Text("%s", text);
+        ImGui::Text("%s", GUI::format(_u8L("Area fill: %1% %%"), area_percent_int == 0 ? "<1" : std::to_string(area_percent_int)).c_str());
         ImGui::Separator();
         ImGui::Text("%s", GUI::format(_u8L("Layer time: %1%"), get_time_dhms(time)).c_str());
         std::string buffer_str = _u8L("Time since start: %1%"); 

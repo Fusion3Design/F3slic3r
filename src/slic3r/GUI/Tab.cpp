@@ -5430,8 +5430,8 @@ void TabSLAMaterial::build_tilt_group(Slic3r::GUI::PageShp page)
         if (key.find_first_of("use_tilt") == 0)
             toggle_tilt_options(key == "use_tilt#0");
 
-            update_dirty();
-            update();
+        update_dirty();
+        update();
     };
 
     for (const std::string& opt_key : tilt_options())
