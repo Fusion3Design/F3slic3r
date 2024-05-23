@@ -5379,6 +5379,25 @@ void TabSLAMaterial::update()
         wxGetApp().mainframe->on_config_changed(m_config);
 }
 
+void TabSLAMaterial::msw_rescale()
+{
+    for (const auto& over_opt : m_overrides_options)
+        if (wxWindow* win = over_opt.second)
+            win->SetInitialSize(win->GetBestSize());
+    Tab::msw_rescale();
+}
+
+void TabSLAMaterial::sys_color_changed()
+{
+    Tab::sys_color_changed();
+
+    for (const auto& over_opt : m_overrides_options)
+        if (wxWindow* check_box = over_opt.second) {
+            wxGetApp().UpdateDarkUI(check_box);
+            CheckBox::SysColorChanged(check_box);
+        }
+}
+
 static void add_options_into_line(ConfigOptionsGroupShp &optgroup,
                                   const std::vector<SamePair<std::string>> &prefixes,
                                   const std::string &optkey,

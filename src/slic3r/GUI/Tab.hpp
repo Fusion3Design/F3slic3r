@@ -577,6 +577,8 @@ public:
 	void		build() override;
 	void		toggle_options() override;
 	void		update() override;
+	void        msw_rescale() override;
+	void		sys_color_changed() override;
 	bool 		supports_printer_technology(const PrinterTechnology tech) const override { return tech == ptSLA; }
 };
 
