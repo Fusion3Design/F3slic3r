@@ -53,6 +53,8 @@ wxMenuItem* append_menu_check_item(wxMenu* menu, int id, const wxString& string,
 
 void enable_menu_item(wxUpdateUIEvent& evt, std::function<bool()> const cb_condition, wxMenuItem* item, wxWindow* win);
 
+void set_menu_item_bitmap(wxMenuItem* item, const std::string& icon_name);
+
 class wxDialog;
 
 void    msw_buttons_rescale(wxDialog* dlg, const int em_unit, const std::vector<int>& btn_ids, double height_koef = 1.);

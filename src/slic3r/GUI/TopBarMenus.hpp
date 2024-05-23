@@ -41,6 +41,7 @@ public:
 
     wxString    get_workspace_name(const /*ConfigOptionMode*/int mode);
     void        set_cb_on_user_item (std::function<void()> cb) { m_cb_on_user_item = cb; }
+    void        sys_color_changed();
 
 };
 

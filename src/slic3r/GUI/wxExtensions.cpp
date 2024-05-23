@@ -215,6 +215,16 @@ wxMenuItem* append_menu_check_item(wxMenu* menu, int id, const wxString& string,
     return item;
 }
 
+void set_menu_item_bitmap(wxMenuItem* item, const std::string& icon_name)
+{
+    item->SetBitmap(*get_bmp_bundle(icon_name));
+#ifndef __linux__
+    const auto it = msw_menuitem_bitmaps.find(item->GetId());
+    if (it != msw_menuitem_bitmaps.end() && it->second != icon_name)
+        it->second = icon_name;
+#endif // !__linux__
+}
+
 /* Function for rescale of buttons in Dialog under MSW if dpi is changed.
  * btn_ids - vector of buttons identifiers
  */

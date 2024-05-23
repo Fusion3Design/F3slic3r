@@ -77,6 +77,7 @@ public:
     void    update_default_menu();
     void    sys_color_changed();
 
+    static void sys_color_changed(wxMenu* menu);
     static void sys_color_changed(wxMenuBar* menu_bar);
 
     wxMenu* default_menu();

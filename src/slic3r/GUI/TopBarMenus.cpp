@@ -1,6 +1,8 @@
 #include "TopBarMenus.hpp"
 #include "TopBar.hpp"
 
+#include "GUI_Factories.hpp"
+
 #include "GUI_App.hpp"
 #include "Plater.hpp"
 #include "UserAccount.hpp"
@@ -32,6 +34,13 @@ wxString TopBarMenus::get_workspace_name(const int mode)
 {
     return  mode == Slic3r::ConfigOptionMode::comSimple   ? _L("Beginner mode") :
             mode == Slic3r::ConfigOptionMode::comAdvanced ? _L("Normal mode")  : _L("Expert mode");
+}
+
+void TopBarMenus::sys_color_changed()
+{
+    MenuFactory::sys_color_changed(&main);
+    MenuFactory::sys_color_changed(&workspaces);
+    MenuFactory::sys_color_changed(&account);
 }
 
 void TopBarMenus::ApplyWorkspacesMenu()
@@ -70,7 +79,7 @@ void TopBarMenus::CreateAccountMenu()
                 user_account->do_logout();
             else
                 user_account->do_login();
-        }, get_bmp_bundle("login", 16));
+        }, "login");
 }
 
 void TopBarMenus::UpdateAccountMenu(Slic3r::GUI::UserAccount* user_account)
@@ -78,7 +87,7 @@ void TopBarMenus::UpdateAccountMenu(Slic3r::GUI::UserAccount* user_account)
     bool is_logged = user_account && user_account->is_logged();
     if (m_login_item) {
         m_login_item->SetItemLabel(is_logged ? _L("Prusa Account Log out") : _L("Prusa Account Log in"));
-        m_login_item->SetBitmap(is_logged ? *get_bmp_bundle("logout", 16) : *get_bmp_bundle("login", 16));
+        set_menu_item_bitmap(m_login_item, is_logged ? "logout" : "login");
     }
 }
 

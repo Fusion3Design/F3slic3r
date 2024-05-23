@@ -548,6 +548,10 @@ void TopBarItemsCtrl::Rescale()
 void TopBarItemsCtrl::OnColorsChanged()
 {
     wxGetApp().UpdateDarkUI(this);
+
+    if (m_menus)
+        m_menus->sys_color_changed();
+
     if (m_menu_btn)
         m_menu_btn->sys_color_changed();
     if (m_settings_btn)
@@ -555,6 +559,8 @@ void TopBarItemsCtrl::OnColorsChanged()
 
     m_workspace_btn->sys_color_changed();
     m_account_btn->sys_color_changed();
+    UpdateAccountButton(true);
+
     m_search->SysColorsChanged();
 
     UpdateSelection();
