@@ -6263,7 +6263,7 @@ static void render_sla_layer_legend(const SLAPrint& print, int layer_idx, int cn
         const double time_until_layer = times[layer_idx];
             
         ImGuiWrapper& imgui = *wxGetApp().imgui();
-        ImGuiPureWrap::set_next_window_pos(float(cnv_width) - imgui.get_style_scaling() * 5.f, imgui.get_style_scaling() * 55.f, ImGuiCond_Always, 1.0f, 0.0f);
+        ImGuiPureWrap::set_next_window_pos(float(cnv_width) - imgui.get_style_scaling() * 5.f, 5.f, ImGuiCond_Always, 1.0f, 0.0f);
         ImGui::SetNextWindowBgAlpha(0.6f);
 
         ImGuiPureWrap::begin(_u8L("Layer statistics"), ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing);
