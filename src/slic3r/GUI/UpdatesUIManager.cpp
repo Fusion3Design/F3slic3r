@@ -333,7 +333,7 @@ void ManagePresetRepositoriesDialog::onCloseDialog(wxEvent &)
 void ManagePresetRepositoriesDialog::onOkDialog(wxEvent&)
 {
     if (m_manager->set_selected_repositories())
-        this->EndModal(wxID_CLOSE);
+        this->EndModal(wxID_OK);
 }
 
 } // namespace GUI

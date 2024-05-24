@@ -3445,12 +3445,6 @@ bool GUI_App::config_wizard_startup()
     return false;
 }
 
-void GUI_App::manage_preset_repositiories()
-{
-    ManagePresetRepositoriesDialog dlg(plater()->get_preset_archive_database());
-    dlg.ShowModal();
-}
-
 bool GUI_App::check_updates(const bool invoked_automatically)
 {	
     // verbose means - not run after startup, but by user
@@ -3459,7 +3453,9 @@ bool GUI_App::check_updates(const bool invoked_automatically)
         // for preset_updater sync we need to sync archive database first
         plater()->get_preset_archive_database()->sync_blocking();
         // and we can have user to select the repos they want (thats additional dialog)
-        manage_preset_repositiories();
+        ManagePresetRepositoriesDialog dlg(plater()->get_preset_archive_database());
+        if (dlg.ShowModal() != wxID_OK)
+            return true;
         // then its time for preset_updater sync 
         preset_updater->sync_blocking(preset_bundle, this, plater()->get_preset_archive_database()->get_archive_repositories(), plater()->get_preset_archive_database()->get_selected_repositories_uuid());
         // and then we check updates
