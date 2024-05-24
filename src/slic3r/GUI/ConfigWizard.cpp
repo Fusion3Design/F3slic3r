@@ -718,27 +718,28 @@ void PagePrinters::unselect_all_presets()
             break; 
         }
     }
-    assert(preset_bundle);
 
-    auto unselect = [preset_bundle](const std::string& vendor_id, const std::string& model, const std::string& variant) {
-        for (auto& preset : preset_bundle->printers) {
-            if (preset.config.opt_string("printer_model") == model
-                && preset.config.opt_string("printer_variant") == variant) {
-                preset.is_visible = false;
+    if (preset_bundle) {
+        auto unselect = [preset_bundle](const std::string& vendor_id, const std::string& model, const std::string& variant) {
+            for (auto& preset : preset_bundle->printers) {
+                if (preset.config.opt_string("printer_model") == model
+                    && preset.config.opt_string("printer_variant") == variant) {
+                    preset.is_visible = false;
+                }
             }
-        }
-    };
+        };
 
-    // unselect presets in preset bundle, if related model and variant was checked in Picker
-    for (auto picker : printer_pickers) {
-        for (const auto& cb : picker->cboxes) {
-            if (cb->GetValue())
-                unselect(picker->vendor_id, cb->model, cb->variant);
-        }
+        // unselect presets in preset bundle, if related model and variant was checked in Picker
+        for (auto picker : printer_pickers) {
+            for (const auto& cb : picker->cboxes) {
+                if (cb->GetValue())
+                    unselect(picker->vendor_id, cb->model, cb->variant);
+            }
 
-        for (const auto& cb : picker->cboxes_alt) {
-            if (cb->GetValue())
-                unselect(picker->vendor_id, cb->model, cb->variant);
+            for (const auto& cb : picker->cboxes_alt) {
+                if (cb->GetValue())
+                    unselect(picker->vendor_id, cb->model, cb->variant);
+            }
         }
     }
 
@@ -3675,12 +3676,15 @@ void ConfigWizard::priv::load_pages_from_archive()
     any_fff_selected = !only_sla_mode && check_fff_selected();
 
     update_materials(T_ANY);
-    if (!only_sla_mode)
+    if (!page_filaments && !only_sla_mode) {
         add_page(page_filaments = new PageMaterials(q, &filaments,
             _L("Filament Profiles Selection"), _L("Filaments"), _L("Type:")));
+    }
 
-    add_page(page_sla_materials = new PageMaterials(q, &sla_materials,
-        _L("SLA Material Profiles Selection") + " ", _L("SLA Materials"), _L("Type:")));
+    if (!page_sla_materials) {
+        add_page(page_sla_materials = new PageMaterials(q, &sla_materials,
+            _L("SLA Material Profiles Selection") + " ", _L("SLA Materials"), _L("Type:")));
+    }
 
     load_pages();
 }
