@@ -11,18 +11,17 @@
 #include "ConcaveHull.hpp"
 
 #include "boost/log/trivial.hpp"
-#include "ClipperUtils.hpp"
-#include "Tesselate.hpp"
-#include "MTUtils.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Tesselate.hpp"
+#include "libslic3r/MTUtils.hpp"
 
-#include "TriangulateWall.hpp"
+#include "libslic3r/TriangulateWall.hpp"
 
 // For debugging:
 // #include <fstream>
-// #include <libnest2d/tools/benchmark.h>
-#include "SVG.hpp"
+#include "libslic3r/SVG.hpp"
 
-#include "I18N.hpp"
+#include "libslic3r/I18N.hpp"
 #include <boost/log/trivial.hpp>
 
 

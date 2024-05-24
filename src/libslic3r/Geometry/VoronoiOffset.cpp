@@ -4,9 +4,9 @@
 ///|/
 // Polygon offsetting using Voronoi diagram prodiced by boost::polygon.
 
-#include "Geometry.hpp"
+#include "libslic3r/Geometry.hpp"
 #include "VoronoiOffset.hpp"
-#include "libslic3r.h"
+#include "libslic3r/libslic3r.h"
 
 #include <cmath>
 

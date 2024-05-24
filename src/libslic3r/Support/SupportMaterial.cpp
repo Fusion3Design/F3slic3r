@@ -19,7 +19,7 @@
 #include "../Point.hpp"
 #include "../MutablePolygon.hpp"
 
-#include "Support/SupportCommon.hpp"
+#include "../Support/SupportCommon.hpp"
 #include "SupportMaterial.hpp"
 
 #include <clipper/clipper_z.hpp>
@@ -40,7 +40,7 @@
     #include <agg/agg_scanline_p.h>
     #include <agg/agg_rasterizer_scanline_aa.h>
     #include <agg/agg_path_storage.h>
-    #include "PNGReadWrite.hpp"
+    #include "libslic3r/PNGReadWrite.hpp"
 #else
     #include "EdgeGrid.hpp"
 #endif // SUPPORT_USE_AGG_RASTERIZER

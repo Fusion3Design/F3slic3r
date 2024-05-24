@@ -5,7 +5,7 @@
 #include "MinAreaBoundingBox.hpp"
 
 #include <libslic3r/ExPolygon.hpp>
-#include <BoundingBox.hpp>
+#include <libslic3r/BoundingBox.hpp>
 
 #if defined(_MSC_VER) && defined(__clang__)
 #define BOOST_NO_CXX17_HDR_STRING_VIEW
@@ -13,7 +13,7 @@
 
 #include <boost/rational.hpp>
 
-#include <libslic3r/Int128.hpp>
+#include <Int128.hpp>
 
 #if !defined(HAS_INTRINSIC_128_TYPE) || defined(__APPLE__)
 #include <boost/multiprecision/integer.hpp>

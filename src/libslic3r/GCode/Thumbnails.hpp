@@ -17,7 +17,7 @@
 
 #include <boost/beast/core/detail/base64.hpp>
 
-#include "../libslic3r/enum_bitmask.hpp"
+#include "libslic3r/enum_bitmask.hpp"
 
 namespace Slic3r {
     enum class ThumbnailError : int { InvalidVal, OutOfRange, InvalidExt };

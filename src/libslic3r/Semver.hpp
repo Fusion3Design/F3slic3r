@@ -12,7 +12,7 @@
 #include <boost/optional.hpp>
 #include <boost/format.hpp>
 
-#include "semver/semver.h"
+#include <semver.h>
 
 #include "Exception.hpp"
 

@@ -10,7 +10,7 @@
 #include "../ClipperUtils.hpp"
 #include "../ExPolygon.hpp"
 #include "../Surface.hpp"
-#include "Arachne/WallToolPaths.hpp"
+#include "libslic3r/Arachne/WallToolPaths.hpp"
 
 #include "FillConcentric.hpp"
 

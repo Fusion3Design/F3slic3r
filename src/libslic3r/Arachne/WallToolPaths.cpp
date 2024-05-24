@@ -7,13 +7,13 @@
 
 #include "SkeletalTrapezoidation.hpp"
 #include "utils/linearAlg2D.hpp"
-#include "EdgeGrid.hpp"
 #include "utils/SparseLineGrid.hpp"
-#include "Geometry.hpp"
+#include "libslic3r/EdgeGrid.hpp"
+#include "libslic3r/Geometry.hpp"
 #include "utils/PolylineStitcher.hpp"
-#include "SVG.hpp"
-#include "Utils.hpp"
-#include "ClipperUtils.hpp"
+#include "libslic3r/SVG.hpp"
+#include "libslic3r/Utils.hpp"
+#include "libslic3r/ClipperUtils.hpp"
 
 #include <boost/log/trivial.hpp>
 

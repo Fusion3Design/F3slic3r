@@ -10,8 +10,8 @@
 
 #include "objparser.hpp"
 
-#include "libslic3r/LocalesUtils.hpp"
-#include "fast_float/fast_float.h"
+#include <LocalesUtils.hpp>
+#include <fast_float.h>
 
 namespace ObjParser {
 

@@ -9,9 +9,9 @@
 #include <optional>
 #include <vector>
 
-#include "../../EdgeGrid.hpp"
-#include "../../Polygon.hpp"
-#include "SVG.hpp"
+#include "libslic3r/EdgeGrid.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/SVG.hpp"
 
 //#define LIGHTNING_TREE_NODE_DEBUG_OUTPUT
 

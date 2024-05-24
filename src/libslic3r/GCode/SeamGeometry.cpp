@@ -1,7 +1,7 @@
 #include "libslic3r/GCode/SeamGeometry.hpp"
-#include "ClipperUtils.hpp"
-#include "KDTreeIndirect.hpp"
-#include "Layer.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/KDTreeIndirect.hpp"
+#include "libslic3r/Layer.hpp"
 #include <fstream>
 #include <numeric>
 #include <oneapi/tbb/blocked_range.h>

@@ -13,8 +13,8 @@
 #ifndef slic3r_TreeSupportCommon_hpp
 #define slic3r_TreeSupportCommon_hpp
 
-#include "../libslic3r.h"
-#include "../Polygon.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/Polygon.hpp"
 #include "SupportCommon.hpp"
 
 #include <string_view>

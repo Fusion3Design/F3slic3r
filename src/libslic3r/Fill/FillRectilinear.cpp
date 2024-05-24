@@ -19,11 +19,11 @@
 #include <boost/log/trivial.hpp>
 #include <boost/static_assert.hpp>
 
-#include "../ClipperUtils.hpp"
-#include "../ExPolygon.hpp"
-#include "../Geometry.hpp"
-#include "../Surface.hpp"
-#include "../ShortestPath.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/Geometry.hpp"
+#include "libslic3r/Surface.hpp"
+#include "libslic3r/ShortestPath.hpp"
 
 #include "FillRectilinear.hpp"
 
@@ -43,7 +43,7 @@
 #include <cassert>
 
 // We want our version of assert.
-#include "../libslic3r.h"
+#include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
 

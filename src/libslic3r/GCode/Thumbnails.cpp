@@ -6,7 +6,7 @@
 #include "../miniz_extension.hpp"
 #include "../format.hpp"
 
-#include <qoi/qoi.h>
+#include <qoi.h>
 #include <jpeglib.h>
 #include <jerror.h>
 

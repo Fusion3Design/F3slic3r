@@ -3,8 +3,8 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "SL1_SVG.hpp"
-#include "SLA/RasterBase.hpp"
-#include "libslic3r/LocalesUtils.hpp"
+#include "libslic3r/SLA/RasterBase.hpp"
+#include <LocalesUtils.hpp>
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Format/ZipperArchiveImport.hpp"

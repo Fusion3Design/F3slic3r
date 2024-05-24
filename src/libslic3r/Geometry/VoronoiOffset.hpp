@@ -7,7 +7,7 @@
 #ifndef slic3r_VoronoiOffset_hpp_
 #define slic3r_VoronoiOffset_hpp_
 
-#include "../libslic3r.h"
+#include "libslic3r/libslic3r.h"
 
 #include "Voronoi.hpp"
 

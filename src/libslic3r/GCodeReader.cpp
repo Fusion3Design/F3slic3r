@@ -14,7 +14,7 @@
 
 #include "LocalesUtils.hpp"
 
-#include <fast_float/fast_float.h>
+#include <fast_float.h>
 
 namespace Slic3r {
 

@@ -6,8 +6,8 @@
 
 #include "AGGRaster.hpp"
 #include "libslic3r/MarchingSquares.hpp"
-#include "MTUtils.hpp"
-#include "ClipperUtils.hpp"
+#include "libslic3r/MTUtils.hpp"
+#include "libslic3r/ClipperUtils.hpp"
 
 namespace marchsq {
 

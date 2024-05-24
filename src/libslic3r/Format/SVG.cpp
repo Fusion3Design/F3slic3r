@@ -6,11 +6,11 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "../libslic3r.h"
-#include "../Model.hpp"
-#include "../TriangleMesh.hpp"
-#include "../NSVGUtils.hpp"
-#include "../Emboss.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/Model.hpp"
+#include "libslic3r/TriangleMesh.hpp"
+#include "libslic3r/NSVGUtils.hpp"
+#include "libslic3r/Emboss.hpp"
 
 #include <boost/log/trivial.hpp>
 

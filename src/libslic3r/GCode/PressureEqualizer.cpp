@@ -8,13 +8,13 @@
 #include <cfloat>
 #include <algorithm>
 
-#include "../libslic3r.h"
-#include "../PrintConfig.hpp"
-#include "../LocalesUtils.hpp"
-#include "../GCode.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/PrintConfig.hpp"
+#include <LocalesUtils.hpp>
+#include "libslic3r/GCode.hpp"
 
 #include "PressureEqualizer.hpp"
-#include "fast_float/fast_float.h"
+#include <fast_float.h>
 #include "GCodeWriter.hpp"
 
 namespace Slic3r {

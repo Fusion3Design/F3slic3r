@@ -3,9 +3,9 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Print.hpp"
+#include "libslic3r/Print.hpp"
 #include "ToolOrdering.hpp"
-#include "Layer.hpp"
+#include "libslic3r/Layer.hpp"
 
 // #define SLIC3R_DEBUG
 
@@ -21,7 +21,7 @@
 
 #include <boost/log/trivial.hpp>
 
-#include <libslic3r.h>
+#include <libslic3r/libslic3r.h>
 
 namespace Slic3r {
 

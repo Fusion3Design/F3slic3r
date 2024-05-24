@@ -1,8 +1,8 @@
 #include <boost/log/trivial.hpp>
 
-#include <Arachne/utils/PolygonsSegmentIndex.hpp>
-#include <MultiMaterialSegmentation.hpp>
-#include <Geometry.hpp>
+#include <libslic3r/Arachne/utils/PolygonsSegmentIndex.hpp>
+#include <libslic3r/MultiMaterialSegmentation.hpp>
+#include <libslic3r/Geometry.hpp>
 
 #include "VoronoiUtils.hpp"
 

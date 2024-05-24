@@ -4,9 +4,9 @@
 ///|/
 #include "MedialAxis.hpp"
 
-#include "clipper.hpp"
+#include "libslic3r/clipper.hpp"
 #include "VoronoiOffset.hpp"
-#include "ClipperUtils.hpp"
+#include "libslic3r/ClipperUtils.hpp"
 
 #include <boost/log/trivial.hpp>
 

@@ -5,16 +5,16 @@
 #include <tbb/parallel_for.h>
 
 #include "SupportPointGenerator.hpp"
-#include "Execution/ExecutionTBB.hpp"
-#include "Geometry/ConvexHull.hpp"
-#include "Model.hpp"
-#include "ExPolygon.hpp"
-#include "SVG.hpp"
-#include "Point.hpp"
-#include "ClipperUtils.hpp"
-#include "Tesselate.hpp"
-#include "MinAreaBoundingBox.hpp"
-#include "libslic3r.h"
+#include "libslic3r/Execution/ExecutionTBB.hpp"
+#include "libslic3r/Geometry/ConvexHull.hpp"
+#include "libslic3r/Model.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/SVG.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Tesselate.hpp"
+#include "libslic3r/MinAreaBoundingBox.hpp"
+#include "libslic3r/libslic3r.h"
 
 #include <iostream>
 #include <random>

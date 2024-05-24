@@ -6,9 +6,9 @@
 #ifndef slic3r_GCode_PressureEqualizer_hpp_
 #define slic3r_GCode_PressureEqualizer_hpp_
 
-#include "../libslic3r.h"
-#include "../PrintConfig.hpp"
-#include "../ExtrusionRole.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/ExtrusionRole.hpp"
 
 #include <queue>
 

@@ -1,7 +1,7 @@
 #include "WipeTowerIntegration.hpp"
 
-#include "../GCode.hpp"
-#include "../libslic3r.h"
+#include "libslic3r/GCode.hpp"
+#include "libslic3r/libslic3r.h"
 
 #include "boost/algorithm/string/replace.hpp"
 

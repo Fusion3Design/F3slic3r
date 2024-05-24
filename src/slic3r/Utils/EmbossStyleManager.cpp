@@ -538,7 +538,7 @@ bool StyleManager::set_wx_font(const wxFont &wx_font, std::unique_ptr<FontFile> 
 
 #include <libslic3r/AppConfig.hpp>
 #include "WxFontUtils.hpp"
-#include "fast_float/fast_float.h"
+#include <fast_float.h>
 
 // StylesSerializable
 namespace {

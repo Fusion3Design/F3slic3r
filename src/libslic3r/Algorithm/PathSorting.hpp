@@ -5,9 +5,9 @@
 #ifndef SRC_LIBSLIC3R_PATH_SORTING_HPP_
 #define SRC_LIBSLIC3R_PATH_SORTING_HPP_
 
-#include "AABBTreeLines.hpp"
-#include "BoundingBox.hpp"
-#include "Line.hpp"
+#include "libslic3r/AABBTreeLines.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Line.hpp"
 #include "ankerl/unordered_dense.h"
 #include <algorithm>
 #include <iterator>

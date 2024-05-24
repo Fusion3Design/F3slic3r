@@ -2,22 +2,24 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "../ClipperUtils.hpp"
-#include "../ShortestPath.hpp"
-#include "../Arachne/WallToolPaths.hpp"
 
-#include "AABBTreeLines.hpp"
-#include "Algorithm/PathSorting.hpp"
-#include "BoundingBox.hpp"
-#include "ExPolygon.hpp"
 #include "FillEnsuring.hpp"
-#include "KDTreeIndirect.hpp"
-#include "Line.hpp"
-#include "Point.hpp"
-#include "Polygon.hpp"
-#include "Polyline.hpp"
-#include "SVG.hpp"
-#include "libslic3r.h"
+
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/ShortestPath.hpp"
+#include "libslic3r/Arachne/WallToolPaths.hpp"
+
+#include "libslic3r/AABBTreeLines.hpp"
+#include "libslic3r/Algorithm/PathSorting.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/KDTreeIndirect.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/Polyline.hpp"
+#include "libslic3r/SVG.hpp"
+#include "libslic3r/libslic3r.h"
 
 #include <algorithm>
 #include <boost/log/trivial.hpp>

@@ -5,8 +5,8 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "AnycubicSLA.hpp"
-#include "GCode/ThumbnailData.hpp"
-#include "SLA/RasterBase.hpp"
+#include "libslic3r/GCode/ThumbnailData.hpp"
+#include "libslic3r/SLA/RasterBase.hpp"
 #include "libslic3r/SLAPrint.hpp"
 
 #include <sstream>

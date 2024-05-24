@@ -1,12 +1,12 @@
 #include "LabelObjects.hpp"
 
-#include "ClipperUtils.hpp"
-#include "GCode/GCodeWriter.hpp"
-#include "Model.hpp"
-#include "Print.hpp"
-#include "TriangleMeshSlicer.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/GCode/GCodeWriter.hpp"
+#include "libslic3r/Model.hpp"
+#include "libslic3r/Print.hpp"
+#include "libslic3r/TriangleMeshSlicer.hpp"
 
-#include "boost/algorithm/string/replace.hpp"
+#include <boost/algorithm/string/replace.hpp>
 
 
 namespace Slic3r::GCode {

@@ -3,6 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <unordered_set>
+#include <chrono>
 
 #include <libslic3r/Exception.hpp>
 #include <libslic3r/SLAPrintSteps.hpp>
@@ -35,7 +36,6 @@
 
 #include "I18N.hpp"
 
-#include <libnest2d/tools/benchmark.h>
 #include "format.hpp"
 
 namespace Slic3r {
@@ -167,9 +167,9 @@ indexed_triangle_set SLAPrint::Steps::generate_preview_vdb(
 
 void SLAPrint::Steps::generate_preview(SLAPrintObject &po, SLAPrintObjectStep step)
 {
-    Benchmark bench;
+    using std::chrono::high_resolution_clock;
 
-    bench.start();
+    auto start{high_resolution_clock::now()};
 
     auto r = range(po.m_mesh_to_slice);
     auto m = indexed_triangle_set{};
@@ -284,11 +284,14 @@ void SLAPrint::Steps::generate_preview(SLAPrintObject &po, SLAPrintObjectStep st
         po.m_preview_meshes[i] = {};
     }
 
-    bench.stop();
+    auto stop{high_resolution_clock::now()};
 
-    if (!po.m_preview_meshes[step]->empty())
-        BOOST_LOG_TRIVIAL(trace) << "Preview gen took: " << bench.getElapsedSec();
-    else
+    if (!po.m_preview_meshes[step]->empty()) {
+        using std::chrono::duration;
+        using std::chrono::seconds;
+
+        BOOST_LOG_TRIVIAL(trace) << "Preview gen took: " << duration<double>{stop - start}.count();
+    } else
         BOOST_LOG_TRIVIAL(error) << "Preview failed!";
 
     using namespace std::string_literals;

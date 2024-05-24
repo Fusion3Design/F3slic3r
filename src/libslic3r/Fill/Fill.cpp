@@ -25,7 +25,7 @@
 #include "FillLightning.hpp"
 #include "FillConcentric.hpp"
 #include "FillEnsuring.hpp"
-#include "Polygon.hpp"
+#include "libslic3r/Polygon.hpp"
 
 namespace Slic3r {
 

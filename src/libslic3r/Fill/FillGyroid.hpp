@@ -6,7 +6,7 @@
 #ifndef slic3r_FillGyroid_hpp_
 #define slic3r_FillGyroid_hpp_
 
-#include "../libslic3r.h"
+#include "libslic3r/libslic3r.h"
 
 #include "FillBase.hpp"
 

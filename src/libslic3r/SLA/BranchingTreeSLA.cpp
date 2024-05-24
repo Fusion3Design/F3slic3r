@@ -9,7 +9,7 @@
 #include "libslic3r/KDTreeIndirect.hpp"
 
 #include "SupportTreeUtils.hpp"
-#include "BranchingTree/PointCloud.hpp"
+#include "libslic3r/BranchingTree/PointCloud.hpp"
 
 #include "Pad.hpp"
 

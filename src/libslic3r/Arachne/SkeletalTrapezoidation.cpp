@@ -10,13 +10,13 @@
 #include <boost/log/trivial.hpp>
 
 #include "utils/linearAlg2D.hpp"
-#include "Utils.hpp"
-#include "SVG.hpp"
-#include "Geometry/VoronoiVisualUtils.hpp"
-#include "Geometry/VoronoiUtilsCgal.hpp"
-#include "../EdgeGrid.hpp"
+#include "libslic3r/Utils.hpp"
+#include "libslic3r/SVG.hpp"
+#include "libslic3r/Geometry/VoronoiVisualUtils.hpp"
+#include "libslic3r/Geometry/VoronoiUtilsCgal.hpp"
+#include "libslic3r/EdgeGrid.hpp"
 
-#include "Geometry/VoronoiUtils.hpp"
+#include "libslic3r/Geometry/VoronoiUtils.hpp"
 
 #define SKELETAL_TRAPEZOIDATION_BEAD_SEARCH_MAX 1000 //A limit to how long it'll keep searching for adjacent beads. Increasing will re-use beadings more often (saving performance), but search longer for beading (costing performance).
 

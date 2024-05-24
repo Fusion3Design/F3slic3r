@@ -10,14 +10,14 @@
 #include <stdio.h>
 #include <numeric>
 
-#include "../ClipperUtils.hpp"
-#include "../EdgeGrid.hpp"
-#include "../Geometry.hpp"
-#include "../Geometry/Circle.hpp"
-#include "../Point.hpp"
-#include "../PrintConfig.hpp"
-#include "../Surface.hpp"
-#include "../libslic3r.h"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/EdgeGrid.hpp"
+#include "libslic3r/Geometry.hpp"
+#include "libslic3r/Geometry/Circle.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/Surface.hpp"
+#include "libslic3r/libslic3r.h"
 
 #include "FillBase.hpp"
 #include "FillConcentric.hpp"

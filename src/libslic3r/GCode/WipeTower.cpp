@@ -15,14 +15,14 @@
 #include <sstream>
 #include <iomanip>
 
-#include "ClipperUtils.hpp"
-#include "GCodeProcessor.hpp"
-#include "BoundingBox.hpp"
-#include "LocalesUtils.hpp"
-#include "Geometry.hpp"
-#include "Surface.hpp"
-#include "Fill/FillRectilinear.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/GCode/GCodeProcessor.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Geometry.hpp"
+#include "libslic3r/Surface.hpp"
+#include "libslic3r/Fill/FillRectilinear.hpp"
 
+#include <LocalesUtils.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 

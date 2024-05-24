@@ -9,18 +9,20 @@
 #include <cstdlib>
 #include <boost/nowide/convert.hpp>
 #include <boost/log/trivial.hpp>
-#include <ClipperUtils.hpp> // union_ex + for boldness(polygon extend(offset))
 #include "IntersectionPoints.hpp"
 
 #define STB_TRUETYPE_IMPLEMENTATION // force following include to generate implementation
-#include "imgui/imstb_truetype.h" // stbtt_fontinfo
+
+// Explicit horror include (used to be implicit) - libslic3r "officialy" does not depend on imgui.
+#include "../../bundled_deps/imgui/imgui/imstb_truetype.h" // stbtt_fontinfo
 #include "Utils.hpp" // ScopeGuard
 
-#include <Triangulation.hpp> // CGAL project
+#include <libslic3r/Triangulation.hpp> // CGAL project
 #include "libslic3r.h"
 
 // to heal shape
-#include "ExPolygonsIndex.hpp"
+#include "libslic3r/ClipperUtils.hpp" // union_ex + for boldness(polygon extend(offset))
+#include "libslic3r/ExPolygonsIndex.hpp"
 #include "libslic3r/AABBTreeLines.hpp" // search structure for found close points
 #include "libslic3r/Line.hpp"
 #include "libslic3r/BoundingBox.hpp"
