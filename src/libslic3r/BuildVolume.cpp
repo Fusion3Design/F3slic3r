@@ -5,7 +5,7 @@
 #include "BuildVolume.hpp"
 #include "ClipperUtils.hpp"
 #include "Geometry/ConvexHull.hpp"
-#include "GCode/GCodeProcessor.hpp"
+#include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "Point.hpp"
 
 #include <boost/log/trivial.hpp>

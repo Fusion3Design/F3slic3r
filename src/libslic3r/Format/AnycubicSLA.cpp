@@ -11,7 +11,7 @@
 
 #include <sstream>
 #include <iostream>
-#include <fstream>
+#include <fstream> // IWYU pragma: keep
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/log/trivial.hpp>

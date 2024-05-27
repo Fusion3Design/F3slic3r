@@ -9,7 +9,7 @@
 #undef PI
 
 // Include igl first. It defines "L" macro which then clashes with our localization
-#include <igl/copyleft/cgal/mesh_boolean.h>
+#include <igl/copyleft/cgal/mesh_boolean.h> // IWYU pragma: keep
 #undef L
 
 // CGAL headers

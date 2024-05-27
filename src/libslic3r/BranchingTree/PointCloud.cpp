@@ -7,7 +7,7 @@
 #include "libslic3r/Tesselate.hpp"
 #include "libslic3r/SLA/SupportTreeUtils.hpp"
 
-#include <igl/random_points_on_mesh.h>
+#include <igl/random_points_on_mesh.h> // IWYU pragma: keep
 
 namespace Slic3r { namespace branchingtree {
 

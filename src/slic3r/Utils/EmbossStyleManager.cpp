@@ -5,6 +5,9 @@
 #include "EmbossStyleManager.hpp"
 #include <optional>
 #include <GL/glew.h> // Imgui texture
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 #include <imgui/imgui_internal.h> // ImTextCharFromUtf8
 #include <libslic3r/AppConfig.hpp>
 #include <libslic3r/Utils.hpp> // ScopeGuard

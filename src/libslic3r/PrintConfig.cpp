@@ -25,7 +25,7 @@
 #include "format.hpp"
 
 #include "SLA/SupportTree.hpp"
-#include "GCode/Thumbnails.hpp"
+#include "libslic3r/GCode/Thumbnails.hpp"
 
 #include <set>
 #include <boost/algorithm/string/replace.hpp>
@@ -6114,6 +6114,6 @@ bool is_XL_printer(const PrintConfig &cfg)
 
 } // namespace Slic3r
 
-#include <cereal/types/polymorphic.hpp>
+#include <cereal/types/polymorphic.hpp> // IWYU pragma: keep
 CEREAL_REGISTER_TYPE(Slic3r::DynamicPrintConfig)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(Slic3r::DynamicConfig, Slic3r::DynamicPrintConfig)

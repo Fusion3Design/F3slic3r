@@ -27,7 +27,7 @@
 
 #include <wx/listbook.h>
 #include <wx/notebook.h>
-#include <wx/glcanvas.h>
+#include <wx/glcanvas.h> // IWYU pragma: keep
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 #include <wx/choice.h>

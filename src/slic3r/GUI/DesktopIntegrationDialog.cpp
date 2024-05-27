@@ -15,7 +15,7 @@
 #include "libslic3r/Platform.hpp"
 #include "libslic3r/Config.hpp"
 
-#include <boost/nowide/fstream.hpp>
+#include <boost/nowide/fstream.hpp> // IWYU pragma: keep
 #include <boost/nowide/convert.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>

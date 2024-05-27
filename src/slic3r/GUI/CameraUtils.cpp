@@ -3,8 +3,8 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "CameraUtils.hpp"
-#include <igl/project.h> // projecting points
-#include <igl/unproject.h>
+#include <igl/project.h> // IWYU pragma: keep
+#include <igl/unproject.h> // IWYU pragma: keep
 
 #include "slic3r/GUI/3DScene.hpp" // GLVolume
 #include "libslic3r/Geometry/ConvexHull.hpp"

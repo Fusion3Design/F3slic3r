@@ -3,7 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Thumbnails.hpp"
-#include "../miniz_extension.hpp"
+#include "libslic3r/miniz_extension.hpp" // IWYU pragma: keep
 #include "../format.hpp"
 
 #include <qoi.h>

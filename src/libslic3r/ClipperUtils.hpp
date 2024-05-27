@@ -19,7 +19,8 @@
 
 #else /* SLIC3R_USE_CLIPPER2 */
 
-#include "clipper.hpp"
+#include "libslic3r/clipper.hpp"
+
 // import these wherever we're included
 using Slic3r::ClipperLib::jtMiter;
 using Slic3r::ClipperLib::jtRound;

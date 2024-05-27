@@ -11,7 +11,7 @@
 #define slic3r_SVG_hpp_
 
 #include "libslic3r.h"
-#include "clipper.hpp"
+#include "libslic3r/clipper.hpp"
 #include "ExPolygon.hpp"
 #include "Line.hpp"
 #include "TriangleMesh.hpp"

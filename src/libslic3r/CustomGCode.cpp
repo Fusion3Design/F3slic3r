@@ -5,7 +5,7 @@
 #include "CustomGCode.hpp"
 #include "Config.hpp"
 #include "GCode.hpp"
-#include "GCode/GCodeWriter.hpp"
+#include "libslic3r/GCode/GCodeWriter.hpp"
 
 namespace Slic3r {
 

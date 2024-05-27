@@ -15,7 +15,6 @@
 #include "libslic3r/Tesselate.hpp"
 #include "libslic3r/MinAreaBoundingBox.hpp"
 #include "libslic3r/libslic3r.h"
-
 #include <iostream>
 #include <random>
 

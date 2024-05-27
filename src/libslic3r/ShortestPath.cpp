@@ -8,7 +8,7 @@
 	#undef assert
 #endif
 
-#include "clipper.hpp"
+#include "libslic3r/clipper.hpp"
 #include "ShortestPath.hpp"
 #include "KDTreeIndirect.hpp"
 #include "MutablePriorityQueue.hpp"

@@ -10,6 +10,10 @@
 #include "boost/nowide/cstdio.hpp"
 #endif
 
+#if defined(__linux__)
+#include <features.h>
+#endif
+
 #include "libslic3r/I18N.hpp"
 
 namespace Slic3r {

@@ -12,12 +12,12 @@
 #include <cassert>
 #include <cstddef>
 
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/types/map.hpp> 
-#include <cereal/types/string.hpp> 
-#include <cereal/types/utility.hpp> 
-#include <cereal/types/vector.hpp> 
-#include <cereal/archives/binary.hpp>
+#include <cereal/types/polymorphic.hpp> // IWYU pragma: keep
+#include <cereal/types/map.hpp> // IWYU pragma: keep
+#include <cereal/types/string.hpp> // IWYU pragma: keep
+#include <cereal/types/utility.hpp> // IWYU pragma: keep
+#include <cereal/types/vector.hpp> // IWYU pragma: keep
+#include <cereal/archives/binary.hpp> // IWYU pragma: keep
 #define CEREAL_FUTURE_EXPERIMENTAL
 #include <cereal/archives/adapters.hpp>
 
@@ -25,7 +25,7 @@
 #include <libslic3r/ObjectID.hpp>
 #include <libslic3r/Utils.hpp>
 
-#include "slic3r/GUI/3DScene.hpp"
+#include "slic3r/GUI/3DScene.hpp" // IWYU pragma: keep
 
 #include <boost/foreach.hpp>
 
@@ -700,13 +700,13 @@ using OutputArchive = cereal::UserDataAdapter<StackImpl, cereal::BinaryOutputArc
 
 } // namespace UndoRedo
 
-class Model;
-class ModelObject;
-class ModelVolume;
-class ModelInstance;
-class ModelMaterial;
-class DynamicPrintConfig;
-class TriangleMesh;
+class Model; // IWYU pragma: keep
+class ModelObject; // IWYU pragma: keep
+class ModelVolume; // IWYU pragma: keep
+class ModelInstance; // IWYU pragma: keep
+class ModelMaterial; // IWYU pragma: keep
+class DynamicPrintConfig; // IWYU pragma: keep
+class TriangleMesh; // IWYU pragma: keep
 
 } // namespace Slic3r
 
@@ -800,10 +800,10 @@ namespace cereal
 	}
 }
 
-#include <libslic3r/Model.hpp>
-#include <libslic3r/TriangleMesh.hpp>
-#include <slic3r/GUI/Selection.hpp>
-#include <slic3r/GUI/Gizmos/GLGizmosManager.hpp>
+#include <libslic3r/Model.hpp> // IWYU pragma: keep
+#include <libslic3r/TriangleMesh.hpp> // IWYU pragma: keep
+#include <slic3r/GUI/Selection.hpp> // IWYU pragma: keep
+#include <slic3r/GUI/Gizmos/GLGizmosManager.hpp> // IWYU pragma: keep
 
 namespace Slic3r {
 namespace UndoRedo {

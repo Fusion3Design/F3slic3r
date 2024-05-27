@@ -19,7 +19,7 @@
 #include <boost/multiprecision/integer.hpp>
 #endif
 
-#include <libnest2d/backends/libslic3r/geometries.hpp>
+#include <libnest2d/backends/libslic3r/geometries.hpp> // IWYU pragma: keep
 #include <libnest2d/utils/rotcalipers.hpp>
 
 namespace Slic3r {
