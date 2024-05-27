@@ -3947,6 +3947,7 @@ void PrintConfigDef::init_sla_params()
     def->full_label = L("Printer absolute correction");
     def->tooltip  = L("Will inflate or deflate the sliced 2D polygons according "
                       "to the sign of the correction.");
+    def->sidetext = L("mm");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionFloat(0.0));
     
@@ -4398,8 +4399,7 @@ void PrintConfigDef::init_sla_params()
         "support_head_penetration", "branchingsupport_head_penetration", 
         "support_head_width", "branchingsupport_head_width",
         "support_pillar_diameter", "branchingsupport_pillar_diameter",
-        "relative_correction_x", "relative_correction_y", "relative_correction_z", 
-        "elefant_foot_compensation",
+        "elefant_foot_compensation", "absolute_correction",
         // int
         "support_points_density_relative"
         }) {
