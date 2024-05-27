@@ -3239,6 +3239,8 @@ void GLGizmoEmboss::draw_rotation() {
             std::string no_snapshot;
             m_parent.do_rotate(is_last_change? rotation_snapshot_name : no_snapshot);
             process(is_last_change);
+        } else if (is_last_change){
+            m_parent.do_rotate(rotation_snapshot_name);
         }
     }
 
