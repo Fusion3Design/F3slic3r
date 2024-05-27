@@ -2,10 +2,7 @@
 #include "TopBarMenus.hpp"
 
 #include "GUI_App.hpp"
-#include "MainFrame.hpp"
-#include "Plater.hpp"
 #include "Search.hpp"
-#include "UserAccount.hpp"
 #include "format.hpp"
 #include "I18N.hpp"
 
@@ -228,14 +225,13 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
 
 void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
 {
-    auto user_account = wxGetApp().plater()->get_user_account();
-    const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Log in");
+    TopBarMenus::UserAccountInfo  user_account = m_menus->get_user_account_info();
+    const wxString user_name = user_account.is_logged ? from_u8(user_account.user_name) : _L("Log in");
     m_account_btn->SetToolTip(user_name);
 #ifdef __linux__
     if (avatar) {
-        if (user_account->is_logged()) {
-            boost::filesystem::path path = user_account->get_avatar_path(true);
-            ScalableBitmap new_logo(this, path, wxSize(icon_sz, icon_sz));
+        if (user_account.is_logged) {
+            ScalableBitmap new_logo(this, user_account.avatar_path, wxSize(icon_sz, icon_sz));
             if (new_logo.IsOk())
                 m_account_btn->SetBitmap_(new_logo);
             else
@@ -247,9 +243,8 @@ void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
     }
 #else
     if (avatar) {
-        if (user_account->is_logged()) {
-            boost::filesystem::path path = user_account->get_avatar_path(true);
-            ScalableBitmap new_logo(this, path, wxSize(icon_sz, icon_sz));
+        if (user_account.is_logged) {
+            ScalableBitmap new_logo(this, user_account.avatar_path, wxSize(icon_sz, icon_sz));
             if (new_logo.IsOk())
                 m_account_btn->SetBitmapBundle(new_logo.bmp());
             else
@@ -423,9 +418,10 @@ void TopBarItemsCtrl::update_btns_width()
     }
 }
 
-TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullptr*/, bool is_main/* = true*/) :
+TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullptr*/, std::function<void()> cb_settings_btn/* = nullptr*/) :
     wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL)
     ,m_menus(menus)
+    ,m_cb_settings_btn(cb_settings_btn)
 {
     wxGetApp().UpdateDarkUI(this);
 
@@ -454,11 +450,9 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     });
 #endif
 
-    if (!is_main) {
+    if (m_cb_settings_btn) {
         m_settings_btn = new Button(this, _L("Settings"/*, "settings"*/));
-        m_settings_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent& event) {
-            wxGetApp().mainframe->select_tab();
-        });
+        m_settings_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) { m_cb_settings_btn(); });
         left_sizer->Add(m_settings_btn, 0, wxALIGN_CENTER_VERTICAL);
     }
 
@@ -466,7 +460,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     left_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
 
     CreateSearch();
-    if (!is_main)
+    if (m_cb_settings_btn)
         wxGetApp().searcher().set_search_input(m_search);
 
     wxBoxSizer* search_sizer = new wxBoxSizer(wxVERTICAL);
@@ -498,10 +492,10 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
 
     m_sizer->SetItemMinSize(1, wxSize(42 * wxGetApp().em_unit(), -1));
 
-    this->Bind(wxEVT_UPDATE_UI, [](wxUpdateUIEvent& evt) {
-        auto user_account = wxGetApp().plater()->get_user_account();
-        evt.Enable(user_account ? user_account->is_logged()             : false);
-        evt.Check (user_account ? user_account->get_remember_session()  : false);
+    this->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt) {
+        auto user_account = m_menus->get_user_account_info();
+        evt.Enable(user_account.is_logged);
+        evt.Check (user_account.remember_session);
     }, m_menus->remember_me_item_id);
 
     update_btns_width();
@@ -509,9 +503,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
 
 void TopBarItemsCtrl::UpdateMode()
 {
-    auto mode = wxGetApp().get_mode();
-
-    wxBitmapBundle bmp = *get_bmp_bundle("mode", 16, -1, wxGetApp().get_mode_btn_color(mode));
+    wxBitmapBundle bmp = *m_menus->get_workspace_bitmap();
 #ifdef __linux__
     m_workspace_btn->SetBitmap(bmp);
     m_workspace_btn->SetBitmapCurrent(bmp);
@@ -520,7 +512,7 @@ void TopBarItemsCtrl::UpdateMode()
     m_workspace_btn->SetBitmapBundle(bmp);
 #endif
 
-    m_workspace_btn->SetLabel(m_collapsed_btns ? "" : m_menus->get_workspace_name(mode));
+    m_workspace_btn->SetLabel(m_collapsed_btns ? "" : m_menus->get_workspace_name());
 
     this->Layout();
 }
@@ -653,10 +645,6 @@ void TopBarItemsCtrl::ShowFull()
     if (m_settings_btn)
         m_settings_btn->Show();
     m_account_btn->Show();
-    m_menus->set_cb_on_user_item([this]() {
-        m_account_btn->set_selected(true);
-        m_menus->Popup(this, &m_menus->account, m_account_btn->get_popup_pos());
-    });
     update_btns_width();
     UpdateSearchSizeAndPosition();
 }
@@ -668,7 +656,6 @@ void TopBarItemsCtrl::ShowJustMode()
     if (m_settings_btn)
         m_settings_btn->Hide();
     m_account_btn->Hide();
-    m_menus->set_cb_on_user_item(nullptr);
     update_btns_width();
     UpdateSearchSizeAndPosition();
 }

@@ -6815,6 +6815,22 @@ const UserAccount* Plater::get_user_account() const
     return p->user_account.get();
 }
 
+void Plater::toggle_remember_user_account_session()
+{
+    if (p->user_account)
+        p->user_account->toggle_remember_session();
+}
+
+void Plater::act_with_user_account()
+{
+    if (p->user_account) {
+        if (p->user_account->is_logged())
+            p->user_account->do_logout();
+        else
+            p->user_account->do_login();
+    }
+}
+
 void Plater::init_notification_manager()
 {
     p->init_notification_manager();

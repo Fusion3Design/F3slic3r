@@ -358,6 +358,9 @@ public:
     UserAccount* get_user_account();
     const UserAccount* get_user_account() const;
 
+    void toggle_remember_user_account_session();
+    void act_with_user_account();
+
     void init_notification_manager();
 
     void bring_instance_forward();
