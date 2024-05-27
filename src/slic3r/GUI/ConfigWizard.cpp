@@ -652,7 +652,8 @@ PageUpdateManager::PageUpdateManager(ConfigWizard* parent_in)
         const bool is_actual_archive_selection = wizard_p()->is_actual_archive_selection;
         const bool is_selection_changed        = m_manager->is_selection_changed();
         const bool has_selections              = m_manager->has_selections();
-        event.Enable(!is_actual_archive_selection || (is_selection_changed && has_selections));
+        const bool is_config_from_archive      = wizard_p()->is_config_from_archive;
+        event.Enable((!is_config_from_archive && has_selections) || !is_actual_archive_selection || (is_selection_changed && has_selections));
     });
 
     sizer->Add(btn, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, em);

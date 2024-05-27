@@ -311,7 +311,7 @@ ManagePresetRepositoriesDialog::ManagePresetRepositoriesDialog(PresetArchiveData
 
 
     buttons->GetAffirmativeButton()->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& event) {
-        event.Enable(m_manager->is_selection_changed() && m_manager->has_selections());
+        event.Enable(m_manager->has_selections());
     });
 
     SetSizer(sizer);
