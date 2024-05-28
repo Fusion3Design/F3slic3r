@@ -581,6 +581,7 @@ public:
 	void		toggle_tilt_options(bool is_above);
 	void		toggle_options() override;
 	void		update() override;
+	void		clear_pages() override;
 	void        msw_rescale() override;
 	void		sys_color_changed() override;
 	bool 		supports_printer_technology(const PrinterTechnology tech) const override { return tech == ptSLA; }

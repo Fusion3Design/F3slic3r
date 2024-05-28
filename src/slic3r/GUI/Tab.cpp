@@ -5494,25 +5494,6 @@ void TabSLAMaterial::update()
         wxGetApp().mainframe->on_config_changed(m_config);
 }
 
-void TabSLAMaterial::msw_rescale()
-{
-    for (const auto& over_opt : m_overrides_options)
-        if (wxWindow* win = over_opt.second)
-            win->SetInitialSize(win->GetBestSize());
-    Tab::msw_rescale();
-}
-
-void TabSLAMaterial::sys_color_changed()
-{
-    Tab::sys_color_changed();
-
-    for (const auto& over_opt : m_overrides_options)
-        if (wxWindow* check_box = over_opt.second) {
-            wxGetApp().UpdateDarkUI(check_box);
-            CheckBox::SysColorChanged(check_box);
-        }
-}
-
 void TabSLAMaterial::update_sla_prusa_specific_visibility()
 {
     if (m_active_page && m_active_page->title() == "Material printing profile") {
@@ -5530,6 +5511,33 @@ void TabSLAMaterial::update_sla_prusa_specific_visibility()
 
         Layout();
     }
+}
+
+void TabSLAMaterial::clear_pages()
+{
+    Tab::clear_pages();
+
+    for (auto& over_opt : m_overrides_options)
+        over_opt.second = nullptr;
+}
+
+void TabSLAMaterial::msw_rescale()
+{
+    for (const auto& over_opt : m_overrides_options)
+        if (wxWindow* win = over_opt.second)
+            win->SetInitialSize(win->GetBestSize());
+    Tab::msw_rescale();
+}
+
+void TabSLAMaterial::sys_color_changed()
+{
+    Tab::sys_color_changed();
+
+    for (const auto& over_opt : m_overrides_options)
+        if (wxWindow* check_box = over_opt.second) {
+            wxGetApp().UpdateDarkUI(check_box);
+            CheckBox::SysColorChanged(check_box);
+        }
 }
 
 static void add_options_into_line(ConfigOptionsGroupShp &optgroup,
