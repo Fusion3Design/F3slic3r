@@ -234,11 +234,11 @@ private:
     //
     // Palette used to render extrusion roles
     //
-    std::map<EGCodeExtrusionRole, Color> m_extrusion_roles_colors;
+    std::array<Color, size_t(EGCodeExtrusionRole::COUNT)> m_extrusion_roles_colors;
     //
     // Palette used to render options
     //
-    std::map<EOptionType, Color> m_options_colors;
+    std::array<Color, size_t(EOptionType::COUNT)> m_options_colors;
 
     bool m_initialized{ false };
     bool m_loading{ false };
