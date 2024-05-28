@@ -78,6 +78,8 @@ public:
     std::string get_current_printer_uuid_from_connect(const std::string& selected_printer_id) const;
 
     void        set_current_printer_data(const std::string& data) { m_current_printer_data_json_from_connect = data; }
+
+    void        set_refresh_time(int seconds) { m_communication->set_refresh_time(seconds); }
 private:
     void set_username(const std::string& username);
    

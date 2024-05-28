@@ -984,6 +984,10 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->notification_manager->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
             this->notification_manager->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::WarningNotificationLevel, msg);
         });
+
+        this->q->Bind(EVT_UA_REFRESH_TIME, [this](UserAccountTimeEvent& evt) {
+            this->user_account->set_refresh_time(evt.data);
+            });        
     }
 
 	wxGetApp().other_instance_message_handler()->init(this->q);

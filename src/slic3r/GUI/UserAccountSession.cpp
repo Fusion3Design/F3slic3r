@@ -29,6 +29,7 @@ wxDEFINE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_DATA_SUCCESS, UserAccountSuccessEvent
 wxDEFINE_EVENT(EVT_UA_FAIL, UserAccountFailEvent);
 wxDEFINE_EVENT(EVT_UA_RESET, UserAccountFailEvent);
 wxDEFINE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_DATA_FAIL, UserAccountFailEvent);
+wxDEFINE_EVENT(EVT_UA_REFRESH_TIME, UserAccountTimeEvent);
 
 void UserActionPost::perform(/*UNUSED*/ wxEvtHandler* evt_handler, /*UNUSED*/ const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) const
 {
@@ -124,6 +125,7 @@ void UserAccountSession::token_success_callback(const std::string& body)
 {
     // Data we need
     std::string access_token, refresh_token, shared_session_key;
+    int expires_in = 300;
     try {
         std::stringstream ss(body);
         pt::ptree ptree;
@@ -132,6 +134,7 @@ void UserAccountSession::token_success_callback(const std::string& body)
         const auto access_token_optional = ptree.get_optional<std::string>("access_token");
         const auto refresh_token_optional = ptree.get_optional<std::string>("refresh_token");
         const auto shared_session_key_optional = ptree.get_optional<std::string>("shared_session_key");
+        const auto expires_in_optional = ptree.get_optional<int>("expires_in");
 
         if (access_token_optional)
             access_token = *access_token_optional;
@@ -139,6 +142,9 @@ void UserAccountSession::token_success_callback(const std::string& body)
             refresh_token = *refresh_token_optional;
         if (shared_session_key_optional)
             shared_session_key = *shared_session_key_optional;
+        assert(expires_in_optional);
+        if (expires_in_optional)
+            expires_in = *expires_in_optional;
     }
     catch (const std::exception&) {
         std::string msg = "Could not parse server response after code exchange.";
@@ -163,7 +169,9 @@ void UserAccountSession::token_success_callback(const std::string& body)
     m_access_token = access_token;
     m_refresh_token = refresh_token;
     m_shared_session_key = shared_session_key;
+    m_next_token_timeout = std::time(nullptr) + expires_in;
     enqueue_action(UserAccountActionID::USER_ACCOUNT_ACTION_USER_ID, nullptr, nullptr, {});
+    wxQueueEvent(p_evt_handler, new UserAccountTimeEvent(EVT_UA_REFRESH_TIME, expires_in));
 }
 
 void UserAccountSession::code_exchange_fail_callback(const std::string& body)
@@ -180,6 +188,7 @@ void UserAccountSession::enqueue_test_with_refresh()
     m_proccessing_enabled = true;
     m_priority_action_queue.push({ UserAccountActionID::USER_ACCOUNT_ACTION_TEST_ACCESS_TOKEN, nullptr, std::bind(&UserAccountSession::enqueue_refresh, this, std::placeholders::_1), {} });
 }
+
 
 void UserAccountSession::enqueue_refresh(const std::string& body)
 {
