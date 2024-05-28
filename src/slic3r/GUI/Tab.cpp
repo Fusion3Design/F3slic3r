@@ -5556,6 +5556,14 @@ void TabSLAMaterial::update_sla_prusa_specific_visibility()
     }
 }
 
+void TabSLAMaterial::clear_pages()
+{
+    Tab::clear_pages();
+
+    for (auto& over_opt : m_overrides_options)
+        over_opt.second = nullptr;
+}
+
 void TabSLAMaterial::msw_rescale()
 {
     for (const auto& over_opt : m_overrides_options)
