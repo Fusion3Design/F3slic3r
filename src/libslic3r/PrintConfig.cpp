@@ -4958,28 +4958,6 @@ void DynamicPrintConfig::normalize_fdm()
         opt_wall_transition_length->value = std::max(opt_wall_transition_length->value, 0.001);
 }
 
-static std::vector<std::string> s_Preset_sla_tilt_options{
-     "delay_before_exposure"
-    ,"delay_after_exposure"
-    ,"tower_hop_height"
-    ,"tower_speed"
-    ,"use_tilt"
-    ,"tilt_down_initial_speed"
-    ,"tilt_down_offset_steps"
-    ,"tilt_down_offset_delay"
-    ,"tilt_down_finish_speed"
-    ,"tilt_down_cycles"
-    ,"tilt_down_delay"
-    ,"tilt_up_initial_speed"
-    ,"tilt_up_offset_steps"
-    ,"tilt_up_offset_delay"
-    ,"tilt_up_finish_speed"
-    ,"tilt_up_cycles"
-    ,"tilt_up_delay"
-};
-
-const std::vector<std::string>& tilt_options() { return s_Preset_sla_tilt_options; }
-
 // Default values containe option pair of values (Below and Above) for each titl modes 
 // (Slow, Fast, HighViscosity and NoTilt) -> used for SL1S and other vendors printers
 
@@ -5089,7 +5067,7 @@ void  handle_legacy_sla(DynamicPrintConfig &config)
         ) {
         int tilt_mode = config.option("material_print_speed")->getInt();
 
-        const bool is_sl1_model = config.opt_string("printer_model") != "SL1";
+        const bool is_sl1_model = config.opt_string("printer_model") == "SL1";
 
         const std::map<std::string, ConfigOptionFloats> floats_defs = is_sl1_model ? tilt_options_floats_sl1_defs : tilt_options_floats_defs;
         const std::map<std::string, ConfigOptionInts>   ints_defs   = is_sl1_model ? tilt_options_ints_sl1_defs : tilt_options_ints_defs;
@@ -5097,7 +5075,7 @@ void  handle_legacy_sla(DynamicPrintConfig &config)
         const std::map<std::string, ConfigOptionEnums<TowerSpeeds>>   tower_enums_defs = is_sl1_model ? tower_tilt_options_enums_sl1_defs : tower_tilt_options_enums_defs;
         const std::map<std::string, ConfigOptionEnums<TiltSpeeds>>    tilt_enums_defs  = is_sl1_model ? tilt_options_enums_sl1_defs : tilt_options_enums_defs;
 
-        for (const std::string& opt_key : s_Preset_sla_tilt_options) {
+        for (const std::string& opt_key : tilt_options()) {
             switch (config.def()->get(opt_key)->type) {
             case coFloats: {
                 ConfigOptionFloats values = floats_defs.at(opt_key);

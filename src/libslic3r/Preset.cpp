@@ -628,7 +628,28 @@ static std::vector<std::string> s_Preset_sla_material_options {
     "material_ow_elefant_foot_compensation"
 };
 
-static std::vector<std::string> s_Preset_sla_material_options_all = boost::copy_range<std::vector<std::string>>(boost::join(s_Preset_sla_material_options, tilt_options()));
+static std::vector<std::string> s_Preset_sla_tilt_options{
+     "delay_before_exposure"
+    ,"delay_after_exposure"
+    ,"tower_hop_height"
+    ,"tower_speed"
+    ,"use_tilt"
+    ,"tilt_down_initial_speed"
+    ,"tilt_down_offset_steps"
+    ,"tilt_down_offset_delay"
+    ,"tilt_down_finish_speed"
+    ,"tilt_down_cycles"
+    ,"tilt_down_delay"
+    ,"tilt_up_initial_speed"
+    ,"tilt_up_offset_steps"
+    ,"tilt_up_offset_delay"
+    ,"tilt_up_finish_speed"
+    ,"tilt_up_cycles"
+    ,"tilt_up_delay"
+};
+const std::vector<std::string>& tilt_options() { return s_Preset_sla_tilt_options; }
+
+static std::vector<std::string> s_Preset_sla_material_options_all = boost::copy_range<std::vector<std::string>>(boost::join(s_Preset_sla_material_options, s_Preset_sla_tilt_options));
 
 static std::vector<std::string> s_Preset_sla_printer_options {
     "printer_technology",
