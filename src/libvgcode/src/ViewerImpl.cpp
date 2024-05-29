@@ -879,6 +879,8 @@ void ViewerImpl::reset()
     m_enabled_segments_count = 0;
     m_enabled_options_count = 0;
 
+    m_settings_used_for_ranges = std::nullopt;
+
     delete_textures(m_enabled_options_tex_id);
     delete_buffers(m_enabled_options_buf_id);
     delete_textures(m_enabled_segments_tex_id);
@@ -1746,6 +1748,13 @@ void ViewerImpl::update_view_full_range()
 
 void ViewerImpl::update_color_ranges()
 {
+    // Color ranges do not need to be recalculated that often. If the following settings are the same
+    // as last time, the current ranges are still valid. The recalculation is quite expensive.
+    if (m_settings_used_for_ranges.has_value() &&
+        m_settings.extrusion_roles_visibility == m_settings_used_for_ranges->extrusion_roles_visibility &&
+        m_settings.options_visibility == m_settings_used_for_ranges->options_visibility)
+        return;
+
     m_width_range.reset();
     m_height_range.reset();
     m_speed_range.reset();
@@ -1783,6 +1792,8 @@ void ViewerImpl::update_color_ranges()
             m_layer_time_range[i].update(t);
         }
     }
+
+    m_settings_used_for_ranges = m_settings;
 }
 
 void ViewerImpl::update_heights_widths()

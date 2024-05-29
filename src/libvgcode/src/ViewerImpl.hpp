@@ -21,6 +21,7 @@
 #include "ExtrusionRoles.hpp"
 
 #include <string>
+#include <optional>
 
 namespace libvgcode {
 
@@ -273,6 +274,7 @@ private:
     //
     // Variables used for toolpaths coloring
     //
+    std::optional<Settings> m_settings_used_for_ranges;
     ColorRange m_height_range;
     ColorRange m_width_range;
     ColorRange m_speed_range;
