@@ -3651,6 +3651,9 @@ void ConfigWizard::priv::load_pages_from_archive()
             {
                 if (PagePrinters* pageFFF = printers.first) {
                     pageFFF->incr_indent();
+                    if (!pageFFF->any_selected())
+                        pageFFF->printer_pickers[0]->select_one(0, true);// select first printer for them
+
                     pages_fff.push_back(pageFFF);
                     if (!is_primary_printer_page_set) {
                         pageFFF->is_primary_printer_page = true;
@@ -3660,6 +3663,9 @@ void ConfigWizard::priv::load_pages_from_archive()
 
                 if (PagePrinters* pageSLA = printers.second) {
                     pageSLA->incr_indent();
+                    if (!pageSLA->any_selected())
+                        pageSLA->printer_pickers[0]->select_one(0, true);// select first printer for them
+
                     pages_msla.push_back(pageSLA);
                     if (!is_primary_printer_page_set) {
                         pageSLA->is_primary_printer_page = true;
