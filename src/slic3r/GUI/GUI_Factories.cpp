@@ -27,6 +27,33 @@
 #include "slic3r/Utils/MacDarkMode.hpp"
 #endif
 
+// ----------------------------------------------------------------------------
+// MenuWithSeparators
+// ----------------------------------------------------------------------------
+
+void MenuWithSeparators::DestroySeparators()
+{
+    if (m_separator_frst) {
+        Destroy(m_separator_frst);
+        m_separator_frst = nullptr;
+    }
+
+    if (m_separator_scnd) {
+        Destroy(m_separator_scnd);
+        m_separator_scnd = nullptr;
+    }
+}
+
+void MenuWithSeparators::SetFirstSeparator()
+{
+    m_separator_frst = this->AppendSeparator();
+}
+
+void MenuWithSeparators::SetSecondSeparator()
+{
+    m_separator_scnd = this->AppendSeparator();
+}
+
 namespace Slic3r
 {
 namespace GUI

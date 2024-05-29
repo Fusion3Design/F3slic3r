@@ -17,6 +17,30 @@
 class wxMenu;
 class wxMenuItem;
 
+// ----------------------------------------------------------------------------
+// MenuWithSeparators
+// ----------------------------------------------------------------------------
+
+class MenuWithSeparators : public wxMenu
+{
+public:
+    MenuWithSeparators(const wxString& title, long style = 0)
+        : wxMenu(title, style) {}
+
+    MenuWithSeparators(long style = 0)
+        : wxMenu(style) {}
+
+    ~MenuWithSeparators() {}
+
+    void DestroySeparators();
+    void SetFirstSeparator();
+    void SetSecondSeparator();
+
+private:
+    wxMenuItem* m_separator_frst{ nullptr };    // use like separator before settings item
+    wxMenuItem* m_separator_scnd{ nullptr };   // use like separator between settings items
+};
+
 namespace Slic3r {
 
 enum class ModelVolumeType : int;

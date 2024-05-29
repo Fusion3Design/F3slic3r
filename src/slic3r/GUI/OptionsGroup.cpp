@@ -11,12 +11,9 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "OptionsGroup.hpp"
-#include "ConfigExceptions.hpp"
-#include "Plater.hpp"
+#include "Search.hpp"
 #include "GUI_App.hpp"
-#include "MainFrame.hpp"
 #include "OG_CustomCtrl.hpp"
-#include "MsgDialog.hpp"
 #include "format.hpp"
 
 #include <utility>
@@ -271,7 +268,9 @@ Option::Option(const ConfigOptionDef& _opt, t_config_option_key id) : opt(_opt),
             tooltip = _L("Unavailable for this method.") + "\n";
         tooltip += _(opt.tooltip);
 
-        edit_tooltip(tooltip);
+        // edit tooltip : change Slic3r to SLIC3R_APP_KEY
+        // Temporary workaround for localization
+        tooltip.Replace("Slic3r", SLIC3R_APP_KEY, true);
 
         opt.tooltip = into_u8(tooltip);
     }

@@ -18,7 +18,6 @@
 #include <wx/button.h>
 #include <wx/statbox.h>
 #include <wx/wupdlock.h>
-#include <wx/notebook.h>
 #include <wx/listctrl.h>
 
 #include "GUI.hpp"
@@ -26,7 +25,6 @@
 #include "format.hpp"
 #include "wxExtensions.hpp"
 #include "I18N.hpp"
-#include "Notebook.hpp"
 #include "3DScene.hpp"
 #include "GLCanvas3D.hpp"
 #include "Plater.hpp"

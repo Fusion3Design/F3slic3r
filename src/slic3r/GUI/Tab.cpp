@@ -67,7 +67,6 @@
 #include "SavePresetDialog.hpp"
 #include "EditGCodeDialog.hpp"
 #include "MsgDialog.hpp"
-//#include "Notebook.hpp"
 #include "TopBar.hpp"
 
 #include "Widgets/CheckBox.hpp"

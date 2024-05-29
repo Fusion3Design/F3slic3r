@@ -22,7 +22,6 @@
 class wxBoxSizer;
 class wxBitmapComboBox;
 class wxMenuItem;
-class MenuWithSeparators;
 
 namespace Slic3r {
 class ConfigOptionsGroup;
