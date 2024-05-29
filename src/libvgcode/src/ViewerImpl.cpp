@@ -969,8 +969,6 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
 
     reset();
 
-    m_loading = true;
-
     m_vertices = std::move(gcode_data.vertices);
     m_tool_colors = std::move(gcode_data.tools_colors);
     m_color_print_colors = std::move(gcode_data.color_print_colors);
@@ -1096,8 +1094,6 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     m_view_range.set_visible(m_view_range.get_enabled());
     update_enabled_entities();
     update_colors();
-
-    m_loading = false;
 }
 
 void ViewerImpl::update_enabled_entities()
@@ -1261,10 +1257,6 @@ void ViewerImpl::update_colors()
 
 void ViewerImpl::render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
 {
-    // ensure that the render does take place while loading the data
-    if (m_loading)
-        return;
-
     if (m_settings.update_view_full_range)
         update_view_full_range();
 
@@ -1575,16 +1567,16 @@ void ViewerImpl::set_color_range_palette(EViewType type, const Palette& palette)
 {
     switch (type)
     {
-    case EViewType::Height:                   { m_height_range.set_palette(palette); }
-    case EViewType::Width:                    { m_width_range.set_palette(palette); }
-    case EViewType::Speed:                    { m_speed_range.set_palette(palette); }
-    case EViewType::ActualSpeed:              { m_actual_speed_range.set_palette(palette); }
-    case EViewType::FanSpeed:                 { m_fan_speed_range.set_palette(palette); }
-    case EViewType::Temperature:              { m_temperature_range.set_palette(palette); }
-    case EViewType::VolumetricFlowRate:       { m_volumetric_rate_range.set_palette(palette); }
-    case EViewType::ActualVolumetricFlowRate: { m_actual_volumetric_rate_range.set_palette(palette); }
-    case EViewType::LayerTimeLinear:          { m_layer_time_range[0].set_palette(palette); }
-    case EViewType::LayerTimeLogarithmic:     { m_layer_time_range[1].set_palette(palette); }
+    case EViewType::Height:                   { m_height_range.set_palette(palette);          break; }
+    case EViewType::Width:                    { m_width_range.set_palette(palette);           break; }
+    case EViewType::Speed:                    { m_speed_range.set_palette(palette);           break; }
+    case EViewType::ActualSpeed:              { m_actual_speed_range.set_palette(palette);    break; }
+    case EViewType::FanSpeed:                 { m_fan_speed_range.set_palette(palette);       break; }
+    case EViewType::Temperature:              { m_temperature_range.set_palette(palette);     break; }
+    case EViewType::VolumetricFlowRate:       { m_volumetric_rate_range.set_palette(palette); break; }
+    case EViewType::ActualVolumetricFlowRate: { m_actual_volumetric_rate_range.set_palette(palette); break; }
+    case EViewType::LayerTimeLinear:          { m_layer_time_range[0].set_palette(palette);   break; }
+    case EViewType::LayerTimeLogarithmic:     { m_layer_time_range[1].set_palette(palette);   break; }
     default:                                  { break; }
     }
     m_settings.update_colors = true;

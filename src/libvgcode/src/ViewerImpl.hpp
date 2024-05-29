@@ -242,7 +242,6 @@ private:
     std::array<Color, size_t(EOptionType::COUNT)> m_options_colors;
 
     bool m_initialized{ false };
-    bool m_loading{ false };
 
     //
     // The OpenGL element used to represent all toolpath segments
