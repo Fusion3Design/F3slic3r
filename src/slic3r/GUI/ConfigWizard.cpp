@@ -1808,9 +1808,17 @@ void PageMode::serialize_mode(AppConfig *app_config) const
     app_config->set("use_inches", check_inch->GetValue() ? "1" : "0");
 }
 
-PageVendors::PageVendors(ConfigWizard* parent, std::string repo_id /*= wxEmptyString*/)
-    : ConfigWizardPage(parent, repo_id.empty() ? _L("Other Vendors") : format_wxstr(_L("%1% Vendors"), repo_id), 
-                               repo_id.empty() ? _L("Other Vendors") : format_wxstr(_L("%1% Vendors"), repo_id))
+wxString repo_title(const std::string& repo_id, const std::string& repo_name)
+{
+    if (repo_name.empty())
+    {
+        return repo_id.empty() ? _L("Other Vendors") : format_wxstr(_L("%1% Vendors"), repo_id);
+    }
+    return repo_name;
+}
+
+PageVendors::PageVendors(ConfigWizard* parent, std::string repo_id /*= wxEmptyString*/, std::string repo_name)
+    : ConfigWizardPage(parent, repo_title(repo_id, repo_name),repo_title(repo_id, repo_name))
 {
     const AppConfig &appconfig = this->wizard_p()->appconfig_new;
 
@@ -3680,7 +3688,7 @@ void ConfigWizard::priv::load_pages_from_archive()
             // pages needs to be added into repositories before page_vendors creation
             repositories.push_back({ data.id, nullptr, pages});
 
-            PageVendors* page_vendors = new PageVendors(q, data.id);
+            PageVendors* page_vendors = new PageVendors(q, data.id, data.name);
             repositories[repositories.size() - 1].vendors_page = page_vendors;
 
             add_page(page_vendors);

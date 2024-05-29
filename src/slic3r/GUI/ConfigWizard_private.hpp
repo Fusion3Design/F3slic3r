@@ -485,7 +485,7 @@ struct PageMode: ConfigWizardPage
 
 struct PageVendors: ConfigWizardPage
 {
-    PageVendors(ConfigWizard *parent, std::string repos_id = std::string());
+    PageVendors(ConfigWizard *parent, std::string repos_id = std::string(), std::string name = std::string());
 };
 
 struct PageFirmware: ConfigWizardPage
