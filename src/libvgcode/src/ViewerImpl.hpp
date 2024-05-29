@@ -65,6 +65,7 @@ public:
     // view type and settings
     //
     void update_colors();
+    void update_colors_texture();
 
     //
     // Render the toolpaths
@@ -267,6 +268,10 @@ private:
     // cpu buffer to store vertices
     //
     std::vector<PathVertex> m_vertices;
+
+    // Cache for the colors to reduce the need to recalculate colors of all the vertices.
+    std::vector<float> m_vertices_colors;
+
     //
     // Variables used for toolpaths visibiliity
     //

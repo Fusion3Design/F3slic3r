@@ -868,6 +868,7 @@ void ViewerImpl::reset()
     m_total_time = { 0.0f, 0.0f };
     m_travels_time = { 0.0f, 0.0f };
     m_vertices.clear();
+    m_vertices_colors.clear();
     m_valid_lines_bitset.clear();
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     m_cog_marker.reset();
@@ -973,6 +974,7 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     m_vertices = std::move(gcode_data.vertices);
     m_tool_colors = std::move(gcode_data.tools_colors);
     m_color_print_colors = std::move(gcode_data.color_print_colors);
+    m_vertices_colors.resize(m_vertices.size());
 
     m_settings.spiral_vase_mode = gcode_data.spiral_vase_mode;
 
@@ -1194,12 +1196,44 @@ static float encode_color(const Color& color) {
     return static_cast<float>(i_color);
 }
 
-void ViewerImpl::update_colors()
+
+void ViewerImpl::update_colors_texture()
 {
 #if !defined(ENABLE_OPENGL_ES)
     if (m_colors_buf_id == 0)
         return;
 #endif // ENABLE_OPENGL_ES
+
+    const size_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers.get_view_range()[1] : 0;
+    const bool color_top_layer_only = m_view_range.get_full()[1] != m_view_range.get_visible()[1];
+
+    // Based on current settings and slider position, we might want to render some
+    // vertices as dark grey. Use either that or the normal color (from the cache).
+    std::vector<float> colors(m_vertices_colors.size());
+    assert(colors.size() == m_vertices.size() && m_vertices_colors.size() == m_vertices.size());
+    for (size_t i=0; i<m_vertices.size(); ++i)
+        colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id &&
+                    (!m_settings.spiral_vase_mode || i != m_view_range.get_enabled()[0])) ?
+                    encode_color(DUMMY_COLOR) : m_vertices_colors[i];
+
+    #ifdef ENABLE_OPENGL_ES
+        if (!colors.empty())
+            // update gpu buffer for colors
+            m_texture_data.set_colors(colors);
+    #else
+        m_colors_tex_size = colors.size() * sizeof(float);
+
+        // update gpu buffer for colors
+        glsafe(glBindBuffer(GL_TEXTURE_BUFFER, m_colors_buf_id));
+        glsafe(glBufferData(GL_TEXTURE_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW));
+        glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
+    #endif // ENABLE_OPENGL_ES
+}
+
+
+void ViewerImpl::update_colors()
+{
+
 
     if (!m_used_extruders.empty()) {
         // ensure that the number of defined tool colors matches the max id of the used extruders 
@@ -1213,29 +1247,15 @@ void ViewerImpl::update_colors()
     }
 
     update_color_ranges();
-
-    const size_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers.get_view_range()[1] : 0;
-    const bool color_top_layer_only = m_view_range.get_full()[1] != m_view_range.get_visible()[1];
-    std::vector<float> colors(m_vertices.size());
-    for (size_t i = 0; i < m_vertices.size(); ++i) {
-        colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id &&
-                     (!m_settings.spiral_vase_mode || i != m_view_range.get_enabled()[0])) ?
-            encode_color(DUMMY_COLOR) : encode_color(get_vertex_color(m_vertices[i]));
-    }
-
-#ifdef ENABLE_OPENGL_ES
-    if (!colors.empty())
-        // update gpu buffer for colors
-        m_texture_data.set_colors(colors);
-#else
-    m_colors_tex_size = colors.size() * sizeof(float);
-
-    // update gpu buffer for colors
-    glsafe(glBindBuffer(GL_TEXTURE_BUFFER, m_colors_buf_id));
-    glsafe(glBufferData(GL_TEXTURE_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW));
-    glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
-#endif // ENABLE_OPENGL_ES
-
+    
+    // Recalculate "normal" colors of all the vertices for current view settings.
+    // If some part of the preview should be rendered in dark grey, it is taken
+    // care of in update_colors_texture. That is to avoid the need to recalculate
+    // the "normal" color on every slider move.
+    for (size_t i = 0; i < m_vertices.size(); ++i)
+        m_vertices_colors[i] = encode_color(get_vertex_color(m_vertices[i]));
+    
+    update_colors_texture();
     m_settings.update_colors = false;
 }
 
@@ -1288,7 +1308,8 @@ void ViewerImpl::set_layers_view_range(Interval::value_type min, Interval::value
     update_view_full_range();
     m_view_range.set_visible(m_view_range.get_enabled());
     m_settings.update_enabled_entities = true;
-    m_settings.update_colors = true;
+    //m_settings.update_colors = true;
+    update_colors_texture();
 }
 
 void ViewerImpl::toggle_top_layer_only_view_range()
@@ -1297,7 +1318,8 @@ void ViewerImpl::toggle_top_layer_only_view_range()
     update_view_full_range();
     m_view_range.set_visible(m_view_range.get_enabled());
     m_settings.update_enabled_entities = true;
-    m_settings.update_colors = true;
+    //m_settings.update_colors = true;
+    update_colors_texture();
 }
 
 std::vector<ETimeMode> ViewerImpl::get_time_modes() const
@@ -1405,7 +1427,8 @@ void ViewerImpl::set_view_visible_range(Interval::value_type min, Interval::valu
     update_view_full_range();
     m_view_range.set_visible(min, max);
     update_enabled_entities();
-    m_settings.update_colors = true;
+    //m_settings.update_colors = true;
+    update_colors_texture();
 }
 
 float ViewerImpl::get_estimated_time_at(size_t id) const
