@@ -195,8 +195,8 @@ Preview::Preview(
 
 void Preview::set_layers_slider_values_range(int bottom, int top)
 {
-    m_layers_slider->SetHigherPos(std::min(top, m_layers_slider->GetMaxPos()));
-    m_layers_slider->SetLowerPos(std::max(bottom, m_layers_slider->GetMinPos()));
+    m_layers_slider->SetSelectionSpan(std::min(top, m_layers_slider->GetMaxPos()),
+                                      std::max(bottom, m_layers_slider->GetMinPos()));
 }
 
 bool Preview::init(wxWindow* parent, Bed3D& bed, Model* model)
@@ -606,6 +606,9 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
     m_layers_slider->SetExtruderColors(plater->get_extruder_colors_from_plater_config(wxGetApp().is_editor() ? nullptr : m_gcode_result));
     m_layers_slider->SetSliderValues(layers_z);
     assert(m_layers_slider->GetMinPos() == 0);
+
+    m_layers_slider->Freeze();
+
     m_layers_slider->SetMaxPos(layers_z.empty() ? 0 : layers_z.size() - 1);
 
     int idx_low = 0;
@@ -632,6 +635,8 @@ void Preview::update_layers_slider(const std::vector<double>& layers_z, bool kee
         m_layers_slider->SetLayersTimes(plater->sla_print().print_statistics().layers_times_running_total);
     else
         m_layers_slider->SetLayersTimes(m_canvas->get_gcode_layers_times_cache(), m_gcode_result->print_statistics.modes.front().time);
+
+    m_layers_slider->Thaw();
 
     // check if ticks_info_from_model contains ColorChange g-code
     bool color_change_already_exists = false;
@@ -768,8 +773,7 @@ void Preview::update_layers_slider_mode()
 
 void Preview::reset_layers_slider()
 {
-    m_layers_slider->SetHigherPos(0);
-    m_layers_slider->SetLowerPos(0);
+    m_layers_slider->SetSelectionSpan(0, 0);
 }
 
 void Preview::update_sliders_from_canvas(wxKeyEvent& event)
@@ -871,8 +875,11 @@ void Preview::update_moves_slider(std::optional<int> visible_range_min, std::opt
 
     m_moves_slider->SetSliderValues(values);
     m_moves_slider->SetSliderAlternateValues(alternate_values);
+
+    m_moves_slider->Freeze();
     m_moves_slider->SetMaxPos(static_cast<int>(values.size()) - 1);
     m_moves_slider->SetSelectionSpan(span_min_id, span_max_id);
+    m_moves_slider->Thaw();
 
     m_moves_slider->ShowLowerThumb(get_app_config()->get("seq_top_layer_only") == "0");
 }
