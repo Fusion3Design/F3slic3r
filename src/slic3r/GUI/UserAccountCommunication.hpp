@@ -67,7 +67,9 @@ public:
     // we have map of uuids and printer_models - set polling action to lightweight STATUS action
     void on_uuid_map_success();
 
-    void        set_refresh_time(int seconds);
+    void set_refresh_time(int seconds);
+    void on_token_timer(wxTimerEvent& evt);
+    void on_polling_timer(wxTimerEvent& evt);
 private:
     std::unique_ptr<UserAccountSession>     m_session;
     std::thread                             m_thread;
@@ -77,6 +79,8 @@ private:
     bool                                    m_thread_stop { false };
     bool                                    m_thread_wakeup{ false };
     bool                                    m_window_is_active{ true };
+    wxTimer*                                m_polling_timer;
+
     std::string                             m_code_verifier;
     wxEvtHandler*                           m_evt_handler;
     AppConfig*                              m_app_config;
