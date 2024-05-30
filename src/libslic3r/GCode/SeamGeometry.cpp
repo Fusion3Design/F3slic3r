@@ -59,7 +59,7 @@ Vec2d get_polygon_normal(
     std::optional<std::size_t> previous_index;
     std::optional<std::size_t> next_index;
 
-    visit_forward(index, points.size(), [&](const std::size_t index_candidate) {
+    visit_near_forward(index, points.size(), [&](const std::size_t index_candidate) {
         if (index == index_candidate) {
             return false;
         }
@@ -70,7 +70,7 @@ Vec2d get_polygon_normal(
         }
         return false;
     });
-    visit_backward(index, points.size(), [&](const std::size_t index_candidate) {
+    visit_near_backward(index, points.size(), [&](const std::size_t index_candidate) {
         const double distance{(points[index_candidate] - points[index]).norm()};
         if (distance > min_arm_length) {
             previous_index = index_candidate;
@@ -204,36 +204,34 @@ std::vector<Vec2d> oversample_edge(const Vec2d &from, const Vec2d &to, const dou
     return result;
 }
 
-void visit_forward(
+void visit_near_forward(
     const std::size_t start_index,
     const std::size_t loop_size,
     const std::function<bool(std::size_t)> &visitor
 ) {
     std::size_t last_index{loop_size - 1};
     std::size_t index{start_index};
-    for (unsigned _{0}; _ < 30; ++_) { // Infinite loop prevention
+    for (unsigned _{0}; _ < 30; ++_) { // Do not visit too far.
         if (visitor(index)) {
             return;
         }
         index = index == last_index ? 0 : index + 1;
     }
-    assert(false);
 }
 
-void visit_backward(
+void visit_near_backward(
     const std::size_t start_index,
     const std::size_t loop_size,
     const std::function<bool(std::size_t)> &visitor
 ) {
     std::size_t last_index{loop_size - 1};
     std::size_t index{start_index == 0 ? loop_size - 1 : start_index - 1};
-    for (unsigned _{0}; _ < 30; ++_) { // Infinite loop prevention
+    for (unsigned _{0}; _ < 30; ++_) { // Do not visit too far.
         if (visitor(index)) {
             return;
         }
         index = index == 0 ? last_index : index - 1;
     }
-    assert(false);
 }
 
 std::vector<Vec2d> unscaled(const Points &points) {
@@ -300,7 +298,7 @@ std::vector<double> get_vertex_angles(const std::vector<Vec2d> &points, const do
         std::optional<std::size_t> previous_index;
         std::optional<std::size_t> next_index;
 
-        visit_forward(index, points.size(), [&](const std::size_t index_candidate) {
+        visit_near_forward(index, points.size(), [&](const std::size_t index_candidate) {
             if (index == index_candidate) {
                 return false;
             }
@@ -311,7 +309,7 @@ std::vector<double> get_vertex_angles(const std::vector<Vec2d> &points, const do
             }
             return false;
         });
-        visit_backward(index, points.size(), [&](const std::size_t index_candidate) {
+        visit_near_backward(index, points.size(), [&](const std::size_t index_candidate) {
             const double distance{(points[index_candidate] - points[index]).norm()};
             if (distance > min_arm_length) {
                 previous_index = index_candidate;

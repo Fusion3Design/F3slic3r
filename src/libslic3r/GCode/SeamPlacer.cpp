@@ -219,7 +219,7 @@ std::optional<Vec2d> offset_along_loop_lines(
     double distance{0};
     Vec2d previous_point{point};
     std::optional<Vec2d> offset_point;
-    Geometry::visit_forward(loop_line_index, loop_lines.size(), [&](std::size_t index) {
+    Geometry::visit_near_forward(loop_line_index, loop_lines.size(), [&](std::size_t index) {
         const Vec2d next_point{loop_lines[index].b};
         const Vec2d edge{next_point - previous_point};
 

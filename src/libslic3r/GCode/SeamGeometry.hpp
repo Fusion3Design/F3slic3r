@@ -120,12 +120,12 @@ void iterate_nested(const NestedVector &nested_vector, const std::function<void(
     });
 }
 
-void visit_forward(
+void visit_near_forward(
     const std::size_t start_index,
     const std::size_t loop_size,
     const std::function<bool(std::size_t)> &visitor
 );
-void visit_backward(
+void visit_near_backward(
     const std::size_t start_index,
     const std::size_t loop_size,
     const std::function<bool(std::size_t)> &visitor
