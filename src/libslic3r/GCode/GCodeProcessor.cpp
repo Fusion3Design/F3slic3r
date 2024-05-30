@@ -4626,16 +4626,19 @@ void GCodeProcessor::calculate_time(GCodeProcessorResult& result, size_t keep_la
             actual_speed_moves = std::move(machine.actual_speed_moves);
     }
 
-    // insert actual speed moves into the move list
-    unsigned int inserted_actual_speed_moves_count = 0;
-    std::vector<GCodeProcessorResult::MoveVertex> new_moves;
+    // insert actual speed moves into the move list. We will do this in two stages (to avoid inserting in the middle of
+    // result.moves repeatedly). First, we create individual vectors of MoveVertices, and store them along with their
+    // required index in the result.moves vector after they are all inserted. Then we go through the destination
+    // vector once and move all the elements where we want them in one go.
+    std::vector<std::pair<size_t, std::vector<GCodeProcessorResult::MoveVertex>>> moves_to_insert = {std::make_pair(0, std::vector<GCodeProcessorResult::MoveVertex>{})};
+    size_t inserted_count = 0;
     std::map<unsigned int, unsigned int> id_map;
     for (auto it = actual_speed_moves.begin(); it != actual_speed_moves.end(); ++it) {
-        const unsigned int base_id = it->move_id + inserted_actual_speed_moves_count;
+        const unsigned int base_id_old = it->move_id;
         if (it->position.has_value()) {
             // insert actual speed move into the move list
             // clone from existing move
-            GCodeProcessorResult::MoveVertex new_move = result.moves[base_id];
+            GCodeProcessorResult::MoveVertex new_move = result.moves[base_id_old];
             // override modified parameters
             new_move.time = { 0.0f, 0.0f };
             new_move.position = *it->position;
@@ -4648,29 +4651,47 @@ void GCodeProcessor::calculate_time(GCodeProcessorResult& result, size_t keep_la
             new_move.fan_speed = *it->fan_speed;
             new_move.temperature = *it->temperature;
             new_move.internal_only = true;
-            new_moves.push_back(new_move);
+            moves_to_insert.back().second.emplace_back(new_move);
         }
         else {
-            result.moves.insert(result.moves.begin() + base_id, new_moves.begin(), new_moves.end());
-            id_map[it->move_id] = base_id + new_moves.size();
-            // update move actual speed
-            result.moves[base_id + new_moves.size()].actual_feedrate = it->actual_feedrate;
-            inserted_actual_speed_moves_count += new_moves.size();
+            moves_to_insert.back().first = base_id_old + inserted_count; // Save required position of this range in the NEW vector.
+            id_map[base_id_old]          = base_id_old + inserted_count; // Remember where the old element will end up.
+            inserted_count += moves_to_insert.back().second.size();      // Increase the number of moves that are already planned to be added.
+
+            result.moves[base_id_old].actual_feedrate = it->actual_feedrate; // update move actual speed
+            
             // synchronize seams actual speed
-            if (base_id + new_moves.size() + 1 < result.moves.size()) {
-                GCodeProcessorResult::MoveVertex& move = result.moves[base_id + new_moves.size() + 1];
+            if (base_id_old + 1 < result.moves.size()) {
+                GCodeProcessorResult::MoveVertex& move = result.moves[base_id_old + 1];
                 if (move.type == EMoveType::Seam)
                     move.actual_feedrate = it->actual_feedrate;
             }
-            new_moves.clear();
+            moves_to_insert.emplace_back(std::make_pair(0, std::vector<GCodeProcessorResult::MoveVertex>{}));
         }
     }
+
+    // Now actually do the insertion of the ranges into the destination vector.
+    std::vector<GCodeProcessorResult::MoveVertex>& m = result.moves;
+    size_t offset = inserted_count;    
+    m.resize(m.size() + offset); // grow the vector to its final size   
+    size_t last_pos = m.size() - 1;  // index of the last element that still needs to be moved
+    for (auto it = moves_to_insert.rbegin(); it != moves_to_insert.rend(); ++it) {
+        const auto& [new_pos, new_moves] = *it;
+        if (new_moves.empty())
+            continue;
+        for (int i = last_pos; i >= new_pos + new_moves.size(); --i) // Move the elements to their final place.
+            m[i] = m[i - offset];
+        std::copy(new_moves.begin(), new_moves.end(), m.begin() + new_pos);
+        last_pos = new_pos - 1;
+        offset -= new_moves.size();
+    }
+    assert(offset == 0);
 
     // synchronize blocks' move_ids with after moves for actual speed insertion
     for (size_t i = 0; i < static_cast<size_t>(PrintEstimatedStatistics::ETimeMode::Count); ++i) {
         for (GCodeProcessor::TimeBlock& block : m_time_processor.machines[i].blocks) {
             auto it = id_map.find(block.move_id);
-            block.move_id = (it != id_map.end()) ? it->second : block.move_id + inserted_actual_speed_moves_count;
+            block.move_id = (it != id_map.end()) ? it->second : block.move_id + inserted_count;
         }
     }
 }
