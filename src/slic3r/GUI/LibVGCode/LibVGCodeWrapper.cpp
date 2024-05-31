@@ -714,15 +714,29 @@ GCodeInputData convert(const Slic3r::Print& print, const std::vector<std::string
     }
     Slic3r::sort_remove_duplicates(layers);
 
-    // collect extracted vertices layer by layer
-    float min_z = 0.0f;
-    for (float z : layers) {
-        for (const VerticesData& d : data) {
-            std::copy_if(d.vertices.begin(), d.vertices.end(), std::back_inserter(ret.vertices),
-            [min_z, z](const PathVertex& v) { return min_z < v.position[2] && v.position[2] <= z; });
+
+    // Now we need to copy the vertices into ret.vertices to be consumed by the preliminary G-code preview.
+    // We need to collect vertices in the first layer for all objects, push them into the output vector
+    // and then do the same for all the layers. The algorithm relies on the fact that the vertices from
+    // lower layers are always placed after vertices from the higher layer.
+    std::vector<size_t> vert_indices(data.size(), 0);
+    for (size_t layer_id = 0; layer_id < layers.size(); ++layer_id) {
+        const float layer_z = layers[layer_id];
+        for (size_t obj_idx = 0; obj_idx < data.size(); ++obj_idx) {
+            // d contains PathVertices for one object. Let's stuff everything below this layer_z into ret.vertices.
+            const size_t start_idx = vert_indices[obj_idx];
+            size_t idx = start_idx;
+            while (idx < data[obj_idx].vertices.size() && data[obj_idx].vertices[idx].position[2] <= layer_z)
+                ++idx;
+            // We have found a vertex above current layer_z. Let's copy the vertices into the output
+            // and remember where to start when we process another layer.
+            ret.vertices.insert(ret.vertices.end(),
+                                data[obj_idx].vertices.begin() + start_idx,
+                                data[obj_idx].vertices.begin() + idx);
+            vert_indices[obj_idx] = idx;
         }
-        min_z = z;
     }
+
 
     // collect tool colors
     ret.tools_colors.reserve(str_tool_colors.size());
