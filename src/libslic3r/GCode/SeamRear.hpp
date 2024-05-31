@@ -16,24 +16,12 @@ struct PerimeterLine
     using Scalar = Vec2d::Scalar;
     static const constexpr int Dim = 2;
 };
-
-struct StraightLine
-{
-    Vec2d prefered_position;
-    double rear_project_threshold;
-
-    std::optional<SeamChoice> operator()(
-        const Perimeters::Perimeter &perimeter,
-        const Perimeters::PointType point_type,
-        const Perimeters::PointClassification point_classification
-    ) const;
-};
-
 } // namespace Impl
 
 std::vector<std::vector<SeamPerimeterChoice>> get_object_seams(
-    Shells::Shells<> &&shells,
-    const double rear_project_threshold
+    std::vector<std::vector<Perimeters::BoundedPerimeter>> &&perimeters,
+    const double rear_tolerance,
+    const double rear_y_offet
 );
 } // namespace Slic3r::Seams::Rear
 

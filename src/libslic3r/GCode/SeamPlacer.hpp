@@ -21,20 +21,16 @@
 
 namespace Slic3r::Seams {
 
-struct BoundedPerimeter {
-    Perimeters::Perimeter perimeter;
-    BoundingBox bounding_box;
-};
-
 using ObjectSeams =
     std::unordered_map<const PrintObject *, std::vector<std::vector<SeamPerimeterChoice>>>;
-using LayerPerimeters = std::vector<std::vector<BoundedPerimeter>>;
+using LayerPerimeters = std::vector<std::vector<Perimeters::BoundedPerimeter>>;
 using ObjectLayerPerimeters = std::unordered_map<const PrintObject *, LayerPerimeters>;
 
 struct Params
 {
     double max_nearest_detour;
-    double rear_project_threshold;
+    double rear_tolerance;
+    double rear_y_offset;
     Aligned::Params aligned;
     double max_distance{};
     unsigned random_seed{};

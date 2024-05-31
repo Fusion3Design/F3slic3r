@@ -48,6 +48,29 @@ ObjectShells partition_to_shells(
     return result;
 }
 
+LayerPerimeters sort_to_layers(Shells::Shells<> &&shells) {
+    const std::size_t layer_count{Perimeters::get_layer_count(shells)};
+    LayerPerimeters result(layer_count);
+
+    for (Shells::Shell<> &shell : shells) {
+        for (Shells::Slice<> &slice : shell) {
+            const BoundingBox bounding_box{Geometry::scaled(slice.boundary.positions)};
+            result[slice.layer_index].push_back(
+                Perimeters::BoundedPerimeter{std::move(slice.boundary), bounding_box}
+            );
+        }
+    }
+    return result;
+}
+
+ObjectLayerPerimeters sort_to_layers(ObjectShells &&object_shells) {
+    ObjectLayerPerimeters result;
+    for (auto &[print_object, shells] : object_shells) {
+        result[print_object] = sort_to_layers(std::move(shells));
+    }
+    return result;
+}
+
 ObjectSeams precalculate_seams(
     const Params &params,
     ObjectShells &&seam_data,
@@ -74,7 +97,7 @@ ObjectSeams precalculate_seams(
             break;
         }
         case spRear: {
-            result[print_object] = Rear::get_object_seams(std::move(shells), params.rear_project_threshold);
+            result[print_object] = Rear::get_object_seams(sort_to_layers(std::move(shells)), params.rear_tolerance, params.rear_y_offset);
             break;
         }
         case spRandom: {
@@ -111,7 +134,8 @@ Params Placer::get_params(const DynamicPrintConfig &config) {
     params.staggered_inner_seams = config.opt_bool("staggered_inner_seams");
 
     params.max_nearest_detour = 1.0;
-    params.rear_project_threshold = 0.05; // %
+    params.rear_tolerance = 0.2;
+    params.rear_y_offset = 20;
     params.aligned.jump_visibility_threshold = 0.6;
     params.max_distance = 5.0;
     params.perimeter.oversampling_max_distance = 0.2;
@@ -126,24 +150,6 @@ Params Placer::get_params(const DynamicPrintConfig &config) {
     params.visibility.sqr_rays_per_sample_point = 5;
 
     return params;
-}
-
-ObjectLayerPerimeters sort_to_layers(ObjectShells &&object_shells) {
-    ObjectLayerPerimeters result;
-    for (auto &[print_object, shells] : object_shells) {
-        const std::size_t layer_count{print_object->layer_count()};
-        result[print_object] = LayerPerimeters(layer_count);
-
-        for (Shells::Shell<> &shell : shells) {
-            for (Shells::Slice<> &slice : shell) {
-                const BoundingBox bounding_box{Geometry::scaled(slice.boundary.positions)};
-                result[print_object][slice.layer_index].push_back(
-                    BoundedPerimeter{std::move(slice.boundary), bounding_box}
-                );
-            }
-        }
-    }
-    return result;
 }
 
 void Placer::init(
@@ -306,14 +312,14 @@ struct NearestCorner {
 };
 
 std::pair<SeamChoice, std::size_t> place_seam_near(
-    const std::vector<BoundedPerimeter> &layer_perimeters,
+    const std::vector<Perimeters::BoundedPerimeter> &layer_perimeters,
     const ExtrusionLoop &loop,
     const Point &position,
     const double max_detour
 ) {
     BoundingBoxes choose_from;
     choose_from.reserve(layer_perimeters.size());
-    for (const BoundedPerimeter &perimeter : layer_perimeters) {
+    for (const Perimeters::BoundedPerimeter &perimeter : layer_perimeters) {
         choose_from.push_back(perimeter.bounding_box);
     }
 
@@ -367,7 +373,7 @@ Point Placer::place_seam(const Layer *layer, const ExtrusionLoop &loop, const Po
 
 
     if (this->params.seam_preference == spNearest) {
-        const std::vector<BoundedPerimeter> &perimeters{this->perimeters_per_layer.at(po)[layer_index]};
+        const std::vector<Perimeters::BoundedPerimeter> &perimeters{this->perimeters_per_layer.at(po)[layer_index]};
         const auto [seam_choice, perimeter_index] = place_seam_near(perimeters, loop, last_pos, this->params.max_nearest_detour);
         return finalize_seam_position(loop_polygon, seam_choice, perimeters[perimeter_index].perimeter, loop_width, do_staggering);
     } else {

@@ -107,6 +107,8 @@ struct Perimeter
 {
     struct IndexToCoord
     {
+        IndexToCoord(const tcb::span<const Vec2d> positions): positions(positions) {}
+        IndexToCoord() = default;
         double operator()(const size_t index, size_t dim) const;
 
         tcb::span<const Vec2d> positions;
@@ -160,6 +162,11 @@ struct Perimeter
     PointTrees enforced_points{};
     PointTrees common_points{};
     PointTrees blocked_points{};
+};
+
+struct BoundedPerimeter {
+    Perimeters::Perimeter perimeter;
+    BoundingBox bounding_box;
 };
 
 /**

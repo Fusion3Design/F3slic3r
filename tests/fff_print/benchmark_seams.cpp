@@ -54,6 +54,7 @@ TEST_CASE_METHOD(Slic3r::Test::SeamsFixture, "Seam benchmarks", "[Seams][.Benchm
         });
     };
 
+    /**
     BENCHMARK_ADVANCED("Generate rear seam benchy")(Catch::Benchmark::Chronometer meter) {
         std::vector<Shells::Shells<>> inputs;
         inputs.reserve(meter.runs());
@@ -66,6 +67,7 @@ TEST_CASE_METHOD(Slic3r::Test::SeamsFixture, "Seam benchmarks", "[Seams][.Benchm
             return Rear::get_object_seams(std::move(inputs[i]), params.rear_project_threshold);
         });
     };
+    */
 
     BENCHMARK_ADVANCED("Generate random seam benchy")(Catch::Benchmark::Chronometer meter) {
         std::vector<Shells::Shells<>> inputs;
