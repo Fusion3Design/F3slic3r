@@ -223,7 +223,7 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
 void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
 {
     auto user_account = wxGetApp().plater()->get_user_account();
-    const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Anonymous");   
+    const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Log in");
     m_account_btn->SetLabel(m_collapsed_btns ? "" : user_name);
     m_account_btn->SetToolTip(user_name);
     const int icon_sz = 24;
@@ -479,7 +479,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
         m_menus->Popup(this, &m_menus->workspaces, m_workspace_btn->get_popup_pos());
     });
 
-    m_account_btn = new ButtonWithPopup(this, _L("Anonymous"), "user", wxSize(180, -1));
+    m_account_btn = new ButtonWithPopup(this, _L("Log in"), "user", wxSize(180, -1));
     right_sizer->Add(m_account_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT, m_btn_margin);
     
     m_account_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {

@@ -4302,7 +4302,7 @@ void GLCanvas3D::update_ui_from_settings()
 #endif // ENABLE_RETINA_GL
 
     if (wxGetApp().is_editor())
-        wxGetApp().plater()->enable_collapse_toolbar(wxGetApp().app_config->get_bool("show_collapse_button"));
+        wxGetApp().plater()->enable_collapse_toolbar(wxGetApp().app_config->get_bool("show_collapse_button") || !wxGetApp().sidebar().IsShown());
 }
 
 GLCanvas3D::WipeTowerInfo GLCanvas3D::get_wipe_tower_info() const
@@ -5023,9 +5023,9 @@ bool GLCanvas3D::_init_main_toolbar()
     m_main_toolbar.set_layout_type(GLToolbar::Layout::Horizontal);
     m_main_toolbar.set_horizontal_orientation(GLToolbar::Layout::HO_Right);
     m_main_toolbar.set_vertical_orientation(GLToolbar::Layout::VO_Top);
-    m_main_toolbar.set_border(5.0f);
-    m_main_toolbar.set_separator_size(5);
-    m_main_toolbar.set_gap_size(4);
+    //m_main_toolbar.set_border(5.0f);
+    //m_main_toolbar.set_separator_size(5.f);
+    //m_main_toolbar.set_gap_size(5.f);
 
     GLToolbarItem::Data item;
 
@@ -5164,7 +5164,9 @@ bool GLCanvas3D::_init_main_toolbar()
     item.icon_filename = "layers_white.svg";
     item.tooltip = _u8L("Variable layer height");
     item.sprite_id = sprite_id++;
-    item.left.action_callback = [this]() { if (m_canvas != nullptr) wxPostEvent(m_canvas, SimpleEvent(EVT_GLTOOLBAR_LAYERSEDITING)); };
+    item.left.action_callback = [this]() { 
+        if (m_canvas != nullptr) 
+            wxPostEvent(m_canvas, SimpleEvent(EVT_GLTOOLBAR_LAYERSEDITING)); };
     item.visibility_callback = [this]()->bool {
         bool res = current_printer_technology() == ptFFF;
         // turns off if changing printer technology
@@ -5207,9 +5209,9 @@ bool GLCanvas3D::_init_undoredo_toolbar()
     m_undoredo_toolbar.set_layout_type(GLToolbar::Layout::Horizontal);
     m_undoredo_toolbar.set_horizontal_orientation(GLToolbar::Layout::HO_Left);
     m_undoredo_toolbar.set_vertical_orientation(GLToolbar::Layout::VO_Top);
-    m_undoredo_toolbar.set_border(5.0f);
-    m_undoredo_toolbar.set_separator_size(5);
-    m_undoredo_toolbar.set_gap_size(4);
+    //m_undoredo_toolbar.set_border(5.f);
+    //m_undoredo_toolbar.set_separator_size(5.f);
+    //m_undoredo_toolbar.set_gap_size(5.f);
 
     GLToolbarItem::Data item;
 
@@ -5982,6 +5984,7 @@ void GLCanvas3D::_check_and_update_toolbar_icon_scale()
     const Size cnv_size = get_canvas_size();
 
     int size = int(GLToolbar::Default_Icons_Size * scale);
+    int gizmo_size = int(GLGizmosManager::Default_Icons_Size * scale);
 
     // Set current size for all top toolbars. It will be used for next calculations
     GLToolbar& collapse_toolbar = wxGetApp().plater()->get_collapse_toolbar();
@@ -5991,6 +5994,7 @@ void GLCanvas3D::_check_and_update_toolbar_icon_scale()
     m_undoredo_toolbar.set_scale(sc);
     collapse_toolbar.set_scale(sc);
     size *= int(m_retina_helper->get_scale_factor());
+    gizmo_size *= int(m_retina_helper->get_scale_factor());
 #else
     m_main_toolbar.set_icons_size(size);
     m_undoredo_toolbar.set_icons_size(size);
@@ -6008,10 +6012,14 @@ void GLCanvas3D::_check_and_update_toolbar_icon_scale()
     //      https://github.com/supermerill/SuperSlicer/issues/854
     const float new_h_scale = std::max((cnv_size.get_width() - noitems_width), 1.0f) / (items_cnt * GLToolbar::Default_Icons_Size);
 
-    items_cnt = m_gizmos.get_selectable_icons_cnt() + 3; // +3 means a place for top and view toolbars and separators in gizmos toolbar
+    float   gizmos_height   = m_gizmos.get_scaled_total_height();
+    int     giz_items_cnt   = m_gizmos.get_selectable_icons_cnt();
+    float   noitems_height  = gizmos_height - gizmo_size * giz_items_cnt; // height of separators and borders in gizmos toolbars 
 
-    // calculate scale needed for items in the gizmos toolbar
-    const float new_v_scale = cnv_size.get_height() / (items_cnt * GLGizmosManager::Default_Icons_Size);
+    noitems_height += m_main_toolbar.get_height(); // increase its value to main_toolbar height
+    giz_items_cnt += 2; // +2 means a place for view toolbar
+
+    const float new_v_scale = std::max((cnv_size.get_height() - noitems_height), 1.0f) / (giz_items_cnt * GLGizmosManager::Default_Icons_Size);
 
     // set minimum scale as a auto scale for the toolbars
     float new_scale = std::min(new_h_scale, new_v_scale);

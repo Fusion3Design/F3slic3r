@@ -39,7 +39,7 @@
 namespace Slic3r {
 namespace GUI {
 
-const float GLGizmosManager::Default_Icons_Size = 64;
+const float GLGizmosManager::Default_Icons_Size = 48;// 64;
 
 GLGizmosManager::GLGizmosManager(GLCanvas3D& parent)
     : m_parent(parent)
@@ -62,6 +62,8 @@ std::vector<size_t> GLGizmosManager::get_selectable_idxs() const
     return out;
 }
 
+#define rect_sel 1 // square_sel, if 0
+
 GLGizmosManager::EType GLGizmosManager::get_gizmo_from_mouse(const Vec2d &mouse_pos) const
 {
     if (!m_enabled) return Undefined;
@@ -71,15 +73,21 @@ GLGizmosManager::EType GLGizmosManager::get_gizmo_from_mouse(const Vec2d &mouse_
     float icons_size = m_layout.scaled_icons_size();
     float border     = m_layout.scaled_border();
     float stride_y   = m_layout.scaled_stride_y();
+    float gap_x      = m_layout.scaled_gap_x();
+    float gap_y      = m_layout.scaled_gap_x();
     float top_y      = 0.5f * (cnv_h - height) + border;
 
     // is mouse horizontally in the area?
-    if ((border <= (float) mouse_pos(0) &&
-         ((float) mouse_pos(0) <= border + icons_size))) {
+    if (border <= (float) mouse_pos(0) &&
+         (float) mouse_pos(0) <= (border+gap_x + icons_size)) {
         // which icon is it on?
         size_t from_top = (size_t) ((float) mouse_pos(1) - top_y) / stride_y;
         // is it really on the icon or already past the border?
+#if rect_sel
         if ((float) mouse_pos(1) <= top_y + from_top * stride_y + icons_size) {
+#else
+        if ((float) mouse_pos(1) <= top_y + gap_y + from_top * stride_y + icons_size) {
+#endif
             std::vector<size_t> selectable = get_selectable_idxs();
             if (from_top < selectable.size()) 
                 return static_cast<EType>(selectable[from_top]);
@@ -808,8 +816,15 @@ void GLGizmosManager::do_render_overlay() const
 
     render_background(top_x, top_y, top_x + width, top_y - height, border_w, border_h);
 
-    top_x += border_w;
+    const float margin_w = border_w + m_layout.scaled_gap_x() * inv_cnv_w;
+    const float margin_h = border_h + m_layout.scaled_gap_y() * inv_cnv_h;
+
+    top_x += margin_w;
+#if rect_sel 
     top_y -= border_h;
+#else
+    top_y -= margin_h;
+#endif
 
     const float icons_size_x = 2.0f * m_layout.scaled_icons_size() * inv_cnv_w;
     const float icons_size_y = 2.0f * m_layout.scaled_icons_size() * inv_cnv_h;
@@ -832,9 +847,17 @@ void GLGizmosManager::do_render_overlay() const
     float current_y = FLT_MAX;
     for (size_t idx : selectable_idxs) {
         GLGizmoBase* gizmo = m_gizmos[idx].get();
+
+        if (m_current == idx)
+#if rect_sel
+            render_background(top_x - margin_w, top_y + border_h, top_x + icons_size_x + margin_w, top_y - icons_size_y - border_h, border_w, border_h);
+#else
+            render_background(top_x - margin_w, top_y + margin_h, top_x + icons_size_x + margin_w, top_y - icons_size_y - margin_h, border_w, border_h);
+#endif
+
         const unsigned int sprite_id = gizmo->get_sprite_id();
         // higlighted state needs to be decided first so its highlighting in every other state
-        const int icon_idx = (m_highlight.first == idx ? (m_highlight.second ? 4 : 5) : (m_current == idx) ? 2 : ((m_hover == idx) ? 1 : (gizmo->is_activable() ? 0 : 3)));
+        const int icon_idx = (m_highlight.first == idx ? (m_highlight.second ? 4 : 5) : (m_current == idx) ? /*2*/1 : ((m_hover == idx) ? 1 : (gizmo->is_activable() ? 0 : 3)));
 
         const float u_left   = u_offset + icon_idx * du;
         const float u_right  = u_left + du - u_offset;
@@ -856,12 +879,16 @@ void GLGizmosManager::do_render_overlay() const
 
 float GLGizmosManager::get_scaled_total_height() const
 {
-    return m_layout.scale * (2.0f * m_layout.border + (float)get_selectable_idxs().size() * m_layout.stride_y() - m_layout.gap_y);
+#if rect_sel
+    return 2.0f * m_layout.scaled_border() + (float)get_selectable_idxs().size() * m_layout.scaled_stride_y() - m_layout.scaled_gap_y();
+#else
+    return 2.0f * m_layout.scaled_border() + (float)get_selectable_idxs().size() * m_layout.scaled_stride_y();
+#endif
 }
 
 float GLGizmosManager::get_scaled_total_width() const
 {
-    return 2.0f * m_layout.scaled_border() + m_layout.scaled_icons_size();
+    return 2.0f * m_layout.scaled_border() + m_layout.scaled_icons_size() + m_layout.scaled_gap_x();
 }
 
 GLGizmoBase* GLGizmosManager::get_current() const
