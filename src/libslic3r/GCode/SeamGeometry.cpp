@@ -1,4 +1,5 @@
 #include "libslic3r/GCode/SeamGeometry.hpp"
+#include "ClipperUtils.hpp"
 #include "KDTreeIndirect.hpp"
 #include "Layer.hpp"
 #include <fstream>
@@ -183,6 +184,54 @@ std::vector<Extrusions> get_extrusions(tcb::span<const Slic3r::Layer *const> obj
         }
 
         result.push_back(std::move(extrusions));
+    }
+
+    return result;
+}
+
+BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimeters, const double max_bb_distance) {
+    BoundedPolygons result;
+    result.reserve(external_perimeters.size());
+
+    using std::transform, std::back_inserter;
+
+    transform(
+        external_perimeters.begin(), external_perimeters.end(), back_inserter(result),
+        [&](const Geometry::Extrusion &external_perimeter) {
+            const auto [choosen_index, _]{Geometry::pick_closest_bounding_box(
+                external_perimeter.bounding_box,
+                external_perimeter.island_boundary_bounding_boxes
+            )};
+
+            const double distance{Geometry::bounding_box_distance(
+                external_perimeter.island_boundary_bounding_boxes[choosen_index],
+                external_perimeter.bounding_box
+            )};
+
+            if (distance > max_bb_distance) {
+                Polygons expanded_extrusion{expand(external_perimeter.polygon, external_perimeter.width / 2.0)};
+                if (!expanded_extrusion.empty()) {
+                    return BoundedPolygon{
+                        expanded_extrusion.front(), expanded_extrusion.front().bounding_box(), external_perimeter.polygon.is_clockwise()
+                    };
+                }
+            }
+
+            const bool is_hole{choosen_index != 0};
+            const Polygon &adjacent_boundary{
+                !is_hole ? external_perimeter.island_boundary.contour :
+                           external_perimeter.island_boundary.holes[choosen_index - 1]};
+            return BoundedPolygon{adjacent_boundary, external_perimeter.island_boundary_bounding_boxes[choosen_index], is_hole};
+        }
+    );
+    return result;
+}
+
+std::vector<BoundedPolygons> project_to_geometry(const std::vector<Geometry::Extrusions> &extrusions, const double max_bb_distance) {
+    std::vector<BoundedPolygons> result(extrusions.size());
+
+    for (std::size_t layer_index{0}; layer_index < extrusions.size(); ++layer_index) {
+        result[layer_index] = project_to_geometry(extrusions[layer_index], max_bb_distance);
     }
 
     return result;

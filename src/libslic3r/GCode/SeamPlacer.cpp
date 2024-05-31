@@ -7,8 +7,10 @@
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/property_tree/json_parser.hpp>
+
 #include "SeamPlacer.hpp"
 
+#include "libslic3r/GCode/SeamShells.hpp"
 #include "libslic3r/GCode/SeamAligned.hpp"
 #include "libslic3r/GCode/SeamRear.hpp"
 #include "libslic3r/GCode/SeamRandom.hpp"
@@ -17,16 +19,15 @@
 
 namespace Slic3r::Seams {
 
-using ObjectShells = std::vector<std::pair<const PrintObject *, Shells::Shells<>>>;
 using ObjectPainting = std::map<const PrintObject*, ModelInfo::Painting>;
 
-ObjectShells partition_to_shells(
+ObjectLayerPerimeters get_perimeters(
     SpanOfConstPtrs<PrintObject> objects,
     const Params &params,
     const ObjectPainting& object_painting,
     const std::function<void(void)> &throw_if_canceled
 ) {
-    ObjectShells result;
+    ObjectLayerPerimeters result;
 
     for (const PrintObject *print_object : objects) {
         const ModelInfo::Painting &painting{object_painting.at(print_object)};
@@ -37,20 +38,18 @@ ObjectShells partition_to_shells(
         const Perimeters::LayerInfos layer_infos{Perimeters::get_layer_infos(
             print_object->layers(), params.perimeter.elephant_foot_compensation
         )};
-        Shells::Shells<Polygon> shell_polygons{
-            Shells::create_shells(extrusions, params.max_distance)};
+        const std::vector<Geometry::BoundedPolygons> projected{Geometry::project_to_geometry(extrusions, params.max_distance)};
+        Perimeters::LayerPerimeters perimeters{Perimeters::create_perimeters(projected, layer_infos, painting, params.perimeter)};
 
-        Shells::Shells<> perimeters{
-            Perimeters::create_perimeters(shell_polygons, layer_infos, painting, params.perimeter)};
         throw_if_canceled();
-        result.emplace_back(print_object, std::move(perimeters));
+        result.emplace(print_object, std::move(perimeters));
     }
     return result;
 }
 
-LayerPerimeters sort_to_layers(Shells::Shells<> &&shells) {
-    const std::size_t layer_count{Perimeters::get_layer_count(shells)};
-    LayerPerimeters result(layer_count);
+Perimeters::LayerPerimeters sort_to_layers(Shells::Shells<> &&shells) {
+    const std::size_t layer_count{Shells::get_layer_count(shells)};
+    Perimeters::LayerPerimeters result(layer_count);
 
     for (Shells::Shell<> &shell : shells) {
         for (Shells::Slice<> &slice : shell) {
@@ -63,22 +62,14 @@ LayerPerimeters sort_to_layers(Shells::Shells<> &&shells) {
     return result;
 }
 
-ObjectLayerPerimeters sort_to_layers(ObjectShells &&object_shells) {
-    ObjectLayerPerimeters result;
-    for (auto &[print_object, shells] : object_shells) {
-        result[print_object] = sort_to_layers(std::move(shells));
-    }
-    return result;
-}
-
 ObjectSeams precalculate_seams(
     const Params &params,
-    ObjectShells &&seam_data,
+    ObjectLayerPerimeters &&seam_data,
     const std::function<void(void)> &throw_if_canceled
 ) {
     ObjectSeams result;
 
-    for (auto &[print_object, shells] : seam_data) {
+    for (auto &[print_object, layer_perimeters] : seam_data) {
         switch (params.seam_preference) {
         case spAligned: {
             const Transform3d transformation{print_object->trafo_centered()};
@@ -91,17 +82,18 @@ ObjectSeams precalculate_seams(
                 points_visibility, params.convex_visibility_modifier,
                 params.concave_visibility_modifier};
 
+            Shells::Shells<> shells{Shells::create_shells(std::move(layer_perimeters), params.max_distance)};
             result[print_object] = Aligned::get_object_seams(
                 std::move(shells), visibility_calculator, params.aligned
             );
             break;
         }
         case spRear: {
-            result[print_object] = Rear::get_object_seams(sort_to_layers(std::move(shells)), params.rear_tolerance, params.rear_y_offset);
+            result[print_object] = Rear::get_object_seams(std::move(layer_perimeters), params.rear_tolerance, params.rear_y_offset);
             break;
         }
         case spRandom: {
-            result[print_object] = Random::get_object_seams(std::move(shells), params.random_seed);
+            result[print_object] = Random::get_object_seams(std::move(layer_perimeters), params.random_seed);
             break;
         }
         case spNearest: {
@@ -166,14 +158,14 @@ void Placer::init(
         object_painting.emplace(print_object, ModelInfo::Painting{transformation, volumes});
     }
 
-    ObjectShells seam_data{partition_to_shells(objects, params, object_painting, throw_if_canceled)};
+    ObjectLayerPerimeters perimeters{get_perimeters(objects, params, object_painting, throw_if_canceled)};
     this->params = params;
 
     if (this->params.seam_preference != spNearest) {
         this->seams_per_object =
-            precalculate_seams(params, std::move(seam_data), throw_if_canceled);
+            precalculate_seams(params, std::move(perimeters), throw_if_canceled);
     } else {
-        this->perimeters_per_layer = sort_to_layers(std::move(seam_data));
+        this->perimeters_per_layer = std::move(perimeters);
     }
 
     BOOST_LOG_TRIVIAL(debug) << "SeamPlacer: init: end";

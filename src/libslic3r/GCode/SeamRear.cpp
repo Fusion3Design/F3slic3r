@@ -75,9 +75,26 @@ std::vector<std::vector<SeamPerimeterChoice>> get_object_seams(
     for (std::vector<Perimeters::BoundedPerimeter> &layer : perimeters) {
         result.emplace_back();
         for (Perimeters::BoundedPerimeter &perimeter : layer) {
-            BoundingBoxf bounding_box{unscaled(perimeter.bounding_box)};
-            const SeamChoice seam_choice{Seams::choose_seam_point(perimeter.perimeter, Impl::RearestPointCalculator{rear_tolerance, rear_y_offset, bounding_box})};
-            result.back().push_back(SeamPerimeterChoice{seam_choice, std::move(perimeter.perimeter)});
+            if (perimeter.perimeter.is_degenerate) {
+                std::optional<Seams::SeamChoice> seam_choice{
+                    Seams::choose_degenerate_seam_point(perimeter.perimeter)};
+                if (seam_choice) {
+                    result.back().push_back(
+                        SeamPerimeterChoice{*seam_choice, std::move(perimeter.perimeter)}
+                    );
+                } else {
+                    result.back().push_back(SeamPerimeterChoice{SeamChoice{}, std::move(perimeter.perimeter)});
+                }
+            } else {
+                BoundingBoxf bounding_box{unscaled(perimeter.bounding_box)};
+                const SeamChoice seam_choice{Seams::choose_seam_point(
+                    perimeter.perimeter,
+                    Impl::RearestPointCalculator{rear_tolerance, rear_y_offset, bounding_box}
+                )};
+                result.back().push_back(
+                    SeamPerimeterChoice{seam_choice, std::move(perimeter.perimeter)}
+                );
+            }
         }
     }
 

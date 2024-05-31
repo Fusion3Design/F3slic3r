@@ -5,8 +5,8 @@
 
 #include "libslic3r/GCode/SeamPainting.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"
-
-#include "libslic3r/GCode/SeamShells.hpp"
+#include "libslic3r/AABBTreeLines.hpp"
+#include "libslic3r/GCode/SeamGeometry.hpp"
 
 namespace Slic3r {
     class Layer;
@@ -164,37 +164,25 @@ struct Perimeter
     PointTrees blocked_points{};
 };
 
+using Perimeters = std::vector<Perimeter>;
+
 struct BoundedPerimeter {
-    Perimeters::Perimeter perimeter;
+    Perimeter perimeter;
     BoundingBox bounding_box;
 };
 
-/**
- * @brief Create a Perimeter for each polygon in each of the shells.
- */
-Shells::Shells<Perimeter> create_perimeters(
-    const std::vector<Shells::Shell<Polygon>> &shells,
+using BoundedPerimeters = std::vector<BoundedPerimeter>;
+using LayerPerimeters = std::vector<BoundedPerimeters>;
+
+LayerPerimeters create_perimeters(
+    const std::vector<Geometry::BoundedPolygons> &polygons,
     const std::vector<LayerInfo> &layer_infos,
     const ModelInfo::Painting &painting,
     const PerimeterParams &params
 );
 
-inline std::size_t get_layer_count(
-    const Shells::Shells<> &shells
-) {
-    std::size_t layer_count{0};
-    for (const Shells::Shell<> &shell : shells) {
-        for (const Shells::Slice<>& slice : shell) {
-            if (slice.layer_index >= layer_count) {
-                layer_count = slice.layer_index + 1;
-            }
-        }
-    }
-    return layer_count;
-}
-
 inline std::vector<Vec2d> extract_points(
-    const Perimeters::Perimeter &perimeter, const Perimeters::PointType point_type
+    const Perimeter &perimeter, const PointType point_type
 ) {
     std::vector<Vec2d> result;
     for (std::size_t i{0}; i < perimeter.positions.size(); ++i) {

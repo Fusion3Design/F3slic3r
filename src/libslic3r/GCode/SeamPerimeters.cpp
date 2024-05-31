@@ -384,26 +384,32 @@ Perimeter Perimeter::create(
         std::move(angle_types)};
 }
 
-Shells::Shells<> create_perimeters(
-    const std::vector<Shells::Shell<Polygon>> &shells,
+LayerPerimeters create_perimeters(
+    const std::vector<Geometry::BoundedPolygons> &polygons,
     const std::vector<LayerInfo> &layer_infos,
     const ModelInfo::Painting &painting,
     const PerimeterParams &params
 ) {
-    std::vector<Shells::Shell<>> result;
-    result.reserve(shells.size());
+    LayerPerimeters result;
+    result.reserve(polygons.size());
+
     std::transform(
-        shells.begin(), shells.end(), std::back_inserter(result),
-        [](const Shells::Shell<Polygon> &shell) { return Shells::Shell<>(shell.size()); }
+        polygons.begin(), polygons.end(), std::back_inserter(result),
+        [](const Geometry::BoundedPolygons &layer) { return BoundedPerimeters(layer.size()); }
     );
 
-    Geometry::iterate_nested(shells, [&](const std::size_t shell_index, const std::size_t polygon_index){
-        const Shells::Shell<Polygon> &shell{shells[shell_index]};
-        const Shells::Slice<Polygon>& slice{shell[polygon_index]};
-        const Polygon &polygon{slice.boundary};
-        const LayerInfo &layer_info{layer_infos[slice.layer_index]};
-        result[shell_index][polygon_index] = {Perimeter::create(polygon, painting, layer_info, params), slice.layer_index};
-    });
+    Geometry::iterate_nested(
+        polygons,
+        [&](const std::size_t layer_index, const std::size_t polygon_index) {
+            const Geometry::BoundedPolygons &layer{polygons[layer_index]};
+            const Geometry::BoundedPolygon &bounded_polygon{layer[polygon_index]};
+            const LayerInfo &layer_info{layer_infos[layer_index]};
+            result[layer_index][polygon_index] = BoundedPerimeter{
+                Perimeter::create(bounded_polygon.polygon, painting, layer_info, params),
+                bounded_polygon.bounding_box};
+        }
+    );
     return result;
 }
+
 } // namespace Slic3r::Seams::Perimeter

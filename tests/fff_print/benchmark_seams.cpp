@@ -12,8 +12,18 @@ TEST_CASE_METHOD(Slic3r::Test::SeamsFixture, "Seam benchmarks", "[Seams][.Benchm
     };
 
     using namespace Slic3r::Seams;
+
     BENCHMARK_ADVANCED("Create shells benchy")(Catch::Benchmark::Chronometer meter) {
-        meter.measure([&] { return Shells::create_shells(extrusions, params.max_distance); });
+        std::vector<Perimeters::LayerPerimeters> inputs;
+        inputs.reserve(meter.runs());
+        std::generate_n(std::back_inserter(inputs), meter.runs(), [&]() {
+            return Slic3r::Seams::Perimeters::create_perimeters(
+                projected, layer_infos, painting, params.perimeter
+            );
+        });
+        meter.measure([&](const int i) {
+            return Shells::create_shells(std::move(inputs[i]), params.max_distance);
+        });
     };
 
 
@@ -27,7 +37,7 @@ TEST_CASE_METHOD(Slic3r::Test::SeamsFixture, "Seam benchmarks", "[Seams][.Benchm
 
     BENCHMARK_ADVANCED("Create perimeters benchy")(Catch::Benchmark::Chronometer meter) {
         meter.measure([&] {
-            return Perimeters::create_perimeters(shell_polygons, layer_infos, painting, params.perimeter);
+            return Perimeters::create_perimeters(projected, layer_infos, painting, params.perimeter);
         });
     };
 
@@ -35,8 +45,12 @@ TEST_CASE_METHOD(Slic3r::Test::SeamsFixture, "Seam benchmarks", "[Seams][.Benchm
         std::vector<Shells::Shells<>> inputs;
         inputs.reserve(meter.runs());
         std::generate_n(std::back_inserter(inputs), meter.runs(), [&]() {
-            return Perimeters::create_perimeters(
-                shell_polygons, layer_infos, painting, params.perimeter
+            Slic3r::Seams::Perimeters::LayerPerimeters perimeters{
+                Slic3r::Seams::Perimeters::create_perimeters(
+                    projected, layer_infos, painting, params.perimeter
+                )};
+            return Shells::create_shells(
+                std::move(perimeters), params.max_distance
             );
         });
         meter.measure([&](const int i) {
@@ -54,27 +68,25 @@ TEST_CASE_METHOD(Slic3r::Test::SeamsFixture, "Seam benchmarks", "[Seams][.Benchm
         });
     };
 
-    /**
     BENCHMARK_ADVANCED("Generate rear seam benchy")(Catch::Benchmark::Chronometer meter) {
-        std::vector<Shells::Shells<>> inputs;
+        std::vector<Perimeters::LayerPerimeters> inputs;
         inputs.reserve(meter.runs());
         std::generate_n(std::back_inserter(inputs), meter.runs(), [&]() {
-            return create_perimeters(
-                shell_polygons, layer_infos, painting, params.perimeter
+            return Slic3r::Seams::Perimeters::create_perimeters(
+                projected, layer_infos, painting, params.perimeter
             );
         });
         meter.measure([&](const int i) {
-            return Rear::get_object_seams(std::move(inputs[i]), params.rear_project_threshold);
+            return Rear::get_object_seams(std::move(inputs[i]), params.rear_tolerance, params.rear_y_offset);
         });
     };
-    */
 
     BENCHMARK_ADVANCED("Generate random seam benchy")(Catch::Benchmark::Chronometer meter) {
-        std::vector<Shells::Shells<>> inputs;
+        std::vector<Perimeters::LayerPerimeters> inputs;
         inputs.reserve(meter.runs());
         std::generate_n(std::back_inserter(inputs), meter.runs(), [&]() {
-            return Perimeters::create_perimeters(
-                shell_polygons, layer_infos, painting, params.perimeter
+            return Slic3r::Seams::Perimeters::create_perimeters(
+                projected, layer_infos, painting, params.perimeter
             );
         });
         meter.measure([&](const int i) {

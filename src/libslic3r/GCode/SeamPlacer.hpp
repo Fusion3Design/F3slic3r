@@ -23,8 +23,7 @@ namespace Slic3r::Seams {
 
 using ObjectSeams =
     std::unordered_map<const PrintObject *, std::vector<std::vector<SeamPerimeterChoice>>>;
-using LayerPerimeters = std::vector<std::vector<Perimeters::BoundedPerimeter>>;
-using ObjectLayerPerimeters = std::unordered_map<const PrintObject *, LayerPerimeters>;
+using ObjectLayerPerimeters = std::unordered_map<const PrintObject *, Perimeters::LayerPerimeters>;
 
 struct Params
 {

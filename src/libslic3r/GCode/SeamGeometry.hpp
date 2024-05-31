@@ -43,6 +43,17 @@ using Extrusions = std::vector<Extrusion>;
 
 std::vector<Extrusions> get_extrusions(tcb::span<const Slic3r::Layer *const> object_layers);
 
+struct BoundedPolygon {
+    Polygon polygon;
+    BoundingBox bounding_box;
+    bool is_hole{false};
+};
+
+using BoundedPolygons = std::vector<BoundedPolygon>;
+
+BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimeters, const double max_bb_distance);
+std::vector<BoundedPolygons> project_to_geometry(const std::vector<Geometry::Extrusions> &extrusions, const double max_bb_distance);
+
 Vec2d get_polygon_normal(
     const std::vector<Vec2d> &points, const std::size_t index, const double min_arm_length
 );
