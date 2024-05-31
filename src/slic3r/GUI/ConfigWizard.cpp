@@ -1101,6 +1101,7 @@ void PageMaterials::update_lists(int sel_type, int sel_vendor, int last_selected
         // Refresh type list
 		list_type->Clear();
 		list_type->append(_L("(All)"), &EMPTY);
+        std::vector<std::string> appended_types;
 		if (sel_printers_count > 1) {
             // If all is selected with other printers
             // unselect "all" or all printers depending on last value
@@ -1135,10 +1136,11 @@ void PageMaterials::update_lists(int sel_type, int sel_vendor, int last_selected
                         break;
                     }
                 }
-                materials->filter_presets(printer, printer_name, EMPTY, EMPTY, [this](const Preset* p) {
+                materials->filter_presets(printer, printer_name, EMPTY, EMPTY, [this, &appended_types](const Preset* p) {
                     const std::string& type = this->materials->get_type(p);
-                    if (list_type->find(type) == wxNOT_FOUND) {
+                    if (std::find(appended_types.begin(), appended_types.end(), type) == appended_types.end()) {
                         list_type->append(type, &type);
+                        appended_types.emplace_back(type);
                     }
                     });
             }
@@ -1149,10 +1151,11 @@ void PageMaterials::update_lists(int sel_type, int sel_vendor, int last_selected
             list_printer->SetSelection(0);
             sel_printers_count = list_printer->GetSelections(sel_printers);
 
-            materials->filter_presets(nullptr, EMPTY, EMPTY, EMPTY, [this](const Preset* p) {
+            materials->filter_presets(nullptr, EMPTY, EMPTY, EMPTY, [this, &appended_types](const Preset* p) {
                 const std::string& type = this->materials->get_type(p);
-                if (list_type->find(type) == wxNOT_FOUND) {
+                if (std::find(appended_types.begin(), appended_types.end(), type) == appended_types.end()) {
                     list_type->append(type, &type);
+                    appended_types.emplace_back(type);
                 }
                 });
         }
@@ -1163,10 +1166,11 @@ void PageMaterials::update_lists(int sel_type, int sel_vendor, int last_selected
             sel_printers_count = list_printer->GetSelections(sel_printers);
             template_shown = true;
             materials->filter_presets(nullptr, TEMPLATES, EMPTY, EMPTY, 
-                [this](const Preset* p) {
+                [this, &appended_types](const Preset* p) {
                     const std::string& type = this->materials->get_type(p);
-                    if (list_type->find(type) == wxNOT_FOUND) {
+                    if (std::find(appended_types.begin(), appended_types.end(), type) == appended_types.end()) {
                         list_type->append(type, &type);
+                        appended_types.emplace_back(type);
                     }
                 });
         }
@@ -1187,6 +1191,7 @@ void PageMaterials::update_lists(int sel_type, int sel_vendor, int last_selected
 
 		list_vendor->Clear();
 		list_vendor->append(_L("(All)"), &EMPTY);
+        std::vector<std::string> appended_vendors;
 		if (sel_printers_count != 0 && sel_type != wxNOT_FOUND) {
 			const std::string& type = list_type->get_data(sel_type);
 			// find printer preset
@@ -1199,10 +1204,11 @@ void PageMaterials::update_lists(int sel_type, int sel_vendor, int last_selected
 						break;
 					}
 				}
-				materials->filter_presets(printer, printer_name, type, EMPTY, [this](const Preset* p) {
+				materials->filter_presets(printer, printer_name, type, EMPTY, [this, &appended_vendors](const Preset* p) {
 					const std::string& vendor = this->materials->get_vendor(p);
-					if (list_vendor->find(vendor) == wxNOT_FOUND) {
+					if (std::find(appended_vendors.begin(), appended_vendors.end(), vendor) == appended_vendors.end()) {
 						list_vendor->append(vendor, &vendor);
+                        appended_vendors.emplace_back(vendor);
 					}
 					});
 			}
@@ -1220,6 +1226,7 @@ void PageMaterials::update_lists(int sel_type, int sel_vendor, int last_selected
 		// Refresh material list
 
 		list_profile->Clear();
+        std::vector<std::string> appended_aliases;
         clear_compatible_printers_label();
 		if (sel_printers_count != 0 && sel_type != wxNOT_FOUND && sel_vendor != wxNOT_FOUND) {
 			const std::string& type = list_type->get_data(sel_type);
@@ -1235,17 +1242,20 @@ void PageMaterials::update_lists(int sel_type, int sel_vendor, int last_selected
 						break;
 					}
 				}
-				materials->filter_presets(printer, printer_name, type, vendor, [this, &to_list](const Preset* p) {
+				materials->filter_presets(printer, printer_name, type, vendor, [this, &to_list, &appended_aliases](const Preset* p) {
 					const std::string& section = materials->appconfig_section();
                     bool checked = wizard_p()->appconfig_new.has(section, p->name);
                     bool was_checked = false;
 
-                    int cur_i = list_profile->find(p->alias);
-                    if (cur_i == wxNOT_FOUND) {
+                    auto it = std::find(appended_aliases.begin(), appended_aliases.end(), p->alias);
+                    size_t cur_i = 0;
+                    if (it == appended_aliases.end()) {
                         cur_i = list_profile->append(p->alias + (materials->get_omnipresent(p) || template_shown ? "" : " *"), &p->alias);
+                        appended_aliases.emplace_back(p->alias);
                         to_list.emplace_back(p->alias, materials->get_omnipresent(p), checked);
                     }
                     else {
+                        cur_i = it - appended_aliases.begin();
                         was_checked = list_profile->IsChecked(cur_i);
                         to_list[cur_i].checked = checked || was_checked;
                     }
