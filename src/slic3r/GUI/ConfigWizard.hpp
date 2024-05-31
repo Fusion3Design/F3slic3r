@@ -25,6 +25,12 @@ class PresetUpdater;
 
 namespace GUI {
 
+class ConfigWizardLoadingDialog : public wxDialog
+{
+public:
+    ConfigWizardLoadingDialog(wxWindow* parent, const wxString& message);
+};
+
 namespace DownloaderUtils {
     class Worker : public wxBoxSizer
     {

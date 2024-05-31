@@ -3224,8 +3224,18 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
 #endif // 0
     plater()->get_preset_archive_database()->sync_blocking();
 
+    // ConfigWizard can take some time to start. Because it is a wxWidgets window, it has to be done in UI thread,
+    // so displaying a nice modal dialog and letting the CW start in a worker thread is not an option.
+    // Let's at least show a modeless dialog before the UI thread freezes.
+    auto cw_loading_dlg = new ConfigWizardLoadingDialog(mainframe, _L("Loading Configuration Wizard..."));
+    cw_loading_dlg->CenterOnParent();
+    cw_loading_dlg->Show();
+    wxYield();
     auto wizard = new ConfigWizard(mainframe);
+    cw_loading_dlg->Close();
+
     const bool res = wizard->run(reason, start_page);
+
 
     // !!! Deallocate memory after close ConfigWizard.
     // Note, that mainframe is a parent of ConfigWizard.

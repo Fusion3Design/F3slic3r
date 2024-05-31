@@ -90,6 +90,23 @@ using Config::Snapshot;
 using Config::SnapshotDB;
 
 
+
+ConfigWizardLoadingDialog::ConfigWizardLoadingDialog(wxWindow* parent, const wxString& message)
+    : wxDialog(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxFRAME_FLOAT_ON_PARENT)
+{
+    auto* text = new wxStaticText(this, wxID_ANY, message, wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL);
+    auto* vsizer = new wxBoxSizer(wxVERTICAL);
+    auto *top_sizer = new wxBoxSizer(wxVERTICAL);
+    vsizer->Add(text, 1, wxEXPAND);
+    top_sizer->Add(vsizer, 1, wxEXPAND | wxALL, 15);
+    SetSizer(top_sizer);
+    #ifdef _WIN32
+        wxGetApp().UpdateDlgDarkUI(this);
+    #endif
+    Fit();
+}
+
+
 // Configuration data structures extensions needed for the wizard
 
 bool Bundle::load(fs::path source_path, BundleLocation location, bool ais_prusa_bundle)
