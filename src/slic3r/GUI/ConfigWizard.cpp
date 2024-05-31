@@ -2569,9 +2569,6 @@ void ConfigWizard::priv::load_pages()
         if (any_sla_selected) 
             index->add_page(page_sla_materials);
 
-        // there should to be selected at least one printer
-        btn_finish->Enable(any_fff_selected || any_sla_selected || custom_printer_selected || custom_printer_in_bundle);
-
         index->add_page(page_update);
         index->add_page(page_downloader);
         index->add_page(page_reload_from_disk);
@@ -2587,9 +2584,10 @@ void ConfigWizard::priv::load_pages()
     else
         index->go_to(former_active);   // Will restore the active item/page if possible
 
-    // set visibility for "Select all..." and "Finish" buttons
-    btn_sel_all->Show(is_config_from_archive);
-    btn_finish ->Show(is_config_from_archive);
+    // set visibility for "Select all..."
+    btn_sel_all->Show(!pages_fff.empty() || !pages_msla.empty());
+    // Set enabling fo "Finish" button -> there should to be selected at least one printer
+    btn_finish->Enable(any_fff_selected || any_sla_selected || custom_printer_selected || custom_printer_in_bundle);
 
     q->Layout();
 // This Refresh() is needed to avoid ugly artifacts after printer selection, when no one vendor was selected from the very beginnig
@@ -3638,14 +3636,16 @@ void ConfigWizard::priv::load_pages_from_archive()
             PagePrinters* pageFFF = nullptr;
             PagePrinters* pageSLA = nullptr;
 
+            const bool is_prusa_vendor = vendor->name.find("Prusa") != std::string::npos;
+
             if (is_fff_technology) {
-                pageFFF = new PagePrinters(q, vendor->name + " " + _L("FFF Technology Printers"), vendor->name + " FFF", *vendor, 1, T_FFF);
+                pageFFF = new PagePrinters(q, vendor->name + " " + _L("FFF Technology Printers"), vendor->name + (is_prusa_vendor ? "" : " FFF"), *vendor, 1, T_FFF);
                 add_page(pageFFF);
                 only_sla_mode = false;
             }
 
             if (is_sla_technology) {
-                pageSLA = new PagePrinters(q, vendor->name + " " + _L("SLA Technology Printers"), vendor->name + " MSLA", *vendor, 1, T_SLA);
+                pageSLA = new PagePrinters(q, vendor->name + " " + _L("SLA Technology Printers"), vendor->name + (is_prusa_vendor ? "" : " MSLA"), *vendor, 1, T_SLA);
                 add_page(pageSLA);
             }
 
@@ -3835,7 +3835,7 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     });
 
     p->btn_sel_all->Bind(wxEVT_BUTTON, [this](const wxCommandEvent &) {
-        p->any_sla_selected = true;
+ //       p->any_sla_selected = true;
         p->load_pages();
 
         for (auto page : p->pages_msla)
