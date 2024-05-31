@@ -148,7 +148,7 @@ struct ConfigWizardPage: wxPanel
     ConfigWizard *parent;
     const wxString shortname;
     wxBoxSizer *content;
-    unsigned indent;
+    const unsigned indent;
 
     ConfigWizardPage(ConfigWizard *parent, wxString title, wxString shortname, unsigned indent = 0);
     virtual ~ConfigWizardPage();
@@ -162,7 +162,6 @@ struct ConfigWizardPage: wxPanel
 
     wxStaticText* append_text(wxString text);
     void append_spacer(int space);
-    void incr_indent()                     { if (indent > 0) indent--; }
 
     ConfigWizard::priv *wizard_p() const { return parent->p.get(); }
 
@@ -681,6 +680,7 @@ struct ConfigWizard::priv
     void add_page(ConfigWizardPage *page);
     void enable_next(bool enable);
     void set_start_page(ConfigWizard::StartPage start_page);
+    void create_vendor_printers_page(const std::string& repo_id, const VendorProfile* vendor, bool install = false);
     void set_run_reason(RunReason run_reason);
     void update_materials(Technology technology);
 
@@ -703,6 +703,8 @@ struct ConfigWizard::priv
 
     int em() const { return index->em(); }
     void set_config_updated_from_archive(bool is_updated);
+
+    Repository* get_repo(const std::string& repo_id);
 
     // Fills vendors_for_repo in respect to repo_id
     // and return true if any of vendors_for_repo is installed (is in app_config)

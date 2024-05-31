@@ -1848,6 +1848,16 @@ PageVendors::PageVendors(ConfigWizard* parent, std::string repo_id /*= wxEmptySt
         auto *cbox = new wxCheckBox(this, wxID_ANY, vendor->name);
         cbox->Bind(wxEVT_CHECKBOX, [=](wxCommandEvent &event) {
             if (cbox->IsChecked()) {
+                // create PrinterPages for this vendor, if they aren't created jet
+                {
+                    auto repo = wizard_p()->get_repo(repo_id);
+                    assert(repo);
+                    if (repo->printers_pages.find(vendor->id) == repo->printers_pages.end()) {
+                        wxWindowUpdateLocker freeze_guard(parent);
+                        wizard_p()->create_vendor_printers_page(repo_id, vendor);
+                    }
+                }
+
                 wxString    user_presets_list{ wxString() };
                 int         user_presets_cnt { 0 };
                 
@@ -1885,18 +1895,7 @@ PageVendors::PageVendors(ConfigWizard* parent, std::string repo_id /*= wxEmptySt
         const bool enabled = acvendors.find(vendor->id) != acvendors.end();
         if (enabled) {
             cbox->SetValue(true);
-
-            for (const auto& repo : wizard_p()->repositories) {
-                if (repo.id_name != repo_id)
-                    continue;
-
-                auto pages = repo.printers_pages.find(vendor->id);
-                wxCHECK_RET(pages != repo.printers_pages.end(), "Internal error: 3rd party vendor printers page not created");
-                for (PagePrinters* page : { pages->second.first, pages->second.second })
-                    if (page) page->install = true;
-
-                break;
-            }
+            wizard_p()->create_vendor_printers_page(repo_id, vendor, true);
         }
 
         append(cbox);
@@ -2747,6 +2746,75 @@ void ConfigWizard::priv::set_start_page(ConfigWizard::StartPage start_page)
             index->go_to(page_welcome);
             btn_next->SetFocus();
             break;
+    }
+}
+
+ConfigWizard::priv::Repository* ConfigWizard::priv::get_repo(const std::string& repo_id)
+{
+    auto it = std::find(repositories.begin(), repositories.end(), repo_id);
+    if (it == repositories.end())
+        return nullptr;
+    return &repositories[it - repositories.begin()];
+}
+
+void ConfigWizard::priv::create_vendor_printers_page(const std::string& repo_id, const VendorProfile* vendor, bool install/* = false*/)
+{
+    bool is_fff_technology = false;
+    bool is_sla_technology = false;
+
+    for (auto& model: vendor->models)
+    {
+        if (!is_fff_technology && model.technology == ptFFF)
+            is_fff_technology = true;
+        if (!is_sla_technology && model.technology == ptSLA)
+            is_sla_technology = true;
+
+        if (is_fff_technology && is_sla_technology)
+            break;
+    }
+
+    PagePrinters* pageFFF = nullptr;
+    PagePrinters* pageSLA = nullptr;
+
+    const bool is_prusa_vendor = vendor->name.find("Prusa") != std::string::npos;
+    const unsigned indent = repo_id.empty() ? 0 : 1;
+
+    if (is_fff_technology) 
+    {
+        pageFFF = new PagePrinters(q, vendor->name + " " +_L("FFF Technology Printers"), vendor->name + (is_prusa_vendor ? "" : " FFF"), *vendor, indent, T_FFF);
+        pageFFF->install = install;
+        if (only_sla_mode)
+            only_sla_mode = false;
+        add_page(pageFFF);
+    }
+
+    if (is_sla_technology) 
+    {
+        pageSLA = new PagePrinters(q, vendor->name + " " + _L("SLA Technology Printers"), vendor->name + (is_prusa_vendor ? "" : " MLSA"), *vendor, indent, T_SLA);
+        pageSLA->install = install;
+        add_page(pageSLA);
+    }
+
+    if (repo_id.empty())
+    {
+        // single vendor repository
+        if (pageFFF) {
+            pages_fff.emplace_back(pageFFF);
+            if (!pageFFF->any_selected())
+                pageFFF->printer_pickers[0]->select_one(0, true);// select first printer for them
+        }
+        if (pageSLA) {
+            pages_msla.emplace_back(pageSLA);
+            if (!pageSLA->any_selected())
+                pageSLA->printer_pickers[0]->select_one(0, true);// select first printer for them
+        }
+    }
+    else if (pageFFF || pageSLA)
+    {
+        // multiple vendor repository
+        auto repo = get_repo(repo_id);
+        assert(repo);
+        repo->printers_pages.insert({vendor->id, {pageFFF, pageSLA}});
     }
 }
 
@@ -3616,77 +3684,28 @@ void ConfigWizard::priv::load_pages_from_archive()
             is_actual_archive_selection = false;
         }
 
-        Pages3rdparty     pages;
-
-        for (const VendorProfile* vendor : vendors) {
-
-            bool is_fff_technology = false;
-            bool is_sla_technology = false;
-
-            for (auto& model : vendor->models)
-            {
-                if (!is_fff_technology && model.technology == ptFFF)
-                    is_fff_technology = true;
-                if (!is_sla_technology && model.technology == ptSLA)
-                    is_sla_technology = true;
-                if (is_fff_technology && is_sla_technology)
-                    break;
-            }
-            
-            PagePrinters* pageFFF = nullptr;
-            PagePrinters* pageSLA = nullptr;
-
-            const bool is_prusa_vendor = vendor->name.find("Prusa") != std::string::npos;
-
-            if (is_fff_technology) {
-                pageFFF = new PagePrinters(q, vendor->name + " " + _L("FFF Technology Printers"), vendor->name + (is_prusa_vendor ? "" : " FFF"), *vendor, 1, T_FFF);
-                add_page(pageFFF);
-                only_sla_mode = false;
-            }
-
-            if (is_sla_technology) {
-                pageSLA = new PagePrinters(q, vendor->name + " " + _L("SLA Technology Printers"), vendor->name + (is_prusa_vendor ? "" : " MSLA"), *vendor, 1, T_SLA);
-                add_page(pageSLA);
-            }
-
-            pages.insert({ vendor->id, {pageFFF, pageSLA} });
-        }
-
-        if (pages.size() == 1) {
+        if (vendors.size() == 1)
+        {
             // it's single vendor repository
+            create_vendor_printers_page("", vendors[0], true);
 
-            for (const auto& [name, printers] : pages)
+            if (!is_primary_printer_page_set && !pages_fff.empty())
             {
-                if (PagePrinters* pageFFF = printers.first) {
-                    pageFFF->incr_indent();
-                    if (!pageFFF->any_selected())
-                        pageFFF->printer_pickers[0]->select_one(0, true);// select first printer for them
-
-                    pages_fff.push_back(pageFFF);
-                    if (!is_primary_printer_page_set) {
-                        pageFFF->is_primary_printer_page = true;
-                        is_primary_printer_page_set = true;
-                    }
-                }
-
-                if (PagePrinters* pageSLA = printers.second) {
-                    pageSLA->incr_indent();
-                    if (!pageSLA->any_selected())
-                        pageSLA->printer_pickers[0]->select_one(0, true);// select first printer for them
-
-                    pages_msla.push_back(pageSLA);
-                    if (!is_primary_printer_page_set) {
-                        pageSLA->is_primary_printer_page = true;
-                        is_primary_printer_page_set = true;
-                    }
-                }
+                pages_fff.back()->is_primary_printer_page = true;
+                is_primary_printer_page_set = true;
+            }
+            else if (!is_primary_printer_page_set && !pages_msla.empty())
+            {
+                pages_msla.back()->is_primary_printer_page = true;
+                is_primary_printer_page_set = true;
             }
         }
-        else if (!pages.empty()) {
+        else if (!vendors.empty()) 
+        {
             // it's multiple vendor repository
 
-            // pages needs to be added into repositories before page_vendors creation
-            repositories.push_back({ data.id, nullptr, pages});
+            // repository item with repo_id needs to be added into repositories before page_vendors creation
+            repositories.push_back({ data.id });
 
             PageVendors* page_vendors = new PageVendors(q, data.id, data.name);
             repositories[repositories.size() - 1].vendors_page = page_vendors;
