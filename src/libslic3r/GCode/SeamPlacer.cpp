@@ -275,6 +275,36 @@ Point finalize_seam_position(
     return scaled(loop_point);
 }
 
+struct NearestCorner {
+    Vec2d prefered_position;
+
+    std::optional<SeamChoice> operator()(
+        const Perimeters::Perimeter &perimeter,
+        const Perimeters::PointType point_type,
+        const Perimeters::PointClassification point_classification
+    ) const {
+        std::optional<SeamChoice> corner_candidate;
+        double min_distance{std::numeric_limits<double>::infinity()};
+        for (std::size_t i{0}; i < perimeter.positions.size(); ++i) {
+            if (perimeter.point_types[i] == point_type &&
+                perimeter.point_classifications[i] == point_classification &&
+                perimeter.angle_types[i] != Perimeters::AngleType::smooth) {
+                const Vec2d &point{perimeter.positions[i]};
+                if (!corner_candidate) {
+                    corner_candidate = {i, i, point};
+                    continue;
+                }
+                const double distance{(prefered_position - point).norm()};
+                if (distance < min_distance) {
+                    corner_candidate = {i, i, point};
+                    min_distance = distance;
+                }
+            }
+        }
+        return corner_candidate;
+    }
+};
+
 std::pair<SeamChoice, std::size_t> place_seam_near(
     const std::vector<BoundedPerimeter> &layer_perimeters,
     const ExtrusionLoop &loop,
@@ -292,11 +322,19 @@ std::pair<SeamChoice, std::size_t> place_seam_near(
     const std::size_t choice_index{
         Geometry::pick_closest_bounding_box(loop_polygon.bounding_box(), choose_from).first};
 
-    Seams::Aligned::Impl::Nearest nearest{unscaled(position), max_detour};
+    const NearestCorner nearest_corner{unscaled(position)};
+    const std::optional<SeamChoice> corner_choice{
+        Seams::maybe_choose_seam_point(layer_perimeters[choice_index].perimeter, nearest_corner)};
 
-    const SeamChoice choice{Seams::choose_seam_point(layer_perimeters[choice_index].perimeter, nearest)};
+    if (corner_choice) {
+        return {*corner_choice, choice_index};
+    }
 
-    return {choice, choice_index};
+    const Seams::Aligned::Impl::Nearest nearest{unscaled(position), max_detour};
+    const SeamChoice nearest_choice{
+        Seams::choose_seam_point(layer_perimeters[choice_index].perimeter, nearest)};
+
+    return {nearest_choice, choice_index};
 }
 
 int get_perimeter_count(const Layer *layer){
