@@ -654,28 +654,42 @@ PageUpdateManager::PageUpdateManager(ConfigWizard* parent_in)
 
     const int em = em_unit(this);
 
-    m_manager = std::make_unique<RepositoryUpdateUIManager>(this, wxGetApp().plater()->get_preset_archive_database(), em);
+    manager = std::make_unique<RepositoryUpdateUIManager>(this, wxGetApp().plater()->get_preset_archive_database(), em);
 
-    auto sizer = m_manager->get_sizer();
+    warning_text = new wxStaticText(this, wxID_ANY, _L("WARNING: Select at least one repository."));
+    warning_text->SetFont(wxGetApp().bold_font());
+    warning_text->Hide();
 
-    wxButton* btn = new wxButton(this, wxID_ANY, "  " + _L("Confirm configuration update") + "  ");
-    btn->SetFont(wxGetApp().bold_font());
-    wxGetApp().UpdateDarkUI(btn, true);
-    btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) { 
-        if (m_manager->set_selected_repositories())
-            wizard_p()->set_config_updated_from_archive(true);
-    });
-    btn->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& event) {
-        const bool is_actual_archive_selection = wizard_p()->is_actual_archive_selection;
-        const bool is_selection_changed        = m_manager->is_selection_changed();
-        const bool has_selections              = m_manager->has_selections();
-        const bool is_config_from_archive      = wizard_p()->is_config_from_archive;
-        event.Enable((!is_config_from_archive && has_selections) || !is_actual_archive_selection || (is_selection_changed && has_selections));
+    warning_text->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& event) {
+        const bool show_warning = !manager->has_selections();
+        if (warning_text->IsShown() != show_warning) {
+            warning_text->Show(show_warning);
+            this->Layout();
+        }
     });
 
-    sizer->Add(btn, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, em);
+    auto sizer = manager->get_sizer();
+    sizer->Add(warning_text, 0, wxEXPAND | wxTOP, 2 * em);
 
     append(sizer, 0, wxTOP, 2 * em);
+
+    this->Bind(wxEVT_SHOW, [this, parent_in](wxShowEvent& evt) {
+        if (evt.IsShown())
+            is_active = true;
+        else if (is_active && parent_in->IsShown()) {
+            if (manager->has_selections()) {
+                wxBusyCursor wait;
+                if (manager->set_selected_repositories())
+                    wizard_p()->set_config_updated_from_archive(true);
+            }
+            else {
+                CallAfter([this]() {
+                    wizard_p()->index->go_to(1);
+                });
+            }
+            is_active = false;
+        }
+    });
 }
 
 PagePrinters::PagePrinters(ConfigWizard *parent,
@@ -2327,12 +2341,12 @@ void ConfigWizardIndex::go_to(size_t i)
     if (i != item_active
         && i < items.size()
         && items[i].page != nullptr) {
-        auto *new_active = items[i].page;
         auto *former_active = active_page();
         if (former_active != nullptr) {
             former_active->Hide();
         }
 
+        auto *new_active = items[i].page;
         item_active = i;
         new_active->Show();
 
@@ -2539,7 +2553,7 @@ void ConfigWizard::priv::load_pages()
     index->add_page(page_welcome);
     index->add_page(page_update_manager);
 
-    if (is_config_from_archive) {
+    if (!is_first_start) {
 
         // Printers
         if (!only_sla_mode)
@@ -2605,9 +2619,7 @@ void ConfigWizard::priv::load_pages()
 
     }
 
-    if (is_config_from_archive && former_active == page_update_manager)
-        index->go_to(2);    // next page after "Configuration manager"
-    else
+    if (former_active != page_update_manager)
         index->go_to(former_active);   // Will restore the active item/page if possible
 
     // set visibility for "Select all..."
@@ -3596,12 +3608,13 @@ void ConfigWizard::priv::set_config_updated_from_archive(bool is_updated)
         app.preset_updater->config_update(app.app_config->orig_version(), PresetUpdater::UpdateParams::SHOW_TEXT_BOX, repos);
 
         // We have now probably changed data. We need to rebuild or database from which wizards constructs.
-        // DK: Im not sure if we should do full load_vendors. or only load BundleMap::load().
-        // also see BundleMap::reload().
-        load_vendors();
+        // Just reload bundles and upadte installed printer from appconfig_new.
+        bundles = BundleMap::load();
+        // Initialize the is_visible flag in printer Presets
+        for (auto& pair : bundles)
+            pair.second.preset_bundle->load_installed_printers(appconfig_new);
     }
 
-    is_config_from_archive = is_updated;
     load_pages_from_archive();
 }
 
@@ -3673,7 +3686,7 @@ void ConfigWizard::priv::clear_printer_pages()
 
 void ConfigWizard::priv::load_pages_from_archive()
 {
-    if (!is_config_from_archive)
+    if (is_first_start)
         return;
 
     wxBusyCursor wait; 
@@ -3691,8 +3704,6 @@ void ConfigWizard::priv::load_pages_from_archive()
     only_sla_mode = true;
     bool is_primary_printer_page_set = false;
 
-    is_actual_archive_selection = true;
-
     for (const auto& archive : archs) {
         const auto& data = archive->get_manifest();
         const bool is_selected_arch     = pad->is_selected_repository_by_uuid(archive->get_uuid());
@@ -3704,12 +3715,6 @@ void ConfigWizard::priv::load_pages_from_archive()
 
         if (is_already_added_repo || (!is_selected_arch && !any_installed_vendor))
             continue;
-
-        if (!is_selected_arch && any_installed_vendor) {
-            // ys/dkFIXME - There is a case, when local and web archives have a same repo_id and 
-            // some of them isn't selected but is processed as first
-            is_actual_archive_selection = false;
-        }
 
         if (vendors.size() == 1)
         {
@@ -3871,6 +3876,12 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
         	! p->check_and_install_missing_materials(dynamic_cast<PageMaterials*>(active_page)->materials->technology))
         	// In that case don't leave the page and the function above queried the user whether to install default materials.
             return;
+        if (active_page == p->page_update_manager && p->is_first_start) {
+            p->is_first_start = false;
+            p->page_update_manager->Hide();
+            p->index->go_to(2);
+            return;
+        }
         this->p->index->go_next();
     });
 
@@ -3894,9 +3905,11 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
 
     p->index->Bind(EVT_INDEX_PAGE, [this](const wxCommandEvent &) {
         const bool is_last = p->index->active_is_last();
-        p->btn_next->Show(! is_last);
-        if (is_last)
-            p->btn_finish->SetFocus();
+        p->btn_next->Show(! is_last || p->is_first_start);
+        if (is_last) {
+            if (!p->is_first_start)
+                p->btn_finish->SetFocus();
+        }
 
         Layout();
     });
@@ -3929,7 +3942,8 @@ bool ConfigWizard::run(RunReason reason, StartPage start_page)
 
     p->set_run_reason(reason);
     p->set_start_page(start_page);
-    p->set_config_updated_from_archive(reason == RR_USER);
+    p->is_first_start = reason != RR_USER;
+    p->set_config_updated_from_archive(p->is_first_start);
 
     if (ShowModal() == wxID_OK) {
         bool apply_keeped_changes = false;

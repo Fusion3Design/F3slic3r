@@ -186,7 +186,9 @@ struct PageWelcome: ConfigWizardPage
 
 struct PageUpdateManager : ConfigWizardPage
 {
-    std::unique_ptr<RepositoryUpdateUIManager>  m_manager;
+    std::unique_ptr<RepositoryUpdateUIManager>  manager;
+    wxStaticText*                               warning_text    { nullptr };
+    bool                                        is_active       { false };
 
     PageUpdateManager(ConfigWizard* parent);
 };
@@ -660,8 +662,7 @@ struct ConfigWizard::priv
     };
     std::vector<Repository>     repositories;
 
-    bool                        is_config_from_archive{ false };
-    bool                        is_actual_archive_selection{ true };
+    bool                        is_first_start{ true };
 
     // Pointers to all pages (regardless or whether currently part of the ConfigWizardIndex)
     std::vector<ConfigWizardPage*> all_pages;
