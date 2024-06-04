@@ -678,6 +678,9 @@ PageUpdateManager::PageUpdateManager(ConfigWizard* parent_in)
             is_active = true;
         else if (is_active && parent_in->IsShown()) {
             if (manager->has_selections()) {
+                if (wizard_p()->is_first_start)
+                    wizard_p()->is_first_start = false;
+
                 wxBusyCursor wait;
                 if (manager->set_selected_repositories())
                     wizard_p()->set_config_updated_from_archive(true);
@@ -2619,13 +2622,12 @@ void ConfigWizard::priv::load_pages()
 
     }
 
-    if (former_active != page_update_manager)
-        index->go_to(former_active);   // Will restore the active item/page if possible
-
-    // set visibility for "Select all..."
-    btn_sel_all->Show(!pages_fff.empty() || !pages_msla.empty());
-    // Set enabling fo "Finish" button -> there should to be selected at least one printer
-    btn_finish->Enable(any_fff_selected || any_sla_selected || custom_printer_selected || custom_printer_in_bundle);
+    if (former_active != page_update_manager) {
+        if (pages_fff.empty() && pages_msla.empty() && !repositories.empty())
+            index->go_to(repositories[0].vendors_page); // Activate Vendor page, if no one printer is selected
+        else
+            index->go_to(former_active);   // Will restore the active item/page if possible
+    }
 
     q->Layout();
 // This Refresh() is needed to avoid ugly artifacts after printer selection, when no one vendor was selected from the very beginnig
@@ -3048,6 +3050,22 @@ void ConfigWizard::priv::on_3rdparty_install(const VendorProfile *vendor, bool i
     }
 
     load_pages();
+}
+
+bool ConfigWizard::priv::can_finish()
+{
+    if (index->active_page() == page_update_manager)
+        return false;
+    // Set enabling fo "Finish" button -> there should to be selected at least one printer
+    return any_fff_selected || any_sla_selected || custom_printer_selected || custom_printer_in_bundle;
+}
+
+bool ConfigWizard::priv::can_select_all()
+{
+    if (index->active_page() == page_update_manager)
+        return false;
+    // set enabling for "Select all..." -> there should to be exist at least one printer page
+    return !pages_fff.empty() || !pages_msla.empty();
 }
 
 bool ConfigWizard::priv::on_bnt_finish()
@@ -3746,6 +3764,10 @@ void ConfigWizard::priv::load_pages_from_archive()
         }
     }
 
+    if (only_sla_mode && !repositories.empty()) {
+        only_sla_mode = false;
+    }
+
     if (!only_sla_mode) {
         add_page(page_custom = new PageCustom(q));
         custom_printer_selected = page_custom->custom_wanted();
@@ -3754,7 +3776,9 @@ void ConfigWizard::priv::load_pages_from_archive()
     any_sla_selected = check_sla_selected();
     any_fff_selected = !only_sla_mode && check_fff_selected();
 
+    check_and_install_missing_materials(T_ANY);
     update_materials(T_ANY);
+
     if (!page_filaments && !only_sla_mode) {
         add_page(page_filaments = new PageMaterials(q, &filaments,
             _L("Filament Profiles Selection"), _L("Filaments"), _L("Type:")));
@@ -3891,6 +3915,11 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
             this->EndModal(wxID_OK);
     });
 
+    p->btn_finish->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt)
+    {
+        evt.Enable(p->can_finish());
+    });
+
     p->btn_sel_all->Bind(wxEVT_BUTTON, [this](const wxCommandEvent &) {
  //       p->any_sla_selected = true;
         p->load_pages();
@@ -3901,6 +3930,11 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
             page->select_all(true, false);
 
         p->index->go_to(p->page_mode);
+    });
+
+    p->btn_sel_all->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt)
+    {
+        evt.Enable(p->can_select_all());
     });
 
     p->index->Bind(EVT_INDEX_PAGE, [this](const wxCommandEvent &) {

@@ -611,8 +611,8 @@ struct ConfigWizard::priv
     PresetAliases aliases_fff;    // Map of alias to material presets
     PresetAliases aliases_sla;    // Map of alias to material presets
     std::unique_ptr<DynamicPrintConfig> custom_config;           // Backing for custom printer definition
-    bool any_fff_selected;        // Used to decide whether to display Filaments page
-    bool any_sla_selected;        // Used to decide whether to display SLA Materials page
+    bool any_fff_selected { false };        // Used to decide whether to display Filaments page
+    bool any_sla_selected { false };        // Used to decide whether to display SLA Materials page
     bool custom_printer_selected { false }; // New custom printer is requested
     bool custom_printer_in_bundle { false }; // Older custom printer already exists when wizard starts
     // Set to true if there are none FFF printers on the main FFF page. If true, only SLA printers are shown (not even custom printers)
@@ -691,6 +691,8 @@ struct ConfigWizard::priv
     void select_default_materials_for_printer_models(Technology technology, const std::set<const VendorProfile::PrinterModel*> &printer_models);
     void on_3rdparty_install(const VendorProfile *vendor, bool install);
 
+    bool can_finish();
+    bool can_select_all();
     bool on_bnt_finish();
     bool check_and_install_missing_materials(Technology technology, const std::string &only_for_model_id = std::string());
     bool apply_config(AppConfig *app_config, PresetBundle *preset_bundle, const PresetUpdater *updater, bool& apply_keeped_changes);
