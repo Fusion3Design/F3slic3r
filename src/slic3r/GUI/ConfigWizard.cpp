@@ -684,11 +684,11 @@ PageUpdateManager::PageUpdateManager(ConfigWizard* parent_in)
                 wxBusyCursor wait;
                 if (manager->set_selected_repositories())
                     wizard_p()->set_config_updated_from_archive(true);
+                else
+                    CallAfter([this]() { wizard_p()->index->go_to(1); });
             }
             else {
-                CallAfter([this]() {
-                    wizard_p()->index->go_to(1);
-                });
+                CallAfter([this]() { wizard_p()->index->go_to(1); });
             }
             is_active = false;
         }
@@ -2569,6 +2569,8 @@ void ConfigWizard::priv::load_pages()
         if (!only_sla_mode) {
 
             for (const auto& repos : repositories) {
+                if (!repos.vendors_page)
+                    continue;
                 index->add_page(repos.vendors_page);
 
                 // Copy pages names from map to vector, so we can sort it without case sensitivity
@@ -2623,7 +2625,7 @@ void ConfigWizard::priv::load_pages()
     }
 
     if (former_active != page_update_manager) {
-        if (pages_fff.empty() && pages_msla.empty() && !repositories.empty())
+        if (pages_fff.empty() && pages_msla.empty() && installed_multivendors_repos())
             index->go_to(repositories[0].vendors_page); // Activate Vendor page, if no one printer is selected
         else
             index->go_to(former_active);   // Will restore the active item/page if possible
@@ -2798,7 +2800,7 @@ ConfigWizard::priv::Repository* ConfigWizard::priv::get_repo(const std::string& 
     return &repositories[it - repositories.begin()];
 }
 
-void ConfigWizard::priv::create_vendor_printers_page(const std::string& repo_id, const VendorProfile* vendor, bool install/* = false*/)
+void ConfigWizard::priv::create_vendor_printers_page(const std::string& repo_id, const VendorProfile* vendor, bool install/* = false*/, bool from_single_vendor_repo /*= false*/)
 {
     bool is_fff_technology = false;
     bool is_sla_technology = false;
@@ -2818,7 +2820,7 @@ void ConfigWizard::priv::create_vendor_printers_page(const std::string& repo_id,
     PagePrinters* pageSLA = nullptr;
 
     const bool is_prusa_vendor = vendor->name.find("Prusa") != std::string::npos;
-    const unsigned indent = repo_id.empty() ? 0 : 1;
+    const unsigned indent = from_single_vendor_repo ? 0 : 1;
 
     if (is_fff_technology) 
     {
@@ -2836,7 +2838,7 @@ void ConfigWizard::priv::create_vendor_printers_page(const std::string& repo_id,
         add_page(pageSLA);
     }
 
-    if (repo_id.empty())
+    if (from_single_vendor_repo)
     {
         // single vendor repository
         if (pageFFF) {
@@ -2850,7 +2852,7 @@ void ConfigWizard::priv::create_vendor_printers_page(const std::string& repo_id,
                 pageSLA->printer_pickers[0]->select_one(0, true);// select first printer for them
         }
     }
-    else if (pageFFF || pageSLA)
+    if (pageFFF || pageSLA)
     {
         // multiple vendor repository
         auto repo = get_repo(repo_id);
@@ -3694,12 +3696,23 @@ void ConfigWizard::priv::clear_printer_pages()
         delelete_page(page);
     pages_msla.clear();
 
-    for (Repository& repo : repositories)
+    for (Repository& repo : repositories) {
+        if (!repo.vendors_page)
+            continue;
         for (auto& [name, printers] : repo.printers_pages) {
-            if (printers.first ) delelete_page(printers.first);
+            if (printers.first) delelete_page(printers.first);
             if (printers.second) delelete_page(printers.second);
         }
+    }
     repositories.clear();
+}
+
+bool ConfigWizard::priv::installed_multivendors_repos()
+{
+    for (const auto& repo : repositories)
+        if (repo.vendors_page)
+            return true;
+    return false;
 }
 
 void ConfigWizard::priv::load_pages_from_archive()
@@ -3734,37 +3747,42 @@ void ConfigWizard::priv::load_pages_from_archive()
         if (is_already_added_repo || (!is_selected_arch && !any_installed_vendor))
             continue;
 
-        if (vendors.size() == 1)
+        if (!vendors.empty())
         {
-            // it's single vendor repository
-            create_vendor_printers_page("", vendors[0], true);
-
-            if (!is_primary_printer_page_set && !pages_fff.empty())
-            {
-                pages_fff.back()->is_primary_printer_page = true;
-                is_primary_printer_page_set = true;
-            }
-            else if (!is_primary_printer_page_set && !pages_msla.empty())
-            {
-                pages_msla.back()->is_primary_printer_page = true;
-                is_primary_printer_page_set = true;
-            }
-        }
-        else if (!vendors.empty()) 
-        {
-            // it's multiple vendor repository
-
             // repository item with repo_id needs to be added into repositories before page_vendors creation
             repositories.push_back({ data.id });
 
-            PageVendors* page_vendors = new PageVendors(q, data.id, data.name);
-            repositories[repositories.size() - 1].vendors_page = page_vendors;
+            const bool is_non_prusa = data.id.find("non-prusa") == 0;
+            if (is_non_prusa || vendors.size() > 1)
+            {
+                // it's multiple vendor or non-prusa repository
 
-            add_page(page_vendors);
+                PageVendors* page_vendors = new PageVendors(q, data.id, data.name);
+                repositories[repositories.size() - 1].vendors_page = page_vendors;
+
+                add_page(page_vendors);
+            }
+            else
+            {
+                // it's single prusa vendor repository
+                create_vendor_printers_page(data.id, vendors[0], true, true);
+
+                if (!is_primary_printer_page_set && !pages_fff.empty())
+                {
+                    pages_fff.back()->is_primary_printer_page = true;
+                    is_primary_printer_page_set = true;
+                }
+                else if (!is_primary_printer_page_set && !pages_msla.empty())
+                {
+                    pages_msla.back()->is_primary_printer_page = true;
+                    is_primary_printer_page_set = true;
+                }
+            }
         }
+
     }
 
-    if (only_sla_mode && !repositories.empty()) {
+    if (only_sla_mode && installed_multivendors_repos()) {
         only_sla_mode = false;
     }
 

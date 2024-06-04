@@ -662,6 +662,8 @@ struct ConfigWizard::priv
     };
     std::vector<Repository>     repositories;
 
+    bool                        installed_multivendors_repos();
+
     bool                        is_first_start{ true };
 
     // Pointers to all pages (regardless or whether currently part of the ConfigWizardIndex)
@@ -681,7 +683,7 @@ struct ConfigWizard::priv
     void add_page(ConfigWizardPage *page);
     void enable_next(bool enable);
     void set_start_page(ConfigWizard::StartPage start_page);
-    void create_vendor_printers_page(const std::string& repo_id, const VendorProfile* vendor, bool install = false);
+    void create_vendor_printers_page(const std::string& repo_id, const VendorProfile* vendor, bool install = false, bool from_single_vendor_repo = false);
     void set_run_reason(RunReason run_reason);
     void update_materials(Technology technology);
 
