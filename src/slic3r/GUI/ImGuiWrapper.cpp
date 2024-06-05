@@ -396,12 +396,8 @@ void ImGuiWrapper::render()
 
     if (! s_missing_chars.empty()) {
         // If there were some characters that ImGui was unable to render, we will destroy current font.
-        // It will be rebuilt in the next call of new_frame including these. We also move all characters
-        // that we already added this way into the list of missing chars again, so all are added at once.
+        // It will be rebuilt in the next call of new_frame including these.
         destroy_font();
-        for (ImWchar c : s_fixed_chars)
-            s_missing_chars.emplace(c);
-        s_fixed_chars.clear();
     }
 }
 
@@ -1553,6 +1549,13 @@ void ImGuiWrapper::destroy_font()
         io.Fonts->TexID = 0;
         glsafe(::glDeleteTextures(1, &m_font_texture));
         m_font_texture = 0;
+
+        // We have destroyed current font, including all characters that we may have added dynamically.
+        // Move move all characters that we already added into the list of missing chars again,
+        // so they are all added at once.
+        for (ImWchar c : s_fixed_chars)
+            s_missing_chars.emplace(c);
+        s_fixed_chars.clear();
     }
 }
 
