@@ -1470,7 +1470,7 @@ PageCustom::PageCustom(ConfigWizard *parent)
     auto *label = new wxStaticText(this, wxID_ANY, _L("Custom profile name:"));
 
     wxBoxSizer* profile_name_sizer = new wxBoxSizer(wxVERTICAL);
-    profile_name_editor = new SavePresetDialog::Item{ this, profile_name_sizer, default_profile_name };
+    profile_name_editor = new SavePresetDialog::Item{ this, profile_name_sizer, default_profile_name, &wxGetApp().preset_bundle->printers};
     profile_name_editor->Enable(false);
 
     cb_custom->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &) {
@@ -3796,13 +3796,20 @@ void ConfigWizard::priv::load_pages_from_archive()
 
     check_and_install_missing_materials(T_ANY);
     update_materials(T_ANY);
-
-    if (!page_filaments && !only_sla_mode) {
+    if (page_filaments) {
+        if (any_fff_selected)
+            page_filaments->reload_presets();
+    }
+    else if(!only_sla_mode) {
         add_page(page_filaments = new PageMaterials(q, &filaments,
             _L("Filament Profiles Selection"), _L("Filaments"), _L("Type:")));
     }
 
-    if (!page_sla_materials) {
+    if (page_sla_materials) {
+        if (any_sla_selected)
+            page_sla_materials->reload_presets();
+    }
+    else {
         add_page(page_sla_materials = new PageMaterials(q, &sla_materials,
             _L("SLA Material Profiles Selection") + " ", _L("SLA Materials"), _L("Type:")));
     }

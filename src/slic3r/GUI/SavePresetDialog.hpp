@@ -41,7 +41,7 @@ public:
         };
 
         Item(Preset::Type type, const std::string& suffix, wxBoxSizer* sizer, SavePresetDialog* parent, bool is_for_multiple_save);
-        Item(wxWindow* parent, wxBoxSizer* sizer, const std::string& def_name, PrinterTechnology pt = ptFFF);
+        Item(wxWindow* parent, wxBoxSizer* sizer, const std::string& def_name, PresetCollection* presets, PrinterTechnology pt = ptFFF);
 
         void            update_valid_bmp();
         void            accept();
