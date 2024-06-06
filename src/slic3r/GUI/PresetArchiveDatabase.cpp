@@ -104,7 +104,8 @@ bool extract_repository_header(const pt::ptree& ptree, ArchiveRepository::Reposi
 void delete_path_recursive(const fs::path& path)
 {
 	try {
-		if (fs::exists(path)) {
+        boost::system::error_code ec;
+		if (fs::exists(path, ec) && !ec) {
 			for (fs::directory_iterator it(path); it != fs::directory_iterator(); ++it) {
 				const fs::path subpath = it->path();
 				if (fs::is_directory(subpath)) {
@@ -277,8 +278,9 @@ bool LocalArchiveRepository::get_file_inner(const fs::path& source_path, const f
 	if (cfr != CopyFileResult::SUCCESS) {
 		BOOST_LOG_TRIVIAL(error) << "Copying of " << source_path << " to " << target_path << " has failed (" << cfr << "): " << error_message;
 		// remove target file, even if it was there before
-		if (fs::exists(target_path)) {
-			boost::system::error_code ec;
+        boost::system::error_code ec;
+		if (fs::exists(target_path, ec) && !ec) {
+            ec.clear();
 			fs::remove(target_path, ec);
 			if (ec) {
 				BOOST_LOG_TRIVIAL(error) << format("Failed to delete file: %1%", ec.message());
@@ -335,11 +337,21 @@ bool PresetArchiveDatabase::set_selected_repositories(const std::vector<std::str
 		std::string id;
 		std::string name;
 		for (const auto& archive : m_archive_repositories) {
-			if (archive->get_uuid() == uuid) {
-				id = archive->get_manifest().id;
-				name = archive->get_manifest().name;
-				break;
-			}
+			if (archive->get_uuid() != uuid) {
+                continue;
+            }        
+		    id = archive->get_manifest().id;
+		    name = archive->get_manifest().name;
+            if (!archive->is_extracted()) {
+                // non existent local repo since start selected
+                msg = GUI::format(
+                    _L("Cannot select local repository from path: %1%. It was not extracted."
+                       " To solve this issue either remove and load it again or restart the app."),
+                    archive->get_manifest().source_path
+                );
+                return false;
+            }
+		    break;
 		}
 		assert(!id.empty());
 		if (auto it = used_set.find(id); it != used_set.end()) {
@@ -406,7 +418,8 @@ std::string PresetArchiveDatabase::add_local_archive(const boost::filesystem::pa
 	}
 	// Solve if it can be set true first.
 	m_selected_repositories_uuid[uuid] = false;
-	m_archive_repositories.emplace_back(std::make_unique<LocalArchiveRepository>(uuid, std::move(header_data)));
+    m_has_installed_printer_repositories_uuid[uuid] = false;
+	m_archive_repositories.emplace_back(std::make_unique<LocalArchiveRepository>(uuid, std::move(header_data), true));
 
 	save_app_manifest_json();
 	return uuid;
@@ -426,13 +439,18 @@ void PresetArchiveDatabase::remove_local_archive(const std::string& uuid)
 	assert(used_it != m_selected_repositories_uuid.end());
 	m_selected_repositories_uuid.erase(used_it);
 
+    auto inst_it = m_has_installed_printer_repositories_uuid.find(removed_uuid);
+    assert(inst_it != m_has_installed_printer_repositories_uuid.end());
+    m_has_installed_printer_repositories_uuid.erase(inst_it);
+
 	save_app_manifest_json();
 }
 
 void PresetArchiveDatabase::load_app_manifest_json()
 {
 	const fs::path path = get_stored_manifest_path();
-	if (!fs::exists(path)) {
+    boost::system::error_code ec;
+	if (!fs::exists(path, ec) || ec) {
 		copy_initial_manifest();
 	}
 	std::ifstream file(path.string());
@@ -465,25 +483,22 @@ void PresetArchiveDatabase::load_app_manifest_json()
 			if (const auto source_path = subtree.second.get_optional<std::string>("source_path"); source_path) {
 				ArchiveRepository::RepositoryManifest manifest;
 				std::string uuid = get_next_uuid();
-				if (!extract_local_archive_repository(uuid, *source_path, m_unq_tmp_path, manifest)) {
-					BOOST_LOG_TRIVIAL(error) << "Local archive repository not extracted: " << *source_path;
-					continue;
-				}
+                bool extracted = extract_local_archive_repository(uuid, *source_path, m_unq_tmp_path, manifest);
 				// "selected" flag
 				if(const auto used = subtree.second.get_optional<bool>("selected"); used) {
-					m_selected_repositories_uuid[uuid] = *used;
+                    m_selected_repositories_uuid[uuid] = extracted && *used;
 				} else {
 					assert(true);
-                    m_selected_repositories_uuid[uuid] = true;
+                    m_selected_repositories_uuid[uuid] = extracted;
 				}
 				// "has_installed_printers" flag
                 if (const auto used = subtree.second.get_optional<bool>("has_installed_printers"); used) {
-                    m_has_installed_printer_repositories_uuid[uuid] = *used;
+                    m_has_installed_printer_repositories_uuid[uuid] = extracted && *used;
                 } else {
                     assert(true);
-                    m_has_installed_printer_repositories_uuid[uuid] = true;
+                    m_has_installed_printer_repositories_uuid[uuid] = false;
                 }
-				m_archive_repositories.emplace_back(std::make_unique<LocalArchiveRepository>(std::move(uuid), std::move(manifest)));
+				m_archive_repositories.emplace_back(std::make_unique<LocalArchiveRepository>(std::move(uuid), std::move(manifest), extracted));
 			
 				continue;
 			}
@@ -507,7 +522,7 @@ void PresetArchiveDatabase::load_app_manifest_json()
                 m_has_installed_printer_repositories_uuid[uuid] = *used;
             } else {
                 assert(true);
-                m_has_installed_printer_repositories_uuid[uuid] = true;
+                m_has_installed_printer_repositories_uuid[uuid] = false;
             }
 			m_archive_repositories.emplace_back(std::make_unique<OnlineArchiveRepository>(std::move(uuid), std::move(manifest)));
 		}

@@ -85,6 +85,8 @@ public:
 	virtual bool get_ini_no_id(const std::string& source_subpath, const boost::filesystem::path& target_path) const = 0;
 	const RepositoryManifest& get_manifest() const { return m_data; }
 	std::string get_uuid() const { return m_uuid; }
+    // Only local archvies can return false
+    virtual bool is_extracted() const { return true; }
 protected:
 	RepositoryManifest m_data;
 	std::string m_uuid;
@@ -114,7 +116,8 @@ private:
 class LocalArchiveRepository : public ArchiveRepository
 {
 public:
-	LocalArchiveRepository(const std::string& uuid, RepositoryManifest&& data) : ArchiveRepository(uuid, std::move(data)) {}
+	LocalArchiveRepository(const std::string& uuid, RepositoryManifest&& data, bool extracted) : ArchiveRepository(uuid, std::move(data)), m_extracted(extracted) 
+    {}
 	// Gets vendor_indices.zip to target_path.
 	bool get_archive(const boost::filesystem::path& target_path) const override;
 	// Gets file if repository_id arg matches m_id.
@@ -123,8 +126,11 @@ public:
 	// Gets file without checking id.
 	// Should be used only if no previous ini file exists.
 	bool get_ini_no_id(const std::string& source_subpath, const boost::filesystem::path& target_path) const override;
+    bool is_extracted() const override { return m_extracted;  }
+
 private:
 	bool get_file_inner(const boost::filesystem::path& source_path, const boost::filesystem::path& target_path) const;
+    bool m_extracted;
 };
 
 typedef std::vector<std::unique_ptr<const ArchiveRepository>> PrivateArchiveRepositoryVector;

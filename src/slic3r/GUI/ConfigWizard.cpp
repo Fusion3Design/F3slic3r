@@ -3675,8 +3675,8 @@ bool ConfigWizard::priv::any_installed_vendor_for_repo(const std::string& repo_i
 
 static bool to_delete(PagePrinters* page, const std::set<std::string>& selected_uuids)
 {
-    const PresetArchiveDatabase*   pad   = wxGetApp().plater()->get_preset_archive_database();
-    const ArchiveRepositoryVector& archs = pad->get_archive_repositories();
+    const PresetArchiveDatabase*         pad   = wxGetApp().plater()->get_preset_archive_database();
+    const SharedArchiveRepositoryVector& archs = pad->get_all_archive_repositories();
 
     bool unselect_all = true;
 
@@ -3728,7 +3728,7 @@ bool ConfigWizard::priv::can_clear_printer_pages()
     }
 
     if (msg.IsEmpty())
-        return false;
+        return true;
 
     wxString message = format_wxstr( _L("Next pages will be deleted after configuration update:%1%\n"
                                         "Installed presets will be uninstalled.\n"
