@@ -937,7 +937,13 @@ void Sidebar::update_sliced_info_sizer()
             }
             m_sliced_info->SetTextAndShow(siCost, str_total_cost, "Cost");
 
-            wxString t_est = std::isnan(ps.estimated_print_time) ? "N/A" : from_u8(short_time_ui(get_time_dhms(float(ps.estimated_print_time))));
+            wxString t_est = "N/A";
+            if (! std::isnan(ps.estimated_print_time)) {
+                t_est = from_u8(short_time_ui(get_time_dhms(float(ps.estimated_print_time))));
+                if (ps.estimated_print_time_tolerance > 0.)
+                    t_est += from_u8(" \u00B1 ") + from_u8(short_time_ui(get_time_dhms(float(ps.estimated_print_time_tolerance))));
+            }
+
             m_sliced_info->SetTextAndShow(siEstimatedTime, t_est, _L("Estimated printing time") + ":");
 
             m_plater->get_notification_manager()->set_slicing_complete_print_time(_u8L("Estimated printing time") + ": " + into_u8(t_est), m_plater->is_sidebar_collapsed());

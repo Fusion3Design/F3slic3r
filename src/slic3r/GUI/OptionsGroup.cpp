@@ -80,7 +80,8 @@ const t_field& OptionsGroup::build_field(const t_config_option_key& id, const Co
                 m_fields.emplace(id, SpinCtrl::Create<SpinCtrl>(this->ctrl_parent(), opt, id));
 				break;
             case coEnum:
-                m_fields.emplace(id, Choice::Create<Choice>(this->ctrl_parent(), opt, id));
+            case coEnums:
+               m_fields.emplace(id, Choice::Create<Choice>(this->ctrl_parent(), opt, id));
 				break;
             case coPoints:
                 m_fields.emplace(id, PointCtrl::Create<PointCtrl>(this->ctrl_parent(), opt, id));
@@ -239,6 +240,10 @@ void OptionsGroup::change_opt_value(DynamicPrintConfig& config, const t_config_o
             config.set_key_value(opt_key, opt);
         }
                    break;
+        case coEnums: {
+            ConfigOptionEnumsGeneric* vec_new = new ConfigOptionEnumsGeneric(1, boost::any_cast<int>(value));;
+            config.option<ConfigOptionEnumsGeneric>(opt_key)->set_at(vec_new, opt_index, 0);
+            break; }
         case coPoints: {
             if (opt_key == "bed_shape") {
                 config.option<ConfigOptionPoints>(opt_key)->values = boost::any_cast<std::vector<Vec2d>>(value);
@@ -816,7 +821,7 @@ void ConfigOptionsGroup::Hide()
 
 void ConfigOptionsGroup::Show(const bool show)
 {
-    sizer->ShowItems(show);
+    if (sizer) sizer->ShowItems(show);
 #if 0//#ifdef __WXGTK__
     m_panel->Show(show);
     m_grid_sizer->Show(show);
@@ -1100,6 +1105,9 @@ boost::any ConfigOptionsGroup::get_config_value(const DynamicPrintConfig& config
 		break;
 	case coEnum:
         ret = config.option(opt_key)->getInt();
+		break;
+	case coEnums:
+        ret = config.option(opt_key)->getInts()[idx];
 		break;
 	case coPoints:
 		if (opt_key == "bed_shape")
