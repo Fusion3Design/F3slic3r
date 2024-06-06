@@ -1092,6 +1092,12 @@ void MainFrame::on_sys_color_changed()
 
     // update label colors in respect to the system mode
     wxGetApp().init_ui_colours();
+
+    if (wxGetApp().is_gcode_viewer()) {
+        MenuFactory::sys_color_changed(m_menubar);
+        return;
+    }
+
     // but if there are some ui colors in appconfig, they have to be applied
     wxGetApp().update_ui_colours_from_appconfig();
 #ifdef __WXMSW__

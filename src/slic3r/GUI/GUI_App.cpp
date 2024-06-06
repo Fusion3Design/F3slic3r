@@ -2479,6 +2479,9 @@ bool GUI_App::save_mode(const /*ConfigOptionMode*/int mode)
 // Update view mode according to selected menu
 void GUI_App::update_mode()
 {
+    if (is_gcode_viewer())
+        return;
+
     sidebar().update_mode();
 
     mainframe->m_tmp_top_bar->UpdateMode();
