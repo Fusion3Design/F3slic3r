@@ -107,6 +107,7 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const 
     // Connect the webview events
     Bind(wxEVT_WEBVIEW_ERROR, &WebViewPanel::on_error, this, m_browser->GetId());
     Bind(wxEVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED, &WebViewPanel::on_script_message, this, m_browser->GetId());
+    Bind(wxEVT_WEBVIEW_NAVIGATING, &WebViewPanel::on_navigation_request, this, m_browser->GetId());
 
 #ifdef DEBUG_URL_PANEL
     // Connect the button events
@@ -250,6 +251,10 @@ void WebViewPanel::on_reload_button(wxCommandEvent& WXUNUSED(evt))
 }
 
 void WebViewPanel::on_script_message(wxWebViewEvent& evt)
+{
+}
+
+void WebViewPanel::on_navigation_request(wxWebViewEvent &evt) 
 {
 }
 
@@ -468,13 +473,10 @@ SourceViewDialog::SourceViewDialog(wxWindow* parent, wxString source) :
 
 ConnectRequestHandler::ConnectRequestHandler()
 {
-    m_actions["REQUEST_ACCESS_TOKEN"] = std::bind(&ConnectRequestHandler::on_connect_action_request_access_token, this);
     m_actions["REQUEST_CONFIG"] = std::bind(&ConnectRequestHandler::on_connect_action_request_config, this);
     m_actions["WEBAPP_READY"] = std::bind(&ConnectRequestHandler::on_connect_action_webapp_ready, this);
     m_actions["SELECT_PRINTER"] = std::bind(&ConnectRequestHandler::on_connect_action_select_printer, this);
     m_actions["PRINT"] = std::bind(&ConnectRequestHandler::on_connect_action_print, this);
-    // obsolete
-    //m_actions["REQUEST_SELECTED_PRINTER"] = std::bind(&ConnectRequestHandler::on_connect_action_print, this);
 }
 ConnectRequestHandler::~ConnectRequestHandler()
 {
@@ -519,13 +521,6 @@ void ConnectRequestHandler::resend_config()
     on_connect_action_request_config();
 }
 
-void ConnectRequestHandler::on_connect_action_request_access_token()
-{
-    std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
-    wxString script = GUI::format_wxstr("window._prusaConnect_v1.setAccessToken(\'%1%\')", token);
-    run_script_bridge(script);
-}
-
 void ConnectRequestHandler::on_connect_action_request_config()
 {
     /*
@@ -540,7 +535,7 @@ void ConnectRequestHandler::on_connect_action_request_config()
     const std::string dark_mode = wxGetApp().dark_mode() ? "DARK" : "LIGHT";
     wxString language = GUI::wxGetApp().current_language_code();
     language = language.SubString(0, 1);
-    const std::string init_options = GUI::format("{\"accessToken\": \"%1%\" , \"clientVersion\": \"%2%\", \"colorMode\": \"%3%\", \"language\": \"%4%\"}", token, SLIC3R_VERSION, dark_mode, language);
+    const std::string init_options = GUI::format("{\"clientVersion\": \"%1%\", \"colorMode\": \"%2%\", \"language\": \"%3%\"}", SLIC3R_VERSION, dark_mode, language); // \"accessToken\": \"%1%\" , 
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.init(%1%)", init_options);
     run_script_bridge(script);
     
@@ -631,7 +626,10 @@ void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
     BOOST_LOG_TRIVIAL(debug) << "recieved message from PrusaConnect FE: " << evt.GetString();
     handle_message(into_u8(evt.GetString()));
 }
-
+void ConnectWebViewPanel::on_navigation_request(wxWebViewEvent &evt) 
+{
+    //TODO Stop request out of connect
+}
 void ConnectWebViewPanel::logout()
 {
     wxString script = L"window._prusaConnect_v1.logout()";

@@ -22,7 +22,7 @@ wxWebView* WebView::CreateWebView(wxWindow * parent, const wxString& url, std::v
     if (webView) {
         wxString correct_url = url.empty() ? wxString("") : wxURI(url).BuildURI();
 
-#ifdef __WIN32_
+#ifdef __WIN32__
         webView->SetUserAgent(SLIC3R_APP_FULL_NAME);
         webView->Create(parent, wxID_ANY, correct_url, wxDefaultPosition, wxDefaultSize);
         //We register the wxfs:// protocol for testing purposes

@@ -1,7 +1,7 @@
 #ifndef slic3r_WebViewDialog_hpp_
 #define slic3r_WebViewDialog_hpp_
 
-#define DEBUG_URL_PANEL
+//#define DEBUG_URL_PANEL
 
 #include <map>
 #include <wx/wx.h>
@@ -53,6 +53,7 @@ public:
     void on_select_all(wxCommandEvent& evt);
     void On_enable_context_menu(wxCommandEvent& evt);
     void On_enable_dev_tools(wxCommandEvent& evt);
+    virtual void on_navigation_request(wxWebViewEvent &evt);
 
     wxString get_default_url() const { return m_default_url; }
     void set_default_url(const wxString& url) { m_default_url = url; }
@@ -173,7 +174,6 @@ public:
     void resend_config();
 protected:
     // action callbacs stored in m_actions
-    virtual void on_connect_action_request_access_token();
     virtual void on_connect_action_request_config();
     virtual void on_connect_action_select_printer() = 0;
     virtual void on_connect_action_print() = 0;
@@ -193,6 +193,7 @@ public:
     void on_script_message(wxWebViewEvent& evt) override;
     void logout();
     void sys_color_changed() override;
+    void on_navigation_request(wxWebViewEvent &evt) override;
 protected:
     void on_connect_action_select_printer() override;
     void on_connect_action_print() override;
