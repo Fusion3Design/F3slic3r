@@ -636,6 +636,19 @@ void ConnectWebViewPanel::logout()
 {
     wxString script = L"window._prusaConnect_v1.logout()";
     run_script(script);
+
+    Plater* plater = wxGetApp().plater();
+    m_browser->RunScript(wxString::Format(
+        R"(
+            console.log('Preparing login');
+            window.fetch('/slicer/logout', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
+                .then((resp) => {
+                    console.log('Login resp', resp);
+                    resp.text().then((json) => console.log('Login resp body', json));
+                });
+        )",
+        plater->get_user_account()->get_access_token()
+    ));
 }
 
 void ConnectWebViewPanel::sys_color_changed()
