@@ -407,6 +407,7 @@ void ImGuiWrapper::render()
         // If there were some characters that ImGui was unable to render, we will destroy current font.
         // It will be rebuilt in the next call of new_frame including these.
         destroy_font();
+        this->set_requires_extra_frame();
     }
 }
 
@@ -1175,16 +1176,6 @@ void ImGuiWrapper::init_font(bool compress)
             throw Slic3r::RuntimeError("ImGui: Could not load deafult font");
         }
     }
-
-#ifdef __APPLE__
-    ImFontConfig config;
-    config.MergeMode = true;
-    if (! m_font_cjk) {
-		// Apple keyboard shortcuts are only contained in the CJK fonts.
-        [[maybe_unused]]ImFont *font_cjk = io.Fonts->AddFontFromFileTTF((Slic3r::resources_dir() + "/fonts/NotoSansCJK-Regular.ttc").c_str(), m_font_size, &config, ranges_keyboard_shortcuts);
-        assert(font_cjk != nullptr);
-    }
-#endif
 
     float font_scale = m_font_size/15;
     int icon_sz = lround(16 * font_scale); // default size of icon is 16 px
