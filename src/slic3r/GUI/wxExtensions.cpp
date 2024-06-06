@@ -566,10 +566,15 @@ ScalableButton::ScalableButton( wxWindow *          parent,
     SetBitmap(bitmap.bmp());
 }
 
-void ScalableButton::SetBitmap_(const ScalableBitmap& bmp)
+void ScalableButton::SetBitmap_(const ScalableBitmap& bitmap)
 {
-    SetBitmap(bmp.bmp());
-    m_current_icon_name = bmp.name();
+    const wxBitmapBundle& bmp = bitmap.bmp();
+    SetBitmap(bmp);
+    SetBitmapCurrent(bmp);
+    SetBitmapPressed(bmp);
+    SetBitmapFocus(bmp);
+    SetBitmapDisabled(bmp);
+    m_current_icon_name = bitmap.name();
 }
 
 bool ScalableButton::SetBitmap_(const std::string& bmp_name)

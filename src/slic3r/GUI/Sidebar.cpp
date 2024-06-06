@@ -513,7 +513,11 @@ Sidebar::Sidebar(Plater *parent)
 
     auto *sizer = new wxBoxSizer(wxVERTICAL);
     sizer->Add(m_scrolled_panel, 1, wxEXPAND);
-    sizer->Add(btns_sizer, 0, wxEXPAND | wxLEFT | wxBOTTOM, margin_5);
+    sizer->Add(btns_sizer, 0, wxEXPAND | wxLEFT | wxBOTTOM
+#ifndef _WIN32
+        | wxRIGHT
+#endif // __linux__
+        , margin_5);
     SetSizer(sizer);
 
     // Events

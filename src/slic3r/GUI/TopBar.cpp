@@ -166,8 +166,14 @@ void TopBarItemsCtrl::Button::sys_color_changed()
     m_foreground_color = wxGetApp().get_label_clr_default();
 }
 
+#ifdef __linux__
+const int icon_sz = 20;
+#else
+const int icon_sz = 24;
+#endif
+
 TopBarItemsCtrl::ButtonWithPopup::ButtonWithPopup(wxWindow* parent, const wxString& label, const std::string& icon_name, wxSize size)
-    :TopBarItemsCtrl::Button(parent, label, icon_name, 24, size)
+    :TopBarItemsCtrl::Button(parent, label, icon_name, icon_sz, size)
 {
     if (size != wxDefaultSize)
         m_fixed_width = size.x * 0.1;
@@ -224,9 +230,7 @@ void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
 {
     auto user_account = wxGetApp().plater()->get_user_account();
     const wxString user_name = user_account->is_logged() ? from_u8(user_account->get_username()) : _L("Log in");
-    m_account_btn->SetLabel(m_collapsed_btns ? "" : user_name);
     m_account_btn->SetToolTip(user_name);
-    const int icon_sz = 24;
 #ifdef __linux__
     if (avatar) {
         if (user_account->is_logged()) {
@@ -256,7 +260,10 @@ void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
         }
     }
 #endif
-    m_account_btn->Refresh();
+
+    m_account_btn->SetLabel(m_collapsed_btns ? "" : user_name);
+    this->Layout();
+//    m_account_btn->Refresh();
 }
 
 void TopBarItemsCtrl::UnselectPopupButtons()

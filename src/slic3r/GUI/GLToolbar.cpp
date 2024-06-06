@@ -1291,7 +1291,7 @@ void GLToolbar::render_vertical(const GLCanvas3D& parent)
 
     render_background(left, top, right, bottom, border_w, border_h);
 
-    left += border_w + gap_size_y;
+    left += border_w + gap_size_x;
     top  -= border_h + gap_size_y;
 
     // renders icons
