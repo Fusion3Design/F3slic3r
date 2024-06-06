@@ -61,8 +61,8 @@ void RepositoryUpdateUIManager::fill_entries(bool init_selection/* = false*/)
     m_online_entries.clear();
     m_offline_entries.clear();
 
-    const ArchiveRepositoryVector&  archs = m_pad->get_archive_repositories();
-    for (const auto& archive : archs) {
+    const SharedArchiveRepositoryVector&  archs = m_pad->get_all_archive_repositories();
+    for (const auto* archive : archs) {
         const std::string&  uuid   = archive->get_uuid();
         if (init_selection && m_pad->is_selected_repository_by_uuid(uuid))
             m_selected_uuids.emplace(uuid);

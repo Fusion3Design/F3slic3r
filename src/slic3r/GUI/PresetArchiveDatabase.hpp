@@ -38,9 +38,43 @@ public:
 		// not read from manifest json
 		boost::filesystem::path tmp_path; // Where archive is unzziped. Created each app run. 
 		boost::filesystem::path source_path; // Path given by user. Stored between app runs.
+
+        RepositoryManifest() = default;
+        RepositoryManifest(
+            const std::string &id,
+            const std::string &name,
+            const std::string &url,
+            const std::string &index_url = "",
+            const std::string &description = "",
+            const std::string &visibility = "",
+            const boost::filesystem::path &tmp_path = "",
+            const boost::filesystem::path &source_path = ""
+        )
+            : id(id)
+            , name(name)
+            , url(url)
+            , index_url(index_url)
+            , description(description)
+            , visibility(visibility)
+            , tmp_path(tmp_path)
+            , source_path(source_path) 
+		{}
+        RepositoryManifest(const RepositoryManifest &other)
+            : id(other.id)
+            , name(other.name)
+            , url(other.url)
+            , index_url(other.index_url)
+            , description(other.description)
+            , visibility(other.visibility)
+            , tmp_path(other.tmp_path)
+            , source_path(other.source_path) 
+		{}
 	};
 	// Use std::move when calling constructor.
-	ArchiveRepository(const std::string& uuid, RepositoryManifest&& data) : m_data(std::move(data)), m_uuid(uuid) {}
+	ArchiveRepository(const std::string& uuid, RepositoryManifest&& data) 
+		: m_data(std::move(data))
+		, m_uuid(uuid) 
+	{}
 	virtual ~ArchiveRepository() {}
 	// Gets vendor_indices.zip to target_path
 	virtual bool get_archive(const boost::filesystem::path& target_path) const = 0;
@@ -93,7 +127,8 @@ private:
 	bool get_file_inner(const boost::filesystem::path& source_path, const boost::filesystem::path& target_path) const;
 };
 
-typedef std::vector<std::unique_ptr<const ArchiveRepository>> ArchiveRepositoryVector;
+typedef std::vector<std::unique_ptr<const ArchiveRepository>> PrivateArchiveRepositoryVector;
+typedef std::vector<const ArchiveRepository*> SharedArchiveRepositoryVector;
 
 class PresetArchiveDatabase
 {
@@ -103,11 +138,15 @@ public:
 
 	void sync_blocking();
 
-	const ArchiveRepositoryVector& get_archive_repositories() const { return m_archive_repositories; }
+	// Do not use get_all_archive_repositories to perform any GET calls. Use get_selected_archive_repositories instead.
+    SharedArchiveRepositoryVector get_all_archive_repositories() const;
+    // Creates copy of m_archive_repositories of shared pointers that are selected in m_selected_repositories_uuid.
+    SharedArchiveRepositoryVector get_selected_archive_repositories() const;
 	bool is_selected_repository_by_uuid(const std::string& uuid) const;
 	bool is_selected_repository_by_id(const std::string& repo_id) const;
 	const std::map<std::string, bool>& get_selected_repositories_uuid() const { assert(m_selected_repositories_uuid.size() == m_archive_repositories.size()); return m_selected_repositories_uuid; }
 	bool set_selected_repositories(const std::vector<std::string>& used_uuids, std::string& msg);
+    void set_installed_printer_repositories(const std::vector<std::string> &used_ids);
 	std::string add_local_archive(const boost::filesystem::path path, std::string& msg);
 	void remove_local_archive(const std::string& uuid);
 private:
@@ -116,14 +155,16 @@ private:
 	void read_server_manifest(const std::string& json_body);
 	void save_app_manifest_json() const;
 	void clear_online_repos();
-	bool is_selected(const std::string& id) const;
+	bool is_selected(const std::string& uuid) const;
+    bool has_installed_printers(const std::string &uuid) const;
 	boost::filesystem::path get_stored_manifest_path() const;
-	void consolidate_selected_uuids_map();
+	void consolidate_uuid_maps();
 	std::string get_next_uuid();
 	wxEvtHandler*					p_evt_handler;
 	boost::filesystem::path			m_unq_tmp_path;
-	ArchiveRepositoryVector			m_archive_repositories;
+    PrivateArchiveRepositoryVector  m_archive_repositories;
 	std::map<std::string, bool>		m_selected_repositories_uuid;
+    std::map<std::string, bool>		m_has_installed_printer_repositories_uuid;
 	boost::uuids::random_generator	m_uuid_generator;
 };
 

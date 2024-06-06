@@ -358,6 +358,34 @@ bool PresetArchiveDatabase::set_selected_repositories(const std::vector<std::str
 	save_app_manifest_json();
 	return true;
 }
+void PresetArchiveDatabase::set_installed_printer_repositories(const std::vector<std::string> &used_ids)
+{
+	// set all uuids as not having installed printer
+    m_has_installed_printer_repositories_uuid.clear();
+    for (const auto &archive : m_archive_repositories) {
+        m_has_installed_printer_repositories_uuid.emplace(archive->get_uuid(), false);
+	}
+	// set correct repos as having installed printer
+    for (const std::string &used_id : used_ids) {
+		// find archive with id and is used
+        for (const auto &archive : m_archive_repositories) {
+            if (archive->get_manifest().id != used_id) {
+				continue;
+			}	
+			const std::string uuid = archive->get_uuid();
+
+            const auto& it = m_selected_repositories_uuid.find(uuid);
+            assert(it != m_selected_repositories_uuid.end());
+            if (it->second == false) {
+				continue;
+			}
+
+			// set archive as has installed printer
+            m_has_installed_printer_repositories_uuid[uuid] = true;
+		}
+	}
+    save_app_manifest_json();
+}
 
 std::string PresetArchiveDatabase::add_local_archive(const boost::filesystem::path path, std::string& msg)
 {
@@ -425,6 +453,8 @@ void PresetArchiveDatabase::load_app_manifest_json()
 	}
 
 	m_archive_repositories.clear();
+    m_selected_repositories_uuid.clear();
+    m_has_installed_printer_repositories_uuid.clear();
 	try
 	{
 		std::stringstream ss(data);
@@ -439,11 +469,20 @@ void PresetArchiveDatabase::load_app_manifest_json()
 					BOOST_LOG_TRIVIAL(error) << "Local archive repository not extracted: " << *source_path;
 					continue;
 				}
+				// "selected" flag
 				if(const auto used = subtree.second.get_optional<bool>("selected"); used) {
 					m_selected_repositories_uuid[uuid] = *used;
 				} else {
 					assert(true);
+                    m_selected_repositories_uuid[uuid] = true;
 				}
+				// "has_installed_printers" flag
+                if (const auto used = subtree.second.get_optional<bool>("has_installed_printers"); used) {
+                    m_has_installed_printer_repositories_uuid[uuid] = *used;
+                } else {
+                    assert(true);
+                    m_has_installed_printer_repositories_uuid[uuid] = true;
+                }
 				m_archive_repositories.emplace_back(std::make_unique<LocalArchiveRepository>(std::move(uuid), std::move(manifest)));
 			
 				continue;
@@ -456,13 +495,20 @@ void PresetArchiveDatabase::load_app_manifest_json()
 				BOOST_LOG_TRIVIAL(error) << "Failed to read one of repository headers.";
 				continue;
 			}
-			auto search = m_selected_repositories_uuid.find(uuid);
-			assert(search == m_selected_repositories_uuid.end());
+            // "selected" flag
 			if (const auto used = subtree.second.get_optional<bool>("selected"); used) {
 				m_selected_repositories_uuid[uuid] = *used;
 			} else {
 				assert(true);
+                m_selected_repositories_uuid[uuid] = true;
 			}
+            // "has_installed_printers" flag
+            if (const auto used = subtree.second.get_optional<bool>("has_installed_printers"); used) {
+                m_has_installed_printer_repositories_uuid[uuid] = *used;
+            } else {
+                assert(true);
+                m_has_installed_printer_repositories_uuid[uuid] = true;
+            }
 			m_archive_repositories.emplace_back(std::make_unique<OnlineArchiveRepository>(std::move(uuid), std::move(manifest)));
 		}
 	}
@@ -498,13 +544,17 @@ void PresetArchiveDatabase::save_app_manifest_json() const
 		"id": "prod",
 		"url": "http://10.24.3.3:8001/v1/repos/prod",
 		"index_url": "http://10.24.3.3:8001/v1/repos/prod/vendor_indices.zip"
+        "selected": 1
+		"has_installed_printers": 1
 	}, {
 		"name": "Development",
 		"description": "Production repository",
-		"visibility": null,
+        "visibility": "developers only",
 		"id": "dev",
 		"url": "http://10.24.3.3:8001/v1/repos/dev",
 		"index_url": "http://10.24.3.3:8001/v1/repos/dev/vendor_indices.zip"
+        "selected": 0
+        "has_installed_printers": 0
 	}]
 	*/
 	std::string data = "[";
@@ -515,9 +565,15 @@ void PresetArchiveDatabase::save_app_manifest_json() const
 			const ArchiveRepository::RepositoryManifest& man = archive->get_manifest();
 			std::string line = archive == m_archive_repositories.front() ? std::string() : ",";
 			line += GUI::format(
-				"{\"source_path\": \"%1%\","
-				"\"selected\": %2%}"
-				, man.source_path.generic_string(), is_selected(archive->get_uuid()) ? "1" : "0");
+				"{"
+				"\"source_path\": \"%1%\","
+				"\"selected\": %2%,"
+				"\"has_installed_printers\": %3%"
+				"}",
+                man.source_path.generic_string()
+				, is_selected(archive->get_uuid()) ? "1" : "0"
+                , has_installed_printers(archive->get_uuid()) ? "1" : "0"
+            );
 			data += line;
 			continue;
 		}
@@ -531,8 +587,17 @@ void PresetArchiveDatabase::save_app_manifest_json() const
 			"\"id\": \"%4%\","
 			"\"url\": \"%5%\","
 			"\"index_url\": \"%6%\","
-			"\"selected\": %7%}"
-			, man.name, man.description, man. visibility, man.id, man.url, man.index_url, is_selected(archive->get_uuid()) ? "1" : "0");
+			"\"selected\": %7%,"
+            "\"has_installed_printers\": %8%"
+			"}"
+			, man.name, man.description
+			, man. visibility
+			, man.id
+			, man.url
+			, man.index_url
+			, is_selected(archive->get_uuid()) ? "1" : "0"
+			, has_installed_printers(archive->get_uuid()) ? "1" : "0"
+		);
 		data += line;
 	}
 	data += "]";
@@ -559,12 +624,18 @@ bool PresetArchiveDatabase::is_selected(const std::string& uuid) const
 	assert(search != m_selected_repositories_uuid.end()); 
 	return search->second;
 }
-
+bool PresetArchiveDatabase::has_installed_printers(const std::string &uuid) const 
+{
+    auto search = m_has_installed_printer_repositories_uuid.find(uuid);
+    assert(search != m_has_installed_printer_repositories_uuid.end());
+    return search->second;
+}
 void PresetArchiveDatabase::clear_online_repos()
 {
 	auto it = m_archive_repositories.begin();
 	while (it != m_archive_repositories.end()) {
-		if ((*it)->get_manifest().tmp_path.empty()) {
+		// Do not clean repos with local path (local repo) and with visibility filled (secret repo)
+        if ((*it)->get_manifest().tmp_path.empty()) {
 			it = m_archive_repositories.erase(it);
 		} else {
 			++it;
@@ -585,7 +656,7 @@ void PresetArchiveDatabase::read_server_manifest(const std::string& json_body)
 		BOOST_LOG_TRIVIAL(error) << "Failed to read archives JSON. " << e.what();
 
 	}
-	// Online repo manifests are in json_body. We already read local manifest and online manifest from last run.
+	// Online repo manifests are in json_body. We already have read local manifest and online manifest from last run.
 	// Keep the local ones and replace the online ones but keep uuid for same id so the selected map is correct.
 	// Solution: Create id - uuid translate table for online repos.
 	std::map<std::string, std::string> id_to_uuid;
@@ -594,7 +665,23 @@ void PresetArchiveDatabase::read_server_manifest(const std::string& json_body)
 			id_to_uuid[repo_ptr->get_manifest().id] = repo_ptr->get_uuid();
 		}
 	}
-	clear_online_repos();
+	
+	// Make a stash of secret repos that are online and has installed printers.
+	// If some of these will be missing afer reading the json tree, it needs to be added back to main population.
+	PrivateArchiveRepositoryVector secret_online_used_repos_cache;
+    for (const auto &repo_ptr : m_archive_repositories) {
+        if (repo_ptr->get_manifest().visibility.empty() || !repo_ptr->get_manifest().tmp_path.empty()) {
+            continue;
+		}
+        const auto &it = m_has_installed_printer_repositories_uuid.find(repo_ptr->get_uuid());
+        assert(it != m_has_installed_printer_repositories_uuid.end());
+        if (it->second) {
+            ArchiveRepository::RepositoryManifest manifest(repo_ptr->get_manifest());
+            secret_online_used_repos_cache.emplace_back(std::make_unique<OnlineArchiveRepository>(repo_ptr->get_uuid(), std::move(manifest)));
+		}
+	}
+
+    clear_online_repos();
 	
 	for (const auto& subtree : ptree) {
 		ArchiveRepository::RepositoryManifest manifest;
@@ -605,15 +692,59 @@ void PresetArchiveDatabase::read_server_manifest(const std::string& json_body)
 		}
 		auto id_it = id_to_uuid.find(manifest.id);
 		std::string uuid = (id_it == id_to_uuid.end() ? get_next_uuid() : id_it->second);
-		// Set default used value to true - its a never before seen repository
+		// Set default selected value to true - its a never before seen repository
 		if (auto search = m_selected_repositories_uuid.find(uuid); search == m_selected_repositories_uuid.end()) {
 			m_selected_repositories_uuid[uuid] = true;
 		}
+        // Set default "has installed printers" value to false - its a never before seen repository
+        if (auto search = m_has_installed_printer_repositories_uuid.find(uuid);
+            search == m_has_installed_printer_repositories_uuid.end()) {
+            m_has_installed_printer_repositories_uuid[uuid] = false;
+        }
 		m_archive_repositories.emplace_back(std::make_unique<OnlineArchiveRepository>(uuid, std::move(manifest)));
 	}
 	
-	consolidate_selected_uuids_map();
+	// return missing secret online repos with installed printers to the vector
+	for (const auto &repo_ptr : secret_online_used_repos_cache) {
+        std::string uuid = repo_ptr->get_uuid();
+        if (std::find_if(
+                m_archive_repositories.begin(), m_archive_repositories.end(),
+                [uuid](const std::unique_ptr<const ArchiveRepository> &ptr) {
+                    return ptr->get_uuid() == uuid;
+                }
+            ) == m_archive_repositories.end())
+		{
+            ArchiveRepository::RepositoryManifest manifest(repo_ptr->get_manifest());
+            m_archive_repositories.emplace_back(std::make_unique<OnlineArchiveRepository>(repo_ptr->get_uuid(), std::move(manifest)));
+	    }
+	}
+
+	consolidate_uuid_maps();
 	save_app_manifest_json();
+}
+
+SharedArchiveRepositoryVector PresetArchiveDatabase::get_all_archive_repositories() const 
+{
+    SharedArchiveRepositoryVector result;
+    for (const auto &repo_ptr : m_archive_repositories) 
+    {
+        result.emplace_back(repo_ptr.get());
+    }
+    return result;
+}
+
+SharedArchiveRepositoryVector PresetArchiveDatabase::get_selected_archive_repositories() const 
+{
+    SharedArchiveRepositoryVector result;
+    for (const auto &repo_ptr : m_archive_repositories) 
+    {
+        auto it = m_selected_repositories_uuid.find(repo_ptr->get_uuid());
+        assert(it != m_selected_repositories_uuid.end());
+        if (it->second) {
+            result.emplace_back(repo_ptr.get());
+        }   
+    }
+    return result;
 }
 
 bool PresetArchiveDatabase::is_selected_repository_by_uuid(const std::string& uuid) const
@@ -632,25 +763,41 @@ bool PresetArchiveDatabase::is_selected_repository_by_id(const std::string& repo
 	}
 	return false;
 }
-void PresetArchiveDatabase::consolidate_selected_uuids_map()
+void PresetArchiveDatabase::consolidate_uuid_maps()
 {
 	//std::vector<std::unique_ptr<const ArchiveRepository>> m_archive_repositories;
 	//std::map<std::string, bool> m_selected_repositories_uuid;
-	auto it = m_selected_repositories_uuid.begin();
-	while (it != m_selected_repositories_uuid.end()) {
+	auto selected_it = m_selected_repositories_uuid.begin();
+    while (selected_it != m_selected_repositories_uuid.end()) {
 		bool found = false;
 		for (const auto& repo_ptr : m_archive_repositories) {
-			if (repo_ptr->get_uuid() == it->first) {
+            if (repo_ptr->get_uuid() == selected_it->first) {
 				found = true;
 				break;	 
 			}
 		}
 		if (!found) {
-			it = m_selected_repositories_uuid.erase(it);
+            selected_it = m_selected_repositories_uuid.erase(selected_it);
 		} else {
-			++it;
+            ++selected_it;
 		}
 	}
+	// Do the same for m_has_installed_printer_repositories_uuid
+    auto installed_it = m_has_installed_printer_repositories_uuid.begin();
+    while (installed_it != m_has_installed_printer_repositories_uuid.end()) {
+        bool found = false;
+        for (const auto &repo_ptr : m_archive_repositories) {
+            if (repo_ptr->get_uuid() == installed_it->first) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            installed_it = m_has_installed_printer_repositories_uuid.erase(installed_it);
+        } else {
+            ++installed_it;
+        }
+    }
 }
 
 std::string PresetArchiveDatabase::get_next_uuid()

@@ -19,7 +19,7 @@ class AppConfig;
 class PresetBundle;
 class Semver;
 
-typedef std::vector<std::unique_ptr<const GUI::ArchiveRepository>> ArchiveRepositoryVector;
+typedef std::vector<const GUI::ArchiveRepository*> SharedArchiveRepositoryVector;
 
 static constexpr const int SLIC3R_VERSION_BODY_MAX = 256;
 
@@ -34,10 +34,10 @@ public:
 	~PresetUpdater();
 
 	// If either version check or config updating is enabled, get the appropriate data in the background and cache it.
-	void sync(const PresetBundle *preset_bundle, wxEvtHandler* evt_handler, const ArchiveRepositoryVector& repositories, const std::map<std::string, bool>& selected_repo_uuids);
+	void sync(const PresetBundle *preset_bundle, wxEvtHandler* evt_handler, SharedArchiveRepositoryVector&& repositories);
 	void cancel_sync();
 
-	void sync_blocking(const PresetBundle* preset_bundle, wxEvtHandler* evt_handler, const ArchiveRepositoryVector& repositories, const std::map<std::string, bool>& selected_repo_uuids);
+	void sync_blocking(const PresetBundle* preset_bundle, wxEvtHandler* evt_handler, const SharedArchiveRepositoryVector& repositories);
 
 	// If version check is enabled, check if chaced online slic3r version is newer, notify if so.
 	void slic3r_update_notify();
@@ -62,14 +62,14 @@ public:
 	// A false return value implies Slic3r should exit due to incompatibility of configuration.
 	// Providing old slic3r version upgrade profiles on upgrade of an application even in case
 	// that the config index installed from the Internet is equal to the index contained in the installation package.
-	UpdateResult config_update(const Semver &old_slic3r_version, UpdateParams params, const ArchiveRepositoryVector& repositories) const;
+	UpdateResult config_update(const Semver &old_slic3r_version, UpdateParams params, const SharedArchiveRepositoryVector& repositories) const;
 	
 	void update_index_db();
 
 	// "Update" a list of bundles from resources or cache/vendor (behaves like an online update).
-	bool install_bundles_rsrc_or_cache_vendor(std::vector<std::string> bundles, const ArchiveRepositoryVector& repositories, bool snapshot = true) const;
+	bool install_bundles_rsrc_or_cache_vendor(std::vector<std::string> bundles, const SharedArchiveRepositoryVector& repositories, bool snapshot = true) const;
 
-	void on_update_notification_confirm(const ArchiveRepositoryVector& repositories);
+	void on_update_notification_confirm(const SharedArchiveRepositoryVector& repositories);
 
 	bool version_check_enabled() const;
 

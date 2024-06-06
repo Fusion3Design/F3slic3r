@@ -3276,6 +3276,17 @@ bool ConfigWizard::priv::apply_config(AppConfig *app_config, PresetBundle *prese
     const auto enabled_vendors = appconfig_new.vendors();
     const auto enabled_vendors_old = app_config->vendors();
 
+    std::vector<std::string> used_repo_ids;
+    for (const auto& vendor : enabled_vendors) {
+        const auto& it = bundles.find(vendor.first);
+        assert(it != bundles.end());
+        const std::string repo_id = it->second.vendor_profile->repo_id;
+        if (std::find(used_repo_ids.begin(), used_repo_ids.end(), repo_id) == used_repo_ids.end()) {
+            used_repo_ids.emplace_back(repo_id);
+        }
+    }
+    wxGetApp().plater()->get_preset_archive_database()->set_installed_printer_repositories(std::move(used_repo_ids));
+
     bool suppress_sla_printer = model_has_multi_part_objects(wxGetApp().model());
     PrinterTechnology preferred_pt = ptAny;
     auto get_preferred_printer_technology = [enabled_vendors, enabled_vendors_old, suppress_sla_printer](const std::string& bundle_name, const Bundle& bundle) {
@@ -3406,7 +3417,7 @@ bool ConfigWizard::priv::apply_config(AppConfig *app_config, PresetBundle *prese
         // Don't create snapshot - we've already done that above if applicable.
         GUI_App& app = wxGetApp();
         const auto* archive_db = app.plater()->get_preset_archive_database();
-        bool install_result = updater->install_bundles_rsrc_or_cache_vendor(std::move(install_bundles), archive_db->get_archive_repositories(), false);
+        bool install_result = updater->install_bundles_rsrc_or_cache_vendor(std::move(install_bundles), archive_db->get_selected_archive_repositories(), false);
         if (!install_result)
             return false;
     } else {
@@ -3625,8 +3636,8 @@ void ConfigWizard::priv::set_config_updated_from_archive(bool is_updated)
         // This set with preset_updater used to be done in GUI_App::run_wizard before ConfigWizard::run()
         GUI_App& app = wxGetApp();
         // Do blocking sync on every change of archive repos, so user is always offered recent profiles.
-        const ArchiveRepositoryVector &repos = app.plater()->get_preset_archive_database()->get_archive_repositories();
-        app.preset_updater->sync_blocking(app.preset_bundle, &app, repos, app.plater()->get_preset_archive_database()->get_selected_repositories_uuid());
+        const SharedArchiveRepositoryVector &repos = app.plater()->get_preset_archive_database()->get_selected_archive_repositories();
+        app.preset_updater->sync_blocking(app.preset_bundle, &app, repos);
         // Offer update installation. It used to be offered only when wizard run reason was RR_USER.
         app.preset_updater->update_index_db();
         app.preset_updater->config_update(app.app_config->orig_version(), PresetUpdater::UpdateParams::SHOW_TEXT_BOX, repos);
@@ -3681,12 +3692,12 @@ static bool to_delete(PagePrinters* page, const std::set<std::string>& selected_
 
 static void unselect(PagePrinters* page)
 {
-    const PresetArchiveDatabase*        pad             = wxGetApp().plater()->get_preset_archive_database();
-    const ArchiveRepositoryVector&      archs           = pad->get_archive_repositories();
+    const PresetArchiveDatabase*            pad             = wxGetApp().plater()->get_preset_archive_database();
+    const SharedArchiveRepositoryVector&    archs           = pad->get_all_archive_repositories();
 
     bool unselect_all = true;
 
-    for (const auto& archive : archs) {
+    for (const auto* archive : archs) {
         if (page->get_vendor_repo_id() == archive->get_manifest().id) {
             if (pad->is_selected_repository_by_uuid(archive->get_uuid()))
                 unselect_all = false;
@@ -3780,12 +3791,12 @@ void ConfigWizard::priv::load_pages_from_archive()
 
     auto pad = wxGetApp().plater()->get_preset_archive_database();
 
-    const ArchiveRepositoryVector& archs = pad->get_archive_repositories();
+    const SharedArchiveRepositoryVector& archs = pad->get_all_archive_repositories();
 
     only_sla_mode = true;
     bool is_primary_printer_page_set = false;
 
-    for (const auto& archive : archs) {
+    for (const auto* archive : archs) {
         const auto& data = archive->get_manifest();
         const bool is_selected_arch     = pad->is_selected_repository_by_uuid(archive->get_uuid());
 
