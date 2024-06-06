@@ -96,7 +96,6 @@ enum ConfigMenuIDs {
     ConfigMenuWizard,
     ConfigMenuSnapshots,
     ConfigMenuTakeSnapshot,
-    ConfigMenuUpdateConf,
     ConfigMenuUpdateApp,
     ConfigMenuDesktopIntegration,
     ConfigMenuPreferences,

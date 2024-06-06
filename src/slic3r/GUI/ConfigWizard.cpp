@@ -681,9 +681,13 @@ PageUpdateManager::PageUpdateManager(ConfigWizard* parent_in)
                 if (wizard_p()->is_first_start)
                     wizard_p()->is_first_start = false;
 
-                wxBusyCursor wait;
-                if (manager->set_selected_repositories())
-                    wizard_p()->set_config_updated_from_archive(true);
+                if (wizard_p()->can_clear_printer_pages()) {
+                    wxBusyCursor wait;
+                    if (manager->set_selected_repositories())
+                        wizard_p()->set_config_updated_from_archive(true);
+                    else
+                        CallAfter([this]() { wizard_p()->index->go_to(1); });
+                }
                 else
                     CallAfter([this]() { wizard_p()->index->go_to(1); });
             }
@@ -3658,6 +3662,23 @@ bool ConfigWizard::priv::any_installed_vendor_for_repo(const std::string& repo_i
     return false;
 }
 
+static bool to_delete(PagePrinters* page, const std::set<std::string>& selected_uuids)
+{
+    const PresetArchiveDatabase*   pad   = wxGetApp().plater()->get_preset_archive_database();
+    const ArchiveRepositoryVector& archs = pad->get_archive_repositories();
+
+    bool unselect_all = true;
+
+    for (const auto& archive : archs) {
+        if (page->get_vendor_repo_id() == archive->get_manifest().id) {
+            if (selected_uuids.find(archive->get_uuid()) != selected_uuids.end())
+                unselect_all = false;
+            //break; ! don't break here, because there can be several archives with same repo_id
+        }
+    }
+    return unselect_all;
+}
+
 static void unselect(PagePrinters* page)
 {
     const PresetArchiveDatabase*        pad             = wxGetApp().plater()->get_preset_archive_database();
@@ -3675,6 +3696,35 @@ static void unselect(PagePrinters* page)
 
     if (unselect_all)
         page->unselect_all_presets();
+}
+
+bool ConfigWizard::priv::can_clear_printer_pages()
+{
+    const auto& selected_uuids = page_update_manager->manager->get_selected_uuids();
+
+    wxString msg;
+
+    for (Repository& repo : repositories) {
+        for (auto& [name, printers] : repo.printers_pages) {
+            if (PagePrinters* page = printers.first;
+                page && to_delete(page, selected_uuids))
+                    msg += "* " + page->shortname + "\n";
+
+            if (PagePrinters* page = printers.second;
+                page && to_delete(page, selected_uuids))
+                    msg += "* " + page->shortname + "\n";
+        }
+    }
+
+    if (msg.IsEmpty())
+        return false;
+
+    wxString message = format_wxstr( _L("Next pages will be deleted after configuration update:%1%\n"
+                                        "Installed presets will be uninstalled.\n"
+                                        "Would you like to process it?"), "\n\n"+ msg);
+
+    MessageDialog msg_dlg(this->q, message, _L("Notice"), wxYES_NO);
+    return msg_dlg.ShowModal() == wxID_YES;
 }
 
 void ConfigWizard::priv::clear_printer_pages()

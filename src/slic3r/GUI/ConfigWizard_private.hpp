@@ -715,6 +715,7 @@ struct ConfigWizard::priv
     // and return true if any of vendors_for_repo is installed (is in app_config)
     bool any_installed_vendor_for_repo(const std::string& repo_id, std::vector<const VendorProfile*>& );
 
+    bool can_clear_printer_pages();
     void clear_printer_pages();
     void load_pages_from_archive();
 };

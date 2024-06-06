@@ -44,7 +44,7 @@ RepositoryUpdateUIManager::RepositoryUpdateUIManager(wxWindow* parent, PresetArc
 
     m_main_sizer->Add(offline_label, 0, wxTOP | wxLEFT, 2 * em);
 
-    m_offline_sizer = new wxFlexGridSizer(6, 0.75 * em, 1.5 * em);
+    m_offline_sizer = new wxFlexGridSizer(7, 0.75 * em, 1.5 * em);
     m_offline_sizer->AddGrowableCol(1);
     m_offline_sizer->AddGrowableCol(2);
     m_offline_sizer->AddGrowableCol(4);
@@ -76,7 +76,7 @@ void RepositoryUpdateUIManager::fill_entries(bool init_selection/* = false*/)
         }
         else {
             // offline repo
-            m_offline_entries.push_back({ is_selected, uuid, data.name, data.description, data.source_path.filename().string(), fs::exists(data.source_path) });
+            m_offline_entries.push_back({ is_selected, uuid, data.name, data.description, data.source_path.filename().string(), fs::exists(data.source_path), data.source_path });
         }
     }
 }
@@ -137,7 +137,7 @@ void RepositoryUpdateUIManager::fill_grids()
 
         // header
 
-        for (const wxString& l : std::initializer_list<wxString>{ _L("Use"), _L("Name"), _L("Descrition"), "", _L("Source file"), "" }) {
+        for (const wxString& l : std::initializer_list<wxString>{ _L("Use"), _L("Name"), _L("Descrition"), "", _L("Source file"), "", "" }) {
             auto text = new wxStaticText(m_parent, wxID_ANY, l);
             text->SetFont(wxGetApp().bold_font());
             add(text);
@@ -168,7 +168,20 @@ void RepositoryUpdateUIManager::fill_grids()
                 add(bmp);
             }
 
-            add(new wxStaticText(m_parent, wxID_ANY, from_u8(entry.source)));
+            {
+                auto path_str = new wxStaticText(m_parent, wxID_ANY, from_u8(entry.source));
+                path_str->SetToolTip(from_u8(entry.source_path.string()));
+                add(path_str);
+            }
+
+            {
+                ScalableButton* btn = new ScalableButton(m_parent, wxID_ANY, "open");
+                btn->SetToolTip(_L("Open folder"));
+                btn->Bind(wxEVT_BUTTON, [this, &entry](wxCommandEvent& event) {
+                    GUI::desktop_open_folder(entry.source_path.parent_path().make_preferred());
+                });
+                add(btn);
+            }
 
             {
                 wxButton* btn = new wxButton(m_parent, wxID_ANY, "  " + _L("Remove") + "  ");

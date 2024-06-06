@@ -29,8 +29,8 @@ class RepositoryUpdateUIManager
     };
 
     struct OfflineEntry {
-        OfflineEntry(bool use, const std::string &id, const std::string &name, const std::string &description, const std::string &source, bool is_ok) :
-            use(use), id(id), name(name), description(description), source(source), is_ok(is_ok) {}
+        OfflineEntry(bool use, const std::string &id, const std::string &name, const std::string &description, const std::string &source, bool is_ok, boost::filesystem::path source_path) :
+            use(use), id(id), name(name), description(description), source(source), is_ok(is_ok), source_path(source_path) {}
 
         bool            use;
         std::string     id;
@@ -38,6 +38,7 @@ class RepositoryUpdateUIManager
         std::string     description;
         std::string   	source;
         bool            is_ok;
+        boost::filesystem::path source_path;
     };
 
     PresetArchiveDatabase*      m_pad           { nullptr };
@@ -71,6 +72,7 @@ public:
     bool        set_selected_repositories();
     bool        is_selection_changed() const { return m_is_selection_changed; }
     bool        has_selections()       const { return !m_selected_uuids.empty(); }
+    const std::set<std::string>& get_selected_uuids() const { return m_selected_uuids; }
 };
 
 class ManagePresetRepositoriesDialog : public DPIDialog
