@@ -889,6 +889,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         });
 
         this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+            // There are multiple handlers and we want to notify all
+            evt.Skip();
             std::string username;
             if (user_account->on_user_id_success(evt.data, username)) {
                 // login notification

@@ -15,6 +15,11 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+// if set to 1 the fetch() JS function gets override to include JWT in authorization header
+// if set to 0, the /slicer/login is invoked from WebKit (passing JWT token only to this request)
+// to set authorization cookie for all WebKit requests to Connect
+#define AUTH_VIA_FETCH_OVERRIDE 0
+
 
 namespace pt = boost::property_tree;
 
@@ -542,8 +547,83 @@ void ConnectRequestHandler::on_connect_action_request_config()
 }
 
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
-    : WebViewPanel(parent, L"https://connect.prusa3d.com/", { "_prusaSlicer" }, "connect_loading")
+    : WebViewPanel(parent, L"https://dev.connect.prusa3d.com/", { "_prusaSlicer" }, "connect_loading")
 {  
+    //m_browser->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new WebViewHandler("https")));
+
+    Plater* plater = wxGetApp().plater();
+    m_browser->AddUserScript(wxString::Format(
+
+#if AUTH_VIA_FETCH_OVERRIDE
+        /*
+         * Notes:
+         * - The fetch() function has two distinct prototypes (i.e. input args):
+         *    1. fetch(url: string, options: object | undefined)
+         *    2. fetch(req: Request, options: object | undefined)
+         * - For some reason I can't explain the headers can be extended only via Request object
+         *   i.e. the fetch prototype (2). So we need to convert (1) call into (2) before
+         *
+         */
+        R"(
+            if (window.__fetch === undefined) {
+                window.__fetch = fetch;
+                window.fetch = function(req, opts = {}) {
+                    if (typeof req === 'string') {
+                        req = new Request(req, opts);
+                        opts = {};
+                    }
+                    if (window.__access_token && (req.url[0] == '/' || req.url.indexOf('prusa3d.com') > 0)) {
+                        req.headers.set('Authorization', 'Bearer ' + window.__access_token);
+                        console.log('Header updated: ', req.headers.get('Authorization'));
+                        console.log('AT Version: ', __access_token_version);
+                    }
+                    //console.log('Injected fetch used', req, opts);
+                    return __fetch(req, opts);
+                };
+            }
+            window.__access_token = '%s';
+            window.__access_token_version = 0;
+        )",
+#else
+    R"(
+        console.log('Preparing login');
+        window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
+            .then((resp) => {
+                console.log('Login resp', resp);
+                resp.text().then((json) => console.log('Login resp body', json));
+            });
+        )",
+#endif
+        plater->get_user_account()->get_access_token()
+    ));
+    plater->Bind(EVT_UA_ID_USER_SUCCESS, &ConnectWebViewPanel::on_user_token, this);
+}
+
+ConnectWebViewPanel::~ConnectWebViewPanel()
+{
+    m_browser->Unbind(EVT_UA_ID_USER_SUCCESS, &ConnectWebViewPanel::on_user_token, this);
+}
+
+void ConnectWebViewPanel::on_user_token(UserAccountSuccessEvent& e)
+{
+    e.Skip();
+    wxString javascript = wxString::Format(
+#if AUTH_VIA_FETCH_OVERRIDE
+        "window.__access_token = '%s';window.__access_token_version = (window.__access_token_version || 0) + 1;console.log('Updated Auth token', window.__access_token);",
+#else
+        R"(
+        console.log('Preparing login');
+        window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
+            .then((resp) => {
+                console.log('Login resp', resp);
+                resp.text().then((json) => console.log('Login resp body', json));
+            });
+        )",
+#endif
+        wxGetApp().plater()->get_user_account()->get_access_token()
+    );
+    //m_browser->AddUserScript(javascript, wxWEBVIEW_INJECT_AT_DOCUMENT_END);
+    m_browser->RunScript(javascript);
 }
 
 void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
@@ -1040,7 +1120,7 @@ void WebViewDialog::EndModal(int retCode)
 
 PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val)
     : WebViewDialog(parent
-        , L"https://connect.prusa3d.com/slicer-select-printer"
+        , L"https://dev.connect.prusa3d.com/slicer-select-printer"
         , _L("Choose a printer")
         , wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit()))
         ,{"_prusaSlicer"}

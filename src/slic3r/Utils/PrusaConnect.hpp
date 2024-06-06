@@ -32,7 +32,7 @@ public:
     bool has_auto_discovery() const override { return true; }
     bool can_test() const override { return true; }
     PrintHostPostUploadActions get_post_upload_actions() const override { return PrintHostPostUploadAction::StartPrint | PrintHostPostUploadAction::QueuePrint; }
-    std::string get_host() const override { return "https://connect.prusa3d.com"; }
+    std::string get_host() const override { return "https://dev.connect.prusa3d.com"; }
     bool get_storage(wxArrayString& storage_path, wxArrayString& storage_name) const override;
     //const std::string& get_apikey() const { return m_apikey; }
     //const std::string& get_cafile() const { return m_cafile; }

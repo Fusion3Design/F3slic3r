@@ -143,12 +143,22 @@ UserAccountCommunication::UserAccountCommunication(wxEvtHandler* evt_handler, Ap
 
     std::string access_token, refresh_token, shared_session_key, next_timeout;
     if (is_secret_store_ok()) {
-        std::string key0, key1, key2;
-        load_secret("access_token", key0, access_token);
-        load_secret("refresh_token", key1, refresh_token);
-        load_secret("access_token_timeout", key2, next_timeout);
-        assert(key0 == key1);
+        std::string key0, key1, key2, tokens;
+        if (load_secret("tokens", key0, tokens)) {
+            std::vector<std::string> token_list;
+            boost::split(token_list, tokens, boost::is_any_of("|"), boost::token_compress_off);
+            assert(token_list.empty() || token_list.size() == 3);
+            access_token = token_list.size() > 0 ? token_list[0] : std::string();
+            refresh_token = token_list.size() > 1 ? token_list[1] : std::string();
+            next_timeout = token_list.size() > 2 ? token_list[2] : std::string();
+        } else {
+            load_secret("access_token", key0, access_token);
+            load_secret("refresh_token", key1, refresh_token);
+            load_secret("access_token_timeout", key2, next_timeout);
+            assert(key0 == key1);
+        }
         shared_session_key = key0;
+
     } else {
         access_token = m_app_config->get("access_token");
         refresh_token = m_app_config->get("refresh_token");
@@ -173,7 +183,7 @@ UserAccountCommunication::UserAccountCommunication(wxEvtHandler* evt_handler, Ap
 UserAccountCommunication::~UserAccountCommunication() 
 {
     if (m_thread.joinable()) {
-         Stop the worker thread, if running.
+        // Stop the worker thread, if running.
         {
             // Notify the worker thread to cancel wait on detection polling.
             std::lock_guard<std::mutex> lck(m_thread_stop_mutex);
@@ -191,9 +201,13 @@ void UserAccountCommunication::set_username(const std::string& username)
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         if (is_secret_store_ok()) {
-            save_secret("access_token", m_session->get_shared_session_key(), m_remember_session ? m_session->get_access_token() : std::string());
-            save_secret("refresh_token", m_session->get_shared_session_key(), m_remember_session ? m_session->get_refresh_token() : std::string());
-            save_secret("access_token_timeout", m_session->get_shared_session_key(), m_remember_session ? GUI::format("%1%",m_session->get_next_token_timeout()) : "0");
+            std::string tokens;
+            if (m_remember_session) {
+                tokens = m_session->get_access_token() +
+                    "|" + m_session->get_refresh_token() +
+                    "|" + std::to_string(m_session->get_next_token_timeout());
+            }
+            save_secret("tokens", m_session->get_shared_session_key(), tokens);
         }
         else {
             m_app_config->set("access_token", m_remember_session ? m_session->get_access_token() : std::string());
@@ -245,7 +259,7 @@ void UserAccountCommunication::on_uuid_map_success()
 
 void UserAccountCommunication::login_redirect()
 {
-    const std::string AUTH_HOST = "https://account.prusa3d.com";
+    const std::string AUTH_HOST = "https://test-account.prusa3d.com";
     const std::string CLIENT_ID = client_id();
     const std::string REDIRECT_URI = "prusaslicer://login";
     CodeChalengeGenerator ccg;

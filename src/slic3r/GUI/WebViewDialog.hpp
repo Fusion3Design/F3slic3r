@@ -1,17 +1,23 @@
 #ifndef slic3r_WebViewDialog_hpp_
 #define slic3r_WebViewDialog_hpp_
 
+#define DEBUG_URL_PANEL
+
 #include <map>
 #include <wx/wx.h>
 #include <wx/event.h>
+
+#include "UserAccountSession.hpp"
+
+#ifdef DEBUG_URL_PANEL
+#include <wx/infobar.h>
+#endif
 
 class wxWebView;
 class wxWebViewEvent;
 
 namespace Slic3r {
 namespace GUI {
-
-//#define DEBUG_URL_PANEL 
 
 class WebViewPanel : public wxPanel
 {
@@ -183,6 +189,7 @@ class ConnectWebViewPanel : public WebViewPanel, public ConnectRequestHandler
 {
 public:
     ConnectWebViewPanel(wxWindow* parent);
+    ~ConnectWebViewPanel() override;
     void on_script_message(wxWebViewEvent& evt) override;
     void logout();
     void sys_color_changed() override;
@@ -191,6 +198,8 @@ protected:
     void on_connect_action_print() override;
     void on_connect_action_webapp_ready() override {}
     void run_script_bridge(const wxString& script) override {run_script(script); }
+private:
+    void on_user_token(UserAccountSuccessEvent& e);
 };
 
 class PrinterWebViewPanel : public WebViewPanel

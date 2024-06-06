@@ -94,8 +94,7 @@ private:
     void wakeup_session_thread();
     void init_session_thread();
     void login_redirect();
-    std::string client_id() const { return "oamhmhZez7opFosnwzElIgE2oGgI2iJORSkw587O"; }
-    
+    std::string client_id() const { return "UfTRUm5QjWwaQEGpWQBHGHO3reAyuzgOdBaiqO52"; }
     
     
 };
