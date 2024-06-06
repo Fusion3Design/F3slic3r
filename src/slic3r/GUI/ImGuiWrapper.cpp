@@ -51,6 +51,7 @@
 // and ones that we already tried to add into the atlas.
 std::set<ImWchar> s_missing_chars;
 std::set<ImWchar> s_fixed_chars;
+bool              s_font_cjk;
 
 // This is a free function that ImGui calls when it renders
 // a fallback glyph for c.
@@ -59,10 +60,21 @@ void imgui_rendered_fallback_glyph(ImWchar c)
     if (ImGui::GetIO().Fonts->Fonts[0] == ImGui::GetFont()) {
         // Only do this when we are using the default ImGui font. Otherwise this would conflict with
         // EmbossStyleManager's font handling and we would load glyphs needlessly.
-        if (s_fixed_chars.find(c) == s_fixed_chars.end()) {
-            // Do not add this if we already tried to fix it. We don't want to
-            // rebuild the atlas in every frame when the glyph is not available at all.
+        auto it = s_fixed_chars.find(c);
+        if (it == s_fixed_chars.end()) {
+            // This is the first time we are trying to fix this character.
             s_missing_chars.emplace(c);
+        } else {
+            // We already tried to add this, but it is still not there. There is a chance
+            // that loading the CJK font would make this available.
+            if (! s_font_cjk) {
+                s_font_cjk = true;
+                s_missing_chars.emplace(c);
+                s_fixed_chars.erase(it);
+            } else {
+                // We did everything we could. The glyph was not available.
+                // Do not try to add it anymore.
+            }
         }
     }
 }
@@ -170,6 +182,47 @@ ImGuiWrapper::ImGuiWrapper()
     init_style();
 
     ImGui::GetIO().IniFilename = nullptr;
+
+    static const ImWchar ranges_latin2[] =
+    {
+        0x0020, 0x00FF, // Basic Latin + Latin Supplement
+        0x0100, 0x017F, // Latin Extended-A
+        0,
+    };
+    static const ImWchar ranges_turkish[] = {
+	    0x0020, 0x01FF, // Basic Latin + Latin Supplement
+	    0x0100, 0x017F, // Latin Extended-A
+	    0x0180, 0x01FF, // Turkish
+	    0,
+    };
+    static const ImWchar ranges_vietnamese[] =
+    {
+        0x0020, 0x00FF, // Basic Latin
+        0x0102, 0x0103,
+        0x0110, 0x0111,
+        0x0128, 0x0129,
+        0x0168, 0x0169,
+        0x01A0, 0x01A1,
+        0x01AF, 0x01B0,
+        0x1EA0, 0x1EF9,
+        0,
+    };
+
+    m_lang_glyphs_info.emplace_back("cs",   ranges_latin2, false);
+    m_lang_glyphs_info.emplace_back("pl",   ranges_latin2, false);
+    m_lang_glyphs_info.emplace_back("hu",   ranges_latin2, false);
+    m_lang_glyphs_info.emplace_back("sl",   ranges_latin2, false);
+    m_lang_glyphs_info.emplace_back("ru",   ImGui::GetIO().Fonts->GetGlyphRangesCyrillic(), false); // Default + about 400 Cyrillic characters
+    m_lang_glyphs_info.emplace_back("uk",   ImGui::GetIO().Fonts->GetGlyphRangesCyrillic(), false);
+    m_lang_glyphs_info.emplace_back("be",   ImGui::GetIO().Fonts->GetGlyphRangesCyrillic(), false);
+    m_lang_glyphs_info.emplace_back("tr",   ranges_turkish,    false);
+    m_lang_glyphs_info.emplace_back("vi",   ranges_vietnamese, false);
+    m_lang_glyphs_info.emplace_back("ja",   ImGui::GetIO().Fonts->GetGlyphRangesJapanese(), true);         // Default + Hiragana, Katakana, Half-Width, Selection of 1946 Ideographs
+    m_lang_glyphs_info.emplace_back("ko",   ImGui::GetIO().Fonts->GetGlyphRangesKorean(),   true);         // Default + Korean characters
+    m_lang_glyphs_info.emplace_back("zh_TW",ImGui::GetIO().Fonts->GetGlyphRangesChineseFull(), true);      // Traditional Chinese: Default + Half-Width + Japanese Hiragana/Katakana + full set of about 21000 CJK Unified Ideographs
+    m_lang_glyphs_info.emplace_back("zh",   ImGui::GetIO().Fonts->GetGlyphRangesChineseSimplifiedCommon(), true); // Simplified Chinese: Default + Half-Width + Japanese Hiragana/Katakana + set of 2500 CJK Unified Ideographs for common simplified Chinese
+    m_lang_glyphs_info.emplace_back("th",   ImGui::GetIO().Fonts->GetGlyphRangesThai(),     false);
+    m_lang_glyphs_info.emplace_back("else", ImGui::GetIO().Fonts->GetGlyphRangesDefault(),  false);
 }
 
 ImGuiWrapper::~ImGuiWrapper()
@@ -189,61 +242,17 @@ void ImGuiWrapper::set_language(const std::string &language)
     }
 
     const ImWchar *ranges = nullptr;
-    size_t idx = language.find('_');
-    std::string lang = (idx == std::string::npos) ? language : language.substr(0, idx);
-    static const ImWchar ranges_latin2[] =
-    {
-        0x0020, 0x00FF, // Basic Latin + Latin Supplement
-        0x0100, 0x017F, // Latin Extended-A
-        0,
-    };
-	static const ImWchar ranges_turkish[] = {
-		0x0020, 0x01FF, // Basic Latin + Latin Supplement
-		0x0100, 0x017F, // Latin Extended-A
-		0x0180, 0x01FF, // Turkish
-		0,
-	};
-    static const ImWchar ranges_vietnamese[] =
-    {
-        0x0020, 0x00FF, // Basic Latin
-        0x0102, 0x0103,
-        0x0110, 0x0111,
-        0x0128, 0x0129,
-        0x0168, 0x0169,
-        0x01A0, 0x01A1,
-        0x01AF, 0x01B0,
-        0x1EA0, 0x1EF9,
-        0,
-    };
-    m_font_cjk = false;
-    if (lang == "cs" || lang == "pl" || lang == "hu" || lang == "sl") {
-        ranges = ranges_latin2;
-    } else if (lang == "ru" || lang == "uk" || lang == "be") {
-        ranges = ImGui::GetIO().Fonts->GetGlyphRangesCyrillic(); // Default + about 400 Cyrillic characters
-    } else if (lang == "tr") {
-        ranges = ranges_turkish;
-    } else if (lang == "vi") {
-        ranges = ranges_vietnamese;
-    } else if (lang == "ja") {
-        ranges = ImGui::GetIO().Fonts->GetGlyphRangesJapanese(); // Default + Hiragana, Katakana, Half-Width, Selection of 1946 Ideographs
-        m_font_cjk = true;
-    } else if (lang == "ko") {
-        ranges = ImGui::GetIO().Fonts->GetGlyphRangesKorean(); // Default + Korean characters
-        m_font_cjk = true;
-    } else if (lang == "zh") {
-        ranges = (language == "zh_TW") ?
-            // Traditional Chinese
-            // Default + Half-Width + Japanese Hiragana/Katakana + full set of about 21000 CJK Unified Ideographs
-            ImGui::GetIO().Fonts->GetGlyphRangesChineseFull() :
-            // Simplified Chinese
-            // Default + Half-Width + Japanese Hiragana/Katakana + set of 2500 CJK Unified Ideographs for common simplified Chinese
-            ImGui::GetIO().Fonts->GetGlyphRangesChineseSimplifiedCommon();
-        m_font_cjk = true;
-    } else if (lang == "th") {
-        ranges = ImGui::GetIO().Fonts->GetGlyphRangesThai(); // Default + Thai characters
-    } else {
-        ranges = ImGui::GetIO().Fonts->GetGlyphRangesDefault(); // Basic Latin, Extended Latin
+
+    // Get glyph ranges for current language, std CLK flag to inform which font files need to be loaded.
+    for (const auto& [lang_str, lang_ranges, lang_cjk] : m_lang_glyphs_info) {
+        if (boost::istarts_with(language, lang_str) || lang_str == "else") {
+            ranges = lang_ranges;
+            s_font_cjk = lang_cjk;
+        }
     }
+
+    s_missing_chars.clear();
+    s_fixed_chars.clear();
 
     if (ranges != m_glyph_ranges) {
         m_glyph_ranges = ranges;
@@ -1129,7 +1138,7 @@ void ImGuiWrapper::init_font(bool compress)
 
     builder.AddChar(ImWchar(0x2026)); // …
 
-    if (m_font_cjk) {
+    if (s_font_cjk) {
         // https://github.com/prusa3d/PrusaSlicer/issues/8171: The translation
         // contains characters not in the ImGui ranges for simplified Chinese. Add them manually.
         // This should no longer be needed because the following block would add them automatically.
@@ -1145,7 +1154,7 @@ void ImGuiWrapper::init_font(bool compress)
     s_missing_chars.clear();
 
 #ifdef __APPLE__
-	if (m_font_cjk)
+	if (s_font_cjk)
 		// Apple keyboard shortcuts are only contained in the CJK fonts.
 		builder.AddRanges(ranges_keyboard_shortcuts);
 #endif
@@ -1153,7 +1162,13 @@ void ImGuiWrapper::init_font(bool compress)
 
     //FIXME replace with io.Fonts->AddFontFromMemoryTTF(buf_decompressed_data, (int)buf_decompressed_size, m_font_size, nullptr, ranges.Data);
     //https://github.com/ocornut/imgui/issues/220
-	ImFont* font = io.Fonts->AddFontFromFileTTF((Slic3r::resources_dir() + "/fonts/" + (m_font_cjk ? "NotoSansCJK-Regular.ttc" : "NotoSans-Regular.ttf")).c_str(), m_font_size, nullptr, ranges.Data);
+    ImFont* font = io.Fonts->AddFontFromFileTTF((Slic3r::resources_dir() + "/fonts/" + "NotoSans-Regular.ttf").c_str(), m_font_size, nullptr, ranges.Data);
+    if (s_font_cjk) {
+        ImFontConfig config;
+        config.MergeMode = true;
+        io.Fonts->AddFontFromFileTTF((Slic3r::resources_dir() + "/fonts/" + "NotoSansCJK-Regular.ttc").c_str(), m_font_size, &config, ranges.Data);
+    }
+    
     if (font == nullptr) {
         font = io.Fonts->AddFontDefault();
         if (font == nullptr) {

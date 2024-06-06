@@ -1823,7 +1823,7 @@ void GLCanvas3D::render()
     
 #ifdef SHOW_IMGUI_DEMO_WINDOW
     if (show_imgui_demo_window) ImGui::ShowDemoWindow();
-#endif // SHOW_IMGUI_DEMO_WINDOW    
+#endif // SHOW_IMGUI_DEMO_WINDOW
 
     const bool is_looking_downward = camera.is_looking_downward();
 
