@@ -174,15 +174,14 @@ public:
     void resend_config();
 protected:
     // action callbacs stored in m_actions
-    virtual void on_connect_action_request_config();
-    virtual void on_connect_action_select_printer() = 0;
-    virtual void on_connect_action_print() = 0;
-    virtual void run_script_bridge(const wxString& script) = 0;
-    virtual void on_connect_action_webapp_ready() = 0;
+    virtual void on_connect_action_request_config(const std::string& message_data);
+    virtual void on_connect_action_request_open_in_browser(const std::string& message_data);
+    virtual void on_connect_action_select_printer(const std::string& message_data) = 0;
+    virtual void on_connect_action_print(const std::string& message_data) = 0;
+    virtual void on_connect_action_webapp_ready(const std::string& message_data) = 0;
+    virtual void run_script_bridge(const wxString &script) = 0;
 
-    std::map<std::string, std::function<void(void)>> m_actions;
-    std::string m_message_data;
-
+    std::map<std::string, std::function<void(const std::string&)>> m_actions;
 };
 
 class ConnectWebViewPanel : public WebViewPanel, public ConnectRequestHandler
@@ -195,9 +194,9 @@ public:
     void sys_color_changed() override;
     void on_navigation_request(wxWebViewEvent &evt) override;
 protected:
-    void on_connect_action_select_printer() override;
-    void on_connect_action_print() override;
-    void on_connect_action_webapp_ready() override {}
+    void on_connect_action_select_printer(const std::string& message_data) override;
+    void on_connect_action_print(const std::string& message_data) override;
+    void on_connect_action_webapp_ready(const std::string& message_data) override {}
     void run_script_bridge(const wxString& script) override {run_script(script); }
 private:
     void on_user_token(UserAccountSuccessEvent& e);
@@ -230,9 +229,9 @@ public:
     void on_show(wxShowEvent& evt) override;
     void on_script_message(wxWebViewEvent& evt) override;
 protected:
-    void on_connect_action_select_printer() override;
-    void on_connect_action_print() override;
-    void on_connect_action_webapp_ready() override;
+    void on_connect_action_select_printer(const std::string& message_data) override;
+    void on_connect_action_print(const std::string& message_data) override;
+    void on_connect_action_webapp_ready(const std::string& message_data) override;
     void request_compatible_printers_FFF();
     void request_compatible_printers_SLA();
     void run_script_bridge(const wxString& script) override { run_script(script); }

@@ -473,10 +473,11 @@ SourceViewDialog::SourceViewDialog(wxWindow* parent, wxString source) :
 
 ConnectRequestHandler::ConnectRequestHandler()
 {
-    m_actions["REQUEST_CONFIG"] = std::bind(&ConnectRequestHandler::on_connect_action_request_config, this);
-    m_actions["WEBAPP_READY"] = std::bind(&ConnectRequestHandler::on_connect_action_webapp_ready, this);
-    m_actions["SELECT_PRINTER"] = std::bind(&ConnectRequestHandler::on_connect_action_select_printer, this);
-    m_actions["PRINT"] = std::bind(&ConnectRequestHandler::on_connect_action_print, this);
+    m_actions["REQUEST_CONFIG"] = std::bind(&ConnectRequestHandler::on_connect_action_request_config, this, std::placeholders::_1);
+    m_actions["WEBAPP_READY"] = std::bind(&ConnectRequestHandler::on_connect_action_webapp_ready,this, std::placeholders::_1);
+    m_actions["SELECT_PRINTER"] = std::bind(&ConnectRequestHandler::on_connect_action_select_printer, this, std::placeholders::_1);
+    m_actions["PRINT"] = std::bind(&ConnectRequestHandler::on_connect_action_print, this, std::placeholders::_1);
+    m_actions["REQUEST_OPEN_IN_BROWSER"] = std::bind(&ConnectRequestHandler::on_connect_action_request_open_in_browser, this, std::placeholders::_1);
 }
 ConnectRequestHandler::~ConnectRequestHandler()
 {
@@ -491,9 +492,8 @@ void ConnectRequestHandler::handle_message(const std::string& message)
     {"action":"REQUEST_ACCESS_TOKEN"}
     */
     std::string action_string;
-    m_message_data = message;
     try {
-        std::stringstream ss(m_message_data);
+        std::stringstream ss(message);
         pt::ptree ptree;
         pt::read_json(ss, ptree);
         // v1:
@@ -512,16 +512,16 @@ void ConnectRequestHandler::handle_message(const std::string& message)
     }
     assert(m_actions.find(action_string) != m_actions.end()); // this assert means there is a action that has no handling.
     if (m_actions.find(action_string) != m_actions.end()) {
-        m_actions[action_string]();
+        m_actions[action_string](message);
     }
 }
 
 void ConnectRequestHandler::resend_config()
 {
-    on_connect_action_request_config();
+    on_connect_action_request_config({});
 }
 
-void ConnectRequestHandler::on_connect_action_request_config()
+void ConnectRequestHandler::on_connect_action_request_config(const std::string& message_data)
 {
     /*
     accessToken?: string;
@@ -539,6 +539,20 @@ void ConnectRequestHandler::on_connect_action_request_config()
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.init(%1%)", init_options);
     run_script_bridge(script);
     
+}
+void ConnectRequestHandler::on_connect_action_request_open_in_browser(const std::string& message_data) 
+{
+    try {
+        std::stringstream ss(message_data);
+        pt::ptree ptree;
+        pt::read_json(ss, ptree);
+        if (const auto url = ptree.get_optional<std::string>("url"); url) {
+            wxGetApp().open_browser_with_warning_dialog(GUI::from_u8(*url));
+        }
+    } catch (const std::exception &e) {
+        BOOST_LOG_TRIVIAL(error) << "Could not parse _prusaConnect message. " << e.what();
+        return;
+    }    
 }
 
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
@@ -654,12 +668,12 @@ void ConnectWebViewPanel::sys_color_changed()
     resend_config();
 }
 
-void ConnectWebViewPanel::on_connect_action_select_printer()
+void ConnectWebViewPanel::on_connect_action_select_printer(const std::string& message_data)
 {
-    assert(!m_message_data.empty());
-    wxGetApp().handle_connect_request_printer_select(m_message_data);
+    assert(!message_data.empty());
+    wxGetApp().handle_connect_request_printer_select(message_data);
 }
-void ConnectWebViewPanel::on_connect_action_print()
+void ConnectWebViewPanel::on_connect_action_print(const std::string& message_data)
 {
     // PRINT request is not defined for ConnectWebViewPanel
     assert(true);
@@ -1156,18 +1170,18 @@ void PrinterPickWebViewDialog::on_script_message(wxWebViewEvent& evt)
     handle_message(into_u8(evt.GetString()));
 }
 
-void PrinterPickWebViewDialog::on_connect_action_select_printer()
+void PrinterPickWebViewDialog::on_connect_action_select_printer(const std::string& message_data)
 {
     // SELECT_PRINTER request is not defined for PrinterPickWebViewDialog
     assert(true);
 }
-void PrinterPickWebViewDialog::on_connect_action_print()
+void PrinterPickWebViewDialog::on_connect_action_print(const std::string& message_data)
 {
-    m_ret_val = m_message_data;
+    m_ret_val = message_data;
     this->EndModal(wxID_OK);
 }
 
-void PrinterPickWebViewDialog::on_connect_action_webapp_ready()
+void PrinterPickWebViewDialog::on_connect_action_webapp_ready(const std::string& message_data)
 {
     
     if (Preset::printer_technology(wxGetApp().preset_bundle->printers.get_selected_preset().config) == ptFFF) {

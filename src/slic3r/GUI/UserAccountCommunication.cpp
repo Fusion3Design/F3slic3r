@@ -439,7 +439,7 @@ void UserAccountCommunication::set_refresh_time(int seconds)
 {
     assert(m_token_timer);
     m_token_timer->Stop();
-    int miliseconds = std::max(seconds * 1000 - 60000, 60000);
+    int miliseconds = std::max(seconds * 1000 - 66666, 60000);
     m_token_timer->StartOnce(miliseconds);
 }
 
