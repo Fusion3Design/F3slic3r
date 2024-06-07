@@ -535,14 +535,14 @@ void ConnectRequestHandler::on_connect_action_request_config()
     const std::string dark_mode = wxGetApp().dark_mode() ? "DARK" : "LIGHT";
     wxString language = GUI::wxGetApp().current_language_code();
     language = language.SubString(0, 1);
-    const std::string init_options = GUI::format("{\"clientVersion\": \"%1%\", \"colorMode\": \"%2%\", \"language\": \"%3%\"}", SLIC3R_VERSION, dark_mode, language); // \"accessToken\": \"%1%\" , 
+    const std::string init_options = GUI::format("{\"accessToken\": \"%4%\",\"clientVersion\": \"%1%\", \"colorMode\": \"%2%\", \"language\": \"%3%\"}", SLIC3R_VERSION, dark_mode, language, token );  
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.init(%1%)", init_options);
     run_script_bridge(script);
     
 }
 
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
-    : WebViewPanel(parent, L"https://dev.connect.prusa3d.com/", { "_prusaSlicer" }, "connect_loading")
+    : WebViewPanel(parent, L"https://connect.prusa3d.com/", { "_prusaSlicer" }, "connect_loading")
 {  
     //m_browser->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new WebViewHandler("https")));
 
@@ -618,7 +618,7 @@ void ConnectWebViewPanel::on_user_token(UserAccountSuccessEvent& e)
         wxGetApp().plater()->get_user_account()->get_access_token()
     );
     //m_browser->AddUserScript(javascript, wxWEBVIEW_INJECT_AT_DOCUMENT_END);
-    m_browser->RunScript(javascript);
+    m_browser->RunScriptAsync(javascript);
 }
 
 void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
