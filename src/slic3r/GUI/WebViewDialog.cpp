@@ -1131,7 +1131,7 @@ void WebViewDialog::EndModal(int retCode)
 
 PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val)
     : WebViewDialog(parent
-        , L"https://dev.connect.prusa3d.com/slicer-select-printer"
+        , L"https://connect.prusa3d.com/slicer-select-printer"
         , _L("Choose a printer")
         , wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit()))
         ,{"_prusaSlicer"}
