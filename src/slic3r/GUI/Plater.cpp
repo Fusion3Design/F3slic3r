@@ -5916,26 +5916,29 @@ void Plater::connect_gcode()
 */
     const Preset* selected_printer_preset = &wxGetApp().preset_bundle->printers.get_selected_preset();
 
-    const std::string set_ready = p->user_account->get_keyword_from_json(dialog_msg, "set_ready");
-    const std::string position = p->user_account->get_keyword_from_json(dialog_msg, "position");
-    const std::string wait_until = p->user_account->get_keyword_from_json(dialog_msg, "wait_until");
     const std::string filename = p->user_account->get_keyword_from_json(dialog_msg, "filename");
-    const std::string printer_uuid = p->user_account->get_keyword_from_json(dialog_msg, "printer_uuid");
     const std::string team_id = p->user_account->get_keyword_from_json(dialog_msg, "team_id");
+
+    std::string data_subtree = p->user_account->get_print_data_from_json(dialog_msg, "data");
+    if (filename.empty() || team_id.empty() || data_subtree.empty()) {
+        std::string msg = _u8L("Failed to read response from Connect server. Upload is canceled.");
+        BOOST_LOG_TRIVIAL(error) << msg;
+        BOOST_LOG_TRIVIAL(error) << "Response: " << dialog_msg;
+        show_error(this, msg);
+        return;
+    }
+    
 
     PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *selected_printer_preset);
     ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnectNew));
     // use existing structures to pass data
     ph_printer.config.opt_string("printhost_apikey") = team_id;
-    ph_printer.config.opt_string("print_host") = printer_uuid;
     DynamicPrintConfig* physical_printer_config = &ph_printer.config;
 
     PrintHostJob upload_job(physical_printer_config);
     assert(!upload_job.empty());
 
-    upload_job.upload_data.set_ready = set_ready;
-    upload_job.upload_data.position = position;
-    upload_job.upload_data.wait_until = wait_until;
+    upload_job.upload_data.data_json = data_subtree;
     upload_job.upload_data.upload_path = boost::filesystem::path(filename);
 
     p->export_gcode(fs::path(), false, std::move(upload_job));

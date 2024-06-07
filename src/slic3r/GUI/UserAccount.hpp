@@ -69,6 +69,7 @@ public:
     // standalone utility methods
     std::string get_nozzle_from_json(const std::string& message) const;
     std::string get_keyword_from_json(const std::string& json, const std::string& keyword) const;
+    std::string get_print_data_from_json(const std::string &json, const std::string &keyword) const;
     void fill_supported_printer_models_from_json(const std::string& json, std::vector<std::string>& result) const;
     void fill_material_from_json(const std::string& json, std::vector<std::string>& result) const;
 
