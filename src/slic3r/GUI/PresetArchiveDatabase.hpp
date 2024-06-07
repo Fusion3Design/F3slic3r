@@ -155,11 +155,13 @@ public:
 	bool is_selected_repository_by_uuid(const std::string& uuid) const;
 	bool is_selected_repository_by_id(const std::string& repo_id) const;
 	const std::map<std::string, bool>& get_selected_repositories_uuid() const { assert(m_selected_repositories_uuid.size() == m_archive_repositories.size()); return m_selected_repositories_uuid; }
-    // Does re-estract all local archives
+    // Does re-extract all local archives
 	bool set_selected_repositories(const std::vector<std::string>& used_uuids, std::string& msg);
     void set_installed_printer_repositories(const std::vector<std::string> &used_ids);
 	std::string add_local_archive(const boost::filesystem::path path, std::string& msg);
 	void remove_local_archive(const std::string& uuid);
+    bool extract_archives_with_check(std::string &msg);
+
 private:
 	void load_app_manifest_json();
 	void copy_initial_manifest();

@@ -2569,6 +2569,7 @@ wxMenu* GUI_App::get_config_menu()
         local_menu->Append(config_id_base + ConfigMenuWizard, config_wizard_name + dots, config_wizard_tooltip);
         local_menu->Append(config_id_base + ConfigMenuSnapshots, _L("&Configuration Snapshots") + dots, _L("Inspect / activate configuration snapshots"));
         local_menu->Append(config_id_base + ConfigMenuTakeSnapshot, _L("Take Configuration &Snapshot"), _L("Capture a configuration snapshot"));
+        local_menu->Append(config_id_base + ConfigMenuUpdateConf, _L("Check for Configuration Updates"), _L("Check for configuration updates"));
         local_menu->Append(config_id_base + ConfigMenuUpdateApp, _L("Check for Application Updates"), _L("Check for new version of application"));
 #if defined(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION) 
         //if (DesktopIntegrationDialog::integration_possible())
@@ -2598,6 +2599,9 @@ wxMenu* GUI_App::get_config_menu()
         switch (event.GetId() - config_id_base) {
         case ConfigMenuWizard:
             run_wizard(ConfigWizard::RR_USER);
+            break;
+        case ConfigMenuUpdateConf: 
+            check_updates(true); 
             break;
         case ConfigMenuUpdateApp:
             app_version_check(true);
@@ -3451,17 +3455,18 @@ bool GUI_App::config_wizard_startup()
     return false;
 }
 
-bool GUI_App::check_updates(const bool invoked_automatically)
+bool GUI_App::check_updates(const bool invoked_by_user)
 {	
-    // verbose means - not run after startup, but by user
-    if (invoked_automatically) {
+    if (invoked_by_user) {
         // do preset_updater sync so if user runs slicer for a long time, check for updates actually delivers updates.
         // for preset_updater sync we need to sync archive database first
         plater()->get_preset_archive_database()->sync_blocking();
-        // and we can have user to select the repos they want (thats additional dialog)
-        ManagePresetRepositoriesDialog dlg(plater()->get_preset_archive_database());
-        if (dlg.ShowModal() != wxID_OK)
-            return true;
+        // Now re-extract offline repos
+        std::string extract_msg;
+        if (!plater()->get_preset_archive_database()->extract_archives_with_check(extract_msg)) {
+            extract_msg = GUI::format("%1%\n\n%2%", _L("Following repositories won't be updated:"), extract_msg);
+            show_error(nullptr, extract_msg);
+        }
         // then its time for preset_updater sync 
         preset_updater->sync_blocking(preset_bundle, this, plater()->get_preset_archive_database()->get_selected_archive_repositories());
         // and then we check updates
@@ -3470,7 +3475,7 @@ bool GUI_App::check_updates(const bool invoked_automatically)
 	PresetUpdater::UpdateResult updater_result;
 	try {
         preset_updater->update_index_db();
-		updater_result = preset_updater->config_update(app_config->orig_version(), invoked_automatically ? PresetUpdater::UpdateParams::SHOW_TEXT_BOX : PresetUpdater::UpdateParams::SHOW_NOTIFICATION, plater()->get_preset_archive_database()->get_selected_archive_repositories());
+		updater_result = preset_updater->config_update(app_config->orig_version(), invoked_by_user ? PresetUpdater::UpdateParams::SHOW_TEXT_BOX : PresetUpdater::UpdateParams::SHOW_NOTIFICATION, plater()->get_preset_archive_database()->get_selected_archive_repositories());
 		if (updater_result == PresetUpdater::R_INCOMPAT_EXIT) {
 			mainframe->Close();
             // Applicaiton is closing.
@@ -3479,7 +3484,7 @@ bool GUI_App::check_updates(const bool invoked_automatically)
 		else if (updater_result == PresetUpdater::R_INCOMPAT_CONFIGURED) {
             m_app_conf_exists = true;
 		}
-		else if (invoked_automatically && updater_result == PresetUpdater::R_NOOP) {
+		else if (invoked_by_user && updater_result == PresetUpdater::R_NOOP) {
 			MsgNoUpdates dlg;
 			dlg.ShowModal();
 		}

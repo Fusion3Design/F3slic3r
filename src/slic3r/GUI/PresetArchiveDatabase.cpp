@@ -378,6 +378,30 @@ bool PresetArchiveDatabase::set_selected_repositories(const std::vector<std::str
 	save_app_manifest_json();
 	return true;
 }
+bool PresetArchiveDatabase::extract_archives_with_check(std::string &msg)
+{
+    extract_local_archives();
+    for (auto &pair : m_selected_repositories_uuid) {
+        if (!pair.second) {
+            continue;
+        }
+        std::string uuid = pair.first;
+        auto compare_repo = [uuid](const std::unique_ptr<ArchiveRepository> &repo) {
+            return repo->get_uuid() == uuid;
+        };
+
+        const auto& archives_it =std::find_if(m_archive_repositories.begin(), m_archive_repositories.end(), compare_repo);
+        assert(archives_it != m_archive_repositories.end());
+        if (!archives_it->get()->is_extracted()) {
+            // non existent local repo since start selected
+            msg += GUI::format(
+                _L("Offline repository from path: %1% was not extracted.\n"),
+                archives_it->get()->get_manifest().source_path
+            );
+        }
+    }
+    return msg.empty();
+}
 void PresetArchiveDatabase::set_installed_printer_repositories(const std::vector<std::string> &used_ids)
 {
 	// set all uuids as not having installed printer
