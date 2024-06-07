@@ -122,17 +122,16 @@ void delete_path_recursive(const fs::path& path)
 	}
 }
 
-bool extract_local_archive_repository(const std::string& uuid, const fs::path& zip_path, fs::path& unq_tmp_path, ArchiveRepository::RepositoryManifest& manifest_data)
+bool extract_local_archive_repository( ArchiveRepository::RepositoryManifest& manifest_data)
 {
-	manifest_data.source_path = zip_path;
-	// Path where data will be unzipped.
-	manifest_data.tmp_path = unq_tmp_path / uuid;
+    assert(!manifest_data.tmp_path.empty());
+    assert(!manifest_data.source_path.empty());
 	// Delete previous data before unzip.
 	// We have unique path in temp set for whole run of slicer and in it folder for each repo. 
 	delete_path_recursive(manifest_data.tmp_path);
 	fs::create_directories(manifest_data.tmp_path);
 	// Unzip repository zip to unique path in temp directory.
-	if (!unzip_repository(zip_path, manifest_data.tmp_path)) {
+    if (!unzip_repository(manifest_data.source_path, manifest_data.tmp_path)) {
 		return false;
 	}
 	// Read the manifest file.
@@ -142,7 +141,7 @@ bool extract_local_archive_repository(const std::string& uuid, const fs::path& z
 		pt::ptree ptree;
 		pt::read_json(manifest_path.string(), ptree);
 		if (!extract_repository_header(ptree, manifest_data)) {
-			BOOST_LOG_TRIVIAL(error) << "Failed to load repository: " << zip_path;
+            BOOST_LOG_TRIVIAL(error) << "Failed to load repository: " << manifest_data.tmp_path;
 			return false;
 		}
 	}
@@ -314,6 +313,14 @@ bool LocalArchiveRepository::get_archive(const fs::path& target_path) const
 	return get_file_inner(std::move(source_path), target_path);
 }
 
+void LocalArchiveRepository::do_extract() 
+{
+    RepositoryManifest new_manifest;
+    new_manifest.source_path = this->get_manifest().source_path;
+    new_manifest.tmp_path = this->get_manifest().tmp_path;
+    m_extracted = extract_local_archive_repository(new_manifest);
+    set_manifest(std::move(new_manifest));
+}
 
 //-------------------------------------PresetArchiveDatabase-------------------------------------------------------------------------------------------------------------------------
 
@@ -331,6 +338,8 @@ PresetArchiveDatabase::PresetArchiveDatabase(AppConfig* app_config, wxEvtHandler
 
 bool PresetArchiveDatabase::set_selected_repositories(const std::vector<std::string>& selected_uuids, std::string& msg)
 {
+    // First re-extract locals, this will set is_extracted flag
+    extract_local_archives();
 	// Check if some uuids leads to the same id (online vs local conflict)
 	std::map<std::string, std::string> used_set;
 	for (const std::string& uuid : selected_uuids) {
@@ -345,8 +354,7 @@ bool PresetArchiveDatabase::set_selected_repositories(const std::vector<std::str
             if (!archive->is_extracted()) {
                 // non existent local repo since start selected
                 msg = GUI::format(
-                    _L("Cannot select local repository from path: %1%. It was not extracted."
-                       " To solve this issue either remove and load it again or restart the app."),
+                    _L("Cannot select offline repository from path: %1%. It was not extracted."),
                     archive->get_manifest().source_path
                 );
                 return false;
@@ -401,7 +409,7 @@ void PresetArchiveDatabase::set_installed_printer_repositories(const std::vector
 
 std::string PresetArchiveDatabase::add_local_archive(const boost::filesystem::path path, std::string& msg)
 {
-	if (auto it = std::find_if(m_archive_repositories.begin(), m_archive_repositories.end(), [path](const std::unique_ptr<const ArchiveRepository>& ptr) {
+	if (auto it = std::find_if(m_archive_repositories.begin(), m_archive_repositories.end(), [path](const std::unique_ptr<ArchiveRepository>& ptr) {
 		return ptr->get_manifest().source_path == path;
 		}); it != m_archive_repositories.end())
 	{
@@ -411,7 +419,9 @@ std::string PresetArchiveDatabase::add_local_archive(const boost::filesystem::pa
 	}
 	std::string uuid = get_next_uuid();
 	ArchiveRepository::RepositoryManifest header_data;
-	if (!extract_local_archive_repository(uuid, path, m_unq_tmp_path, header_data)) {
+    header_data.source_path = path;
+    header_data.tmp_path = m_unq_tmp_path / uuid;
+	if (!extract_local_archive_repository(header_data)) {
 		msg = GUI::format(_L("Failed to extract local archive %1%."), path);
 		BOOST_LOG_TRIVIAL(error) << msg;
 		return std::string();
@@ -426,7 +436,7 @@ std::string PresetArchiveDatabase::add_local_archive(const boost::filesystem::pa
 }
 void PresetArchiveDatabase::remove_local_archive(const std::string& uuid)
 {
-	auto compare_repo = [uuid](const std::unique_ptr<const ArchiveRepository>& repo) {
+	auto compare_repo = [uuid](const std::unique_ptr<ArchiveRepository>& repo) {
 		return repo->get_uuid() == uuid;
 	};
 
@@ -445,6 +455,13 @@ void PresetArchiveDatabase::remove_local_archive(const std::string& uuid)
 
 	save_app_manifest_json();
 }
+
+ void PresetArchiveDatabase::extract_local_archives()
+ {
+    for (auto &archive : m_archive_repositories) {
+         archive->do_extract();
+    }
+ }    
 
 void PresetArchiveDatabase::load_app_manifest_json()
 {
@@ -483,7 +500,9 @@ void PresetArchiveDatabase::load_app_manifest_json()
 			if (const auto source_path = subtree.second.get_optional<std::string>("source_path"); source_path) {
 				ArchiveRepository::RepositoryManifest manifest;
 				std::string uuid = get_next_uuid();
-                bool extracted = extract_local_archive_repository(uuid, *source_path, m_unq_tmp_path, manifest);
+                manifest.source_path = boost::filesystem::path(*source_path);
+                manifest.tmp_path = m_unq_tmp_path / uuid;
+                bool extracted = extract_local_archive_repository(manifest);
 				// "selected" flag
 				if(const auto used = subtree.second.get_optional<bool>("selected"); used) {
                     m_selected_repositories_uuid[uuid] = extracted && *used;
@@ -724,7 +743,7 @@ void PresetArchiveDatabase::read_server_manifest(const std::string& json_body)
         std::string uuid = repo_ptr->get_uuid();
         if (std::find_if(
                 m_archive_repositories.begin(), m_archive_repositories.end(),
-                [uuid](const std::unique_ptr<const ArchiveRepository> &ptr) {
+                [uuid](const std::unique_ptr<ArchiveRepository> &ptr) {
                     return ptr->get_uuid() == uuid;
                 }
             ) == m_archive_repositories.end())
@@ -741,6 +760,7 @@ void PresetArchiveDatabase::read_server_manifest(const std::string& json_body)
 SharedArchiveRepositoryVector PresetArchiveDatabase::get_all_archive_repositories() const 
 {
     SharedArchiveRepositoryVector result;
+    result.reserve(m_archive_repositories.size());
     for (const auto &repo_ptr : m_archive_repositories) 
     {
         result.emplace_back(repo_ptr.get());
@@ -751,6 +771,7 @@ SharedArchiveRepositoryVector PresetArchiveDatabase::get_all_archive_repositorie
 SharedArchiveRepositoryVector PresetArchiveDatabase::get_selected_archive_repositories() const 
 {
     SharedArchiveRepositoryVector result;
+    result.reserve(m_archive_repositories.size());
     for (const auto &repo_ptr : m_archive_repositories) 
     {
         auto it = m_selected_repositories_uuid.find(repo_ptr->get_uuid());
@@ -780,7 +801,7 @@ bool PresetArchiveDatabase::is_selected_repository_by_id(const std::string& repo
 }
 void PresetArchiveDatabase::consolidate_uuid_maps()
 {
-	//std::vector<std::unique_ptr<const ArchiveRepository>> m_archive_repositories;
+	//std::vector<std::unique_ptr<ArchiveRepository>> m_archive_repositories;
 	//std::map<std::string, bool> m_selected_repositories_uuid;
 	auto selected_it = m_selected_repositories_uuid.begin();
     while (selected_it != m_selected_repositories_uuid.end()) {

@@ -87,6 +87,9 @@ public:
 	std::string get_uuid() const { return m_uuid; }
     // Only local archvies can return false
     virtual bool is_extracted() const { return true; }
+    virtual void do_extract() {}
+    void set_manifest(RepositoryManifest &&manifest) { m_data = std::move(manifest); }
+
 protected:
 	RepositoryManifest m_data;
 	std::string m_uuid;
@@ -127,13 +130,14 @@ public:
 	// Should be used only if no previous ini file exists.
 	bool get_ini_no_id(const std::string& source_subpath, const boost::filesystem::path& target_path) const override;
     bool is_extracted() const override { return m_extracted;  }
-
+    void do_extract() override;
+    
 private:
 	bool get_file_inner(const boost::filesystem::path& source_path, const boost::filesystem::path& target_path) const;
     bool m_extracted;
 };
 
-typedef std::vector<std::unique_ptr<const ArchiveRepository>> PrivateArchiveRepositoryVector;
+typedef std::vector<std::unique_ptr<ArchiveRepository>> PrivateArchiveRepositoryVector;
 typedef std::vector<const ArchiveRepository*> SharedArchiveRepositoryVector;
 
 class PresetArchiveDatabase
@@ -151,6 +155,7 @@ public:
 	bool is_selected_repository_by_uuid(const std::string& uuid) const;
 	bool is_selected_repository_by_id(const std::string& repo_id) const;
 	const std::map<std::string, bool>& get_selected_repositories_uuid() const { assert(m_selected_repositories_uuid.size() == m_archive_repositories.size()); return m_selected_repositories_uuid; }
+    // Does re-estract all local archives
 	bool set_selected_repositories(const std::vector<std::string>& used_uuids, std::string& msg);
     void set_installed_printer_repositories(const std::vector<std::string> &used_ids);
 	std::string add_local_archive(const boost::filesystem::path path, std::string& msg);
@@ -165,6 +170,7 @@ private:
     bool has_installed_printers(const std::string &uuid) const;
 	boost::filesystem::path get_stored_manifest_path() const;
 	void consolidate_uuid_maps();
+    void extract_local_archives();
 	std::string get_next_uuid();
 	wxEvtHandler*					p_evt_handler;
 	boost::filesystem::path			m_unq_tmp_path;
