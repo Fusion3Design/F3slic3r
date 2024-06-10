@@ -5974,36 +5974,41 @@ void GLCanvas3D::_render_sequential_clearance()
     m_sequential_print_clearance.render();
 }
 
-void GLCanvas3D::_check_and_update_toolbar_icon_scale()
-{
-    // Don't update a toolbar scale, when we are on a Preview
-    if (wxGetApp().plater()->is_preview_shown())
-        return;
 
-    const float scale = wxGetApp().toolbar_icon_scale();
+bool GLCanvas3D::check_toolbar_icon_size(float init_scale, float& new_scale_to_save, int counter/* = 3*/)
+{
     const Size cnv_size = get_canvas_size();
+
+#if ENABLE_RETINA_GL
+    float max_scale = m_retina_helper->get_scale_factor();
+#else
+    float max_scale = 0.1f * wxGetApp().em_unit();
+#endif // ENABLE_RETINA_GL
+
+    float scale = init_scale * max_scale;
 
     int size = int(GLToolbar::Default_Icons_Size * scale);
     int gizmo_size = int(GLGizmosManager::Default_Icons_Size * scale);
 
-    // Set current size for all top toolbars. It will be used for next calculations
+    // Set current scale for all top toolbars. It will be used for next calculations
+
     GLToolbar& collapse_toolbar = wxGetApp().plater()->get_collapse_toolbar();
-#if ENABLE_RETINA_GL
-    const float sc = m_retina_helper->get_scale_factor() * scale;
-    m_main_toolbar.set_scale(sc);
-    m_undoredo_toolbar.set_scale(sc);
-    collapse_toolbar.set_scale(sc);
-    size *= int(m_retina_helper->get_scale_factor());
-    gizmo_size *= int(m_retina_helper->get_scale_factor());
-#else
-    m_main_toolbar.set_icons_size(size);
-    m_undoredo_toolbar.set_icons_size(size);
-    collapse_toolbar.set_icons_size(size);
-#endif // ENABLE_RETINA_GL
+    GLToolbar& view_toolbar = wxGetApp().plater()->get_view_toolbar();
+
+    if (!is_approx(scale, m_main_toolbar.get_scale(), 0.015f)) {
+        m_main_toolbar.set_scale(scale);
+        m_undoredo_toolbar.set_scale(scale);
+        collapse_toolbar.set_scale(scale);
+        view_toolbar.set_scale(scale);
+        m_gizmos.set_overlay_scale(scale);
+
+        view_toolbar.set_icons_size(gizmo_size);
+    }
 
     const float top_tb_width = m_main_toolbar.get_width() + m_undoredo_toolbar.get_width() + collapse_toolbar.get_width();
-    int   items_cnt = m_main_toolbar.get_visible_items_cnt() + m_undoredo_toolbar.get_visible_items_cnt() + collapse_toolbar.get_visible_items_cnt();
+    float items_cnt = float(m_main_toolbar.get_visible_items_cnt() + m_undoredo_toolbar.get_visible_items_cnt() + collapse_toolbar.get_visible_items_cnt());
     const float noitems_width = top_tb_width - float(size) * items_cnt; // width of separators and borders in top toolbars 
+    items_cnt += 1.6; // +1.6 means a place for some minimal margin between toolbars
 
     // calculate scale needed for items in all top toolbars
     // the std::max() is there because on some Linux dialects/virtual machines this code is called when the canvas has not been properly initialized yet,
@@ -6023,11 +6028,30 @@ void GLCanvas3D::_check_and_update_toolbar_icon_scale()
 
     // set minimum scale as a auto scale for the toolbars
     float new_scale = std::min(new_h_scale, new_v_scale);
-#if ENABLE_RETINA_GL
-    new_scale /= m_retina_helper->get_scale_factor();
-#endif
-    if (fabs(new_scale - scale) > 0.015) // scale is changed by 1.5% and more
-        wxGetApp().set_auto_toolbar_icon_scale(new_scale);
+
+    new_scale_to_save = std::min(new_scale / max_scale, 1.f);
+
+    if (is_approx(init_scale, new_scale_to_save, 0.015f) || counter == 0)
+        return true;
+
+    // scale is changed by 1.5% and more
+    init_scale = new_scale_to_save;
+    counter--;
+    return check_toolbar_icon_size(init_scale, new_scale_to_save, counter);
+}
+
+
+void GLCanvas3D::_check_and_update_toolbar_icon_scale()
+{
+    // Don't update a toolbar scale, when we are on a Preview
+    if (wxGetApp().plater()->is_preview_shown())
+        return;
+
+    const float init_scale = wxGetApp().toolbar_icon_scale();
+    float new_scale_to_save;
+    if (check_toolbar_icon_size(init_scale, new_scale_to_save) &&
+        !is_approx(init_scale, new_scale_to_save, 0.015f))
+        wxGetApp().set_auto_toolbar_icon_scale(new_scale_to_save);
 }
 
 void GLCanvas3D::_render_overlays()
@@ -6095,17 +6119,6 @@ void GLCanvas3D::_render_volumes_for_picking(const Camera& camera) const
 
 void GLCanvas3D::_render_gizmos_overlay()
 {
-#if ENABLE_RETINA_GL
-//     m_gizmos.set_overlay_scale(m_retina_helper->get_scale_factor());
-    const float scale = m_retina_helper->get_scale_factor()*wxGetApp().toolbar_icon_scale();
-    m_gizmos.set_overlay_scale(scale); //! #ys_FIXME_experiment
-#else
-//     m_gizmos.set_overlay_scale(m_canvas->GetContentScaleFactor());
-//     m_gizmos.set_overlay_scale(wxGetApp().em_unit()*0.1f);
-    const float size = int(GLGizmosManager::Default_Icons_Size * wxGetApp().toolbar_icon_scale());
-    m_gizmos.set_overlay_icon_size(size); //! #ys_FIXME_experiment
-#endif /* __WXMSW__ */
-
     m_gizmos.render_overlay();
 
     if (m_gizmo_highlighter.m_render_arrow)
@@ -6163,19 +6176,6 @@ void GLCanvas3D::_render_collapse_toolbar() const
 void GLCanvas3D::_render_view_toolbar() const
 {
     GLToolbar& view_toolbar = wxGetApp().plater()->get_view_toolbar();
-
-#if ENABLE_RETINA_GL
-    const float scale = m_retina_helper->get_scale_factor() * wxGetApp().toolbar_icon_scale();
-#if __APPLE__
-    view_toolbar.set_scale(scale);
-#else // if GTK3
-    const float size = int(GLGizmosManager::Default_Icons_Size * scale);
-    view_toolbar.set_icons_size(size);
-#endif // __APPLE__
-#else
-    const float size = int(GLGizmosManager::Default_Icons_Size * wxGetApp().toolbar_icon_scale());
-    view_toolbar.set_icons_size(size);
-#endif // ENABLE_RETINA_GL
 
     const Size cnv_size = get_canvas_size();
     // places the toolbar on the bottom-left corner of the 3d scene

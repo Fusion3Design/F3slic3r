@@ -39,7 +39,7 @@
 namespace Slic3r {
 namespace GUI {
 
-const float GLGizmosManager::Default_Icons_Size = 48;// 64;
+const float GLGizmosManager::Default_Icons_Size = 52;// 64;
 
 GLGizmosManager::GLGizmosManager(GLCanvas3D& parent)
     : m_parent(parent)

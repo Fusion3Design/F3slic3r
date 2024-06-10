@@ -99,11 +99,11 @@ private:
 
         float stride_y() const { return icons_size + gap_y;}
 
-        float scaled_icons_size() const { return scale * icons_size; }
-        float scaled_border() const { return scale * border; }
-        float scaled_gap_x() const { return scale * gap_x; }
-        float scaled_gap_y() const { return scale * gap_y; }
-        float scaled_stride_y() const { return scale * stride_y(); }
+        float scaled_icons_size()   const { return int(scale * icons_size); }
+        float scaled_border()       const { return int(scale * border); }
+        float scaled_gap_x()        const { return int(scale * gap_x); }
+        float scaled_gap_y()        const { return int(scale * gap_y); }
+        float scaled_stride_y()     const { return scaled_icons_size() + scaled_gap_y(); }
     };
 
     GLCanvas3D& m_parent;

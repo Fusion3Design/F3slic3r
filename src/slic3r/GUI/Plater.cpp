@@ -643,10 +643,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     view3D = new View3D(q, bed, &model, config, &background_process);
     preview = new Preview(q, bed, &model, config, &background_process, &gcode_result, [this]() { schedule_background_process(); });
 
-#ifdef __APPLE__
     // set default view_toolbar icons size equal to GLGizmosManager::Default_Icons_Size
     view_toolbar.set_icons_size(GLGizmosManager::Default_Icons_Size);
-#endif // __APPLE__
 
     panels.push_back(view3D);
     panels.push_back(preview);
