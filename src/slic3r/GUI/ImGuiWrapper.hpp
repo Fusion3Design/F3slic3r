@@ -31,9 +31,9 @@ namespace GUI {
 
 class ImGuiWrapper
 {
+    std::vector<std::tuple<std::string, const ImWchar*, bool>> m_lang_glyphs_info; // language prefix, ranges, whether it needs CLK font
     const ImWchar* m_glyph_ranges{ nullptr };
     // Chinese, Japanese, Korean
-    bool m_font_cjk{ false };
     float m_font_size{ 18.0 };
     unsigned m_font_texture{ 0 };
     float m_style_scaling{ 1.0 };
