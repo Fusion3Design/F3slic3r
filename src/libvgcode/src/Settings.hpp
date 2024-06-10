@@ -30,39 +30,39 @@ struct Settings
 		//
 		// Visibility maps
 		//
-		std::map<EOptionType, bool> options_visibility{ {
-				{ EOptionType::Travels,         false },
-				{ EOptionType::Wipes,           false },
-				{ EOptionType::Retractions,     false },
-				{ EOptionType::Unretractions,   false },
-				{ EOptionType::Seams,           false },
-				{ EOptionType::ToolChanges,     false },
-				{ EOptionType::ColorChanges,    false },
-				{ EOptionType::PausePrints,     false },
-				{ EOptionType::CustomGCodes,    false },
+		std::array<bool, size_t(EOptionType::COUNT)> options_visibility{
+			    false, // Travels
+				false, // Wipes
+				false, // Retractions
+				false, // Unretractions
+				false, // Seams
+				false, // ToolChanges
+				false, // ColorChanges
+				false, // PausePrints
+				false, // CustomGCodes
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-				{ EOptionType::CenterOfGravity, false },
-				{ EOptionType::ToolMarker,      true }
+				false, // CenterOfGravity
+				true   // ToolMarker
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-		} };
+		};
 
-		std::map<EGCodeExtrusionRole, bool> extrusion_roles_visibility{ {
-				{ EGCodeExtrusionRole::None,                     true },
-				{ EGCodeExtrusionRole::Perimeter,                true },
-				{ EGCodeExtrusionRole::ExternalPerimeter,        true },
-				{ EGCodeExtrusionRole::OverhangPerimeter,        true },
-				{ EGCodeExtrusionRole::InternalInfill,           true },
-				{ EGCodeExtrusionRole::SolidInfill,              true },
-				{ EGCodeExtrusionRole::TopSolidInfill,           true },
-				{ EGCodeExtrusionRole::Ironing,                  true },
-				{ EGCodeExtrusionRole::BridgeInfill,             true },
-				{ EGCodeExtrusionRole::GapFill,                  true },
-				{ EGCodeExtrusionRole::Skirt,                    true },
-				{ EGCodeExtrusionRole::SupportMaterial,          true },
-				{ EGCodeExtrusionRole::SupportMaterialInterface, true },
-				{ EGCodeExtrusionRole::WipeTower,                true },
-				{ EGCodeExtrusionRole::Custom,                   true }
-		} };
+		std::array<bool, size_t(EGCodeExtrusionRole::COUNT)> extrusion_roles_visibility{
+				true, // None
+				true, // Perimeter
+				true, // ExternalPerimeter
+				true, // OverhangPerimeter
+				true, // InternalInfill
+                true, // SolidInfill
+				true, // TopSolidInfill
+				true, // Ironing
+				true, // BridgeInfill
+				true, // GapFill
+				true, // Skirt
+				true, // SupportMaterial
+				true, // SupportMaterialInterface
+				true, // WipeTower
+				true  // Custom
+		};
 };
 
 } // namespace libvgcode

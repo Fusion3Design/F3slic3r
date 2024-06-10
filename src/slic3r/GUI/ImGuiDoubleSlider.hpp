@@ -136,7 +136,7 @@ private:
     int             m_lower_pos;
     int             m_higher_pos;
     // slider's position of the mouse cursor
-    int             m_mouse_pos;
+    int             m_mouse_pos       { 0 };
 
     bool            m_rclick_on_selected_thumb{ false };
     bool            m_lclick_on_selected_thumb{ false };
@@ -230,6 +230,13 @@ public:
         m_ctrl.SetMaxPos(max_pos);
         process_thumb_move();
     }
+    void Freeze() {
+        m_allow_process_thumb_move = false;
+    }
+    void Thaw() {
+        m_allow_process_thumb_move = true;
+        process_thumb_move(); 
+    }
 
     void    SetSliderValues(const std::vector<ValType>& values)          { m_values = values; }
     // values used to show thumb labels
@@ -274,14 +281,14 @@ protected:
     }
 
     void process_thumb_move() { 
-        if (m_cb_thumb_move) 
+        if (m_cb_thumb_move && m_allow_process_thumb_move)
             m_cb_thumb_move(); 
     }
 
 private:
 
-    std::function<void()> m_cb_thumb_move{ nullptr };
-
+    std::function<void()> m_cb_thumb_move            { nullptr };
+    bool                  m_allow_process_thumb_move { true };
 };
 
 } // DoubleSlider

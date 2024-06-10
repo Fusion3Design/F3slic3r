@@ -280,34 +280,34 @@ static void delete_buffers(unsigned int& id)
     }
 }
 
-static const std::map<EGCodeExtrusionRole, Color> DEFAULT_EXTRUSION_ROLES_COLORS{ {
-    { EGCodeExtrusionRole::None,                       { 230, 179, 179 } },
-    { EGCodeExtrusionRole::Perimeter,                  { 255, 230,  77 } },
-    { EGCodeExtrusionRole::ExternalPerimeter,          { 255, 125,  56 } },
-    { EGCodeExtrusionRole::OverhangPerimeter,          {  31,  31, 255 } },
-    { EGCodeExtrusionRole::InternalInfill,             { 176,  48,  41 } },
-    { EGCodeExtrusionRole::SolidInfill,                { 150,  84, 204 } },
-    { EGCodeExtrusionRole::TopSolidInfill,             { 240,  64,  64 } },
-    { EGCodeExtrusionRole::Ironing,                    { 255, 140, 105 } },
-    { EGCodeExtrusionRole::BridgeInfill,               {  77, 128, 186 } },
-    { EGCodeExtrusionRole::GapFill,                    { 255, 255, 255 } },
-    { EGCodeExtrusionRole::Skirt,                      {   0, 135, 110 } },
-    { EGCodeExtrusionRole::SupportMaterial,            {   0, 255,   0 } },
-    { EGCodeExtrusionRole::SupportMaterialInterface,   {   0, 128,   0 } },
-    { EGCodeExtrusionRole::WipeTower,                  { 179, 227, 171 } },
-    { EGCodeExtrusionRole::Custom,                     {  94, 209, 148 } }
+static const std::array<Color, size_t(EGCodeExtrusionRole::COUNT)> DEFAULT_EXTRUSION_ROLES_COLORS = { {
+    { 230, 179, 179 }, // None
+    { 255, 230,  77 }, // Perimeter
+    { 255, 125,  56 }, // ExternalPerimeter
+    {  31,  31, 255 }, // OverhangPerimeter
+    { 176,  48,  41 }, // InternalInfill
+    { 150,  84, 204 }, // SolidInfill
+    { 240,  64,  64 }, // TopSolidInfill
+    { 255, 140, 105 }, // Ironing
+    {  77, 128, 186 }, // BridgeInfill
+    { 255, 255, 255 }, // GapFill
+    {   0, 135, 110 }, // Skirt
+    {   0, 255,   0 }, // SupportMaterial
+    {   0, 128,   0 }, // SupportMaterialInterface
+    { 179, 227, 171 }, // WipeTower
+    {  94, 209, 148 }  // Custom
 } };
 
-static const std::map<EOptionType, Color> DEFAULT_OPTIONS_COLORS{ {
-    { EOptionType::Travels,       {  56,  72, 155 } },
-    { EOptionType::Wipes,         { 255, 255,   0 } },
-    { EOptionType::Retractions,   { 205,  34, 214 } },
-    { EOptionType::Unretractions, {  73, 173, 207 } },
-    { EOptionType::Seams,         { 230, 230, 230 } },
-    { EOptionType::ToolChanges,   { 193, 190,  99 } },
-    { EOptionType::ColorChanges,  { 218, 148, 139 } },
-    { EOptionType::PausePrints,   {  82, 240, 131 } },
-    { EOptionType::CustomGCodes,  { 226, 210,  67 } }
+static const std::array<Color, size_t(EOptionType::COUNT)> DEFAULT_OPTIONS_COLORS{ {
+    {  56,  72, 155 }, // Travels
+    { 255, 255,   0 }, // Wipes
+    { 205,  34, 214 }, // Retractions
+    {  73, 173, 207 }, // Unretractions
+    { 230, 230, 230 }, // Seams
+    { 193, 190,  99 }, // ToolChanges
+    { 218, 148, 139 }, // ColorChanges
+    {  82, 240, 131 }, // PausePrints
+    { 226, 210,  67 }  // CustomGCodes
 } };
 
 #ifdef ENABLE_OPENGL_ES
@@ -868,6 +868,7 @@ void ViewerImpl::reset()
     m_total_time = { 0.0f, 0.0f };
     m_travels_time = { 0.0f, 0.0f };
     m_vertices.clear();
+    m_vertices_colors.clear();
     m_valid_lines_bitset.clear();
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
     m_cog_marker.reset();
@@ -878,6 +879,8 @@ void ViewerImpl::reset()
 #else
     m_enabled_segments_count = 0;
     m_enabled_options_count = 0;
+
+    m_settings_used_for_ranges = std::nullopt;
 
     delete_textures(m_enabled_options_tex_id);
     delete_buffers(m_enabled_options_buf_id);
@@ -966,11 +969,10 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
 
     reset();
 
-    m_loading = true;
-
     m_vertices = std::move(gcode_data.vertices);
     m_tool_colors = std::move(gcode_data.tools_colors);
     m_color_print_colors = std::move(gcode_data.color_print_colors);
+    m_vertices_colors.resize(m_vertices.size());
 
     m_settings.spiral_vase_mode = gcode_data.spiral_vase_mode;
 
@@ -1092,8 +1094,6 @@ void ViewerImpl::load(GCodeInputData&& gcode_data)
     m_view_range.set_visible(m_view_range.get_enabled());
     update_enabled_entities();
     update_colors();
-
-    m_loading = false;
 }
 
 void ViewerImpl::update_enabled_entities()
@@ -1128,19 +1128,19 @@ void ViewerImpl::update_enabled_entities()
         if (!m_valid_lines_bitset[i] && !v.is_option())
             continue;
         if (v.is_travel()) {
-            if (!m_settings.options_visibility.at(EOptionType::Travels))
+            if (!m_settings.options_visibility[size_t(EOptionType::Travels)])
                 continue;
         }
         else if (v.is_wipe()) {
-            if (!m_settings.options_visibility.at(EOptionType::Wipes))
+            if (!m_settings.options_visibility[size_t(EOptionType::Wipes)])
                 continue;
         }
         else if (v.is_option()) {
-            if (!m_settings.options_visibility.at(move_type_to_option(v.type)))
+            if (!m_settings.options_visibility[size_t(move_type_to_option(v.type))])
                 continue;
         }
         else if (v.is_extrusion()) {
-            if (!m_settings.extrusion_roles_visibility.at(v.role))
+            if (!m_settings.extrusion_roles_visibility[size_t(v.role)])
                 continue;
         }
         else
@@ -1192,12 +1192,44 @@ static float encode_color(const Color& color) {
     return static_cast<float>(i_color);
 }
 
-void ViewerImpl::update_colors()
+
+void ViewerImpl::update_colors_texture()
 {
 #if !defined(ENABLE_OPENGL_ES)
     if (m_colors_buf_id == 0)
         return;
 #endif // ENABLE_OPENGL_ES
+
+    const size_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers.get_view_range()[1] : 0;
+    const bool color_top_layer_only = m_view_range.get_full()[1] != m_view_range.get_visible()[1];
+
+    // Based on current settings and slider position, we might want to render some
+    // vertices as dark grey. Use either that or the normal color (from the cache).
+    std::vector<float> colors(m_vertices_colors.size());
+    assert(colors.size() == m_vertices.size() && m_vertices_colors.size() == m_vertices.size());
+    for (size_t i=0; i<m_vertices.size(); ++i)
+        colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id &&
+                    (!m_settings.spiral_vase_mode || i != m_view_range.get_enabled()[0])) ?
+                    encode_color(DUMMY_COLOR) : m_vertices_colors[i];
+
+    #ifdef ENABLE_OPENGL_ES
+        if (!colors.empty())
+            // update gpu buffer for colors
+            m_texture_data.set_colors(colors);
+    #else
+        m_colors_tex_size = colors.size() * sizeof(float);
+
+        // update gpu buffer for colors
+        glsafe(glBindBuffer(GL_TEXTURE_BUFFER, m_colors_buf_id));
+        glsafe(glBufferData(GL_TEXTURE_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW));
+        glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
+    #endif // ENABLE_OPENGL_ES
+}
+
+
+void ViewerImpl::update_colors()
+{
+
 
     if (!m_used_extruders.empty()) {
         // ensure that the number of defined tool colors matches the max id of the used extruders 
@@ -1211,38 +1243,20 @@ void ViewerImpl::update_colors()
     }
 
     update_color_ranges();
-
-    const size_t top_layer_id = m_settings.top_layer_only_view_range ? m_layers.get_view_range()[1] : 0;
-    const bool color_top_layer_only = m_view_range.get_full()[1] != m_view_range.get_visible()[1];
-    std::vector<float> colors(m_vertices.size());
-    for (size_t i = 0; i < m_vertices.size(); ++i) {
-        colors[i] = (color_top_layer_only && m_vertices[i].layer_id < top_layer_id &&
-                     (!m_settings.spiral_vase_mode || i != m_view_range.get_enabled()[0])) ?
-            encode_color(DUMMY_COLOR) : encode_color(get_vertex_color(m_vertices[i]));
-    }
-
-#ifdef ENABLE_OPENGL_ES
-    if (!colors.empty())
-        // update gpu buffer for colors
-        m_texture_data.set_colors(colors);
-#else
-    m_colors_tex_size = colors.size() * sizeof(float);
-
-    // update gpu buffer for colors
-    glsafe(glBindBuffer(GL_TEXTURE_BUFFER, m_colors_buf_id));
-    glsafe(glBufferData(GL_TEXTURE_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW));
-    glsafe(glBindBuffer(GL_TEXTURE_BUFFER, 0));
-#endif // ENABLE_OPENGL_ES
-
+    
+    // Recalculate "normal" colors of all the vertices for current view settings.
+    // If some part of the preview should be rendered in dark grey, it is taken
+    // care of in update_colors_texture. That is to avoid the need to recalculate
+    // the "normal" color on every slider move.
+    for (size_t i = 0; i < m_vertices.size(); ++i)
+        m_vertices_colors[i] = encode_color(get_vertex_color(m_vertices[i]));
+    
+    update_colors_texture();
     m_settings.update_colors = false;
 }
 
 void ViewerImpl::render(const Mat4x4& view_matrix, const Mat4x4& projection_matrix)
 {
-    // ensure that the render does take place while loading the data
-    if (m_loading)
-        return;
-
     if (m_settings.update_view_full_range)
         update_view_full_range();
 
@@ -1258,9 +1272,9 @@ void ViewerImpl::render(const Mat4x4& view_matrix, const Mat4x4& projection_matr
     render_options(view_matrix, projection_matrix);
 
 #if VGCODE_ENABLE_COG_AND_TOOL_MARKERS
-    if (m_settings.options_visibility.at(EOptionType::ToolMarker))
+    if (m_settings.options_visibility[size_t(EOptionType::ToolMarker)])
         render_tool_marker(view_matrix, projection_matrix);
-    if (m_settings.options_visibility.at(EOptionType::CenterOfGravity))
+    if (m_settings.options_visibility[size_t(EOptionType::CenterOfGravity)])
         render_cog_marker(view_matrix, projection_matrix);
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 }
@@ -1286,7 +1300,8 @@ void ViewerImpl::set_layers_view_range(Interval::value_type min, Interval::value
     update_view_full_range();
     m_view_range.set_visible(m_view_range.get_enabled());
     m_settings.update_enabled_entities = true;
-    m_settings.update_colors = true;
+    //m_settings.update_colors = true;
+    update_colors_texture();
 }
 
 void ViewerImpl::toggle_top_layer_only_view_range()
@@ -1295,7 +1310,8 @@ void ViewerImpl::toggle_top_layer_only_view_range()
     update_view_full_range();
     m_view_range.set_visible(m_view_range.get_enabled());
     m_settings.update_enabled_entities = true;
-    m_settings.update_colors = true;
+    //m_settings.update_colors = true;
+    update_colors_texture();
 }
 
 std::vector<ETimeMode> ViewerImpl::get_time_modes() const
@@ -1363,45 +1379,37 @@ AABox ViewerImpl::get_extrusion_bounding_box(const std::vector<EGCodeExtrusionRo
 
 bool ViewerImpl::is_option_visible(EOptionType type) const
 {
-    const auto it = m_settings.options_visibility.find(type);
-    return (it == m_settings.options_visibility.end()) ? false : it->second;
+    return m_settings.options_visibility[size_t(type)];
 }
 
 void ViewerImpl::toggle_option_visibility(EOptionType type)
 {
-    auto it = m_settings.options_visibility.find(type);
-    if (it != m_settings.options_visibility.end()) {
-        it->second = !it->second;
-        const Interval old_enabled_range = m_view_range.get_enabled();
-        update_view_full_range();
-        const Interval& new_enabled_range = m_view_range.get_enabled();
-        if (old_enabled_range != new_enabled_range) {
-            const Interval& visible_range = m_view_range.get_visible();
-            if (old_enabled_range == visible_range)
-                m_view_range.set_visible(new_enabled_range);
-            else if (m_settings.top_layer_only_view_range && new_enabled_range[0] < visible_range[0])
-                m_view_range.set_visible(new_enabled_range[0], visible_range[1]);
-        }
-        m_settings.update_enabled_entities = true;
-        m_settings.update_colors = true;
+    m_settings.options_visibility[size_t(type)] = ! m_settings.options_visibility[size_t(type)];
+    const Interval old_enabled_range = m_view_range.get_enabled();
+    update_view_full_range();
+    const Interval& new_enabled_range = m_view_range.get_enabled();
+    if (old_enabled_range != new_enabled_range) {
+        const Interval& visible_range = m_view_range.get_visible();
+        if (old_enabled_range == visible_range)
+            m_view_range.set_visible(new_enabled_range);
+        else if (m_settings.top_layer_only_view_range && new_enabled_range[0] < visible_range[0])
+            m_view_range.set_visible(new_enabled_range[0], visible_range[1]);
     }
+    m_settings.update_enabled_entities = true;
+    m_settings.update_colors = true;
 }
 
 bool ViewerImpl::is_extrusion_role_visible(EGCodeExtrusionRole role) const
 {
-    const auto it = m_settings.extrusion_roles_visibility.find(role);
-    return (it == m_settings.extrusion_roles_visibility.end()) ? false : it->second;
+    return m_settings.extrusion_roles_visibility[size_t(role)];
 }
 
 void ViewerImpl::toggle_extrusion_role_visibility(EGCodeExtrusionRole role)
 {
-    auto it = m_settings.extrusion_roles_visibility.find(role);
-    if (it != m_settings.extrusion_roles_visibility.end()) {
-        it->second = !it->second;
-        update_view_full_range();
-        m_settings.update_enabled_entities = true;
-        m_settings.update_colors = true;
-    }
+    m_settings.extrusion_roles_visibility[size_t(role)] = ! m_settings.extrusion_roles_visibility[size_t(role)];
+    update_view_full_range();
+    m_settings.update_enabled_entities = true;
+    m_settings.update_colors = true;
 }
 
 void ViewerImpl::set_view_visible_range(Interval::value_type min, Interval::value_type max)
@@ -1411,7 +1419,8 @@ void ViewerImpl::set_view_visible_range(Interval::value_type min, Interval::valu
     update_view_full_range();
     m_view_range.set_visible(min, max);
     update_enabled_entities();
-    m_settings.update_colors = true;
+    //m_settings.update_colors = true;
+    update_colors_texture();
 }
 
 float ViewerImpl::get_estimated_time_at(size_t id) const
@@ -1506,17 +1515,13 @@ void ViewerImpl::set_color_print_colors(const Palette& colors)
 
 const Color& ViewerImpl::get_extrusion_role_color(EGCodeExtrusionRole role) const
 {
-    const auto it = m_extrusion_roles_colors.find(role);
-    return (it == m_extrusion_roles_colors.end()) ? DUMMY_COLOR : it->second;
+    return m_extrusion_roles_colors[size_t(role)];
 }
 
 void ViewerImpl::set_extrusion_role_color(EGCodeExtrusionRole role, const Color& color)
 {
-    auto it = m_extrusion_roles_colors.find(role);
-    if (it != m_extrusion_roles_colors.end()) {
-        it->second = color;
-        m_settings.update_colors = true;
-    }
+    m_extrusion_roles_colors[size_t(role)] = color;
+    m_settings.update_colors = true;
 }
 
 void ViewerImpl::reset_default_extrusion_roles_colors()
@@ -1526,17 +1531,13 @@ void ViewerImpl::reset_default_extrusion_roles_colors()
 
 const Color& ViewerImpl::get_option_color(EOptionType type) const
 {
-    const auto it = m_options_colors.find(type);
-    return (it == m_options_colors.end()) ? DUMMY_COLOR : it->second;
+    return m_options_colors[size_t(type)];
 }
 
 void ViewerImpl::set_option_color(EOptionType type, const Color& color)
 {
-    auto it = m_options_colors.find(type);
-    if (it != m_options_colors.end()) {
-        it->second = color;
-        m_settings.update_colors = true;
-    }
+    m_options_colors[size_t(type)] = color;
+    m_settings.update_colors = true;
 }
 
 void ViewerImpl::reset_default_options_colors()
@@ -1566,16 +1567,16 @@ void ViewerImpl::set_color_range_palette(EViewType type, const Palette& palette)
 {
     switch (type)
     {
-    case EViewType::Height:                   { m_height_range.set_palette(palette); }
-    case EViewType::Width:                    { m_width_range.set_palette(palette); }
-    case EViewType::Speed:                    { m_speed_range.set_palette(palette); }
-    case EViewType::ActualSpeed:              { m_actual_speed_range.set_palette(palette); }
-    case EViewType::FanSpeed:                 { m_fan_speed_range.set_palette(palette); }
-    case EViewType::Temperature:              { m_temperature_range.set_palette(palette); }
-    case EViewType::VolumetricFlowRate:       { m_volumetric_rate_range.set_palette(palette); }
-    case EViewType::ActualVolumetricFlowRate: { m_actual_volumetric_rate_range.set_palette(palette); }
-    case EViewType::LayerTimeLinear:          { m_layer_time_range[0].set_palette(palette); }
-    case EViewType::LayerTimeLogarithmic:     { m_layer_time_range[1].set_palette(palette); }
+    case EViewType::Height:                   { m_height_range.set_palette(palette);          break; }
+    case EViewType::Width:                    { m_width_range.set_palette(palette);           break; }
+    case EViewType::Speed:                    { m_speed_range.set_palette(palette);           break; }
+    case EViewType::ActualSpeed:              { m_actual_speed_range.set_palette(palette);    break; }
+    case EViewType::FanSpeed:                 { m_fan_speed_range.set_palette(palette);       break; }
+    case EViewType::Temperature:              { m_temperature_range.set_palette(palette);     break; }
+    case EViewType::VolumetricFlowRate:       { m_volumetric_rate_range.set_palette(palette); break; }
+    case EViewType::ActualVolumetricFlowRate: { m_actual_volumetric_rate_range.set_palette(palette); break; }
+    case EViewType::LayerTimeLinear:          { m_layer_time_range[0].set_palette(palette);   break; }
+    case EViewType::LayerTimeLogarithmic:     { m_layer_time_range[1].set_palette(palette);   break; }
     default:                                  { break; }
     }
     m_settings.update_colors = true;
@@ -1599,8 +1600,8 @@ size_t ViewerImpl::get_used_cpu_memory() const
     ret += m_layers.size_in_bytes_cpu();
     ret += STDVEC_MEMSIZE(m_options, EOptionType);
     ret += m_used_extruders.size() * sizeof(std::map<uint8_t, ColorPrint>::value_type);
-    ret += m_extrusion_roles_colors.size() * sizeof(std::map<EGCodeExtrusionRole, Color>::value_type);
-    ret += m_options_colors.size() * sizeof(std::map<EOptionType, Color>::value_type);
+    ret += sizeof(m_extrusion_roles_colors);
+    ret += sizeof(m_options_colors);
     ret += STDVEC_MEMSIZE(m_vertices, PathVertex);
     ret += m_valid_lines_bitset.size_in_bytes_cpu();
     ret += m_height_range.size_in_bytes_cpu();
@@ -1646,8 +1647,8 @@ static bool is_visible(const PathVertex& v, const Settings& settings)
     try
     {
         return (option_type == EOptionType::COUNT) ?
-            (v.type == EMoveType::Extrude) ? settings.extrusion_roles_visibility.at(v.role) : false :
-            settings.options_visibility.at(option_type);
+            (v.type == EMoveType::Extrude) ? settings.extrusion_roles_visibility[size_t(v.role)] : false :
+            settings.options_visibility[size_t(option_type)];
     }
     catch (...)
     {
@@ -1658,8 +1659,8 @@ static bool is_visible(const PathVertex& v, const Settings& settings)
 void ViewerImpl::update_view_full_range()
 {
     const Interval& layers_range = m_layers.get_view_range();
-    const bool travels_visible = m_settings.options_visibility.at(EOptionType::Travels);
-    const bool wipes_visible   = m_settings.options_visibility.at(EOptionType::Wipes);
+    const bool travels_visible = m_settings.options_visibility[size_t(EOptionType::Travels)];
+    const bool wipes_visible   = m_settings.options_visibility[size_t(EOptionType::Wipes)];
 
     auto first_it = m_vertices.begin();
     while (first_it != m_vertices.end() &&
@@ -1746,6 +1747,13 @@ void ViewerImpl::update_view_full_range()
 
 void ViewerImpl::update_color_ranges()
 {
+    // Color ranges do not need to be recalculated that often. If the following settings are the same
+    // as last time, the current ranges are still valid. The recalculation is quite expensive.
+    if (m_settings_used_for_ranges.has_value() &&
+        m_settings.extrusion_roles_visibility == m_settings_used_for_ranges->extrusion_roles_visibility &&
+        m_settings.options_visibility == m_settings_used_for_ranges->options_visibility)
+        return;
+
     m_width_range.reset();
     m_height_range.reset();
     m_speed_range.reset();
@@ -1761,7 +1769,7 @@ void ViewerImpl::update_color_ranges()
         const PathVertex& v = m_vertices[i];
         if (v.is_extrusion()) {
             m_height_range.update(round_to_bin(v.height));
-            if (!v.is_custom_gcode() || m_settings.extrusion_roles_visibility.at(EGCodeExtrusionRole::Custom)) {
+            if (!v.is_custom_gcode() || m_settings.extrusion_roles_visibility[size_t(EGCodeExtrusionRole::Custom)]) {
                 m_width_range.update(round_to_bin(v.width));
                 m_volumetric_rate_range.update(round_to_bin(v.volumetric_rate()));
                 m_actual_volumetric_rate_range.update(round_to_bin(v.actual_volumetric_rate()));
@@ -1769,8 +1777,8 @@ void ViewerImpl::update_color_ranges()
             m_fan_speed_range.update(round_to_bin(v.fan_speed));
             m_temperature_range.update(round_to_bin(v.temperature));
         }
-        if ((v.is_travel() && m_settings.options_visibility.at(EOptionType::Travels)) ||
-            (v.is_wipe() && m_settings.options_visibility.at(EOptionType::Wipes)) ||
+        if ((v.is_travel() && m_settings.options_visibility[size_t(EOptionType::Travels)]) ||
+            (v.is_wipe() && m_settings.options_visibility[size_t(EOptionType::Wipes)]) ||
              v.is_extrusion()) {
             m_speed_range.update(v.feedrate);
             m_actual_speed_range.update(v.actual_feedrate);
@@ -1783,6 +1791,8 @@ void ViewerImpl::update_color_ranges()
             m_layer_time_range[i].update(t);
         }
     }
+
+    m_settings_used_for_ranges = m_settings;
 }
 
 void ViewerImpl::update_heights_widths()

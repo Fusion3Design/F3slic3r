@@ -21,6 +21,7 @@
 #include "ExtrusionRoles.hpp"
 
 #include <string>
+#include <optional>
 
 namespace libvgcode {
 
@@ -64,6 +65,7 @@ public:
     // view type and settings
     //
     void update_colors();
+    void update_colors_texture();
 
     //
     // Render the toolpaths
@@ -233,14 +235,13 @@ private:
     //
     // Palette used to render extrusion roles
     //
-    std::map<EGCodeExtrusionRole, Color> m_extrusion_roles_colors;
+    std::array<Color, size_t(EGCodeExtrusionRole::COUNT)> m_extrusion_roles_colors;
     //
     // Palette used to render options
     //
-    std::map<EOptionType, Color> m_options_colors;
+    std::array<Color, size_t(EOptionType::COUNT)> m_options_colors;
 
     bool m_initialized{ false };
-    bool m_loading{ false };
 
     //
     // The OpenGL element used to represent all toolpath segments
@@ -266,6 +267,10 @@ private:
     // cpu buffer to store vertices
     //
     std::vector<PathVertex> m_vertices;
+
+    // Cache for the colors to reduce the need to recalculate colors of all the vertices.
+    std::vector<float> m_vertices_colors;
+
     //
     // Variables used for toolpaths visibiliity
     //
@@ -273,6 +278,7 @@ private:
     //
     // Variables used for toolpaths coloring
     //
+    std::optional<Settings> m_settings_used_for_ranges;
     ColorRange m_height_range;
     ColorRange m_width_range;
     ColorRange m_speed_range;

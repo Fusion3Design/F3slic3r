@@ -123,6 +123,8 @@ static constexpr std::size_t MOVE_TYPES_COUNT = static_cast<std::size_t>(EMoveTy
 //
 enum class EGCodeExtrusionRole : uint8_t
 {
+      // This enum is used as in index into extrusion_roles_visibility.
+      // Better only add things to the end.
 	  None,
 	  Perimeter,
 	  ExternalPerimeter,
@@ -148,6 +150,8 @@ static constexpr std::size_t GCODE_EXTRUSION_ROLES_COUNT = static_cast<std::size
 //
 enum class EOptionType : uint8_t
 {
+    // This enum is used as in index into options_visibility.
+    // Better only add things to the end.
     Travels,
     Wipes,
     Retractions,
