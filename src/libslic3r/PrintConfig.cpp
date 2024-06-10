@@ -1137,6 +1137,26 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats { 0. });
 
+    def = this->add("filament_infill_max_speed", coFloats);
+    def->label = L("Max simple infill speed");
+    def->tooltip = L("Maximum speed allowed for this filament while printing simple infill. "
+                   "The term \"simple infill\" means infill without any self intersections in a single layer. "
+                   "Set to zero for no limit.");
+    def->sidetext = L("mm/s");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
+    def = this->add("filament_infill_max_crossing_speed", coFloats);
+    def->label = L("Max crossing infill speed");
+    def->tooltip = L("Maximum speed allowed for this filament while printing crossing infill. "
+                   "The term \"crossing infill\" means infill with self intersections in a single layer. "
+                   "Set to zero for no limit.");
+    def->sidetext = L("mm/s");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloats { 0. });
+
     def = this->add("filament_loading_speed", coFloats);
     def->label = L("Loading speed");
     def->tooltip = L("Speed used for loading the filament on the wipe tower.");
