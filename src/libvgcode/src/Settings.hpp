@@ -30,7 +30,7 @@ struct Settings
 		//
 		// Visibility maps
 		//
-		std::array<bool, size_t(EOptionType::COUNT)> options_visibility{
+		std::array<bool, std::size_t(EOptionType::COUNT)> options_visibility{
 			    false, // Travels
 				false, // Wipes
 				false, // Retractions
@@ -46,7 +46,7 @@ struct Settings
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 		};
 
-		std::array<bool, size_t(EGCodeExtrusionRole::COUNT)> extrusion_roles_visibility{
+		std::array<bool, std::size_t(EGCodeExtrusionRole::COUNT)> extrusion_roles_visibility{
 				true, // None
 				true, // Perimeter
 				true, // ExternalPerimeter
