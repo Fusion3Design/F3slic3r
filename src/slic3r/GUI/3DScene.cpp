@@ -814,7 +814,8 @@ void GLVolumeCollection::render(GLVolumeCollection::ERenderType type, bool disab
         const int vol_idx = volume.first->volume_idx();
         const bool render_as_mmu_painted = is_render_as_mmu_painted_enabled && !volume.first->selected &&
             !volume.first->is_outside && volume.first->hover == GLVolume::HS_None && !volume.first->is_wipe_tower && obj_idx >= 0 && vol_idx >= 0 &&
-            !model_objects[obj_idx]->volumes[vol_idx]->mm_segmentation_facets.empty();
+            !model_objects[obj_idx]->volumes[vol_idx]->mm_segmentation_facets.empty() &&
+            type != GLVolumeCollection::ERenderType::Transparent; // to filter out shells (not very nice)
         volume.first->set_render_color(true);
 
         // render sinking contours of non-hovered volumes
