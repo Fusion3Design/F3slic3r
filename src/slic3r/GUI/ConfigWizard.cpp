@@ -674,26 +674,35 @@ PageUpdateManager::PageUpdateManager(ConfigWizard* parent_in)
     append(sizer, 0, wxTOP, 2 * em);
 
     this->Bind(wxEVT_SHOW, [this, parent_in](wxShowEvent& evt) {
+
+        auto revert_page_selection = [this]() -> void {
+            CallAfter([this]() { 
+                wizard_p()->index->go_to(1); 
+                if (!this->IsShown())
+                    this->Show();
+            });
+        };
+
         if (evt.IsShown())
             is_active = true;
         else if (is_active && parent_in->IsShown()) {
             if (manager->has_selections()) {
-                if (wizard_p()->is_first_start)
-                    wizard_p()->is_first_start = false;
 
                 if (wizard_p()->can_clear_printer_pages()) {
                     wxBusyCursor wait;
-                    if (manager->set_selected_repositories())
+                    if (manager->set_selected_repositories()) {
+                        wizard_p()->is_config_from_archive = true;
                         wizard_p()->set_config_updated_from_archive(true);
+                    }
                     else
-                        CallAfter([this]() { wizard_p()->index->go_to(1); });
+                        revert_page_selection();
                 }
                 else
-                    CallAfter([this]() { wizard_p()->index->go_to(1); });
+                    revert_page_selection();
             }
-            else {
-                CallAfter([this]() { wizard_p()->index->go_to(1); });
-            }
+            else 
+                revert_page_selection();
+
             is_active = false;
         }
     });
@@ -2560,7 +2569,7 @@ void ConfigWizard::priv::load_pages()
     index->add_page(page_welcome);
     index->add_page(page_update_manager);
 
-    if (!is_first_start) {
+    if (is_config_from_archive) {
 
         // Printers
         if (!only_sla_mode)
@@ -3064,6 +3073,23 @@ bool ConfigWizard::priv::can_finish()
         return false;
     // Set enabling fo "Finish" button -> there should to be selected at least one printer
     return any_fff_selected || any_sla_selected || custom_printer_selected || custom_printer_in_bundle;
+}
+
+bool ConfigWizard::priv::can_go_next()
+{
+    if (index->active_page() == page_update_manager)
+        return page_update_manager->manager->has_selections();
+    return true;
+}
+
+bool ConfigWizard::priv::can_show_next()
+{
+    const bool is_last = index->active_is_last();
+
+    if (index->active_page() == page_update_manager && is_last)
+        return true;
+
+    return !is_last;
 }
 
 bool ConfigWizard::priv::can_select_all()
@@ -3778,7 +3804,7 @@ bool ConfigWizard::priv::installed_multivendors_repos()
 
 void ConfigWizard::priv::load_pages_from_archive()
 {
-    if (is_first_start)
+    if (!is_config_from_archive)
         return;
 
     wxBusyCursor wait; 
@@ -3976,6 +4002,11 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
 
     p->btn_prev->Bind(wxEVT_BUTTON, [this](const wxCommandEvent &) { this->p->index->go_prev(); });
 
+    p->btn_prev->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt)
+    {
+        evt.Enable(p->can_go_next());
+    });
+
     p->btn_next->Bind(wxEVT_BUTTON, [this](const wxCommandEvent &)
     {
         // check, that there is selected at least one filament/material
@@ -3986,13 +4017,17 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
         	! p->check_and_install_missing_materials(dynamic_cast<PageMaterials*>(active_page)->materials->technology))
         	// In that case don't leave the page and the function above queried the user whether to install default materials.
             return;
-        if (active_page == p->page_update_manager && p->is_first_start) {
-            p->is_first_start = false;
+        if (active_page == p->page_update_manager && p->index->active_is_last()) {
             p->page_update_manager->Hide();
             p->index->go_to(2);
             return;
         }
         this->p->index->go_next();
+    });
+
+    p->btn_next->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt)
+    {
+        evt.Enable(p->can_go_next());
     });
 
     p->btn_finish->Bind(wxEVT_BUTTON, [this](const wxCommandEvent &)
@@ -4023,14 +4058,12 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
         evt.Enable(p->can_select_all());
     });
 
-    p->index->Bind(EVT_INDEX_PAGE, [this](const wxCommandEvent &) {
-        const bool is_last = p->index->active_is_last();
-        p->btn_next->Show(! is_last || p->is_first_start);
-        if (is_last) {
-            if (!p->is_first_start)
-                p->btn_finish->SetFocus();
-        }
+    p->index->Bind(EVT_INDEX_PAGE, [this](const wxCommandEvent &)
+    {
+        p->btn_next->Show(p->can_show_next());
 
+        if (p->index->active_is_last())
+            p->btn_finish->SetFocus();
         Layout();
     });
 
@@ -4062,8 +4095,8 @@ bool ConfigWizard::run(RunReason reason, StartPage start_page)
 
     p->set_run_reason(reason);
     p->set_start_page(start_page);
-    p->is_first_start = reason != RR_USER;
-    p->set_config_updated_from_archive(p->is_first_start);
+    p->is_config_from_archive = reason == RR_USER;
+    p->set_config_updated_from_archive(p->is_config_from_archive);
 
     if (ShowModal() == wxID_OK) {
         bool apply_keeped_changes = false;

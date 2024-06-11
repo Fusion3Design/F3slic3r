@@ -664,7 +664,7 @@ struct ConfigWizard::priv
 
     bool                        installed_multivendors_repos();
 
-    bool                        is_first_start{ true };
+    bool                        is_config_from_archive{ false };
 
     // Pointers to all pages (regardless or whether currently part of the ConfigWizardIndex)
     std::vector<ConfigWizardPage*> all_pages;
@@ -694,6 +694,8 @@ struct ConfigWizard::priv
     void on_3rdparty_install(const VendorProfile *vendor, bool install);
 
     bool can_finish();
+    bool can_go_next();
+    bool can_show_next();
     bool can_select_all();
     bool on_bnt_finish();
     bool check_and_install_missing_materials(Technology technology, const std::string &only_for_model_id = std::string());
