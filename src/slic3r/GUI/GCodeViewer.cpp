@@ -309,7 +309,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
 
         ImGuiPureWrap::set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height() - preview->get_moves_slider_height()), ImGuiCond_Always, 0.5f, 1.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-        ImGui::SetNextWindowBgAlpha(0.25f);
+        ImGui::SetNextWindowBgAlpha(properties_shown ? 0.8f : 0.25f);
         ImGuiPureWrap::begin(std::string("ToolPosition"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
         ImGui::AlignTextToFramePadding();
         ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, _u8L("Position") + ":");
