@@ -978,7 +978,6 @@ void GUI_App::legacy_app_config_vendor_check()
     if (!found_legacy_printers) {
         return;
     }
-    bool found_prusa_sla_vendor = vendor_map.find("PrusaResearchSLA") != vendor_map.end();
     // make a deep copy of vendor map with moved printers
     std::map<std::string, std::map<std::string, std::set<std::string>>> new_vendor_map;
     for (const auto& vendor : vendor_map) {
@@ -996,16 +995,12 @@ void GUI_App::legacy_app_config_vendor_check()
     }
     app_config->set_vendors(new_vendor_map);
     
-    if (found_prusa_sla_vendor) {
-        // The vendor was present in appconfig, we do nothing with its ini file.
-        return;
-    }
-
     // copy PrusaResearchSLA ini file to vendors
+    boost::system::error_code ec;
     const boost::filesystem::path prusa_sla_in_resources = boost::filesystem::path(Slic3r::resources_dir()) / "profiles" / "PrusaResearchSLA.ini";
     assert(boost::filesystem::exists(prusa_sla_in_resources));
     const boost::filesystem::path prusa_sla_in_vendors = boost::filesystem::path(Slic3r::data_dir()) / "vendor" / "PrusaResearchSLA.ini";
-    if (boost::filesystem::exists(prusa_sla_in_vendors)) {
+    if (boost::filesystem::exists(prusa_sla_in_vendors, ec)) {
         return;
     }
     std::string message;
@@ -3457,7 +3452,7 @@ bool GUI_App::config_wizard_startup()
 
 bool GUI_App::check_updates(const bool invoked_by_user)
 {	
-    if (invoked_by_user) {
+     if (invoked_by_user) {
         // do preset_updater sync so if user runs slicer for a long time, check for updates actually delivers updates.
         // for preset_updater sync we need to sync archive database first
         plater()->get_preset_archive_database()->sync_blocking();
