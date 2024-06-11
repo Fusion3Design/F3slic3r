@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2018 - 2023 Enrico Turri @enricoturri1966, Lukáš Matěna @lukasmatena, Lukáš Hejl @hejllukas, Vojtěch Bubník @bubnikv, Vojtěch Král @vojtechkral
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #ifndef slic3r_OpenGLManager_hpp_
 #define slic3r_OpenGLManager_hpp_
 
@@ -50,15 +54,13 @@ public:
         const std::string& get_renderer() const;
 
         bool is_core_profile() const { return m_core_profile; }
-        void set_core_profile(bool value) { m_core_profile = value; }
 
         bool is_mesa() const;
         bool is_es() const {
-            return
 #if ENABLE_OPENGL_ES
-                true;
+            return true;
 #else
-                false;
+            return false;
 #endif // ENABLE_OPENGL_ES
         }
 
@@ -100,9 +102,7 @@ private:
 
     bool m_gl_initialized{ false };
     wxGLContext* m_context{ nullptr };
-#if ENABLE_OPENGL_DEBUG_OPTION
     bool m_debug_enabled{ false };
-#endif // ENABLE_OPENGL_DEBUG_OPTION
     GLShadersManager m_shaders_manager;
     static GLInfo s_gl_info;
 #ifdef __APPLE__ 
@@ -121,11 +121,7 @@ public:
 
     bool init_gl();
 #if ENABLE_GL_CORE_PROFILE
-#if ENABLE_OPENGL_DEBUG_OPTION
-    wxGLContext* init_glcontext(wxGLCanvas& canvas, const std::pair<int, int>& required_opengl_version, bool enable_debug);
-#else
-    wxGLContext* init_glcontext(wxGLCanvas& canvas, const std::pair<int, int>& required_opengl_version);
-#endif // ENABLE_OPENGL_DEBUG_OPTION
+    wxGLContext* init_glcontext(wxGLCanvas& canvas, const std::pair<int, int>& required_opengl_version, bool enable_compatibility_profile, bool enable_debug);
 #else
     wxGLContext* init_glcontext(wxGLCanvas& canvas);
 #endif // ENABLE_GL_CORE_PROFILE

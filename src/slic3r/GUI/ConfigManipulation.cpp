@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2019 - 2023 Lukáš Hejl @hejllukas, Vojtěch Bubník @bubnikv, Lukáš Matěna @lukasmatena, Oleksandra Iushchenko @YuSanka, Pavel Mikuš @Godrak, Tomáš Mészáros @tamasmeszaros
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 // #include "libslic3r/GCodeSender.hpp"
 #include "ConfigManipulation.hpp"
 #include "I18N.hpp"
@@ -77,7 +81,6 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
            fill_density == 0 &&
            ! config->opt_bool("support_material") &&
            config->opt_int("support_material_enforce_layers") == 0 &&
-           config->opt_bool("ensure_vertical_shell_thickness") &&
            ! config->opt_bool("thin_walls")))
     {
         wxString msg_text = _(L("The Spiral Vase mode requires:\n"
@@ -85,7 +88,6 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
                                 "- no top solid layers\n"
                                 "- 0% fill density\n"
                                 "- no support material\n"
-                                "- Ensure vertical shell thickness enabled\n"
                					"- Detect thin walls disabled"));
         if (is_global_config)
             msg_text += "\n\n" + _(L("Shall I adjust those settings in order to enable Spiral Vase?"));
@@ -100,7 +102,6 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
             new_conf.set_key_value("fill_density", new ConfigOptionPercent(0));
             new_conf.set_key_value("support_material", new ConfigOptionBool(false));
             new_conf.set_key_value("support_material_enforce_layers", new ConfigOptionInt(0));
-            new_conf.set_key_value("ensure_vertical_shell_thickness", new ConfigOptionBool(true));
             new_conf.set_key_value("thin_walls", new ConfigOptionBool(false));            
             fill_density = 0;
             support = false;
@@ -115,8 +116,6 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
                 cb_value_change("support_material", false);
         }
     }
-
-    auto style = config->opt_enum<SupportMaterialStyle>("support_material_style");
 
     if (config->opt_bool("wipe_tower") && config->opt_bool("support_material") && 
         // Organic supports are always synchronized with object layers as of now.
@@ -140,8 +139,8 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
             }
         } else {
             if ((config->opt_int("support_material_extruder") != 0 || config->opt_int("support_material_interface_extruder") != 0)) {
-                wxString msg_text = _(L("The Wipe Tower currently supports the non-soluble supports only\n"
-                                        "if they are printed with the current extruder without triggering a tool change.\n"
+                wxString msg_text = _(L("The Wipe Tower currently supports the non-soluble supports only "
+                                        "if they are printed with the current extruder without triggering a tool change. "
                                         "(both support_material_extruder and support_material_interface_extruder need to be set to 0)."));
                 if (is_global_config)
                     msg_text += "\n\n" + _(L("Shall I adjust those settings in order to enable the Wipe Tower?"));
@@ -219,14 +218,13 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
 void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
 {
     bool have_perimeters = config->opt_int("perimeters") > 0;
-    for (auto el : { "extra_perimeters","extra_perimeters_on_overhangs", "ensure_vertical_shell_thickness", "thin_walls", "overhangs",
+    for (auto el : { "extra_perimeters","extra_perimeters_on_overhangs", "thin_walls", "overhangs",
                     "seam_position","staggered_inner_seams", "external_perimeters_first", "external_perimeter_extrusion_width",
-                    "perimeter_speed", "small_perimeter_speed", "external_perimeter_speed", "enable_dynamic_overhang_speeds", "overhang_overlap_levels", "dynamic_overhang_speeds" })
+                    "perimeter_speed", "small_perimeter_speed", "external_perimeter_speed", "enable_dynamic_overhang_speeds"})
         toggle_field(el, have_perimeters);
 
     for (size_t i = 0; i < 4; i++) {
-        toggle_field("overhang_overlap_levels#" + std::to_string(i), config->opt_bool("enable_dynamic_overhang_speeds"));
-        toggle_field("dynamic_overhang_speeds#" + std::to_string(i), config->opt_bool("enable_dynamic_overhang_speeds"));
+        toggle_field("overhang_speed_" + std::to_string(i), config->opt_bool("enable_dynamic_overhang_speeds"));
     }
 
     bool have_infill = config->option<ConfigOptionPercent>("fill_density")->value > 0;
@@ -262,8 +260,8 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
 
     bool have_default_acceleration = config->opt_float("default_acceleration") > 0;
     for (auto el : { "perimeter_acceleration", "infill_acceleration", "top_solid_infill_acceleration",
-                    "solid_infill_acceleration", "external_perimeter_acceleration"
-                    "bridge_acceleration", "first_layer_acceleration" })
+                    "solid_infill_acceleration", "external_perimeter_acceleration",
+                    "bridge_acceleration", "first_layer_acceleration", "wipe_tower_acceleration"})
         toggle_field(el, have_default_acceleration);
 
     bool have_skirt = config->opt_int("skirts") > 0;
@@ -297,7 +295,8 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
                                      (config->opt_bool("support_material") || 
                                       config->opt_int("support_material_enforce_layers") > 0);
     for (const std::string& key : { "support_tree_angle", "support_tree_angle_slow", "support_tree_branch_diameter",
-                                    "support_tree_branch_diameter_angle", "support_tree_tip_diameter", "support_tree_top_rate" })
+                                    "support_tree_branch_diameter_angle", "support_tree_branch_diameter_double_wall", 
+                                    "support_tree_tip_diameter", "support_tree_branch_distance", "support_tree_top_rate" })
         toggle_field(key, has_organic_supports);
 
     for (auto el : { "support_material_bottom_interface_layers", "support_material_interface_spacing", "support_material_interface_extruder",
@@ -325,9 +324,12 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     toggle_field("standby_temperature_delta", have_ooze_prevention);
 
     bool have_wipe_tower = config->opt_bool("wipe_tower");
-    for (auto el : { "wipe_tower_x", "wipe_tower_y", "wipe_tower_width", "wipe_tower_rotation_angle", "wipe_tower_brim_width",
-                     "wipe_tower_bridging", "wipe_tower_no_sparse_layers", "single_extruder_multi_material_priming" })
+    for (auto el : { "wipe_tower_x", "wipe_tower_y", "wipe_tower_width", "wipe_tower_rotation_angle", "wipe_tower_brim_width", "wipe_tower_cone_angle",
+                     "wipe_tower_extra_spacing", "wipe_tower_extra_flow", "wipe_tower_bridging", "wipe_tower_no_sparse_layers", "single_extruder_multi_material_priming" })
         toggle_field(el, have_wipe_tower);
+
+    bool have_non_zero_mmu_segmented_region_max_width = config->opt_float("mmu_segmented_region_max_width") > 0.;
+    toggle_field("mmu_segmented_region_interlocking_depth", have_non_zero_mmu_segmented_region_max_width);
 
     toggle_field("avoid_crossing_curled_overhangs", !config->opt_bool("avoid_crossing_perimeters"));
     toggle_field("avoid_crossing_perimeters", !config->opt_bool("avoid_crossing_curled_overhangs"));
@@ -343,36 +345,6 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig* config)
     toggle_field("min_feature_size", have_arachne);
     toggle_field("min_bead_width", have_arachne);
     toggle_field("thin_walls", !have_arachne);
-}
-
-void ConfigManipulation::update_print_sla_config(DynamicPrintConfig* config, const bool is_global_config/* = false*/)
-{
-    double head_penetration = config->opt_float("support_head_penetration");
-    double head_width = config->opt_float("support_head_width");
-    if (head_penetration > head_width) {
-        wxString msg_text = _(L("Head penetration should not be greater than the head width."));
-
-        MessageDialog dialog(m_msg_dlg_parent, msg_text, _(L("Invalid Head penetration")), wxICON_WARNING | wxOK);
-        DynamicPrintConfig new_conf = *config;
-        if (dialog.ShowModal() == wxID_OK) {
-            new_conf.set_key_value("support_head_penetration", new ConfigOptionFloat(head_width));
-            apply(config, &new_conf);
-        }
-    }
-
-    double pinhead_d = config->opt_float("support_head_front_diameter");
-    double pillar_d = config->opt_float("support_pillar_diameter");
-    if (pinhead_d > pillar_d) {
-        wxString msg_text = _(L("Pinhead diameter should be smaller than the pillar diameter."));
-
-        MessageDialog dialog(m_msg_dlg_parent, msg_text, _(L("Invalid pinhead diameter")), wxICON_WARNING | wxOK);
-
-        DynamicPrintConfig new_conf = *config;
-        if (dialog.ShowModal() == wxID_OK) {
-            new_conf.set_key_value("support_head_front_diameter", new ConfigOptionFloat(pillar_d / 2.0));
-            apply(config, &new_conf);
-        }
-    }
 }
 
 void ConfigManipulation::toggle_print_sla_options(DynamicPrintConfig* config)

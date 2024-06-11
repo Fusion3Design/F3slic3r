@@ -1,3 +1,14 @@
+///|/ Copyright (c) Prusa Research 2017 - 2023 Oleksandra Iushchenko @YuSanka, Enrico Turri @enricoturri1966, Lukáš Hejl @hejllukas, David Kocík @kocikdav, Vojtěch Bubník @bubnikv, Lukáš Matěna @lukasmatena, Vojtěch Král @vojtechkral
+///|/
+///|/ ported from lib/Slic3r/GUI/OptionsGroup.pm:
+///|/ Copyright (c) Prusa Research 2016 - 2018 Vojtěch Bubník @bubnikv, Oleksandra Iushchenko @YuSanka
+///|/ Copyright (c) Slic3r 2011 - 2015 Alessandro Ranellucci @alranel
+///|/ Copyright (c) 2013 Scott Penrose
+///|/ Copyright (c) 2012 Henrik Brix Andersen @henrikbrixandersen
+///|/ Copyright (c) 2011 Richard Goodwin
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #ifndef slic3r_OptionsGroup_hpp_
 #define slic3r_OptionsGroup_hpp_
 
@@ -47,8 +58,7 @@ struct Option {
 		return  (rhs.opt_id == this->opt_id);
 	}
 
-	Option(const ConfigOptionDef& _opt, t_config_option_key id) :
-		opt(_opt), opt_id(id) {}
+	Option(const ConfigOptionDef& _opt, t_config_option_key id);
 };
 using t_option = std::unique_ptr<Option>;	//!
 
@@ -122,6 +132,8 @@ public:
 
     std::function<void(wxWindow* win)> rescale_extra_column_item { nullptr };
     std::function<void(wxWindow* win)> rescale_near_label_widget { nullptr };
+
+    std::function<void(const t_config_option_key& opt_key)> edit_custom_gcode { nullptr };
     
     wxFont			sidetext_font {wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT) };
     wxFont			label_font {wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT) };
@@ -194,6 +206,7 @@ public:
 
     wxGridSizer*        get_grid_sizer() { return m_grid_sizer; }
 	const std::vector<Line>& get_lines() { return m_lines; }
+	Line*				get_last_line()  { return m_lines.empty() ? nullptr : &m_lines[m_lines.size()-1]; }
 	bool				is_legend_line();
 	// if we have to set the same control alignment for different option groups, 
     // we have to set same max contrtol width to all of them

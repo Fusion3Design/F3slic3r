@@ -1,7 +1,14 @@
+///|/ Copyright (c) Prusa Research 2021 - 2023 Vojtěch Bubník @bubnikv, Lukáš Matěna @lukasmatena
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "MedialAxis.hpp"
 
 #include "clipper.hpp"
 #include "VoronoiOffset.hpp"
+#include "ClipperUtils.hpp"
+
+#include <boost/log/trivial.hpp>
 
 #ifdef SLIC3R_DEBUG
 namespace boost { namespace polygon {
@@ -444,11 +451,39 @@ private:
 
 MedialAxis::MedialAxis(double min_width, double max_width, const ExPolygon &expolygon) :
     m_expolygon(expolygon), m_lines(expolygon.lines()), m_min_width(min_width), m_max_width(max_width)
-{}
+{
+    (void)m_expolygon; // supress unused variable warning
+}
 
 void MedialAxis::build(ThickPolylines* polylines)
 {
-    construct_voronoi(m_lines.begin(), m_lines.end(), &m_vd);
+#ifndef NDEBUG
+    // Verify the scaling of the coordinates of input line segments.
+    for (const Line& l : m_lines) {
+        auto test = [](int32_t v) {
+            static constexpr const int32_t hi = 65536 * 16383;
+            assert(v <= hi && -v < hi);
+        };
+        test(l.a.x());
+        test(l.a.y());
+        test(l.b.x());
+        test(l.b.y());
+    }
+#endif // NDEBUG
+    m_vd.construct_voronoi(m_lines.begin(), m_lines.end());
+
+    // For several ExPolygons in SPE-1729, an invalid Voronoi diagram was produced that wasn't fixable by rotating input data.
+    // Those ExPolygons contain very thin lines and holes formed by very close (1-5nm) vertices that are on the edge of our resolution.
+    // Those thin lines and holes are both unprintable and cause the Voronoi diagram to be invalid.
+    // So we filter out such thin lines and holes and try to compute the Voronoi diagram again.
+    if (!m_vd.is_valid()) {
+        m_lines = to_lines(closing_ex({m_expolygon}, float(2. * SCALED_EPSILON)));
+        m_vd.construct_voronoi(m_lines.begin(), m_lines.end());
+
+        if (!m_vd.is_valid())
+            BOOST_LOG_TRIVIAL(error) << "MedialAxis - Invalid Voronoi diagram even after morphological closing.";
+    }
+
     Slic3r::Voronoi::annotate_inside_outside(m_vd, m_lines);
 //    static constexpr double threshold_alpha = M_PI / 12.; // 30 degrees
 //    std::vector<Vec2d> skeleton_edges = Slic3r::Voronoi::skeleton_edges_rough(vd, lines, threshold_alpha);
@@ -467,9 +502,6 @@ void MedialAxis::build(ThickPolylines* polylines)
         return;
     }
     */
-    
-    //typedef const VD::vertex_type vert_t;
-    using edge_t = const VD::edge_type;
     
     // collect valid edges (i.e. prune those not belonging to MAT)
     // note: this keeps twins, so it inserts twice the number of the valid edges
