@@ -783,20 +783,10 @@ void GLVolumeCollection::render(GLVolumeCollection::ERenderType type, bool disab
     const ModelObjectPtrs& model_objects = GUI::wxGetApp().model().objects;
     const std::vector<ColorRGBA> extruders_colors = GUI::wxGetApp().plater()->get_extruder_colors_from_plater_config();
     const bool is_render_as_mmu_painted_enabled = !model_objects.empty() && !extruders_colors.empty();
-    struct MMPaintCachePerVolume {
-        size_t extruder_id;
-        std::unique_ptr<GUI::TriangleSelectorMmGui> triangle_selector_mm;
-        std::chrono::system_clock::time_point time_used;
-        uint64_t mm_timestamp;
-    };
-    struct MMPaintCache {
-        std::vector<ColorRGBA> extruders_colors;
-        std::map<ObjectID, MMPaintCachePerVolume> volume_data;
-    };
-    static MMPaintCache mm_paint_cache;
-    if (mm_paint_cache.extruders_colors != extruders_colors) {
-        mm_paint_cache.extruders_colors = extruders_colors;
-        mm_paint_cache.volume_data.clear();
+
+    if (m_mm_paint_cache.extruders_colors != extruders_colors) {
+        m_mm_paint_cache.extruders_colors = extruders_colors;
+        m_mm_paint_cache.volume_data.clear();
     }
     auto time_now = std::chrono::system_clock::now();
 
@@ -857,15 +847,15 @@ void GLVolumeCollection::render(GLVolumeCollection::ERenderType type, bool disab
 
             // This block retrieves the painted geometry from the cache or adds it to it.
             ObjectID vol_id = model_volume.id();
-            auto it = mm_paint_cache.volume_data.find(vol_id);
+            auto it = m_mm_paint_cache.volume_data.find(vol_id);
             GUI::TriangleSelectorMmGui* ts = nullptr;
             uint64_t timestamp = model_volume.mm_segmentation_facets.timestamp();
-            if (it == mm_paint_cache.volume_data.end() || it->second.extruder_id != extruder_idx || timestamp != it->second.mm_timestamp) {
-                auto ts_uptr = std::make_unique<GUI::TriangleSelectorMmGui>(model_volume.mesh(), mm_paint_cache.extruders_colors, mm_paint_cache.extruders_colors[extruder_idx]);
+            if (it == m_mm_paint_cache.volume_data.end() || it->second.extruder_id != extruder_idx || timestamp != it->second.mm_timestamp) {
+                auto ts_uptr = std::make_unique<GUI::TriangleSelectorMmGui>(model_volume.mesh(), m_mm_paint_cache.extruders_colors, m_mm_paint_cache.extruders_colors[extruder_idx]);
                 ts = ts_uptr.get();
                 ts->deserialize(model_volume.mm_segmentation_facets.get_data(), true);
                 ts->request_update_render_data();
-                mm_paint_cache.volume_data[vol_id] = MMPaintCachePerVolume{ extruder_idx, std::move(ts_uptr), std::chrono::system_clock::now(), timestamp };
+                m_mm_paint_cache.volume_data[vol_id] = MMPaintCachePerVolume{ extruder_idx, std::move(ts_uptr), std::chrono::system_clock::now(), timestamp };
             }
             else {
                 ts = it->second.triangle_selector_mm.get();
@@ -928,11 +918,11 @@ void GLVolumeCollection::render(GLVolumeCollection::ERenderType type, bool disab
     using namespace std::chrono_literals;
     static auto time_since_last_check = time_now;
     if (time_now - time_since_last_check > 1000ms)
-        for (auto it = mm_paint_cache.volume_data.begin(); it != mm_paint_cache.volume_data.end(); ) {
+        for (auto it = m_mm_paint_cache.volume_data.begin(); it != m_mm_paint_cache.volume_data.end(); ) {
             auto it_delete = it; // The iterator to the deleted element will be invalidated, the others will not.
             ++it;
             if (time_now - it_delete->second.time_used > 5000ms)
-                mm_paint_cache.volume_data.erase(it_delete);
+                m_mm_paint_cache.volume_data.erase(it_delete);
     }
 
 

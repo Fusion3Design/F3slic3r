@@ -19,6 +19,9 @@
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Color.hpp"
+#include "libslic3r/ObjectID.hpp"
+
+#include "slic3r/GUI/Gizmos/GLGizmoMmuSegmentation.hpp"
 
 #include "GLModel.hpp"
 #include "MeshUtils.hpp"
@@ -391,6 +394,18 @@ private:
     bool m_show_sinking_contours{ false };
     bool m_show_non_manifold_edges{ true };
     bool m_use_raycasters{ true };
+
+    struct MMPaintCachePerVolume {
+        size_t extruder_id;
+        std::unique_ptr<GUI::TriangleSelectorMmGui> triangle_selector_mm;
+        std::chrono::system_clock::time_point time_used;
+        uint64_t mm_timestamp;
+    };
+    struct MMPaintCache {
+        std::vector<ColorRGBA> extruders_colors;
+        std::map<ObjectID, MMPaintCachePerVolume> volume_data;
+    };
+    mutable MMPaintCache m_mm_paint_cache;
 
 public:
     GLVolumePtrs volumes;
