@@ -329,7 +329,7 @@ std::vector<wxBitmapBundle*> get_extruder_color_icons(bool thin_icon/* = false*/
 {
     // Create the bitmap with color bars.
     std::vector<wxBitmapBundle*> bmps;
-    std::vector<std::string> colors = Slic3r::GUI::wxGetApp().plater()->get_extruder_colors_from_plater_config();
+    std::vector<std::string> colors = Slic3r::GUI::wxGetApp().plater()->get_extruder_color_strings_from_plater_config();
 
     if (colors.empty())
         return bmps;

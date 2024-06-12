@@ -4674,7 +4674,7 @@ void GLCanvas3D::_render_thumbnail_internal(ThumbnailData& thumbnail_data, const
     camera.apply_projection(volumes_box, near_z, far_z);
 
     const ModelObjectPtrs &model_objects                = GUI::wxGetApp().model().objects;
-    std::vector<ColorRGBA> extruders_colors             = get_extruders_colors();
+    std::vector<ColorRGBA> extruders_colors             = GUI::wxGetApp().plater()->get_extruder_colors_from_plater_config();
     const bool             is_enabled_painted_thumbnail = !model_objects.empty() && !extruders_colors.empty();
 
     if (thumbnail_params.transparent_background)
@@ -4724,7 +4724,7 @@ void GLCanvas3D::_render_thumbnail_internal(ThumbnailData& thumbnail_data, const
 
         if (render_as_painted) {
             const ModelVolume& model_volume = *model_objects[obj_idx]->volumes[vol_idx];
-            const size_t extruder_idx = get_extruder_color_idx(model_volume, extruders_count);
+            const size_t extruder_idx = ModelVolume::get_extruder_color_idx(model_volume, extruders_count);
             TriangleSelectorMmGui ts(model_volume.mesh(), extruders_colors, extruders_colors[extruder_idx]);
             ts.deserialize(model_volume.mm_segmentation_facets.get_data(), true);
             ts.request_update_render_data();
