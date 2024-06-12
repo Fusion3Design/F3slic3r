@@ -123,7 +123,7 @@ std::optional<Point> get_last_position(const std::vector<SliceExtrusions> &slice
 std::vector<IslandExtrusions> extract_island_extrusions(
     const LayerSlice &lslice,
     const Print &print,
-    const Layer *layer,
+    const Layer &layer,
     const Seams::Placer &seam_placer,
     const bool spiral_vase,
     const ExtractEntityPredicate &predicate,
@@ -133,14 +133,14 @@ std::vector<IslandExtrusions> extract_island_extrusions(
 std::vector<InfillRange> extract_ironing_extrusions(
     const LayerSlice &lslice,
     const Print &print,
-    const Layer *layer,
+    const Layer &layer,
     const ExtractEntityPredicate &predicate,
     std::optional<Point> &previous_position
 );
 
 std::vector<SliceExtrusions> get_slices_extrusions(
     const Print &print,
-    const Layer *layer,
+    const Layer &layer,
     const Seams::Placer &seam_placer,
     std::optional<Point> previous_position,
     const bool spiral_vase,

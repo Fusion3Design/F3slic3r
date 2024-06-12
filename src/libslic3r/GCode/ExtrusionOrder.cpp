@@ -27,11 +27,10 @@ int get_extruder_id(
 }
 
 ExtrusionEntitiesPtr extract_infill_extrusions(
-    const Layer *layer,
     const PrintRegion &region,
     const ExtrusionEntityCollection &fills,
-    LayerExtrusionRanges::const_iterator begin,
-    LayerExtrusionRanges::const_iterator end,
+    const LayerExtrusionRanges::const_iterator& begin,
+    const LayerExtrusionRanges::const_iterator& end,
     const ExtractEntityPredicate &predicate
 ) {
     ExtrusionEntitiesPtr result;
@@ -61,13 +60,13 @@ ExtrusionEntitiesPtr extract_infill_extrusions(
 
 std::vector<ExtrusionEntity *> extract_perimeter_extrusions(
     const Print &print,
-    const Layer *layer,
+    const Layer &layer,
     const LayerIsland &island,
     const ExtractEntityPredicate &predicate
 ) {
     std::vector<ExtrusionEntity *> result;
 
-    const LayerRegion &layerm = *layer->get_region(island.perimeters.region());
+    const LayerRegion &layerm = *layer.get_region(island.perimeters.region());
     const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
 
     for (uint32_t perimeter_id : island.perimeters) {
@@ -107,8 +106,8 @@ std::vector<ExtrusionEntityReference> sort_fill_extrusions(const ExtrusionEntiti
 
 std::vector<InfillRange> extract_infill_ranges(
     const Print &print,
-    const Layer *layer,
-    const LayerIsland island,
+    const Layer &layer,
+    const LayerIsland &island,
     std::optional<Point> previous_position,
     const ExtractEntityPredicate &predicate
 ) {
@@ -117,7 +116,7 @@ std::vector<InfillRange> extract_infill_ranges(
         // Gather range of fill ranges with the same region.
         auto it_end = it;
         for (++ it_end; it_end != island.fills.end() && it->region() == it_end->region(); ++ it_end) ;
-        const LayerRegion &layerm = *layer->get_region(it->region());
+        const LayerRegion &layerm = *layer.get_region(it->region());
         // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be unique to a PrintObject, they would not
         // identify the content of PrintRegion accross the whole print uniquely. Translate to a Print specific PrintRegion.
         const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
@@ -125,7 +124,6 @@ std::vector<InfillRange> extract_infill_ranges(
         const Point* start_near = previous_position ? &(*(previous_position)) : nullptr;
 
         ExtrusionEntitiesPtr extrusions{extract_infill_extrusions(
-            layer,
             region,
             layerm.fills(),
             it,
@@ -147,18 +145,18 @@ std::vector<InfillRange> extract_infill_ranges(
 }
 
 void place_seams(
-    const Layer *layer, const Seams::Placer &seam_placer, const std::vector<ExtrusionEntity *> &perimeters, std::optional<Point> previous_position, const bool spiral_vase
+    const Layer &layer, const Seams::Placer &seam_placer, const std::vector<ExtrusionEntity *> &perimeters, std::optional<Point> previous_position, const bool spiral_vase
 ) {
     std::vector<const ExtrusionEntity *> result;
     result.reserve(perimeters.size());
 
     for (ExtrusionEntity* perimeter : perimeters) {
-        auto loop{static_cast<ExtrusionLoop *>(perimeter)};
+        auto loop{dynamic_cast<ExtrusionLoop *>(perimeter)};
 
         Point seam_point{previous_position ? *previous_position : Point::Zero()};
         if (!spiral_vase && loop != nullptr) {
             assert(m_layer != nullptr);
-            seam_point = seam_placer.place_seam(layer, *loop, seam_point);
+            seam_point = seam_placer.place_seam(&layer, *loop, seam_point);
             loop->seam = seam_point;
         }
         previous_position = seam_point;
@@ -185,7 +183,7 @@ std::optional<Point> get_last_position(const ExtrusionEntityReferences &extrusio
 
 std::optional<Point> get_last_position(const std::vector<ExtrusionEntity *> &perimeters){
     if (!perimeters.empty()) {
-        auto last_perimeter{static_cast<const ExtrusionLoop *>(perimeters.back())};
+        auto last_perimeter{dynamic_cast<const ExtrusionLoop *>(perimeters.back())};
         if (last_perimeter != nullptr) {
             return last_perimeter->seam;
         }
@@ -221,7 +219,7 @@ std::optional<Point> get_last_position(const std::vector<SliceExtrusions> &slice
 std::vector<IslandExtrusions> extract_island_extrusions(
     const LayerSlice &lslice,
     const Print &print,
-    const Layer *layer,
+    const Layer &layer,
     const Seams::Placer &seam_placer,
     const bool spiral_vase,
     const ExtractEntityPredicate &predicate,
@@ -229,13 +227,13 @@ std::vector<IslandExtrusions> extract_island_extrusions(
 ) {
     std::vector<IslandExtrusions> result;
     for (const LayerIsland &island : lslice.islands) {
-        const LayerRegion &layerm = *layer->get_region(island.perimeters.region());
+        const LayerRegion &layerm = *layer.get_region(island.perimeters.region());
         // PrintObjects own the PrintRegions, thus the pointer to PrintRegion would be
         // unique to a PrintObject, they would not identify the content of PrintRegion
         // accross the whole print uniquely. Translate to a Print specific PrintRegion.
         const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
 
-        const auto infill_predicate = [&](const auto &eec, const auto &region) {
+        const auto infill_predicate = [&](const ExtrusionEntityCollection &eec, const PrintRegion &region) {
             return predicate(eec, region) && eec.role() != ExtrusionRole::Ironing;
         };
 
@@ -277,7 +275,7 @@ std::vector<IslandExtrusions> extract_island_extrusions(
 std::vector<InfillRange> extract_ironing_extrusions(
     const LayerSlice &lslice,
     const Print &print,
-    const Layer *layer,
+    const Layer &layer,
     const ExtractEntityPredicate &predicate,
     std::optional<Point> &previous_position
 ) {
@@ -304,7 +302,7 @@ std::vector<InfillRange> extract_ironing_extrusions(
 
 std::vector<SliceExtrusions> get_slices_extrusions(
     const Print &print,
-    const Layer *layer,
+    const Layer &layer,
     const Seams::Placer &seam_placer,
     std::optional<Point> previous_position,
     const bool spiral_vase,
@@ -318,8 +316,8 @@ std::vector<SliceExtrusions> get_slices_extrusions(
 
     std::vector<SliceExtrusions> result;
 
-    for (size_t idx : layer->lslice_indices_sorted_by_print_order) {
-        const LayerSlice &lslice = layer->lslices_ex[idx];
+    for (size_t idx : layer.lslice_indices_sorted_by_print_order) {
+        const LayerSlice &lslice = layer.lslices_ex[idx];
         result.emplace_back(SliceExtrusions{
             extract_island_extrusions(
                 lslice, print, layer, seam_placer, spiral_vase, predicate, previous_position
@@ -404,14 +402,14 @@ std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
 
                 if (get_extruder_id(
                         entity_collection, layer_tools, region, instance.instance_id
-                    ) != extruder_id) {
+                    ) != static_cast<int>(extruder_id)) {
                     return false;
                 }
                 return true;
             };
 
             result.emplace_back(get_slices_extrusions(
-                print, layer, seam_placer, previous_position, spiral_vase, predicate
+                print, *layer, seam_placer, previous_position, spiral_vase, predicate
             ));
             previous_position = get_last_position(result.back(), print.config().infill_first);
         }
@@ -451,7 +449,7 @@ std::vector<NormalExtrusions> get_normal_extrusions(
                     return false;
                 }
 
-                if (get_extruder_id(entity_collection, layer_tools, region, instance.instance_id) != extruder_id) {
+                if (get_extruder_id(entity_collection, layer_tools, region, instance.instance_id) != static_cast<int>(extruder_id)) {
                     return false;
                 }
                 return true;
@@ -459,7 +457,7 @@ std::vector<NormalExtrusions> get_normal_extrusions(
 
             result.back().slices_extrusions = get_slices_extrusions(
                 print,
-                layer,
+                *layer,
                 seam_placer,
                 previous_position,
                 spiral_vase,
