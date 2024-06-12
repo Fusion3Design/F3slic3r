@@ -64,6 +64,7 @@
 #include "NotificationManager.hpp"
 #include "Preferences.hpp"
 #include "WebViewDialog.hpp"
+#include "UserAccount.hpp"
 
 #ifdef _WIN32
 #include <dbt.h>
@@ -595,12 +596,36 @@ static wxString GetTooltipForSettingsButton(PrinterTechnology pt)
     return from_u8(tooltip);
 }
 
+void MainFrame::set_callbacks_for_topbar_menus()
+{
+    m_bar_menus.set_workspaces_menu_callbacks(
+        []()                             -> int         { return wxGetApp().get_mode(); },
+        [](/*ConfigOptionMode*/int mode) -> void        { wxGetApp().save_mode(mode); },
+        [](/*ConfigOptionMode*/int mode) -> std::string { return wxGetApp().get_mode_btn_color(mode); }
+    );
+
+    m_bar_menus.set_account_menu_callbacks(
+        []() -> void { wxGetApp().plater()->toggle_remember_user_account_session(); },
+        []() -> void { wxGetApp().plater()->act_with_user_account(); },
+        []() -> TopBarMenus::UserAccountInfo {
+            if (auto user_account = wxGetApp().plater()->get_user_account())
+                return { user_account->is_logged(),
+                         user_account->get_remember_session(),
+                         user_account->get_username(),
+                         user_account->get_avatar_path(true) };
+            return TopBarMenus::UserAccountInfo();
+        }
+    );
+}
+
 void MainFrame::init_tabpanel()
 {
     wxGetApp().update_ui_colours_from_appconfig();
 
+    set_callbacks_for_topbar_menus();
+
     if (wxGetApp().is_editor()) {
-        m_tmp_top_bar = new TopBar(this, &m_bar_menus, false);
+        m_tmp_top_bar = new TopBar(this, &m_bar_menus, [this]() -> void { select_tab(); });
         m_tmp_top_bar->SetFont(Slic3r::GUI::wxGetApp().normal_font());
         m_tmp_top_bar->Hide();
     }
@@ -855,7 +880,8 @@ void MainFrame::set_printer_webview_credentials(const std::string& usr, const st
 void Slic3r::GUI::MainFrame::refresh_account_menu(bool avatar/* = false */)
 {
     // Update User name in TopBar
-    m_bar_menus.UpdateAccountMenu(m_plater->get_user_account());
+    m_bar_menus.UpdateAccountMenu();
+
     m_tabpanel->GetTopBarItemsCtrl()->UpdateAccountButton(avatar);
     m_tmp_top_bar->GetTopBarItemsCtrl()->UpdateAccountButton(avatar);
 }

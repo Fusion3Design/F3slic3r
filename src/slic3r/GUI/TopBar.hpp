@@ -57,19 +57,21 @@ class TopBarItemsCtrl : public wxControl
         wxPoint get_popup_pos();
     };
 
-    TopBarMenus*    m_menus{ nullptr };
+    TopBarMenus*    m_menus                 { nullptr };
 
-    ::TextInput*    m_search{ nullptr };
+    ::TextInput*    m_search                { nullptr };
 
-    int             m_btns_width{ 0 };
-    bool            m_collapsed_btns{ false };
+    int             m_btns_width            { 0 };
+    bool            m_collapsed_btns        { false };
+
+    std::function<void()> m_cb_settings_btn { nullptr };
 
     void            update_btns_width();
 
 public:
     TopBarItemsCtrl(wxWindow* parent,
                     TopBarMenus* menus = nullptr,
-                    bool is_main = true);
+                    std::function<void()> cb_settings_btn = nullptr);
     ~TopBarItemsCtrl() {}
 
     void SetSelection(int sel, bool force = false);
@@ -124,12 +126,12 @@ public:
 
     TopBar( wxWindow * parent,
             TopBarMenus* menus,
-            bool is_main = true)
+            std::function<void()> cb_settings_btn = nullptr)
     {
         Init();
         // wxNB_NOPAGETHEME: Disable Windows Vista theme for the Notebook background. The theme performance is terrible on Windows 10
         // with multiple high resolution displays connected.
-        Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME, menus, is_main);
+        Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP | wxTAB_TRAVERSAL | wxNB_NOPAGETHEME, menus, cb_settings_btn);
     }
 
     bool Create(wxWindow * parent,
@@ -138,12 +140,12 @@ public:
                 const wxSize & size = wxDefaultSize,
                 long style = 0,
                 TopBarMenus* menus = nullptr,
-                bool is_main = true)
+                std::function<void()> cb_settings_btn = nullptr)
     {
         if (!wxBookCtrlBase::Create(parent, winid, pos, size, style | wxBK_TOP))
             return false;
 
-        m_bookctrl = new TopBarItemsCtrl(this, menus, is_main);
+        m_bookctrl = new TopBarItemsCtrl(this, menus, cb_settings_btn);
 
         wxSizer* mainSizer = new wxBoxSizer(IsVertical() ? wxVERTICAL : wxHORIZONTAL);
 

@@ -643,10 +643,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     view3D = new View3D(q, bed, &model, config, &background_process);
     preview = new Preview(q, bed, &model, config, &background_process, &gcode_result, [this]() { schedule_background_process(); });
 
-#ifdef __APPLE__
     // set default view_toolbar icons size equal to GLGizmosManager::Default_Icons_Size
     view_toolbar.set_icons_size(GLGizmosManager::Default_Icons_Size);
-#endif // __APPLE__
 
     panels.push_back(view3D);
     panels.push_back(preview);
@@ -1073,6 +1071,7 @@ void Plater::priv::collapse_sidebar(bool collapse)
     new_tooltip += " [Shift+Tab]";
     int id = collapse_toolbar.get_item_id("collapse_sidebar");
     collapse_toolbar.set_tooltip(id, new_tooltip);
+    collapse_toolbar.set_enabled(collapse || wxGetApp().app_config->get_bool("show_collapse_button"));
 
     notification_manager->set_sidebar_collapsed(collapse);
 }
@@ -3273,8 +3272,8 @@ bool Plater::priv::init_view_toolbar()
 
     view_toolbar.set_horizontal_orientation(GLToolbar::Layout::HO_Left);
     view_toolbar.set_vertical_orientation(GLToolbar::Layout::VO_Bottom);
-    view_toolbar.set_border(5.0f);
-    view_toolbar.set_gap_size(1.0f);
+    //view_toolbar.set_border(5.0f);
+    //view_toolbar.set_gap_size(1.0f);
 
     GLToolbarItem::Data item;
 
@@ -3324,9 +3323,9 @@ bool Plater::priv::init_collapse_toolbar()
     collapse_toolbar.set_layout_type(GLToolbar::Layout::Vertical);
     collapse_toolbar.set_horizontal_orientation(GLToolbar::Layout::HO_Right);
     collapse_toolbar.set_vertical_orientation(GLToolbar::Layout::VO_Top);
-    collapse_toolbar.set_border(5.0f);
-    collapse_toolbar.set_separator_size(5);
-    collapse_toolbar.set_gap_size(2);
+    //collapse_toolbar.set_border(5.0f);
+    //collapse_toolbar.set_separator_size(5);
+    //collapse_toolbar.set_gap_size(2);
 
     GLToolbarItem::Data item;
 
@@ -6814,6 +6813,22 @@ UserAccount* Plater::get_user_account()
 const UserAccount* Plater::get_user_account() const
 {
     return p->user_account.get();
+}
+
+void Plater::toggle_remember_user_account_session()
+{
+    if (p->user_account)
+        p->user_account->toggle_remember_session();
+}
+
+void Plater::act_with_user_account()
+{
+    if (p->user_account) {
+        if (p->user_account->is_logged())
+            p->user_account->do_logout();
+        else
+            p->user_account->do_login();
+    }
 }
 
 void Plater::init_notification_manager()
