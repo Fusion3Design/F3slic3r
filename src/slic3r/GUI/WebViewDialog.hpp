@@ -200,6 +200,7 @@ protected:
     void run_script_bridge(const wxString& script) override {run_script(script); }
 private:
     void on_user_token(UserAccountSuccessEvent& e);
+    bool m_reached_default_url {false};
 };
 
 class PrinterWebViewPanel : public WebViewPanel

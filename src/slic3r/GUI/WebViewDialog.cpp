@@ -642,7 +642,17 @@ void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
 }
 void ConnectWebViewPanel::on_navigation_request(wxWebViewEvent &evt) 
 {
-    //TODO Stop request out of connect
+    if (evt.GetURL() == m_default_url) {
+        m_reached_default_url = true;
+        return;
+    }
+    if (evt.GetURL() == (GUI::format_wxstr("file:///%1%/web/connection_failed.html", boost::filesystem::path(resources_dir()).generic_string()))) {
+        return;
+    }
+    if (m_reached_default_url && !evt.GetURL().StartsWith(m_default_url)) {
+        BOOST_LOG_TRIVIAL(info) << evt.GetURL() <<  " does not start with default url. Vetoing.";
+        evt.Veto();
+    }
 }
 void ConnectWebViewPanel::logout()
 {
