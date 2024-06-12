@@ -1202,6 +1202,13 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
         const bool type_prusa = std::regex_match(path.string(), pattern_prusa);
         const bool type_printRequest =  std::regex_match(path.string(), pattern_printRequest);
 
+        if (type_printRequest && printer_technology != ptSLA) {
+            Slic3r::GUI::show_info(nullptr,
+                _L("PrintRequest can only be loaded if an SLA printer is selected."),
+                _L("Error!"));
+            continue;
+        }
+
         Slic3r::Model model;
         bool is_project_file = type_prusa;
         try {
