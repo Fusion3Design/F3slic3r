@@ -1345,18 +1345,38 @@ bool GLGizmoEmboss::process(bool make_snapshot)
 
 void GLGizmoEmboss::close()
 {
-    // remove volume when text is empty
     if (m_volume != nullptr && 
-        m_volume->text_configuration.has_value() &&
-        is_text_empty(m_text)) {
-        Plater &p = *wxGetApp().plater();
-        // is the text object?
-        if (m_volume->is_the_only_one_part()) {
-            // delete whole object
-            p.remove(m_parent.get_selection().get_object_idx());
-        } else {
-            // delete text volume
-            p.remove_selected();
+        m_volume->text_configuration.has_value() ){
+        
+        // remove volume when text is empty
+        if (is_text_empty(m_text)) {
+            Plater &p = *wxGetApp().plater();
+            // is the text object?
+            if (m_volume->is_the_only_one_part()) {
+                // delete whole object
+                p.remove(m_parent.get_selection().get_object_idx());
+            } else {
+                // delete text volume
+                p.remove_selected();
+            }
+        }
+
+        // Fix phanthom transformation
+        //   appear when right click into scene during edit Rotation in input (click "Edit" button)
+        const GLVolume *gl_volume_ptr = m_parent.get_selection().get_first_volume();
+        if (gl_volume_ptr != nullptr) {
+            const Transform3d &v_tr = m_volume->get_matrix();
+            const Transform3d &gl_v_tr = gl_volume_ptr->get_volume_transformation().get_matrix();
+
+            const Matrix3d &v_rot = v_tr.linear();
+            const Matrix3d &gl_v_rot = gl_v_tr.linear();
+            const Vec3d &v_move = v_tr.translation();
+            const Vec3d &gl_v_move = gl_v_tr.translation();
+            if (!is_approx(v_rot, gl_v_rot)) { 
+                m_parent.do_rotate(rotation_snapshot_name);
+            } else if (!is_approx(v_move, gl_v_move)){
+                m_parent.do_move(move_snapshot_name);
+            }
         }
     }
 

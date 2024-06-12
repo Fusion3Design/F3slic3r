@@ -266,6 +266,16 @@ inline bool is_approx(const Vec3d &p1, const Vec3d &p2, double epsilon = EPSILON
 	return d.x() < epsilon && d.y() < epsilon && d.z() < epsilon;
 }
 
+inline bool is_approx(const Matrix3d &m1, const Matrix3d &m2, double epsilon = EPSILON)
+{
+    for (size_t i = 0; i < 3; i++)
+        for (size_t j = 0; j < 3; j++)
+            if (!is_approx(m1(i, j), m2(i, j), epsilon))
+                return false;
+
+    return true;
+}
+
 inline Point lerp(const Point &a, const Point &b, double t)
 {
     assert((t >= -EPSILON) && (t <= 1. + EPSILON));
