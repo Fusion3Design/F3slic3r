@@ -963,30 +963,57 @@ void GUI_App::legacy_app_config_vendor_check()
     // So we just move it to the vendor folder. Since all profiles are named the same, it should not be a problem.
     // Preset updater should be doing blocking update over PrusaResearch.ini. Then all should be ok.
 
-    const std::vector<std::string> prusaslicer_moved_to_sla = { "SL1", "SL1S" };
+    std::map<std::string, std::vector<std::string>> moved_models;
+    moved_models["PrusaResearch"] = {"SL1", "SL1S"};
+    moved_models["Anycubic"] = {"PHOTON MONO", "PHOTON MONO SE", "PHOTON MONO X", "PHOTON MONO X 6K"};
+    std::map<std::string, std::string> vendors_from_to;
+    vendors_from_to["PrusaResearch"] = "PrusaResearchSLA";
+    vendors_from_to["Anycubic"] = "AnycubicSLA";
+    // resulting 
+    std::vector<std::string> vendors_to_create;
+
     const std::map<std::string, std::map<std::string, std::set<std::string>>>& vendor_map = app_config->vendors();
-    bool found_legacy_printers = false;
-    if (const auto& vendor_it = vendor_map.find("PrusaResearch"); vendor_it != vendor_map.end()) {
-        for (const std::string& model : prusaslicer_moved_to_sla) {
-            if (const auto& it = vendor_it->second.find(model); it != vendor_it->second.end()) {
-                BOOST_LOG_TRIVIAL(error) << "found " << model;
-                found_legacy_printers = true;
-                break;
+    for (const auto& moved_models_of_vendor : moved_models) {
+        if (const auto &vendor_it = vendor_map.find(moved_models_of_vendor.first); vendor_it != vendor_map.end()) {
+            for (const std::string &model : moved_models_of_vendor.second) {
+                if (const auto &it = vendor_it->second.find(model); it != vendor_it->second.end()) {
+                    vendors_to_create.emplace_back(vendors_from_to[moved_models_of_vendor.first]);
+                    break;
+                }
             }
         }
     }
-    if (!found_legacy_printers) {
+    
+    if (vendors_to_create.empty()) {
         return;
     }
+    BOOST_LOG_TRIVIAL(warning) << "PrusaSlicer has found legacy SLA printers. The printers will be "
+                                  "moved to new vendor and its ini file will be installed. Configuration snapshot will be taken.";
+
+     // Take snapshot now, since creation of new vendors in appconfig, snapshots wont be compatible in older slicers.
+    // If any of the new vendors already is in appconfig, there is no reason to do a snapshot, it will fail or wont be compatible in previous version.
+    bool do_snapshot = true;
+    for (const std::string &vendor : vendors_to_create) {
+        if (vendor_map.find(vendor) != vendor_map.end()) {
+            do_snapshot = false;
+            break;
+        }
+    }
+    if (do_snapshot) {
+         GUI::Config::take_config_snapshot_report_error(*app_config, Config::Snapshot::SNAPSHOT_UPGRADE, "");
+    }
+
     // make a deep copy of vendor map with moved printers
     std::map<std::string, std::map<std::string, std::set<std::string>>> new_vendor_map;
     for (const auto& vendor : vendor_map) {
         for (const auto& model : vendor.second) {
-            if (vendor.first == "PrusaResearch" && std::find(prusaslicer_moved_to_sla.begin(), prusaslicer_moved_to_sla.end(), model.first) != prusaslicer_moved_to_sla.end()) {
+            if (vendors_from_to.find(vendor.first) != vendors_from_to.end() && std::find(moved_models[vendor.first].begin(), moved_models[vendor.first].end(), model.first) != moved_models[vendor.first].end()) {
+                // variants of models to be moved are placed under new vendor
                 for (const std::string& variant : model.second) {
-                    new_vendor_map["PrusaResearchSLA"][model.first].emplace(variant);
+                    new_vendor_map[vendors_from_to[vendor.first]][model.first].emplace(variant);
                 }
             } else {
+                // rest is just copied
                 for (const std::string& variant : model.second) {
                     new_vendor_map[vendor.first][model.first].emplace(variant);
                 }
@@ -995,19 +1022,24 @@ void GUI_App::legacy_app_config_vendor_check()
     }
     app_config->set_vendors(new_vendor_map);
     
-    // copy PrusaResearchSLA ini file to vendors
-    boost::system::error_code ec;
-    const boost::filesystem::path prusa_sla_in_resources = boost::filesystem::path(Slic3r::resources_dir()) / "profiles" / "PrusaResearchSLA.ini";
-    assert(boost::filesystem::exists(prusa_sla_in_resources));
-    const boost::filesystem::path prusa_sla_in_vendors = boost::filesystem::path(Slic3r::data_dir()) / "vendor" / "PrusaResearchSLA.ini";
-    if (boost::filesystem::exists(prusa_sla_in_vendors, ec)) {
-        return;
+    // copy new vendors ini file to vendors
+    for (const std::string &vendor : vendors_to_create) {
+        boost::system::error_code ec;
+        const boost::filesystem::path ini_in_resources = boost::filesystem::path(Slic3r::resources_dir()) / "profiles" / (vendor + ".ini");
+        assert(boost::filesystem::exists(ini_in_resources));
+        const boost::filesystem::path ini_in_vendors = boost::filesystem::path(Slic3r::data_dir()) / "vendor" / (vendor + ".ini");
+        if (boost::filesystem::exists(ini_in_vendors, ec)) {
+            return;
+        }
+        std::string message;
+        CopyFileResult cfr = copy_file(ini_in_resources.string(), ini_in_vendors.string(), message, false);
+        if (cfr != SUCCESS) {
+            BOOST_LOG_TRIVIAL(error) << "Failed to copy file " << ini_in_resources << " to " << ini_in_vendors << ": " << message;
+        }
     }
-    std::string message;
-    CopyFileResult cfr = copy_file(prusa_sla_in_resources.string(), prusa_sla_in_vendors.string(), message, false);
-    if (cfr != SUCCESS) {
-        BOOST_LOG_TRIVIAL(error) << "Failed to copy file " << prusa_sla_in_resources << " to " << prusa_sla_in_vendors << ": " << message;
-    }
+    
+
+   
 }
 
 // returns old config path to copy from if such exists,
