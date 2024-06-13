@@ -399,10 +399,9 @@ void UserAccountCommunication::init_session_thread()
     m_polling_timer->Start(10000);
     m_thread = std::thread([this]() {
         for (;;) {
-            // Wait for 5 seconds or wakeup call
             {
                 std::unique_lock<std::mutex> lck(m_thread_stop_mutex);      
-                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(1000), [this] { return m_thread_stop || m_thread_wakeup; });
+                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(88888), [this] { return m_thread_stop || m_thread_wakeup; });
             }
             if (m_thread_stop)
                 // Stop the worker thread.
@@ -451,6 +450,9 @@ void UserAccountCommunication::on_token_timer(wxTimerEvent& evt)
 }
 void UserAccountCommunication::on_polling_timer(wxTimerEvent& evt)
 {
+    if (!m_window_is_active) {
+        return;
+    }
     wakeup_session_thread();
 }
 
