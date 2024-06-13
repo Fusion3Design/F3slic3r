@@ -950,6 +950,27 @@ void GUI_App::init_app_config()
     }
 }
 
+namespace {
+// Copy ini file from resources to vendors if such file does not exists yet.
+void copy_vendor_ini(const std::vector<std::string>& vendors)
+{
+    for (const std::string &vendor : vendors) {
+        boost::system::error_code ec;
+        const boost::filesystem::path ini_in_resources = boost::filesystem::path(  Slic3r::resources_dir() ) /  "profiles" / (vendor + ".ini");
+        assert(boost::filesystem::exists(ini_in_resources));
+        const boost::filesystem::path ini_in_vendors = boost::filesystem::path(Slic3r::data_dir()) /  "vendor" / (vendor + ".ini");
+        if (boost::filesystem::exists(ini_in_vendors, ec)) {
+            continue;
+        }
+        std::string message;
+        CopyFileResult cfr = copy_file(ini_in_resources.string(), ini_in_vendors.string(), message, false);
+        if (cfr != SUCCESS) {
+            BOOST_LOG_TRIVIAL(error) << "Failed to copy file " << ini_in_resources << " to "  << ini_in_vendors << ": " << message;
+        }
+    }
+}
+}
+
 void GUI_App::legacy_app_config_vendor_check()
 {
     // Expected state: 
@@ -985,8 +1006,18 @@ void GUI_App::legacy_app_config_vendor_check()
     }
     
     if (vendors_to_create.empty()) {
+        // If there are no printers to move, also do check if "new" vendors really has ini file in vendor folder.
+        // In case of running older and current slicer back and forth, there might be vendors in appconfig without ini.
+        std::vector<std::string> vendors_to_check;
+        for (const auto &vendor_pair: vendors_from_to) {
+            if (vendor_map.find(vendor_pair.second) != vendor_map.end()) {
+                vendors_to_check.emplace_back(vendor_pair.second);
+            }
+        }
+        copy_vendor_ini(vendors_to_check);
         return;
     }
+
     BOOST_LOG_TRIVIAL(warning) << "PrusaSlicer has found legacy SLA printers. The printers will be "
                                   "moved to new vendor and its ini file will be installed. Configuration snapshot will be taken.";
 
@@ -1023,23 +1054,7 @@ void GUI_App::legacy_app_config_vendor_check()
     app_config->set_vendors(new_vendor_map);
     
     // copy new vendors ini file to vendors
-    for (const std::string &vendor : vendors_to_create) {
-        boost::system::error_code ec;
-        const boost::filesystem::path ini_in_resources = boost::filesystem::path(Slic3r::resources_dir()) / "profiles" / (vendor + ".ini");
-        assert(boost::filesystem::exists(ini_in_resources));
-        const boost::filesystem::path ini_in_vendors = boost::filesystem::path(Slic3r::data_dir()) / "vendor" / (vendor + ".ini");
-        if (boost::filesystem::exists(ini_in_vendors, ec)) {
-            return;
-        }
-        std::string message;
-        CopyFileResult cfr = copy_file(ini_in_resources.string(), ini_in_vendors.string(), message, false);
-        if (cfr != SUCCESS) {
-            BOOST_LOG_TRIVIAL(error) << "Failed to copy file " << ini_in_resources << " to " << ini_in_vendors << ": " << message;
-        }
-    }
-    
-
-   
+    copy_vendor_ini(vendors_to_create);  
 }
 
 // returns old config path to copy from if such exists,
