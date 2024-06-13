@@ -519,7 +519,7 @@ struct Plater::priv
     void on_3dcanvas_mouse_dragging_finished(SimpleEvent&);
 
     void show_action_buttons(const bool is_ready_to_slice) const;
-
+    bool can_show_upload_to_connect() const;
     // Set the bed shape to a single closed 2D polygon(array of two element arrays),
     // triangulate the bed and store the triangles into m_bed.m_triangles,
     // fills the m_bed.m_grid_lines and sets m_bed.m_origin.
@@ -3555,6 +3555,24 @@ bool Plater::priv::can_layers_editing() const
     return layers_height_allowed();
 }
 
+bool Plater::priv::can_show_upload_to_connect() const
+{
+    if (!user_account->is_logged()) {
+        return false;
+    }
+    const Preset& selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
+    std::string vendor_id;
+    if (selected_printer.vendor ) {
+        vendor_id = selected_printer.vendor->id;
+    } else if (std::string inherits = selected_printer.inherits(); !inherits.empty()) {
+        const Preset* parent = wxGetApp().preset_bundle->printers.find_preset(inherits);
+        if (parent && parent->vendor) {
+            vendor_id = parent->vendor->id;
+        }
+    }    
+    return vendor_id.compare(0, 5, "Prusa") == 0;
+} 
+
 void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
 {
 	// Cache this value, so that the callbacks from the RemovableDriveManager may repeat that value when calling show_action_buttons().
@@ -3565,7 +3583,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
     DynamicPrintConfig* selected_printer_config = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
     const auto print_host_opt = selected_printer_config ? selected_printer_config->option<ConfigOptionString>("print_host") : nullptr;
     const bool send_gcode_shown = print_host_opt != nullptr && !print_host_opt->value.empty();
-    const bool connect_gcode_shown = print_host_opt == nullptr && user_account->is_logged();
+    const bool connect_gcode_shown = print_host_opt == nullptr && can_show_upload_to_connect();
     // when a background processing is ON, export_btn and/or send_btn are showing
     if (get_config_bool("background_processing"))
     {
