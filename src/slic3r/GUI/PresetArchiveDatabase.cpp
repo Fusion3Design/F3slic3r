@@ -10,7 +10,6 @@
 #include "libslic3r/miniz_extension.hpp"
 
 #include <boost/log/trivial.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>

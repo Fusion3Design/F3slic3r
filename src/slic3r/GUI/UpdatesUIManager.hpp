@@ -4,6 +4,9 @@
 #define slic3r_GUI_UpdatesUIManager_hpp_
 
 #include "GUI_Utils.hpp"
+#include <boost/filesystem.hpp>
+#include <set>
+#include <vector>
 
 class wxWindow;
 class wxEvent;

@@ -2,6 +2,7 @@
 #define slic3r_TopBarMenus_hpp_
 
 #include <wx/menu.h>
+#include <boost/filesystem.hpp>
 
 class TopBarItemsCtrl;
 class wxString;

@@ -4,14 +4,12 @@
 #include "Event.hpp"
 
 #include <boost/uuid/uuid_generators.hpp>
+#include <boost/filesystem.hpp>
 
 #include <string>
 #include <vector>
+#include <map>
 #include <memory>
-
-namespace boost::filesystem {
-class path;
-}
 
 namespace Slic3r {
 class AppConfig;

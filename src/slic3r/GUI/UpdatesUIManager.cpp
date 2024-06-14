@@ -14,6 +14,7 @@
 #include "format.hpp"
 
 #include "Widgets/CheckBox.hpp"
+#include <wx/wupdlock.h>
 
 namespace fs = boost::filesystem;
 
@@ -177,7 +178,7 @@ void RepositoryUpdateUIManager::fill_grids()
             {
                 ScalableButton* btn = new ScalableButton(m_parent, wxID_ANY, "open");
                 btn->SetToolTip(_L("Open folder"));
-                btn->Bind(wxEVT_BUTTON, [this, &entry](wxCommandEvent& event) {
+                btn->Bind(wxEVT_BUTTON, [&entry](wxCommandEvent& event) {
                     GUI::desktop_open_folder(entry.source_path.parent_path().make_preferred());
                 });
                 add(btn);
@@ -293,8 +294,8 @@ bool RepositoryUpdateUIManager::set_selected_repositories()
 void RepositoryUpdateUIManager::check_selection()
 {
     for (const auto& [uuid, is_selected] : m_pad->get_selected_repositories_uuid() )
-        if (is_selected && m_selected_uuids.find(uuid) == m_selected_uuids.end() ||
-            !is_selected && m_selected_uuids.find(uuid) != m_selected_uuids.end()) {
+        if ((is_selected && m_selected_uuids.find(uuid) == m_selected_uuids.end() )||
+            (!is_selected && m_selected_uuids.find(uuid) != m_selected_uuids.end())) {
             m_is_selection_changed = true;
             return;
         }

@@ -3881,25 +3881,20 @@ void ConfigWizard::priv::load_pages_from_archive()
     any_sla_selected = check_sla_selected();
     any_fff_selected = !only_sla_mode && check_fff_selected();
 
-    check_and_install_missing_materials(T_ANY);
-    update_materials(T_ANY);
-    if (page_filaments) {
-        if (any_fff_selected)
-            page_filaments->reload_presets();
-    }
-    else if(!only_sla_mode) {
+    if(!only_sla_mode && !page_filaments)
         add_page(page_filaments = new PageMaterials(q, &filaments,
             _L("Filament Profiles Selection"), _L("Filaments"), _L("Type:")));
-    }
-
-    if (page_sla_materials) {
-        if (any_sla_selected)
-            page_sla_materials->reload_presets();
-    }
-    else {
+    if (!page_sla_materials)
         add_page(page_sla_materials = new PageMaterials(q, &sla_materials,
             _L("SLA Material Profiles Selection") + " ", _L("SLA Materials"), _L("Type:")));
-    }
+    
+    check_and_install_missing_materials(T_ANY);
+    update_materials(T_ANY);
+    if (any_fff_selected)
+        page_filaments->reload_presets();
+
+    if (any_sla_selected)
+        page_sla_materials->reload_presets();
 
     load_pages();
 }
