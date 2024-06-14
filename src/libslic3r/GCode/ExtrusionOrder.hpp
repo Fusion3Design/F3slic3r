@@ -71,103 +71,17 @@ struct NormalExtrusions {
     std::vector<SliceExtrusions> slices_extrusions;
 };
 
-bool is_overriden(const ExtrusionEntityCollection &eec, const LayerTools &layer_tools, const std::size_t instance_id);
+std::optional<Point> get_last_position(const ExtrusionEntitiesPtr &perimeters);
 
-int get_extruder_id(
-    const ExtrusionEntityCollection &eec,
-    const LayerTools &layer_tools,
-    const PrintRegion &region,
-    const std::size_t instance_id
-);
-
-using ExtractEntityPredicate = std::function<bool(const ExtrusionEntityCollection&, const PrintRegion&)>;
-
-ExtrusionEntitiesPtr extract_infill_extrusions(
-    const Layer *layer,
-    const PrintRegion &region,
-    const ExtrusionEntityCollection &fills,
-    LayerExtrusionRanges::const_iterator begin,
-    LayerExtrusionRanges::const_iterator end,
-    const ExtractEntityPredicate &predicate
-);
-
-std::vector<ExtrusionEntity *> extract_perimeter_extrusions(
-    const Print &print,
-    const Layer *layer,
-    const LayerIsland &island,
-    const ExtractEntityPredicate &predicate
-);
-
-std::vector<ExtrusionEntityReference> sort_fill_extrusions(const ExtrusionEntitiesPtr &fills, const Point* start_near);
-
-std::vector<InfillRange> extract_infill_ranges(
-    const Print &print,
-    const Layer *layer,
-    const LayerIsland island,
-    std::optional<Point> previous_position,
-    const ExtractEntityPredicate &predicate
-);
-
-void place_seams(
-    const Layer *layer, const Seams::Placer &seam_placer, const std::vector<ExtrusionEntity *> &perimeters, std::optional<Point> previous_position, const bool spiral_vase
-);
-
-std::optional<Point> get_last_position(const std::vector<InfillRange> &infill_ranges);
-
-std::optional<Point> get_last_position(const ExtrusionEntityReferences &extrusions);
-
-std::optional<Point> get_last_position(const std::vector<ExtrusionEntity *> &perimeters);
-
-std::optional<Point> get_last_position(const std::vector<SliceExtrusions> &slice_extrusions, const bool infill_first);
-
-std::vector<IslandExtrusions> extract_island_extrusions(
-    const LayerSlice &lslice,
-    const Print &print,
-    const Layer &layer,
-    const Seams::Placer &seam_placer,
-    const bool spiral_vase,
-    const ExtractEntityPredicate &predicate,
-    std::optional<Point> &previous_position
-);
-
-std::vector<InfillRange> extract_ironing_extrusions(
-    const LayerSlice &lslice,
-    const Print &print,
-    const Layer &layer,
-    const ExtractEntityPredicate &predicate,
-    std::optional<Point> &previous_position
-);
-
-std::vector<SliceExtrusions> get_slices_extrusions(
-    const Print &print,
-    const Layer &layer,
-    const Seams::Placer &seam_placer,
-    std::optional<Point> previous_position,
-    const bool spiral_vase,
-    const ExtractEntityPredicate &predicate
-);
-
-unsigned translate_support_extruder(
-    const int configured_extruder,
-    const LayerTools &layer_tools,
-    const ConfigOptionBools &is_soluable
-);
-
-ExtrusionEntityReferences get_support_extrusions(
-    const unsigned int extruder_id,
-    const GCode::ObjectLayerToPrint &layer_to_print,
-    unsigned int support_extruder,
-    unsigned int interface_extruder
-);
+using SeamPlacingFunciton = std::function<std::optional<Point>(const Layer &layer, ExtrusionEntity* perimeter, const std::optional<Point>&)>;
 
 std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
     const Print &print,
     const GCode::ObjectsLayerToPrint &layers,
     const LayerTools &layer_tools,
     const std::vector<InstanceToPrint> &instances_to_print,
-    const Seams::Placer &seam_placer,
-    const bool spiral_vase,
     const unsigned int extruder_id,
+    const SeamPlacingFunciton &place_seam,
     std::optional<Point> &previous_position
 );
 
@@ -176,9 +90,8 @@ std::vector<NormalExtrusions> get_normal_extrusions(
     const GCode::ObjectsLayerToPrint &layers,
     const LayerTools &layer_tools,
     const std::vector<InstanceToPrint> &instances_to_print,
-    const Seams::Placer &seam_placer,
-    const bool spiral_vase,
     const unsigned int extruder_id,
+    const SeamPlacingFunciton &place_seam,
     std::optional<Point> &previous_position
 );
 

@@ -1,4 +1,5 @@
 #include "ExtrusionOrder.hpp"
+#include "libslic3r/ShortestPath.hpp"
 
 namespace Slic3r::GCode::ExtrusionOrder {
 
@@ -25,6 +26,8 @@ int get_extruder_id(
     }
     return extruder_id;
 }
+
+using ExtractEntityPredicate = std::function<bool(const ExtrusionEntityCollection&, const PrintRegion&)>;
 
 ExtrusionEntitiesPtr extract_infill_extrusions(
     const PrintRegion &region,
@@ -121,8 +124,6 @@ std::vector<InfillRange> extract_infill_ranges(
         // identify the content of PrintRegion accross the whole print uniquely. Translate to a Print specific PrintRegion.
         const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
 
-        const Point* start_near = previous_position ? &(*(previous_position)) : nullptr;
-
         ExtrusionEntitiesPtr extrusions{extract_infill_extrusions(
             region,
             layerm.fills(),
@@ -131,6 +132,7 @@ std::vector<InfillRange> extract_infill_ranges(
             predicate
         )};
 
+        const Point* start_near = previous_position ? &(*(previous_position)) : nullptr;
         const std::vector<ExtrusionEntityReference> sorted_extrusions{sort_fill_extrusions(extrusions, start_near)};
 
         if (! sorted_extrusions.empty()) {
@@ -142,25 +144,6 @@ std::vector<InfillRange> extract_infill_ranges(
         it = it_end;
     }
     return result;
-}
-
-void place_seams(
-    const Layer &layer, const Seams::Placer &seam_placer, const std::vector<ExtrusionEntity *> &perimeters, std::optional<Point> previous_position, const bool spiral_vase
-) {
-    std::vector<const ExtrusionEntity *> result;
-    result.reserve(perimeters.size());
-
-    for (ExtrusionEntity* perimeter : perimeters) {
-        auto loop{dynamic_cast<ExtrusionLoop *>(perimeter)};
-
-        Point seam_point{previous_position ? *previous_position : Point::Zero()};
-        if (!spiral_vase && loop != nullptr) {
-            assert(m_layer != nullptr);
-            seam_point = seam_placer.place_seam(&layer, *loop, seam_point);
-            loop->seam = seam_point;
-        }
-        previous_position = seam_point;
-    }
 }
 
 std::optional<Point> get_last_position(const std::vector<InfillRange> &infill_ranges) {
@@ -181,11 +164,15 @@ std::optional<Point> get_last_position(const ExtrusionEntityReferences &extrusio
     return std::nullopt;
 }
 
-std::optional<Point> get_last_position(const std::vector<ExtrusionEntity *> &perimeters){
+std::optional<Point> get_last_position(const ExtrusionEntitiesPtr &perimeters){
     if (!perimeters.empty()) {
-        auto last_perimeter{dynamic_cast<const ExtrusionLoop *>(perimeters.back())};
-        if (last_perimeter != nullptr) {
-            return last_perimeter->seam;
+        auto last_perimeter_loop{dynamic_cast<const ExtrusionLoop *>(perimeters.back())};
+        if (last_perimeter_loop != nullptr) {
+            return last_perimeter_loop->seam;
+        }
+        auto last_perimeter_multi_path{dynamic_cast<const ExtrusionMultiPath *>(perimeters.back())};
+        if (last_perimeter_multi_path != nullptr) {
+            return last_perimeter_multi_path->last_point();
         }
     }
     return std::nullopt;
@@ -220,9 +207,8 @@ std::vector<IslandExtrusions> extract_island_extrusions(
     const LayerSlice &lslice,
     const Print &print,
     const Layer &layer,
-    const Seams::Placer &seam_placer,
-    const bool spiral_vase,
     const ExtractEntityPredicate &predicate,
+    const SeamPlacingFunciton &place_seam,
     std::optional<Point> &previous_position
 ) {
     std::vector<IslandExtrusions> result;
@@ -250,13 +236,17 @@ std::vector<IslandExtrusions> extract_island_extrusions(
                 previous_position = last_position;
             }
 
-            place_seams(layer, seam_placer, island_extrusions.perimeters, previous_position, spiral_vase);
+            for (ExtrusionEntity* perimeter : island_extrusions.perimeters) {
+                previous_position = place_seam(layer, perimeter, previous_position);
+            }
 
             if (const auto last_position = get_last_position(island_extrusions.perimeters)) {
                 previous_position = last_position;
             }
         } else {
-            place_seams(layer, seam_placer, island_extrusions.perimeters, previous_position, spiral_vase);
+            for (ExtrusionEntity* perimeter : island_extrusions.perimeters) {
+                previous_position = place_seam(layer, perimeter, previous_position);
+            }
 
             if (const auto last_position = get_last_position(island_extrusions.perimeters)) {
                 previous_position = last_position;
@@ -303,10 +293,9 @@ std::vector<InfillRange> extract_ironing_extrusions(
 std::vector<SliceExtrusions> get_slices_extrusions(
     const Print &print,
     const Layer &layer,
-    const Seams::Placer &seam_placer,
-    std::optional<Point> previous_position,
-    const bool spiral_vase,
-    const ExtractEntityPredicate &predicate
+    const ExtractEntityPredicate &predicate,
+    const SeamPlacingFunciton &place_seam,
+    std::optional<Point> previous_position
 ) {
     // Note: ironing.
     // FIXME move ironing into the loop above over LayerIslands?
@@ -320,7 +309,7 @@ std::vector<SliceExtrusions> get_slices_extrusions(
         const LayerSlice &lslice = layer.lslices_ex[idx];
         result.emplace_back(SliceExtrusions{
             extract_island_extrusions(
-                lslice, print, layer, seam_placer, spiral_vase, predicate, previous_position
+                lslice, print, layer, predicate, place_seam, previous_position
             ),
             extract_ironing_extrusions(lslice, print, layer, predicate, previous_position)
         });
@@ -385,9 +374,8 @@ std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
     const GCode::ObjectsLayerToPrint &layers,
     const LayerTools &layer_tools,
     const std::vector<InstanceToPrint> &instances_to_print,
-    const Seams::Placer &seam_placer,
-    const bool spiral_vase,
     const unsigned int extruder_id,
+    const SeamPlacingFunciton &place_seam,
     std::optional<Point> &previous_position
 ) {
     std::vector<std::vector<SliceExtrusions>> result;
@@ -409,7 +397,7 @@ std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
             };
 
             result.emplace_back(get_slices_extrusions(
-                print, *layer, seam_placer, previous_position, spiral_vase, predicate
+                print, *layer, predicate, place_seam, previous_position
             ));
             previous_position = get_last_position(result.back(), print.config().infill_first);
         }
@@ -422,9 +410,8 @@ std::vector<NormalExtrusions> get_normal_extrusions(
     const GCode::ObjectsLayerToPrint &layers,
     const LayerTools &layer_tools,
     const std::vector<InstanceToPrint> &instances_to_print,
-    const Seams::Placer &seam_placer,
-    const bool spiral_vase,
     const unsigned int extruder_id,
+    const SeamPlacingFunciton &place_seam,
     std::optional<Point> &previous_position
 ) {
     std::vector<NormalExtrusions> result;
@@ -458,10 +445,9 @@ std::vector<NormalExtrusions> get_normal_extrusions(
             result.back().slices_extrusions = get_slices_extrusions(
                 print,
                 *layer,
-                seam_placer,
-                previous_position,
-                spiral_vase,
-                predicate
+                predicate,
+                place_seam,
+                previous_position
             );
             previous_position = get_last_position(result.back().slices_extrusions, print.config().infill_first);
         }

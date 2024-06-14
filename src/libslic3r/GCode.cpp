@@ -2497,21 +2497,41 @@ LayerResult GCodeGenerator::process_layer(
             previous_position = get_last_position(brim);
         }
 
+
+        const auto place_seam =[&](
+            const Layer &layer, ExtrusionEntity *perimeter, const std::optional<Point> &previous_position
+        ) {
+            auto loop{dynamic_cast<ExtrusionLoop *>(perimeter)};
+
+            Point seam_point{previous_position ? *previous_position : Point::Zero()};
+            if (!this->m_config.spiral_vase && loop != nullptr) {
+                seam_point = this->m_seam_placer.place_seam(&layer, *loop, seam_point);
+                loop->seam = seam_point;
+            }
+
+            auto path{dynamic_cast<const ExtrusionMultiPath *>(perimeter)};
+            if (path != nullptr) {
+                return path->last_point();
+            } else {
+                return seam_point;
+            }
+        };
+
         using GCode::ExtrusionOrder::get_overriden_extrusions;
         bool is_anything_overridden = layer_tools.wiping_extrusions().is_anything_overridden();
         std::vector<std::vector<SliceExtrusions>> overriden_extrusions;
         if (is_anything_overridden) {
             overriden_extrusions = get_overriden_extrusions(
-                print, layers, layer_tools, instances_to_print, this->m_seam_placer,
-                this->m_config.spiral_vase, extruder_id, previous_position
+                print, layers, layer_tools, instances_to_print, extruder_id, place_seam,
+                previous_position
             );
         }
 
         using GCode::ExtrusionOrder::get_normal_extrusions;
         using GCode::ExtrusionOrder::NormalExtrusions;
         const std::vector<NormalExtrusions> normal_extrusions{get_normal_extrusions(
-            print, layers, layer_tools, instances_to_print, this->m_seam_placer,
-            this->m_config.spiral_vase, extruder_id, previous_position
+            print, layers, layer_tools, instances_to_print, extruder_id, place_seam,
+            previous_position
         )};
 
         if (!skirt.empty()) {
@@ -2559,7 +2579,6 @@ LayerResult GCodeGenerator::process_layer(
         }
         this->m_label_objects.update(first_instance);
 
-        // We are almost ready to print. However, we must go through all the objects twice to print the the overridden extrusions first (infill/perimeter wiping feature):
         if (!overriden_extrusions.empty()) {
             // Extrude wipes.
             size_t gcode_size_old = gcode.size();
