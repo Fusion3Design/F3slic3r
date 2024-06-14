@@ -149,6 +149,8 @@ set(SLIC3R_SOURCES
     Format/SVG.cpp
     Format/SLAArchiveFormatRegistry.hpp
     Format/SLAArchiveFormatRegistry.cpp
+    Format/PrintRequest.cpp
+    Format/PrintRequest.cpp
     GCode/ThumbnailData.cpp
     GCode/ThumbnailData.hpp
     GCode/Thumbnails.cpp
@@ -481,6 +483,8 @@ set(SLIC3R_SOURCES
     SLA/DefaultSupportTree.cpp
     SLA/BranchingTreeSLA.hpp
     SLA/BranchingTreeSLA.cpp
+    SLA/ZCorrection.hpp
+    SLA/ZCorrection.cpp
     BranchingTree/BranchingTree.cpp
     BranchingTree/BranchingTree.hpp
     BranchingTree/PointCloud.cpp

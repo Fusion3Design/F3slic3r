@@ -496,6 +496,20 @@ const std::string& PresetBundle::get_preset_name_by_alias( const Preset::Type& p
     return presets.get_preset_name_by_alias(alias);
 }
 
+const std::string& PresetBundle::get_preset_name_by_alias_invisible(const Preset::Type& preset_type, const std::string& alias) const
+{
+    // there are not aliases for Printers profiles
+    if (preset_type == Preset::TYPE_PRINTER || preset_type == Preset::TYPE_INVALID)
+        return alias;
+
+    const PresetCollection& presets = preset_type == Preset::TYPE_PRINT ? prints :
+        preset_type == Preset::TYPE_SLA_PRINT ? sla_prints :
+        preset_type == Preset::TYPE_FILAMENT ? filaments :
+        sla_materials;
+
+    return presets.get_preset_name_by_alias_invisible(alias);
+}
+
 void PresetBundle::save_changes_for_preset(const std::string& new_name, Preset::Type type,
                                            const std::vector<std::string>& unselected_options)
 {
