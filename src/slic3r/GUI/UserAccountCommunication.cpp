@@ -161,10 +161,7 @@ UserAccountCommunication::UserAccountCommunication(wxEvtHandler* evt_handler, Ap
         shared_session_key = key0;
 
     } else {
-        access_token = m_app_config->get("access_token");
-        refresh_token = m_app_config->get("refresh_token");
-        shared_session_key = m_app_config->get("shared_session_key");
-        next_timeout = m_app_config->get("access_token_timeout");
+        // Do nothing.
     }
     long long next = next_timeout.empty() ? 0 : std::stoll(next_timeout);
     long long remain_time = next - std::time(nullptr);
@@ -214,10 +211,7 @@ void UserAccountCommunication::set_username(const std::string& username)
             save_secret("tokens", m_session->get_shared_session_key(), tokens);
         }
         else {
-            m_app_config->set("access_token", m_remember_session ? m_session->get_access_token() : std::string());
-            m_app_config->set("refresh_token", m_remember_session ? m_session->get_refresh_token() : std::string());
-            m_app_config->set("shared_session_key", m_remember_session ? m_session->get_shared_session_key() : std::string());
-            m_app_config->set("access_token_timeout", m_remember_session ? GUI::format("%1%", m_session->get_next_token_timeout()) : "0");
+            // If we can't store the tokens securely, don't store them at all.
         }
     }
 }
