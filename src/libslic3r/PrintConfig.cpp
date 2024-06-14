@@ -102,7 +102,9 @@ static const t_config_enum_values s_keys_map_PrintHostType {
     { "flashair",       htFlashAir },
     { "astrobox",       htAstroBox },
     { "repetier",       htRepetier },
-    { "mks",            htMKS }
+    { "mks",            htMKS },
+    { "prusaconnectnew", htPrusaConnectNew },
+
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(PrintHostType)
 
@@ -254,6 +256,14 @@ static t_config_enum_values s_keys_map_PerimeterGeneratorType {
     { "arachne", int(PerimeterGeneratorType::Arachne) }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(PerimeterGeneratorType)
+
+
+static t_config_enum_values s_keys_map_TopOnePerimeterType {
+    { "none",    int(TopOnePerimeterType::None) },
+    { "top",     int(TopOnePerimeterType::TopSurfaces) },
+    { "topmost", int(TopOnePerimeterType::TopmostOnly) }
+};
+CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(TopOnePerimeterType)
 
 static const t_config_enum_values s_keys_map_TowerSpeeds{
     { "layer1",  tsLayer1    },
@@ -427,6 +437,7 @@ void PrintConfigDef::init_common_params()
     def = this->add("printhost_password", coString);
     def->label = L("Password");
 //    def->tooltip = L("");
+    def->gui_type = ConfigOptionDef::GUIType::password;
     def->mode = comAdvanced;
     def->cli = ConfigOptionDef::nocli;
     def->set_default_value(new ConfigOptionString(""));
@@ -520,6 +531,29 @@ void PrintConfigDef::init_fff_params()
     def->max = 300;
     def->set_default_value(new ConfigOptionInts { 0 });
 
+    def = this->add("chamber_temperature", coInts);
+    def->label = L("Nominal");
+    def->full_label = L("Chamber temperature");
+    def->tooltip = L("Required chamber temperature for the print.\nWhen set to zero, "
+                     "the nominal chamber temperature is not set in the G-code.");
+    def->sidetext = L("°C");
+    def->min = 0;
+    def->max = 1000;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionInts{ 0 });
+
+    def = this->add("chamber_minimal_temperature", coInts);
+    def->label = L("Minimal");
+    def->full_label = L("Chamber minimal temperature");
+    def->tooltip = L("Minimal chamber temperature that the printer waits for before the print starts. This allows "
+                     "to start the print before the nominal chamber temperature is reached.\nWhen set to zero, "
+                     "the minimal chamber temperature is not set in the G-code.");
+    def->sidetext = L("°C");
+    def->min = 0;
+    def->max = 1000;
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionInts{ 0 });
+
     def = this->add("before_layer_gcode", coString);
     def->label = L("Before layer change G-code");
     def->tooltip = L("This custom code is inserted at every layer change, right before the Z move. "
@@ -599,6 +633,25 @@ void PrintConfigDef::init_fff_params()
     def->max = 2;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(1));
+
+    def = this->add("top_one_perimeter_type", coEnum);
+    def->label = L("Only one perimeter type");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("Use only one perimeter on flat top surface, to give more space to the top infill pattern. Could be applied on topmost surface or all top surface.");
+    def->mode = comExpert;
+    def->set_enum<TopOnePerimeterType>({
+        { "none",    L("None surfaces") },
+        { "top",     L("All top surfaces") },
+        { "topmost", L("Topmost surface only") }
+    });
+    def->set_default_value(new ConfigOptionEnum<TopOnePerimeterType>(TopOnePerimeterType::None));
+
+    def = this->add("only_one_perimeter_first_layer", coBool);
+    def->label = L("Only one perimeter on first layer");
+    def->category = L("Layers and Perimeters");
+    def->tooltip = L("Use only one perimeter on the first layer of model.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(false));
 
     def = this->add("bridge_speed", coFloat);
     def->label = L("Bridges");
@@ -1313,6 +1366,28 @@ void PrintConfigDef::init_fff_params()
     def = this->add("filament_vendor", coString);
     def->set_default_value(new ConfigOptionString(L("(Unknown)")));
     def->cli = ConfigOptionDef::nocli;
+
+    def = this->add("filament_shrinkage_compensation_xy", coPercents);
+    def->label = L("Shrinkage XY");
+    def->tooltip = L("Enter your filament shrinkage percentages for the X and Y axes here to apply scaling of the object to "
+                     "compensate for shrinkage in the X and Y axes. For example, if you measured 99mm instead of 100mm, "
+                     "then you should put here 1%.");
+    def->sidetext = L("%");
+    def->mode = comAdvanced;
+    def->min = -10.;
+    def->max = 10.;
+    def->set_default_value(new ConfigOptionPercents { 0 });
+
+    def = this->add("filament_shrinkage_compensation_z", coPercents);
+    def->label = L("Shrinkage Z");
+    def->tooltip = L("Enter your filament shrinkage percentages for the Z axis here to apply scaling of the object to "
+                     "compensate for shrinkage in the Z axis. For example, if you measured 99mm instead of 100mm, "
+                     "then you should put here 1%.");
+    def->sidetext = L("%");
+    def->mode = comAdvanced;
+    def->min = -10.;
+    def->max = 10.;
+    def->set_default_value(new ConfigOptionPercents { 0. });
 
     def = this->add("fill_angle", coFloat);
     def->label = L("Fill angle");
@@ -2269,7 +2344,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Printer type");
     def->tooltip = L("Type of the printer.");
     def->set_default_value(new ConfigOptionString());
-    def->cli = ConfigOptionDef::nocli;
+//    def->cli = ConfigOptionDef::nocli;
 
     def = this->add("printer_notes", coString);
     def->label = L("Printer notes");
@@ -2290,7 +2365,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Printer variant");
     def->tooltip = L("Name of the printer variant. For example, the printer variants may be differentiated by a nozzle diameter.");
     def->set_default_value(new ConfigOptionString());
-    def->cli = ConfigOptionDef::nocli;
+//    def->cli = ConfigOptionDef::nocli;
 
     def = this->add("print_settings_id", coString);
     def->set_default_value(new ConfigOptionString(""));
@@ -2701,16 +2776,17 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("autoemit_temperature_commands", coBool);
     def->label = L("Emit temperature commands automatically");
-    def->tooltip = L("When enabled, PrusaSlicer will check whether your Custom Start G-Code contains M104 or M190. "
+    def->tooltip = L("When enabled, PrusaSlicer will check whether your custom Start G-Code contains G-codes to set "
+                     "extruder, bed or chamber temperature (M104, M109, M140, M190, M141 and M191). "
                      "If so, the temperatures will not be emitted automatically so you're free to customize "
                      "the order of heating commands and other custom actions. Note that you can use "
                      "placeholder variables for all PrusaSlicer settings, so you can put "
                      "a \"M109 S[first_layer_temperature]\" command wherever you want.\n"
-                     "If your Custom Start G-Code does NOT contain M104 or M190, "
-                     "PrusaSlicer will execute the Start G-Code after bed reached its target temperature "
-                     "and extruder just started heating.\n\n"
-                     "When disabled, PrusaSlicer will NOT emit commands to heat up extruder and bed, "
-                     "leaving both to Custom Start G-Code.");
+                     "If your custom Start G-Code does NOT contain these G-codes, "
+                     "PrusaSlicer will execute the Start G-Code after heated chamber was set to its temperature, "
+                     "bed reached its target temperature and extruder just started heating.\n\n"
+                     "When disabled, PrusaSlicer will NOT emit commands to heat up extruder, bed or chamber, "
+                     "leaving all to Custom Start G-Code.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(true));
 
@@ -3324,6 +3400,12 @@ void PrintConfigDef::init_fff_params()
                    "with a variable layer height. Enabled by default.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(true));
+
+    def = this->add("prefer_clockwise_movements", coBool);
+    def->label = L("Prefer clockwise movements");
+    def->tooltip = L("This setting makes the printer print loops clockwise instead of counterclockwise.");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBool(false));
 
     def = this->add("wipe", coBools);
     def->label = L("Wipe while retracting");
@@ -5342,7 +5424,13 @@ CLIActionsConfigDef::CLIActionsConfigDef()
     def->cli = "gcodeviewer";
     def->set_default_value(new ConfigOptionBool(false));
 
-#if ENABLE_GL_CORE_PROFILE
+    def = this->add("opengl-aa", coBool);
+    def->label = L("Automatic OpenGL antialising samples number selection");
+    def->tooltip = L("Automatically select the highest number of samples for OpenGL antialising.");
+    def->cli = "opengl-aa";
+    def->set_default_value(new ConfigOptionBool(false));
+
+#if !SLIC3R_OPENGL_ES
     def = this->add("opengl-version", coString);
     def->label = L("OpenGL version");
     def->tooltip = L("Select a specific version of OpenGL");
@@ -5360,7 +5448,7 @@ CLIActionsConfigDef::CLIActionsConfigDef()
     def->tooltip = L("Activate OpenGL debug output on graphic cards which support it (OpenGL 4.3 or higher)");
     def->cli = "opengl-debug";
     def->set_default_value(new ConfigOptionBool(false));
-#endif // ENABLE_GL_CORE_PROFILE
+#endif // !SLIC3R_OPENGL_ES
 
     def = this->add("slice", coBool);
     def->label = L("Slice");
@@ -5549,17 +5637,67 @@ CLIMiscConfigDef::CLIMiscConfigDef()
     def->tooltip = L("Render with a software renderer. The bundled MESA software renderer is loaded instead of the default OpenGL driver.");
     def->min = 0;
 #endif /* _MSC_VER */
+
+    def = this->add("printer-profile", coString);
+    def->label = ("Printer preset name");
+    def->tooltip = ("Name of the printer preset used for slicing.");
+    def->set_default_value(new ConfigOptionString());
+
+    def = this->add("print-profile", coString);
+    def->label = ("Print preset name");
+    def->tooltip = ("Name of the print preset used for slicing.");
+    def->set_default_value(new ConfigOptionString());
+
+    def = this->add("material-profile", coStrings);
+    def->label = ("Material preset name(s)");
+    def->tooltip = ("Name(s) of the material preset(s) used for slicing.\n"
+                    "Could be filaments or sla_material preset name(s) depending on printer tochnology");
+    def->set_default_value(new ConfigOptionStrings());
+}
+
+CLIProfilesSharingConfigDef::CLIProfilesSharingConfigDef()
+{
+    ConfigOptionDef* def;
+
+    // Information from this def will be used just for console output.
+    // So, don't use L marker to label and tooltips values to avoid extract those phrases to translation.
+
+    def = this->add("query-printer-models", coBool);
+    def->label = ("Get list of printer models");
+    def->tooltip = ("Get list of installed printer models into JSON.\n"
+                   "Note:\n"
+                   "To print printer models for required technology use 'printer-technology' option with value FFF or SLA. By default printer_technology is FFF.\n"
+                   "To print out JSON into file use 'output' option.\n"
+                   "To specify configuration folder use 'datadir' option.");
+
+/*
+    def = this->add("query-printer-profiles", coBool);
+    def->label = ("Get list of printer profiles for the selected printer model and printer variant");
+    def->tooltip = ("Get list of printer profiles for the selected 'printer-model' and 'printer-variant' into JSON.\n"
+                   "Note:\n"
+                   "To print out JSON into file use 'output' option.\n"
+                   "To specify configuration folder use 'datadir' option.");
+*/
+
+    def = this->add("query-print-filament-profiles", coBool);
+    def->label = ("Get list of print profiles and filament profiles for the selected printer profile");
+    def->tooltip = ("Get list of print profiles and filament profiles for the selected 'printer-profile' into JSON.\n"
+                   "Note:\n"
+                   "To print out JSON into file use 'output' option.\n"
+                   "To specify configuration folder use 'datadir' option.");
 }
 
 const CLIActionsConfigDef    cli_actions_config_def;
 const CLITransformConfigDef  cli_transform_config_def;
 const CLIMiscConfigDef       cli_misc_config_def;
+const CLIProfilesSharingConfigDef   cli_profiles_sharing_config_def;
 
 DynamicPrintAndCLIConfig::PrintAndCLIConfigDef DynamicPrintAndCLIConfig::s_def;
 
 void DynamicPrintAndCLIConfig::handle_legacy(t_config_option_key &opt_key, std::string &value) const
 {
     if (cli_actions_config_def  .options.find(opt_key) == cli_actions_config_def  .options.end() &&
+        cli_profiles_sharing_config_def.options.find(opt_key) == cli_profiles_sharing_config_def.options.end() &&
         cli_transform_config_def.options.find(opt_key) == cli_transform_config_def.options.end() &&
         cli_misc_config_def     .options.find(opt_key) == cli_misc_config_def     .options.end()) {
         PrintConfigDef::handle_legacy(opt_key, value);

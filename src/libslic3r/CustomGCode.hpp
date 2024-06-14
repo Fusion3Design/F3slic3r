@@ -14,6 +14,11 @@ class DynamicPrintConfig;
 
 namespace CustomGCode {
 
+/* For exporting GCode in GCodeWriter is used XYZF_NUM(val) = PRECISION(val, 3) for XYZ values. 
+ * So, let use same value as a permissible error for layer height.
+ */
+constexpr double epsilon() { return 0.0011; }
+
 enum Type
 {
     ColorChange,

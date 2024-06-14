@@ -125,6 +125,7 @@ public:
         TYPE_PHYSICAL_PRINTER,
         // This type is here to support search through the Preferences
         TYPE_PREFERENCES,
+        TYPE_WEBVIEW,
     };
 
     Type                type        = TYPE_INVALID;
@@ -435,6 +436,8 @@ public:
     Preset*         find_preset(const std::string &name, bool first_visible_if_not_found = false, bool respect_active_preset = true);
     const Preset*   find_preset(const std::string &name, bool first_visible_if_not_found = false, bool respect_active_preset = true) const 
         { return const_cast<PresetCollection*>(this)->find_preset(name, first_visible_if_not_found, respect_active_preset); }
+
+    size_t          get_preset_idx_by_name(const std::string preset_name) const;
 
     size_t          first_visible_idx() const;
     // Return index of the first compatible preset. Certainly at least the '- default -' preset shall be compatible.

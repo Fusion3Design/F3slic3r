@@ -944,9 +944,11 @@ void Layer::sort_perimeters_into_islands(
 
     auto insert_into_island = [
         // Region where the perimeters, gap fills and fill expolygons are stored.
-        region_id, 
+        region_id,
         // Whether there are infills with different regions generated for this LayerSlice.
         has_multiple_regions,
+        // Layer split into surfaces
+        &slices,
         // Perimeters and gap fills to be sorted into islands.
         &perimeter_and_gapfill_ranges,
         // Infill regions to be sorted into islands.
@@ -959,6 +961,7 @@ void Layer::sort_perimeters_into_islands(
         lslices_ex[lslice_idx].islands.push_back({});
         LayerIsland &island = lslices_ex[lslice_idx].islands.back();
         island.perimeters = LayerExtrusionRange(region_id, perimeter_and_gapfill_ranges[source_slice_idx].first);
+        island.boundary = slices.surfaces[source_slice_idx].expolygon;
         island.thin_fills = perimeter_and_gapfill_ranges[source_slice_idx].second;
         if (ExPolygonRange fill_range = fill_expolygons_ranges[source_slice_idx]; ! fill_range.empty()) {
             if (has_multiple_regions) {

@@ -12,6 +12,7 @@
 #include "ConfigWizard.hpp"
 #include "OpenGLManager.hpp"
 #include "libslic3r/Preset.hpp"
+#include "I18N.hpp"
 
 #include <wx/app.h>
 #include <wx/colour.h>
@@ -39,6 +40,10 @@ class PrintHostJobQueue;
 class Model;
 class AppUpdater;
 
+namespace Search {
+    class OptionsSearcher;
+}
+
 namespace GUI{
 
 class RemovableDriveManager;
@@ -54,7 +59,7 @@ class NotificationManager;
 class Downloader;
 struct GUI_InitParams;
 class GalleryDialog;
-
+class LoginDialog;
 
 
 enum FileType
@@ -137,12 +142,13 @@ private:
     wxColour        m_color_label_sys;
     wxColour        m_color_label_default;
     wxColour        m_color_window_default;
-#ifdef _WIN32
+//#ifdef _WIN32
     wxColour        m_color_highlight_label_default;
     wxColour        m_color_hovered_btn_label;
     wxColour        m_color_default_btn_label;
     wxColour        m_color_highlight_default;
     wxColour        m_color_selected_btn_bg;
+#ifdef _WIN32
     bool            m_force_colors_update { false };
 #endif
     std::vector<std::string>     m_mode_palette;
@@ -175,6 +181,8 @@ private:
     std::string m_instance_hash_string;
 	size_t m_instance_hash_int;
 
+    Search::OptionsSearcher* m_searcher{ nullptr };
+
 public:
     bool            OnInit() override;
     bool            initialized() const { return m_initialized; }
@@ -187,6 +195,16 @@ public:
     bool is_gcode_viewer() const { return m_app_mode == EAppMode::GCodeViewer; }
     bool is_recreating_gui() const { return m_is_recreating_gui; }
     std::string logo_name() const { return is_editor() ? "PrusaSlicer" : "PrusaSlicer-gcodeviewer"; }
+
+    Search::OptionsSearcher& searcher() noexcept { return *m_searcher; }
+    void                     set_searcher(Search::OptionsSearcher* searcher) { m_searcher = searcher; }
+    void                     check_and_update_searcher(ConfigOptionMode mode = comExpert);
+    void                     jump_to_option(size_t selected);
+    void                     jump_to_option(const std::string& opt_key, Preset::Type type, const std::wstring& category);
+    // jump to option which is represented by composite key : "opt_key;tab_name"
+    void                     jump_to_option(const std::string& composite_key);
+    void                     update_search_lines();
+    void                     show_search_dialog();
 
     // To be called after the GUI is fully built up.
     // Process command line parameters cached in this->init_params,
@@ -231,7 +249,7 @@ public:
     std::vector<wxColour>   get_mode_palette();
     void                    set_mode_palette(const std::vector<wxColour> &palette);
 
-#ifdef _WIN32
+//#ifdef _WIN32
     const wxColour& get_label_highlight_clr()   { return m_color_highlight_label_default; }
     const wxColour& get_highlight_default_clr() { return m_color_highlight_default; }
     const wxColour& get_color_hovered_btn_label() { return m_color_hovered_btn_label; }
@@ -240,7 +258,7 @@ public:
 #ifdef _MSW_DARK_MODE
     void            force_menu_update();
 #endif //_MSW_DARK_MODE
-#endif
+//#endif
 
     const wxFont&   small_font()            { return m_small_font; }
     const wxFont&   bold_font()             { return m_bold_font; }
@@ -248,7 +266,6 @@ public:
     const wxFont&   code_font()             { return m_code_font; }
     const wxFont&   link_font()             { return m_link_font; }
     int             em_unit() const         { return m_em_unit; }
-    bool            tabs_as_menu() const;
     bool            suppress_round_corners() const;
     wxSize          get_min_size(wxWindow* display_win) const;
     int             get_max_font_pt_size();
@@ -277,7 +294,7 @@ public:
     bool            save_mode(const /*ConfigOptionMode*/int mode) ;
     void            update_mode();
 
-    void            add_config_menu(wxMenuBar *menu);
+    wxMenu*         get_config_menu();
     bool            has_unsaved_preset_changes() const;
     bool            has_current_preset_changes() const;
     void            update_saved_preset_from_current_preset();
@@ -301,6 +318,7 @@ public:
     // Calls wxLaunchDefaultBrowser if user confirms in dialog.
     // Add "Rememeber my choice" checkbox to question dialog, when it is forced or a "suppress_hyperlinks" option has empty value
     bool            open_browser_with_warning_dialog(const wxString& url, wxWindow* parent = nullptr, bool force_remember_choice = true, int flags = 0);
+    bool            open_login_browser_with_dialog(const wxString& url, wxWindow* parent = nullptr, int flags = 0);
 #ifdef __APPLE__
     void            OSXStoreOpenFiles(const wxArrayString &files) override;
     // wxWidgets override to get an event on open files.
@@ -353,6 +371,9 @@ public:
     void            open_web_page_localized(const std::string &http_address);
     bool            may_switch_to_SLA_preset(const wxString& caption);
     bool            run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage start_page = ConfigWizard::SP_WELCOME);
+#if 0
+    void            update_login_dialog();
+#endif // 0
     void            show_desktop_integration_dialog();
     void            show_downloader_registration_dialog();
 
@@ -381,6 +402,31 @@ public:
 
     void            open_wifi_config_dialog(bool forced, const wxString& drive_path = {});
     bool            get_wifi_config_dialog_shown() const { return m_wifi_config_dialog_shown; }
+    
+    void            request_login(bool show_user_info = false) {}
+    bool            check_login() { return false; }
+    void            get_login_info() {}
+    bool            is_user_login() { return true; }
+
+    void            request_user_login(int online_login) {}
+    void            request_user_logout() {}
+    int             request_user_unbind(std::string dev_id) { return 0; }
+    bool            select_printer_from_connect(const std::string& cmd);
+    void            select_filament_from_connect(const std::string& cmd);
+    void            handle_connect_request_printer_select(const std::string& cmd);
+    void            handle_connect_request_printer_select_inner(const std::string& cmd);
+    void            show_printer_webview_tab();
+    // return true if preset vas invisible and we have to installed it to make it selectable
+    bool            select_printer_preset(const Preset* printer_preset);
+    bool            select_filament_preset(const Preset* filament_preset, size_t extruder_index);
+    void            search_and_select_filaments(const std::string& material, size_t extruder_index, std::string& out_message);
+    void            handle_script_message(std::string msg) {}
+    void            request_model_download(std::string import_json) {}
+    void            download_project(std::string project_id) {}
+    void            request_project_download(std::string project_id) {}
+    void            request_open_project(std::string project_id) {}
+    void            request_remove_project(std::string project_id) {}
+
 private:
     bool            on_init_inner();
 	void            init_app_config();
@@ -402,8 +448,14 @@ private:
     // inititate read of version file online in separate thread
     void            app_version_check(bool from_user);
 
-    bool                    m_datadir_redefined { false }; 
     bool                    m_wifi_config_dialog_shown { false };
+    bool                    m_wifi_config_dialog_was_declined { false };
+    // change to vector of items when adding more items that require update
+    //wxMenuItem*    m_login_config_menu_item { nullptr };
+    std::map< ConfigMenuIDs, wxMenuItem*> m_config_menu_updatable_items;
+#if 0
+    std::unique_ptr<LoginDialog> m_login_dialog;
+#endif // 0
 };
 
 DECLARE_APP(GUI_App)

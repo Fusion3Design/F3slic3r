@@ -19,6 +19,16 @@ set(SLIC3R_GUI_SOURCES
     GUI/AboutDialog.hpp
     GUI/ArrangeSettingsDialogImgui.hpp
     GUI/ArrangeSettingsDialogImgui.cpp
+    GUI/UserAccountCommunication.cpp
+    GUI/UserAccountCommunication.hpp
+    GUI/UserAccountSession.cpp
+    GUI/UserAccountSession.hpp
+    GUI/UserAccount.cpp
+    GUI/UserAccount.hpp
+    GUI/WebViewDialog.cpp
+    GUI/WebViewDialog.hpp
+    GUI/WebView.cpp
+    GUI/WebView.hpp
     GUI/SysInfoDialog.cpp
     GUI/SysInfoDialog.hpp
     GUI/KBShortcutsDialog.cpp
@@ -82,6 +92,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/Gizmos/GLGizmoMmuSegmentation.hpp
     GUI/Gizmos/GLGizmoMeasure.cpp
     GUI/Gizmos/GLGizmoMeasure.hpp
+    GUI/LibVGCode/LibVGCodeWrapper.hpp
+    GUI/LibVGCode/LibVGCodeWrapper.cpp
     GUI/GLSelectionRectangle.cpp
     GUI/GLSelectionRectangle.hpp
     GUI/GLModel.hpp
@@ -114,6 +126,10 @@ set(SLIC3R_GUI_SOURCES
     GUI/IconManager.hpp
     GUI/MainFrame.cpp
     GUI/MainFrame.hpp
+    GUI/FrequentlyChangedParameters.cpp
+    GUI/FrequentlyChangedParameters.hpp
+    GUI/Sidebar.cpp
+    GUI/Sidebar.hpp
     GUI/Plater.cpp
     GUI/Plater.hpp
     GUI/PresetComboBoxes.hpp
@@ -184,6 +200,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/ButtonsDescription.hpp
     GUI/ImGuiWrapper.hpp
     GUI/ImGuiWrapper.cpp
+    GUI/ImGuiPureWrap.hpp
+    GUI/ImGuiPureWrap.cpp
     Config/Snapshot.cpp
     Config/Snapshot.hpp
     Config/Version.cpp
@@ -234,10 +252,20 @@ set(SLIC3R_GUI_SOURCES
     GUI/ProgressStatusBar.cpp
     GUI/Mouse3DController.cpp
     GUI/Mouse3DController.hpp
-    GUI/DoubleSlider.cpp
-    GUI/DoubleSlider.hpp
+    GUI/ImGuiDoubleSlider.cpp
+    GUI/ImGuiDoubleSlider.hpp
+    GUI/TickCodesManager.cpp
+    GUI/TickCodesManager.hpp
+    GUI/DoubleSliderForLayers.cpp
+    GUI/DoubleSliderForLayers.hpp
+    GUI/DoubleSliderForGcode.cpp
+    GUI/DoubleSliderForGcode.hpp
     GUI/Notebook.cpp
     GUI/Notebook.hpp
+    GUI/TopBar.cpp
+    GUI/TopBar.hpp
+    GUI/TopBarMenus.cpp
+    GUI/TopBarMenus.hpp
     GUI/ObjectDataViewModel.cpp
     GUI/ObjectDataViewModel.hpp
     GUI/InstanceCheck.cpp
@@ -285,6 +313,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/Downloader.hpp
     GUI/DownloaderFileGet.cpp
     GUI/DownloaderFileGet.hpp
+    GUI/LoginDialog.cpp
+    GUI/LoginDialog.hpp
     Utils/AppUpdater.cpp
     Utils/AppUpdater.hpp
     Utils/Http.cpp
@@ -331,6 +361,10 @@ set(SLIC3R_GUI_SOURCES
     Utils/WxFontUtils.hpp
     Utils/WifiScanner.hpp
     Utils/WifiScanner.cpp
+    Utils/Secrets.hpp
+    Utils/Secrets.cpp
+    Utils/PrusaConnect.hpp
+    Utils/PrusaConnect.cpp
 )
 
 find_package(NanoSVG REQUIRED)
@@ -362,7 +396,7 @@ endforeach()
 
 encoding_check(libslic3r_gui)
 
-target_link_libraries(libslic3r_gui libslic3r avrdude libcereal imgui GLEW::GLEW OpenGL::GL hidapi libcurl ${wxWidgets_LIBRARIES} NanoSVG::nanosvg NanoSVG::nanosvgrast)
+target_link_libraries(libslic3r_gui libslic3r avrdude libcereal imgui libvgcode GLEW::GLEW OpenGL::GL hidapi libcurl ${wxWidgets_LIBRARIES} NanoSVG::nanosvg NanoSVG::nanosvgrast)
 
 if (MSVC)
     target_link_libraries(libslic3r_gui Setupapi.lib)

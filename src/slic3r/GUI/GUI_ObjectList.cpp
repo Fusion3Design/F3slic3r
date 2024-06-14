@@ -4555,8 +4555,8 @@ void ObjectList::rename_item()
     if (new_name.IsEmpty())
         return;
 
-    if (Plater::has_illegal_filename_characters(new_name)) {
-        Plater::show_illegal_characters_warning(this);
+    if (has_illegal_characters(new_name)) {
+        show_illegal_characters_warning(this);
         return;
     }
 
@@ -4673,7 +4673,7 @@ void ObjectList::fix_through_winsdk()
 
     // Show info notification
     wxString msg = MenuFactory::get_repaire_result_message(succes_models, failed_models);
-    plater->get_notification_manager()->push_notification(NotificationType::RepairFinished, NotificationManager::NotificationLevel::PrintInfoShortNotificationLevel, boost::nowide::narrow(msg));
+    plater->get_notification_manager()->push_notification(NotificationType::RepairFinished, NotificationManager::NotificationLevel::PrintInfoShortNotificationLevel, into_u8(msg));
 }
 
 void ObjectList::simplify()
@@ -4768,7 +4768,7 @@ void ObjectList::OnEditingDone(wxDataViewEvent &event)
     const auto renderer = dynamic_cast<BitmapTextRenderer*>(GetColumn(colName)->GetRenderer());
 
     if (renderer->WasCanceled())
-		wxTheApp->CallAfter([this]{ Plater::show_illegal_characters_warning(this); });
+		wxTheApp->CallAfter([this]{ show_illegal_characters_warning(this); });
 
 #ifdef __WXMSW__
 	// Workaround for entering the column editing mode on Windows. Simulate keyboard enter when another column of the active line is selected.

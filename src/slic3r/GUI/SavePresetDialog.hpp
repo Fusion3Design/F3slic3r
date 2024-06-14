@@ -49,7 +49,14 @@ public:
 
         bool            is_valid()      const { return m_valid_type != ValidationType::NoValid; }
         Preset::Type    type()          const { return m_type; }
-        std::string     preset_name()   const { return m_preset_name; }
+        std::string     preset_name()   const;
+
+        struct PresetName {
+            std::string casei_name;
+            std::string name;
+
+            bool operator<(const PresetName& other) const { return other.casei_name > this->casei_name; }
+        };
 
     private:
         Preset::Type    m_type {Preset::TYPE_INVALID};
@@ -66,8 +73,11 @@ public:
 
         PresetCollection*   m_presets       {nullptr};
 
+        std::vector<PresetName> m_casei_preset_names;
+
         std::string get_init_preset_name(const std::string &suffix);
         void        init_input_name_ctrl(wxBoxSizer *input_name_sizer, std::string preset_name);
+        void        init_casei_preset_names();
         const Preset*   get_existing_preset() const ;
 
         void        update();

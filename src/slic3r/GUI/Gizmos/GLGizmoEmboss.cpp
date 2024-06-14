@@ -825,7 +825,7 @@ static void draw_mouse_offset(const std::optional<Vec2d> &offset)
     auto   draw_list = ImGui::GetOverlayDrawList();
     ImVec2 p1        = ImGui::GetMousePos();
     ImVec2 p2(p1.x + offset->x(), p1.y + offset->y());
-    ImU32  color     = ImGui::GetColorU32(ImGuiWrapper::COL_ORANGE_LIGHT);
+    ImU32  color     = ImGui::GetColorU32(ImGuiPureWrap::COL_ORANGE_LIGHT);
     float  thickness = 3.f;
     draw_list->AddLine(p1, p2, color, thickness);
 }
@@ -886,7 +886,7 @@ void GLGizmoEmboss::on_render_input_window(float x, float y, float bottom_limit)
                 ImVec4(1.f, .3f, .3f, .75f)
         ); // Warning color
         const float radius = 16.f;
-        ImGuiWrapper::draw_cross_hair(center, radius, color);
+        ImGuiPureWrap::draw_cross_hair(center, radius, color);
     }
 
 #ifdef SHOW_FINE_POSITION
@@ -965,7 +965,7 @@ void GLGizmoEmboss::on_set_state()
             m_set_window_offset = calc_fine_position(m_parent.get_selection(), get_minimal_window_size(), m_parent.get_canvas_size());
         } else {            
             m_set_window_offset = (m_gui_cfg != nullptr) ?
-                ImGuiWrapper::change_window_position(on_get_name().c_str(), false) : ImVec2(-1, -1);
+                ImGuiPureWrap::change_window_position(on_get_name().c_str(), false) : ImVec2(-1, -1);
         }
     }
 }
@@ -1177,7 +1177,7 @@ void GLGizmoEmboss::set_volume_by_selection()
 
     // Do not use focused input value when switch volume(it must swith value)
     if (m_volume != nullptr && m_volume != volume) // when update volume it changed id BUT not pointer
-        ImGuiWrapper::left_inputs();
+        ImGuiPureWrap::left_inputs();
 
     // Is selected volume text volume?
     const std::optional<TextConfiguration> &tc_opt = volume->text_configuration;
@@ -1345,18 +1345,38 @@ bool GLGizmoEmboss::process(bool make_snapshot)
 
 void GLGizmoEmboss::close()
 {
-    // remove volume when text is empty
     if (m_volume != nullptr && 
-        m_volume->text_configuration.has_value() &&
-        is_text_empty(m_text)) {
-        Plater &p = *wxGetApp().plater();
-        // is the text object?
-        if (m_volume->is_the_only_one_part()) {
-            // delete whole object
-            p.remove(m_parent.get_selection().get_object_idx());
-        } else {
-            // delete text volume
-            p.remove_selected();
+        m_volume->text_configuration.has_value() ){
+        
+        // remove volume when text is empty
+        if (is_text_empty(m_text)) {
+            Plater &p = *wxGetApp().plater();
+            // is the text object?
+            if (m_volume->is_the_only_one_part()) {
+                // delete whole object
+                p.remove(m_parent.get_selection().get_object_idx());
+            } else {
+                // delete text volume
+                p.remove_selected();
+            }
+        }
+
+        // Fix phanthom transformation
+        //   appear when right click into scene during edit Rotation in input (click "Edit" button)
+        const GLVolume *gl_volume_ptr = m_parent.get_selection().get_first_volume();
+        if (gl_volume_ptr != nullptr) {
+            const Transform3d &v_tr = m_volume->get_matrix();
+            const Transform3d &gl_v_tr = gl_volume_ptr->get_volume_transformation().get_matrix();
+
+            const Matrix3d &v_rot = v_tr.linear();
+            const Matrix3d &gl_v_rot = gl_v_tr.linear();
+            const Vec3d &v_move = v_tr.translation();
+            const Vec3d &gl_v_move = gl_v_tr.translation();
+            if (!is_approx(v_rot, gl_v_rot)) { 
+                m_parent.do_rotate(rotation_snapshot_name);
+            } else if (!is_approx(v_move, gl_v_move)){
+                m_parent.do_move(move_snapshot_name);
+            }
         }
     }
 
@@ -1418,7 +1438,7 @@ void GLGizmoEmboss::draw_window()
        
 #ifdef SHOW_WX_FONT_DESCRIPTOR
     if (is_selected_style)
-        m_imgui->text_colored(ImGuiWrapper::COL_GREY_DARK, m_style_manager.get_style().path);
+        m_imgui->text_colored(ImGuiPureWrap::COL_GREY_DARK, m_style_manager.get_style().path);
 #endif // SHOW_WX_FONT_DESCRIPTOR
 
 #ifdef SHOW_CONTAIN_3MF_FIX
@@ -1426,7 +1446,7 @@ void GLGizmoEmboss::draw_window()
         m_volume->text_configuration.has_value() &&
         m_volume->text_configuration->fix_3mf_tr.has_value()) {
         ImGui::SameLine();
-        m_imgui->text_colored(ImGuiWrapper::COL_GREY_DARK, ".3mf");
+        m_imgui->text_colored(ImGuiPureWrap::COL_GREY_DARK, ".3mf");
         if (ImGui::IsItemHovered()) {
             Transform3d &fix = *m_volume->text_configuration->fix_3mf_tr;
             std::stringstream ss;
@@ -1572,7 +1592,7 @@ void GLGizmoEmboss::draw_text_input()
     // IMPROVE: only extend not clear
     // Extend font ranges
     if (!range_text.empty() &&
-        !ImGuiWrapper::contain_all_glyphs(imgui_font, range_text) )
+        !ImGuiPureWrap::contain_all_glyphs(imgui_font, range_text) )
         m_style_manager.clear_imgui_font();    
 }
 
@@ -1631,9 +1651,9 @@ void GLGizmoEmboss::draw_font_list_line()
     bool exist_change_in_font = m_style_manager.is_font_changed();
     const std::string& font_text = m_gui_cfg->translations.font;
     if (exist_change_in_font || !exist_stored_style)
-        ImGuiWrapper::text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, font_text);
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, font_text);
     else
-        ImGuiWrapper::text(font_text);
+        ImGuiPureWrap::text(font_text);
 
     ImGui::SameLine(m_gui_cfg->input_offset);
 
@@ -1807,7 +1827,7 @@ void GLGizmoEmboss::draw_font_list()
         m_face_names->texture_id = 0;
 
         // Remove value from search input
-        ImGuiWrapper::left_inputs();
+        ImGuiPureWrap::left_inputs();
         m_face_names->search.clear();
     }
 
@@ -1852,7 +1872,7 @@ void GLGizmoEmboss::draw_model_type()
     std::string title = _u8L("Operation");
     if (is_last_solid_part) {
         ImVec4 color{.5f, .5f, .5f, 1.f};
-        m_imgui->text_colored(color, title.c_str());
+        ImGuiPureWrap::text_colored(color, title.c_str());
     } else {
         ImGui::Text("%s", title.c_str());
     }
@@ -1933,9 +1953,9 @@ void GLGizmoEmboss::draw_style_rename_popup() {
 
     bool allow_change = false;
     if (new_name.empty()) {
-        ImGuiWrapper::text_colored(ImGuiWrapper::COL_ORANGE_DARK, _u8L("Name can't be empty."));
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_DARK, _u8L("Name can't be empty."));
     }else if (!is_unique) { 
-        ImGuiWrapper::text_colored(ImGuiWrapper::COL_ORANGE_DARK, _u8L("Name has to be unique."));
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_DARK, _u8L("Name has to be unique."));
     } else {
         ImGui::NewLine();
         allow_change = true;
@@ -1944,7 +1964,7 @@ void GLGizmoEmboss::draw_style_rename_popup() {
     bool store = false;
     ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue;
     if (ImGui::InputText("##rename style", &new_name, flags) && allow_change) store = true;
-    if (m_imgui->button(_L("OK"), ImVec2(0.f, 0.f), allow_change)) store = true;
+    if (m_imgui->button(_u8L("OK"), ImVec2(0.f, 0.f), allow_change)) store = true;
     ImGui::SameLine();
     if (ImGui::Button(_u8L("Cancel").c_str())) {
         new_name = old_name;
@@ -1982,7 +2002,7 @@ void GLGizmoEmboss::draw_style_rename_button()
         else            ImGui::SetTooltip("%s", _u8L("Can't rename temporary style.").c_str());
     }
     if (ImGui::BeginPopupModal(popup_id, 0, ImGuiWindowFlags_AlwaysAutoResize)) {
-        m_imgui->disable_background_fadeout_animation();
+        ImGuiPureWrap::disable_background_fadeout_animation();
         draw_style_rename_popup();
         ImGui::EndPopup();
     }
@@ -2014,9 +2034,9 @@ void GLGizmoEmboss::draw_style_save_as_popup() {
     bool is_unique = m_style_manager.is_unique_style_name(new_name);        
     bool allow_change = false;
     if (new_name.empty()) {
-        ImGuiWrapper::text_colored(ImGuiWrapper::COL_ORANGE_DARK, _u8L("Name can't be empty."));
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_DARK, _u8L("Name can't be empty."));
     }else if (!is_unique) { 
-        ImGuiWrapper::text_colored(ImGuiWrapper::COL_ORANGE_DARK, _u8L("Name has to be unique."));
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_DARK, _u8L("Name has to be unique."));
     } else {
         ImGui::NewLine();
         allow_change = true;
@@ -2027,7 +2047,7 @@ void GLGizmoEmboss::draw_style_save_as_popup() {
     if (ImGui::InputText("##save as style", &new_name, flags))
         save_style = true;
         
-    if (m_imgui->button(_L("OK"), ImVec2(0.f, 0.f), allow_change))
+    if (m_imgui->button(_u8L("OK"), ImVec2(0.f, 0.f), allow_change))
         save_style = true;
 
     ImGui::SameLine();
@@ -2058,7 +2078,7 @@ void GLGizmoEmboss::draw_style_add_button()
     ImGui::SameLine();
     if (draw_button(m_icons, IconType::add, !can_add)) {
         if (!m_style_manager.exist_stored_style()) {
-            m_style_manager.store_styles_to_app_config(wxGetApp().app_config);
+            m_style_manager.store_styles_to_app_config();
         } else {
             ImGui::OpenPopup(popup_id);
         }
@@ -2073,7 +2093,7 @@ void GLGizmoEmboss::draw_style_add_button()
     }
 
     if (ImGui::BeginPopupModal(popup_id, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        m_imgui->disable_background_fadeout_animation();
+        ImGuiPureWrap::disable_background_fadeout_animation();
         draw_style_save_as_popup();
         ImGui::EndPopup();
     }
@@ -2124,7 +2144,7 @@ void GLGizmoEmboss::draw_delete_style_button() {
             break;
         }
         if (exist_change)
-            m_style_manager.store_styles_to_app_config(wxGetApp().app_config);
+            m_style_manager.store_styles_to_app_config(false);
     }
 
     if (ImGui::IsItemHovered()) {
@@ -2181,15 +2201,15 @@ void GLGizmoEmboss::draw_style_list() {
     if (trunc_name.empty()) {
         // generate trunc name
         std::string current_name = current_style.name;
-        ImGuiWrapper::escape_double_hash(current_name);
-        trunc_name = ImGuiWrapper::trunc(current_name, max_style_name_width);
+        ImGuiPureWrap::escape_double_hash(current_name);
+        trunc_name = ImGuiPureWrap::trunc(current_name, max_style_name_width);
     }
 
     std::string title = _u8L("Style");
     if (m_style_manager.exist_stored_style())
         ImGui::Text("%s", title.c_str());
     else
-        ImGui::TextColored(ImGuiWrapper::COL_ORANGE_LIGHT, "%s", title.c_str());
+        ImGui::TextColored(ImGuiPureWrap::COL_ORANGE_LIGHT, "%s", title.c_str());
         
     ImGui::SetNextItemWidth(m_gui_cfg->input_width);
     auto add_text_modify = [&is_modified](const std::string& name) {
@@ -2413,9 +2433,9 @@ bool GLGizmoEmboss::revertible(const std::string &name,
 {
     bool changed = exist_change(value, default_value);
     if (changed || default_value == nullptr)
-        ImGuiWrapper::text_colored(ImGuiWrapper::COL_ORANGE_LIGHT, name);
+        ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_ORANGE_LIGHT, name);
     else
-        ImGuiWrapper::text(name);
+        ImGuiPureWrap::text(name);
 
     // render revert changes button
     if (changed) {
@@ -2662,7 +2682,7 @@ void GLGizmoEmboss::draw_advanced()
         unsigned int collection = current_prop.collection_number.value_or(0);
         ff_property += ", collect=" + std::to_string(collection+1) + "/" + std::to_string(font_file->infos.size());
     }
-    m_imgui->text_colored(ImGuiWrapper::COL_GREY_DARK, ff_property);
+    m_imgui->text_colored(ImGuiPureWrap::COL_GREY_DARK, ff_property);
 #endif // SHOW_FONT_FILE_PROPERTY
 
     auto &tr = m_gui_cfg->translations;
@@ -3018,7 +3038,7 @@ void GLGizmoEmboss::set_minimal_window_size(bool is_advance_edit_style)
     const ImVec2 &min_win_size = get_minimal_window_size();
     ImVec2 new_window_size(0.f, min_win_size.y + diff_y);
     ImGui::SetWindowSize(new_window_size, ImGuiCond_Always);
-    m_set_window_offset = ImGuiWrapper::change_window_position(on_get_name().c_str(), true);
+    m_set_window_offset = ImGuiPureWrap::change_window_position(on_get_name().c_str(), true);
 }
 
 ImVec2 GLGizmoEmboss::get_minimal_window_size() const
@@ -3441,7 +3461,7 @@ void init_truncated_names(Facenames &face_names, float max_width)
 {
     for (FaceName &face : face_names.faces) {
         std::string name_str(face.wx_name.ToUTF8().data());
-        face.name_truncated = ImGuiWrapper::trunc(name_str, max_width);
+        face.name_truncated = ImGuiPureWrap::trunc(name_str, max_width);
     }
     face_names.has_truncated_names = true;
 }

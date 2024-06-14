@@ -572,8 +572,6 @@ protected:
      * Genrate small segments for local maxima where the beading would only result in a single bead
      */
     void generateLocalMaximaSingleBeads();
-
-    friend bool detect_voronoi_edge_intersecting_input_segment(const VD &voronoi_diagram, const std::vector<Segment> &segments);
 };
 
 } // namespace Slic3r::Arachne

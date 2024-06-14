@@ -16,7 +16,6 @@
 
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
-#include <boost/nowide/cenv.hpp>
 #include <boost/nowide/fstream.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/ptree_fwd.hpp>
@@ -101,9 +100,6 @@ void AppConfig::set_defaults()
             set("associate_3mf", "0");
         if (get("associate_stl").empty())
             set("associate_stl", "0");
-
-        if (get("tabs_as_menu").empty())
-            set("tabs_as_menu", "0");
 
         if (get("suppress_round_corners").empty())
             set("suppress_round_corners", "1");
@@ -215,6 +211,12 @@ void AppConfig::set_defaults()
 
     if (get("wifi_config_dialog_declined").empty())
         set("wifi_config_dialog_declined", "0");
+
+    if (get("connect_polling").empty())
+        set("connect_polling", "1");
+
+    if (get("auth_login_dialog_confirmed").empty())
+        set("auth_login_dialog_confirmed", "0");
 
 #ifdef _WIN32
     if (get("use_legacy_3DConnexion").empty())

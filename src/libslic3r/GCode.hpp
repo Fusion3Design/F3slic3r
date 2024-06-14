@@ -353,8 +353,7 @@ private:
     std::string     set_extruder(unsigned int extruder_id, double print_z);
     bool line_distancer_is_required(const std::vector<unsigned int>& extruder_ids);
 
-    // Cache for custom seam enforcers/blockers for each layer.
-    SeamPlacer                          m_seam_placer;
+    Seams::Placer                       m_seam_placer;
 
     /* Origin of print coordinates expressed in unscaled G-code coordinates.
        This affects the input arguments supplied to the extrude*() and travel_to()
@@ -430,9 +429,6 @@ private:
     float                               m_last_layer_z{ 0.0f };
     float                               m_max_layer_z{ 0.0f };
     float                               m_last_width{ 0.0f };
-#if ENABLE_GCODE_VIEWER_DATA_CHECKING
-    double                              m_last_mm3_per_mm;
-#endif // ENABLE_GCODE_VIEWER_DATA_CHECKING
 
     std::optional<Vec3d>                m_previous_layer_last_position;
     std::optional<Vec3d>                m_previous_layer_last_position_before_wipe;
@@ -471,6 +467,7 @@ private:
     std::string                         _extrude(
         const ExtrusionAttributes &attribs, const Geometry::ArcWelder::Path &path, const std::string_view description, double speed = -1);
     void                                print_machine_envelope(GCodeOutputStream &file, const Print &print);
+    void                                _print_first_layer_chamber_temperature(GCodeOutputStream &file, const Print &print, const std::string &gcode, int temp, bool wait, bool accurate);
     void                                _print_first_layer_bed_temperature(GCodeOutputStream &file, const Print &print, const std::string &gcode, unsigned int first_printing_extruder_id, bool wait);
     void                                _print_first_layer_extruder_temperatures(GCodeOutputStream &file, const Print &print, const std::string &gcode, unsigned int first_printing_extruder_id, bool wait);
     // On the first printing layer. This flag triggers first layer speeds.

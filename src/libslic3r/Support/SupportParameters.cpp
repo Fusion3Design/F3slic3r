@@ -143,6 +143,8 @@ SupportParameters::SupportParameters(const PrintObject &object)
     }
 
     this->tree_branch_diameter_double_wall_area_scaled = 0.25 * sqr(scaled<double>(object_config.support_tree_branch_diameter_double_wall.value)) * M_PI;
+
+    this->prefer_clockwise_movements = print_config.prefer_clockwise_movements;
 }
 
 } // namespace Slic3r

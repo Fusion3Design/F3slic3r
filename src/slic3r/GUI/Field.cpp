@@ -142,7 +142,7 @@ void Field::PostInitialize()
 #else /* __APPLE__ */
 				case WXK_CONTROL_F:
 #endif /* __APPLE__ */
-				case 'F': { wxGetApp().plater()->search(false); break; }
+				case 'F': { wxGetApp().show_search_dialog(); break; }
 			    default: break;
 			    }
 			    if (tab_id >= 0)

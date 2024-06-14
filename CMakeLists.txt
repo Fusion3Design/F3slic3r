@@ -42,7 +42,11 @@ option(SLIC3R_MSVC_PDB          "Generate PDB files on MSVC in Release mode" 1)
 option(SLIC3R_ASAN              "Enable ASan on Clang and GCC" 0)
 option(SLIC3R_UBSAN             "Enable UBSan on Clang and GCC" 0)
 option(SLIC3R_ENABLE_FORMAT_STEP "Enable compilation of STEP file support" ON)
-# If SLIC3R_FHS is 1 -> SLIC3R_DESKTOP_INTEGRATION is always 0, othrewise variable.
+
+# SLIC3R_OPENGL_ES can be enabled only if SLIC3R_GUI is enabled.
+CMAKE_DEPENDENT_OPTION(SLIC3R_OPENGL_ES "Compile PrusaSlicer targeting OpenGL ES" OFF "SLIC3R_GUI" OFF)
+
+# If SLIC3R_FHS is 1 -> SLIC3R_DESKTOP_INTEGRATION is always 0, otherwise variable.
 CMAKE_DEPENDENT_OPTION(SLIC3R_DESKTOP_INTEGRATION "Allow perfoming desktop integration during runtime" 1 "NOT SLIC3R_FHS" 0)
 
 set(OPENVDB_FIND_MODULE_PATH "" CACHE PATH "Path to OpenVDB installation's find modules.")
@@ -97,6 +101,10 @@ endforeach()
 if (SLIC3R_GUI)
     add_definitions(-DSLIC3R_GUI)
 endif ()
+
+if (SLIC3R_OPENGL_ES)
+    add_definitions(-DSLIC3R_OPENGL_ES)
+endif()
 
 if(SLIC3R_DESKTOP_INTEGRATION)
     add_definitions(-DSLIC3R_DESKTOP_INTEGRATION)
@@ -360,7 +368,7 @@ endif()
 # boost::process was introduced first in version 1.64.0,
 # boost::beast::detail::base64 was introduced first in version 1.66.0
 set(MINIMUM_BOOST_VERSION "1.66.0")
-set(_boost_components "system;filesystem;thread;log;locale;regex;chrono;atomic;date_time;iostreams")
+set(_boost_components "system;filesystem;thread;log;locale;regex;chrono;atomic;date_time;iostreams;nowide")
 find_package(Boost ${MINIMUM_BOOST_VERSION} REQUIRED COMPONENTS ${_boost_components})
 
 add_library(boost_libs INTERFACE)
@@ -459,10 +467,12 @@ find_package(EXPAT REQUIRED)
 
 add_library(libexpat INTERFACE)
 
-if (TARGET EXPAT::EXPAT )
+if (TARGET EXPAT::EXPAT ) # found by a newer Find script
     target_link_libraries(libexpat INTERFACE EXPAT::EXPAT)
-elseif(TARGET expat::expat)
+elseif(TARGET expat::expat) # found by a config script
     target_link_libraries(libexpat INTERFACE expat::expat)
+else() # found by an older Find script
+    target_link_libraries(libexpat INTERFACE ${EXPAT_LIBRARIES})
 endif ()
 
 find_package(PNG REQUIRED)
@@ -603,7 +613,6 @@ function(prusaslicer_copy_dlls target)
         COMMAND ${CMAKE_COMMAND} -E copy ${TOP_LEVEL_PROJECT_DIR}/deps/+MPFR/mpfr/lib/win${_bits}/libmpfr-4.dll ${_out_dir}
         COMMENT "Copy mpfr runtime to build tree"
         VERBATIM)
-
 endfunction()
 
 

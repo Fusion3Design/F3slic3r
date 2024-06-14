@@ -162,7 +162,7 @@ void WifiConfigDialog::on_retrieve_password(wxCommandEvent& e)
         return;
     }
     
-    std::string psk = m_wifi_scanner->get_psk(boost::nowide::narrow(m_ssid_combo->GetValue()));
+    std::string psk = m_wifi_scanner->get_psk(into_u8(m_ssid_combo->GetValue()));
     if (psk.empty()) {
         // TRN Alert message when retrieving password for wifi from keychain. Probably will display only on Apple so keychain is MacOS term.
         wxString msg = _L("No password in the keychain for given SSID.");
@@ -208,7 +208,7 @@ void WifiConfigDialog::rescan_networks(bool select)
     std::string current = m_wifi_scanner->get_current_ssid();
     const auto& map = m_wifi_scanner->get_map();
     m_ssid_combo->Clear();
-    for (const auto &pair : map) {
+    for (const auto& pair : map) {
         m_ssid_combo->Append(pair.first);
         // select ssid of current network (if connected)
         if (current == pair.first)
@@ -230,7 +230,7 @@ void WifiConfigDialog::on_ok(wxCommandEvent& e)
         return;
     }
    
-    std::string selected_path = boost::nowide::narrow(m_drive_combo->GetValue());
+    std::string selected_path = into_u8(m_drive_combo->GetValue());
 
     if (selected_path.empty()) {
         // TRN Alert message when writing WiFi configuration file to usb drive.

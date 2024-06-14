@@ -127,8 +127,8 @@ std::optional<std::string> get_current_thread_name()
 		return std::nullopt;
 
 	wchar_t *ptr = nullptr;
-	s_fnGetThreadDescription(::GetCurrentThread(), &ptr);
-	return (ptr == nullptr) ? std::string() : boost::nowide::narrow(ptr);
+    s_fnGetThreadDescription(::GetCurrentThread(), &ptr);
+    return (ptr == nullptr) ? std::string() : boost::nowide::narrow(ptr);
 }
 
 #else // _WIN32

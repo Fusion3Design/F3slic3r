@@ -588,7 +588,7 @@ PageWelcome::PageWelcome(ConfigWizard *parent)
 {
     welcome_text->Hide();
     cbox_reset->Hide();
-    cbox_integrate->Hide();    
+    cbox_integrate->Hide();
 }
 
 void PageWelcome::set_run_reason(ConfigWizard::RunReason run_reason)
@@ -1426,7 +1426,7 @@ Worker::Worker(wxWindow* parent)
     wxGetApp().SetWindowVariantForButton(button_path);
     this->Add(button_path, 0, wxEXPAND | wxTOP | wxLEFT, 5);
     button_path->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) {
-        boost::filesystem::path chosen_dest(boost::nowide::narrow(m_input_path->GetValue()));
+        boost::filesystem::path chosen_dest(into_u8(m_input_path->GetValue()));
 
         wxDirDialog dialog(m_parent, _L("Choose folder") + ":", chosen_dest.string() );
         if (dialog.ShowModal() == wxID_OK)
@@ -1536,11 +1536,13 @@ bool PageDownloader::on_finish_downloader() const
     return m_downloader->on_finish();
 }
 
-bool DownloaderUtils::Worker::perform_register(const std::string& path_override/* = {}*/)
+#ifdef __linux__
+bool DownloaderUtils::Worker::perform_registration_linux = false;
+#endif // __linux__
+
+bool DownloaderUtils::Worker::perform_register(const std::string& path)
 {
-    boost::filesystem::path aux_dest (GUI::into_u8(path_name()));
-    if (!path_override.empty())
-        aux_dest = boost::filesystem::path(path_override);
+    boost::filesystem::path aux_dest (path);
     boost::system::error_code ec;
     boost::filesystem::path chosen_dest = boost::filesystem::absolute(aux_dest, ec);
     if(ec)
@@ -1549,7 +1551,7 @@ bool DownloaderUtils::Worker::perform_register(const std::string& path_override/
     if (chosen_dest.empty() || !boost::filesystem::is_directory(chosen_dest, ec) || ec) {
         std::string err_msg = GUI::format("%1%\n\n%2%",_L("Chosen directory for downloads does not exist.") ,chosen_dest.string());
         BOOST_LOG_TRIVIAL(error) << err_msg;
-        show_error(m_parent, err_msg);
+        show_error(/*m_parent*/ nullptr, err_msg);
         return false;
     }
     BOOST_LOG_TRIVIAL(info) << "Downloader registration: Directory for downloads: " << chosen_dest.string();
@@ -1613,12 +1615,12 @@ bool DownloaderUtils::Worker::on_finish() {
     BOOST_LOG_TRIVIAL(debug) << "PageDownloader::on_finish_downloader ac_value " << ac_value << " downloader_checked " << downloader_checked;
     if (ac_value && downloader_checked) {
         // already registered but we need to do it again
-        if (!perform_register())
+        if (!perform_register(GUI::into_u8(path_name())))
             return false;
         app_config->set("downloader_url_registered", "1");
     } else if (!ac_value && downloader_checked) {
         // register
-        if (!perform_register())
+        if (!perform_register(GUI::into_u8(path_name())))
             return false;
         app_config->set("downloader_url_registered", "1");
     } else if (ac_value && !downloader_checked) {
@@ -1731,6 +1733,37 @@ PageVendors::PageVendors(ConfigWizard *parent)
 
         auto *cbox = new wxCheckBox(this, wxID_ANY, vendor->name);
         cbox->Bind(wxEVT_CHECKBOX, [=](wxCommandEvent &event) {
+            if (cbox->IsChecked()) {
+                wxString    user_presets_list{ wxString() };
+                int         user_presets_cnt { 0 };
+                
+                // Check if some of preset doesn't exist as a user_preset
+                // to avoid rewrite those user_presets by new installed system presets
+                const PresetCollection& presets = wizard_p()->bundles.at(vendor->id).preset_bundle.get()->printers;
+                for (const Preset& preset : presets)
+                    if (!preset.is_default && boost::filesystem::exists(preset.file)) {
+                        user_presets_list += " * " + from_u8(preset.name) + "\n";
+                        user_presets_cnt++;
+                    }
+
+                if (!user_presets_list.IsEmpty()) {
+                    wxString message = format_wxstr(_L_PLURAL("Following user preset has a same name as one of added system presets from '%1%' vendor:\n"
+                                                              "%2%Please note that this user preset will be rewrite by system preset.\n\n"
+                                                              "Do you still wish to add presets from '%1%'?",
+                                                              "Following user presets have same names as some of added system presets from '%1%' vendor:\n"
+                                                              "%2%Please note that these user presets will be rewrite by system presets.\n\n"
+                                                              "Do you still wish to add presets from '%1%'?",
+                                                    user_presets_cnt), vendor->name, user_presets_list);
+
+                    MessageDialog msg(this->GetParent(), message, _L("Notice"), wxYES_NO);
+                    if (msg.ShowModal() == wxID_NO) {
+                        // uncheck checked ckeckbox
+                        cbox->SetValue(false);
+                        return;
+                    }
+                }
+            }
+
             wizard_p()->on_3rdparty_install(vendor, cbox->IsChecked());
         });
 
@@ -2883,7 +2916,6 @@ bool ConfigWizard::priv::check_and_install_missing_materials(Technology technolo
 
     const auto ask_and_select_default_materials = [this](const wxString &message, const std::set<const VendorProfile::PrinterModel*> &printer_models, Technology technology)
     {
-        //wxMessageDialog msg(q, message, _L("Notice"), wxYES_NO);
         MessageDialog msg(q, message, _L("Notice"), wxYES_NO);
         if (msg.ShowModal() == wxID_YES)
             select_default_materials_for_printer_models(technology, printer_models);
@@ -3065,10 +3097,10 @@ bool ConfigWizard::priv::apply_config(AppConfig *app_config, PresetBundle *prese
 
 #if defined(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION)
     // Desktop integration on Linux
-    BOOST_LOG_TRIVIAL(debug) << "ConfigWizard::priv::apply_config integrate_desktop" << page_welcome->integrate_desktop()  << " perform_registration_linux " << page_downloader->m_downloader->get_perform_registration_linux();
+    BOOST_LOG_TRIVIAL(debug) << "ConfigWizard::priv::apply_config integrate_desktop" << page_welcome->integrate_desktop()  << " perform_registration_linux " << DownloaderUtils::Worker::perform_registration_linux;
     if (page_welcome->integrate_desktop())
         DesktopIntegrationDialog::perform_desktop_integration();
-    if (page_downloader->m_downloader->get_perform_registration_linux())
+    if (DownloaderUtils::Worker::perform_registration_linux)
         DesktopIntegrationDialog::perform_downloader_desktop_integration();
 #endif //(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION)
 

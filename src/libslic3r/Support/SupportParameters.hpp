@@ -88,6 +88,9 @@ struct SupportParameters {
     float 					raft_angle_base;
     float 					raft_angle_interface;
 
+    // Print closed loop clockwise when it is equal to true.
+    bool                    prefer_clockwise_movements;
+
     // Produce a raft interface angle for a given SupportLayer::interface_id()
     float 					raft_interface_angle(size_t interface_id) const 
     	{ return this->raft_angle_interface + ((interface_id & 1) ? float(- M_PI / 4.) : float(+ M_PI / 4.)); }

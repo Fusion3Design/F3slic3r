@@ -331,6 +331,37 @@ void GLGizmoSVG::volume_transformation_changed()
     calculate_scale();
 }
 
+void GLGizmoSVG::on_mouse_confirm_edit(const wxMouseEvent &mouse_event) {
+    // Fix phanthom transformation
+    //   appear when mouse click into scene during edit Rotation in input (click "Edit" button)
+    //   this must happen just before unselect selection (to find current volume)
+    static bool was_dragging = true;  
+    if ((mouse_event.LeftUp() || mouse_event.RightUp()) && 
+        m_parent.get_first_hover_volume_idx() < 0 &&
+        !was_dragging &&
+        m_volume != nullptr && 
+        m_volume->is_svg() ) { 
+        // current volume
+        const GLVolume *gl_volume_ptr = m_parent.get_selection().get_first_volume();
+        assert(gl_volume_ptr->geometry_id.first == m_volume->id().id);
+        if (gl_volume_ptr != nullptr) {
+            const Transform3d &v_tr = m_volume->get_matrix();
+            const Transform3d &gl_v_tr = gl_volume_ptr->get_volume_transformation().get_matrix();
+
+            const Matrix3d &v_rot = v_tr.linear();
+            const Matrix3d &gl_v_rot = gl_v_tr.linear();
+            const Vec3d &v_move = v_tr.translation();
+            const Vec3d &gl_v_move = gl_v_tr.translation();
+            if (!is_approx(v_rot, gl_v_rot)) {
+                m_parent.do_rotate(rotation_snapshot_name);
+            } else if (!is_approx(v_move, gl_v_move)) {
+                m_parent.do_move(move_snapshot_name);
+            }
+        }
+    }
+    was_dragging = mouse_event.Dragging();
+}
+
 bool GLGizmoSVG::on_mouse(const wxMouseEvent &mouse_event)
 {
     // not selected volume
@@ -340,7 +371,7 @@ bool GLGizmoSVG::on_mouse(const wxMouseEvent &mouse_event)
 
     if (on_mouse_for_rotation(mouse_event)) return true;
     if (on_mouse_for_translate(mouse_event)) return true;
-
+    on_mouse_confirm_edit(mouse_event);
     return false;
 }
 
@@ -486,7 +517,7 @@ void GLGizmoSVG::on_render_input_window(float x, float y, float bottom_limit)
                 ImVec4(1.f, .3f, .3f, .75f)
         ); // Warning color
         const float radius = 16.f;
-        ImGuiWrapper::draw_cross_hair(center, radius, color);
+        ImGuiPureWrap::draw_cross_hair(center, radius, color);
     }
 
     // check if is set window offset
@@ -525,7 +556,7 @@ void GLGizmoSVG::on_set_state()
         set_volume_by_selection();
            
         m_set_window_offset = (m_gui_cfg != nullptr) ?
-            ImGuiWrapper::change_window_position(on_get_name().c_str(), false) : ImVec2(-1, -1);
+            ImGuiPureWrap::change_window_position(on_get_name().c_str(), false) : ImVec2(-1, -1);
     }
 }
 
@@ -1167,7 +1198,7 @@ void GLGizmoSVG::set_volume_by_selection()
     // Do not use focused input value when switch volume(it must swith value)
     if (m_volume != nullptr && 
         m_volume != volume) // when update volume it changed id BUT not pointer
-        ImGuiWrapper::left_inputs();
+        ImGuiPureWrap::left_inputs();
 
     // is valid svg volume?
     if (!is_svg(*volume)) 
@@ -1437,7 +1468,7 @@ void GLGizmoSVG::draw_filename(){
             // TRN - Preview of filename after clear local filepath.
             m_filename_preview = _u8L("Unknown filename");
         
-        m_filename_preview = ImGuiWrapper::trunc(m_filename_preview, m_gui_cfg->input_width);
+        m_filename_preview = ImGuiPureWrap::trunc(m_filename_preview, m_gui_cfg->input_width);
     }
 
     if (!m_shape_warnings.empty()){
@@ -1461,7 +1492,7 @@ void GLGizmoSVG::draw_filename(){
     ImGui::Text("%s", m_filename_preview.c_str());
     bool is_hovered = ImGui::IsItemHovered();
     ImGui::SameLine();
-    m_imgui->text_colored(ImGuiWrapper::COL_GREY_LIGHT, ".svg");
+    ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_GREY_LIGHT, ".svg");
     ImGui::PopStyleVar(); // ImGuiStyleVar_ItemSpacing 
 
     is_hovered |= ImGui::IsItemHovered();
@@ -1509,7 +1540,7 @@ void GLGizmoSVG::draw_filename(){
         if (m_volume->emboss_shape->svg_file->path.empty()){
             draw(get_icon(m_icons, IconType::bake_inactive));
             ImGui::SameLine();
-            m_imgui->text_colored(ImGuiWrapper::COL_GREY_DARK, forget_path.c_str());
+            ImGuiPureWrap::text_colored(ImGuiPureWrap::COL_GREY_DARK, forget_path.c_str());
         } else {
             draw(get_icon(m_icons, IconType::bake));
             ImGui::SameLine();
@@ -1622,7 +1653,7 @@ void GLGizmoSVG::draw_filename(){
 
 void GLGizmoSVG::draw_depth()
 {
-    ImGuiWrapper::text(m_gui_cfg->translations.depth);
+    ImGuiPureWrap::text(m_gui_cfg->translations.depth);
     ImGui::SameLine(m_gui_cfg->input_offset);
     ImGui::SetNextItemWidth(m_gui_cfg->input_width);
 
@@ -1658,7 +1689,7 @@ void GLGizmoSVG::draw_depth()
 
 void GLGizmoSVG::draw_size() 
 {
-    ImGuiWrapper::text(m_gui_cfg->translations.size);
+    ImGuiPureWrap::text(m_gui_cfg->translations.size);
     if (ImGui::IsItemHovered()){
         size_t count_points = 0;
         for (const auto &s : m_volume_shape.shapes_with_ids)
@@ -1808,7 +1839,7 @@ void GLGizmoSVG::draw_use_surface()
     m_imgui->disabled_begin(!can_use_surface);
     ScopeGuard sc([imgui = m_imgui]() { imgui->disabled_end(); });
 
-    ImGuiWrapper::text(m_gui_cfg->translations.use_surface);
+    ImGuiPureWrap::text(m_gui_cfg->translations.use_surface);
     ImGui::SameLine(m_gui_cfg->input_offset);
 
     if (ImGui::Checkbox("##useSurface", &m_volume_shape.projection.use_surface))
@@ -1828,7 +1859,7 @@ void GLGizmoSVG::draw_distance()
     m_imgui->disabled_begin(!allowe_surface_distance);
     ScopeGuard sg([imgui = m_imgui]() { imgui->disabled_end(); });
 
-    ImGuiWrapper::text(m_gui_cfg->translations.distance);
+    ImGuiPureWrap::text(m_gui_cfg->translations.distance);
     ImGui::SameLine(m_gui_cfg->input_offset);
     ImGui::SetNextItemWidth(m_gui_cfg->input_width);
 
@@ -1870,7 +1901,7 @@ void GLGizmoSVG::draw_distance()
 
 void GLGizmoSVG::draw_rotation()
 {        
-    ImGuiWrapper::text(m_gui_cfg->translations.rotation);
+    ImGuiPureWrap::text(m_gui_cfg->translations.rotation);
     ImGui::SameLine(m_gui_cfg->input_offset);
     ImGui::SetNextItemWidth(m_gui_cfg->input_width);
 
@@ -1976,7 +2007,7 @@ void GLGizmoSVG::draw_model_type()
     std::string title = _u8L("Operation");
     if (is_last_solid_part) {
         ImVec4 color{.5f, .5f, .5f, 1.f};
-        m_imgui->text_colored(color, title.c_str());
+        ImGuiPureWrap::text_colored(color, title.c_str());
     } else {
         ImGui::Text("%s", title.c_str());
     }

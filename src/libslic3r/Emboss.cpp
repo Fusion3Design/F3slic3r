@@ -56,6 +56,7 @@ namespace {
 // for debug purpose only
 // NOTE: check scale when store svg !!
 #include "libslic3r/SVG.hpp" // for visualize_heal
+Points get_unique_intersections(const Slic3r::IntersectionsLines &intersections); // fast forward declaration
 static std::string visualize_heal_svg_filepath = "C:/data/temp/heal.svg";
 void               visualize_heal(const std::string &svg_filepath, const ExPolygons &expolygons)
 {
@@ -639,6 +640,10 @@ bool heal_dupl_inter(ExPolygons &shape, unsigned max_iteration)
             expoly = create_bounding_rect({expoly});
         }
     }
+        
+    // After insert bounding box unify and heal
+    shape = union_ex(shape);
+    heal_dupl_inter(shape, 1);
     return false;
 }
 

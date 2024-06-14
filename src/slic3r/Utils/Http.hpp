@@ -128,6 +128,10 @@ public:
 	// Called if curl_easy_getinfo resolved just used IP address.
 	Http& on_ip_resolve(IPResolveFn fn);
 
+	Http& cookie_file(const std::string& file_path);
+	Http& cookie_jar(const std::string& file_path);
+	Http& set_referer(const std::string& referer);
+
 	// Starts performing the request in a background thread
 	Ptr perform();
 	// Starts performing the request on the current thread

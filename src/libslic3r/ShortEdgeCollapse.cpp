@@ -9,10 +9,28 @@
 #include <unordered_set>
 #include <random>
 #include <algorithm>
+#include <boost/random/uniform_int_distribution.hpp>
 
 #include <ankerl/unordered_dense.h>
 
 namespace Slic3r {
+
+/**
+ * Simple implementation of Fisher-Yates algorithm using uniform int
+ * distribution from boost, ensurinng the result is the same
+ * accross platforms.
+ *
+ * DO NOT EXPECT IT TO BE PERFORMANT! Use it only when std::shuffle is
+ * not applicable.
+ */
+template<typename Range, typename UniformRandomNumberGenerator>
+void stable_shuffle(Range &range, UniformRandomNumberGenerator &generator) {
+    const int n{static_cast<int>(range.size())};
+    for (int i{0}; i < n - 2; ++i) {
+        int j{boost::random::uniform_int_distribution<int>{i, n-1}(generator)};
+        std::swap(range[i], range[j]);
+    }
+}
 
 void its_short_edge_collpase(indexed_triangle_set &mesh, size_t target_triangle_count) {
     // whenever vertex is removed, its mapping is update to the index of vertex with wich it merged
@@ -102,8 +120,8 @@ void its_short_edge_collpase(indexed_triangle_set &mesh, size_t target_triangle_
         float max_edge_len_squared = edge_len * edge_len;
 
         //shuffle the faces and traverse in random order, this MASSIVELY improves the quality of the result
-        std::shuffle(face_indices.begin(), face_indices.end(), generator);
-        
+        stable_shuffle(face_indices, generator);
+
         int allowed_face_removals = int(face_indices.size()) - int(target_triangle_count);
         for (const size_t &face_idx : face_indices) {
             if (face_removal_flags[face_idx]) {

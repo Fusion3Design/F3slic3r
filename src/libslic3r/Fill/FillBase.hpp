@@ -72,6 +72,9 @@ struct FillParams
     bool        use_arachne     { false };
     // Layer height for Concentric infill with Arachne.
     coordf_t    layer_height    { 0.f };
+
+    // For infills that produce closed loops to force printing those loops clockwise.
+    bool        prefer_clockwise_movements { false };
 };
 static_assert(IsTriviallyCopyable<FillParams>::value, "FillParams class is not POD (and it should be - see constructor).");
 

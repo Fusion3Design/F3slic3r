@@ -557,6 +557,12 @@ Http& Http::set_post_body(const std::string &body)
 	return *this;
 }
 
+Http& Http::set_referer(const std::string& referer)
+{
+	if (p) { ::curl_easy_setopt(p->curl, CURLOPT_REFERER, referer.c_str()); }
+	return *this;
+}
+
 Http& Http::set_put_body(const fs::path &path)
 {
 	if (p) { p->set_put_body(path);}
@@ -584,6 +590,22 @@ Http& Http::on_progress(ProgressFn fn)
 Http& Http::on_ip_resolve(IPResolveFn fn)
 {
 	if (p) { p->ipresolvefn = std::move(fn); }
+	return *this;
+}
+
+Http& Http::cookie_file(const std::string& file_path)
+{
+	if (p) {
+		::curl_easy_setopt(p->curl, CURLOPT_COOKIEFILE, file_path.c_str());
+	}
+	return *this;
+}
+
+Http& Http::cookie_jar(const std::string& file_path)
+{
+	if (p) {
+		::curl_easy_setopt(p->curl, CURLOPT_COOKIEJAR, file_path.c_str());
+	}
 	return *this;
 }
 

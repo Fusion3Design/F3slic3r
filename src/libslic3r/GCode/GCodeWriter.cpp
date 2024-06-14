@@ -181,6 +181,27 @@ std::string GCodeWriter::set_bed_temperature(unsigned int temperature, bool wait
     return gcode.str();
 }
 
+
+
+std::string GCodeWriter::set_chamber_temperature(unsigned int temperature, bool wait, bool accurate) const
+{
+    std::string_view code, comment;
+    if (wait) {
+        code = "M191"sv;
+        comment = "set chamber temperature and wait for it to be reached"sv;
+    } else {
+        code = "M141"sv;
+        comment = "set chamber temperature"sv;
+    }
+    
+    std::ostringstream gcode;
+    gcode << code << (accurate ? " R" : " S") << temperature << " ; " << comment << "\n";
+    
+    return gcode.str();
+}
+
+
+
 std::string GCodeWriter::set_acceleration_internal(Acceleration type, unsigned int acceleration)
 {
     // Clamp the acceleration to the allowed maximum.

@@ -119,11 +119,14 @@ namespace instance_check_internal
 			other_instance_hash_major = PtrToUint(handle);
 			other_instance_hash_major = other_instance_hash_major << 32;
 			other_instance_hash += other_instance_hash_major;
+			handle = GetProp(hwnd, L"Instance_Is_Maximized");
+			const bool maximized = PtrToUint(handle) == 1;
+
 			if(my_instance_hash == other_instance_hash)
 			{
 				BOOST_LOG_TRIVIAL(debug) << "win enum - found correct instance";
 				l_prusa_slicer_hwnd = hwnd;
-				ShowWindow(hwnd, SW_SHOWMAXIMIZED);
+				ShowWindow(hwnd, maximized ? SW_SHOWMAXIMIZED : SW_SHOW);
 				SetForegroundWindow(hwnd);
 				return false;
 			}
@@ -378,6 +381,7 @@ namespace GUI {
 
 wxDEFINE_EVENT(EVT_LOAD_MODEL_OTHER_INSTANCE, LoadFromOtherInstanceEvent);
 wxDEFINE_EVENT(EVT_START_DOWNLOAD_OTHER_INSTANCE, StartDownloadOtherInstanceEvent);
+wxDEFINE_EVENT(EVT_LOGIN_OTHER_INSTANCE, LoginOtherInstanceEvent);
 wxDEFINE_EVENT(EVT_INSTANCE_GO_TO_FRONT, InstanceGoToFrontEvent);
 
 void OtherInstanceMessageHandler::init(wxEvtHandler* callback_evt_handler)
@@ -410,6 +414,7 @@ void OtherInstanceMessageHandler::shutdown(MainFrame* main_frame)
 		HWND hwnd = main_frame->GetHandle();
 		RemoveProp(hwnd, L"Instance_Hash_Minor");
 		RemoveProp(hwnd, L"Instance_Hash_Major");
+		RemoveProp(hwnd, L"Instance_Is_Maximized");
 #endif //_WIN32
 #if __APPLE__
 		//delete macos implementation
@@ -439,12 +444,28 @@ void OtherInstanceMessageHandler::init_windows_properties(MainFrame* main_frame,
 {
 	size_t       minor_hash = instance_hash & 0xFFFFFFFF;
 	size_t       major_hash = (instance_hash & 0xFFFFFFFF00000000) >> 32;
+	size_t       is_maximized = main_frame->IsMaximized() ? 1 : 0;
 	HWND         hwnd = main_frame->GetHandle();
 	HANDLE       handle_minor = UIntToPtr(minor_hash);
 	HANDLE       handle_major = UIntToPtr(major_hash);
+	HANDLE       handle_is_maximized = UIntToPtr(is_maximized);
 	SetProp(hwnd, L"Instance_Hash_Minor", handle_minor);
 	SetProp(hwnd, L"Instance_Hash_Major", handle_major);
+	SetProp(hwnd, L"Instance_Is_Maximized", handle_is_maximized);
 	//BOOST_LOG_TRIVIAL(debug) << "window properties initialized " << instance_hash << " (" << minor_hash << " & "<< major_hash;
+}
+
+void OtherInstanceMessageHandler::update_windows_properties(MainFrame* main_frame)
+{
+	if (m_initialized) {
+		// dlete old value of "Instance_Is_Maximized" property
+		HWND hwnd = main_frame->GetHandle();
+		RemoveProp(hwnd, L"Instance_Is_Maximized");
+		// set new value for "Instance_Is_Maximized" property
+		size_t	is_maximized		= main_frame->IsMaximized() ? 1 : 0;
+		HANDLE	handle_is_maximized	= UIntToPtr(is_maximized);
+		SetProp(hwnd, L"Instance_Is_Maximized", handle_is_maximized);
+	}
 }
 
 #if 0
@@ -520,6 +541,9 @@ void OtherInstanceMessageHandler::handle_message(const std::string& message)
 	    else if (it->rfind("prusaslicer://open?file=", 0) == 0)
 #endif
 			downloads.emplace_back(*it);
+		else if (it->rfind("prusaslicer://login", 0) == 0) {
+			wxPostEvent(m_callback_evt_handler, LoginOtherInstanceEvent(GUI::EVT_LOGIN_OTHER_INSTANCE, std::string(*it)));
+		}
 	}
 	if (! paths.empty()) {
 		//wxEvtHandler* evt_handler = wxGetApp().plater(); //assert here?

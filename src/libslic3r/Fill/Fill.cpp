@@ -508,13 +508,14 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
 
         // apply half spacing using this flow's own spacing and generate infill
         FillParams params;
-        params.density           = float(0.01 * surface_fill.params.density);
-        params.dont_adjust       = false; //  surface_fill.params.dont_adjust;
-        params.anchor_length     = surface_fill.params.anchor_length;
-        params.anchor_length_max = surface_fill.params.anchor_length_max;
-        params.resolution        = resolution;
-        params.use_arachne       = (perimeter_generator == PerimeterGeneratorType::Arachne && surface_fill.params.pattern == ipConcentric) || surface_fill.params.pattern == ipEnsuring;
-        params.layer_height      = layerm.layer()->height;
+        params.density                    = float(0.01 * surface_fill.params.density);
+        params.dont_adjust                = false; //  surface_fill.params.dont_adjust;
+        params.anchor_length              = surface_fill.params.anchor_length;
+        params.anchor_length_max          = surface_fill.params.anchor_length_max;
+        params.resolution                 = resolution;
+        params.use_arachne                = (perimeter_generator == PerimeterGeneratorType::Arachne && surface_fill.params.pattern == ipConcentric) || surface_fill.params.pattern == ipEnsuring;
+        params.layer_height               = layerm.layer()->height;
+        params.prefer_clockwise_movements = this->object()->print()->config().prefer_clockwise_movements;
 
         for (ExPolygon &expoly : surface_fill.expolygons) {
 			// Spacing is modified by the filler to indicate adjustments. Reset it for each expolygon.
@@ -569,11 +570,12 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
 
                     thick_polylines.clear();
                 } else {
+                    // When prefer_clockwise_movements is true, we have to ensure that extrusion paths will not be reversed during path planning.
                     extrusion_entities_append_paths(
                         eec->entities, std::move(polylines),
 						ExtrusionAttributes{ surface_fill.params.extrusion_role,
 							ExtrusionFlow{ flow_mm3_per_mm, float(flow_width), surface_fill.params.flow.height() } 
-						});
+						}, !params.prefer_clockwise_movements);
                     layerm.m_fills.entities.push_back(eec);
                 }
                 insert_fills_into_islands(*this, uint32_t(surface_fill.region_id), fill_begin, uint32_t(layerm.fills().size()));

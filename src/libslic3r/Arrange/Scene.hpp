@@ -264,8 +264,8 @@ class Scene
     ExtendedBed m_bed;
 
 public:
-    // Can only be built from an rvalue SceneBuilder, as it's content will
-    // potentially be moved to the constructed ArrangeScene object
+    // Scene can only be built from an rvalue SceneBuilder whose content will
+    // potentially be moved to the constructed Scene object.
     template<class Sub>
     explicit Scene(SceneBuilderBase<Sub> &&bld)
     {
@@ -287,8 +287,10 @@ public:
     std::vector<ObjectID> selected_ids() const;
 };
 
+// Get all the ObjectIDs of Arrangeables which are in selected state
 std::set<ObjectID> selected_geometry_ids(const Scene &sc);
 
+// A dummy, empty ArrangeableModel for testing and as placeholder to avoiod using nullptr
 class EmptyArrangeableModel: public ArrangeableModel
 {
 public:
@@ -308,12 +310,20 @@ void SceneBuilderBase<Subclass>::build_scene(Scene &sc) &&
     if (!m_settings)
         m_settings = std::make_unique<arr2::ArrangeSettings>();
 
+    // Apply the bed minimum distance by making the original bed smaller
+    // and arranging on this smaller bed.
     coord_t inset = std::max(scaled(m_settings->get_distance_from_bed()),
                              m_skirt_offs + m_brims_offs);
 
+    // Objects have also a minimum distance from each other implemented
+    // as inflation applied to object outlines. This object distance
+    // does not apply to the bed, so the bed is inflated by this amount
+    // to compensate.
     coord_t md = scaled(m_settings->get_distance_from_objects());
     md = md / 2 - inset;
 
+    // Applying the final bed with the corrected dimensions to account
+    // for safety distances
     visit_bed([md](auto &rawbed) { rawbed = offset(rawbed, md); }, m_bed);
 
     sc.m_settings = std::move(m_settings);

@@ -4,8 +4,6 @@ project(PrusaSlicer-native)
 add_subdirectory(build-utils)
 add_subdirectory(admesh)
 add_subdirectory(avrdude)
-# boost/nowide
-add_subdirectory(boost)
 add_subdirectory(clipper)
 add_subdirectory(miniz)
 add_subdirectory(glu-libtess)
@@ -33,6 +31,7 @@ endif ()
 
 if (SLIC3R_GUI)
     add_subdirectory(imgui)
+    add_subdirectory(libvgcode)
     add_subdirectory(hidapi)
     include_directories(hidapi/include)
 
@@ -50,7 +49,7 @@ if (SLIC3R_GUI)
     if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
         set (wxWidgets_CONFIG_OPTIONS "--toolkit=gtk${SLIC3R_GTK}")
     endif ()
-    find_package(wxWidgets 3.2 MODULE REQUIRED COMPONENTS base core adv html gl)
+    find_package(wxWidgets 3.2 MODULE REQUIRED COMPONENTS base core adv html gl webview)
 
     include(${wxWidgets_USE_FILE})
 
@@ -61,19 +60,12 @@ if (SLIC3R_GUI)
     endif()
 
     find_package(JPEG MODULE QUIET)
-    find_package(TIFF MODULE QUIET) # Tiff exported config is broken for static build
     find_package(NanoSVG REQUIRED)
 
     string(REGEX MATCH "wxpng" WX_PNG_BUILTIN ${wxWidgets_LIBRARIES})
     if (PNG_FOUND AND NOT WX_PNG_BUILTIN)
         list(FILTER wxWidgets_LIBRARIES EXCLUDE REGEX png)
         list(APPEND wxWidgets_LIBRARIES ${PNG_LIBRARIES})
-    endif ()
-
-    string(REGEX MATCH "wxtiff" WX_TIFF_BUILTIN ${wxWidgets_LIBRARIES})
-    if (TIFF_FOUND AND NOT WX_TIFF_BUILTIN)
-        list(FILTER wxWidgets_LIBRARIES EXCLUDE REGEX tiff)
-        list(APPEND wxWidgets_LIBRARIES ${TIFF_LIBRARIES})
     endif ()
 
     string(REGEX MATCH "wxjpeg" WX_JPEG_BUILTIN ${wxWidgets_LIBRARIES})
@@ -220,6 +212,13 @@ if (WIN32)
                 COMMENT "Symlinking the resources directory into the build tree"
                 VERBATIM
             )
+
+            if (SLIC3R_GUI)
+                add_custom_command(TARGET PrusaSlicer POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy
+                    "${wxWidgets_ROOT_DIR}/bin/WebView2Loader.dll"
+                    "${CMAKE_CURRENT_BINARY_DIR}/${CONF}/WebView2Loader.dll")
+            endif()
         endforeach ()
     else ()
         file(TO_NATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}/resources" WIN_RESOURCES_SYMLINK)
@@ -228,6 +227,12 @@ if (WIN32)
             COMMENT "Symlinking the resources directory into the build tree"
             VERBATIM
         )
+        if (SLIC3R_GUI)
+            add_custom_command(TARGET PrusaSlicer POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                "${wxWidgets_ROOT_DIR}/bin/WebView2Loader.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/${CONF}/WebView2Loader.dll")
+        endif()
     endif ()
 
     # This has to be a separate target due to the windows command line lenght limits

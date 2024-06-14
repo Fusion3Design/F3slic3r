@@ -170,7 +170,7 @@ void FileGet::priv::get_perform()
 		m_tmp_path = m_dest_folder / (m_filename + "." + std::to_string(get_current_pid()) + ".download");
 
 		wxCommandEvent* evt = new wxCommandEvent(EVT_DWNLDR_FILE_NAME_CHANGE);
-		evt->SetString(boost::nowide::widen(m_filename));
+		evt->SetString(from_u8(m_filename));
 		evt->SetInt(m_id);
 		m_evt_handler->QueueEvent(evt);
 	}
