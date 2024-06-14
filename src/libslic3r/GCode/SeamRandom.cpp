@@ -122,15 +122,33 @@ std::optional<SeamChoice> Random::operator()(
 } // namespace Impl
 
 std::vector<std::vector<SeamPerimeterChoice>> get_object_seams(
-    Shells::Shells<> &&shells, const unsigned fixed_seed
+    Perimeters::LayerPerimeters &&perimeters, const unsigned fixed_seed
 ) {
     std::mt19937 random_engine{fixed_seed};
     const Impl::Random random{random_engine};
 
-    return Seams::get_object_seams(std::move(shells), [&](const Shells::Shell<> &shell) {
-        return Seams::get_shell_seam(shell, [&](const Perimeters::Perimeter &perimeter, std::size_t) {
-            return Seams::choose_seam_point(perimeter, random);
-        });
-    });
+    std::vector<std::vector<SeamPerimeterChoice>> result;
+
+    for (std::vector<Perimeters::BoundedPerimeter> &layer : perimeters) {
+        result.emplace_back();
+        for (Perimeters::BoundedPerimeter &perimeter : layer) {
+            if (perimeter.perimeter.is_degenerate) {
+                std::optional<Seams::SeamChoice> seam_choice{
+                    Seams::choose_degenerate_seam_point(perimeter.perimeter)};
+                if (seam_choice) {
+                    result.back().push_back(
+                        SeamPerimeterChoice{*seam_choice, std::move(perimeter.perimeter)}
+                    );
+                } else {
+                    result.back().push_back(SeamPerimeterChoice{SeamChoice{}, std::move(perimeter.perimeter)});
+                }
+            } else {
+                result.back().push_back(SeamPerimeterChoice{
+                    Seams::choose_seam_point(perimeter.perimeter, random),
+                    std::move(perimeter.perimeter)});
+            }
+        }
+    }
+    return result;
 }
 } // namespace Slic3r::Seams::Random

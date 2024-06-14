@@ -34,27 +34,14 @@ Perimeters::Perimeter get_perimeter() {
 }
 } // namespace RearTest
 
-TEST_CASE("StraightLine operator places seam point near the prefered position", "[Seams][SeamRear]") {
-    const Rear::Impl::StraightLine rearest{Vec2d{0.7, 2.0}};
-    std::optional<SeamChoice> choice{rearest(RearTest::get_perimeter(), Perimeters::PointType::common, Perimeters::PointClassification::common)};
-
-    REQUIRE(choice);
-    CHECK(scaled(choice->position) == scaled(Vec2d{0.7, 1.0}));
-    CHECK(choice->previous_index == 2);
-    CHECK(choice->next_index == 3);
-}
-
 TEST_CASE_METHOD(Test::SeamsFixture, "Generate rear seam", "[Seams][SeamRear][Integration]") {
-    Shells::Shells<> perimeters{
-        Perimeters::create_perimeters(shell_polygons, layer_infos, painting, params.perimeter)};
-    Shells::Shells<> shell_perimeters;
-    shell_perimeters.push_back(std::move(perimeters[shell_index]));
-    const std::vector<std::vector<SeamPerimeterChoice>> seam{
-        Rear::get_object_seams(std::move(shell_perimeters), params.rear_project_threshold)};
-    REQUIRE(seam.size() == 125);
+    Seams::Perimeters::LayerPerimeters perimeters{
+        Seams::Perimeters::create_perimeters(projected, layer_infos, painting, params.perimeter)};
+    const std::vector<std::vector<SeamPerimeterChoice>> seams{
+        Rear::get_object_seams(std::move(perimeters), params.rear_tolerance, params.rear_y_offset)};
 
     if constexpr (debug_files) {
         std::ofstream csv{"rear_seam.csv"};
-        Test::serialize_seam(csv, seam);
+        Test::serialize_seam(csv, seams);
     }
 }

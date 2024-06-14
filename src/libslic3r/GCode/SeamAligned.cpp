@@ -261,6 +261,29 @@ struct SeamCandidate {
     std::vector<double> visibilities;
 };
 
+std::vector<SeamChoice> get_shell_seam(
+    const Shells::Shell<> &shell,
+    const std::function<SeamChoice(const Perimeters::Perimeter &, std::size_t)> &chooser
+) {
+    std::vector<SeamChoice> result;
+    result.reserve(shell.size());
+    for (std::size_t i{0}; i < shell.size(); ++i) {
+        const Shells::Slice<> &slice{shell[i]};
+        if (slice.boundary.is_degenerate) {
+            if (std::optional<SeamChoice> seam_choice{
+                    choose_degenerate_seam_point(slice.boundary)}) {
+                result.push_back(*seam_choice);
+            } else {
+                result.emplace_back();
+            }
+        } else {
+            const SeamChoice choice{chooser(slice.boundary, i)};
+            result.push_back(choice);
+        }
+    }
+    return result;
+}
+
 SeamCandidate get_seam_candidate(
     const Shells::Shell<> &shell,
     const Vec2d &starting_position,
@@ -273,7 +296,7 @@ SeamCandidate get_seam_candidate(
 
     std::vector<double> choice_visibilities(shell.size(), 1.0);
     std::vector<SeamChoice> choices{
-        Seams::get_shell_seam(shell, [&, previous_position{starting_position}](const Perimeter &perimeter, std::size_t slice_index) mutable {
+        get_shell_seam(shell, [&, previous_position{starting_position}](const Perimeter &perimeter, std::size_t slice_index) mutable {
             SeamChoice candidate{Seams::choose_seam_point(
                 perimeter, Impl::Nearest{previous_position, params.max_detour}
             )};
