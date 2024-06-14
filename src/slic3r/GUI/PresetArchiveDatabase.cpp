@@ -893,7 +893,6 @@ bool sync_inner(std::string& manifest)
 
 void PresetArchiveDatabase::sync_blocking()
 {
-	BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << " " << std::this_thread::get_id();
 	std::string manifest;
 	if (!sync_inner(manifest))
 		return;
