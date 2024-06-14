@@ -34,15 +34,6 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
 
     std::string gcode;
 
-    // Toolchangeresult.gcode assumes the wipe tower corner is at the origin (except for priming lines)
-    // We want to rotate and shift all extrusions (gcode postprocessing) and starting and ending position
-    float alpha = m_wipe_tower_rotation / 180.f * float(M_PI);
-
-    auto transform_wt_pt = [&alpha, this](const Vec2f& pt) -> Vec2f {
-        Vec2f out = Eigen::Rotation2Df(alpha) * pt;
-        out += m_wipe_tower_pos;
-        return out;
-    };
 
     Vec2f start_pos = tcr.start_pos;
     Vec2f end_pos = tcr.end_pos;
@@ -52,7 +43,7 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
     }
 
     Vec2f wipe_tower_offset = tcr.priming ? Vec2f::Zero() : m_wipe_tower_pos;
-    float wipe_tower_rotation = tcr.priming ? 0.f : alpha;
+    float wipe_tower_rotation = tcr.priming ? 0.f : this->get_alpha();
 
     std::string tcr_rotated_gcode = post_process_wipe_tower_moves(tcr, wipe_tower_offset, wipe_tower_rotation);
 
@@ -145,7 +136,7 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
         Geometry::ArcWelder::Path path;
         path.reserve(tcr.wipe_path.size());
         std::transform(tcr.wipe_path.begin(), tcr.wipe_path.end(), std::back_inserter(path),
-            [&gcodegen, &transform_wt_pt](const Vec2f &wipe_pt) { 
+            [&gcodegen, this](const Vec2f &wipe_pt) {
                 return Geometry::ArcWelder::Segment{ wipe_tower_point_to_object_point(gcodegen, transform_wt_pt(wipe_pt)) };
             });
         // Pass to the wipe cache.

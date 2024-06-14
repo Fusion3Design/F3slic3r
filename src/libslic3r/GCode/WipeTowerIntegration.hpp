@@ -39,8 +39,23 @@ public:
     std::string tool_change(GCodeGenerator &gcodegen, int extruder_id, bool finish_layer);
     std::string finalize(GCodeGenerator &gcodegen);
     std::vector<float> used_filament_length() const;
+    WipeTower::ToolChangeResult get_toolchange(std::size_t index) {
+        return m_tool_changes.at(m_layer_idx).at(index);
+    }
+
+    Vec2f transform_wt_pt(const Vec2f& pt) const {
+        Vec2f out = Eigen::Rotation2Df(this->get_alpha()) * pt;
+        out += m_wipe_tower_pos;
+        return out;
+    };
 
 private:
+    // Toolchangeresult.gcode assumes the wipe tower corner is at the origin (except for priming lines)
+    // We want to rotate and shift all extrusions (gcode postprocessing) and starting and ending position
+    float get_alpha() const {
+        return m_wipe_tower_rotation / 180.f * float(M_PI);
+    }
+
     WipeTowerIntegration& operator=(const WipeTowerIntegration&);
     std::string append_tcr(GCodeGenerator &gcodegen, const WipeTower::ToolChangeResult &tcr, int new_extruder_id, double z = -1.) const;
 

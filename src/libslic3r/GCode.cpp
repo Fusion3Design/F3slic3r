@@ -2462,39 +2462,44 @@ LayerResult GCodeGenerator::process_layer(
         }
     }
 
-    // Extrude the skirt, brim, support, perimeters, infill ordered by the extruders.
-    for (unsigned int extruder_id : layer_tools.extruders)
+    using GCode::ExtrusionOrder::NormalExtrusions;
+    struct ExtruderExtrusions {
+        unsigned extruder_id;
+        std::vector<std::pair<std::size_t, const ExtrusionEntity *>> skirt;
+        ExtrusionEntitiesPtr brim;
+        std::vector<std::vector<SliceExtrusions>> overriden_extrusions;
+        std::vector<NormalExtrusions> normal_extrusions;
+    };
+
+    unsigned current_extruder_id{this->m_writer.extruder()->id()};
+    unsigned toolchange_number{0};
+    std::optional<Point> previous_position{this->last_position};
+
+    std::vector<ExtruderExtrusions> extrusions;
+    for (const unsigned int extruder_id : layer_tools.extruders)
     {
-        gcode += (layer_tools.has_wipe_tower && m_wipe_tower) ?
-            m_wipe_tower->tool_change(*this, extruder_id, extruder_id == layer_tools.extruders.back()) :
-            this->set_extruder(extruder_id, print_z);
-
-        // let analyzer tag generator aware of a role type change
-        if (layer_tools.has_wipe_tower && m_wipe_tower)
-            m_last_processor_extrusion_role = GCodeExtrusionRole::WipeTower;
-
-        if (has_custom_gcode_to_emit && extruder_id_for_custom_gcode == int(extruder_id)) {
-            assert(m_writer.extruder()->id() == extruder_id_for_custom_gcode);
-            assert(m_pending_pre_extrusion_gcode.empty());
-            // Now we have picked the right extruder, so we can emit the custom g-code.
-            gcode += ProcessLayer::emit_custom_gcode_per_print_z(*this, *layer_tools.custom_gcode, m_writer.extruder()->id(), first_extruder_id, print.config());
+        if (layer_tools.has_wipe_tower && m_wipe_tower) {
+            if (is_toolchange_required(first_layer, layer_tools.extruders.back(), extruder_id, current_extruder_id)) {
+                const WipeTower::ToolChangeResult tool_change{m_wipe_tower->get_toolchange(toolchange_number++)};
+                previous_position = this->gcode_to_point(m_wipe_tower->transform_wt_pt(tool_change.end_pos).cast<double>());
+                current_extruder_id = tool_change.new_tool;
+            }
         }
 
-        std::optional<Point> previous_position{this->last_position};
+        ExtruderExtrusions extruder_extrusions{extruder_id};
 
-        std::vector<std::pair<std::size_t, const ExtrusionEntity *>> skirt;
         if (auto loops_it = skirt_loops_per_extruder.find(extruder_id); loops_it != skirt_loops_per_extruder.end()) {
             const std::pair<size_t, size_t> loops = loops_it->second;
             for (std::size_t i = loops.first; i < loops.second; ++i) {
-                skirt.emplace_back(i, print.skirt().entities[i]);
+                extruder_extrusions.skirt.emplace_back(i, print.skirt().entities[i]);
             }
         }
 
         using GCode::ExtrusionOrder::get_last_position;
-        ExtrusionEntitiesPtr brim;
         if (!m_brim_done) {
-            brim = print.brim().entities;
-            previous_position = get_last_position(brim);
+            extruder_extrusions.brim = print.brim().entities;
+            previous_position = get_last_position(extruder_extrusions.brim);
+            m_brim_done = true;
         }
 
 
@@ -2519,22 +2524,40 @@ LayerResult GCodeGenerator::process_layer(
 
         using GCode::ExtrusionOrder::get_overriden_extrusions;
         bool is_anything_overridden = layer_tools.wiping_extrusions().is_anything_overridden();
-        std::vector<std::vector<SliceExtrusions>> overriden_extrusions;
         if (is_anything_overridden) {
-            overriden_extrusions = get_overriden_extrusions(
+            extruder_extrusions.overriden_extrusions = get_overriden_extrusions(
                 print, layers, layer_tools, instances_to_print, extruder_id, place_seam,
                 previous_position
             );
         }
 
         using GCode::ExtrusionOrder::get_normal_extrusions;
-        using GCode::ExtrusionOrder::NormalExtrusions;
-        const std::vector<NormalExtrusions> normal_extrusions{get_normal_extrusions(
+        extruder_extrusions.normal_extrusions = get_normal_extrusions(
             print, layers, layer_tools, instances_to_print, extruder_id, place_seam,
             previous_position
-        )};
+        );
+        extrusions.push_back(std::move(extruder_extrusions));
+    }
 
-        if (!skirt.empty()) {
+    // Extrude the skirt, brim, support, perimeters, infill ordered by the extruders.
+    for (const ExtruderExtrusions &extruder_extrusions : extrusions)
+    {
+        gcode += (layer_tools.has_wipe_tower && m_wipe_tower) ?
+            m_wipe_tower->tool_change(*this, extruder_extrusions.extruder_id, extruder_extrusions.extruder_id == layer_tools.extruders.back()) :
+            this->set_extruder(extruder_extrusions.extruder_id, print_z);
+
+        // let analyzer tag generator aware of a role type change
+        if (layer_tools.has_wipe_tower && m_wipe_tower)
+            m_last_processor_extrusion_role = GCodeExtrusionRole::WipeTower;
+
+        if (has_custom_gcode_to_emit && extruder_id_for_custom_gcode == int(extruder_extrusions.extruder_id)) {
+            assert(m_writer.extruder()->id() == extruder_id_for_custom_gcode);
+            assert(m_pending_pre_extrusion_gcode.empty());
+            // Now we have picked the right extruder, so we can emit the custom g-code.
+            gcode += ProcessLayer::emit_custom_gcode_per_print_z(*this, *layer_tools.custom_gcode, m_writer.extruder()->id(), first_extruder_id, print.config());
+        }
+
+        if (!extruder_extrusions.skirt.empty()) {
             if (!this->m_config.complete_objects.value) {
                 gcode += this->m_label_objects.maybe_stop_instance();
             }
@@ -2544,7 +2567,7 @@ LayerResult GCodeGenerator::process_layer(
             m_avoid_crossing_perimeters.use_external_mp();
             Flow layer_skirt_flow = print.skirt_flow().with_height(float(m_skirt_done.back() - (m_skirt_done.size() == 1 ? 0. : m_skirt_done[m_skirt_done.size() - 2])));
             double mm3_per_mm = layer_skirt_flow.mm3_per_mm();
-            for (const auto&[_, loop_entity] : skirt) {
+            for (const auto&[_, loop_entity] : extruder_extrusions.skirt) {
                 // Adjust flow according to this layer's layer height.
                 //FIXME using the support_material_speed of the 1st object printed.
                 gcode += this->extrude_skirt(dynamic_cast<const ExtrusionLoop&>(*loop_entity),
@@ -2554,13 +2577,13 @@ LayerResult GCodeGenerator::process_layer(
             }
             m_avoid_crossing_perimeters.use_external_mp(false);
             // Allow a straight travel move to the first object point if this is the first layer (but don't in next layers).
-            if (first_layer && skirt.front().first == 0)
+            if (first_layer && extruder_extrusions.skirt.front().first == 0)
                 m_avoid_crossing_perimeters.disable_once();
         }
 
 
         // Extrude brim with the extruder of the 1st region.
-        if (!brim.empty()) {
+        if (!extruder_extrusions.brim.empty()) {
 
             if (!this->m_config.complete_objects.value) {
                 gcode += this->m_label_objects.maybe_stop_instance();
@@ -2569,17 +2592,16 @@ LayerResult GCodeGenerator::process_layer(
 
             this->set_origin(0., 0.);
             m_avoid_crossing_perimeters.use_external_mp();
-            for (const ExtrusionEntity *ee : brim) {
+            for (const ExtrusionEntity *ee : extruder_extrusions.brim) {
                 gcode += this->extrude_entity({ *ee, false }, smooth_path_caches.global(), "brim"sv, m_config.support_material_speed.value);
             }
-            m_brim_done = true;
             m_avoid_crossing_perimeters.use_external_mp(false);
             // Allow a straight travel move to the first object point.
             m_avoid_crossing_perimeters.disable_once();
         }
         this->m_label_objects.update(first_instance);
 
-        if (!overriden_extrusions.empty()) {
+        if (!extruder_extrusions.overriden_extrusions.empty()) {
             // Extrude wipes.
             size_t gcode_size_old = gcode.size();
             for (std::size_t i{0}; i < instances_to_print.size(); ++i) {
@@ -2587,7 +2609,7 @@ LayerResult GCodeGenerator::process_layer(
 
                 this->process_layer_single_object(
                     gcode, instance, layers[instance.object_layer_to_print_id],
-                    smooth_path_caches.layer_local(), {}, overriden_extrusions[i]
+                    smooth_path_caches.layer_local(), {}, extruder_extrusions.overriden_extrusions[i]
                 );
             }
             if (gcode_size_old < gcode.size()) {
@@ -2601,8 +2623,8 @@ LayerResult GCodeGenerator::process_layer(
 
             this->process_layer_single_object(
                 gcode, instance, layers[instance.object_layer_to_print_id],
-                smooth_path_caches.layer_local(), normal_extrusions[i].support_extrusions,
-                normal_extrusions[i].slices_extrusions
+                smooth_path_caches.layer_local(), extruder_extrusions.normal_extrusions[i].support_extrusions,
+                extruder_extrusions.normal_extrusions[i].slices_extrusions
             );
         }
     }
