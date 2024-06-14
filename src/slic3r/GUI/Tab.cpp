@@ -5341,7 +5341,16 @@ void TabSLAMaterial::build()
         opt.opt.label = axis;
         line.append_option(opt);
     }
+    optgroup->append_line(line);
 
+    optgroup->append_single_option_line("zcorrection_layers");
+
+    line = Line{ "", "" };
+    line.full_width = 1;
+    // line.label_path = category_path + "recommended-thin-wall-thickness";
+    line.widget = [this](wxWindow* parent) {
+        return description_line_widget(parent, &m_z_correction_to_mm_description);
+    };
     optgroup->append_line(line);
 
     add_material_overrides_page();
@@ -5491,7 +5500,19 @@ void TabSLAMaterial::update()
 //     m_update_cnt--;
 //
 //     if (m_update_cnt == 0)
-        wxGetApp().mainframe->on_config_changed(m_config);
+    wxGetApp().mainframe->on_config_changed(m_config);
+}
+
+void TabSLAMaterial::update_description_lines()
+{
+    if (m_active_page && m_active_page->title() == "Material" &&  m_z_correction_to_mm_description) {
+        auto cfg = m_preset_bundle->full_config();
+        double lh = cfg.opt_float("layer_height");
+        int zlayers = cfg.opt_int("zcorrection_layers");
+        m_z_correction_to_mm_description->SetText(GUI::format_wxstr(_L("Current Z correction depth is: %1% mm"), zlayers * lh));
+    }
+
+    Tab::update_description_lines();
 }
 
 void TabSLAMaterial::update_sla_prusa_specific_visibility()
@@ -5519,6 +5540,8 @@ void TabSLAMaterial::clear_pages()
 
     for (auto& over_opt : m_overrides_options)
         over_opt.second = nullptr;
+
+    m_z_correction_to_mm_description = nullptr;
 }
 
 void TabSLAMaterial::msw_rescale()

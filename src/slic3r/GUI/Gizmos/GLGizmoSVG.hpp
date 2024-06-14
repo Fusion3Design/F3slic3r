@@ -129,6 +129,7 @@ private:
     // process mouse event
     bool on_mouse_for_rotation(const wxMouseEvent &mouse_event);
     bool on_mouse_for_translate(const wxMouseEvent &mouse_event);
+    void on_mouse_confirm_edit(const wxMouseEvent &mouse_event);
 
     void volume_transformation_changed();
     

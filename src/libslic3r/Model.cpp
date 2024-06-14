@@ -28,6 +28,7 @@
 #include "Format/3mf.hpp"
 #include "Format/STEP.hpp"
 #include "Format/SVG.hpp"
+#include "Format/PrintRequest.hpp"
 
 #include <float.h>
 
@@ -140,6 +141,8 @@ Model Model::read_from_file(const std::string& input_file, DynamicPrintConfig* c
         result = load_3mf(input_file.c_str(), *config, *config_substitutions, &model, false);
     else if (boost::algorithm::iends_with(input_file, ".svg"))
         result = load_svg(input_file, model);
+    else if (boost::ends_with(input_file, ".printRequest"))
+        result = load_printRequest(input_file.c_str(), &model);
     else
         throw Slic3r::RuntimeError("Unknown file format. Input file must have .stl, .obj, .step/.stp, .svg, .amf(.xml) or extension .3mf(.zip).");
 
@@ -148,9 +151,10 @@ Model Model::read_from_file(const std::string& input_file, DynamicPrintConfig* c
 
     if (model.objects.empty())
         throw Slic3r::RuntimeError("The supplied file couldn't be read because it's empty");
-    
-    for (ModelObject *o : model.objects)
-        o->input_file = input_file;
+   
+    if (!boost::ends_with(input_file, ".printRequest"))
+        for (ModelObject *o : model.objects)
+            o->input_file = input_file;
     
     if (options & LoadAttribute::AddDefaultInstances)
         model.add_default_instances();

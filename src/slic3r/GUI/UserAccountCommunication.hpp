@@ -27,7 +27,8 @@ private:
     std::string sha256(const std::string& input);
 };
 
-class UserAccountCommunication {
+class UserAccountCommunication : public wxEvtHandler 
+{
 public:
     UserAccountCommunication(wxEvtHandler* evt_handler, AppConfig* app_config);
     ~UserAccountCommunication();
@@ -44,6 +45,7 @@ public:
     void enqueue_avatar_action(const std::string& url);
     void enqueue_test_connection();
     void enqueue_printer_data_action(const std::string& uuid);
+    void enqueue_refresh();
 
     // Callbacks - called from UI after receiving Event from Session thread. Some might use Session thread.
     // 
@@ -64,6 +66,10 @@ public:
     void set_polling_enabled(bool enabled);
     // we have map of uuids and printer_models - set polling action to lightweight STATUS action
     void on_uuid_map_success();
+
+    void set_refresh_time(int seconds);
+    void on_token_timer(wxTimerEvent& evt);
+    void on_polling_timer(wxTimerEvent& evt);
 private:
     std::unique_ptr<UserAccountSession>     m_session;
     std::thread                             m_thread;
@@ -73,6 +79,8 @@ private:
     bool                                    m_thread_stop { false };
     bool                                    m_thread_wakeup{ false };
     bool                                    m_window_is_active{ true };
+    wxTimer*                                m_polling_timer;
+
     std::string                             m_code_verifier;
     wxEvtHandler*                           m_evt_handler;
     AppConfig*                              m_app_config;
@@ -80,11 +88,14 @@ private:
     std::string                             m_username;
     bool                                    m_remember_session { true }; // if default is true, on every login Remember me will be checked.
 
+    wxTimer*                                m_token_timer;
+    wxEvtHandler*                           m_timer_evt_handler;
+
     void wakeup_session_thread();
     void init_session_thread();
     void login_redirect();
     std::string client_id() const { return "oamhmhZez7opFosnwzElIgE2oGgI2iJORSkw587O"; }
-    
+
     
     
 };

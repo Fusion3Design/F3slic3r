@@ -842,6 +842,7 @@ bool SLAPrint::invalidate_state_by_config_options(const std::vector<t_config_opt
         "absolute_correction"sv,
         "elefant_foot_compensation"sv,
         "elefant_foot_min_width"sv,
+        "zcorrection_layers"sv,
         "gamma_correction"sv,
     };
 

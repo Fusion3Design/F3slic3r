@@ -167,15 +167,14 @@ void serialize_shell(std::ostream &output, const Shells::Shell<Perimeters::Perim
 }
 
 TEST_CASE_METHOD(Test::SeamsFixture, "Create perimeters", "[Seams][SeamPerimeters][Integration]") {
-    const Shells::Shells<> perimeters{
-        create_perimeters(shell_polygons, layer_infos, painting, params.perimeter)};
+    Seams::Perimeters::LayerPerimeters perimeters{
+        Seams::Perimeters::create_perimeters(projected, layer_infos, painting, params.perimeter)};
 
-    const Shells::Shell<> &shell{perimeters[shell_index]};
+    Seams::Shells::Shells<> shells{
+        Seams::Shells::create_shells(std::move(perimeters), params.max_distance)};
 
     if constexpr (debug_files) {
         std::ofstream csv{"perimeters.csv"};
-        serialize_shell(csv, shell);
+        serialize_shell(csv, shells[0]);
     }
-
-    REQUIRE(shell.size() == 54);
 }

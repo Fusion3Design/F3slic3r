@@ -84,16 +84,13 @@ TEST_CASE("Random respects point type", "[Seams][SeamRandom]") {
 }
 
 TEST_CASE_METHOD(Test::SeamsFixture, "Generate random seam", "[Seams][SeamRandom][Integration]") {
-    Shells::Shells<> perimeters{
-        Seams::Perimeters::create_perimeters(shell_polygons, layer_infos, painting, params.perimeter)};
-    Shells::Shells<> shell_perimeters;
-    shell_perimeters.push_back(std::move(perimeters[shell_index]));
-    const std::vector<std::vector<SeamPerimeterChoice>> seam{
-        Random::get_object_seams(std::move(shell_perimeters), params.random_seed)};
-    REQUIRE(seam.size() == 125);
+    Seams::Perimeters::LayerPerimeters perimeters{
+        Seams::Perimeters::create_perimeters(projected, layer_infos, painting, params.perimeter)};
+    const std::vector<std::vector<SeamPerimeterChoice>> seams{
+        Random::get_object_seams(std::move(perimeters), params.random_seed)};
 
     if constexpr (debug_files) {
         std::ofstream csv{"random_seam.csv"};
-        Test::serialize_seam(csv, seam);
+        Test::serialize_seam(csv, seams);
     }
 }

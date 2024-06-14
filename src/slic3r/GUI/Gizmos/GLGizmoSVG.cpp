@@ -331,6 +331,37 @@ void GLGizmoSVG::volume_transformation_changed()
     calculate_scale();
 }
 
+void GLGizmoSVG::on_mouse_confirm_edit(const wxMouseEvent &mouse_event) {
+    // Fix phanthom transformation
+    //   appear when mouse click into scene during edit Rotation in input (click "Edit" button)
+    //   this must happen just before unselect selection (to find current volume)
+    static bool was_dragging = true;  
+    if ((mouse_event.LeftUp() || mouse_event.RightUp()) && 
+        m_parent.get_first_hover_volume_idx() < 0 &&
+        !was_dragging &&
+        m_volume != nullptr && 
+        m_volume->is_svg() ) { 
+        // current volume
+        const GLVolume *gl_volume_ptr = m_parent.get_selection().get_first_volume();
+        assert(gl_volume_ptr->geometry_id.first == m_volume->id().id);
+        if (gl_volume_ptr != nullptr) {
+            const Transform3d &v_tr = m_volume->get_matrix();
+            const Transform3d &gl_v_tr = gl_volume_ptr->get_volume_transformation().get_matrix();
+
+            const Matrix3d &v_rot = v_tr.linear();
+            const Matrix3d &gl_v_rot = gl_v_tr.linear();
+            const Vec3d &v_move = v_tr.translation();
+            const Vec3d &gl_v_move = gl_v_tr.translation();
+            if (!is_approx(v_rot, gl_v_rot)) {
+                m_parent.do_rotate(rotation_snapshot_name);
+            } else if (!is_approx(v_move, gl_v_move)) {
+                m_parent.do_move(move_snapshot_name);
+            }
+        }
+    }
+    was_dragging = mouse_event.Dragging();
+}
+
 bool GLGizmoSVG::on_mouse(const wxMouseEvent &mouse_event)
 {
     // not selected volume
@@ -340,7 +371,7 @@ bool GLGizmoSVG::on_mouse(const wxMouseEvent &mouse_event)
 
     if (on_mouse_for_rotation(mouse_event)) return true;
     if (on_mouse_for_translate(mouse_event)) return true;
-
+    on_mouse_confirm_edit(mouse_event);
     return false;
 }
 

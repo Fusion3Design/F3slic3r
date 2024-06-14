@@ -1,17 +1,23 @@
 #ifndef slic3r_WebViewDialog_hpp_
 #define slic3r_WebViewDialog_hpp_
 
+//#define DEBUG_URL_PANEL
+
 #include <map>
 #include <wx/wx.h>
 #include <wx/event.h>
+
+#include "UserAccountSession.hpp"
+
+#ifdef DEBUG_URL_PANEL
+#include <wx/infobar.h>
+#endif
 
 class wxWebView;
 class wxWebViewEvent;
 
 namespace Slic3r {
 namespace GUI {
-
-//#define DEBUG_URL_PANEL 
 
 class WebViewPanel : public wxPanel
 {
@@ -47,6 +53,7 @@ public:
     void on_select_all(wxCommandEvent& evt);
     void On_enable_context_menu(wxCommandEvent& evt);
     void On_enable_dev_tools(wxCommandEvent& evt);
+    virtual void on_navigation_request(wxWebViewEvent &evt);
 
     wxString get_default_url() const { return m_default_url; }
     void set_default_url(const wxString& url) { m_default_url = url; }
@@ -167,30 +174,33 @@ public:
     void resend_config();
 protected:
     // action callbacs stored in m_actions
-    virtual void on_connect_action_request_access_token();
-    virtual void on_connect_action_request_config();
-    virtual void on_connect_action_select_printer() = 0;
-    virtual void on_connect_action_print() = 0;
-    virtual void run_script_bridge(const wxString& script) = 0;
-    virtual void on_connect_action_webapp_ready() = 0;
+    virtual void on_connect_action_request_config(const std::string& message_data);
+    virtual void on_connect_action_request_open_in_browser(const std::string& message_data);
+    virtual void on_connect_action_select_printer(const std::string& message_data) = 0;
+    virtual void on_connect_action_print(const std::string& message_data) = 0;
+    virtual void on_connect_action_webapp_ready(const std::string& message_data) = 0;
+    virtual void run_script_bridge(const wxString &script) = 0;
 
-    std::map<std::string, std::function<void(void)>> m_actions;
-    std::string m_message_data;
-
+    std::map<std::string, std::function<void(const std::string&)>> m_actions;
 };
 
 class ConnectWebViewPanel : public WebViewPanel, public ConnectRequestHandler
 {
 public:
     ConnectWebViewPanel(wxWindow* parent);
+    ~ConnectWebViewPanel() override;
     void on_script_message(wxWebViewEvent& evt) override;
     void logout();
     void sys_color_changed() override;
+    void on_navigation_request(wxWebViewEvent &evt) override;
 protected:
-    void on_connect_action_select_printer() override;
-    void on_connect_action_print() override;
-    void on_connect_action_webapp_ready() override {}
+    void on_connect_action_select_printer(const std::string& message_data) override;
+    void on_connect_action_print(const std::string& message_data) override;
+    void on_connect_action_webapp_ready(const std::string& message_data) override {}
     void run_script_bridge(const wxString& script) override {run_script(script); }
+private:
+    void on_user_token(UserAccountSuccessEvent& e);
+    bool m_reached_default_url {false};
 };
 
 class PrinterWebViewPanel : public WebViewPanel
@@ -220,9 +230,9 @@ public:
     void on_show(wxShowEvent& evt) override;
     void on_script_message(wxWebViewEvent& evt) override;
 protected:
-    void on_connect_action_select_printer() override;
-    void on_connect_action_print() override;
-    void on_connect_action_webapp_ready() override;
+    void on_connect_action_select_printer(const std::string& message_data) override;
+    void on_connect_action_print(const std::string& message_data) override;
+    void on_connect_action_webapp_ready(const std::string& message_data) override;
     void request_compatible_printers_FFF();
     void request_compatible_printers_SLA();
     void run_script_bridge(const wxString& script) override { run_script(script); }

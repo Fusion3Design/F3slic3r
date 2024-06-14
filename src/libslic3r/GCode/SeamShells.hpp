@@ -4,28 +4,12 @@
 #include <vector>
 #include <tcbspan/span.hpp>
 
+#include "libslic3r/GCode/SeamPerimeters.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
 
 namespace Slic3r {
 class Layer;
-}
-
-namespace Slic3r::Seams::Perimeters {
-struct Perimeter;
-}
-
-namespace Slic3r::Seams::Shells::Impl {
-
-struct BoundedPolygon {
-    Polygon polygon;
-    BoundingBox bounding_box;
-    bool is_hole{false};
-};
-
-using BoundedPolygons = std::vector<BoundedPolygon>;
-
-BoundedPolygons project_to_geometry(const Geometry::Extrusions &extrusions, const double max_bb_distance);
 }
 
 namespace Slic3r::Seams::Shells {
@@ -39,8 +23,22 @@ template<typename T = Perimeters::Perimeter> using Shell = std::vector<Slice<T>>
 
 template<typename T = Perimeters::Perimeter> using Shells = std::vector<Shell<T>>;
 
-Shells<Polygon> create_shells(
-    const std::vector<Geometry::Extrusions> &extrusions, const double max_distance
+inline std::size_t get_layer_count(
+    const Shells<> &shells
+) {
+    std::size_t layer_count{0};
+    for (const Shell<> &shell : shells) {
+        for (const Slice<>& slice : shell) {
+            if (slice.layer_index >= layer_count) {
+                layer_count = slice.layer_index + 1;
+            }
+        }
+    }
+    return layer_count;
+}
+
+Shells<> create_shells(
+    Perimeters::LayerPerimeters &&perimeters, const double max_distance
 );
 } // namespace Slic3r::Seams::Shells
 

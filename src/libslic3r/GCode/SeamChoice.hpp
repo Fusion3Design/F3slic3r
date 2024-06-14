@@ -2,7 +2,7 @@
 #define libslic3r_SeamChoice_hpp_
 
 #include "libslic3r/Polygon.hpp"
-#include "libslic3r/GCode/SeamPerimeters.hpp"
+#include "libslic3r/GCode/SeamShells.hpp"
 
 namespace Slic3r::Seams {
 
@@ -51,21 +51,6 @@ SeamChoice choose_seam_point(
 );
 
 std::optional<SeamChoice> choose_degenerate_seam_point(const Perimeters::Perimeter &perimeter);
-
-std::optional<std::vector<SeamChoice>> maybe_get_shell_seam(
-    const Shells::Shell<> &shell,
-    const std::function<std::optional<SeamChoice>(const Perimeters::Perimeter &, std::size_t)> &chooser
-);
-
-std::vector<SeamChoice> get_shell_seam(
-    const Shells::Shell<> &shell,
-    const std::function<SeamChoice(const Perimeters::Perimeter &, std::size_t)> &chooser
-);
-
-std::vector<std::vector<SeamPerimeterChoice>> get_object_seams(
-    Shells::Shells<> &&shells,
-    const std::function<std::vector<SeamChoice>(const Shells::Shell<> &)> &get_shell_seam
-);
 
 } // namespace Slic3r::Seams
 

@@ -175,7 +175,7 @@ FreqChangedParams::FreqChangedParams(wxWindow* parent)
             const bool use_custom_matrix = (project_config.option<ConfigOptionBool>("wiping_volumes_use_custom_matrix"))->value;
             const std::vector<double> &init_matrix = (project_config.option<ConfigOptionFloats>("wiping_volumes_matrix"))->values;
 
-            const std::vector<std::string> extruder_colours = wxGetApp().plater()->get_extruder_colors_from_plater_config();
+            const std::vector<std::string> extruder_colours = wxGetApp().plater()->get_extruder_color_strings_from_plater_config();
 
             // Extract the relevant config options, even values from possibly modified presets.
             const double default_purge = static_cast<const ConfigOptionFloat*>(preset_bundle->printers.get_edited_preset().config.option("multimaterial_purging"))->value;

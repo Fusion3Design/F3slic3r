@@ -411,6 +411,7 @@ public:
     PresetWithVendorProfile get_edited_preset_with_vendor_profile() const { return this->get_preset_with_vendor_profile(this->get_edited_preset()); }
 
     const std::string& 		get_preset_name_by_alias(const std::string& alias) const;
+    const std::string&      get_preset_name_by_alias_invisible(const std::string& alias) const;
 	const std::string*		get_preset_name_renamed(const std::string &old_name) const;
 
 	// used to update preset_choice from Tab
@@ -529,7 +530,8 @@ public:
     // Select a profile by its name. Return true if the selection changed.
     // Without force, the selection is only updated if the index changes.
     // With force, the changes are reverted if the new index is the same as the old index.
-    bool            select_preset_by_name(const std::string &name, bool force);
+    // With force_invisible, force preset selection even it's invisible.
+    bool            select_preset_by_name(const std::string &name, bool force, bool force_invisible = false);
 
     // Generate a file path from a profile name. Add the ".ini" suffix if it is missing.
     std::string     path_from_name(const std::string &new_name) const;

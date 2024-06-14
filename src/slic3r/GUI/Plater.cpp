@@ -302,6 +302,7 @@ struct Plater::priv
     static const std::regex pattern_any_amf;
     static const std::regex pattern_prusa;
     static const std::regex pattern_zip;
+    static const std::regex pattern_printRequest;
 
     priv(Plater *q, MainFrame *main_frame);
     ~priv();
@@ -521,7 +522,7 @@ struct Plater::priv
     void on_3dcanvas_mouse_dragging_finished(SimpleEvent&);
 
     void show_action_buttons(const bool is_ready_to_slice) const;
-
+    bool can_show_upload_to_connect() const;
     // Set the bed shape to a single closed 2D polygon(array of two element arrays),
     // triangulate the bed and store the triangles into m_bed.m_triangles,
     // fills the m_bed.m_grid_lines and sets m_bed.m_origin.
@@ -599,6 +600,7 @@ const std::regex Plater::priv::pattern_zip_amf(".*[.]zip[.]amf", std::regex::ica
 const std::regex Plater::priv::pattern_any_amf(".*[.](amf|amf[.]xml|zip[.]amf)", std::regex::icase);
 const std::regex Plater::priv::pattern_prusa(".*prusa", std::regex::icase);
 const std::regex Plater::priv::pattern_zip(".*zip", std::regex::icase);
+const std::regex Plater::priv::pattern_printRequest(".*printRequest", std::regex::icase);
 
 Plater::priv::priv(Plater *q, MainFrame *main_frame)
     : q(q)
@@ -895,6 +897,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         });
 
         this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+            // There are multiple handlers and we want to notify all
+            evt.Skip();
             std::string username;
             if (user_account->on_user_id_success(evt.data, username)) {
                 std::string text = format(_u8L("Logged to Prusa Account as %1%."), username);
@@ -991,6 +995,10 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->notification_manager->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
             this->notification_manager->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::WarningNotificationLevel, msg);
         });
+
+        this->q->Bind(EVT_UA_REFRESH_TIME, [this](UserAccountTimeEvent& evt) {
+            this->user_account->set_refresh_time(evt.data);
+            });        
     }
 
 	wxGetApp().other_instance_message_handler()->init(this->q);
@@ -1199,6 +1207,14 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
         const bool type_zip_amf = !type_3mf && std::regex_match(path.string(), pattern_zip_amf);
         const bool type_any_amf = !type_3mf && std::regex_match(path.string(), pattern_any_amf);
         const bool type_prusa = std::regex_match(path.string(), pattern_prusa);
+        const bool type_printRequest =  std::regex_match(path.string(), pattern_printRequest);
+
+        if (type_printRequest && printer_technology != ptSLA) {
+            Slic3r::GUI::show_info(nullptr,
+                _L("PrintRequest can only be loaded if an SLA printer is selected."),
+                _L("Error!"));
+            continue;
+        }
 
         Slic3r::Model model;
         bool is_project_file = type_prusa;
@@ -1371,7 +1387,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                     convert_model_if(model, answer_convert_from_imperial_units == wxID_YES);
                 }
 
-                if (model.looks_like_multipart_object()) {
+                if (!type_printRequest && model.looks_like_multipart_object()) {
                     if (answer_consider_as_multi_part_objects == wxOK_DEFAULT) {
                         RichMessageDialog dlg(q, _L(
                             "This file contains several objects positioned at multiple heights.\n"
@@ -1410,6 +1426,58 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                 }
                 if (!model_object->instances.empty())
                   model_object->ensure_on_bed(is_project_file);
+                if (type_printRequest)  {
+                    for (ModelInstance* obj_instance : model_object->instances)  {
+                        obj_instance->set_offset(obj_instance->get_offset() + Slic3r::to_3d(this->bed.build_volume().bed_center(), -model_object->origin_translation(2)));
+                    }
+                }
+            }
+            if (type_printRequest) {
+                assert(model.materials.size());
+
+                for (const auto& material : model.materials) {
+                    std::string preset_name = wxGetApp().preset_bundle->get_preset_name_by_alias_invisible(Preset::Type::TYPE_SLA_MATERIAL,
+                        Preset::remove_suffix_modified(material.first));
+                    Preset* prst = wxGetApp().preset_bundle->sla_materials.find_preset(preset_name, false);
+                    if (!prst) { //did not find compatible profile 
+                        // try find alias of material comaptible with another print profile - if exists, use the print profile
+                        auto& prints = wxGetApp().preset_bundle->sla_prints;
+                        std::string edited_print_name = prints.get_edited_preset().name;
+                        bool found = false;
+                        for (auto it = prints.begin(); it != prints.end(); ++it)
+                        {
+                            if (it->name != edited_print_name) {
+                                BOOST_LOG_TRIVIAL(error) << it->name;
+                                wxGetApp().get_tab(Preset::Type::TYPE_SLA_PRINT)->select_preset(it->name, false);
+                                preset_name = wxGetApp().preset_bundle->get_preset_name_by_alias_invisible(Preset::Type::TYPE_SLA_MATERIAL,
+                                    Preset::remove_suffix_modified(material.first));
+                                prst = wxGetApp().preset_bundle->sla_materials.find_preset(preset_name, false);
+                                if (prst) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!found) {
+                            // return to original print profile
+                            wxGetApp().get_tab(Preset::Type::TYPE_SLA_PRINT)->select_preset(edited_print_name, false);
+                            std::string notif_text = into_u8(_L("Material preset was not loaded:"));
+                            notif_text += "\n - " + preset_name;
+                            q->get_notification_manager()->push_notification(NotificationType::CustomNotification,
+                                NotificationManager::NotificationLevel::PrintInfoNotificationLevel, notif_text);
+                            break;
+                        }
+                    }
+
+                    PresetBundle* preset_bundle = wxGetApp().preset_bundle;
+                    if (preset_bundle->sla_materials.get_selected_preset_name() != preset_name) {
+                        preset_bundle->sla_materials.select_preset_by_name(preset_name, false, true);
+                        preset_bundle->tmp_installed_presets = { preset_name };
+                        q->notify_about_installed_presets();
+                        wxGetApp().load_current_presets(false);// For this case we shouldn't check printer_presets
+                    }
+                    break;
+                }
             }
 
             if (one_by_one) {
@@ -3556,6 +3624,24 @@ bool Plater::priv::can_layers_editing() const
     return layers_height_allowed();
 }
 
+bool Plater::priv::can_show_upload_to_connect() const
+{
+    if (!user_account->is_logged()) {
+        return false;
+    }
+    const Preset& selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
+    std::string vendor_id;
+    if (selected_printer.vendor ) {
+        vendor_id = selected_printer.vendor->id;
+    } else if (std::string inherits = selected_printer.inherits(); !inherits.empty()) {
+        const Preset* parent = wxGetApp().preset_bundle->printers.find_preset(inherits);
+        if (parent && parent->vendor) {
+            vendor_id = parent->vendor->id;
+        }
+    }    
+    return vendor_id.compare(0, 5, "Prusa") == 0;
+} 
+
 void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
 {
 	// Cache this value, so that the callbacks from the RemovableDriveManager may repeat that value when calling show_action_buttons().
@@ -3566,7 +3652,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
     DynamicPrintConfig* selected_printer_config = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
     const auto print_host_opt = selected_printer_config ? selected_printer_config->option<ConfigOptionString>("print_host") : nullptr;
     const bool send_gcode_shown = print_host_opt != nullptr && !print_host_opt->value.empty();
-    const bool connect_gcode_shown = print_host_opt == nullptr && user_account->is_logged();
+    const bool connect_gcode_shown = print_host_opt == nullptr && can_show_upload_to_connect();
     // when a background processing is ON, export_btn and/or send_btn are showing
     if (get_config_bool("background_processing"))
     {
@@ -4797,7 +4883,7 @@ void ProjectDropDialog::on_dpi_changed(const wxRect& suggested_rect)
 
 bool Plater::load_files(const wxArrayString& filenames, bool delete_after_load/*=false*/)
 {
-    const std::regex pattern_drop(".*[.](stl|obj|amf|3mf|prusa|step|stp|zip)", std::regex::icase);
+    const std::regex pattern_drop(".*[.](stl|obj|amf|3mf|prusa|step|stp|zip|printRequest)", std::regex::icase);
     const std::regex pattern_gcode_drop(".*[.](gcode|g|bgcode|bgc)", std::regex::icase);
 
     std::vector<fs::path> paths;
@@ -5917,26 +6003,29 @@ void Plater::connect_gcode()
 */
     const Preset* selected_printer_preset = &wxGetApp().preset_bundle->printers.get_selected_preset();
 
-    const std::string set_ready = p->user_account->get_keyword_from_json(dialog_msg, "set_ready");
-    const std::string position = p->user_account->get_keyword_from_json(dialog_msg, "position");
-    const std::string wait_until = p->user_account->get_keyword_from_json(dialog_msg, "wait_until");
     const std::string filename = p->user_account->get_keyword_from_json(dialog_msg, "filename");
-    const std::string printer_uuid = p->user_account->get_keyword_from_json(dialog_msg, "printer_uuid");
     const std::string team_id = p->user_account->get_keyword_from_json(dialog_msg, "team_id");
+
+    std::string data_subtree = p->user_account->get_print_data_from_json(dialog_msg, "data");
+    if (filename.empty() || team_id.empty() || data_subtree.empty()) {
+        std::string msg = _u8L("Failed to read response from Connect server. Upload is canceled.");
+        BOOST_LOG_TRIVIAL(error) << msg;
+        BOOST_LOG_TRIVIAL(error) << "Response: " << dialog_msg;
+        show_error(this, msg);
+        return;
+    }
+    
 
     PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *selected_printer_preset);
     ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnectNew));
     // use existing structures to pass data
     ph_printer.config.opt_string("printhost_apikey") = team_id;
-    ph_printer.config.opt_string("print_host") = printer_uuid;
     DynamicPrintConfig* physical_printer_config = &ph_printer.config;
 
     PrintHostJob upload_job(physical_printer_config);
     assert(!upload_job.empty());
 
-    upload_job.upload_data.set_ready = set_ready;
-    upload_job.upload_data.position = position;
-    upload_job.upload_data.wait_until = wait_until;
+    upload_job.upload_data.data_json = data_subtree;
     upload_job.upload_data.upload_path = boost::filesystem::path(filename);
 
     p->export_gcode(fs::path(), false, std::move(upload_job));
@@ -6315,7 +6404,7 @@ void Plater::on_activate(bool active)
 }
 
 // Get vector of extruder colors considering filament color, if extruder color is undefined.
-std::vector<std::string> Plater::get_extruder_colors_from_plater_config(const GCodeProcessorResult* const result) const
+std::vector<std::string> Plater::get_extruder_color_strings_from_plater_config(const GCodeProcessorResult* const result) const
 {
     if (wxGetApp().is_gcode_viewer() && result != nullptr)
         return result->extruder_colors;
@@ -6341,9 +6430,9 @@ std::vector<std::string> Plater::get_extruder_colors_from_plater_config(const GC
 /* Get vector of colors used for rendering of a Preview scene in "Color print" mode
  * It consists of extruder colors and colors, saved in model.custom_gcode_per_print_z
  */
-std::vector<std::string> Plater::get_colors_for_color_print(const GCodeProcessorResult* const result) const
+std::vector<std::string> Plater::get_color_strings_for_color_print(const GCodeProcessorResult* const result) const
 {
-    std::vector<std::string> colors = get_extruder_colors_from_plater_config(result);
+    std::vector<std::string> colors = get_extruder_color_strings_from_plater_config(result);
     colors.reserve(colors.size() + p->model.custom_gcode_per_print_z.gcodes.size());
 
     if (wxGetApp().is_gcode_viewer() && result != nullptr) {
@@ -6360,6 +6449,22 @@ std::vector<std::string> Plater::get_colors_for_color_print(const GCodeProcessor
     }
 
     return colors;
+}
+
+std::vector<ColorRGBA> Plater::get_extruder_colors_from_plater_config() const
+{
+    std::vector<std::string> colors = get_extruder_color_strings_from_plater_config();
+    std::vector<ColorRGBA> ret;
+    decode_colors(colors, ret);
+    return ret;
+}
+
+std::vector<ColorRGBA> Plater::get_colors_for_color_print() const
+{
+    std::vector<std::string> colors = get_color_strings_for_color_print();
+    std::vector<ColorRGBA> ret;
+    decode_colors(colors, ret);
+    return ret;
 }
 
 wxString Plater::get_project_filename(const wxString& extension) const

@@ -24,6 +24,6 @@ struct Random
 };
 }
 std::vector<std::vector<SeamPerimeterChoice>> get_object_seams(
-    Shells::Shells<> &&shells, const unsigned fixed_seed
+    Perimeters::LayerPerimeters &&perimeters, const unsigned fixed_seed
 );
 }

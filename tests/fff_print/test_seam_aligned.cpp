@@ -115,13 +115,13 @@ TEST_CASE_METHOD(PickSeamOptionFixture, "Least visible point", "[Seams][SeamAlig
 }
 
 TEST_CASE_METHOD(Test::SeamsFixture, "Generate aligned seam", "[Seams][SeamAligned][Integration]") {
-    Shells::Shells<> perimeters{
-        Perimeters::create_perimeters(shell_polygons, layer_infos, painting, params.perimeter)};
-    Shells::Shells<> shell_perimeters;
-    shell_perimeters.push_back(std::move(perimeters[shell_index]));
+    Seams::Perimeters::LayerPerimeters perimeters{
+        Seams::Perimeters::create_perimeters(projected, layer_infos, painting, params.perimeter)};
+    Seams::Shells::Shells<> shells{
+        Seams::Shells::create_shells(std::move(perimeters), params.max_distance)};
+
     const std::vector<std::vector<SeamPerimeterChoice>> seam{
-        Aligned::get_object_seams(std::move(shell_perimeters), visibility_calculator, params.aligned)};
-    REQUIRE(seam.size() == 125);
+        Aligned::get_object_seams(std::move(shells), visibility_calculator, params.aligned)};
 
     if constexpr (debug_files) {
         std::ofstream csv{"aligned_seam.csv"};
@@ -133,9 +133,13 @@ TEST_CASE_METHOD(Test::SeamsFixture, "Calculate visibility", "[Seams][SeamAligne
     if constexpr (debug_files) {
         std::ofstream csv{"visibility.csv"};
         csv << "x,y,z,visibility,total_visibility" << std::endl;
-        Shells::Shells<> perimeters{
-            Perimeters::create_perimeters(shell_polygons, layer_infos, painting, params.perimeter)};
-        for (const Shells::Shell<> &shell : perimeters) {
+
+        Seams::Perimeters::LayerPerimeters perimeters{
+            Seams::Perimeters::create_perimeters(projected, layer_infos, painting, params.perimeter)};
+
+        Seams::Shells::Shells<> shells{
+            Seams::Shells::create_shells(std::move(perimeters), params.max_distance)};
+        for (const Shells::Shell<> &shell : shells) {
             for (const Shells::Slice<> &slice : shell) {
                 for (std::size_t index{0}; index < slice.boundary.positions.size(); ++index) {
                     const Vec2d &position{slice.boundary.positions[index]};

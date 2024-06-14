@@ -15,6 +15,11 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+// if set to 1 the fetch() JS function gets override to include JWT in authorization header
+// if set to 0, the /slicer/login is invoked from WebKit (passing JWT token only to this request)
+// to set authorization cookie for all WebKit requests to Connect
+#define AUTH_VIA_FETCH_OVERRIDE 0
+
 
 namespace pt = boost::property_tree;
 
@@ -102,6 +107,7 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const 
     // Connect the webview events
     Bind(wxEVT_WEBVIEW_ERROR, &WebViewPanel::on_error, this, m_browser->GetId());
     Bind(wxEVT_WEBVIEW_SCRIPT_MESSAGE_RECEIVED, &WebViewPanel::on_script_message, this, m_browser->GetId());
+    Bind(wxEVT_WEBVIEW_NAVIGATING, &WebViewPanel::on_navigation_request, this, m_browser->GetId());
 
 #ifdef DEBUG_URL_PANEL
     // Connect the button events
@@ -245,6 +251,10 @@ void WebViewPanel::on_reload_button(wxCommandEvent& WXUNUSED(evt))
 }
 
 void WebViewPanel::on_script_message(wxWebViewEvent& evt)
+{
+}
+
+void WebViewPanel::on_navigation_request(wxWebViewEvent &evt) 
 {
 }
 
@@ -463,13 +473,11 @@ SourceViewDialog::SourceViewDialog(wxWindow* parent, wxString source) :
 
 ConnectRequestHandler::ConnectRequestHandler()
 {
-    m_actions["REQUEST_ACCESS_TOKEN"] = std::bind(&ConnectRequestHandler::on_connect_action_request_access_token, this);
-    m_actions["REQUEST_CONFIG"] = std::bind(&ConnectRequestHandler::on_connect_action_request_config, this);
-    m_actions["WEBAPP_READY"] = std::bind(&ConnectRequestHandler::on_connect_action_webapp_ready, this);
-    m_actions["SELECT_PRINTER"] = std::bind(&ConnectRequestHandler::on_connect_action_select_printer, this);
-    m_actions["PRINT"] = std::bind(&ConnectRequestHandler::on_connect_action_print, this);
-    // obsolete
-    //m_actions["REQUEST_SELECTED_PRINTER"] = std::bind(&ConnectRequestHandler::on_connect_action_print, this);
+    m_actions["REQUEST_CONFIG"] = std::bind(&ConnectRequestHandler::on_connect_action_request_config, this, std::placeholders::_1);
+    m_actions["WEBAPP_READY"] = std::bind(&ConnectRequestHandler::on_connect_action_webapp_ready,this, std::placeholders::_1);
+    m_actions["SELECT_PRINTER"] = std::bind(&ConnectRequestHandler::on_connect_action_select_printer, this, std::placeholders::_1);
+    m_actions["PRINT"] = std::bind(&ConnectRequestHandler::on_connect_action_print, this, std::placeholders::_1);
+    m_actions["REQUEST_OPEN_IN_BROWSER"] = std::bind(&ConnectRequestHandler::on_connect_action_request_open_in_browser, this, std::placeholders::_1);
 }
 ConnectRequestHandler::~ConnectRequestHandler()
 {
@@ -484,9 +492,8 @@ void ConnectRequestHandler::handle_message(const std::string& message)
     {"action":"REQUEST_ACCESS_TOKEN"}
     */
     std::string action_string;
-    m_message_data = message;
     try {
-        std::stringstream ss(m_message_data);
+        std::stringstream ss(message);
         pt::ptree ptree;
         pt::read_json(ss, ptree);
         // v1:
@@ -505,23 +512,16 @@ void ConnectRequestHandler::handle_message(const std::string& message)
     }
     assert(m_actions.find(action_string) != m_actions.end()); // this assert means there is a action that has no handling.
     if (m_actions.find(action_string) != m_actions.end()) {
-        m_actions[action_string]();
+        m_actions[action_string](message);
     }
 }
 
 void ConnectRequestHandler::resend_config()
 {
-    on_connect_action_request_config();
+    on_connect_action_request_config({});
 }
 
-void ConnectRequestHandler::on_connect_action_request_access_token()
-{
-    std::string token = wxGetApp().plater()->get_user_account()->get_access_token();
-    wxString script = GUI::format_wxstr("window._prusaConnect_v1.setAccessToken(\'%1%\')", token);
-    run_script_bridge(script);
-}
-
-void ConnectRequestHandler::on_connect_action_request_config()
+void ConnectRequestHandler::on_connect_action_request_config(const std::string& message_data)
 {
     /*
     accessToken?: string;
@@ -535,15 +535,104 @@ void ConnectRequestHandler::on_connect_action_request_config()
     const std::string dark_mode = wxGetApp().dark_mode() ? "DARK" : "LIGHT";
     wxString language = GUI::wxGetApp().current_language_code();
     language = language.SubString(0, 1);
-    const std::string init_options = GUI::format("{\"accessToken\": \"%1%\" , \"clientVersion\": \"%2%\", \"colorMode\": \"%3%\", \"language\": \"%4%\"}", token, SLIC3R_VERSION, dark_mode, language);
+    const std::string init_options = GUI::format("{\"accessToken\": \"%4%\",\"clientVersion\": \"%1%\", \"colorMode\": \"%2%\", \"language\": \"%3%\"}", SLIC3R_VERSION, dark_mode, language, token );  
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.init(%1%)", init_options);
     run_script_bridge(script);
     
+}
+void ConnectRequestHandler::on_connect_action_request_open_in_browser(const std::string& message_data) 
+{
+    try {
+        std::stringstream ss(message_data);
+        pt::ptree ptree;
+        pt::read_json(ss, ptree);
+        if (const auto url = ptree.get_optional<std::string>("url"); url) {
+            wxGetApp().open_browser_with_warning_dialog(GUI::from_u8(*url));
+        }
+    } catch (const std::exception &e) {
+        BOOST_LOG_TRIVIAL(error) << "Could not parse _prusaConnect message. " << e.what();
+        return;
+    }    
 }
 
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
     : WebViewPanel(parent, L"https://connect.prusa3d.com/", { "_prusaSlicer" }, "connect_loading")
 {  
+    //m_browser->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new WebViewHandler("https")));
+
+    Plater* plater = wxGetApp().plater();
+    m_browser->AddUserScript(wxString::Format(
+
+#if AUTH_VIA_FETCH_OVERRIDE
+        /*
+         * Notes:
+         * - The fetch() function has two distinct prototypes (i.e. input args):
+         *    1. fetch(url: string, options: object | undefined)
+         *    2. fetch(req: Request, options: object | undefined)
+         * - For some reason I can't explain the headers can be extended only via Request object
+         *   i.e. the fetch prototype (2). So we need to convert (1) call into (2) before
+         *
+         */
+        R"(
+            if (window.__fetch === undefined) {
+                window.__fetch = fetch;
+                window.fetch = function(req, opts = {}) {
+                    if (typeof req === 'string') {
+                        req = new Request(req, opts);
+                        opts = {};
+                    }
+                    if (window.__access_token && (req.url[0] == '/' || req.url.indexOf('prusa3d.com') > 0)) {
+                        req.headers.set('Authorization', 'Bearer ' + window.__access_token);
+                        console.log('Header updated: ', req.headers.get('Authorization'));
+                        console.log('AT Version: ', __access_token_version);
+                    }
+                    //console.log('Injected fetch used', req, opts);
+                    return __fetch(req, opts);
+                };
+            }
+            window.__access_token = '%s';
+            window.__access_token_version = 0;
+        )",
+#else
+    R"(
+        console.log('Preparing login');
+        window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
+            .then((resp) => {
+                console.log('Login resp', resp);
+                resp.text().then((json) => console.log('Login resp body', json));
+            });
+        )",
+#endif
+        plater->get_user_account()->get_access_token()
+    ));
+    plater->Bind(EVT_UA_ID_USER_SUCCESS, &ConnectWebViewPanel::on_user_token, this);
+}
+
+ConnectWebViewPanel::~ConnectWebViewPanel()
+{
+    m_browser->Unbind(EVT_UA_ID_USER_SUCCESS, &ConnectWebViewPanel::on_user_token, this);
+}
+
+void ConnectWebViewPanel::on_user_token(UserAccountSuccessEvent& e)
+{
+    e.Skip();
+    wxString javascript = wxString::Format(
+#if AUTH_VIA_FETCH_OVERRIDE
+        "window.__access_token = '%s';window.__access_token_version = (window.__access_token_version || 0) + 1;console.log('Updated Auth token', window.__access_token);",
+#else
+        R"(
+        console.log('Preparing login');
+        window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
+            .then((resp) => {
+                console.log('Login resp', resp);
+                resp.text().then((json) => console.log('Login resp body', json));
+            });
+        )",
+#endif
+        wxGetApp().plater()->get_user_account()->get_access_token()
+    );
+    //m_browser->AddUserScript(javascript, wxWEBVIEW_INJECT_AT_DOCUMENT_END);
+    m_browser->RunScriptAsync(javascript);
 }
 
 void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
@@ -551,11 +640,37 @@ void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
     BOOST_LOG_TRIVIAL(debug) << "recieved message from PrusaConnect FE: " << evt.GetString();
     handle_message(into_u8(evt.GetString()));
 }
-
+void ConnectWebViewPanel::on_navigation_request(wxWebViewEvent &evt) 
+{
+    if (evt.GetURL() == m_default_url) {
+        m_reached_default_url = true;
+        return;
+    }
+    if (evt.GetURL() == (GUI::format_wxstr("file:///%1%/web/connection_failed.html", boost::filesystem::path(resources_dir()).generic_string()))) {
+        return;
+    }
+    if (m_reached_default_url && !evt.GetURL().StartsWith(m_default_url)) {
+        BOOST_LOG_TRIVIAL(info) << evt.GetURL() <<  " does not start with default url. Vetoing.";
+        evt.Veto();
+    }
+}
 void ConnectWebViewPanel::logout()
 {
     wxString script = L"window._prusaConnect_v1.logout()";
     run_script(script);
+
+    Plater* plater = wxGetApp().plater();
+    m_browser->RunScript(wxString::Format(
+        R"(
+            console.log('Preparing login');
+            window.fetch('/slicer/logout', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
+                .then((resp) => {
+                    console.log('Login resp', resp);
+                    resp.text().then((json) => console.log('Login resp body', json));
+                });
+        )",
+        plater->get_user_account()->get_access_token()
+    ));
 }
 
 void ConnectWebViewPanel::sys_color_changed()
@@ -563,12 +678,12 @@ void ConnectWebViewPanel::sys_color_changed()
     resend_config();
 }
 
-void ConnectWebViewPanel::on_connect_action_select_printer()
+void ConnectWebViewPanel::on_connect_action_select_printer(const std::string& message_data)
 {
-    assert(!m_message_data.empty());
-    wxGetApp().handle_connect_request_printer_select(m_message_data);
+    assert(!message_data.empty());
+    wxGetApp().handle_connect_request_printer_select(message_data);
 }
-void ConnectWebViewPanel::on_connect_action_print()
+void ConnectWebViewPanel::on_connect_action_print(const std::string& message_data)
 {
     // PRINT request is not defined for ConnectWebViewPanel
     assert(true);
@@ -1065,18 +1180,18 @@ void PrinterPickWebViewDialog::on_script_message(wxWebViewEvent& evt)
     handle_message(into_u8(evt.GetString()));
 }
 
-void PrinterPickWebViewDialog::on_connect_action_select_printer()
+void PrinterPickWebViewDialog::on_connect_action_select_printer(const std::string& message_data)
 {
     // SELECT_PRINTER request is not defined for PrinterPickWebViewDialog
     assert(true);
 }
-void PrinterPickWebViewDialog::on_connect_action_print()
+void PrinterPickWebViewDialog::on_connect_action_print(const std::string& message_data)
 {
-    m_ret_val = m_message_data;
+    m_ret_val = message_data;
     this->EndModal(wxID_OK);
 }
 
-void PrinterPickWebViewDialog::on_connect_action_webapp_ready()
+void PrinterPickWebViewDialog::on_connect_action_webapp_ready(const std::string& message_data)
 {
     
     if (Preset::printer_technology(wxGetApp().preset_bundle->printers.get_selected_preset().config) == ptFFF) {

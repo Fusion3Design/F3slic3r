@@ -914,6 +914,10 @@ PageMaterials::PageMaterials(ConfigWizard *parent, Materials *materials, wxStrin
 
     html_window = new wxHtmlWindow(this, wxID_ANY, wxDefaultPosition,
         wxSize(60 * em, 20 * em), wxHW_SCROLLBAR_AUTO);
+    html_window->Bind(wxEVT_HTML_LINK_CLICKED, [](wxHtmlLinkEvent& event) {
+        wxGetApp().open_browser_with_warning_dialog(event.GetLinkInfo().GetHref());
+        event.Skip(false);
+        });
     append(html_window, 0, wxEXPAND);
 
 	list_printer->Bind(wxEVT_LISTBOX, [this](wxCommandEvent& evt) {
@@ -1003,9 +1007,19 @@ void PageMaterials::set_compatible_printers_html_window(const std::vector<std::s
         // TRN ConfigWizard: Materials : "%1%" = "Filaments"/"SLA materials"
         text = format_wxstr(_L("%1% visible for <b>(\"Template\")</b> printer are universal profiles available for all printers. These might not be compatible with your printer."), materials->technology == T_FFF ? _L("Filaments") : _L("SLA materials"));
     } else {
+        bool has_medical = false;
+        for (const Preset *printer : materials->printers) {
+            if (printer->vendor && printer->vendor->id == "PrusaProMedical") {
+                has_medical = true;
+            }
+        }
+        // TRN PrusaSlicer-Medical ConfigWizard: Materials"
+        wxString zero_line = _L("The list of validated workflows for Medical One can be found in this <a href=\"prusa.io/m1-validation\">article</a>. Profiles for other materials are not verified by the material manufacturer and therefore may not correspond to the current version of the material.");
+        if (!has_medical) {
+            zero_line.Clear();
+        }
         // TRN ConfigWizard: Materials : "%1%" = "Filaments"/"SLA materials"
         wxString first_line = format_wxstr(_L("%1% marked with <b>*</b> are <b>not</b> compatible with some installed printers."), materials->technology == T_FFF ? _L("Filaments") : _L("SLA materials"));
-
         if (all_printers) {
             // TRN ConfigWizard: Materials : "%1%" = "filament"/"SLA material"
             wxString second_line = format_wxstr(_L("All installed printers are compatible with the selected %1%."), materials->technology == T_FFF ? _L("filament") : _L("SLA material"));
@@ -1016,12 +1030,14 @@ void PageMaterials::set_compatible_printers_html_window(const std::vector<std::s
                 "</style>"
                 "<body bgcolor= %s>"
                 "<font color=%s>"
-                "%s<br /><br />%s"
+                "<font size=\"3\">"
+                "%s<br /><br />%s<br /><br />%s"
                 "</font>"
                 "</body>"
                 "</html>"
                 , bgr_clr_str
                 , text_clr_str
+                , zero_line
                 , first_line
                 , second_line
             );
@@ -1039,13 +1055,16 @@ void PageMaterials::set_compatible_printers_html_window(const std::vector<std::s
                 "</style>"
                 "<body bgcolor= %s>"
                 "<font color=%s>"
-                "%s<br /><br />%s"
+                "<font size=\"3\">"
+                "%s<br /><br />%s<br /><br />%s"
                 "<table>"
                 "<tr>"
                 , bgr_clr_str
                 , text_clr_str
+                , zero_line
                 , first_line
-                , second_line);
+                , second_line
+            );
             for (size_t i = 0; i < printer_names.size(); ++i)
             {
                 text += wxString::Format("<td>%s</td>", boost::nowide::widen(printer_names[i]));

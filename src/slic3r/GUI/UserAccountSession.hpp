@@ -16,6 +16,7 @@ namespace GUI {
 using OpenPrusaAuthEvent = Event<wxString>;
 using UserAccountSuccessEvent = Event<std::string>;
 using UserAccountFailEvent = Event<std::string>;
+using UserAccountTimeEvent = Event<int>;
 wxDECLARE_EVENT(EVT_OPEN_PRUSAAUTH, OpenPrusaAuthEvent);
 wxDECLARE_EVENT(EVT_UA_LOGGEDOUT, UserAccountSuccessEvent);
 wxDECLARE_EVENT(EVT_UA_ID_USER_SUCCESS, UserAccountSuccessEvent);
@@ -27,7 +28,7 @@ wxDECLARE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_DATA_SUCCESS, UserAccountSuccessEven
 wxDECLARE_EVENT(EVT_UA_FAIL, UserAccountFailEvent); // Soft fail - clears only after some number of fails
 wxDECLARE_EVENT(EVT_UA_RESET, UserAccountFailEvent); // Hard fail - clears all
 wxDECLARE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_DATA_FAIL, UserAccountFailEvent); // Failed to get data for printer to select, soft fail, action does not repeat
-
+wxDECLARE_EVENT(EVT_UA_REFRESH_TIME, UserAccountTimeEvent);
 
 typedef std::function<void(const std::string& body)> UserActionSuccessFn;
 typedef std::function<void(const std::string& body)> UserActionFailFn;
@@ -144,18 +145,19 @@ public:
     void enqueue_action(UserAccountActionID id, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input);
     // Special enques, that sets callbacks.
     void enqueue_test_with_refresh();
+    void enqueue_refresh(const std::string& body);
 
     void process_action_queue();
     bool is_initialized() { return !m_access_token.empty() || !m_refresh_token.empty(); }
     std::string get_access_token() const { return m_access_token; }
     std::string get_refresh_token() const { return m_refresh_token; }
     std::string get_shared_session_key() const { return m_shared_session_key; }
-    
+    long long get_next_token_timeout() const {return m_next_token_timeout; }
+
     //void set_polling_enabled(bool enabled) {m_polling_action = enabled ? UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS : UserAccountActionID::USER_ACCOUNT_ACTION_DUMMY; }
     void set_polling_action(UserAccountActionID action) { m_polling_action = action; }
 private:
-    
-    void enqueue_refresh(const std::string& body);
+
     void refresh_fail_callback(const std::string& body);
     void cancel_queue();
     void code_exchange_fail_callback(const std::string& body);
@@ -172,6 +174,7 @@ private:
     std::string m_access_token;
     std::string m_refresh_token;
     std::string m_shared_session_key;
+    long long m_next_token_timeout; 
 
     std::queue<ActionQueueData>                                    m_action_queue;
     std::queue<ActionQueueData>                                    m_priority_action_queue;
