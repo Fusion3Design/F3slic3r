@@ -3264,15 +3264,27 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
         m_login_dialog.reset();
     }
 #endif // 0
-    plater()->get_preset_archive_database()->sync_blocking();
 
-    // ConfigWizard can take some time to start. Because it is a wxWidgets window, it has to be done in UI thread,
-    // so displaying a nice modal dialog and letting the CW start in a worker thread is not an option.
-    // Let's at least show a modeless dialog before the UI thread freezes.
-    auto cw_loading_dlg = new ConfigWizardLoadingDialog(mainframe, _L("Loading Configuration Wizard..."));
+    // ConfigWizard can take some time to start. Because it is a wxWidgets window, it has to be done
+    // in UI thread, so displaying a nice modal dialog and letting the CW start in a worker thread
+    // is not an option. Let's at least show a modeless dialog before the UI thread freezes.
+    auto cw_loading_dlg =  new ConfigWizardLoadingDialog(mainframe, _L("Loading Configuration Wizard..."));
     cw_loading_dlg->CenterOnParent();
     cw_loading_dlg->Show();
     wxYield();
+
+    // We have to update repos
+    plater()->get_preset_archive_database()->sync_blocking();
+
+    if (reason == ConfigWizard::RunReason::RR_USER) {
+        // Since there might be new repos, we need to sync preset updater
+        const SharedArchiveRepositoryVector &repos = plater()->get_preset_archive_database()->get_selected_archive_repositories();
+        preset_updater->sync_blocking(preset_bundle, this, repos);
+        preset_updater->update_index_db();
+        // Offer update installation.
+        preset_updater->config_update(app_config->orig_version(), PresetUpdater::UpdateParams::SHOW_TEXT_BOX, repos);
+    }
+
     auto wizard = new ConfigWizard(mainframe);
     cw_loading_dlg->Close();
 

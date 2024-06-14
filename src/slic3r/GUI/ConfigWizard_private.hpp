@@ -709,7 +709,7 @@ struct ConfigWizard::priv
     bool check_sla_selected();        // Used to decide whether to display SLA Materials page
 
     int em() const { return index->em(); }
-    void set_config_updated_from_archive(bool is_updated);
+    void set_config_updated_from_archive(bool load_installed_printers, bool run_preset_updater);
 
     Repository* get_repo(const std::string& repo_id);
 

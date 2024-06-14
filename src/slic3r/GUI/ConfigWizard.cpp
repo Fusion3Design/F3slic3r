@@ -692,7 +692,7 @@ PageUpdateManager::PageUpdateManager(ConfigWizard* parent_in)
                     wxBusyCursor wait;
                     if (manager->set_selected_repositories()) {
                         wizard_p()->is_config_from_archive = true;
-                        wizard_p()->set_config_updated_from_archive(true);
+                        wizard_p()->set_config_updated_from_archive(true, true);
                     }
                     else
                         revert_page_selection();
@@ -3652,14 +3652,12 @@ bool ConfigWizard::priv::check_sla_selected()
     return false;
 }
 
-void ConfigWizard::priv::set_config_updated_from_archive(bool is_updated) 
+void ConfigWizard::priv::set_config_updated_from_archive(bool load_installed_printers, bool run_preset_updater) 
 {
-    // is updated is false if this is first call since ConfigWizard::run and RunReason is not RR_USER
-    if (is_updated)
-    {
-        // THIS IS NOT A MAIN THREAD!
-         
-        // This set with preset_updater used to be done in GUI_App::run_wizard before ConfigWizard::run()
+    if (run_preset_updater)  {         
+        // This block of preset_updater functions is done in GUI_App::run_wizard before ConfigWizard::run()
+        // It needs to be also done when repos are confirmed inside wizard.
+        // Possible optimalization - do not run this block if no repos were changed.
         GUI_App& app = wxGetApp();
         // Do blocking sync on every change of archive repos, so user is always offered recent profiles.
         const SharedArchiveRepositoryVector &repos = app.plater()->get_preset_archive_database()->get_selected_archive_repositories();
@@ -3668,9 +3666,11 @@ void ConfigWizard::priv::set_config_updated_from_archive(bool is_updated)
         app.preset_updater->update_index_db();
         app.preset_updater->config_update(app.app_config->orig_version(), PresetUpdater::UpdateParams::SHOW_TEXT_BOX, repos);
 
-        // We have now probably changed data. We need to rebuild or database from which wizards constructs.
+        // We have now probably changed data. We need to rebuild database from which wizards constructs.
         // Just reload bundles and upadte installed printer from appconfig_new.
         bundles = BundleMap::load();
+    }
+    if (load_installed_printers) {
         // Initialize the is_visible flag in printer Presets
         for (auto& pair : bundles)
             pair.second.preset_bundle->load_installed_printers(appconfig_new);
@@ -4096,7 +4096,7 @@ bool ConfigWizard::run(RunReason reason, StartPage start_page)
     p->set_run_reason(reason);
     p->set_start_page(start_page);
     p->is_config_from_archive = reason == RR_USER;
-    p->set_config_updated_from_archive(p->is_config_from_archive);
+    p->set_config_updated_from_archive(p->is_config_from_archive, false);
 
     if (ShowModal() == wxID_OK) {
         bool apply_keeped_changes = false;
