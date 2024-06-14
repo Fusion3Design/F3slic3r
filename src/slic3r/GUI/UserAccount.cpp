@@ -399,6 +399,43 @@ std::string UserAccount::get_keyword_from_json(const std::string& json, const st
     return out;
 }
 
+std::string UserAccount::get_print_data_from_json(const std::string &json, const std::string &keyword) const
+{
+    // copy subtree string f.e.
+    // { "<keyword>": {"param1": "something", "filename":"abcd.gcode", "param3":true}, "something_else" : 0 }
+    // into: {"param1": "something", "filename":"%1%", "param3":true, "size":%2%}
+    // yes there will be 2 placeholders for later format
+
+    // this will fail if not flat subtree
+    size_t start_of_keyword = json.find("\""+keyword+"\"");
+    if (start_of_keyword == std::string::npos)  
+        return {};
+    size_t start_of_sub = json.find('{', start_of_keyword);
+    if (start_of_sub == std::string::npos)
+        return {};
+    size_t end_of_sub = json.find('}', start_of_sub);
+    if (end_of_sub == std::string::npos)
+        return {};
+    size_t start_of_filename = json.find("\"filename\"", start_of_sub);
+    if (start_of_filename == std::string::npos)
+        return {};
+    size_t filename_doubledot = json.find(':', start_of_filename);
+    if (filename_doubledot == std::string::npos)
+        return {};
+    size_t start_of_filename_data = json.find('\"', filename_doubledot);
+    if (start_of_filename_data == std::string::npos)
+        return {};
+    size_t end_of_filename_data = json.find('\"', start_of_filename_data + 1);
+    if (end_of_filename_data == std::string::npos)
+        return {};
+    size_t size = json.size();
+    std::string result = json.substr(start_of_sub, start_of_filename_data - start_of_sub + 1);
+    result += "%1%";
+    result += json.substr(end_of_filename_data, end_of_sub - end_of_filename_data);
+    result += ",\"size\":%2%}";
+    return result;
+}
+
 void UserAccount::fill_supported_printer_models_from_json(const std::string& json, std::vector<std::string>& result) const
 {
     try {

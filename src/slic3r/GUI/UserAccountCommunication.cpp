@@ -132,22 +132,47 @@ bool load_secret(const std::string& opt, std::string& usr, std::string& psswd)
 }
 
 UserAccountCommunication::UserAccountCommunication(wxEvtHandler* evt_handler, AppConfig* app_config)
-    : m_evt_handler(evt_handler)
+    : wxEvtHandler()
+    , m_evt_handler(evt_handler)
     , m_app_config(app_config)
+    , m_polling_timer(new wxTimer(this))
+    , m_token_timer(new wxTimer(this))
 {
-    std::string access_token, refresh_token, shared_session_key;
+    Bind(wxEVT_TIMER, &UserAccountCommunication::on_token_timer, this, m_token_timer->GetId());
+    Bind(wxEVT_TIMER, &UserAccountCommunication::on_polling_timer, this, m_polling_timer->GetId());
+
+    std::string access_token, refresh_token, shared_session_key, next_timeout;
     if (is_secret_store_ok()) {
-        std::string key0, key1;
-        load_secret("access_token", key0, access_token);
-        load_secret("refresh_token", key1, refresh_token);
-        assert(key0 == key1);
+        std::string key0, key1, key2, tokens;
+        if (load_secret("tokens", key0, tokens)) {
+            std::vector<std::string> token_list;
+            boost::split(token_list, tokens, boost::is_any_of("|"), boost::token_compress_off);
+            assert(token_list.empty() || token_list.size() == 3);
+            access_token = token_list.size() > 0 ? token_list[0] : std::string();
+            refresh_token = token_list.size() > 1 ? token_list[1] : std::string();
+            next_timeout = token_list.size() > 2 ? token_list[2] : std::string();
+        } else {
+            load_secret("access_token", key0, access_token);
+            load_secret("refresh_token", key1, refresh_token);
+            load_secret("access_token_timeout", key2, next_timeout);
+            assert(key0 == key1);
+        }
         shared_session_key = key0;
+
     } else {
         access_token = m_app_config->get("access_token");
         refresh_token = m_app_config->get("refresh_token");
         shared_session_key = m_app_config->get("shared_session_key");
+        next_timeout = m_app_config->get("access_token_timeout");
     }
-    bool has_token =  !access_token.empty() && !refresh_token.empty();
+    long long next = next_timeout.empty() ? 0 : std::stoll(next_timeout);
+    long long remain_time = next - std::time(nullptr);
+    if (remain_time <= 0) {
+        access_token.clear();
+    } else {
+        set_refresh_time((int)remain_time);
+    }
+    bool has_token = !refresh_token.empty();
     m_session = std::make_unique<UserAccountSession>(evt_handler, access_token, refresh_token, shared_session_key, m_app_config->get_bool("connect_polling"));
     init_session_thread();
     // perform login at the start, but only with tokens
@@ -157,6 +182,8 @@ UserAccountCommunication::UserAccountCommunication(wxEvtHandler* evt_handler, Ap
 
 UserAccountCommunication::~UserAccountCommunication() 
 {
+    m_token_timer->Stop();
+    m_polling_timer->Stop();
     if (m_thread.joinable()) {
         // Stop the worker thread, if running.
         {
@@ -165,7 +192,7 @@ UserAccountCommunication::~UserAccountCommunication()
             m_thread_stop = true;
         }
         m_thread_stop_condition.notify_all();
-        // Wait for the worker thread to stop.
+        // Wait for the worker thread to stop
         m_thread.join();
     }
 }
@@ -176,13 +203,19 @@ void UserAccountCommunication::set_username(const std::string& username)
     {
         std::lock_guard<std::mutex> lock(m_session_mutex);
         if (is_secret_store_ok()) {
-            save_secret("access_token", m_session->get_shared_session_key(), m_remember_session ? m_session->get_access_token() : std::string());
-            save_secret("refresh_token", m_session->get_shared_session_key(), m_remember_session ? m_session->get_refresh_token() : std::string());
+            std::string tokens;
+            if (m_remember_session) {
+                tokens = m_session->get_access_token() +
+                    "|" + m_session->get_refresh_token() +
+                    "|" + std::to_string(m_session->get_next_token_timeout());
+            }
+            save_secret("tokens", m_session->get_shared_session_key(), tokens);
         }
         else {
             m_app_config->set("access_token", m_remember_session ? m_session->get_access_token() : std::string());
             m_app_config->set("refresh_token", m_remember_session ? m_session->get_refresh_token() : std::string());
             m_app_config->set("shared_session_key", m_remember_session ? m_session->get_shared_session_key() : std::string());
+            m_app_config->set("access_token_timeout", m_remember_session ? GUI::format("%1%", m_session->get_next_token_timeout()) : "0");
         }
     }
 }
@@ -271,6 +304,7 @@ void UserAccountCommunication::do_clear()
         m_session->clear();
     }
     set_username({});
+    m_token_timer->Stop();
 }
 
 void UserAccountCommunication::on_login_code_recieved(const std::string& url_message)
@@ -346,16 +380,28 @@ void UserAccountCommunication::enqueue_printer_data_action(const std::string& uu
     }
     wakeup_session_thread();
 }
-
+void UserAccountCommunication::enqueue_refresh()
+{
+    {
+        std::lock_guard<std::mutex> lock(m_session_mutex);
+        if (!m_session->is_initialized()) {
+            BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
+            return;
+        }
+        m_session->enqueue_refresh({});
+    }
+    wakeup_session_thread();
+}
 
 void UserAccountCommunication::init_session_thread()
 {
+    assert(m_polling_timer);
+    m_polling_timer->Start(10000);
     m_thread = std::thread([this]() {
         for (;;) {
-            // Wait for 5 seconds or wakeup call
             {
                 std::unique_lock<std::mutex> lck(m_thread_stop_mutex);      
-                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(10), [this] { return m_thread_stop || m_thread_wakeup; });
+                m_thread_stop_condition.wait_for(lck, std::chrono::seconds(88888), [this] { return m_thread_stop || m_thread_wakeup; });
             }
             if (m_thread_stop)
                 // Stop the worker thread.
@@ -375,8 +421,10 @@ void UserAccountCommunication::init_session_thread()
 
 void UserAccountCommunication::on_activate_window(bool active)
 {
-    std::lock_guard<std::mutex> lck(m_thread_stop_mutex);
-    m_window_is_active = active;
+    {
+        std::lock_guard<std::mutex> lck(m_thread_stop_mutex);
+        m_window_is_active = active;
+    }
 }
 
 void UserAccountCommunication::wakeup_session_thread()
@@ -386,6 +434,26 @@ void UserAccountCommunication::wakeup_session_thread()
         m_thread_wakeup = true;
     }
     m_thread_stop_condition.notify_all();
+}
+
+void UserAccountCommunication::set_refresh_time(int seconds)
+{
+    assert(m_token_timer);
+    m_token_timer->Stop();
+    int miliseconds = std::max(seconds * 1000 - 66666, 60000);
+    m_token_timer->StartOnce(miliseconds);
+}
+
+void UserAccountCommunication::on_token_timer(wxTimerEvent& evt)
+{
+    enqueue_refresh();
+}
+void UserAccountCommunication::on_polling_timer(wxTimerEvent& evt)
+{
+    if (!m_window_is_active) {
+        return;
+    }
+    wakeup_session_thread();
 }
 
 std::string CodeChalengeGenerator::generate_chalenge(const std::string& verifier)

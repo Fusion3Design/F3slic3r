@@ -42,9 +42,7 @@ struct PrintHostUpload
 
     PrintHostPostUploadAction post_action { PrintHostPostUploadAction::None };
 
-    std::string set_ready;
-    std::string position;
-    std::string wait_until;
+    std::string data_json;
 };
 
 class PrintHost

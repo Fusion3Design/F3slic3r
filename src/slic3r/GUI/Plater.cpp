@@ -519,7 +519,7 @@ struct Plater::priv
     void on_3dcanvas_mouse_dragging_finished(SimpleEvent&);
 
     void show_action_buttons(const bool is_ready_to_slice) const;
-
+    bool can_show_upload_to_connect() const;
     // Set the bed shape to a single closed 2D polygon(array of two element arrays),
     // triangulate the bed and store the triangles into m_bed.m_triangles,
     // fills the m_bed.m_grid_lines and sets m_bed.m_origin.
@@ -889,6 +889,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         });
 
         this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+            // There are multiple handlers and we want to notify all
+            evt.Skip();
             std::string username;
             if (user_account->on_user_id_success(evt.data, username)) {
                 // login notification
@@ -984,6 +986,10 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->notification_manager->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
             this->notification_manager->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::WarningNotificationLevel, msg);
         });
+
+        this->q->Bind(EVT_UA_REFRESH_TIME, [this](UserAccountTimeEvent& evt) {
+            this->user_account->set_refresh_time(evt.data);
+            });        
     }
 
 	wxGetApp().other_instance_message_handler()->init(this->q);
@@ -3549,6 +3555,24 @@ bool Plater::priv::can_layers_editing() const
     return layers_height_allowed();
 }
 
+bool Plater::priv::can_show_upload_to_connect() const
+{
+    if (!user_account->is_logged()) {
+        return false;
+    }
+    const Preset& selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
+    std::string vendor_id;
+    if (selected_printer.vendor ) {
+        vendor_id = selected_printer.vendor->id;
+    } else if (std::string inherits = selected_printer.inherits(); !inherits.empty()) {
+        const Preset* parent = wxGetApp().preset_bundle->printers.find_preset(inherits);
+        if (parent && parent->vendor) {
+            vendor_id = parent->vendor->id;
+        }
+    }    
+    return vendor_id.compare(0, 5, "Prusa") == 0;
+} 
+
 void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
 {
 	// Cache this value, so that the callbacks from the RemovableDriveManager may repeat that value when calling show_action_buttons().
@@ -3559,7 +3583,7 @@ void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
     DynamicPrintConfig* selected_printer_config = wxGetApp().preset_bundle->physical_printers.get_selected_printer_config();
     const auto print_host_opt = selected_printer_config ? selected_printer_config->option<ConfigOptionString>("print_host") : nullptr;
     const bool send_gcode_shown = print_host_opt != nullptr && !print_host_opt->value.empty();
-    const bool connect_gcode_shown = print_host_opt == nullptr && user_account->is_logged();
+    const bool connect_gcode_shown = print_host_opt == nullptr && can_show_upload_to_connect();
     // when a background processing is ON, export_btn and/or send_btn are showing
     if (get_config_bool("background_processing"))
     {
@@ -5910,26 +5934,29 @@ void Plater::connect_gcode()
 */
     const Preset* selected_printer_preset = &wxGetApp().preset_bundle->printers.get_selected_preset();
 
-    const std::string set_ready = p->user_account->get_keyword_from_json(dialog_msg, "set_ready");
-    const std::string position = p->user_account->get_keyword_from_json(dialog_msg, "position");
-    const std::string wait_until = p->user_account->get_keyword_from_json(dialog_msg, "wait_until");
     const std::string filename = p->user_account->get_keyword_from_json(dialog_msg, "filename");
-    const std::string printer_uuid = p->user_account->get_keyword_from_json(dialog_msg, "printer_uuid");
     const std::string team_id = p->user_account->get_keyword_from_json(dialog_msg, "team_id");
+
+    std::string data_subtree = p->user_account->get_print_data_from_json(dialog_msg, "data");
+    if (filename.empty() || team_id.empty() || data_subtree.empty()) {
+        std::string msg = _u8L("Failed to read response from Connect server. Upload is canceled.");
+        BOOST_LOG_TRIVIAL(error) << msg;
+        BOOST_LOG_TRIVIAL(error) << "Response: " << dialog_msg;
+        show_error(this, msg);
+        return;
+    }
+    
 
     PhysicalPrinter ph_printer("connect_temp_printer", wxGetApp().preset_bundle->physical_printers.default_config(), *selected_printer_preset);
     ph_printer.config.set_key_value("host_type", new ConfigOptionEnum<PrintHostType>(htPrusaConnectNew));
     // use existing structures to pass data
     ph_printer.config.opt_string("printhost_apikey") = team_id;
-    ph_printer.config.opt_string("print_host") = printer_uuid;
     DynamicPrintConfig* physical_printer_config = &ph_printer.config;
 
     PrintHostJob upload_job(physical_printer_config);
     assert(!upload_job.empty());
 
-    upload_job.upload_data.set_ready = set_ready;
-    upload_job.upload_data.position = position;
-    upload_job.upload_data.wait_until = wait_until;
+    upload_job.upload_data.data_json = data_subtree;
     upload_job.upload_data.upload_path = boost::filesystem::path(filename);
 
     p->export_gcode(fs::path(), false, std::move(upload_job));

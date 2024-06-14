@@ -88,25 +88,30 @@ bool PrusaConnectNew::init_upload(PrintHostUpload upload_data, std::string& out)
     boost::system::error_code ec;
     boost::uintmax_t size = boost::filesystem::file_size(upload_data.source_path, ec);
     const std::string name = get_name();
-    const std::string file_size = std::to_string(size);
     const std::string access_token = GUI::wxGetApp().plater()->get_user_account()->get_access_token();
-    //const std::string upload_path = upload_data.upload_path.generic_string();
     const std::string upload_filename = upload_data.upload_path.filename().string();
     std::string url = GUI::format("%1%/app/users/teams/%2%/uploads", get_host(), m_team_id);
-    const std::string request_body_json = GUI::format(
-        "{"
-            "\"filename\": \"%1%\", "
-            "\"size\": %2%, "
-            "\"path\": \"%3%\", "
-            "\"force\": true, "
-            "\"printer_uuid\": \"%4%\""
-        "}"
-        , upload_filename
-        , file_size
-        , upload_data.upload_path.generic_string()
-        , m_uuid
-    );
-
+    std::string request_body_json = upload_data.data_json;
+    //    GUI::format(
+    //    "{"
+    //        "\"filename\": \"%1%\", "
+    //        "\"size\": %2%, "
+    //        "\"path\": \"%3%\", "
+    //        "\"force\": true, "
+    //        "\"printer_uuid\": \"%4%\""
+    //    "}"
+    //    , upload_filename
+    //    , file_size
+    //    , upload_data.upload_path.generic_string()
+    //    , m_uuid
+    //);
+    
+    // replace plaholder filename
+    assert(request_body_json.find("%1%") != std::string::npos);
+    assert(request_body_json.find("%2%") != std::string::npos);
+    request_body_json = GUI::format(request_body_json, upload_filename, size);
+    
+   
     BOOST_LOG_TRIVIAL(info) << "Register upload to "<< name<<". Url: " << url << "\nBody: " << request_body_json;
     Http http = Http::post(std::move(url));
     http.header("Authorization", "Bearer " + access_token)
@@ -156,20 +161,20 @@ bool PrusaConnectNew::upload(PrintHostUpload upload_data, ProgressFn progress_fn
     }
     const std::string name = get_name();
     const std::string access_token = GUI::wxGetApp().plater()->get_user_account()->get_access_token();
-    const std::string escaped_upload_path = upload_data.storage + "/" + escape_path_by_element(upload_data.upload_path.string());
-    const std::string set_ready = upload_data.set_ready.empty() ? "" : "&set_ready=" + upload_data.set_ready;
-    const std::string position = upload_data.position.empty() ? "" : "&position=" + upload_data.position;
-    const std::string wait_until = upload_data.wait_until.empty() ? "" : "&wait_until=" + upload_data.wait_until;
+//    const std::string escaped_upload_path = upload_data.storage + "/" + escape_path_by_element(upload_data.upload_path.string());
+//    const std::string set_ready = upload_data.set_ready.empty() ? "" : "&set_ready=" + upload_data.set_ready;
+//    const std::string position = upload_data.position.empty() ? "" : "&position=" + upload_data.position;
+//    const std::string wait_until = upload_data.wait_until.empty() ? "" : "&wait_until=" + upload_data.wait_until;
     const std::string url = GUI::format(
         "%1%/app/teams/%2%/files/raw"
         "?upload_id=%3%"
-        "&force=true"
-        "&printer_uuid=%4%"
-        "&path=%5%"
-        "%6%"
-        "%7%"
-        "%8%"
-        , get_host(), m_team_id, upload_id, m_uuid, escaped_upload_path, set_ready, position, wait_until);
+ //       "&force=true"
+ //       "&printer_uuid=%4%"
+ //       "&path=%5%"
+ //       "%6%"
+ //       "%7%"
+ //       "%8%"
+        , get_host(), m_team_id, upload_id/*, m_uuid, escaped_upload_path, set_ready, position, wait_until*/);
     bool res = true;
 
     BOOST_LOG_TRIVIAL(info) << boost::format("%1%: Uploading file %2% at %3%, filename: %4%, path: %5%, print: %6%")
