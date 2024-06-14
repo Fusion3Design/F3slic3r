@@ -60,7 +60,7 @@ class Downloader;
 struct GUI_InitParams;
 class GalleryDialog;
 class LoginDialog;
-
+class PresetArchiveDatabase;
 
 enum FileType
 {
@@ -170,14 +170,14 @@ private:
 
     OpenGLManager m_opengl_mgr;
 
-    std::unique_ptr<RemovableDriveManager> m_removable_drive_manager;
-
-    std::unique_ptr<ImGuiWrapper> m_imgui;
-    std::unique_ptr<PrintHostJobQueue> m_printhost_job_queue;
-	std::unique_ptr <OtherInstanceMessageHandler> m_other_instance_message_handler;
-    std::unique_ptr <AppUpdater> m_app_updater;
-    std::unique_ptr <wxSingleInstanceChecker> m_single_instance_checker;
-    std::unique_ptr <Downloader> m_downloader;
+    std::unique_ptr<RemovableDriveManager>          m_removable_drive_manager;
+    std::unique_ptr<ImGuiWrapper>                   m_imgui;
+    std::unique_ptr<PrintHostJobQueue>              m_printhost_job_queue;
+	std::unique_ptr<OtherInstanceMessageHandler>    m_other_instance_message_handler;
+    std::unique_ptr<AppUpdater>                     m_app_updater;
+    std::unique_ptr<wxSingleInstanceChecker>        m_single_instance_checker;
+    std::unique_ptr<Downloader>                     m_downloader;
+    
     std::string m_instance_hash_string;
 	size_t m_instance_hash_int;
 
@@ -433,6 +433,7 @@ private:
     // returns old config path to copy from if such exists,
     // returns an empty string if such config path does not exists or if it cannot be loaded.
     std::string     check_older_app_config(Semver current_version, bool backup);
+    void            legacy_app_config_vendor_check();
     void            window_pos_save(wxTopLevelWindow* window, const std::string &name);
     void            window_pos_restore(wxTopLevelWindow* window, const std::string &name, bool default_maximized = false);
     void            window_pos_sanitize(wxTopLevelWindow* window);
@@ -441,7 +442,7 @@ private:
     bool            config_wizard_startup();
     // Returns true if the configuration is fine. 
     // Returns true if the configuration is not compatible and the user decided to rather close the slicer instead of reconfiguring.
-	bool            check_updates(const bool verbose);
+	bool            check_updates(const bool invoked_automatically);
     void            on_version_read(wxCommandEvent& evt);
     // if the data from version file are already downloaded, shows dialogs to start download of new version of app
     void            app_updater(bool from_user);

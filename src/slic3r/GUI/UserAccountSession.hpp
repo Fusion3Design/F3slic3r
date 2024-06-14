@@ -91,7 +91,7 @@ public:
 
 struct ActionQueueData
 {
-    UserAccountActionID            action_id;
+    UserAccountActionID     action_id;
     UserActionSuccessFn     success_callback;
     UserActionFailFn        fail_callback;
     std::string             input;
@@ -176,8 +176,8 @@ private:
     std::string m_shared_session_key;
     long long m_next_token_timeout; 
 
-    std::queue<ActionQueueData>                             m_action_queue;
-    std::queue<ActionQueueData>                             m_priority_action_queue;
+    std::queue<ActionQueueData>                                    m_action_queue;
+    std::queue<ActionQueueData>                                    m_priority_action_queue;
     std::map<UserAccountActionID, std::unique_ptr<UserAction>>     m_actions;
 
     wxEvtHandler* p_evt_handler;

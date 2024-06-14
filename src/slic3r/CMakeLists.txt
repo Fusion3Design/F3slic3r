@@ -126,6 +126,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/IconManager.hpp
     GUI/MainFrame.cpp
     GUI/MainFrame.hpp
+    GUI/UpdatesUIManager.cpp
+    GUI/UpdatesUIManager.hpp
     GUI/FrequentlyChangedParameters.cpp
     GUI/FrequentlyChangedParameters.hpp
     GUI/Sidebar.cpp
@@ -315,6 +317,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/DownloaderFileGet.hpp
     GUI/LoginDialog.cpp
     GUI/LoginDialog.hpp
+    GUI/PresetArchiveDatabase.cpp
+    GUI/PresetArchiveDatabase.hpp
     Utils/AppUpdater.cpp
     Utils/AppUpdater.hpp
     Utils/Http.cpp

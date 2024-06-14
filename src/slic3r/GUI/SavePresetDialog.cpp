@@ -139,8 +139,9 @@ SavePresetDialog::Item::Item(Preset::Type type, const std::string& suffix, wxBox
     update();
 }
 
-SavePresetDialog::Item::Item(wxWindow* parent, wxBoxSizer* sizer, const std::string& def_name, PrinterTechnology pt /*= ptFFF*/):
+SavePresetDialog::Item::Item(wxWindow* parent, wxBoxSizer* sizer, const std::string& def_name, PresetCollection* presets, PrinterTechnology pt /*= ptFFF*/):
     m_preset_name(def_name),
+    m_presets(presets),
     m_printer_technology(pt),
     m_parent(parent),
     m_valid_bmp(new wxStaticBitmap(m_parent, wxID_ANY, *get_bmp_bundle("tick_mark"))),
@@ -151,6 +152,8 @@ SavePresetDialog::Item::Item(wxWindow* parent, wxBoxSizer* sizer, const std::str
     wxBoxSizer* input_name_sizer = new wxBoxSizer(wxHORIZONTAL);
     input_name_sizer->Add(m_valid_bmp,    0, wxALIGN_CENTER_VERTICAL | wxRIGHT, BORDER_W);
     init_input_name_ctrl(input_name_sizer, m_preset_name);
+
+    init_casei_preset_names();
 
     sizer->Add(input_name_sizer,0, wxEXPAND | wxBOTTOM, BORDER_W);
     sizer->Add(m_valid_label,   0, wxEXPAND | wxLEFT,   3*BORDER_W);

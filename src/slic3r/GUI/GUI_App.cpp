@@ -13,6 +13,7 @@
 #include "GUI_ObjectManipulation.hpp"
 #include "GUI_Factories.hpp"
 #include "TopBar.hpp"
+#include "UpdatesUIManager.hpp"
 #include "format.hpp"
 
 // Localization headers: include libslic3r version first so everything in this file
@@ -102,6 +103,7 @@
 #include "UserAccount.hpp"
 #include "WebViewDialog.hpp"
 #include "LoginDialog.hpp"
+#include "PresetArchiveDatabase.hpp"
 
 #include "BitmapCache.hpp"
 //#include "Notebook.hpp"
@@ -832,9 +834,10 @@ void GUI_App::post_init()
             return;
 #endif
         CallAfter([this] {
-            // preset_updater->sync downloads profile updates on background so it must begin after config wizard finished.
+            // preset_updater->sync downloads profile updates and than via event checks updates and incompatible presets. We need to run it on startup.
+            // start before cw so it is canceled by cw if needed?
+            this->preset_updater->sync(preset_bundle, this, std::move(plater()->get_preset_archive_database()->get_selected_archive_repositories()));
             bool cw_showed = this->config_wizard_startup();
-            this->preset_updater->sync(preset_bundle, this);
             if (! cw_showed) {
                 // The CallAfter is needed as well, without it, GL extensions did not show.
                 // Also, we only want to show this when the wizard does not, so the new user
@@ -945,6 +948,113 @@ void GUI_App::init_app_config()
             }
         }
     }
+}
+
+namespace {
+// Copy ini file from resources to vendors if such file does not exists yet.
+void copy_vendor_ini(const std::vector<std::string>& vendors)
+{
+    for (const std::string &vendor : vendors) {
+        boost::system::error_code ec;
+        const boost::filesystem::path ini_in_resources = boost::filesystem::path(  Slic3r::resources_dir() ) /  "profiles" / (vendor + ".ini");
+        assert(boost::filesystem::exists(ini_in_resources));
+        const boost::filesystem::path ini_in_vendors = boost::filesystem::path(Slic3r::data_dir()) /  "vendor" / (vendor + ".ini");
+        if (boost::filesystem::exists(ini_in_vendors, ec)) {
+            continue;
+        }
+        std::string message;
+        CopyFileResult cfr = copy_file(ini_in_resources.string(), ini_in_vendors.string(), message, false);
+        if (cfr != SUCCESS) {
+            BOOST_LOG_TRIVIAL(error) << "Failed to copy file " << ini_in_resources << " to "  << ini_in_vendors << ": " << message;
+        }
+    }
+}
+}
+
+void GUI_App::legacy_app_config_vendor_check()
+{
+    // Expected state: 
+    // User runs 2.8.0+ for the first time. They have Prusa SLA printers installed.
+    // Prusa SLA printers moved from PrusaResearch.ini to PrusaResearchSLA.ini
+    // We expect this is detected and fixed on the first run, when PrusaResearchSLA is not installed yet.
+    // Steps:
+    // Move the printers in appconfig to PrusaResearchSLA
+    // Moving the printers is not enough. The new ini PrusaResearchSLA needs to be installed.
+    // But we cannot install bundles without preset updater.
+    // So we just move it to the vendor folder. Since all profiles are named the same, it should not be a problem.
+    // Preset updater should be doing blocking update over PrusaResearch.ini. Then all should be ok.
+
+    std::map<std::string, std::vector<std::string>> moved_models;
+    moved_models["PrusaResearch"] = {"SL1", "SL1S"};
+    moved_models["Anycubic"] = {"PHOTON MONO", "PHOTON MONO SE", "PHOTON MONO X", "PHOTON MONO X 6K"};
+    std::map<std::string, std::string> vendors_from_to;
+    vendors_from_to["PrusaResearch"] = "PrusaResearchSLA";
+    vendors_from_to["Anycubic"] = "AnycubicSLA";
+    // resulting 
+    std::vector<std::string> vendors_to_create;
+
+    const std::map<std::string, std::map<std::string, std::set<std::string>>>& vendor_map = app_config->vendors();
+    for (const auto& moved_models_of_vendor : moved_models) {
+        if (const auto &vendor_it = vendor_map.find(moved_models_of_vendor.first); vendor_it != vendor_map.end()) {
+            for (const std::string &model : moved_models_of_vendor.second) {
+                if (const auto &it = vendor_it->second.find(model); it != vendor_it->second.end()) {
+                    vendors_to_create.emplace_back(vendors_from_to[moved_models_of_vendor.first]);
+                    break;
+                }
+            }
+        }
+    }
+    
+    if (vendors_to_create.empty()) {
+        // If there are no printers to move, also do check if "new" vendors really has ini file in vendor folder.
+        // In case of running older and current slicer back and forth, there might be vendors in appconfig without ini.
+        std::vector<std::string> vendors_to_check;
+        for (const auto &vendor_pair: vendors_from_to) {
+            if (vendor_map.find(vendor_pair.second) != vendor_map.end()) {
+                vendors_to_check.emplace_back(vendor_pair.second);
+            }
+        }
+        copy_vendor_ini(vendors_to_check);
+        return;
+    }
+
+    BOOST_LOG_TRIVIAL(warning) << "PrusaSlicer has found legacy SLA printers. The printers will be "
+                                  "moved to new vendor and its ini file will be installed. Configuration snapshot will be taken.";
+
+     // Take snapshot now, since creation of new vendors in appconfig, snapshots wont be compatible in older slicers.
+    // If any of the new vendors already is in appconfig, there is no reason to do a snapshot, it will fail or wont be compatible in previous version.
+    bool do_snapshot = true;
+    for (const std::string &vendor : vendors_to_create) {
+        if (vendor_map.find(vendor) != vendor_map.end()) {
+            do_snapshot = false;
+            break;
+        }
+    }
+    if (do_snapshot) {
+         GUI::Config::take_config_snapshot_report_error(*app_config, Config::Snapshot::SNAPSHOT_UPGRADE, "");
+    }
+
+    // make a deep copy of vendor map with moved printers
+    std::map<std::string, std::map<std::string, std::set<std::string>>> new_vendor_map;
+    for (const auto& vendor : vendor_map) {
+        for (const auto& model : vendor.second) {
+            if (vendors_from_to.find(vendor.first) != vendors_from_to.end() && std::find(moved_models[vendor.first].begin(), moved_models[vendor.first].end(), model.first) != moved_models[vendor.first].end()) {
+                // variants of models to be moved are placed under new vendor
+                for (const std::string& variant : model.second) {
+                    new_vendor_map[vendors_from_to[vendor.first]][model.first].emplace(variant);
+                }
+            } else {
+                // rest is just copied
+                for (const std::string& variant : model.second) {
+                    new_vendor_map[vendor.first][model.first].emplace(variant);
+                }
+            }
+        }
+    }
+    app_config->set_vendors(new_vendor_map);
+    
+    // copy new vendors ini file to vendors
+    copy_vendor_ini(vendors_to_create);  
 }
 
 // returns old config path to copy from if such exists,
@@ -1381,6 +1491,9 @@ bool GUI_App::on_init_inner()
     // hide settings tabs after first Layout
     if (is_editor())
         mainframe->select_tab(size_t(0));
+
+    // Call this check only after appconfig was loaded to mainframe, otherwise there will be duplicity error.
+    legacy_app_config_vendor_check();
 
     sidebar().obj_list()->init_objects(); // propagate model objects to object list
     update_mode(); // mode sizer doesn't exist anymore, so we came update mode here, before load_current_presets
@@ -2529,9 +2642,9 @@ wxMenu* GUI_App::get_config_menu()
         case ConfigMenuWizard:
             run_wizard(ConfigWizard::RR_USER);
             break;
-		case ConfigMenuUpdateConf:
-			check_updates(true);
-			break;
+        case ConfigMenuUpdateConf: 
+            check_updates(true); 
+            break;
         case ConfigMenuUpdateApp:
             app_version_check(true);
             break;
@@ -2992,6 +3105,15 @@ void GUI_App::MacOpenURL(const wxString& url)
 {
     std::string narrow_url = into_u8(url);
     if (boost::starts_with(narrow_url, "prusaslicer://open?file=")) {
+        // This app config field applies only to downloading file
+        // (we need to handle login URL even if this flag is set off)
+        if (app_config && !app_config->get_bool("downloader_url_registered"))
+        {
+            notification_manager()->push_notification(NotificationType::URLNotRegistered);
+            BOOST_LOG_TRIVIAL(error) << "Recieved command to open URL, but it is not allowed in app configuration. URL: " << url;
+            return;
+        }
+
         start_download(std::move(narrow_url));
     } else if (boost::starts_with(narrow_url, "prusaslicer://login")) {
         plater()->get_user_account()->on_login_code_recieved(std::move(narrow_url));
@@ -3127,26 +3249,47 @@ bool GUI_App::may_switch_to_SLA_preset(const wxString& caption)
 bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage start_page)
 {
     wxCHECK_MSG(mainframe != nullptr, false, "Internal error: Main frame not created / null");
+
+    // Cancel sync before starting wizard to prevent two downloads at same time.
+    preset_updater->cancel_sync();
+    // Show login dialog before wizard.
 #if 0
-    if (!plater()->get_user_account()->is_logged()) {
+    bool user_was_logged = plater()->get_user_account()->is_logged();
+    if (!user_was_logged) {
         m_login_dialog = std::make_unique<LoginDialog>(mainframe, plater()->get_user_account());
         m_login_dialog->ShowModal();
         mainframe->RemoveChild(m_login_dialog.get());
         m_login_dialog->Destroy();
-        // Destructor does not call Destroy
+        // Destructor does not call Destroy.
         m_login_dialog.reset();
     }
 #endif // 0
-    if (reason == ConfigWizard::RR_USER) {
-        // Cancel sync before starting wizard to prevent two downloads at same time
-        preset_updater->cancel_sync();
+
+    // ConfigWizard can take some time to start. Because it is a wxWidgets window, it has to be done
+    // in UI thread, so displaying a nice modal dialog and letting the CW start in a worker thread
+    // is not an option. Let's at least show a modeless dialog before the UI thread freezes.
+    auto cw_loading_dlg =  new ConfigWizardLoadingDialog(mainframe, _L("Loading Configuration Wizard..."));
+    cw_loading_dlg->CenterOnParent();
+    cw_loading_dlg->Show();
+    wxYield();
+
+    // We have to update repos
+    plater()->get_preset_archive_database()->sync_blocking();
+
+    if (reason == ConfigWizard::RunReason::RR_USER) {
+        // Since there might be new repos, we need to sync preset updater
+        const SharedArchiveRepositoryVector &repos = plater()->get_preset_archive_database()->get_selected_archive_repositories();
+        preset_updater->sync_blocking(preset_bundle, this, repos);
         preset_updater->update_index_db();
-        if (preset_updater->config_update(app_config->orig_version(), PresetUpdater::UpdateParams::FORCED_BEFORE_WIZARD) == PresetUpdater::R_ALL_CANCELED)
-            return false;
+        // Offer update installation.
+        preset_updater->config_update(app_config->orig_version(), PresetUpdater::UpdateParams::SHOW_TEXT_BOX, repos);
     }
 
     auto wizard = new ConfigWizard(mainframe);
+    cw_loading_dlg->Close();
+
     const bool res = wizard->run(reason, start_page);
+
 
     // !!! Deallocate memory after close ConfigWizard.
     // Note, that mainframe is a parent of ConfigWizard.
@@ -3162,7 +3305,6 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
         if (preset_bundle->printers.get_edited_preset().printer_technology() == ptSLA)
             may_switch_to_SLA_preset(_L("Configuration is editing from ConfigWizard"));
     }
-
     return res;
 }
 
@@ -3367,12 +3509,27 @@ bool GUI_App::config_wizard_startup()
     return false;
 }
 
-bool GUI_App::check_updates(const bool verbose)
+bool GUI_App::check_updates(const bool invoked_by_user)
 {	
+     if (invoked_by_user) {
+        // do preset_updater sync so if user runs slicer for a long time, check for updates actually delivers updates.
+        // for preset_updater sync we need to sync archive database first
+        plater()->get_preset_archive_database()->sync_blocking();
+        // Now re-extract offline repos
+        std::string extract_msg;
+        if (!plater()->get_preset_archive_database()->extract_archives_with_check(extract_msg)) {
+            extract_msg = GUI::format("%1%\n\n%2%", _L("Following repositories won't be updated:"), extract_msg);
+            show_error(nullptr, extract_msg);
+        }
+        // then its time for preset_updater sync 
+        preset_updater->sync_blocking(preset_bundle, this, plater()->get_preset_archive_database()->get_selected_archive_repositories());
+        // and then we check updates
+    }
+
 	PresetUpdater::UpdateResult updater_result;
 	try {
         preset_updater->update_index_db();
-		updater_result = preset_updater->config_update(app_config->orig_version(), verbose ? PresetUpdater::UpdateParams::SHOW_TEXT_BOX : PresetUpdater::UpdateParams::SHOW_NOTIFICATION);
+		updater_result = preset_updater->config_update(app_config->orig_version(), invoked_by_user ? PresetUpdater::UpdateParams::SHOW_TEXT_BOX : PresetUpdater::UpdateParams::SHOW_NOTIFICATION, plater()->get_preset_archive_database()->get_selected_archive_repositories());
 		if (updater_result == PresetUpdater::R_INCOMPAT_EXIT) {
 			mainframe->Close();
             // Applicaiton is closing.
@@ -3381,7 +3538,7 @@ bool GUI_App::check_updates(const bool verbose)
 		else if (updater_result == PresetUpdater::R_INCOMPAT_CONFIGURED) {
             m_app_conf_exists = true;
 		}
-		else if (verbose && updater_result == PresetUpdater::R_NOOP) {
+		else if (invoked_by_user && updater_result == PresetUpdater::R_NOOP) {
 			MsgNoUpdates dlg;
 			dlg.ShowModal();
 		}
