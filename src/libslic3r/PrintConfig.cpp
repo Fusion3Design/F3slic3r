@@ -3403,8 +3403,7 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("prefer_clockwise_movements", coBool);
     def->label = L("Prefer clockwise movements");
-    def->tooltip = L("This setting makes the printer print loops clockwise instead of counterclockwise. "
-                     "Most printers don't need to print loops clockwise.");
+    def->tooltip = L("This setting makes the printer print loops clockwise instead of counterclockwise.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBool(false));
 
