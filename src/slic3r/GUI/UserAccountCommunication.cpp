@@ -45,8 +45,6 @@ namespace fs = boost::filesystem;
 namespace Slic3r {
 namespace GUI {
 
-wxDEFINE_EVENT(EVT_UA_NO_TOKENS, UserAccountFailEvent);
-
 
 namespace {
 
@@ -156,9 +154,6 @@ UserAccountCommunication::UserAccountCommunication(wxEvtHandler* evt_handler, Ap
     // perform login at the start, but only with tokens
     if (has_token) {
         do_login();
-    } else {
-        // send evt so preset archive database knows it can sync
-        wxQueueEvent(evt_handler, new UserAccountFailEvent(EVT_UA_NO_TOKENS, {}));
     }
 }
 

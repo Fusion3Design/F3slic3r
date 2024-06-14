@@ -27,7 +27,6 @@ wxDECLARE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_DATA_SUCCESS, UserAccountSuccessEven
 wxDECLARE_EVENT(EVT_UA_FAIL, UserAccountFailEvent); // Soft fail - clears only after some number of fails
 wxDECLARE_EVENT(EVT_UA_RESET, UserAccountFailEvent); // Hard fail - clears all
 wxDECLARE_EVENT(EVT_UA_PRUSACONNECT_PRINTER_DATA_FAIL, UserAccountFailEvent); // Failed to get data for printer to select, soft fail, action does not repeat
-wxDECLARE_EVENT(EVT_UA_NO_TOKENS, UserAccountFailEvent); // when login wont be performed on startup
 
 
 typedef std::function<void(const std::string& body)> UserActionSuccessFn;
