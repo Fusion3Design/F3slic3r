@@ -868,7 +868,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             BOOST_LOG_TRIVIAL(trace) << "Received login from other instance event.";
             user_account->on_login_code_recieved(evt.data);
         });
-        this->q->Bind(EVT_OPEN_PRUSAAUTH, [](OpenPrusaAuthEvent& evt) {
+        this->q->Bind(EVT_OPEN_PRUSAAUTH, [this](OpenPrusaAuthEvent& evt) {
            BOOST_LOG_TRIVIAL(info)  << "open browser: " << evt.data;
            // first register url to be sure to get the code back
            //auto downloader_worker = new DownloaderUtils::Worker(nullptr);
@@ -878,7 +878,14 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                DesktopIntegrationDialog::perform_downloader_desktop_integration();
     #endif // __linux__
            // than open url
-           wxGetApp().open_login_browser_with_dialog(evt.data);
+           //wxGetApp().open_login_browser_with_dialog(evt.data);
+
+           WebViewDialog dlg(this->q
+            , evt.data
+            , _L("Log in")
+            , wxSize(std::max(this->q->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(this->q->GetClientSize().y / 2, 50 * wxGetApp().em_unit()))
+            ,{});
+            dlg.ShowModal();
          });
     
         this->q->Bind(EVT_UA_LOGGEDOUT, [this](UserAccountSuccessEvent& evt) {

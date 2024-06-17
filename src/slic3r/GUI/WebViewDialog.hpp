@@ -104,8 +104,8 @@ public:
     WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size, const std::vector<std::string>& message_handler_names, const std::string& loading_html = "loading");
     virtual ~WebViewDialog();
 
-    virtual void on_show(wxShowEvent& evt) = 0;
-    virtual void on_script_message(wxWebViewEvent& evt) = 0;
+    virtual void on_show(wxShowEvent& evt) {};
+    virtual void on_script_message(wxWebViewEvent& evt);
 
     void on_idle(wxIdleEvent& evt);
     void on_url(wxCommandEvent& evt);
