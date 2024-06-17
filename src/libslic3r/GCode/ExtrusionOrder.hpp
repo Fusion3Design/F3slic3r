@@ -71,7 +71,7 @@ struct NormalExtrusions {
     std::vector<SliceExtrusions> slices_extrusions;
 };
 
-std::optional<Point> get_last_position(const ExtrusionEntitiesPtr &perimeters);
+std::optional<Vec2d> get_last_position(const ExtrusionEntitiesPtr &extrusions, const Vec2d &offset);
 
 using SeamPlacingFunciton = std::function<std::optional<Point>(const Layer &layer, ExtrusionEntity* perimeter, const std::optional<Point>&)>;
 
@@ -82,7 +82,7 @@ std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
     const std::vector<InstanceToPrint> &instances_to_print,
     const unsigned int extruder_id,
     const SeamPlacingFunciton &place_seam,
-    std::optional<Point> &previous_position
+    std::optional<Vec2d> &previous_position
 );
 
 std::vector<NormalExtrusions> get_normal_extrusions(
@@ -92,7 +92,7 @@ std::vector<NormalExtrusions> get_normal_extrusions(
     const std::vector<InstanceToPrint> &instances_to_print,
     const unsigned int extruder_id,
     const SeamPlacingFunciton &place_seam,
-    std::optional<Point> &previous_position
+    std::optional<Vec2d> &previous_position
 );
 
 }

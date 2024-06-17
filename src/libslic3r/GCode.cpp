@@ -2473,7 +2473,10 @@ LayerResult GCodeGenerator::process_layer(
 
     unsigned current_extruder_id{this->m_writer.extruder()->id()};
     unsigned toolchange_number{0};
-    std::optional<Point> previous_position{this->last_position};
+    std::optional<Vec2d> previous_position;
+    if (this->last_position) {
+        previous_position = this->point_to_gcode(*this->last_position);
+    }
 
     std::vector<ExtruderExtrusions> extrusions;
     for (const unsigned int extruder_id : layer_tools.extruders)
@@ -2481,7 +2484,7 @@ LayerResult GCodeGenerator::process_layer(
         if (layer_tools.has_wipe_tower && m_wipe_tower) {
             if (is_toolchange_required(first_layer, layer_tools.extruders.back(), extruder_id, current_extruder_id)) {
                 const WipeTower::ToolChangeResult tool_change{m_wipe_tower->get_toolchange(toolchange_number++)};
-                previous_position = this->gcode_to_point(m_wipe_tower->transform_wt_pt(tool_change.end_pos).cast<double>());
+                previous_position = m_wipe_tower->transform_wt_pt(tool_change.end_pos).cast<double>();
                 current_extruder_id = tool_change.new_tool;
             }
         }
@@ -2495,13 +2498,13 @@ LayerResult GCodeGenerator::process_layer(
             }
         }
 
+        // Extrude brim with the extruder of the 1st region.
         using GCode::ExtrusionOrder::get_last_position;
         if (!m_brim_done) {
             extruder_extrusions.brim = print.brim().entities;
-            previous_position = get_last_position(extruder_extrusions.brim);
+            previous_position = get_last_position(extruder_extrusions.brim, {0.0, 0.0});
             m_brim_done = true;
         }
-
 
         const auto place_seam =[&](
             const Layer &layer, ExtrusionEntity *perimeter, const std::optional<Point> &previous_position
@@ -2581,8 +2584,6 @@ LayerResult GCodeGenerator::process_layer(
                 m_avoid_crossing_perimeters.disable_once();
         }
 
-
-        // Extrude brim with the extruder of the 1st region.
         if (!extruder_extrusions.brim.empty()) {
 
             if (!this->m_config.complete_objects.value) {

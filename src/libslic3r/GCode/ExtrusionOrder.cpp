@@ -27,6 +27,50 @@ int get_extruder_id(
     return extruder_id;
 }
 
+Vec2d get_gcode_point(const Point &point, const Vec2d &offset) {
+    return Vec2d(unscaled<double>(point.x()), unscaled<double>(point.y())) + offset;
+}
+
+Point get_instance_point(const Vec2d &point, const Vec2d &offset) {
+    return Point::new_scale(point - offset);
+}
+
+std::optional<Vec2d> get_gcode_point(const std::optional<Point> &point, const Vec2d &offset) {
+    if (point) {
+        return get_gcode_point(*point, offset);
+    }
+    return std::nullopt;
+}
+
+std::optional<Point> get_instance_point(const std::optional<Vec2d> &point, const Vec2d &offset) {
+    if (point) {
+        return get_instance_point(*point, offset);
+    }
+    return std::nullopt;
+}
+
+std::optional<Vec2d> get_last_position(const ExtrusionEntityReferences &extrusions, const Vec2d &offset) {
+    if (!extrusions.empty()) {
+        const ExtrusionEntityReference &last_extrusion{extrusions.back()};
+        auto last_loop{dynamic_cast<const ExtrusionLoop *>(&last_extrusion.extrusion_entity())};
+        if (last_loop != nullptr) {
+            return get_gcode_point(last_loop->seam, offset);
+        }
+        const Point last_point{
+            last_extrusion.flipped() ? last_extrusion.extrusion_entity().first_point() :
+                                       last_extrusion.extrusion_entity().last_point()};
+        return get_gcode_point(last_point, offset);
+    }
+    return std::nullopt;
+}
+
+std::optional<Vec2d> get_last_position(const ExtrusionEntitiesPtr &extrusions, const Vec2d &offset){
+    if (!extrusions.empty()) {
+        return get_last_position({{*extrusions.back(), false}}, offset);
+    }
+    return std::nullopt;
+}
+
 using ExtractEntityPredicate = std::function<bool(const ExtrusionEntityCollection&, const PrintRegion&)>;
 
 ExtrusionEntitiesPtr extract_infill_extrusions(
@@ -111,7 +155,8 @@ std::vector<InfillRange> extract_infill_ranges(
     const Print &print,
     const Layer &layer,
     const LayerIsland &island,
-    std::optional<Point> previous_position,
+    const Vec2d &offset,
+    std::optional<Vec2d> &previous_position,
     const ExtractEntityPredicate &predicate
 ) {
     std::vector<InfillRange> result;
@@ -132,75 +177,19 @@ std::vector<InfillRange> extract_infill_ranges(
             predicate
         )};
 
-        const Point* start_near = previous_position ? &(*(previous_position)) : nullptr;
-        const std::vector<ExtrusionEntityReference> sorted_extrusions{sort_fill_extrusions(extrusions, start_near)};
+        const std::optional<Point> previous_position_scaled{get_instance_point(previous_position, offset)};
+        const Point* start_near{previous_position_scaled ? &(*(previous_position_scaled)) : nullptr};
+        const ExtrusionEntityReferences sorted_extrusions{sort_fill_extrusions(extrusions, start_near)};
 
-        if (! sorted_extrusions.empty()) {
+        if (!sorted_extrusions.empty()) {
             result.push_back({sorted_extrusions, &region});
-            previous_position = sorted_extrusions.back().flipped() ?
-                sorted_extrusions.back().extrusion_entity().first_point() :
-                sorted_extrusions.back().extrusion_entity().last_point();
+        }
+        if (const auto last_position = get_last_position(sorted_extrusions, offset)) {
+            previous_position = last_position;
         }
         it = it_end;
     }
     return result;
-}
-
-std::optional<Point> get_last_position(const std::vector<InfillRange> &infill_ranges) {
-    if (!infill_ranges.empty() && !infill_ranges.back().items.empty()) {
-        const ExtrusionEntityReference &last_infill{infill_ranges.back().items.back()};
-        return last_infill.flipped() ? last_infill.extrusion_entity().first_point() :
-                                       last_infill.extrusion_entity().last_point();
-    }
-    return std::nullopt;
-}
-
-std::optional<Point> get_last_position(const ExtrusionEntityReferences &extrusions) {
-    if (!extrusions.empty()) {
-        const ExtrusionEntityReference &last_extrusion{extrusions.back()};
-        return last_extrusion.flipped() ? last_extrusion.extrusion_entity().first_point() :
-                                          last_extrusion.extrusion_entity().last_point();
-    }
-    return std::nullopt;
-}
-
-std::optional<Point> get_last_position(const ExtrusionEntitiesPtr &perimeters){
-    if (!perimeters.empty()) {
-        auto last_perimeter_loop{dynamic_cast<const ExtrusionLoop *>(perimeters.back())};
-        if (last_perimeter_loop != nullptr) {
-            return last_perimeter_loop->seam;
-        }
-        auto last_perimeter_multi_path{dynamic_cast<const ExtrusionMultiPath *>(perimeters.back())};
-        if (last_perimeter_multi_path != nullptr) {
-            return last_perimeter_multi_path->last_point();
-        }
-    }
-    return std::nullopt;
-}
-
-std::optional<Point> get_last_position(const std::vector<SliceExtrusions> &slice_extrusions, const bool infill_first) {
-    if (slice_extrusions.empty()) {
-        return {};
-    }
-    const SliceExtrusions &last_slice{slice_extrusions.back()};
-    if (!last_slice.ironing_extrusions.empty()) {
-        return get_last_position(slice_extrusions.back().ironing_extrusions);
-    }
-    if (last_slice.common_extrusions.empty()) {
-        return {};
-    }
-    const IslandExtrusions last_island{last_slice.common_extrusions.back()};
-    if (infill_first) {
-        if (!last_island.perimeters.empty()) {
-            return get_last_position(last_island.perimeters);
-        }
-        return get_last_position(last_island.infill_ranges);
-    } else {
-        if (!last_island.infill_ranges.empty()) {
-            return get_last_position(last_island.infill_ranges);
-        }
-        return get_last_position(last_island.perimeters);
-    }
 }
 
 std::vector<IslandExtrusions> extract_island_extrusions(
@@ -209,7 +198,8 @@ std::vector<IslandExtrusions> extract_island_extrusions(
     const Layer &layer,
     const ExtractEntityPredicate &predicate,
     const SeamPlacingFunciton &place_seam,
-    std::optional<Point> &previous_position
+    const Vec2d &offset,
+    std::optional<Vec2d> &previous_position
 ) {
     std::vector<IslandExtrusions> result;
     for (const LayerIsland &island : lslice.islands) {
@@ -230,33 +220,28 @@ std::vector<IslandExtrusions> extract_island_extrusions(
 
         if (print.config().infill_first) {
             island_extrusions.infill_ranges = extract_infill_ranges(
-                print, layer, island, previous_position, infill_predicate
+                print, layer, island, offset, previous_position, infill_predicate
             );
-            if (const auto last_position = get_last_position(island_extrusions.infill_ranges)) {
-                previous_position = last_position;
-            }
 
             for (ExtrusionEntity* perimeter : island_extrusions.perimeters) {
-                previous_position = place_seam(layer, perimeter, previous_position);
-            }
-
-            if (const auto last_position = get_last_position(island_extrusions.perimeters)) {
-                previous_position = last_position;
+                std::optional<Point> instance_point{get_instance_point(previous_position, offset)};
+                const std::optional<Point> seam_point{place_seam(layer, perimeter, instance_point)};
+                if (seam_point) {
+                    previous_position = get_gcode_point(*seam_point, offset);
+                }
             }
         } else {
             for (ExtrusionEntity* perimeter : island_extrusions.perimeters) {
-                previous_position = place_seam(layer, perimeter, previous_position);
+                std::optional<Point> instance_point{get_instance_point(previous_position, offset)};
+                const std::optional<Point> seam_point{place_seam(layer, perimeter, instance_point)};
+                if (seam_point) {
+                    previous_position = get_gcode_point(*seam_point, offset);
+                }
             }
 
-            if (const auto last_position = get_last_position(island_extrusions.perimeters)) {
-                previous_position = last_position;
-            }
             island_extrusions.infill_ranges = {extract_infill_ranges(
-                print, layer, island, previous_position, infill_predicate
+                print, layer, island, offset, previous_position, infill_predicate
             )};
-            if (const auto last_position = get_last_position(island_extrusions.infill_ranges)) {
-                previous_position = last_position;
-            }
         }
     }
     return result;
@@ -267,7 +252,8 @@ std::vector<InfillRange> extract_ironing_extrusions(
     const Print &print,
     const Layer &layer,
     const ExtractEntityPredicate &predicate,
-    std::optional<Point> &previous_position
+    const Vec2d &offset,
+    std::optional<Vec2d> &previous_position
 ) {
     std::vector<InfillRange> result;
 
@@ -277,15 +263,11 @@ std::vector<InfillRange> extract_ironing_extrusions(
         };
 
         const std::vector<InfillRange> ironing_ranges{extract_infill_ranges(
-            print, layer, island, previous_position, ironing_predicate
+            print, layer, island, offset, previous_position, ironing_predicate
         )};
         result.insert(
             result.end(), ironing_ranges.begin(), ironing_ranges.end()
         );
-
-        if (const auto last_position = get_last_position(ironing_ranges)) {
-            previous_position = last_position;
-        }
     }
     return result;
 }
@@ -295,7 +277,8 @@ std::vector<SliceExtrusions> get_slices_extrusions(
     const Layer &layer,
     const ExtractEntityPredicate &predicate,
     const SeamPlacingFunciton &place_seam,
-    std::optional<Point> previous_position
+    const Vec2d &offset,
+    std::optional<Vec2d> &previous_position
 ) {
     // Note: ironing.
     // FIXME move ironing into the loop above over LayerIslands?
@@ -309,9 +292,9 @@ std::vector<SliceExtrusions> get_slices_extrusions(
         const LayerSlice &lslice = layer.lslices_ex[idx];
         result.emplace_back(SliceExtrusions{
             extract_island_extrusions(
-                lslice, print, layer, predicate, place_seam, previous_position
+                lslice, print, layer, predicate, place_seam, offset, previous_position
             ),
-            extract_ironing_extrusions(lslice, print, layer, predicate, previous_position)
+            extract_ironing_extrusions(lslice, print, layer, predicate, offset, previous_position)
         });
     }
     return result;
@@ -376,7 +359,7 @@ std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
     const std::vector<InstanceToPrint> &instances_to_print,
     const unsigned int extruder_id,
     const SeamPlacingFunciton &place_seam,
-    std::optional<Point> &previous_position
+    std::optional<Vec2d> &previous_position
 ) {
     std::vector<std::vector<SliceExtrusions>> result;
 
@@ -396,10 +379,12 @@ std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
                 return true;
             };
 
+            const PrintObject &print_object = instance.print_object;
+            const Vec2d &offset = unscale(print_object.instances()[instance.instance_id].shift);
+
             result.emplace_back(get_slices_extrusions(
-                print, *layer, predicate, place_seam, previous_position
+                print, *layer, predicate, place_seam, offset, previous_position
             ));
-            previous_position = get_last_position(result.back(), print.config().infill_first);
         }
     }
     return result;
@@ -412,12 +397,15 @@ std::vector<NormalExtrusions> get_normal_extrusions(
     const std::vector<InstanceToPrint> &instances_to_print,
     const unsigned int extruder_id,
     const SeamPlacingFunciton &place_seam,
-    std::optional<Point> &previous_position
+    std::optional<Vec2d> &previous_position
 ) {
     std::vector<NormalExtrusions> result;
 
     for (std::size_t i{0}; i < instances_to_print.size(); ++i) {
         const InstanceToPrint &instance{instances_to_print[i]};
+        const PrintObject &print_object = instance.print_object;
+        const Vec2d &offset = unscale(print_object.instances()[instance.instance_id].shift);
+
         result.emplace_back();
 
         if (layers[instance.object_layer_to_print_id].support_layer != nullptr) {
@@ -427,7 +415,10 @@ std::vector<NormalExtrusions> get_normal_extrusions(
                 translate_support_extruder(instance.print_object.config().support_material_extruder.value, layer_tools, print.config().filament_soluble),
                 translate_support_extruder(instance.print_object.config().support_material_interface_extruder.value, layer_tools, print.config().filament_soluble)
             );
-            previous_position = get_last_position(result.back().support_extrusions);
+
+            if (const auto last_position = get_last_position(result.back().support_extrusions, offset)) {
+                previous_position = last_position;
+            }
         }
 
         if (const Layer *layer = layers[instance.object_layer_to_print_id].object_layer; layer) {
@@ -447,9 +438,9 @@ std::vector<NormalExtrusions> get_normal_extrusions(
                 *layer,
                 predicate,
                 place_seam,
+                offset,
                 previous_position
             );
-            previous_position = get_last_position(result.back().slices_extrusions, print.config().infill_first);
         }
     }
     return result;
