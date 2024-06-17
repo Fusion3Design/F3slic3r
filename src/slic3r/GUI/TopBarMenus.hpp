@@ -21,6 +21,7 @@ private:
 
     // Prusa Account menu items
     wxMenuItem*             m_login_item        { nullptr };
+    wxMenuItem*             m_hide_login_item   { nullptr };
 
     TopBarItemsCtrl*        m_popup_ctrl        { nullptr };
 
@@ -30,6 +31,7 @@ private:
 
     std::function<void()>           m_cb_toggle_remember_session    { nullptr };
     std::function<void()>           m_cb_act_with_user_account      { nullptr };
+    std::function<void()>           m_cb_hide_user_account          { nullptr };
     std::function<UserAccountInfo()>m_cb_get_user_account_info      { nullptr };
 
 public:
@@ -46,6 +48,7 @@ public:
     void ApplyWorkspacesMenu();
     void CreateAccountMenu();
     void UpdateAccountMenu();
+    void RemoveHideLoginItem();
 
     void Popup(TopBarItemsCtrl* popup_ctrl, wxMenu* menu, wxPoint pos);
     void BindEvtClose();
@@ -70,10 +73,12 @@ public:
 
     void set_account_menu_callbacks(std::function<void()>               cb_toggle_remember_session,
                                     std::function<void()>               cb_act_with_user_account  ,
+                                    std::function<void()>               cb_hide_user_account      ,
                                     std::function<UserAccountInfo()>    cb_get_user_account_info   )
     {
         m_cb_toggle_remember_session = cb_toggle_remember_session;
         m_cb_act_with_user_account   = cb_act_with_user_account;
+        m_cb_hide_user_account       = cb_hide_user_account;
         m_cb_get_user_account_info   = cb_get_user_account_info;
     }
 

@@ -6965,8 +6965,11 @@ void Plater::act_with_user_account()
     if (p->user_account) {
         if (p->user_account->is_logged())
             p->user_account->do_logout();
-        else
+        else {
             p->user_account->do_login();
+            if (!wxGetApp().app_config->has("show_login_button"))
+                wxGetApp().app_config->set("show_login_button", "1");
+        }
     }
 }
 

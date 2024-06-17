@@ -517,6 +517,12 @@ void TopBarItemsCtrl::UpdateMode()
     this->Layout();
 }
 
+void TopBarItemsCtrl::ShowUserAccount(bool show)
+{
+    m_account_btn->Show(show);
+    this->Layout();
+}
+
 void TopBarItemsCtrl::Rescale()
 {
     update_margins();
