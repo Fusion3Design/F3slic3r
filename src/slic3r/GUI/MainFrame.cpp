@@ -311,7 +311,13 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
     update_ui_from_settings();    // FIXME (?)
 
     if (m_plater != nullptr) {
+#if ENABLE_HACK_GCODEVIEWER_SLOW_ON_MAC
+        // When the application is run as GCodeViewer the collapse toolbar is set as enabled, but rendered outside of the screen
+        m_plater->get_collapse_toolbar().set_enabled(wxGetApp().is_gcode_viewer() ?
+            true : wxGetApp().app_config->get_bool("show_collapse_button"));
+#else
         m_plater->get_collapse_toolbar().set_enabled(wxGetApp().app_config->get_bool("show_collapse_button"));
+#endif // ENABLE_HACK_GCODEVIEWER_SLOW_ON_MAC
         m_plater->show_action_buttons(true);
 
         preferences_dialog = new PreferencesDialog(this);
@@ -433,7 +439,11 @@ void MainFrame::update_layout()
     {
         m_main_sizer->Add(m_plater, 1, wxEXPAND);
         m_plater->set_default_bed_shape();
+#if ENABLE_HACK_GCODEVIEWER_SLOW_ON_MAC
+        m_plater->get_collapse_toolbar().set_enabled(true);
+#else
         m_plater->get_collapse_toolbar().set_enabled(false);
+#endif // !ENABLE_HACK_GCODEVIEWER_SLOW_ON_MAC
         m_plater->collapse_sidebar(true);
         m_plater->Show();
         break;

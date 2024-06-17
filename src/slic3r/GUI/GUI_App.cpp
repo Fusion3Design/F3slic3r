@@ -3370,14 +3370,10 @@ void GUI_App::gcode_thumbnails_debug()
     boost::nowide::ifstream in_file(in_filename.c_str());
     std::vector<std::string> rows;
     std::string row;
-    if (in_file.good())
-    {
-        while (std::getline(in_file, gcode_line))
-        {
-            if (in_file.good())
-            {
-                if (boost::starts_with(gcode_line, BEGIN_MASK))
-                {
+    if (in_file.good()) {
+        while (std::getline(in_file, gcode_line)) {
+            if (in_file.good()) {
+                if (boost::starts_with(gcode_line, BEGIN_MASK)) {
                     reading_image = true;
                     gcode_line = gcode_line.substr(BEGIN_MASK.length() + 1);
                     std::string::size_type x_pos = gcode_line.find('x');
@@ -3387,12 +3383,10 @@ void GUI_App::gcode_thumbnails_debug()
                     height = (unsigned int)::atoi(height_str.c_str());
                     row.clear();
                 }
-                else if (reading_image && boost::starts_with(gcode_line, END_MASK))
-                {
+                else if (reading_image && boost::starts_with(gcode_line, END_MASK)) {
                     std::string out_filename = out_path + std::to_string(width) + "x" + std::to_string(height) + ".png";
                     boost::nowide::ofstream out_file(out_filename.c_str(), std::ios::binary);
-                    if (out_file.good())
-                    {
+                    if (out_file.good()) {
                         std::string decoded;
                         decoded.resize(boost::beast::detail::base64::decoded_size(row.size()));
                         decoded.resize(boost::beast::detail::base64::decode((void*)&decoded[0], row.data(), row.size()).first);
