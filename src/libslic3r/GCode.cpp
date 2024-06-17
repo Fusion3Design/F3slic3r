@@ -2463,84 +2463,50 @@ LayerResult GCodeGenerator::process_layer(
     }
 
     using GCode::ExtrusionOrder::NormalExtrusions;
-    struct ExtruderExtrusions {
-        unsigned extruder_id;
-        std::vector<std::pair<std::size_t, const ExtrusionEntity *>> skirt;
-        ExtrusionEntitiesPtr brim;
-        std::vector<std::vector<SliceExtrusions>> overriden_extrusions;
-        std::vector<NormalExtrusions> normal_extrusions;
+
+
+
+    const auto place_seam =[&](
+        const Layer &layer, ExtrusionEntity *perimeter, const std::optional<Point> &previous_position
+    ) {
+        auto loop{dynamic_cast<ExtrusionLoop *>(perimeter)};
+
+        Point seam_point{previous_position ? *previous_position : Point::Zero()};
+        if (!this->m_config.spiral_vase && loop != nullptr) {
+            seam_point = this->m_seam_placer.place_seam(&layer, *loop, seam_point);
+            loop->seam = seam_point;
+        }
+
+        auto path{dynamic_cast<const ExtrusionMultiPath *>(perimeter)};
+        if (path != nullptr) {
+            return path->last_point();
+        } else {
+            return seam_point;
+        }
     };
 
-    unsigned current_extruder_id{this->m_writer.extruder()->id()};
-    unsigned toolchange_number{0};
     std::optional<Vec2d> previous_position;
     if (this->last_position) {
         previous_position = this->point_to_gcode(*this->last_position);
     }
-
-    std::vector<ExtruderExtrusions> extrusions;
-    for (const unsigned int extruder_id : layer_tools.extruders)
-    {
-        if (layer_tools.has_wipe_tower && m_wipe_tower) {
-            if (is_toolchange_required(first_layer, layer_tools.extruders.back(), extruder_id, current_extruder_id)) {
-                const WipeTower::ToolChangeResult tool_change{m_wipe_tower->get_toolchange(toolchange_number++)};
-                previous_position = m_wipe_tower->transform_wt_pt(tool_change.end_pos).cast<double>();
-                current_extruder_id = tool_change.new_tool;
-            }
-        }
-
-        ExtruderExtrusions extruder_extrusions{extruder_id};
-
-        if (auto loops_it = skirt_loops_per_extruder.find(extruder_id); loops_it != skirt_loops_per_extruder.end()) {
-            const std::pair<size_t, size_t> loops = loops_it->second;
-            for (std::size_t i = loops.first; i < loops.second; ++i) {
-                extruder_extrusions.skirt.emplace_back(i, print.skirt().entities[i]);
-            }
-        }
-
-        // Extrude brim with the extruder of the 1st region.
-        using GCode::ExtrusionOrder::get_last_position;
-        if (!m_brim_done) {
-            extruder_extrusions.brim = print.brim().entities;
-            previous_position = get_last_position(extruder_extrusions.brim, {0.0, 0.0});
-            m_brim_done = true;
-        }
-
-        const auto place_seam =[&](
-            const Layer &layer, ExtrusionEntity *perimeter, const std::optional<Point> &previous_position
-        ) {
-            auto loop{dynamic_cast<ExtrusionLoop *>(perimeter)};
-
-            Point seam_point{previous_position ? *previous_position : Point::Zero()};
-            if (!this->m_config.spiral_vase && loop != nullptr) {
-                seam_point = this->m_seam_placer.place_seam(&layer, *loop, seam_point);
-                loop->seam = seam_point;
-            }
-
-            auto path{dynamic_cast<const ExtrusionMultiPath *>(perimeter)};
-            if (path != nullptr) {
-                return path->last_point();
-            } else {
-                return seam_point;
-            }
-        };
-
-        using GCode::ExtrusionOrder::get_overriden_extrusions;
-        bool is_anything_overridden = layer_tools.wiping_extrusions().is_anything_overridden();
-        if (is_anything_overridden) {
-            extruder_extrusions.overriden_extrusions = get_overriden_extrusions(
-                print, layers, layer_tools, instances_to_print, extruder_id, place_seam,
-                previous_position
-            );
-        }
-
-        using GCode::ExtrusionOrder::get_normal_extrusions;
-        extruder_extrusions.normal_extrusions = get_normal_extrusions(
-            print, layers, layer_tools, instances_to_print, extruder_id, place_seam,
+    using GCode::ExtrusionOrder::ExtruderExtrusions;
+    using GCode::ExtrusionOrder::get_extrusions;
+    const std::vector<ExtruderExtrusions> extrusions{
+        get_extrusions(
+            print,
+            m_wipe_tower.get(),
+            layers,
+            first_layer,
+            layer_tools,
+            instances_to_print,
+            skirt_loops_per_extruder,
+            this->m_writer.extruder()->id(),
+            place_seam,
+            !m_brim_done,
             previous_position
-        );
-        extrusions.push_back(std::move(extruder_extrusions));
-    }
+        )
+    };
+    m_brim_done = true;
 
     // Extrude the skirt, brim, support, perimeters, infill ordered by the extruders.
     for (const ExtruderExtrusions &extruder_extrusions : extrusions)
