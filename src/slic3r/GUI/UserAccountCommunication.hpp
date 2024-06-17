@@ -5,6 +5,8 @@
 #include "Event.hpp"
 #include "libslic3r/AppConfig.hpp"
 
+#include <wx/timer.h>
+
 #include <queue>
 #include <condition_variable>
 #include <map>
