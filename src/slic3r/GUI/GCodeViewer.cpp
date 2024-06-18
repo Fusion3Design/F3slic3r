@@ -256,6 +256,7 @@ static std::string to_string(libvgcode::EMoveType type)
 {
     switch (type)
     {
+    // TRN: Following strings are labels in the G-code Viewer legend.
     case libvgcode::EMoveType::Noop:        { return _u8L("Noop"); }
     case libvgcode::EMoveType::Retract:     { return _u8L("Retract"); }
     case libvgcode::EMoveType::Unretract:   { return _u8L("Unretract"); }
@@ -275,6 +276,7 @@ static std::string to_string(libvgcode::EGCodeExtrusionRole role)
 {
     switch (role)
     {
+    // TRN: Following strings are labels in the G-code Viewer legend.
     case libvgcode::EGCodeExtrusionRole::None:                     { return _u8L("Unknown"); }
     case libvgcode::EGCodeExtrusionRole::Perimeter:                { return _u8L("Perimeter"); }
     case libvgcode::EGCodeExtrusionRole::ExternalPerimeter:        { return _u8L("External perimeter"); }
@@ -326,6 +328,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
         ImGuiPureWrap::text(std::string(buf));
 
         ImGui::SameLine();
+        // TRN: Show/hide properties is a tooltip on a button which toggles an extra window in the G-code Viewer, showing properties of current G-code segment.
         if (imgui.image_button(properties_shown ? ImGui::HorizontalHide : ImGui::HorizontalShow, properties_shown ? _u8L("Hide properties") : _u8L("Show properties"))) {
             properties_shown = !properties_shown;
             imgui.requires_extra_frame();

@@ -353,7 +353,7 @@ bool PresetArchiveDatabase::set_selected_repositories(const std::vector<std::str
             if (!archive->is_extracted()) {
                 // non existent local repo since start selected
                 msg = GUI::format(
-                    _L("Cannot select offline repository from path: %1%. It was not extracted."),
+                    _L("Cannot select local repository from path: %1%. It was not extracted."),
                     archive->get_manifest().source_path
                 );
                 return false;
@@ -380,12 +380,12 @@ bool PresetArchiveDatabase::set_selected_repositories(const std::vector<std::str
 bool PresetArchiveDatabase::extract_archives_with_check(std::string &msg)
 {
     extract_local_archives();
-    for (auto &pair : m_selected_repositories_uuid) {
+    for (const std::pair<std::string, bool>& pair : m_selected_repositories_uuid) {
         if (!pair.second) {
             continue;
         }
-        std::string uuid = pair.first;
-        auto compare_repo = [uuid](const std::unique_ptr<ArchiveRepository> &repo) {
+        const std::string uuid = pair.first;
+        auto compare_repo = [&uuid](const std::unique_ptr<ArchiveRepository> &repo) {
             return repo->get_uuid() == uuid;
         };
 
@@ -393,10 +393,7 @@ bool PresetArchiveDatabase::extract_archives_with_check(std::string &msg)
         assert(archives_it != m_archive_repositories.end());
         if (!archives_it->get()->is_extracted()) {
             // non existent local repo since start selected
-            msg += GUI::format(
-                _L("Offline repository from path: %1% was not extracted.\n"),
-                archives_it->get()->get_manifest().source_path
-            );
+            msg += std::string(msg.empty() ? "" : "\n") + archives_it->get()->get_manifest().source_path.string();
         }
     }
     return msg.empty();

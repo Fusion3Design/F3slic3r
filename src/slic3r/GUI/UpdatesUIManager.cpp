@@ -40,7 +40,7 @@ RepositoryUpdateUIManager::RepositoryUpdateUIManager(wxWindow* parent, PresetArc
 
     m_main_sizer->AddSpacer(em);
 
-    auto offline_label = new wxStaticText(m_parent, wxID_ANY, _L("Offline Repositories"));
+    auto offline_label = new wxStaticText(m_parent, wxID_ANY, _L("Local Repositories"));
     offline_label->SetFont(wxGetApp().bold_font());
 
     m_main_sizer->Add(offline_label, 0, wxTOP | wxLEFT, 2 * em);
@@ -97,7 +97,8 @@ void RepositoryUpdateUIManager::fill_grids()
 
         // header
 
-        for (const wxString& l : std::initializer_list<wxString>{ _L("Use"), "", _L("Name"), _L("Descrition") }) {
+        // TRN: This string appears in Configuration Wizard in the 'Configuration Manager' step.
+        for (const wxString& l : std::initializer_list<wxString>{ _L("Use"), "", _L("Name"), _L("Description") }) {
             auto text = new wxStaticText(m_parent, wxID_ANY, l);
             text->SetFont(wxGetApp().bold_font());
             add(text);
@@ -165,7 +166,7 @@ void RepositoryUpdateUIManager::fill_grids()
 
             {
                 wxStaticBitmap* bmp = new wxStaticBitmap(m_parent, wxID_ANY, *get_bmp_bundle(entry.is_ok ? "tick_mark" : "exclamation"));
-                bmp->SetToolTip(entry.is_ok ? _L("Exists") : _L("Doesn't exist"));
+                bmp->SetToolTip(entry.is_ok ? _L("File exists") : _L("File does NOT exist"));
                 add(bmp);
             }
 
@@ -240,7 +241,7 @@ void RepositoryUpdateUIManager::remove_offline_repos(const std::string& id)
 void RepositoryUpdateUIManager::load_offline_repos()
 {
     wxArrayString input_files;
-    wxFileDialog dialog(m_parent, _L("Choose one or more ZIP-files") + ":",
+    wxFileDialog dialog(m_parent, _L("Choose one or more ZIP files") + ":",
         from_u8(wxGetApp().app_config->get_last_dir()), "",
         file_wildcards(FT_ZIP), wxFD_OPEN | /*wxFD_MULTIPLE | */wxFD_FILE_MUST_EXIST);
 

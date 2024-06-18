@@ -1888,7 +1888,7 @@ wxString repo_title(const std::string& repo_id, const std::string& repo_name)
 {
     if (repo_name.empty())
     {
-        return repo_id.empty() ? _L("Other Vendors") : format_wxstr(_L("%1% Vendors"), repo_id);
+        return repo_id.empty() ? wxString::FromUTF8("Unknown repo") : format_wxstr("Unnamed repo (ID %1%)", repo_id);
     }
     return repo_name;
 }
@@ -1947,12 +1947,12 @@ PageVendors::PageVendors(ConfigWizard* parent, std::string repo_id /*= wxEmptySt
                     }
 
                 if (!user_presets_list.IsEmpty()) {
-                    wxString message = format_wxstr(_L_PLURAL("Following user preset has a same name as one of added system presets from '%1%' vendor:\n"
-                                                              "%2%Please note that this user preset will be rewrite by system preset.\n\n"
-                                                              "Do you still wish to add presets from '%1%'?",
-                                                              "Following user presets have same names as some of added system presets from '%1%' vendor:\n"
-                                                              "%2%Please note that these user presets will be rewrite by system presets.\n\n"
-                                                              "Do you still wish to add presets from '%1%'?",
+                    wxString message = format_wxstr(_L_PLURAL("Existing user preset '%2%' has the same name as one of new system presets from vendor '%1%'.\n"
+                                                              "Please note that this user preset will be rewritten by the system preset.\n\n"
+                                                              "Do you still wish to add presets from vendor '%1%'?",
+                                                              "Existing user presets (%2%) have the same names as some of new system presets from vendor '%1%'.\n"
+                                                              "Please note that these user presets will be rewritten by the system presets.\n\n"
+                                                              "Do you still wish to add presets from vendor '%1%'?",
                                                     user_presets_cnt), vendor->name, user_presets_list);
 
                     MessageDialog msg(this->GetParent(), message, _L("Notice"), wxYES_NO);
@@ -3775,9 +3775,10 @@ bool ConfigWizard::priv::can_clear_printer_pages()
     if (msg.IsEmpty())
         return true;
 
-    wxString message = format_wxstr( _L("Next pages will be deleted after configuration update:%1%\n"
-                                        "Installed presets will be uninstalled.\n"
-                                        "Would you like to process it?"), "\n\n"+ msg);
+    // TRN: %1% contains list of pages to be removed, each on its own line and ending with a line break.
+    wxString message = format_wxstr( _L("Following Configuration Wizard pages will be removed after the configuration update:\n\n%1%\n"
+                                        "Installed presets for the respective printers will also be removed.\n"
+                                        "Do you want to continue?"), msg);
 
     MessageDialog msg_dlg(this->q, message, _L("Notice"), wxYES_NO);
     return msg_dlg.ShowModal() == wxID_YES;

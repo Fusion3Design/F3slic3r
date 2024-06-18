@@ -471,7 +471,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
 
     wxBoxSizer* right_sizer = new wxBoxSizer(wxHORIZONTAL);
 
-    m_workspace_btn = new ButtonWithPopup(this, _L("Workspace"), "mode_simple");
+    m_workspace_btn = new ButtonWithPopup(this, "Workspace", "mode_simple");
     right_sizer->AddStretchSpacer(20);
     right_sizer->Add(m_workspace_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxALL, m_btn_margin);
     

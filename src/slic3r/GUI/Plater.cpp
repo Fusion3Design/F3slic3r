@@ -991,7 +991,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         this->q->Bind(EVT_UA_PRUSACONNECT_PRINTER_DATA_FAIL, [this](UserAccountFailEvent& evt) {
             BOOST_LOG_TRIVIAL(error) << "Failed communication with Prusa Account: " << evt.data;
             user_account->on_communication_fail();
-            std::string msg = _u8L("Failed to select printer from PrusaConnect.");
+            std::string msg = _u8L("Failed to select printer from Prusa Connect.");
             this->notification_manager->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
             this->notification_manager->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::WarningNotificationLevel, msg);
         });
@@ -1461,8 +1461,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                         if (!found) {
                             // return to original print profile
                             wxGetApp().get_tab(Preset::Type::TYPE_SLA_PRINT)->select_preset(edited_print_name, false);
-                            std::string notif_text = into_u8(_L("Material preset was not loaded:"));
-                            notif_text += "\n - " + preset_name;
+                            std::string notif_text = GUI::format(_L("Material preset was not loaded:\n - %1%"), preset_name);
                             q->get_notification_manager()->push_notification(NotificationType::CustomNotification,
                                 NotificationManager::NotificationLevel::PrintInfoNotificationLevel, notif_text);
                             break;
@@ -5987,7 +5986,7 @@ void Plater::connect_gcode()
         }
     }   
     if (dialog_msg.empty())  {
-        show_error(this, _L("Failed to select a printer. PrusaConnect did not return a value."));
+        show_error(this, _L("Failed to select a printer."));
         return;
     }
     BOOST_LOG_TRIVIAL(debug) << "Message from Printer pick webview: " << dialog_msg;
@@ -6008,7 +6007,7 @@ void Plater::connect_gcode()
 
     std::string data_subtree = p->user_account->get_print_data_from_json(dialog_msg, "data");
     if (filename.empty() || team_id.empty() || data_subtree.empty()) {
-        std::string msg = _u8L("Failed to read response from Connect server. Upload is canceled.");
+        std::string msg = _u8L("Failed to read response from Prusa Connect server. Upload is cancelled.");
         BOOST_LOG_TRIVIAL(error) << msg;
         BOOST_LOG_TRIVIAL(error) << "Response: " << dialog_msg;
         show_error(this, msg);

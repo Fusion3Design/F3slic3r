@@ -86,19 +86,19 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const 
 #ifdef DEBUG_URL_PANEL
     // Create the Tools menu
     m_tools_menu = new wxMenu();
-    wxMenuItem* viewSource = m_tools_menu->Append(wxID_ANY, _L("View Source"));
-    wxMenuItem* viewText = m_tools_menu->Append(wxID_ANY, _L("View Text"));
+    wxMenuItem* viewSource = m_tools_menu->Append(wxID_ANY, "View Source");
+    wxMenuItem* viewText = m_tools_menu->Append(wxID_ANY, "View Text");
     m_tools_menu->AppendSeparator();
 
     wxMenu* script_menu = new wxMenu;
    
     m_script_custom = script_menu->Append(wxID_ANY, "Custom script");
-    m_tools_menu->AppendSubMenu(script_menu, _L("Run Script"));
-    wxMenuItem* addUserScript = m_tools_menu->Append(wxID_ANY, _L("Add user script"));
-    wxMenuItem* setCustomUserAgent = m_tools_menu->Append(wxID_ANY, _L("Set custom user agent"));
+    m_tools_menu->AppendSubMenu(script_menu, "Run Script");
+    wxMenuItem* addUserScript = m_tools_menu->Append(wxID_ANY, "Add user script");
+    wxMenuItem* setCustomUserAgent = m_tools_menu->Append(wxID_ANY, "Set custom user agent");
 
-    m_context_menu = m_tools_menu->AppendCheckItem(wxID_ANY, _L("Enable Context Menu"));
-    m_dev_tools = m_tools_menu->AppendCheckItem(wxID_ANY, _L("Enable Dev Tools"));
+    m_context_menu = m_tools_menu->AppendCheckItem(wxID_ANY, "Enable Context Menu");
+    m_dev_tools = m_tools_menu->AppendCheckItem(wxID_ANY, "Enable Dev Tools");
 
 #endif
 
@@ -443,7 +443,7 @@ case type: \
     BOOST_LOG_TRIVIAL(error) << "WebViewPanel error: " << category;
     load_error_page();
 #ifdef DEBUG_URL_PANEL
-    m_info->ShowMessage(_L("An error occurred loading ") + evt.GetURL() + "\n" +
+    m_info->ShowMessage(wxString("An error occurred loading ") + evt.GetURL() + "\n" +
         "'" + category + "'", wxICON_ERROR);
 #endif
 }
@@ -637,7 +637,7 @@ void ConnectWebViewPanel::on_user_token(UserAccountSuccessEvent& e)
 
 void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
 {
-    BOOST_LOG_TRIVIAL(debug) << "recieved message from PrusaConnect FE: " << evt.GetString();
+    BOOST_LOG_TRIVIAL(debug) << "received message from Prusa Connect FE: " << evt.GetString();
     handle_message(into_u8(evt.GetString()));
 }
 void ConnectWebViewPanel::on_navigation_request(wxWebViewEvent &evt) 
@@ -819,19 +819,19 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
 #ifdef DEBUG_URL_PANEL
     // Create the Tools menu
     m_tools_menu = new wxMenu();
-    wxMenuItem* viewSource = m_tools_menu->Append(wxID_ANY, _L("View Source"));
-    wxMenuItem* viewText = m_tools_menu->Append(wxID_ANY, _L("View Text"));
+    wxMenuItem* viewSource = m_tools_menu->Append(wxID_ANY, "View Source");
+    wxMenuItem* viewText = m_tools_menu->Append(wxID_ANY, "View Text");
     m_tools_menu->AppendSeparator();
 
     wxMenu* script_menu = new wxMenu;
 
     m_script_custom = script_menu->Append(wxID_ANY, "Custom script");
-    m_tools_menu->AppendSubMenu(script_menu, _L("Run Script"));
-    wxMenuItem* addUserScript = m_tools_menu->Append(wxID_ANY, _L("Add user script"));
-    wxMenuItem* setCustomUserAgent = m_tools_menu->Append(wxID_ANY, _L("Set custom user agent"));
+    m_tools_menu->AppendSubMenu(script_menu, "Run Script");
+    wxMenuItem* addUserScript = m_tools_menu->Append(wxID_ANY, "Add user script");
+    wxMenuItem* setCustomUserAgent = m_tools_menu->Append(wxID_ANY, "Set custom user agent");
 
-    m_context_menu = m_tools_menu->AppendCheckItem(wxID_ANY, _L("Enable Context Menu"));
-    m_dev_tools = m_tools_menu->AppendCheckItem(wxID_ANY, _L("Enable Dev Tools"));
+    m_context_menu = m_tools_menu->AppendCheckItem(wxID_ANY, "Enable Context Menu");
+    m_dev_tools = m_tools_menu->AppendCheckItem(wxID_ANY, "Enable Dev Tools");
 
 #endif
     

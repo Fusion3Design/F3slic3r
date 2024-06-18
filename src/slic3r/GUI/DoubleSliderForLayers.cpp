@@ -504,7 +504,7 @@ bool DSForLayers::render_multi_extruders_menu(bool switch_current_code/* = false
 void DSForLayers::render_color_picker()
 {
     ImGuiContext& context = *GImGui;
-    const std::string title = _u8L("Select color for color change");
+    const std::string title = _u8L("Select color for Color Change");
     if (m_show_color_picker) {
 
         ImGuiPureWrap::set_next_window_pos(1200, 200, ImGuiCond_Always, 0.5f, 0.0f);
@@ -532,7 +532,7 @@ void DSForLayers::render_cog_menu()
         if (ImGuiPureWrap::menu_item_with_icon(_u8L("Jump to height").c_str(), "Shift+G")) {
             jump_to_value();
         }
-        if (ImGuiPureWrap::menu_item_with_icon(_u8L("Show estimated print time on mouse moving").c_str(), "", icon_sz, 0, m_show_estimated_times)) {
+        if (ImGuiPureWrap::menu_item_with_icon(_u8L("Show estimated print time on hover").c_str(), "", icon_sz, 0, m_show_estimated_times)) {
             m_show_estimated_times = !m_show_estimated_times;
         }
         if (m_mode == MultiAsSingle && m_draw_mode == dmRegular && 

@@ -1867,9 +1867,8 @@ void MainFrame::export_configbundle(bool export_physical_printers /*= false*/)
 #if wxUSE_SECRETSTORE
             // First password prompts user with dialog
             if (!passwords_dialog_shown) {
-                //wxString msg = GUI::format_wxstr(L"%1%\n%2%", _L("Some of the exported printers contains passwords, which are stored in the system password store."), _L("Do you wish to include the passwords to the exported file in the plain text form?"));
-                wxString msg = _L("Some of the exported printers contains passwords, which are stored in the system password store." 
-                                  " Do you wish to include the passwords in the plain text form to the exported file?");
+                wxString msg = _L("Some of the exported printers contain passwords, which are stored in the system password store." 
+                                  " Do you want to include the passwords in the plain text form in the exported file?");
                 MessageDialog dlg_psswd(this, msg, wxMessageBoxCaptionStr, wxYES_NO | wxYES_DEFAULT | wxICON_QUESTION);
                 if (dlg_psswd.ShowModal() == wxID_YES)
                     passwords_to_plain = true;
@@ -1891,7 +1890,7 @@ void MainFrame::export_configbundle(bool export_physical_printers /*= false*/)
             wxString username;
             wxSecretValue password;
             if (!store.Load(service, username, password)) {
-                std::string msg = GUI::format(_u8L("Failed to load credentials from the system secret store for the printer %1%."), printer_id);
+                std::string msg = GUI::format(_u8L("Failed to load credentials from the system secret store for printer %1%."), printer_id);
                 BOOST_LOG_TRIVIAL(error) << msg;
                 show_error(nullptr, msg);
                 return false;
