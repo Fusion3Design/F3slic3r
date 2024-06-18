@@ -2288,6 +2288,7 @@ std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorte
     const ObjectsLayerToPrint &layers,
     const LayerTools &layer_tools,
     const std::vector<InstanceToPrint> &instances_to_print,
+    const GCode::SmoothPathCaches &smooth_path_caches,
     const bool first_layer
 ) {
     // Map from extruder ID to <begin, end> index of skirt loops to be extruded with that extruder.
@@ -2331,7 +2332,11 @@ std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorte
             first_layer,
             layer_tools,
             instances_to_print,
+            smooth_path_caches.global(),
             skirt_loops_per_extruder,
+            m_enable_loop_clipping,
+            m_config,
+            m_scaled_resolution,
             this->m_writer.extruder()->id(),
             place_seam,
             !this->m_brim_done,
@@ -2419,7 +2424,7 @@ LayerResult GCodeGenerator::process_layer(
 
     using GCode::ExtrusionOrder::ExtruderExtrusions;
     std::vector<ExtruderExtrusions> extrusions{
-        this->get_sorted_extrusions(print, layers, layer_tools, instances_to_print, first_layer)};
+        this->get_sorted_extrusions(print, layers, layer_tools, instances_to_print, smooth_path_caches, first_layer)};
 
     std::string gcode;
     assert(is_decimal_separator_point()); // for the sprintfs
@@ -2544,10 +2549,10 @@ LayerResult GCodeGenerator::process_layer(
             m_avoid_crossing_perimeters.use_external_mp();
             Flow layer_skirt_flow = print.skirt_flow().with_height(float(m_skirt_done.back() - (m_skirt_done.size() == 1 ? 0. : m_skirt_done[m_skirt_done.size() - 2])));
             double mm3_per_mm = layer_skirt_flow.mm3_per_mm();
-            for (const auto&[_, loop_entity] : extruder_extrusions.skirt) {
+            for (const auto&[_, smooth_path] : extruder_extrusions.skirt) {
                 // Adjust flow according to this layer's layer height.
                 //FIXME using the support_material_speed of the 1st object printed.
-                gcode += this->extrude_skirt(dynamic_cast<const ExtrusionLoop&>(*loop_entity),
+                gcode += this->extrude_skirt(smooth_path,
                     // Override of skirt extrusion parameters. extrude_skirt() will fill in the extrusion width.
                     ExtrusionFlow{ mm3_per_mm, 0., layer_skirt_flow.height() },
                     smooth_path_caches.global(), "skirt"sv, m_config.support_material_speed.value);
@@ -2889,8 +2894,6 @@ static inline bool validate_smooth_path(const GCode::SmoothPath &smooth_path, bo
 }
 #endif //NDEBUG
 
-static constexpr const double min_gcode_segment_length = 0.002;
-
 std::string GCodeGenerator::extrude_loop(const ExtrusionLoop &loop_src, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed)
 {
     // Extrude all loops CCW unless CW movements are prefered.
@@ -2910,7 +2913,7 @@ std::string GCodeGenerator::extrude_loop(const ExtrusionLoop &loop_src, const GC
     // if polyline was shorter than the clipping distance we'd get a null polyline, so
     // we discard it in that case.
     if (m_enable_loop_clipping)
-        clip_end(smooth_path, scaled<double>(EXTRUDER_CONFIG(nozzle_diameter)) * LOOP_CLIPPING_LENGTH_OVER_NOZZLE_DIAMETER, scaled<double>(min_gcode_segment_length));
+        clip_end(smooth_path, scaled<double>(EXTRUDER_CONFIG(nozzle_diameter)) * LOOP_CLIPPING_LENGTH_OVER_NOZZLE_DIAMETER, scaled<double>(GCode::ExtrusionOrder::min_gcode_segment_length));
 
     if (smooth_path.empty())
         return {};
@@ -2946,25 +2949,9 @@ std::string GCodeGenerator::extrude_loop(const ExtrusionLoop &loop_src, const GC
 }
 
 std::string GCodeGenerator::extrude_skirt(
-    const ExtrusionLoop &loop_src, const ExtrusionFlow &extrusion_flow_override,
+    GCode::SmoothPath smooth_path, const ExtrusionFlow &extrusion_flow_override,
     const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed)
 {
-    assert(loop_src.is_counter_clockwise());
-    const bool reverse_loop = m_config.prefer_clockwise_movements;
-
-    Point seam_point = this->last_position.has_value() ? *this->last_position : Point::Zero();
-    GCode::SmoothPath smooth_path = smooth_path_cache.resolve_or_fit_split_with_seam(loop_src, reverse_loop, m_scaled_resolution, seam_point, scaled<double>(0.0015));
-
-    // Clip the path to avoid the extruder to get exactly on the first point of the loop;
-    // if polyline was shorter than the clipping distance we'd get a null polyline, so
-    // we discard it in that case.
-    if (m_enable_loop_clipping)
-        clip_end(smooth_path, scale_(EXTRUDER_CONFIG(nozzle_diameter)) * LOOP_CLIPPING_LENGTH_OVER_NOZZLE_DIAMETER, scaled<double>(min_gcode_segment_length));
-
-    if (smooth_path.empty())
-        return {};
-
-    assert(validate_smooth_path(smooth_path, ! m_enable_loop_clipping));
 
     // Extrude along the smooth path.
     std::string gcode;

@@ -1,4 +1,5 @@
 #include "ExtrusionOrder.hpp"
+#include "GCode/SmoothPath.hpp"
 #include "libslic3r/ShortestPath.hpp"
 
 namespace Slic3r::GCode::ExtrusionOrder {
@@ -453,7 +454,11 @@ std::vector<ExtruderExtrusions> get_extrusions(
     const bool is_first_layer,
     const LayerTools &layer_tools,
     const std::vector<InstanceToPrint> &instances_to_print,
+    const GCode::SmoothPathCache &smooth_path_cache,
     const std::map<unsigned int, std::pair<size_t, size_t>> &skirt_loops_per_extruder,
+    const bool enable_loop_clipping,
+    const FullPrintConfig &config,
+    const double scaled_resolution,
     unsigned current_extruder_id,
     const SeamPlacingFunciton &place_seam,
     bool get_brim,
@@ -477,7 +482,35 @@ std::vector<ExtruderExtrusions> get_extrusions(
         if (auto loops_it = skirt_loops_per_extruder.find(extruder_id); loops_it != skirt_loops_per_extruder.end()) {
             const std::pair<size_t, size_t> loops = loops_it->second;
             for (std::size_t i = loops.first; i < loops.second; ++i) {
-                extruder_extrusions.skirt.emplace_back(i, print.skirt().entities[i]);
+                auto loop_src{dynamic_cast<const ExtrusionLoop *>(print.skirt().entities[i])};
+                if (loop_src != nullptr) {
+                    const Point seam_point = previous_position ? get_instance_point(*previous_position, {0.0, 0.0}) : Point::Zero();
+                    const bool reverse_loop = config.prefer_clockwise_movements;
+                    // Because the G-code export has 1um resolution, don't generate segments shorter than 1.5 microns,
+                    // thus empty path segments will not be produced by G-code export.
+                    GCode::SmoothPath smooth_path = smooth_path_cache.resolve_or_fit_split_with_seam(*loop_src, reverse_loop, scaled_resolution, seam_point, scaled<double>(0.0015));
+
+                    // Clip the path to avoid the extruder to get exactly on the first point of the loop;
+                    // if polyline was shorter than the clipping distance we'd get a null polyline, so
+                    // we discard it in that case.
+                    const auto nozzle_diameter{config.nozzle_diameter.get_at(extruder_id)};
+                    if (enable_loop_clipping)
+                        clip_end(smooth_path, scale_(nozzle_diameter) * LOOP_CLIPPING_LENGTH_OVER_NOZZLE_DIAMETER, scaled<double>(min_gcode_segment_length));
+
+                    if (smooth_path.empty())
+                        continue;
+
+                    assert(validate_smooth_path(smooth_path, ! enable_loop_clipping));
+
+                    for (const SmoothPathElement &element : smooth_path) {
+                        if (!element.path.empty()) {
+                            previous_position = get_gcode_point(element.path.back().point, {0.0, 0.0});
+                            break;
+                        }
+                    }
+
+                    extruder_extrusions.skirt.emplace_back(i, std::move(smooth_path));
+                }
             }
         }
 

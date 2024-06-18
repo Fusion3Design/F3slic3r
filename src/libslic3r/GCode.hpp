@@ -236,6 +236,7 @@ private:
         const ObjectsLayerToPrint &layers,
         const LayerTools &layer_tools,
         const std::vector<InstanceToPrint> &instances_to_print,
+        const GCode::SmoothPathCaches &smooth_path_caches,
         const bool first_layer
     );
 
@@ -282,7 +283,7 @@ private:
     );
     std::string     extrude_entity(const ExtrusionEntityReference &entity, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed = -1.);
     std::string     extrude_loop(const ExtrusionLoop &loop, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed = -1.);
-    std::string     extrude_skirt(const ExtrusionLoop &loop_src, const ExtrusionFlow &extrusion_flow_override,
+    std::string     extrude_skirt(GCode::SmoothPath smooth_path, const ExtrusionFlow &extrusion_flow_override,
         const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed);
 
     std::string     extrude_multi_path(const ExtrusionMultiPath &multipath, bool reverse, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed = -1.);

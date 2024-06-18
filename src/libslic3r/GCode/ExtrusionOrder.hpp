@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "libslic3r/GCode/SmoothPath.hpp"
 #include "libslic3r/GCode/WipeTowerIntegration.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/GCode/SeamPlacer.hpp"
@@ -98,11 +99,13 @@ std::vector<NormalExtrusions> get_normal_extrusions(
 
 struct ExtruderExtrusions {
     unsigned extruder_id;
-    std::vector<std::pair<std::size_t, const ExtrusionEntity *>> skirt;
+    std::vector<std::pair<std::size_t, GCode::SmoothPath>> skirt;
     ExtrusionEntitiesPtr brim;
     std::vector<std::vector<SliceExtrusions>> overriden_extrusions;
     std::vector<NormalExtrusions> normal_extrusions;
 };
+
+static constexpr const double min_gcode_segment_length = 0.002;
 
 std::vector<ExtruderExtrusions> get_extrusions(
     const Print &print,
@@ -111,7 +114,11 @@ std::vector<ExtruderExtrusions> get_extrusions(
     const bool is_first_layer,
     const LayerTools &layer_tools,
     const std::vector<InstanceToPrint> &instances_to_print,
+    const GCode::SmoothPathCache &smooth_path_cache,
     const std::map<unsigned int, std::pair<size_t, size_t>> &skirt_loops_per_extruder,
+    const bool enable_loop_clipping,
+    const FullPrintConfig &config,
+    const double scaled_resolution,
     unsigned current_extruder_id,
     const SeamPlacingFunciton &place_seam,
     bool get_brim,
