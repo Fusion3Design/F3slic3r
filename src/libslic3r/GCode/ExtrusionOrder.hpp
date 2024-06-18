@@ -53,13 +53,19 @@ struct InstanceToPrint
 namespace Slic3r::GCode::ExtrusionOrder {
 
 struct InfillRange {
-    std::vector<ExtrusionEntityReference> items;
+    std::vector<SmoothPath> items;
     const PrintRegion *region;
+};
+
+struct Perimeter {
+    GCode::SmoothPath smooth_path;
+    bool reversed;
+    const ExtrusionEntity *extrusion_entity;
 };
 
 struct IslandExtrusions {
     const PrintRegion *region;
-    std::vector<ExtrusionEntity *> perimeters;
+    std::vector<Perimeter> perimeters;
     std::vector<InfillRange> infill_ranges;
 };
 
@@ -75,27 +81,9 @@ struct NormalExtrusions {
 
 std::optional<Vec2d> get_last_position(const ExtrusionEntitiesPtr &extrusions, const Vec2d &offset);
 
-using SeamPlacingFunciton = std::function<std::optional<Point>(const Layer &layer, ExtrusionEntity* perimeter, const std::optional<Point>&)>;
-
-std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
-    const Print &print,
-    const GCode::ObjectsLayerToPrint &layers,
-    const LayerTools &layer_tools,
-    const std::vector<InstanceToPrint> &instances_to_print,
-    const unsigned int extruder_id,
-    const SeamPlacingFunciton &place_seam,
-    std::optional<Vec2d> &previous_position
-);
-
-std::vector<NormalExtrusions> get_normal_extrusions(
-    const Print &print,
-    const GCode::ObjectsLayerToPrint &layers,
-    const LayerTools &layer_tools,
-    const std::vector<InstanceToPrint> &instances_to_print,
-    const unsigned int extruder_id,
-    const SeamPlacingFunciton &place_seam,
-    std::optional<Vec2d> &previous_position
-);
+using PathSmoothingFunction = std::function<SmoothPath(
+    const Layer *, const ExtrusionEntityReference &, const unsigned extruder_id, std::optional<Point> &previous_position
+)>;
 
 struct ExtruderExtrusions {
     unsigned extruder_id;
@@ -114,13 +102,9 @@ std::vector<ExtruderExtrusions> get_extrusions(
     const bool is_first_layer,
     const LayerTools &layer_tools,
     const std::vector<InstanceToPrint> &instances_to_print,
-    const GCode::SmoothPathCache &smooth_path_cache,
     const std::map<unsigned int, std::pair<size_t, size_t>> &skirt_loops_per_extruder,
-    const bool enable_loop_clipping,
-    const FullPrintConfig &config,
-    const double scaled_resolution,
     unsigned current_extruder_id,
-    const SeamPlacingFunciton &place_seam,
+    const PathSmoothingFunction &smooth_path,
     bool get_brim,
     std::optional<Vec2d> previous_position
 );
