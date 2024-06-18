@@ -231,6 +231,14 @@ private:
         const GCode::Impl::Travels::ElevatedTravelParams &elevation_params
     ) const;
 
+    std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> get_sorted_extrusions(
+        const Print &print,
+        const ObjectsLayerToPrint &layers,
+        const LayerTools &layer_tools,
+        const std::vector<InstanceToPrint> &instances_to_print,
+        const bool first_layer
+    );
+
     LayerResult process_layer(
         const Print                     &print,
         // Set of object & print layers of the same PrintObject and with the same print_z.
@@ -243,6 +251,7 @@ private:
         // If set to size_t(-1), then print all copies of all objects.
         // Otherwise print a single copy of a single object.
         const size_t                     single_object_idx = size_t(-1));
+
     // Process all layers of all objects (non-sequential mode) with a parallel pipeline:
     // Generate G-code, run the filters (vase mode, cooling buffer), run the G-code analyser
     // and export G-code into file.

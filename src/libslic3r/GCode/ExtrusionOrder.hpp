@@ -104,7 +104,7 @@ struct ExtruderExtrusions {
     std::vector<NormalExtrusions> normal_extrusions;
 };
 
-inline std::vector<ExtruderExtrusions> get_extrusions(
+std::vector<ExtruderExtrusions> get_extrusions(
     const Print &print,
     const GCode::WipeTowerIntegration *wipe_tower,
     const GCode::ObjectsLayerToPrint &layers,
@@ -116,55 +116,7 @@ inline std::vector<ExtruderExtrusions> get_extrusions(
     const SeamPlacingFunciton &place_seam,
     bool get_brim,
     std::optional<Vec2d> previous_position
-) {
-    unsigned toolchange_number{0};
-
-    std::vector<ExtruderExtrusions> extrusions;
-    for (const unsigned int extruder_id : layer_tools.extruders)
-    {
-        if (layer_tools.has_wipe_tower && wipe_tower != nullptr) {
-            if (is_toolchange_required(is_first_layer, layer_tools.extruders.back(), extruder_id, current_extruder_id)) {
-                const WipeTower::ToolChangeResult tool_change{wipe_tower->get_toolchange(toolchange_number++)};
-                previous_position = wipe_tower->transform_wt_pt(tool_change.end_pos).cast<double>();
-                current_extruder_id = tool_change.new_tool;
-            }
-        }
-
-        ExtruderExtrusions extruder_extrusions{extruder_id};
-
-        if (auto loops_it = skirt_loops_per_extruder.find(extruder_id); loops_it != skirt_loops_per_extruder.end()) {
-            const std::pair<size_t, size_t> loops = loops_it->second;
-            for (std::size_t i = loops.first; i < loops.second; ++i) {
-                extruder_extrusions.skirt.emplace_back(i, print.skirt().entities[i]);
-            }
-        }
-
-        // Extrude brim with the extruder of the 1st region.
-        using GCode::ExtrusionOrder::get_last_position;
-        if (get_brim) {
-            extruder_extrusions.brim = print.brim().entities;
-            previous_position = get_last_position(extruder_extrusions.brim, {0.0, 0.0});
-            get_brim = false;
-        }
-
-        using GCode::ExtrusionOrder::get_overriden_extrusions;
-        bool is_anything_overridden = layer_tools.wiping_extrusions().is_anything_overridden();
-        if (is_anything_overridden) {
-            extruder_extrusions.overriden_extrusions = get_overriden_extrusions(
-                print, layers, layer_tools, instances_to_print, extruder_id, place_seam,
-                previous_position
-            );
-        }
-
-        using GCode::ExtrusionOrder::get_normal_extrusions;
-        extruder_extrusions.normal_extrusions = get_normal_extrusions(
-            print, layers, layer_tools, instances_to_print, extruder_id, place_seam,
-            previous_position
-        );
-        extrusions.push_back(std::move(extruder_extrusions));
-    }
-    return extrusions;
-}
+);
 
 }
 

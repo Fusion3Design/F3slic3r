@@ -2283,6 +2283,66 @@ std::string GCodeGenerator::generate_ramping_layer_change_gcode(
     return travel_gcode;
 }
 
+std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorted_extrusions(
+    const Print &print,
+    const ObjectsLayerToPrint &layers,
+    const LayerTools &layer_tools,
+    const std::vector<InstanceToPrint> &instances_to_print,
+    const bool first_layer
+) {
+    // Map from extruder ID to <begin, end> index of skirt loops to be extruded with that extruder.
+    // Extrude skirt at the print_z of the raft layers and normal object layers
+    // not at the print_z of the interlaced support material layers.
+    std::map<unsigned int, std::pair<size_t, size_t>> skirt_loops_per_extruder{
+        first_layer ?
+            Skirt::make_skirt_loops_per_extruder_1st_layer(print, layer_tools, m_skirt_done) :
+            Skirt::make_skirt_loops_per_extruder_other_layers(print, layer_tools, m_skirt_done)};
+
+    const auto place_seam =[&](
+        const Layer &layer, ExtrusionEntity *perimeter, const std::optional<Point> &previous_position
+    ) {
+        auto loop{dynamic_cast<ExtrusionLoop *>(perimeter)};
+
+        Point seam_point{previous_position ? *previous_position : Point::Zero()};
+        if (!this->m_config.spiral_vase && loop != nullptr) {
+            seam_point = this->m_seam_placer.place_seam(&layer, *loop, seam_point);
+            loop->seam = seam_point;
+        }
+
+        auto path{dynamic_cast<const ExtrusionMultiPath *>(perimeter)};
+        if (path != nullptr) {
+            return path->last_point();
+        } else {
+            return seam_point;
+        }
+    };
+
+    using GCode::ExtrusionOrder::ExtruderExtrusions;
+    using GCode::ExtrusionOrder::get_extrusions;
+
+    const std::optional<Vec2d> previous_position{
+        this->last_position ? std::optional{this->point_to_gcode(*this->last_position)} :
+                              std::nullopt};
+    std::vector<ExtruderExtrusions> extrusions{
+        get_extrusions(
+            print,
+            this->m_wipe_tower.get(),
+            layers,
+            first_layer,
+            layer_tools,
+            instances_to_print,
+            skirt_loops_per_extruder,
+            this->m_writer.extruder()->id(),
+            place_seam,
+            !this->m_brim_done,
+            previous_position
+        )
+    };
+    this->m_brim_done = true;
+
+    return extrusions;
+}
+
 // In sequential mode, process_layer is called once per each object and its copy,
 // therefore layers will contain a single entry and single_object_instance_idx will point to the copy of the object.
 // In non-sequential mode, process_layer is called per each print_z height with all object and support layers accumulated.
@@ -2357,6 +2417,9 @@ LayerResult GCodeGenerator::process_layer(
         m_enable_loop_clipping = !enable;
     }
 
+    using GCode::ExtrusionOrder::ExtruderExtrusions;
+    std::vector<ExtruderExtrusions> extrusions{
+        this->get_sorted_extrusions(print, layers, layer_tools, instances_to_print, first_layer)};
 
     std::string gcode;
     assert(is_decimal_separator_point()); // for the sprintfs
@@ -2424,15 +2487,6 @@ LayerResult GCodeGenerator::process_layer(
         m_second_layer_things_done = true;
     }
 
-    // Map from extruder ID to <begin, end> index of skirt loops to be extruded with that extruder.
-    std::map<unsigned int, std::pair<size_t, size_t>> skirt_loops_per_extruder;
-
-    // Extrude skirt at the print_z of the raft layers and normal object layers
-    // not at the print_z of the interlaced support material layers.
-    skirt_loops_per_extruder = first_layer ?
-        Skirt::make_skirt_loops_per_extruder_1st_layer(print, layer_tools, m_skirt_done) :
-        Skirt::make_skirt_loops_per_extruder_other_layers(print, layer_tools, m_skirt_done);
-
     if (this->config().avoid_crossing_curled_overhangs) {
         m_avoid_crossing_curled_overhangs.clear();
         for (const ObjectLayerToPrint &layer_to_print : layers) {
@@ -2461,52 +2515,6 @@ LayerResult GCodeGenerator::process_layer(
             gcode += custom_gcode;
         }
     }
-
-    using GCode::ExtrusionOrder::NormalExtrusions;
-
-
-
-    const auto place_seam =[&](
-        const Layer &layer, ExtrusionEntity *perimeter, const std::optional<Point> &previous_position
-    ) {
-        auto loop{dynamic_cast<ExtrusionLoop *>(perimeter)};
-
-        Point seam_point{previous_position ? *previous_position : Point::Zero()};
-        if (!this->m_config.spiral_vase && loop != nullptr) {
-            seam_point = this->m_seam_placer.place_seam(&layer, *loop, seam_point);
-            loop->seam = seam_point;
-        }
-
-        auto path{dynamic_cast<const ExtrusionMultiPath *>(perimeter)};
-        if (path != nullptr) {
-            return path->last_point();
-        } else {
-            return seam_point;
-        }
-    };
-
-    std::optional<Vec2d> previous_position;
-    if (this->last_position) {
-        previous_position = this->point_to_gcode(*this->last_position);
-    }
-    using GCode::ExtrusionOrder::ExtruderExtrusions;
-    using GCode::ExtrusionOrder::get_extrusions;
-    const std::vector<ExtruderExtrusions> extrusions{
-        get_extrusions(
-            print,
-            m_wipe_tower.get(),
-            layers,
-            first_layer,
-            layer_tools,
-            instances_to_print,
-            skirt_loops_per_extruder,
-            this->m_writer.extruder()->id(),
-            place_seam,
-            !m_brim_done,
-            previous_position
-        )
-    };
-    m_brim_done = true;
 
     // Extrude the skirt, brim, support, perimeters, infill ordered by the extruders.
     for (const ExtruderExtrusions &extruder_extrusions : extrusions)
