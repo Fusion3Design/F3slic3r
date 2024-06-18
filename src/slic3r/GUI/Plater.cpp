@@ -4144,7 +4144,11 @@ void Plater::load_gcode(const wxString& filename)
     GCodeProcessor processor;
     try
     {
-        processor.process_file(filename.ToUTF8().data());
+        p->notification_manager->push_download_progress_notification("Loading...", []() { return false; });
+        processor.process_file(filename.ToUTF8().data(), [this](float value) {
+            p->notification_manager->set_download_progress_percentage(value);
+            p->get_current_canvas3D()->render();
+        });
     }
     catch (const std::exception& ex)
     {
