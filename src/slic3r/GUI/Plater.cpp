@@ -869,24 +869,24 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             user_account->on_login_code_recieved(evt.data);
         });
         this->q->Bind(EVT_OPEN_PRUSAAUTH, [this](OpenPrusaAuthEvent& evt) {
-           BOOST_LOG_TRIVIAL(info)  << "open browser: " << evt.data;
-           // first register url to be sure to get the code back
-           //auto downloader_worker = new DownloaderUtils::Worker(nullptr);
-           DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
+            BOOST_LOG_TRIVIAL(info)  << "open browser: " << evt.data;
+            // first register url to be sure to get the code back
+            //auto downloader_worker = new DownloaderUtils::Worker(nullptr);
+            DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
     #ifdef __linux__
-           if (DownloaderUtils::Worker::perform_registration_linux)
-               DesktopIntegrationDialog::perform_downloader_desktop_integration();
-    #endif // __linux__
-           // than open url
-           //wxGetApp().open_login_browser_with_dialog(evt.data);
+            if (DownloaderUtils::Worker::perform_registration_linux)
+                DesktopIntegrationDialog::perform_downloader_desktop_integration();
+    #endif  // __linux__
+            // than open url
+            //wxGetApp().open_login_browser_with_dialog(evt.data);
 
-           WebViewDialog dlg(this->q
-            , evt.data
-            , _L("Log in")
-            , wxSize(std::max(this->q->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(this->q->GetClientSize().y / 2, 50 * wxGetApp().em_unit()))
-            ,{});
-            dlg.ShowModal();
-         });
+            std::string dialog_msg;
+            LoginWebViewDialog dialog(this->q, dialog_msg, evt.data);
+            if (dialog.ShowModal() != wxID_OK) {
+                return;
+            }
+            user_account->on_login_code_recieved(dialog_msg);
+        });
     
         this->q->Bind(EVT_UA_LOGGEDOUT, [this](UserAccountSuccessEvent& evt) {
             user_account->clear();

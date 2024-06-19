@@ -127,6 +127,8 @@ public:
     void on_select_all(wxCommandEvent& evt);
     void On_enable_context_menu(wxCommandEvent& evt);
     void On_enable_dev_tools(wxCommandEvent& evt);
+    
+    virtual void on_navigation_request(wxWebViewEvent &evt);
 
     void run_script(const wxString& javascript);
    
@@ -245,6 +247,15 @@ class SourceViewDialog : public wxDialog
 {
 public:
     SourceViewDialog(wxWindow* parent, wxString source);
+};
+
+class LoginWebViewDialog : public WebViewDialog
+{
+public:
+    LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url);
+    void on_navigation_request(wxWebViewEvent &evt) override;
+private:
+    std::string &m_ret_val;
 };
 
 } // GUI
