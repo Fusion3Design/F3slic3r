@@ -129,6 +129,7 @@ public:
     void On_enable_dev_tools(wxCommandEvent& evt);
     
     virtual void on_navigation_request(wxWebViewEvent &evt);
+    virtual void on_loaded(wxWebViewEvent &evt) {}
 
     void run_script(const wxString& javascript);
    
@@ -254,8 +255,16 @@ class LoginWebViewDialog : public WebViewDialog
 public:
     LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url);
     void on_navigation_request(wxWebViewEvent &evt) override;
+
 private:
     std::string &m_ret_val;
+};
+
+class LogoutWebViewDialog : public WebViewDialog
+{
+public:
+    LogoutWebViewDialog(wxWindow* parent);
+    void on_loaded(wxWebViewEvent &evt) override;
 };
 
 } // GUI

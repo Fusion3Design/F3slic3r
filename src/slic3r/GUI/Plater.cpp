@@ -901,6 +901,9 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             wxGetApp().update_login_dialog();
 #endif // 0
             this->show_action_buttons(this->ready_to_slice);
+
+             LogoutWebViewDialog dlg(this->q);
+            dlg.ShowModal();
         });
 
         this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {

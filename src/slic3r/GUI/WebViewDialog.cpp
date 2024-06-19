@@ -861,6 +861,7 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
     Bind(wxEVT_MENU, &WebViewDialog::on_add_user_script, this, addUserScript->GetId());
 #endif
     Bind(wxEVT_WEBVIEW_NAVIGATING, &WebViewDialog::on_navigation_request, this, m_browser->GetId());
+    Bind(wxEVT_WEBVIEW_LOADED, &WebViewDialog::on_loaded, this, m_browser->GetId());
 
     Bind(wxEVT_CLOSE_WINDOW, ([this](wxCloseEvent& evt) { EndModal(wxID_CANCEL); }));
 
@@ -1258,7 +1259,7 @@ LoginWebViewDialog::LoginWebViewDialog(wxWindow *parent, std::string &ret_val, c
     : WebViewDialog(parent
         , url
         , _L("Log in dialog")
-        , wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit()))
+        , wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 4 * 3, 50 * wxGetApp().em_unit()))
         , {})
     , m_ret_val(ret_val)
 {
@@ -1266,13 +1267,26 @@ LoginWebViewDialog::LoginWebViewDialog(wxWindow *parent, std::string &ret_val, c
 }
 void LoginWebViewDialog::on_navigation_request(wxWebViewEvent &evt)
 {
-    BOOST_LOG_TRIVIAL(error) << evt.GetURL();
     wxString url = evt.GetURL();
     if (url.starts_with(L"prusaslicer")) {
         evt.Veto();
         m_ret_val = into_u8(url);
         EndModal(wxID_OK);
     }
+}
+
+LogoutWebViewDialog::LogoutWebViewDialog(wxWindow *parent)
+    : WebViewDialog(parent
+        ,  L"https://account.prusa3d.com/logout"
+        , _L("Logout dialog")
+        , wxSize(std::max(parent->GetClientSize().x / 4, 10 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 4, 10 * wxGetApp().em_unit()))
+        , {})
+{
+    Centre();
+}
+void LogoutWebViewDialog::on_loaded(wxWebViewEvent &evt)
+{
+     EndModal(wxID_OK);
 }
 } // GUI
 } // Slic3r
