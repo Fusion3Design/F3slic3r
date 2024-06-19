@@ -98,7 +98,7 @@ void TopBarMenus::UpdateAccountMenu()
     if (is_logged)
         RemoveHideLoginItem();
     if (m_login_item) {
-        m_login_item->SetItemLabel(is_logged ? _L("Prusa Account Log out") : _L("Prusa Account Log in"));
+        m_login_item->SetItemLabel(is_logged ? _L("Log out") : _L("Log in"));
         set_menu_item_bitmap(m_login_item, is_logged ? "logout" : "login");
     }
 }

@@ -5965,7 +5965,7 @@ bool load_secret(const std::string& id, const std::string& opt, std::string& usr
     wxString username;
     wxSecretValue password;
     if (!store.Load(service, username, password)) {
-        std::string msg(_u8L("Failed to load credentials from the system secret store."));
+        std::string msg(_u8L("Failed to load credentials from the system password store."));
         BOOST_LOG_TRIVIAL(error) << msg;
         show_error(nullptr, msg);
         return false;

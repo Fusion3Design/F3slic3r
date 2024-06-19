@@ -3521,8 +3521,8 @@ bool GUI_App::check_updates(const bool invoked_by_user)
         if (!plater()->get_preset_archive_database()->extract_archives_with_check(failed_paths)) {
             int cnt = std::count(failed_paths.begin(), failed_paths.end(), '\n') + 1;
             // TRN: %1% contains paths from which loading failed. They are separated by \n, there is no \n at the end.
-            failed_paths = GUI::format(_L_PLURAL("It was not possible to extract data from %1%. The repository will not be updated.",
-                "It was not possible to extract data for following local repositories. They will not be updated.\n\n %1%", cnt), failed_paths);
+            failed_paths = GUI::format(_L_PLURAL("It was not possible to extract data from %1%. The source will not be updated.",
+                "It was not possible to extract data for following local sources. They will not be updated.\n\n %1%", cnt), failed_paths);
             show_error(nullptr, failed_paths);
         }
         // then its time for preset_updater sync 
@@ -3919,7 +3919,7 @@ void GUI_App::search_and_select_filaments(const std::string& material, size_t ex
         {
             out_message += /*(extruder_count == 1)
                 ? GUI::format(_L("Selected Filament:\n%1%"), filament_preset.preset->name) 
-                : */GUI::format(_L("Extruder %1%: Selected Filament %2%\n"), extruder_index + 1, filament.preset->name);
+                : */GUI::format(_L("Extruder %1%: Selected filament %2%\n"), extruder_index + 1, filament.preset->name);
             return;
         }
     }
@@ -3934,7 +3934,7 @@ void GUI_App::search_and_select_filaments(const std::string& material, size_t ex
             && filament.preset->name.compare(0, 9, "Prusament") == 0
             && select_filament_preset(filament.preset, extruder_index))
         {
-            out_message += GUI::format(_L("Extruder %1%: Selected and installed filament %2%\n"), extruder_index + 1, filament.preset->name);
+            out_message += GUI::format(_L("Extruder %1%: Installed and selected filament %2%\n"), extruder_index + 1, filament.preset->name);
             return;
         }
     }

@@ -625,7 +625,7 @@ void MainFrame::set_callbacks_for_topbar_menus()
     m_bar_menus.set_account_menu_callbacks(
         []() -> void { wxGetApp().plater()->act_with_user_account(); },
         [this]() -> void {
-            wxString preferences_item = _L("Show \"Log in\" button in application top bar");
+            wxString preferences_item = _L("Show Log in button in application top bar");
             wxString msg =
                 _L("PrusaSlicer will remember your choice.") + "\n\n" +
                 format_wxstr(_L("Visit \"Preferences\" and check \"%1%\"\nto changes your choice."), preferences_item);
@@ -1913,7 +1913,7 @@ void MainFrame::export_configbundle(bool export_physical_printers /*= false*/)
             wxSecretStore store = wxSecretStore::GetDefault();
             wxString errmsg;
             if (!store.IsOk(&errmsg)) {
-                std::string msg = GUI::format("%1% (%2%).", _u8L("Failed to load credentials from the system secret store."), errmsg);
+                std::string msg = GUI::format("%1% (%2%).", _u8L("Failed to load credentials from the system password store."), errmsg);
                 BOOST_LOG_TRIVIAL(error) << msg;
                 show_error(nullptr, msg);
                 // Do not try again. System store is not reachable.
@@ -1924,7 +1924,7 @@ void MainFrame::export_configbundle(bool export_physical_printers /*= false*/)
             wxString username;
             wxSecretValue password;
             if (!store.Load(service, username, password)) {
-                std::string msg = GUI::format(_u8L("Failed to load credentials from the system secret store for printer %1%."), printer_id);
+                std::string msg = GUI::format(_u8L("Failed to load credentials from the system password store for printer %1%."), printer_id);
                 BOOST_LOG_TRIVIAL(error) << msg;
                 show_error(nullptr, msg);
                 return false;
