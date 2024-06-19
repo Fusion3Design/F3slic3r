@@ -79,10 +79,14 @@ struct NormalExtrusions {
     std::vector<SliceExtrusions> slices_extrusions;
 };
 
-std::optional<Vec2d> get_last_position(const ExtrusionEntitiesPtr &extrusions, const Vec2d &offset);
+std::optional<Point> get_last_position(const ExtrusionEntitiesPtr &extrusions, const Point &offset);
+
+struct InstancePoint {
+    Point value;
+};
 
 using PathSmoothingFunction = std::function<SmoothPath(
-    const Layer *, const ExtrusionEntityReference &, const unsigned extruder_id, std::optional<Point> &previous_position
+    const Layer *, const ExtrusionEntityReference &, const unsigned extruder_id, std::optional<InstancePoint> &previous_position
 )>;
 
 struct ExtruderExtrusions {
@@ -106,7 +110,7 @@ std::vector<ExtruderExtrusions> get_extrusions(
     unsigned current_extruder_id,
     const PathSmoothingFunction &smooth_path,
     bool get_brim,
-    std::optional<Vec2d> previous_position
+    std::optional<Point> previous_position
 );
 
 }

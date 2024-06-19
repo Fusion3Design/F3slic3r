@@ -28,36 +28,36 @@ int get_extruder_id(
     return extruder_id;
 }
 
-Vec2d get_gcode_point(const Point &point, const Vec2d &offset) {
-    return Vec2d(unscaled<double>(point.x()), unscaled<double>(point.y())) + offset;
+Point get_gcode_point(const InstancePoint &point, const Point &offset) {
+    return point.value + offset;
 }
 
-Point get_instance_point(const Vec2d &point, const Vec2d &offset) {
-    return Point::new_scale(point - offset);
+InstancePoint get_instance_point(const Point &point, const Point &offset) {
+    return {point - offset};
 }
 
-std::optional<Vec2d> get_gcode_point(const std::optional<Point> &point, const Vec2d &offset) {
+std::optional<Point> get_gcode_point(const std::optional<InstancePoint> &point, const Point &offset) {
     if (point) {
         return get_gcode_point(*point, offset);
     }
     return std::nullopt;
 }
 
-std::optional<Point> get_instance_point(const std::optional<Vec2d> &point, const Vec2d &offset) {
+std::optional<InstancePoint> get_instance_point(const std::optional<Point> &point, const Point &offset) {
     if (point) {
         return get_instance_point(*point, offset);
     }
     return std::nullopt;
 }
 
-std::optional<Vec2d> get_last_position(const ExtrusionEntityReferences &extrusions, const Vec2d &offset) {
+std::optional<Point> get_last_position(const ExtrusionEntityReferences &extrusions, const Point &offset) {
     if (!extrusions.empty()) {
         const ExtrusionEntityReference &last_extrusion{extrusions.back()};
         auto last_loop{dynamic_cast<const ExtrusionLoop *>(&last_extrusion.extrusion_entity())};
         if (last_loop != nullptr) {
-            return get_gcode_point(last_loop->seam, offset);
+            return get_gcode_point(InstancePoint{last_loop->seam}, offset);
         }
-        const Point last_point{
+        const InstancePoint last_point{
             last_extrusion.flipped() ? last_extrusion.extrusion_entity().first_point() :
                                        last_extrusion.extrusion_entity().last_point()};
         return get_gcode_point(last_point, offset);
@@ -65,7 +65,7 @@ std::optional<Vec2d> get_last_position(const ExtrusionEntityReferences &extrusio
     return std::nullopt;
 }
 
-std::optional<Vec2d> get_last_position(const ExtrusionEntitiesPtr &extrusions, const Vec2d &offset){
+std::optional<Point> get_last_position(const ExtrusionEntitiesPtr &extrusions, const Point &offset){
     if (!extrusions.empty()) {
         return get_last_position({{*extrusions.back(), false}}, offset);
     }
@@ -112,8 +112,8 @@ std::vector<Perimeter> extract_perimeter_extrusions(
     const LayerIsland &island,
     const ExtractEntityPredicate &predicate,
     const unsigned extruder_id,
-    const Vec2d &offset,
-    std::optional<Vec2d> &previous_position,
+    const Point &offset,
+    std::optional<Point> &previous_position,
     const PathSmoothingFunction &smooth_path
 ) {
     std::vector<Perimeter> result;
@@ -132,7 +132,7 @@ std::vector<Perimeter> extract_perimeter_extrusions(
 
         for (ExtrusionEntity *ee : *eec) {
             if (ee != nullptr) {
-                std::optional<Point> last_position{get_instance_point(previous_position, offset)};
+                std::optional<InstancePoint> last_position{get_instance_point(previous_position, offset)};
                 bool reverse_loop{false};
                 if (auto loop = dynamic_cast<const ExtrusionLoop *>(ee)) {
                     const bool is_hole = loop->is_clockwise();
@@ -170,8 +170,8 @@ std::vector<InfillRange> extract_infill_ranges(
     const Print &print,
     const Layer &layer,
     const LayerIsland &island,
-    const Vec2d &offset,
-    std::optional<Vec2d> &previous_position,
+    const Point &offset,
+    std::optional<Point> &previous_position,
     const ExtractEntityPredicate &predicate,
     const PathSmoothingFunction &smooth_path,
     const unsigned extruder_id
@@ -194,13 +194,13 @@ std::vector<InfillRange> extract_infill_ranges(
             predicate
         )};
 
-        const std::optional<Point> previous_position_scaled{get_instance_point(previous_position, offset)};
-        const Point* start_near{previous_position_scaled ? &(*(previous_position_scaled)) : nullptr};
+        const std::optional<InstancePoint> previous_instance_point{get_instance_point(previous_position, offset)};
+        const Point* start_near{previous_instance_point ? &(previous_instance_point->value) : nullptr};
         const ExtrusionEntityReferences sorted_extrusions{sort_fill_extrusions(extrusions, start_near)};
 
         std::vector<SmoothPath> paths;
         for (const ExtrusionEntityReference &extrusion_reference : sorted_extrusions) {
-            std::optional<Point> last_position{get_instance_point(previous_position, offset)};
+            std::optional<InstancePoint> last_position{get_instance_point(previous_position, offset)};
             paths.push_back(smooth_path(&layer, extrusion_reference, extruder_id, last_position));
             previous_position = get_gcode_point(last_position, offset);
         }
@@ -216,9 +216,9 @@ std::vector<IslandExtrusions> extract_island_extrusions(
     const Layer &layer,
     const ExtractEntityPredicate &predicate,
     const PathSmoothingFunction &smooth_path,
-    const Vec2d &offset,
+    const Point &offset,
     const unsigned extruder_id,
-    std::optional<Vec2d> &previous_position
+    std::optional<Point> &previous_position
 ) {
     std::vector<IslandExtrusions> result;
     for (const LayerIsland &island : lslice.islands) {
@@ -258,9 +258,9 @@ std::vector<InfillRange> extract_ironing_extrusions(
     const Layer &layer,
     const ExtractEntityPredicate &predicate,
     const PathSmoothingFunction &smooth_path,
-    const Vec2d &offset,
+    const Point &offset,
     const unsigned extruder_id,
-    std::optional<Vec2d> &previous_position
+    std::optional<Point> &previous_position
 ) {
     std::vector<InfillRange> result;
 
@@ -284,9 +284,9 @@ std::vector<SliceExtrusions> get_slices_extrusions(
     const Layer &layer,
     const ExtractEntityPredicate &predicate,
     const PathSmoothingFunction &smooth_path,
-    const Vec2d &offset,
+    const Point &offset,
     const unsigned extruder_id,
-    std::optional<Vec2d> &previous_position
+    std::optional<Point> &previous_position
 ) {
     // Note: ironing.
     // FIXME move ironing into the loop above over LayerIslands?
@@ -367,7 +367,7 @@ std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
     const std::vector<InstanceToPrint> &instances_to_print,
     const unsigned int extruder_id,
     const PathSmoothingFunction &smooth_path,
-    std::optional<Vec2d> &previous_position
+    std::optional<Point> &previous_position
 ) {
     std::vector<std::vector<SliceExtrusions>> result;
 
@@ -388,7 +388,7 @@ std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
             };
 
             const PrintObject &print_object = instance.print_object;
-            const Vec2d &offset = unscale(print_object.instances()[instance.instance_id].shift);
+            const Point &offset = print_object.instances()[instance.instance_id].shift;
 
             result.emplace_back(get_slices_extrusions(
                 print, *layer, predicate, smooth_path, offset, extruder_id, previous_position
@@ -405,14 +405,14 @@ std::vector<NormalExtrusions> get_normal_extrusions(
     const std::vector<InstanceToPrint> &instances_to_print,
     const unsigned int extruder_id,
     const PathSmoothingFunction &smooth_path,
-    std::optional<Vec2d> &previous_position
+    std::optional<Point> &previous_position
 ) {
     std::vector<NormalExtrusions> result;
 
     for (std::size_t i{0}; i < instances_to_print.size(); ++i) {
         const InstanceToPrint &instance{instances_to_print[i]};
         const PrintObject &print_object = instance.print_object;
-        const Vec2d &offset = unscale(print_object.instances()[instance.instance_id].shift);
+        const Point &offset = print_object.instances()[instance.instance_id].shift;
 
         result.emplace_back();
 
@@ -466,7 +466,7 @@ std::vector<ExtruderExtrusions> get_extrusions(
     unsigned current_extruder_id,
     const PathSmoothingFunction &smooth_path,
     bool get_brim,
-    std::optional<Vec2d> previous_position
+    std::optional<Point> previous_position
 ) {
     unsigned toolchange_number{0};
 
@@ -476,7 +476,7 @@ std::vector<ExtruderExtrusions> get_extrusions(
         if (layer_tools.has_wipe_tower && wipe_tower != nullptr) {
             if (is_toolchange_required(is_first_layer, layer_tools.extruders.back(), extruder_id, current_extruder_id)) {
                 const WipeTower::ToolChangeResult tool_change{wipe_tower->get_toolchange(toolchange_number++)};
-                previous_position = wipe_tower->transform_wt_pt(tool_change.end_pos).cast<double>();
+                previous_position = Point::new_scale(wipe_tower->transform_wt_pt(tool_change.end_pos));
                 current_extruder_id = tool_change.new_tool;
             }
         }
@@ -487,9 +487,9 @@ std::vector<ExtruderExtrusions> get_extrusions(
             const std::pair<size_t, size_t> loops = loops_it->second;
             for (std::size_t i = loops.first; i < loops.second; ++i) {
                 const ExtrusionEntityReference entity{*print.skirt().entities[i], false};
-                std::optional<Point> last_position{get_instance_point(previous_position, {0.0, 0.0})};
+                std::optional<InstancePoint> last_position{get_instance_point(previous_position, {0, 0})};
                 SmoothPath path{smooth_path(nullptr, entity, extruder_id, last_position)};
-                previous_position = get_gcode_point(last_position, {0.0, 0.0});
+                previous_position = get_gcode_point(last_position, {0, 0});
                 extruder_extrusions.skirt.emplace_back(i, std::move(path));
             }
         }
@@ -498,7 +498,7 @@ std::vector<ExtruderExtrusions> get_extrusions(
         using GCode::ExtrusionOrder::get_last_position;
         if (get_brim) {
             extruder_extrusions.brim = print.brim().entities;
-            previous_position = get_last_position(extruder_extrusions.brim, {0.0, 0.0});
+            previous_position = get_last_position(extruder_extrusions.brim, {0, 0});
             get_brim = false;
         }
 

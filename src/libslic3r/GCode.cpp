@@ -2299,15 +2299,16 @@ std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorte
             Skirt::make_skirt_loops_per_extruder_1st_layer(print, layer_tools, m_skirt_done) :
             Skirt::make_skirt_loops_per_extruder_other_layers(print, layer_tools, m_skirt_done)};
 
+    using GCode::ExtrusionOrder::InstancePoint;
     const auto smooth_path{
         [&](const Layer *layer, const ExtrusionEntityReference &extrusion_reference,
-            const unsigned extruder_id, std::optional<Point> &previous_position) {
+            const unsigned extruder_id, std::optional<InstancePoint> &previous_position) {
             const ExtrusionEntity *extrusion_entity{&extrusion_reference.extrusion_entity()};
 
             GCode::SmoothPath result;
 
             if (auto loop = dynamic_cast<const ExtrusionLoop *>(extrusion_entity)) {
-                Point seam_point = previous_position ? *previous_position : Point::Zero();
+                Point seam_point = previous_position ? previous_position->value : Point::Zero();
                 if (loop->role().is_perimeter() && layer != nullptr) {
                     seam_point = this->m_seam_placer.place_seam(layer, *loop, seam_point);
                 }
@@ -2344,7 +2345,7 @@ std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorte
             using GCode::SmoothPathElement;
             for (auto it{result.rbegin()}; it != result.rend(); ++it) {
                 if (!it->path.empty()) {
-                    previous_position = it->path.back().point;
+                    previous_position = InstancePoint{it->path.back().point};
                     break;
                 }
             }
