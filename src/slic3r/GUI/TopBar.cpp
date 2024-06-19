@@ -492,12 +492,6 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
 
     m_sizer->SetItemMinSize(1, wxSize(42 * wxGetApp().em_unit(), -1));
 
-    this->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& evt) {
-        auto user_account = m_menus->get_user_account_info();
-        evt.Enable(user_account.is_logged);
-        evt.Check (user_account.remember_session);
-    }, m_menus->remember_me_item_id);
-
     update_btns_width();
 }
 

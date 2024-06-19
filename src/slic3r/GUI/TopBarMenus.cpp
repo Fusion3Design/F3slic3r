@@ -83,10 +83,6 @@ void TopBarMenus::ApplyWorkspacesMenu()
 
 void TopBarMenus::CreateAccountMenu()
 {
-    remember_me_item_id = wxWindow::NewControlId();
-    append_menu_check_item(&account, remember_me_item_id, _L("Remember me"), "" , 
-        [this](wxCommandEvent&) { if (m_cb_toggle_remember_session) m_cb_toggle_remember_session(); }, nullptr);
-
     m_login_item = append_menu_item(&account, wxID_ANY, "", "",
         [this](wxCommandEvent&) { if (m_cb_act_with_user_account) m_cb_act_with_user_account(); }, "login");
 

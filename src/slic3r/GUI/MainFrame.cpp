@@ -623,7 +623,6 @@ void MainFrame::set_callbacks_for_topbar_menus()
     );
 
     m_bar_menus.set_account_menu_callbacks(
-        []() -> void { wxGetApp().plater()->toggle_remember_user_account_session(); },
         []() -> void { wxGetApp().plater()->act_with_user_account(); },
         [this]() -> void {
             wxString preferences_item = _L("Show \"Log in\" button in application top bar");
@@ -642,7 +641,6 @@ void MainFrame::set_callbacks_for_topbar_menus()
         []() -> TopBarMenus::UserAccountInfo {
             if (auto user_account = wxGetApp().plater()->get_user_account())
                 return { user_account->is_logged(),
-                         user_account->get_remember_session(),
                          user_account->get_username(),
                          user_account->get_avatar_path(true) };
             return TopBarMenus::UserAccountInfo();
