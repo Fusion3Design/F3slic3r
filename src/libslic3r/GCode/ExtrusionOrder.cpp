@@ -202,7 +202,7 @@ std::vector<InfillRange> extract_infill_ranges(
         for (const ExtrusionEntityReference &extrusion_reference : sorted_extrusions) {
             std::optional<Point> last_position{get_instance_point(previous_position, offset)};
             paths.push_back(smooth_path(&layer, extrusion_reference, extruder_id, last_position));
-            previous_position = get_gcode_point(previous_position, offset);
+            previous_position = get_gcode_point(last_position, offset);
         }
         result.push_back({std::move(paths), &region});
         it = it_end;

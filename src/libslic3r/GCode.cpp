@@ -2332,20 +2332,19 @@ std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorte
                     );
                 }
 
-                assert(validate_smooth_path(smooth_path, !enable_loop_clipping));
-
+                assert(validate_smooth_path(smooth_path, !m_enable_loop_clipping));
 
                 result = smooth_path;
             } else if (auto multipath = dynamic_cast<const ExtrusionMultiPath *>(extrusion_entity)) {
-                 result = smooth_path_caches.layer_local().resolve_or_fit(*multipath, extrusion_reference.flipped(), m_scaled_resolution);
+                result = smooth_path_caches.layer_local().resolve_or_fit(*multipath, extrusion_reference.flipped(), m_scaled_resolution);
             } else if (auto path = dynamic_cast<const ExtrusionPath *>(extrusion_entity)) {
-                 result = smooth_path_caches.layer_local().resolve_or_fit(*path, extrusion_reference.flipped(), m_scaled_resolution);
+                result = GCode::SmoothPath{GCode::SmoothPathElement{path->attributes(), smooth_path_caches.layer_local().resolve_or_fit(*path, extrusion_reference.flipped(), m_scaled_resolution)}};
             }
 
             using GCode::SmoothPathElement;
-            for (const SmoothPathElement &element : result) {
-                if (!element.path.empty()) {
-                    previous_position = element.path.back().point;
+            for (auto it{result.rbegin()}; it != result.rend(); ++it) {
+                if (!it->path.empty()) {
+                    previous_position = it->path.back().point;
                     break;
                 }
             }
@@ -3036,22 +3035,22 @@ std::string GCodeGenerator::extrude_skirt(
 }
 
 std::string GCodeGenerator::extrude_infill_range(
-    const std::vector<GCode::SmoothPath> &sorted_paths,
+    const std::vector<GCode::SmoothPath> &infill_range,
     const PrintRegion &region,
     const std::string &extrusion_name,
     const GCode::SmoothPathCache &smooth_path_cache
 ) {
     std::string gcode{};
-    if (!sorted_paths.empty()) {
+
+    if (!infill_range.empty()) {
         this->m_config.apply(region.config());
 
-        for (const GCode::SmoothPath &smooth_path : sorted_paths) {
+        for (const GCode::SmoothPath &path : infill_range) {
             // extrude along the path
-            std::string gcode;
-            for (const GCode::SmoothPathElement &el : smooth_path)
+            for (const GCode::SmoothPathElement &el : path)
                 gcode += this->_extrude(el.path_attributes, el.path, extrusion_name);
 
-            GCode::SmoothPath reversed_smooth_path{smooth_path};
+            GCode::SmoothPath reversed_smooth_path{path};
             GCode::reverse(reversed_smooth_path);
             m_wipe.set_path(std::move(reversed_smooth_path));
 

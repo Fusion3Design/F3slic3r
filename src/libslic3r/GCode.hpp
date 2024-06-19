@@ -308,7 +308,7 @@ private:
     );
 
     std::string extrude_infill_range(
-        const std::vector<GCode::SmoothPath> &sorted_paths,
+        const std::vector<GCode::SmoothPath> &infill_range,
         const PrintRegion &region,
         const std::string &extrusion_name,
         const GCode::SmoothPathCache &smooth_path_cache
