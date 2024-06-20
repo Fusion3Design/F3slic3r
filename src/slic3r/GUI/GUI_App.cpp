@@ -3286,18 +3286,19 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
         preset_updater->config_update(app_config->orig_version(), PresetUpdater::UpdateParams::SHOW_TEXT_BOX, repos);
     }
 
-    auto wizard = new ConfigWizard(mainframe);
+    m_config_wizard = new ConfigWizard(mainframe);
     cw_loading_dlg->Close();
 
-    const bool res = wizard->run(reason, start_page);
+    const bool res = m_config_wizard->run(reason, start_page);
 
 
     // !!! Deallocate memory after close ConfigWizard.
     // Note, that mainframe is a parent of ConfigWizard.
     // So, wizard will be destroyed only during destroying of mainframe
     // To avoid this state the wizard have to be disconnected from mainframe and Destroyed explicitly
-    mainframe->RemoveChild(wizard);
-    wizard->Destroy();
+    mainframe->RemoveChild(m_config_wizard);
+    m_config_wizard->Destroy();
+    m_config_wizard = nullptr;
 
     if (res) {
         load_current_presets();
@@ -3309,15 +3310,13 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
     return res;
 }
 
-#if 0
-void GUI_App::update_login_dialog()
+void GUI_App::update_wizard_login_page()
 {
-    if (!m_login_dialog) {
+    if (!m_config_wizard) {
         return;
     }
-    m_login_dialog->update_account();
+    m_config_wizard->update_login();
 }
-#endif // 0
 
 void GUI_App::show_desktop_integration_dialog()
 {

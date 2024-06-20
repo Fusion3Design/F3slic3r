@@ -1259,7 +1259,7 @@ LoginWebViewDialog::LoginWebViewDialog(wxWindow *parent, std::string &ret_val, c
     : WebViewDialog(parent
         , url
         , _L("Log in dialog")
-        , wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 4 * 3, 50 * wxGetApp().em_unit()))
+        , wxSize(parent->GetClientSize().x / 3, parent->GetClientSize().y / 4 * 3)
         , {})
     , m_ret_val(ret_val)
 {

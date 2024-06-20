@@ -97,6 +97,7 @@
 #include "Mouse3DController.hpp"
 #include "Tab.hpp"
 #include "Jobs/ArrangeJob2.hpp"
+#include "ConfigWizardWebViewPage.hpp"
 
 #include "Jobs/RotoptimizeJob.hpp"
 #include "Jobs/SLAImportJob.hpp"
@@ -868,6 +869,10 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             BOOST_LOG_TRIVIAL(trace) << "Received login from other instance event.";
             user_account->on_login_code_recieved(evt.data);
         });
+        this->q->Bind(EVT_LOGIN_VIA_WIZARD, [this](Event<std::string> &evt) {
+            BOOST_LOG_TRIVIAL(trace) << "Received login from wizard.";
+            user_account->on_login_code_recieved(evt.data);
+        });
         this->q->Bind(EVT_OPEN_PRUSAAUTH, [this](OpenPrusaAuthEvent& evt) {
             BOOST_LOG_TRIVIAL(info)  << "open browser: " << evt.data;
             // first register url to be sure to get the code back
@@ -897,9 +902,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             this->main_frame->refresh_account_menu(true);
             // Update sidebar printer status
             sidebar->update_printer_presets_combobox();
-#if 0
-            wxGetApp().update_login_dialog();
-#endif // 0
+            wxGetApp().update_wizard_login_page();
             this->show_action_buttons(this->ready_to_slice);
 
              LogoutWebViewDialog dlg(this->q);
@@ -919,9 +922,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                 this->main_frame->add_connect_webview_tab();
                 // Update User name in TopBar
                 this->main_frame->refresh_account_menu();
-#if 0
-                wxGetApp().update_login_dialog();
-#endif // 0
+                wxGetApp().update_wizard_login_page();
                 this->show_action_buttons(this->ready_to_slice);
  
             } else {
@@ -990,9 +991,6 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
            fwrite(evt.data.c_str(), 1, evt.data.size(), file);
            fclose(file);
            this->main_frame->refresh_account_menu(true);
-#if 0
-           wxGetApp().update_login_dialog();
-#endif // 0    
         }); 
         this->q->Bind(EVT_UA_PRUSACONNECT_PRINTER_DATA_SUCCESS, [this](UserAccountSuccessEvent& evt) {
             this->user_account->set_current_printer_data(evt.data);
