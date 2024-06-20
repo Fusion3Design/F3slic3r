@@ -327,7 +327,7 @@ void WebViewPanel::run_script(const wxString& javascript)
     // Remember the script we run in any case, so the next time the user opens
     // the "Run Script" dialog box, it is shown there for convenient updating.
     m_javascript = javascript;
-    BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript;
+    std::cout << "RunScript " << javascript << "\n";
     m_browser->RunScriptAsync(javascript);
 }
 
@@ -362,7 +362,9 @@ void WebViewPanel::on_add_user_script(wxCommandEvent& WXUNUSED(evt))
     if (dialog.ShowModal() != wxID_OK)
         return;
 
-    if (!m_browser->AddUserScript(dialog.GetValue()))
+    const wxString& javascript = dialog.GetValue();
+    std::cout << "RunScript " << javascript << "\n";
+    if (!m_browser->AddUserScript(javascript))
         wxLogError("Could not add user script");
 }
 
@@ -583,11 +585,10 @@ void ConnectWebViewPanel::on_page_will_load()
     const std::string& access_token = plater->get_user_account()->get_access_token();
 
     assert(!access_token.empty());
-
-    m_browser->AddUserScript(wxString::Format(
+    auto javascript = wxString::Format(
 
 #if AUTH_VIA_FETCH_OVERRIDE
-        /*
+                          /*
          * Notes:
          * - The fetch() function has two distinct prototypes (i.e. input args):
          *    1. fetch(url: string, options: object | undefined)
@@ -595,8 +596,8 @@ void ConnectWebViewPanel::on_page_will_load()
          * - For some reason I can't explain the headers can be extended only via Request object
          *   i.e. the fetch prototype (2). So we need to convert (1) call into (2) before
          *
-         */
-        R"(
+                           */
+                          R"(
             if (window.__fetch === undefined) {
                 window.__fetch = fetch;
                 window.fetch = function(req, opts = {}) {
@@ -617,7 +618,7 @@ void ConnectWebViewPanel::on_page_will_load()
             window.__access_token_version = 0;
         )",
 #else
-        R"(
+                          R"(
         console.log('Preparing login');
         window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
             .then((resp) => {
@@ -626,13 +627,16 @@ void ConnectWebViewPanel::on_page_will_load()
             });
         )",
 #endif
-        access_token
-    ));
+                          access_token
+    );
+    std::cout << "RunScript " << javascript << "\n";
+    m_browser->AddUserScript(javascript);
 }
 
 void ConnectWebViewPanel::on_user_token(UserAccountSuccessEvent& e)
 {
     e.Skip();
+    auto access_token = wxGetApp().plater()->get_user_account()->get_access_token();
     assert(!access_token.empty());
     wxString javascript = wxString::Format(
 #if AUTH_VIA_FETCH_OVERRIDE
@@ -647,9 +651,10 @@ void ConnectWebViewPanel::on_user_token(UserAccountSuccessEvent& e)
             });
         )",
 #endif
-        wxGetApp().plater()->get_user_account()->get_access_token()
+        access_token
     );
     //m_browser->AddUserScript(javascript, wxWEBVIEW_INJECT_AT_DOCUMENT_END);
+    std::cout << "RunScript " << javascript << "\n";
     m_browser->RunScriptAsync(javascript);
 }
 
@@ -678,8 +683,8 @@ void ConnectWebViewPanel::logout()
     run_script(script);
 
     Plater* plater = wxGetApp().plater();
-    m_browser->RunScript(wxString::Format(
-        R"(
+    auto javascript = wxString::Format(
+                     R"(
             console.log('Preparing login');
             window.fetch('/slicer/logout', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
                 .then((resp) => {
@@ -687,8 +692,11 @@ void ConnectWebViewPanel::logout()
                     resp.text().then((json) => console.log('Login resp body', json));
                 });
         )",
-        plater->get_user_account()->get_access_token()
-    ));
+                     plater->get_user_account()->get_access_token()
+    );
+    std::cout << "RunScript " << javascript << "\n";
+    m_browser->RunScript(javascript);
+
 }
 
 void ConnectWebViewPanel::sys_color_changed()
@@ -747,6 +755,7 @@ void PrinterWebViewPanel::send_api_key()
     key);
 
     m_browser->RemoveAllUserScripts();
+    std::cout << "RunScript " << script << "\n";
     m_browser->AddUserScript(script);
     m_browser->Reload();
     
@@ -772,7 +781,9 @@ void PrinterWebViewPanel::send_credentials()
 )", usr, psk);
     
     m_browser->RemoveAllUserScripts();
+    std::cout << "RunScript " << script << "\n";
     m_browser->AddUserScript(script);
+    
     m_browser->Reload();
     
 }
@@ -1056,7 +1067,9 @@ void WebViewDialog::on_add_user_script(wxCommandEvent& WXUNUSED(evt))
     if (dialog.ShowModal() != wxID_OK)
         return;
 
-    if (!m_browser->AddUserScript(dialog.GetValue()))
+    const wxString& javascript = dialog.GetValue();
+    std::cout << "RunScript " << javascript <<"\n";
+    if (!m_browser->AddUserScript(javascript))
         wxLogError("Could not add user script");
 }
 
@@ -1163,7 +1176,7 @@ void WebViewDialog::run_script(const wxString& javascript)
     // Remember the script we run in any case, so the next time the user opens
     // the "Run Script" dialog box, it is shown there for convenient updating.
     m_javascript = javascript;
-    BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript;
+    std::cout << "RunScript " << javascript << "\n";
     m_browser->RunScriptAsync(javascript);
 }
 
