@@ -181,6 +181,7 @@ public:
     void resend_config();
 protected:
     // action callbacs stored in m_actions
+    virtual void on_connect_action_error(const std::string& message_data);
     virtual void on_connect_action_request_config(const std::string& message_data);
     virtual void on_connect_action_request_open_in_browser(const std::string& message_data);
     virtual void on_connect_action_select_printer(const std::string& message_data) = 0;
@@ -207,6 +208,7 @@ protected:
     void run_script_bridge(const wxString& script) override {run_script(script); }
     void on_page_will_load() override;
 private:
+    static wxString get_login_script(bool refresh);
     void on_user_token(UserAccountSuccessEvent& e);
     bool m_reached_default_url {false};
 };

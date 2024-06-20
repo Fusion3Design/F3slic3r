@@ -489,6 +489,7 @@ ConnectRequestHandler::ConnectRequestHandler()
     m_actions["SELECT_PRINTER"] = std::bind(&ConnectRequestHandler::on_connect_action_select_printer, this, std::placeholders::_1);
     m_actions["PRINT"] = std::bind(&ConnectRequestHandler::on_connect_action_print, this, std::placeholders::_1);
     m_actions["REQUEST_OPEN_IN_BROWSER"] = std::bind(&ConnectRequestHandler::on_connect_action_request_open_in_browser, this, std::placeholders::_1);
+    m_actions["ERROR"] = std::bind(&ConnectRequestHandler::on_connect_action_error, this, std::placeholders::_1);
 }
 ConnectRequestHandler::~ConnectRequestHandler()
 {
@@ -525,6 +526,11 @@ void ConnectRequestHandler::handle_message(const std::string& message)
     if (m_actions.find(action_string) != m_actions.end()) {
         m_actions[action_string](message);
     }
+}
+
+void ConnectRequestHandler::on_connect_action_error(const std::string &message_data)
+{
+    BOOST_LOG_TRIVIAL(error) << "WebKit runtime error: " << message_data;
 }
 
 void ConnectRequestHandler::resend_config()
@@ -579,16 +585,19 @@ ConnectWebViewPanel::~ConnectWebViewPanel()
     m_browser->Unbind(EVT_UA_ID_USER_SUCCESS, &ConnectWebViewPanel::on_user_token, this);
 }
 
-void ConnectWebViewPanel::on_page_will_load()
+wxString ConnectWebViewPanel::get_login_script(bool refresh)
 {
     Plater* plater = wxGetApp().plater();
     const std::string& access_token = plater->get_user_account()->get_access_token();
-
     assert(!access_token.empty());
     auto javascript = wxString::Format(
 
 #if AUTH_VIA_FETCH_OVERRIDE
-                          /*
+        refresh
+            ?
+            "window.__access_token = '%s';window.__access_token_version = (window.__access_token_version || 0) + 1;console.log('Updated Auth token', window.__access_token);"
+            :
+        /*
          * Notes:
          * - The fetch() function has two distinct prototypes (i.e. input args):
          *    1. fetch(url: string, options: object | undefined)
@@ -596,8 +605,8 @@ void ConnectWebViewPanel::on_page_will_load()
          * - For some reason I can't explain the headers can be extended only via Request object
          *   i.e. the fetch prototype (2). So we need to convert (1) call into (2) before
          *
-                           */
-                          R"(
+         */
+        R"(
             if (window.__fetch === undefined) {
                 window.__fetch = fetch;
                 window.fetch = function(req, opts = {}) {
@@ -618,17 +627,34 @@ void ConnectWebViewPanel::on_page_will_load()
             window.__access_token_version = 0;
         )",
 #else
-                          R"(
+        R"(
         console.log('Preparing login');
-        window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
-            .then((resp) => {
-                console.log('Login resp', resp);
-                resp.text().then((json) => console.log('Login resp body', json));
+        function errorHandler(err) {
+            window._prusaSlicer.postMessage({
+                action: 'ERROR',
+                error: err
             });
+        };
+        window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
+            .then(function (resp) {
+                console.log('Login resp', resp);
+                resp.text()
+                    .then(function (json) { console.log('Login resp body', json); })
+                    .then(function (body) {
+                        if (resp.status >= 400) window._prusaSlicer.postMessage({action: 'ERROR', error: body});
+                    });
+            })
+            .catch(errorHandler);
         )",
 #endif
-                          access_token
+        access_token
     );
+    return javascript;
+}
+
+void ConnectWebViewPanel::on_page_will_load()
+{
+    auto javascript = get_login_script(false);
     std::cout << "RunScript " << javascript << "\n";
     m_browser->AddUserScript(javascript);
 }
@@ -638,21 +664,7 @@ void ConnectWebViewPanel::on_user_token(UserAccountSuccessEvent& e)
     e.Skip();
     auto access_token = wxGetApp().plater()->get_user_account()->get_access_token();
     assert(!access_token.empty());
-    wxString javascript = wxString::Format(
-#if AUTH_VIA_FETCH_OVERRIDE
-        "window.__access_token = '%s';window.__access_token_version = (window.__access_token_version || 0) + 1;console.log('Updated Auth token', window.__access_token);",
-#else
-        R"(
-        console.log('Preparing login');
-        window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
-            .then((resp) => {
-                console.log('Login resp', resp);
-                resp.text().then((json) => console.log('Login resp body', json));
-            });
-        )",
-#endif
-        access_token
-    );
+    wxString javascript = get_login_script(true);
     //m_browser->AddUserScript(javascript, wxWEBVIEW_INJECT_AT_DOCUMENT_END);
     std::cout << "RunScript " << javascript << "\n";
     m_browser->RunScriptAsync(javascript);
@@ -687,9 +699,9 @@ void ConnectWebViewPanel::logout()
                      R"(
             console.log('Preparing login');
             window.fetch('/slicer/logout', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
-                .then((resp) => {
+                .then(function (resp){
                     console.log('Login resp', resp);
-                    resp.text().then((json) => console.log('Login resp body', json));
+                    resp.text().then(function (json) { console.log('Login resp body', json) });
                 });
         )",
                      plater->get_user_account()->get_access_token()
