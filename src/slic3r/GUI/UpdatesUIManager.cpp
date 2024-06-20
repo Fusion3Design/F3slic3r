@@ -259,7 +259,7 @@ void RepositoryUpdateUIManager::load_offline_repos()
             std::string msg;
             std::string uuid = m_pad->add_local_archive(input_path, msg);
             if (uuid.empty()) {
-                ErrorDialog(m_parent, msg, false).ShowModal();
+                ErrorDialog(m_parent, from_u8(msg), false).ShowModal();
             }
             else {
                 m_selected_uuids.emplace(uuid);
@@ -285,7 +285,7 @@ bool RepositoryUpdateUIManager::set_selected_repositories()
         return true;
     }
 
-    ErrorDialog(m_parent, msg, false).ShowModal();
+    ErrorDialog(m_parent, from_u8(msg), false).ShowModal();
     // update selection on UI
     update();
     check_selection();
