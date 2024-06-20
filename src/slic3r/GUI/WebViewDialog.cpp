@@ -145,6 +145,8 @@ void WebViewPanel::load_url(const wxString& url)
     if (!m_browser)
         return;
 
+    this->on_page_will_load();
+
     this->Show();
     this->Raise();
 #ifdef DEBUG_URL_PANEL
@@ -255,6 +257,10 @@ void WebViewPanel::on_script_message(wxWebViewEvent& evt)
 }
 
 void WebViewPanel::on_navigation_request(wxWebViewEvent &evt) 
+{
+}
+
+void WebViewPanel::on_page_will_load()
 {
 }
 
@@ -560,7 +566,21 @@ ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
 {  
     //m_browser->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new WebViewHandler("https")));
 
+    wxGetApp().plater()->Bind(EVT_UA_ID_USER_SUCCESS, &ConnectWebViewPanel::on_user_token, this);
+}
+
+ConnectWebViewPanel::~ConnectWebViewPanel()
+{
+    m_browser->Unbind(EVT_UA_ID_USER_SUCCESS, &ConnectWebViewPanel::on_user_token, this);
+}
+
+void ConnectWebViewPanel::on_page_will_load()
+{
     Plater* plater = wxGetApp().plater();
+    const std::string& access_token = plater->get_user_account()->get_access_token();
+
+    assert(!access_token.empty());
+
     m_browser->AddUserScript(wxString::Format(
 
 #if AUTH_VIA_FETCH_OVERRIDE
@@ -594,7 +614,7 @@ ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
             window.__access_token_version = 0;
         )",
 #else
-    R"(
+        R"(
         console.log('Preparing login');
         window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
             .then((resp) => {
@@ -603,19 +623,14 @@ ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
             });
         )",
 #endif
-        plater->get_user_account()->get_access_token()
+        access_token
     ));
-    plater->Bind(EVT_UA_ID_USER_SUCCESS, &ConnectWebViewPanel::on_user_token, this);
-}
-
-ConnectWebViewPanel::~ConnectWebViewPanel()
-{
-    m_browser->Unbind(EVT_UA_ID_USER_SUCCESS, &ConnectWebViewPanel::on_user_token, this);
 }
 
 void ConnectWebViewPanel::on_user_token(UserAccountSuccessEvent& e)
 {
     e.Skip();
+    assert(!access_token.empty());
     wxString javascript = wxString::Format(
 #if AUTH_VIA_FETCH_OVERRIDE
         "window.__access_token = '%s';window.__access_token_version = (window.__access_token_version || 0) + 1;console.log('Updated Auth token', window.__access_token);",
