@@ -129,6 +129,9 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const 
 #endif
     //Connect the idle events
     Bind(wxEVT_IDLE, &WebViewPanel::on_idle, this);
+
+    m_browser->EnableContextMenu(true);
+    m_browser->EnableAccessToDevTools(true);
  }
 
 WebViewPanel::~WebViewPanel()
