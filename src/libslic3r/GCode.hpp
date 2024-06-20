@@ -281,10 +281,7 @@ private:
         coordf_t print_z,
         bool vase_mode
     );
-    std::string     extrude_entity(const ExtrusionEntityReference &entity, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed = -1.);
-
     std::string     extrude_perimeter(const GCode::ExtrusionOrder::Perimeter &perimeter, const std::string_view description);
-    std::string     extrude_loop(const ExtrusionLoop &loop, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed = -1.);
     std::string     extrude_skirt(GCode::SmoothPath smooth_path, const ExtrusionFlow &extrusion_flow_override,
         const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed);
 
@@ -305,6 +302,12 @@ private:
         const std::vector<GCode::ExtrusionOrder::Perimeter> &perimeters,
         const InstanceToPrint &print_instance,
         const GCode::SmoothPathCache &smooth_path_cache
+    );
+
+    std::string extrude_brim(
+        const std::vector<GCode::ExtrusionOrder::BrimPath> &brim,
+        const std::string &extrusion_name,
+        const double speed
     );
 
     std::string extrude_infill_range(

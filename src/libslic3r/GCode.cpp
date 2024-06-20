@@ -2603,9 +2603,8 @@ LayerResult GCodeGenerator::process_layer(
 
             this->set_origin(0., 0.);
             m_avoid_crossing_perimeters.use_external_mp();
-            for (const ExtrusionEntity *ee : extruder_extrusions.brim) {
-                gcode += this->extrude_entity({ *ee, false }, smooth_path_caches.global(), "brim"sv, m_config.support_material_speed.value);
-            }
+
+            gcode += this->extrude_brim(extruder_extrusions.brim, "brim", m_config.support_material_speed.value);
             m_avoid_crossing_perimeters.use_external_mp(false);
             // Allow a straight travel move to the first object point.
             m_avoid_crossing_perimeters.disable_once();
@@ -2957,60 +2956,6 @@ std::string GCodeGenerator::extrude_perimeter(
     return gcode;
 }
 
-std::string GCodeGenerator::extrude_loop(const ExtrusionLoop &loop_src, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed)
-{
-    // Extrude all loops CCW unless CW movements are prefered.
-    const bool is_hole      = loop_src.is_clockwise();
-    const bool reverse_loop = m_config.prefer_clockwise_movements ? !is_hole : is_hole;
-
-    Point seam_point = this->last_position.has_value() ? *this->last_position : Point::Zero();
-    if (!m_config.spiral_vase && comment_is_perimeter(description)) {
-        assert(m_layer != nullptr);
-        seam_point = loop_src.seam;
-    }
-    // Because the G-code export has 1um resolution, don't generate segments shorter than 1.5 microns,
-    // thus empty path segments will not be produced by G-code export.
-    GCode::SmoothPath smooth_path = smooth_path_cache.resolve_or_fit_split_with_seam(loop_src, reverse_loop, m_scaled_resolution, seam_point, scaled<double>(0.0015));
-
-    // Clip the path to avoid the extruder to get exactly on the first point of the loop;
-    // if polyline was shorter than the clipping distance we'd get a null polyline, so
-    // we discard it in that case.
-    if (m_enable_loop_clipping)
-        clip_end(smooth_path, scaled<double>(EXTRUDER_CONFIG(nozzle_diameter)) * LOOP_CLIPPING_LENGTH_OVER_NOZZLE_DIAMETER, scaled<double>(GCode::ExtrusionOrder::min_gcode_segment_length));
-
-    if (smooth_path.empty())
-        return {};
-
-    assert(validate_smooth_path(smooth_path, ! m_enable_loop_clipping));
-
-    // Apply the small perimeter speed.
-    if (loop_src.paths.front().role().is_perimeter() && loop_src.length() <= SMALL_PERIMETER_LENGTH && speed == -1)
-        speed = m_config.small_perimeter_speed.get_abs_value(m_config.perimeter_speed);
-
-    // Extrude along the smooth path.
-    std::string gcode;
-    for (const GCode::SmoothPathElement &el : smooth_path)
-        gcode += this->_extrude(el.path_attributes, el.path, description, speed);
-
-    // reset acceleration
-    gcode += m_writer.set_print_acceleration(fast_round_up<unsigned int>(m_config.default_acceleration.value));
-
-    if (m_wipe.enabled()) {
-        // Wipe will hide the seam.
-        m_wipe.set_path(std::move(smooth_path));
-    } else if (loop_src.paths.back().role().is_external_perimeter() && m_layer != nullptr && m_config.perimeters.value > 1) {
-        // Only wipe inside if the wipe along the perimeter is disabled.
-        // Make a little move inwards before leaving loop.
-        if (std::optional<Point> pt = wipe_hide_seam(smooth_path, reverse_loop, scale_(EXTRUDER_CONFIG(nozzle_diameter))); pt) {
-            // Generate the seam hiding travel move.
-            gcode += m_writer.travel_to_xy(this->point_to_gcode(*pt), "move inwards before travel");
-            this->last_position = *pt;
-        }
-    }
-
-    return gcode;
-}
-
 std::string GCodeGenerator::extrude_skirt(
     GCode::SmoothPath smooth_path, const ExtrusionFlow &extrusion_flow_override,
     const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed)
@@ -3034,6 +2979,34 @@ std::string GCodeGenerator::extrude_skirt(
 
     return gcode;
 }
+
+std::string GCodeGenerator::extrude_brim(
+    const std::vector<GCode::ExtrusionOrder::BrimPath> &brim,
+    const std::string &extrusion_name,
+    const double speed
+) {
+    std::string gcode{};
+
+    for (const auto &[path, is_loop] : brim) {
+        // extrude along the path
+        for (const GCode::SmoothPathElement &el : path)
+            gcode += this->_extrude(el.path_attributes, el.path, extrusion_name, speed);
+
+
+        // reset acceleration
+        gcode += m_writer.set_print_acceleration((unsigned int)floor(m_config.default_acceleration.value + 0.5));
+
+        if (is_loop) {
+            m_wipe.set_path(GCode::SmoothPath{path});
+        } else {
+            GCode::SmoothPath reversed_smooth_path{path};
+            GCode::reverse(reversed_smooth_path);
+            m_wipe.set_path(std::move(reversed_smooth_path));
+        }
+    }
+
+    return gcode;
+};
 
 std::string GCodeGenerator::extrude_infill_range(
     const std::vector<GCode::SmoothPath> &infill_range,
@@ -3120,19 +3093,6 @@ std::string GCodeGenerator::extrude_multi_path(const ExtrusionMultiPath &multipa
     // reset acceleration
     gcode += m_writer.set_print_acceleration((unsigned int)floor(m_config.default_acceleration.value + 0.5));
     return gcode;
-}
-
-std::string GCodeGenerator::extrude_entity(const ExtrusionEntityReference &entity, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed)
-{
-    if (const ExtrusionPath *path = dynamic_cast<const ExtrusionPath*>(&entity.extrusion_entity()))
-        return this->extrude_path(*path, entity.flipped(), smooth_path_cache, description, speed);
-    else if (const ExtrusionMultiPath *multipath = dynamic_cast<const ExtrusionMultiPath*>(&entity.extrusion_entity()))
-        return this->extrude_multi_path(*multipath, entity.flipped(), smooth_path_cache, description, speed);
-    else if (const ExtrusionLoop *loop = dynamic_cast<const ExtrusionLoop*>(&entity.extrusion_entity()))
-        return this->extrude_loop(*loop, smooth_path_cache, description, speed);
-    else
-        throw Slic3r::InvalidArgument("Invalid argument supplied to extrude()");
-    return {};
 }
 
 std::string GCodeGenerator::extrude_path(const ExtrusionPath &path, bool reverse, const GCode::SmoothPathCache &smooth_path_cache, std::string_view description, double speed)

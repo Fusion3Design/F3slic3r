@@ -89,10 +89,15 @@ using PathSmoothingFunction = std::function<SmoothPath(
     const Layer *, const ExtrusionEntityReference &, const unsigned extruder_id, std::optional<InstancePoint> &previous_position
 )>;
 
+struct BrimPath {
+    SmoothPath path;
+    bool is_loop;
+};
+
 struct ExtruderExtrusions {
     unsigned extruder_id;
     std::vector<std::pair<std::size_t, GCode::SmoothPath>> skirt;
-    ExtrusionEntitiesPtr brim;
+    std::vector<BrimPath> brim;
     std::vector<std::vector<SliceExtrusions>> overriden_extrusions;
     std::vector<NormalExtrusions> normal_extrusions;
 };

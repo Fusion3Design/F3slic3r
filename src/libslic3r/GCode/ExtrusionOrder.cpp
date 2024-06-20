@@ -497,8 +497,14 @@ std::vector<ExtruderExtrusions> get_extrusions(
         // Extrude brim with the extruder of the 1st region.
         using GCode::ExtrusionOrder::get_last_position;
         if (get_brim) {
-            extruder_extrusions.brim = print.brim().entities;
-            previous_position = get_last_position(extruder_extrusions.brim, {0, 0});
+            for (const ExtrusionEntity *entity : print.brim().entities) {
+                const ExtrusionEntityReference entity_reference{*entity, false};
+                std::optional<InstancePoint> last_position{get_instance_point(previous_position, {0, 0})};
+                SmoothPath path{smooth_path(nullptr, entity_reference, extruder_id, last_position)};
+                previous_position = get_gcode_point(last_position, {0, 0});
+                const bool is_loop{dynamic_cast<const ExtrusionLoop *>(entity) != nullptr};
+                extruder_extrusions.brim.push_back({std::move(path), is_loop});
+            }
             get_brim = false;
         }
 
