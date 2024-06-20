@@ -5,6 +5,7 @@
 #include "GUI_App.hpp"
 #include "Plater.hpp"
 #include "slic3r/GUI/I18N.hpp"
+#include "format.hpp"
 
 #include <wx/webview.h>
 
@@ -31,12 +32,17 @@ ConfigWizardWebViewPage::ConfigWizardWebViewPage(ConfigWizard *parent)
     }
     if (logged) {
         // TRN Config wizard page with a log in web.
-        m_text = new wxStaticText(this, wxID_ANY, format_wxstr("You are logged as %1%.", p_user_account->get_username()));
+        m_text = new wxStaticText(this, wxID_ANY, format_wxstr("You are logged as %1%.", p_user_account->get_username()));       
     } else {
-        // TRN Config wizard page with a log in web.
-        m_text = new wxStaticText(this, wxID_ANY, _L("Please log into your Prusa Account. This step is not mandatory."));
+        // TRN Config wizard page with a log in web. first line of text.
+        m_text = new wxStaticText(this, wxID_ANY, _L("Please log into your Prusa Account."));
+        // TRN Config wizard page with a log in web. second line of text.
+        m_bold_text = new wxStaticText(this, wxID_ANY, _L("This step is optional."));
+        m_bold_text->SetFont(wxGetApp().bold_font());
+        m_bold_text->Wrap(WRAP_WIDTH);
     }
     append(m_text);
+    append(m_bold_text);
     m_browser_sizer->Add(m_browser, 1, wxEXPAND);
     append(m_browser_sizer, 1, wxEXPAND);
 
@@ -50,15 +56,16 @@ ConfigWizardWebViewPage::ConfigWizardWebViewPage(ConfigWizard *parent)
 
 void ConfigWizardWebViewPage::login_changed()
 {
-    assert(p_user_account && m_browser_sizer && m_text);
+    assert(p_user_account && m_browser_sizer && m_text && m_bold_text);
     bool logged = p_user_account->is_logged();
     m_browser_sizer->Show(!logged);
+    m_bold_text->Show(!logged);
     if (logged) {
         // TRN Config wizard page with a log in web.
         m_text->SetLabel(format_wxstr("You are logged as %1%.", p_user_account->get_username()));
     } else {
-        // TRN Config wizard page with a log in web.
-        m_text->SetLabel(_L("Please log into your Prusa Account. This step is not mandatory."));
+        // TRN Config wizard page with a log in web. first line of text.
+        m_text->SetLabel(_L("Please log into your Prusa Account."));
     }
 }
 

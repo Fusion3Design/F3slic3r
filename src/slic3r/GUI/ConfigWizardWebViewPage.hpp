@@ -57,6 +57,7 @@ private:
     UserAccount *p_user_account{nullptr};
     wxBoxSizer *m_browser_sizer{nullptr};
     wxStaticText *m_text{nullptr};
+    wxStaticText *m_bold_text{nullptr};
 };
 
 }} // namespace Slic3r::GUI
