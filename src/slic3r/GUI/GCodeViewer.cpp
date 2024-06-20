@@ -304,12 +304,12 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
 
     if (viewer != nullptr) {
         ImGuiWrapper& imgui = *wxGetApp().imgui();
-        const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
+        const ImGuiViewport& viewport = *ImGui::GetMainViewport();
 
         Preview* preview = dynamic_cast<Preview*>(wxGetApp().plater()->get_current_canvas3D()->get_wxglcanvas_parent());
         assert(preview);
 
-        ImGuiPureWrap::set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height() - preview->get_moves_slider_height()), ImGuiCond_Always, 0.5f, 1.0f);
+        ImGuiPureWrap::set_next_window_pos(viewport.GetCenter().x, viewport.Size.y - preview->get_moves_slider_height(), ImGuiCond_Always, 0.5f, 1.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::SetNextWindowBgAlpha(properties_shown ? 0.8f : 0.25f);
         ImGuiPureWrap::begin(std::string("ToolPosition"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
@@ -348,9 +348,14 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                 char buff[1024];
 
                 append_table_row(_u8L("Type"), [&vertex]() {
-                    std::string text = _u8L(to_string(vertex.type));
+                    ImGuiPureWrap::text(_u8L(to_string(vertex.type)));
+                });
+                append_table_row(_u8L("Extrusion role"), [&vertex]() {
+                    std::string text;
                     if (vertex.is_extrusion())
-                        text += " (" + _u8L(to_string(vertex.role)) + ")";
+                        text = _u8L(to_string(vertex.role));
+                    else
+                        text = _u8L("N/A");
                     ImGuiPureWrap::text(text);
                 });
                 append_table_row(_u8L("Width") + " (" + _u8L("mm") + ")", [&vertex, &buff]() {
@@ -378,7 +383,6 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                     const std::string text = std::string(buff);
                     ImGuiPureWrap::text(text);
                 });
-#if !ENABLE_ACTUAL_SPEED_DEBUG
                 append_table_row(_u8L("Speed") + " (" + _u8L("mm/s") + ")", [&vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
@@ -389,17 +393,16 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                         text = _u8L("N/A");
                     ImGuiPureWrap::text(text);
                 });
-                append_table_row(_u8L("Actual speed") + " (" + _u8L("mm/s") + ")", [&vertex, &buff]() {
+                  append_table_row(_u8L("Volumetric flow rate") + " (" + _u8L("mm³/s") + ")", [&vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
-                        sprintf(buff, "%.1f", vertex.actual_feedrate);
+                        sprintf(buff, "%.3f", vertex.volumetric_rate());
                         text = std::string(buff);
                     }
                     else
                         text = _u8L("N/A");
                     ImGuiPureWrap::text(text);
-                });
-#endif // !ENABLE_ACTUAL_SPEED_DEBUG
+                  });
                 append_table_row(_u8L("Fan speed") + " (" + _u8L("%") + ")", [&vertex, &buff]() {
                     std::string text;
                     if (vertex.is_extrusion()) {
@@ -437,7 +440,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                 if (table_shown) {
                     static float table_wnd_height = 0.0f;
                     const ImVec2 wnd_size = ImGui::GetWindowSize();
-                    ImGuiPureWrap::set_next_window_pos(ImGui::GetWindowPos().x + wnd_size.x, static_cast<float>(cnv_size.get_height() - preview->get_moves_slider_height()), ImGuiCond_Always, 0.0f, 1.0f);
+                    ImGuiPureWrap::set_next_window_pos(ImGui::GetWindowPos().x + wnd_size.x, viewport.Size.y - preview->get_moves_slider_height(), ImGuiCond_Always, 0.0f, 1.0f);
                     ImGui::SetNextWindowSizeConstraints({ 0.0f, 0.0f }, { -1.0f, wnd_size.y });
                     ImGuiPureWrap::begin(std::string("ToolPositionTableWnd"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar |
                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
