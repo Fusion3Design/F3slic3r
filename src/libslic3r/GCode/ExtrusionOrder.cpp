@@ -326,11 +326,13 @@ unsigned translate_support_extruder(
     }
 }
 
-ExtrusionEntityReferences get_support_extrusions(
+std::vector<SupportPath> get_support_extrusions(
     const unsigned int extruder_id,
     const GCode::ObjectLayerToPrint &layer_to_print,
     unsigned int support_extruder,
-    unsigned int interface_extruder
+    unsigned int interface_extruder,
+    const PathSmoothingFunction &smooth_path,
+    std::optional<Point> &previous_position
 ) {
     if (const SupportLayer &support_layer = *layer_to_print.support_layer;
         !support_layer.support_fills.entities.empty()) {
@@ -354,7 +356,23 @@ ExtrusionEntityReferences get_support_extrusions(
                     if (ee->role() == role)
                         entities_cache.emplace_back(ee);
             }
-            return chain_extrusion_references(entities);
+            std::vector<SupportPath> paths;
+            for (const ExtrusionEntityReference &entity_reference : chain_extrusion_references(entities)) {
+                auto collection{dynamic_cast<const ExtrusionEntityCollection *>(&entity_reference.extrusion_entity())};
+                const bool is_interface{entity_reference.extrusion_entity().role() != ExtrusionRole::SupportMaterial};
+                if (collection != nullptr) {
+                    for (const ExtrusionEntity * sub_entity : *collection) {
+                        std::optional<InstancePoint> last_position{get_instance_point(previous_position, {0, 0})};
+                        paths.push_back({smooth_path(nullptr, {*sub_entity, entity_reference.flipped()}, extruder_id, last_position), is_interface});
+                        previous_position = get_gcode_point(last_position, {0, 0});
+                    }
+                } else {
+                    std::optional<InstancePoint> last_position{get_instance_point(previous_position, {0, 0})};
+                    paths.push_back({smooth_path(nullptr, entity_reference, extruder_id, last_position), is_interface});
+                    previous_position = get_gcode_point(last_position, {0, 0});
+                }
+            }
+            return paths;
         }
     }
     return {};
@@ -421,12 +439,10 @@ std::vector<NormalExtrusions> get_normal_extrusions(
                 extruder_id,
                 layers[instance.object_layer_to_print_id],
                 translate_support_extruder(instance.print_object.config().support_material_extruder.value, layer_tools, print.config().filament_soluble),
-                translate_support_extruder(instance.print_object.config().support_material_interface_extruder.value, layer_tools, print.config().filament_soluble)
+                translate_support_extruder(instance.print_object.config().support_material_interface_extruder.value, layer_tools, print.config().filament_soluble),
+                smooth_path,
+                previous_position
             );
-
-            if (const auto last_position = get_last_position(result.back().support_extrusions, offset)) {
-                previous_position = last_position;
-            }
         }
 
         if (const Layer *layer = layers[instance.object_layer_to_print_id].object_layer; layer) {
@@ -454,6 +470,38 @@ std::vector<NormalExtrusions> get_normal_extrusions(
     }
     return result;
 }
+
+bool is_empty(const std::vector<SliceExtrusions> &extrusions) {
+    for (const SliceExtrusions &slice_extrusions : extrusions) {
+        for (const IslandExtrusions &island_extrusions : slice_extrusions.common_extrusions) {
+            if (!island_extrusions.perimeters.empty() || !island_extrusions.infill_ranges.empty()) {
+                return false;
+            }
+        }
+        if (!slice_extrusions.ironing_extrusions.empty()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool is_empty(const ExtruderExtrusions &extruder_extrusions) {
+    for (const std::vector<SliceExtrusions> &slices_extrusions : extruder_extrusions.overriden_extrusions) {
+        if (!is_empty(slices_extrusions)) {
+            return false;
+        }
+    }
+    for (const NormalExtrusions &normal_extrusions : extruder_extrusions.normal_extrusions) {
+        if (!normal_extrusions.support_extrusions.empty()) {
+            return false;
+        }
+        if (!is_empty(normal_extrusions.slices_extrusions)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 
 std::vector<ExtruderExtrusions> get_extrusions(
     const Print &print,
@@ -522,6 +570,11 @@ std::vector<ExtruderExtrusions> get_extrusions(
             print, layers, layer_tools, instances_to_print, extruder_id, smooth_path,
             previous_position
         );
+
+        if (is_empty(extruder_extrusions)) {
+            continue;
+        }
+
         extrusions.push_back(std::move(extruder_extrusions));
     }
     return extrusions;

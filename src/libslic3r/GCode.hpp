@@ -281,12 +281,10 @@ private:
         coordf_t print_z,
         bool vase_mode
     );
-    std::string     extrude_perimeter(const GCode::ExtrusionOrder::Perimeter &perimeter, const std::string_view description);
-    std::string     extrude_skirt(GCode::SmoothPath smooth_path, const ExtrusionFlow &extrusion_flow_override,
-        const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed);
-
-    std::string     extrude_multi_path(const ExtrusionMultiPath &multipath, bool reverse, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed = -1.);
-    std::string     extrude_path(const ExtrusionPath &path, bool reverse, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed = -1.);
+    std::string extrude_smooth_path(
+        const GCode::SmoothPath &smooth_path, const bool is_loop, const std::string_view description, const double speed
+    );
+    std::string extrude_skirt(GCode::SmoothPath smooth_path, const ExtrusionFlow &extrusion_flow_override, const std::string_view description, double speed);
 
     std::vector<InstanceToPrint> sort_print_object_instances(
         // Object and Support layers for the current print_z, collected for a single object, or for possibly multiple objects with multiple instances.
@@ -297,43 +295,32 @@ private:
         const size_t                                     single_object_instance_idx);
 
     std::string extrude_perimeters(
-        const Print &print,
         const PrintRegion &region,
         const std::vector<GCode::ExtrusionOrder::Perimeter> &perimeters,
-        const InstanceToPrint &print_instance,
-        const GCode::SmoothPathCache &smooth_path_cache
-    );
-
-    std::string extrude_brim(
-        const std::vector<GCode::ExtrusionOrder::BrimPath> &brim,
-        const std::string &extrusion_name,
-        const double speed
-    );
-
-    std::string extrude_infill_range(
-        const std::vector<GCode::SmoothPath> &infill_range,
-        const PrintRegion &region,
-        const std::string &extrusion_name,
-        const GCode::SmoothPathCache &smooth_path_cache
+        const InstanceToPrint &print_instance
     );
 
     std::string extrude_infill_ranges(
         const std::vector<InfillRange> &infill_ranges,
-        const std::string &commment,
-        const GCode::SmoothPathCache &smooth_path_cache
+        const std::string &commment
+    );
+
+    void initialize_layer(
+        const InstanceToPrint &print_instance,
+        const ObjectLayerToPrint &layer_to_print
     );
 
     // This function will be called for each printing extruder, possibly twice: First for wiping extrusions, second for normal extrusions.
-    void process_layer_single_object(
-        std::string &gcode,
+    std::string extrude_slices(
         const InstanceToPrint &print_instance,
         const ObjectLayerToPrint &layer_to_print,
-        const GCode::SmoothPathCache &smooth_path_cache,
-        const ExtrusionEntityReferences &support_extrusions,
         const std::vector<SliceExtrusions> &slices_extrusions
     );
 
-    std::string     extrude_support(const ExtrusionEntityReferences &support_fills, const GCode::SmoothPathCache &smooth_path_cache);
+    std::string extrude_support(
+        const std::vector<GCode::ExtrusionOrder::SupportPath> &support_extrusions
+    );
+
     std::string generate_travel_gcode(
         const Points3& travel,
         const std::string& comment,

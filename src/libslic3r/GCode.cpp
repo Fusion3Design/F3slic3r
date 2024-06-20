@@ -2341,7 +2341,6 @@ std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorte
             } else if (auto path = dynamic_cast<const ExtrusionPath *>(extrusion_entity)) {
                 result = GCode::SmoothPath{GCode::SmoothPathElement{path->attributes(), smooth_path_caches.layer_local().resolve_or_fit(*path, extrusion_reference.flipped(), m_scaled_resolution)}};
             }
-
             using GCode::SmoothPathElement;
             for (auto it{result.rbegin()}; it != result.rend(); ++it) {
                 if (!it->path.empty()) {
@@ -2378,6 +2377,7 @@ std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorte
 
     return extrusions;
 }
+
 
 // In sequential mode, process_layer is called once per each object and its copy,
 // therefore layers will contain a single entry and single_object_instance_idx will point to the copy of the object.
@@ -2454,7 +2454,7 @@ LayerResult GCodeGenerator::process_layer(
     }
 
     using GCode::ExtrusionOrder::ExtruderExtrusions;
-    std::vector<ExtruderExtrusions> extrusions{
+    const std::vector<ExtruderExtrusions> extrusions{
         this->get_sorted_extrusions(print, layers, layer_tools, instances_to_print, smooth_path_caches, first_layer)};
 
     std::string gcode;
@@ -2586,7 +2586,7 @@ LayerResult GCodeGenerator::process_layer(
                 gcode += this->extrude_skirt(smooth_path,
                     // Override of skirt extrusion parameters. extrude_skirt() will fill in the extrusion width.
                     ExtrusionFlow{ mm3_per_mm, 0., layer_skirt_flow.height() },
-                    smooth_path_caches.global(), "skirt"sv, m_config.support_material_speed.value);
+                    "skirt"sv, m_config.support_material_speed.value);
             }
             m_avoid_crossing_perimeters.use_external_mp(false);
             // Allow a straight travel move to the first object point if this is the first layer (but don't in next layers).
@@ -2604,7 +2604,9 @@ LayerResult GCodeGenerator::process_layer(
             this->set_origin(0., 0.);
             m_avoid_crossing_perimeters.use_external_mp();
 
-            gcode += this->extrude_brim(extruder_extrusions.brim, "brim", m_config.support_material_speed.value);
+            for (const GCode::ExtrusionOrder::BrimPath &brim_path : extruder_extrusions.brim) {
+                gcode += this->extrude_smooth_path(brim_path.path, brim_path.is_loop, "brim", m_config.support_material_speed.value);
+            }
             m_avoid_crossing_perimeters.use_external_mp(false);
             // Allow a straight travel move to the first object point.
             m_avoid_crossing_perimeters.disable_once();
@@ -2616,10 +2618,14 @@ LayerResult GCodeGenerator::process_layer(
             size_t gcode_size_old = gcode.size();
             for (std::size_t i{0}; i < instances_to_print.size(); ++i) {
                 const InstanceToPrint &instance{instances_to_print[i]};
-
-                this->process_layer_single_object(
-                    gcode, instance, layers[instance.object_layer_to_print_id],
-                    smooth_path_caches.layer_local(), {}, extruder_extrusions.overriden_extrusions[i]
+                const std::vector<SliceExtrusions> overriden_extrusions{extruder_extrusions.overriden_extrusions[i]};
+                if (is_empty(overriden_extrusions)) {
+                    continue;
+                }
+                this->initialize_layer(instance, layers[instance.object_layer_to_print_id]);
+                gcode += this->extrude_slices(
+                    instance, layers[instance.object_layer_to_print_id],
+                    overriden_extrusions
                 );
             }
             if (gcode_size_old < gcode.size()) {
@@ -2630,15 +2636,28 @@ LayerResult GCodeGenerator::process_layer(
         // Extrude normal extrusions.
         for (std::size_t i{0}; i < instances_to_print.size(); ++i) {
             const InstanceToPrint &instance{instances_to_print[i]};
+            using GCode::ExtrusionOrder::SupportPath;
+            const std::vector<SupportPath> &support_extrusions{extruder_extrusions.normal_extrusions[i].support_extrusions};
+            const ObjectLayerToPrint &layer_to_print{layers[instance.object_layer_to_print_id]};
+            const std::vector<SliceExtrusions> &slices_extrusions{extruder_extrusions.normal_extrusions[i].slices_extrusions};
 
-            this->process_layer_single_object(
-                gcode, instance, layers[instance.object_layer_to_print_id],
-                smooth_path_caches.layer_local(), extruder_extrusions.normal_extrusions[i].support_extrusions,
-                extruder_extrusions.normal_extrusions[i].slices_extrusions
+            if (support_extrusions.empty() && is_empty(slices_extrusions)) {
+                continue;
+            }
+
+            this->initialize_layer(instance, layers[instance.object_layer_to_print_id]);
+
+            if (!support_extrusions.empty()) {
+                m_layer = layer_to_print.support_layer;
+                m_object_layer_over_raft = false;
+                gcode += this->extrude_support(support_extrusions);
+            }
+
+            gcode += this->extrude_slices(
+                instance, layer_to_print, slices_extrusions
             );
         }
     }
-
 
     // During layer change the starting position of next layer is now known.
     // The solution is thus to emplace a temporary tag to the gcode, cache the postion and
@@ -2717,85 +2736,58 @@ LayerResult GCodeGenerator::process_layer(
 }
 
 static const auto comment_perimeter = "perimeter"sv;
-// Comparing string_view pointer & length for speed.
-static inline bool comment_is_perimeter(const std::string_view comment) {
-    return comment.data() == comment_perimeter.data() && comment.size() == comment_perimeter.size();
-}
 
-void GCodeGenerator::process_layer_single_object(
-    std::string &gcode,
+void GCodeGenerator::initialize_layer(
     const InstanceToPrint &print_instance,
-    const ObjectLayerToPrint &layer_to_print,
-    const GCode::SmoothPathCache &smooth_path_cache,
-    const ExtrusionEntityReferences &support_extrusions,
-    const std::vector<SliceExtrusions> &slices_extrusions
+    const ObjectLayerToPrint &layer_to_print
 ) {
     const PrintObject &print_object = print_instance.print_object;
     const Print       &print        = *print_object.print();
 
-    bool     first     = true;
-    // Delay layer initialization as many layers may not print with all extruders.
-    auto init_layer_delayed = [this, &print_instance, &layer_to_print, &first]() {
-        if (first) {
-            first = false;
-            const PrintObject &print_object = print_instance.print_object;
-            const Print       &print        = *print_object.print();
-            m_config.apply(print_object.config(), true);
-            m_layer = layer_to_print.layer();
-            if (print.config().avoid_crossing_perimeters)
-                m_avoid_crossing_perimeters.init_layer(*m_layer);
-            // When starting a new object, use the external motion planner for the first travel move.
-            const Point &offset = print_object.instances()[print_instance.instance_id].shift;
-            GCode::PrintObjectInstance next_instance = {&print_object, int(print_instance.instance_id)};
-            if (m_current_instance != next_instance) {
-                m_avoid_crossing_perimeters.use_external_mp_once = true;
-            }
-            m_current_instance = next_instance;
-            this->set_origin(unscale(offset));
-            m_label_objects.update(&print_instance.print_object.instances()[print_instance.instance_id]);
-        }
-    };
-
-    if (!support_extrusions.empty()) {
-        init_layer_delayed();
-        m_layer = layer_to_print.support_layer;
-        m_object_layer_over_raft = false;
-        gcode += this->extrude_support(support_extrusions, smooth_path_cache);
+    m_config.apply(print_object.config(), true);
+    m_layer = layer_to_print.layer();
+    if (print.config().avoid_crossing_perimeters)
+        m_avoid_crossing_perimeters.init_layer(*m_layer);
+    // When starting a new object, use the external motion planner for the first travel move.
+    const Point &offset = print_object.instances()[print_instance.instance_id].shift;
+    GCode::PrintObjectInstance next_instance = {&print_object, int(print_instance.instance_id)};
+    if (m_current_instance != next_instance) {
+        m_avoid_crossing_perimeters.use_external_mp_once = true;
     }
+    m_current_instance = next_instance;
+    this->set_origin(unscale(offset));
+    m_label_objects.update(&print_instance.print_object.instances()[print_instance.instance_id]);
+}
+
+std::string GCodeGenerator::extrude_slices(
+    const InstanceToPrint &print_instance,
+    const ObjectLayerToPrint &layer_to_print,
+    const std::vector<SliceExtrusions> &slices_extrusions
+) {
+    const PrintObject &print_object = print_instance.print_object;
+    const Print       &print        = *print_object.print();
 
     m_layer = layer_to_print.layer();
     // To control print speed of the 1st object layer printed over raft interface.
     m_object_layer_over_raft = layer_to_print.object_layer && layer_to_print.object_layer->id() > 0 &&
         print_object.slicing_parameters().raft_layers() == layer_to_print.object_layer->id();
 
+    std::string gcode;
     for (const SliceExtrusions &slice_extrusions : slices_extrusions) {
         for (const IslandExtrusions &island_extrusions : slice_extrusions.common_extrusions) {
             if (print.config().infill_first) {
-                if (!island_extrusions.infill_ranges.empty()) {
-                    init_layer_delayed();
-                }
-                gcode += this->extrude_infill_ranges(island_extrusions.infill_ranges, "infill", smooth_path_cache);
-                if (!island_extrusions.perimeters.empty()) {
-                    init_layer_delayed();
-                }
-                gcode += this->extrude_perimeters(print, *island_extrusions.region, island_extrusions.perimeters, print_instance, smooth_path_cache);
+                gcode += this->extrude_infill_ranges(island_extrusions.infill_ranges, "infill");
+                gcode += this->extrude_perimeters(*island_extrusions.region, island_extrusions.perimeters, print_instance);
             } else {
-                if (!island_extrusions.perimeters.empty()) {
-                    init_layer_delayed();
-                }
-                gcode += this->extrude_perimeters(print, *island_extrusions.region, island_extrusions.perimeters, print_instance, smooth_path_cache);
-                if (!island_extrusions.infill_ranges.empty()) {
-                    init_layer_delayed();
-                }
-                gcode += this->extrude_infill_ranges(island_extrusions.infill_ranges, "infill", smooth_path_cache);
+                gcode += this->extrude_perimeters(*island_extrusions.region, island_extrusions.perimeters, print_instance);
+                gcode += this->extrude_infill_ranges(island_extrusions.infill_ranges, "infill");
             }
         }
 
-        if (!slice_extrusions.ironing_extrusions.empty()) {
-            init_layer_delayed();
-        }
-        gcode += this->extrude_infill_ranges(slice_extrusions.ironing_extrusions, "ironing", smooth_path_cache);
+        gcode += this->extrude_infill_ranges(slice_extrusions.ironing_extrusions, "ironing");
     }
+
+    return gcode;
 }
 
 void GCodeGenerator::apply_print_config(const PrintConfig &print_config)
@@ -2924,137 +2916,64 @@ static inline bool validate_smooth_path(const GCode::SmoothPath &smooth_path, bo
 }
 #endif //NDEBUG
 
-std::string GCodeGenerator::extrude_perimeter(
-    const GCode::ExtrusionOrder::Perimeter &perimeter, const std::string_view description
+std::string GCodeGenerator::extrude_smooth_path(
+    const GCode::SmoothPath &smooth_path, const bool is_loop, const std::string_view description, const double speed
 ) {
-    double speed{-1};
-    // Apply the small perimeter speed.
-    if (perimeter.extrusion_entity->length() <= SMALL_PERIMETER_LENGTH)
-        speed = m_config.small_perimeter_speed.get_abs_value(m_config.perimeter_speed);
-
     // Extrude along the smooth path.
     std::string gcode;
-    for (const GCode::SmoothPathElement &el : perimeter.smooth_path)
+    for (const GCode::SmoothPathElement &el : smooth_path)
         gcode += this->_extrude(el.path_attributes, el.path, description, speed);
 
     // reset acceleration
     gcode += m_writer.set_print_acceleration(fast_round_up<unsigned int>(m_config.default_acceleration.value));
 
-    if (m_wipe.enabled()) {
-        // Wipe will hide the seam.
-        m_wipe.set_path(GCode::SmoothPath{perimeter.smooth_path});
-    } else if (perimeter.extrusion_entity->role().is_external_perimeter() && m_layer != nullptr && m_config.perimeters.value > 1) {
-        // Only wipe inside if the wipe along the perimeter is disabled.
-        // Make a little move inwards before leaving loop.
-        if (std::optional<Point> pt = wipe_hide_seam(perimeter.smooth_path, perimeter.reversed, scale_(EXTRUDER_CONFIG(nozzle_diameter))); pt) {
-            // Generate the seam hiding travel move.
-            gcode += m_writer.travel_to_xy(this->point_to_gcode(*pt), "move inwards before travel");
-            this->last_position = *pt;
-        }
+    if (is_loop) {
+        m_wipe.set_path(GCode::SmoothPath{smooth_path});
+    } else {
+        GCode::SmoothPath reversed_smooth_path{smooth_path};
+        GCode::reverse(reversed_smooth_path);
+        m_wipe.set_path(std::move(reversed_smooth_path));
     }
-
     return gcode;
 }
 
 std::string GCodeGenerator::extrude_skirt(
     GCode::SmoothPath smooth_path, const ExtrusionFlow &extrusion_flow_override,
-    const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed)
+    const std::string_view description, double speed)
 {
-
     // Extrude along the smooth path.
     std::string gcode;
     for (GCode::SmoothPathElement &el : smooth_path) {
         // Override extrusion parameters.
         el.path_attributes.mm3_per_mm = extrusion_flow_override.mm3_per_mm;
         el.path_attributes.height = extrusion_flow_override.height;
-        gcode += this->_extrude(el.path_attributes, el.path, description, speed);
     }
 
-    // reset acceleration
-    gcode += m_writer.set_print_acceleration(fast_round_up<unsigned int>(m_config.default_acceleration.value));
-
-    if (m_wipe.enabled())
-        // Wipe will hide the seam.
-        m_wipe.set_path(std::move(smooth_path));
+    gcode += this->extrude_smooth_path(smooth_path, true, description, m_config.support_material_speed.value);
 
     return gcode;
 }
 
-std::string GCodeGenerator::extrude_brim(
-    const std::vector<GCode::ExtrusionOrder::BrimPath> &brim,
-    const std::string &extrusion_name,
-    const double speed
-) {
-    std::string gcode{};
-
-    for (const auto &[path, is_loop] : brim) {
-        // extrude along the path
-        for (const GCode::SmoothPathElement &el : path)
-            gcode += this->_extrude(el.path_attributes, el.path, extrusion_name, speed);
-
-
-        // reset acceleration
-        gcode += m_writer.set_print_acceleration((unsigned int)floor(m_config.default_acceleration.value + 0.5));
-
-        if (is_loop) {
-            m_wipe.set_path(GCode::SmoothPath{path});
-        } else {
-            GCode::SmoothPath reversed_smooth_path{path};
-            GCode::reverse(reversed_smooth_path);
-            m_wipe.set_path(std::move(reversed_smooth_path));
-        }
-    }
-
-    return gcode;
-};
-
-std::string GCodeGenerator::extrude_infill_range(
-    const std::vector<GCode::SmoothPath> &infill_range,
-    const PrintRegion &region,
-    const std::string &extrusion_name,
-    const GCode::SmoothPathCache &smooth_path_cache
-) {
-    std::string gcode{};
-
-    if (!infill_range.empty()) {
-        this->m_config.apply(region.config());
-
-        for (const GCode::SmoothPath &path : infill_range) {
-            // extrude along the path
-            for (const GCode::SmoothPathElement &el : path)
-                gcode += this->_extrude(el.path_attributes, el.path, extrusion_name);
-
-            GCode::SmoothPath reversed_smooth_path{path};
-            GCode::reverse(reversed_smooth_path);
-            m_wipe.set_path(std::move(reversed_smooth_path));
-
-            // reset acceleration
-            gcode += m_writer.set_print_acceleration((unsigned int)floor(m_config.default_acceleration.value + 0.5));
-        }
-    }
-    return gcode;
-};
-
 std::string GCodeGenerator::extrude_infill_ranges(
     const std::vector<InfillRange> &infill_ranges,
-    const std::string &comment,
-    const GCode::SmoothPathCache &smooth_path_cache
+    const std::string &comment
 ) {
     std::string gcode{};
     for (const InfillRange &infill_range : infill_ranges) {
-        gcode += this->extrude_infill_range(
-            infill_range.items, *infill_range.region, comment, smooth_path_cache
-        );
+        if (!infill_range.items.empty()) {
+            this->m_config.apply(infill_range.region->config());
+            for (const GCode::SmoothPath &path : infill_range.items) {
+                gcode += this->extrude_smooth_path(path, false, comment, -1.0);
+            }
+        }
     }
     return gcode;
 }
 
 std::string GCodeGenerator::extrude_perimeters(
-    const Print &print,
     const PrintRegion &region,
     const std::vector<GCode::ExtrusionOrder::Perimeter> &perimeters,
-    const InstanceToPrint &print_instance,
-    const GCode::SmoothPathCache &smooth_path_cache
+    const InstanceToPrint &print_instance
 ) {
     if (!perimeters.empty()) {
         m_config.apply(region.config());
@@ -3063,80 +2982,41 @@ std::string GCodeGenerator::extrude_perimeters(
     std::string gcode{};
 
     for (const GCode::ExtrusionOrder::Perimeter &perimeter : perimeters) {
-        // Don't reorder, don't flip.
-        gcode += this->extrude_perimeter(perimeter, comment_perimeter);
+        double speed{-1};
+        // Apply the small perimeter speed.
+        if (perimeter.extrusion_entity->length() <= SMALL_PERIMETER_LENGTH)
+            speed = m_config.small_perimeter_speed.get_abs_value(m_config.perimeter_speed);
+        gcode += this->extrude_smooth_path(perimeter.smooth_path, true, comment_perimeter, speed);
         this->m_travel_obstacle_tracker.mark_extruded(
             perimeter.extrusion_entity, print_instance.object_layer_to_print_id, print_instance.instance_id
         );
+
+        if (!m_wipe.enabled() && perimeter.extrusion_entity->role().is_external_perimeter() && m_layer != nullptr && m_config.perimeters.value > 1) {
+            // Only wipe inside if the wipe along the perimeter is disabled.
+            // Make a little move inwards before leaving loop.
+            if (std::optional<Point> pt = wipe_hide_seam(perimeter.smooth_path, perimeter.reversed, scale_(EXTRUDER_CONFIG(nozzle_diameter))); pt) {
+                // Generate the seam hiding travel move.
+                gcode += m_writer.travel_to_xy(this->point_to_gcode(*pt), "move inwards before travel");
+                this->last_position = *pt;
+            }
+        }
     }
     return gcode;
 };
 
-std::string GCodeGenerator::extrude_multi_path(const ExtrusionMultiPath &multipath, bool reverse, const GCode::SmoothPathCache &smooth_path_cache, const std::string_view description, double speed)
-{
-#ifndef NDEBUG
-    for (auto it = std::next(multipath.paths.begin()); it != multipath.paths.end(); ++ it) {
-        assert(it->polyline.points.size() >= 2);
-        assert(std::prev(it)->polyline.last_point() == it->polyline.first_point());
-    }
-#endif // NDEBUG
-    GCode::SmoothPath smooth_path = smooth_path_cache.resolve_or_fit(multipath, reverse, m_scaled_resolution);
-
-    // extrude along the path
-    std::string gcode;
-    for (GCode::SmoothPathElement &el : smooth_path)
-        gcode += this->_extrude(el.path_attributes, el.path, description, speed);
-
-    GCode::reverse(smooth_path);
-    m_wipe.set_path(std::move(smooth_path));
-
-    // reset acceleration
-    gcode += m_writer.set_print_acceleration((unsigned int)floor(m_config.default_acceleration.value + 0.5));
-    return gcode;
-}
-
-std::string GCodeGenerator::extrude_path(const ExtrusionPath &path, bool reverse, const GCode::SmoothPathCache &smooth_path_cache, std::string_view description, double speed)
-{
-    Geometry::ArcWelder::Path smooth_path = smooth_path_cache.resolve_or_fit(path, reverse, m_scaled_resolution);
-    std::string gcode = this->_extrude(path.attributes(), smooth_path, description, speed);
-    Geometry::ArcWelder::reverse(smooth_path);
-    m_wipe.set_path(std::move(smooth_path));
-    // reset acceleration
-    gcode += m_writer.set_print_acceleration((unsigned int)floor(m_config.default_acceleration.value + 0.5));
-    return gcode;
-}
-
-std::string GCodeGenerator::extrude_support(const ExtrusionEntityReferences &support_fills, const GCode::SmoothPathCache &smooth_path_cache)
+std::string GCodeGenerator::extrude_support(const std::vector<GCode::ExtrusionOrder::SupportPath> &support_extrusions)
 {
     static constexpr const auto support_label            = "support material"sv;
     static constexpr const auto support_interface_label  = "support material interface"sv;
 
     std::string gcode;
-    if (! support_fills.empty()) {
+    if (! support_extrusions.empty()) {
         const double  support_speed            = m_config.support_material_speed.value;
         const double  support_interface_speed  = m_config.support_material_interface_speed.get_abs_value(support_speed);
-        for (const ExtrusionEntityReference &eref : support_fills) {
-            ExtrusionRole role = eref.extrusion_entity().role();
-            assert(role == ExtrusionRole::SupportMaterial || role == ExtrusionRole::SupportMaterialInterface);
-            const auto   label = (role == ExtrusionRole::SupportMaterial) ? support_label : support_interface_label;
-            const double speed = (role == ExtrusionRole::SupportMaterial) ? support_speed : support_interface_speed;
-            const ExtrusionPath *path = dynamic_cast<const ExtrusionPath*>(&eref.extrusion_entity());
-            if (path)
-                gcode += this->extrude_path(*path, eref.flipped(), smooth_path_cache, label, speed);
-            else if (const ExtrusionMultiPath *multipath = dynamic_cast<const ExtrusionMultiPath*>(&eref.extrusion_entity()); multipath)
-                gcode += this->extrude_multi_path(*multipath, eref.flipped(), smooth_path_cache, label, speed);
-            else {
-                const ExtrusionEntityCollection *eec = dynamic_cast<const ExtrusionEntityCollection*>(&eref.extrusion_entity());
-                assert(eec);
-                if (eec) {
-                    //FIXME maybe order the support here?
-                    ExtrusionEntityReferences refs;
-                    refs.reserve(eec->entities.size());
-                    std::transform(eec->entities.begin(), eec->entities.end(), std::back_inserter(refs), 
-                        [flipped = eref.flipped()](const ExtrusionEntity *ee) { return ExtrusionEntityReference{ *ee, flipped }; });
-                    gcode += this->extrude_support(refs, smooth_path_cache);
-                }
-            }
+        for (const GCode::ExtrusionOrder::SupportPath &path : support_extrusions) {
+            const auto   label = path.is_interface ?  support_interface_label : support_label;
+            const double speed = path.is_interface ? support_interface_speed : support_speed;
+            gcode += this->extrude_smooth_path(path.path, false, label, speed);
         }
     }
     return gcode;

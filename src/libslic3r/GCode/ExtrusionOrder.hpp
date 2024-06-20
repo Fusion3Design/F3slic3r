@@ -74,8 +74,14 @@ struct SliceExtrusions {
     std::vector<InfillRange> ironing_extrusions;
 };
 
+
+struct SupportPath {
+    SmoothPath path;
+    bool is_interface;
+};
+
 struct NormalExtrusions {
-    ExtrusionEntityReferences support_extrusions;
+    std::vector<SupportPath> support_extrusions;
     std::vector<SliceExtrusions> slices_extrusions;
 };
 
@@ -103,6 +109,8 @@ struct ExtruderExtrusions {
 };
 
 static constexpr const double min_gcode_segment_length = 0.002;
+
+bool is_empty(const std::vector<SliceExtrusions> &extrusions);
 
 std::vector<ExtruderExtrusions> get_extrusions(
     const Print &print,
