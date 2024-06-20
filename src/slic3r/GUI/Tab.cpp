@@ -5515,7 +5515,7 @@ void TabSLAMaterial::update_description_lines()
         auto cfg = m_preset_bundle->full_config();
         double lh = cfg.opt_float("layer_height");
         int zlayers = cfg.opt_int("zcorrection_layers");
-        m_z_correction_to_mm_description->SetText(GUI::format_wxstr(_L("Current Z correction depth is: %1% mm"), zlayers * lh));
+        m_z_correction_to_mm_description->SetText(GUI::format_wxstr(_L("The current Z-axis height correction is: %1% mm"), zlayers * lh));
     }
 
     Tab::update_description_lines();

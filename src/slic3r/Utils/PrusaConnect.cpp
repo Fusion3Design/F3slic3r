@@ -315,11 +315,11 @@ bool PrusaConnectNew::get_storage(wxArrayString& storage_path, wxArrayString& st
 
 wxString PrusaConnectNew::get_test_ok_msg() const
 {
-    return _L("Test OK.");
+    return _L("Test passed.");
 }
 wxString PrusaConnectNew::get_test_failed_msg(wxString& msg) const
 {
-    return _L("Test NOK.");
+    return _L("Test failed.");
 }
 
 std::string PrusaConnectNew::get_team_id(const std::string& data) const

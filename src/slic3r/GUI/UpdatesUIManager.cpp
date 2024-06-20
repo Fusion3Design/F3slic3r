@@ -26,7 +26,7 @@ RepositoryUpdateUIManager::RepositoryUpdateUIManager(wxWindow* parent, PresetArc
     ,m_pad(pad)
     ,m_main_sizer(new wxBoxSizer(wxVERTICAL))
 {
-    auto online_label = new wxStaticText(m_parent, wxID_ANY, _L("Online Repositories"));
+    auto online_label = new wxStaticText(m_parent, wxID_ANY, _L("Online sources"));
     online_label->SetFont(wxGetApp().bold_font());
 
     m_main_sizer->Add(online_label, 0, wxTOP | wxLEFT, 2 * em);
@@ -40,7 +40,7 @@ RepositoryUpdateUIManager::RepositoryUpdateUIManager(wxWindow* parent, PresetArc
 
     m_main_sizer->AddSpacer(em);
 
-    auto offline_label = new wxStaticText(m_parent, wxID_ANY, _L("Local Repositories"));
+    auto offline_label = new wxStaticText(m_parent, wxID_ANY, _L("Local sources"));
     offline_label->SetFont(wxGetApp().bold_font());
 
     m_main_sizer->Add(offline_label, 0, wxTOP | wxLEFT, 2 * em);
@@ -98,7 +98,7 @@ void RepositoryUpdateUIManager::fill_grids()
         // header
 
         // TRN: This string appears in Configuration Wizard in the 'Configuration Manager' step.
-        for (const wxString& l : std::initializer_list<wxString>{ _L("Use"), "", _L("Name"), _L("Description") }) {
+        for (const wxString& l : std::initializer_list<wxString>{ "", "", _L("Name"), _L("Description")}) {
             auto text = new wxStaticText(m_parent, wxID_ANY, l);
             text->SetFont(wxGetApp().bold_font());
             add(text);
@@ -139,7 +139,7 @@ void RepositoryUpdateUIManager::fill_grids()
 
         // header
 
-        for (const wxString& l : std::initializer_list<wxString>{ _L("Use"), _L("Name"), _L("Descrition"), "", _L("Source file"), "", "" }) {
+        for (const wxString& l : std::initializer_list<wxString>{ "", _L("Name"), _L("Description"), "", _L("Source file"), "", ""}) {
             auto text = new wxStaticText(m_parent, wxID_ANY, l);
             text->SetFont(wxGetApp().bold_font());
             add(text);

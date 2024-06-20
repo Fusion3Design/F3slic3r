@@ -189,7 +189,7 @@ bool save_secret(const std::string& id, const std::string& opt, const std::strin
     const wxString username = boost::nowide::widen(usr);
     const wxSecretValue password(boost::nowide::widen(psswd));
     if (!store.Save(service, username, password)) {
-        std::string msg(_u8L("Failed to save credentials to the system secret store."));
+        std::string msg(_u8L("Failed to save credentials to the system password store."));
         BOOST_LOG_TRIVIAL(error) << msg;
         show_error(nullptr, msg);
         return false;
@@ -215,7 +215,7 @@ bool load_secret(const std::string& id, const std::string& opt, std::string& usr
     wxString username;
     wxSecretValue password;
     if (!store.Load(service, username, password)) {
-        std::string msg(_u8L("Failed to load credentials from the system secret store."));
+        std::string msg(_u8L("Failed to load credentials from the system password store."));
         BOOST_LOG_TRIVIAL(error) << msg;
         show_error(nullptr, msg);
         return false;

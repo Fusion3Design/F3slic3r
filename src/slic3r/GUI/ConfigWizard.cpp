@@ -648,7 +648,7 @@ void PageWelcome::set_run_reason(ConfigWizard::RunReason run_reason)
 }
 
 PageUpdateManager::PageUpdateManager(ConfigWizard* parent_in)
-    : ConfigWizardPage(parent_in, _L("Manage Configuration Updates"), _L("Configuration Manager"))
+    : ConfigWizardPage(parent_in, _L("Configuration sources"), _L("Configuration Sources"))
 {
     this->SetFont(wxGetApp().normal_font());
 
@@ -656,7 +656,7 @@ PageUpdateManager::PageUpdateManager(ConfigWizard* parent_in)
 
     manager = std::make_unique<RepositoryUpdateUIManager>(this, wxGetApp().plater()->get_preset_archive_database(), em);
 
-    warning_text = new wxStaticText(this, wxID_ANY, _L("WARNING: Select at least one repository."));
+    warning_text = new wxStaticText(this, wxID_ANY, _L("WARNING: Select at least one source."));
     warning_text->SetFont(wxGetApp().bold_font());
     warning_text->Hide();
 

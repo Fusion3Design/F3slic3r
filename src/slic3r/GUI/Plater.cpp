@@ -5965,7 +5965,7 @@ bool load_secret(const std::string& id, const std::string& opt, std::string& usr
     wxString username;
     wxSecretValue password;
     if (!store.Load(service, username, password)) {
-        std::string msg(_u8L("Failed to load credentials from the system secret store."));
+        std::string msg(_u8L("Failed to load credentials from the system password store."));
         BOOST_LOG_TRIVIAL(error) << msg;
         show_error(nullptr, msg);
         return false;
@@ -6965,8 +6965,11 @@ void Plater::act_with_user_account()
     if (p->user_account) {
         if (p->user_account->is_logged())
             p->user_account->do_logout();
-        else
+        else {
             p->user_account->do_login();
+            if (!wxGetApp().app_config->has("show_login_button"))
+                wxGetApp().app_config->set("show_login_button", "1");
+        }
     }
 }
 

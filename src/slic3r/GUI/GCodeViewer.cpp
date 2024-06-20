@@ -257,14 +257,14 @@ static std::string to_string(libvgcode::EMoveType type)
     switch (type)
     {
     // TRN: Following strings are labels in the G-code Viewer legend.
-    case libvgcode::EMoveType::Noop:        { return _u8L("Noop"); }
+    case libvgcode::EMoveType::Noop:        { return ("Noop"); }
     case libvgcode::EMoveType::Retract:     { return _u8L("Retract"); }
     case libvgcode::EMoveType::Unretract:   { return _u8L("Unretract"); }
     case libvgcode::EMoveType::Seam:        { return _u8L("Seam"); }
     case libvgcode::EMoveType::ToolChange:  { return _u8L("Tool Change"); }
     case libvgcode::EMoveType::ColorChange: { return _u8L("Color Change"); }
     case libvgcode::EMoveType::PausePrint:  { return _u8L("Pause Print"); }
-    case libvgcode::EMoveType::CustomGCode: { return _u8L("Custom GCode"); }
+    case libvgcode::EMoveType::CustomGCode: { return _u8L("Custom G-code"); }
     case libvgcode::EMoveType::Travel:      { return _u8L("Travel"); }
     case libvgcode::EMoveType::Wipe:        { return _u8L("Wipe"); }
     case libvgcode::EMoveType::Extrude:     { return _u8L("Extrude"); }
