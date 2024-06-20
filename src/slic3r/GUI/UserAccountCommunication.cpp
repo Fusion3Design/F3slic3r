@@ -264,10 +264,12 @@ wxString UserAccountCommunication::get_login_redirect_url() {
     CodeChalengeGenerator ccg;
     m_code_verifier = ccg.generate_verifier();
     std::string code_challenge = ccg.generate_chalenge(m_code_verifier);
+    wxString language = GUI::wxGetApp().current_language_code();
+    language = language.SubString(0, 1);
     BOOST_LOG_TRIVIAL(info) << "code verifier: " << m_code_verifier;
     BOOST_LOG_TRIVIAL(info) << "code challenge: " << code_challenge;
 
-    wxString url = GUI::format_wxstr(L"%1%/o/authorize/?client_id=%2%&response_type=code&code_challenge=%3%&code_challenge_method=S256&scope=basic_info&redirect_uri=%4%&choose_account=1", AUTH_HOST, CLIENT_ID, code_challenge, REDIRECT_URI);
+    wxString url = GUI::format_wxstr(L"%1%/o/authorize/?embed=1&client_id=%2%&response_type=code&code_challenge=%3%&code_challenge_method=S256&scope=basic_info&redirect_uri=%4%&choose_account=1&language=%5%", AUTH_HOST, CLIENT_ID, code_challenge, REDIRECT_URI, language);
 
     return url;
 }
