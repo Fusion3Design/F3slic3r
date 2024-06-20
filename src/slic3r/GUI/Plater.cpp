@@ -874,17 +874,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             user_account->on_login_code_recieved(evt.data);
         });
         this->q->Bind(EVT_OPEN_PRUSAAUTH, [this](OpenPrusaAuthEvent& evt) {
-            BOOST_LOG_TRIVIAL(info)  << "open browser: " << evt.data;
-            // first register url to be sure to get the code back
-            //auto downloader_worker = new DownloaderUtils::Worker(nullptr);
-            DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
-    #ifdef __linux__
-            if (DownloaderUtils::Worker::perform_registration_linux)
-                DesktopIntegrationDialog::perform_downloader_desktop_integration();
-    #endif  // __linux__
-            // than open url
-            //wxGetApp().open_login_browser_with_dialog(evt.data);
-
+            BOOST_LOG_TRIVIAL(info)  << "open login browser: " << evt.data;
             std::string dialog_msg;
             LoginWebViewDialog dialog(this->q, dialog_msg, evt.data);
             if (dialog.ShowModal() != wxID_OK) {
