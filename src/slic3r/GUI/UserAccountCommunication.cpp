@@ -5,6 +5,7 @@
 #include "../Utils/Http.hpp"
 #include "slic3r/GUI/I18N.hpp"
 
+#include <boost/algorithm/string/split.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/beast/core/detail/base64.hpp>
 #include <curl/curl.h>
