@@ -27,12 +27,37 @@ namespace Slic3r {
 namespace GUI {
 
 
+WebViewPanel::~WebViewPanel()
+{
+    SetEvtHandlerEnabled(false);
+#ifdef DEBUG_URL_PANEL
+    delete m_tools_menu;
+#endif
+}
+
+void WebViewPanel::load_url(const wxString& url)
+{
+    if (!m_browser)
+        return;
+
+    this->on_page_will_load();
+
+    this->Show();
+    this->Raise();
+#ifdef DEBUG_URL_PANEL
+    m_url->SetLabelText(url);
+#endif
+    m_browser->LoadURL(url);
+    m_browser->SetFocus();
+}
+
+
 WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const std::vector<std::string>& message_handler_names, const std::string& loading_html/* = "loading"*/)
-        : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
-        , m_default_url (default_url)
-        , m_loading_html(loading_html)
-        , m_script_message_hadler_names(message_handler_names)
- {
+    : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
+    , m_default_url (default_url)
+    , m_loading_html(loading_html)
+    , m_script_message_hadler_names(message_handler_names)
+{
     wxBoxSizer* topsizer = new wxBoxSizer(wxVERTICAL);
 #ifdef DEBUG_URL_PANEL
     // Create the button
@@ -91,7 +116,7 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const 
     m_tools_menu->AppendSeparator();
 
     wxMenu* script_menu = new wxMenu;
-   
+
     m_script_custom = script_menu->Append(wxID_ANY, "Custom script");
     m_tools_menu->AppendSubMenu(script_menu, "Run Script");
     wxMenuItem* addUserScript = m_tools_menu->Append(wxID_ANY, "Add user script");
@@ -129,34 +154,6 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const 
 #endif
     //Connect the idle events
     Bind(wxEVT_IDLE, &WebViewPanel::on_idle, this);
-
-    m_browser->EnableContextMenu(true);
-    m_browser->EnableAccessToDevTools(true);
- }
-
-WebViewPanel::~WebViewPanel()
-{
-    SetEvtHandlerEnabled(false);
-#ifdef DEBUG_URL_PANEL
-    delete m_tools_menu;
-#endif
-}
-
-
-void WebViewPanel::load_url(const wxString& url)
-{
-    if (!m_browser)
-        return;
-
-    this->on_page_will_load();
-
-    this->Show();
-    this->Raise();
-#ifdef DEBUG_URL_PANEL
-    m_url->SetLabelText(url);
-#endif
-    m_browser->LoadURL(url);
-    m_browser->SetFocus();
 }
 
 void WebViewPanel::load_default_url_delayed()
@@ -696,13 +693,14 @@ void ConnectWebViewPanel::on_navigation_request(wxWebViewEvent &evt)
 void ConnectWebViewPanel::on_connect_action_error(const std::string &message_data)
 {
     ConnectRequestHandler::on_connect_action_error(message_data);
-    MessageDialog dialog(
-        this,
-        GUI::format_wxstr(_L("WebKit Runtime Error encountered:\n\n%s"), message_data),
-        "WebKit Runtime Error",
-        wxOK
-    );
-    dialog.ShowModal();
+    // TODO: make this more user friendly (and make sure only once opened if multiple errors happen)
+//    MessageDialog dialog(
+//        this,
+//        GUI::format_wxstr(_L("WebKit Runtime Error encountered:\n\n%s"), message_data),
+//        "WebKit Runtime Error",
+//        wxOK
+//    );
+//    dialog.ShowModal();
 
 }
 
