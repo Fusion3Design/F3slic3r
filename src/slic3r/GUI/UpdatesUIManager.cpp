@@ -134,9 +134,9 @@ void RepositoryUpdateUIManager::fill_grids()
                 add(bmp);
             }
 
-            add(new wxStaticText(m_parent, wxID_ANY, from_u8(entry.name)));
+            add(new wxStaticText(m_parent, wxID_ANY, from_u8(entry.name) + " "));
 
-            add(new wxStaticText(m_parent, wxID_ANY, from_u8(entry.description)));
+            add(new wxStaticText(m_parent, wxID_ANY, from_u8(entry.description) + " "));
         }
     }
 
