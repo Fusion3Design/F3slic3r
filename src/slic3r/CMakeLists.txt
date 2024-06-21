@@ -29,6 +29,7 @@ set(SLIC3R_GUI_SOURCES
     GUI/WebViewDialog.hpp
     GUI/WebView.cpp
     GUI/WebView.hpp
+    GUI/WebViewPlatformUtils.hpp
     GUI/SysInfoDialog.cpp
     GUI/SysInfoDialog.hpp
     GUI/KBShortcutsDialog.cpp
@@ -389,9 +390,19 @@ if (APPLE)
             GUI/Mouse3DHandlerMac.mm
             GUI/InstanceCheckMac.mm
             GUI/InstanceCheckMac.h
-        )
+            GUI/WebViewPlatformUtilsMac.mm
+
+    )
     FIND_LIBRARY(DISKARBITRATION_LIBRARY DiskArbitration)
     FIND_LIBRARY(COREWLAN_LIBRARY CoreWLAN)
+elseif (WIN32)
+    list(APPEND SLIC3R_GUI_SOURCES
+            GUI/WebViewPlatformUtilsWin32.cpp
+    )
+else() # Linux
+    list(APPEND SLIC3R_GUI_SOURCES
+            GUI/WebViewPlatformUtilsLinux.cpp
+    )
 endif ()
 
 add_library(libslic3r_gui STATIC ${SLIC3R_GUI_SOURCES})

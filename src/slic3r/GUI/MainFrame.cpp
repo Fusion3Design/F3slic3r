@@ -855,11 +855,9 @@ void MainFrame::show_printer_webview_tab(DynamicPrintConfig* dpc)
         if (dynamic_cast<const ConfigOptionEnum<AuthorizationType>*>(dpc->option("printhost_authorization_type"))->value == AuthorizationType::atKeyPassword) {
             set_printer_webview_api_key(dpc->opt_string("printhost_apikey"));
         }
-#if 0 // The user password authentication is not working in prusa link as of now.
         else {
-            mset_printer_webview_credentials(dpc->opt_string("printhost_user"), dpc->opt_string("printhost_password"));
+            set_printer_webview_credentials(dpc->opt_string("printhost_user"), dpc->opt_string("printhost_password"));
         }
-#endif // 0
         // add printer or change url
         if (get_printer_webview_tab_added()) {
             set_printer_webview_tab_url(from_u8(url));
@@ -903,7 +901,9 @@ void MainFrame::set_printer_webview_tab_url(const wxString& url)
         add_printer_webview_tab(url);
         return;
     }
-    m_printer_webview->clear();
+    // TODO: this will reset already filled credential when bundle loaded,
+    //  what's the reason of clearing credentials here?
+    //m_printer_webview->clear();
     m_printer_webview->set_default_url(url);
 
     if (m_tabpanel->GetSelection() == m_tabpanel->FindPage(m_printer_webview)) {
