@@ -50,28 +50,6 @@ std::optional<InstancePoint> get_instance_point(const std::optional<Point> &poin
     return std::nullopt;
 }
 
-std::optional<Point> get_last_position(const ExtrusionEntityReferences &extrusions, const Point &offset) {
-    if (!extrusions.empty()) {
-        const ExtrusionEntityReference &last_extrusion{extrusions.back()};
-        auto last_loop{dynamic_cast<const ExtrusionLoop *>(&last_extrusion.extrusion_entity())};
-        if (last_loop != nullptr) {
-            return get_gcode_point(InstancePoint{last_loop->seam}, offset);
-        }
-        const InstancePoint last_point{
-            last_extrusion.flipped() ? last_extrusion.extrusion_entity().first_point() :
-                                       last_extrusion.extrusion_entity().last_point()};
-        return get_gcode_point(last_point, offset);
-    }
-    return std::nullopt;
-}
-
-std::optional<Point> get_last_position(const ExtrusionEntitiesPtr &extrusions, const Point &offset){
-    if (!extrusions.empty()) {
-        return get_last_position({{*extrusions.back(), false}}, offset);
-    }
-    return std::nullopt;
-}
-
 using ExtractEntityPredicate = std::function<bool(const ExtrusionEntityCollection&, const PrintRegion&)>;
 
 ExtrusionEntitiesPtr extract_infill_extrusions(
@@ -234,6 +212,7 @@ std::vector<IslandExtrusions> extract_island_extrusions(
 
         result.push_back(IslandExtrusions{&region});
         IslandExtrusions &island_extrusions{result.back()};
+        island_extrusions.infill_first = print.config().infill_first;
 
         if (print.config().infill_first) {
             island_extrusions.infill_ranges = extract_infill_ranges(
@@ -378,7 +357,7 @@ std::vector<SupportPath> get_support_extrusions(
     return {};
 }
 
-std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
+std::vector<OverridenExtrusions> get_overriden_extrusions(
     const Print &print,
     const GCode::ObjectsLayerToPrint &layers,
     const LayerTools &layer_tools,
@@ -387,7 +366,7 @@ std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
     const PathSmoothingFunction &smooth_path,
     std::optional<Point> &previous_position
 ) {
-    std::vector<std::vector<SliceExtrusions>> result;
+    std::vector<OverridenExtrusions> result;
 
     for (const InstanceToPrint &instance : instances_to_print) {
         if (const Layer *layer = layers[instance.object_layer_to_print_id].object_layer; layer) {
@@ -408,9 +387,9 @@ std::vector<std::vector<SliceExtrusions>> get_overriden_extrusions(
             const PrintObject &print_object = instance.print_object;
             const Point &offset = print_object.instances()[instance.instance_id].shift;
 
-            result.emplace_back(get_slices_extrusions(
+            result.push_back({offset, get_slices_extrusions(
                 print, *layer, predicate, smooth_path, offset, extruder_id, previous_position
-            ));
+            )});
         }
     }
     return result;
@@ -433,6 +412,7 @@ std::vector<NormalExtrusions> get_normal_extrusions(
         const Point &offset = print_object.instances()[instance.instance_id].shift;
 
         result.emplace_back();
+        result.back().instance_offset = offset;
 
         if (layers[instance.object_layer_to_print_id].support_layer != nullptr) {
             result.back().support_extrusions = get_support_extrusions(
@@ -486,8 +466,8 @@ bool is_empty(const std::vector<SliceExtrusions> &extrusions) {
 }
 
 bool is_empty(const ExtruderExtrusions &extruder_extrusions) {
-    for (const std::vector<SliceExtrusions> &slices_extrusions : extruder_extrusions.overriden_extrusions) {
-        if (!is_empty(slices_extrusions)) {
+    for (const OverridenExtrusions &overriden_extrusions : extruder_extrusions.overriden_extrusions) {
+        if (!is_empty(overriden_extrusions.slices_extrusions)) {
             return false;
         }
     }
@@ -543,7 +523,6 @@ std::vector<ExtruderExtrusions> get_extrusions(
         }
 
         // Extrude brim with the extruder of the 1st region.
-        using GCode::ExtrusionOrder::get_last_position;
         if (get_brim) {
             for (const ExtrusionEntity *entity : print.brim().entities) {
                 const ExtrusionEntityReference entity_reference{*entity, false};

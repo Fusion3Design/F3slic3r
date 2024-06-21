@@ -284,7 +284,7 @@ private:
     std::string extrude_smooth_path(
         const GCode::SmoothPath &smooth_path, const bool is_loop, const std::string_view description, const double speed
     );
-    std::string extrude_skirt(GCode::SmoothPath smooth_path, const ExtrusionFlow &extrusion_flow_override, const std::string_view description, double speed);
+    std::string extrude_skirt(GCode::SmoothPath smooth_path, const ExtrusionFlow &extrusion_flow_override);
 
     std::vector<InstanceToPrint> sort_print_object_instances(
         // Object and Support layers for the current print_z, collected for a single object, or for possibly multiple objects with multiple instances.
@@ -305,7 +305,7 @@ private:
         const std::string &commment
     );
 
-    void initialize_layer(
+    void initialize_instance(
         const InstanceToPrint &print_instance,
         const ObjectLayerToPrint &layer_to_print
     );

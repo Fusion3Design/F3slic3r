@@ -67,6 +67,7 @@ struct IslandExtrusions {
     const PrintRegion *region;
     std::vector<Perimeter> perimeters;
     std::vector<InfillRange> infill_ranges;
+    bool infill_first{false};
 };
 
 struct SliceExtrusions {
@@ -74,18 +75,21 @@ struct SliceExtrusions {
     std::vector<InfillRange> ironing_extrusions;
 };
 
-
 struct SupportPath {
     SmoothPath path;
     bool is_interface;
 };
 
 struct NormalExtrusions {
+    Point instance_offset;
     std::vector<SupportPath> support_extrusions;
     std::vector<SliceExtrusions> slices_extrusions;
 };
 
-std::optional<Point> get_last_position(const ExtrusionEntitiesPtr &extrusions, const Point &offset);
+struct OverridenExtrusions {
+    Point instance_offset;
+    std::vector<SliceExtrusions> slices_extrusions;
+};
 
 struct InstancePoint {
     Point value;
@@ -104,7 +108,7 @@ struct ExtruderExtrusions {
     unsigned extruder_id;
     std::vector<std::pair<std::size_t, GCode::SmoothPath>> skirt;
     std::vector<BrimPath> brim;
-    std::vector<std::vector<SliceExtrusions>> overriden_extrusions;
+    std::vector<OverridenExtrusions> overriden_extrusions;
     std::vector<NormalExtrusions> normal_extrusions;
 };
 
@@ -125,7 +129,6 @@ std::vector<ExtruderExtrusions> get_extrusions(
     bool get_brim,
     std::optional<Point> previous_position
 );
-
 }
 
 #endif // slic3r_GCode_ExtrusionOrder_hpp_

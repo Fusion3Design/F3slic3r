@@ -2576,7 +2576,6 @@ LayerResult GCodeGenerator::process_layer(
             }
             this->m_label_objects.update(nullptr);
 
-            this->set_origin(0., 0.);
             m_avoid_crossing_perimeters.use_external_mp();
             Flow layer_skirt_flow = print.skirt_flow().with_height(float(m_skirt_done.back() - (m_skirt_done.size() == 1 ? 0. : m_skirt_done[m_skirt_done.size() - 2])));
             double mm3_per_mm = layer_skirt_flow.mm3_per_mm();
@@ -2585,8 +2584,8 @@ LayerResult GCodeGenerator::process_layer(
                 //FIXME using the support_material_speed of the 1st object printed.
                 gcode += this->extrude_skirt(smooth_path,
                     // Override of skirt extrusion parameters. extrude_skirt() will fill in the extrusion width.
-                    ExtrusionFlow{ mm3_per_mm, 0., layer_skirt_flow.height() },
-                    "skirt"sv, m_config.support_material_speed.value);
+                    ExtrusionFlow{ mm3_per_mm, 0., layer_skirt_flow.height() }
+                );
             }
             m_avoid_crossing_perimeters.use_external_mp(false);
             // Allow a straight travel move to the first object point if this is the first layer (but don't in next layers).
@@ -2601,7 +2600,6 @@ LayerResult GCodeGenerator::process_layer(
             }
             this->m_label_objects.update(nullptr);
 
-            this->set_origin(0., 0.);
             m_avoid_crossing_perimeters.use_external_mp();
 
             for (const GCode::ExtrusionOrder::BrimPath &brim_path : extruder_extrusions.brim) {
@@ -2618,14 +2616,15 @@ LayerResult GCodeGenerator::process_layer(
             size_t gcode_size_old = gcode.size();
             for (std::size_t i{0}; i < instances_to_print.size(); ++i) {
                 const InstanceToPrint &instance{instances_to_print[i]};
-                const std::vector<SliceExtrusions> overriden_extrusions{extruder_extrusions.overriden_extrusions[i]};
-                if (is_empty(overriden_extrusions)) {
+                using GCode::ExtrusionOrder::OverridenExtrusions;
+                const OverridenExtrusions &overriden_extrusions{extruder_extrusions.overriden_extrusions[i]};
+                if (is_empty(overriden_extrusions.slices_extrusions)) {
                     continue;
                 }
-                this->initialize_layer(instance, layers[instance.object_layer_to_print_id]);
+                this->initialize_instance(instance, layers[instance.object_layer_to_print_id]);
                 gcode += this->extrude_slices(
                     instance, layers[instance.object_layer_to_print_id],
-                    overriden_extrusions
+                    overriden_extrusions.slices_extrusions
                 );
             }
             if (gcode_size_old < gcode.size()) {
@@ -2645,7 +2644,7 @@ LayerResult GCodeGenerator::process_layer(
                 continue;
             }
 
-            this->initialize_layer(instance, layers[instance.object_layer_to_print_id]);
+            this->initialize_instance(instance, layers[instance.object_layer_to_print_id]);
 
             if (!support_extrusions.empty()) {
                 m_layer = layer_to_print.support_layer;
@@ -2657,6 +2656,7 @@ LayerResult GCodeGenerator::process_layer(
                 instance, layer_to_print, slices_extrusions
             );
         }
+        this->set_origin(0.0, 0.0);
     }
 
     // During layer change the starting position of next layer is now known.
@@ -2737,7 +2737,7 @@ LayerResult GCodeGenerator::process_layer(
 
 static const auto comment_perimeter = "perimeter"sv;
 
-void GCodeGenerator::initialize_layer(
+void GCodeGenerator::initialize_instance(
     const InstanceToPrint &print_instance,
     const ObjectLayerToPrint &layer_to_print
 ) {
@@ -2765,7 +2765,6 @@ std::string GCodeGenerator::extrude_slices(
     const std::vector<SliceExtrusions> &slices_extrusions
 ) {
     const PrintObject &print_object = print_instance.print_object;
-    const Print       &print        = *print_object.print();
 
     m_layer = layer_to_print.layer();
     // To control print speed of the 1st object layer printed over raft interface.
@@ -2775,7 +2774,7 @@ std::string GCodeGenerator::extrude_slices(
     std::string gcode;
     for (const SliceExtrusions &slice_extrusions : slices_extrusions) {
         for (const IslandExtrusions &island_extrusions : slice_extrusions.common_extrusions) {
-            if (print.config().infill_first) {
+            if (island_extrusions.infill_first) {
                 gcode += this->extrude_infill_ranges(island_extrusions.infill_ranges, "infill");
                 gcode += this->extrude_perimeters(*island_extrusions.region, island_extrusions.perimeters, print_instance);
             } else {
@@ -2938,8 +2937,7 @@ std::string GCodeGenerator::extrude_smooth_path(
 }
 
 std::string GCodeGenerator::extrude_skirt(
-    GCode::SmoothPath smooth_path, const ExtrusionFlow &extrusion_flow_override,
-    const std::string_view description, double speed)
+    GCode::SmoothPath smooth_path, const ExtrusionFlow &extrusion_flow_override)
 {
     // Extrude along the smooth path.
     std::string gcode;
@@ -2949,7 +2947,7 @@ std::string GCodeGenerator::extrude_skirt(
         el.path_attributes.height = extrusion_flow_override.height;
     }
 
-    gcode += this->extrude_smooth_path(smooth_path, true, description, m_config.support_material_speed.value);
+    gcode += this->extrude_smooth_path(smooth_path, true, "skirt"sv, m_config.support_material_speed.value);
 
     return gcode;
 }
