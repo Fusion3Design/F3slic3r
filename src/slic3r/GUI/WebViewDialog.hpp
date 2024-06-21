@@ -61,6 +61,10 @@ public:
     virtual void sys_color_changed();
 protected:
 
+    virtual void on_page_will_load();
+
+protected:
+
     wxWebView* m_browser { nullptr };
     bool m_load_default_url { false };
 #ifdef DEBUG_URL_PANEL
@@ -177,6 +181,7 @@ public:
     void resend_config();
 protected:
     // action callbacs stored in m_actions
+    virtual void on_connect_action_error(const std::string& message_data);
     virtual void on_connect_action_request_config(const std::string& message_data);
     virtual void on_connect_action_request_open_in_browser(const std::string& message_data);
     virtual void on_connect_action_select_printer(const std::string& message_data) = 0;
@@ -201,7 +206,10 @@ protected:
     void on_connect_action_print(const std::string& message_data) override;
     void on_connect_action_webapp_ready(const std::string& message_data) override {}
     void run_script_bridge(const wxString& script) override {run_script(script); }
+    void on_page_will_load() override;
+    void on_connect_action_error(const std::string &message_data) override;
 private:
+    static wxString get_login_script(bool refresh);
     void on_user_token(UserAccountSuccessEvent& e);
     bool m_reached_default_url {false};
 };
