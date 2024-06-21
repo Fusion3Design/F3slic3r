@@ -54,7 +54,7 @@ ConfigWizardWebViewPage::ConfigWizardWebViewPage(ConfigWizard *parent)
 
 }
 
-void ConfigWizardWebViewPage::login_changed()
+bool ConfigWizardWebViewPage::login_changed()
 {
     assert(p_user_account && m_browser_sizer && m_text && m_bold_text);
     bool logged = p_user_account->is_logged();
@@ -67,6 +67,7 @@ void ConfigWizardWebViewPage::login_changed()
         // TRN Config wizard page with a log in web. first line of text.
         m_text->SetLabel(_L("Please log into your Prusa Account."));
     }
+    return logged;
 }
 
 void ConfigWizardWebViewPage::on_error(wxWebViewEvent &evt) 

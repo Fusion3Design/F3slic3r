@@ -4137,8 +4137,12 @@ bool ConfigWizard::run(RunReason reason, StartPage start_page)
 
 void ConfigWizard::update_login()
 {
-    if(p->page_login) {
-        p->page_login->login_changed();
+    if(!p->page_login) {
+        return;
+    }
+    if (p->page_login->login_changed()) {
+        // repos changed - we need rebuild
+        p->set_config_updated_from_archive(p->is_config_from_archive, true);
     }
 }
 

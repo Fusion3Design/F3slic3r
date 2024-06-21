@@ -49,8 +49,8 @@ public:
 
     void on_error(wxWebViewEvent &evt);
     void on_navigation_request(wxWebViewEvent &evt);
-    
-    void login_changed();
+    // returns true if logged in - wizard needs to update repos
+    bool login_changed();
 
 private:
     wxWebView *m_browser{nullptr};
