@@ -104,8 +104,8 @@ public:
     WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size, const std::vector<std::string>& message_handler_names, const std::string& loading_html = "loading");
     virtual ~WebViewDialog();
 
-    virtual void on_show(wxShowEvent& evt) = 0;
-    virtual void on_script_message(wxWebViewEvent& evt) = 0;
+    virtual void on_show(wxShowEvent& evt) {};
+    virtual void on_script_message(wxWebViewEvent& evt);
 
     void on_idle(wxIdleEvent& evt);
     void on_url(wxCommandEvent& evt);
@@ -127,6 +127,9 @@ public:
     void on_select_all(wxCommandEvent& evt);
     void On_enable_context_menu(wxCommandEvent& evt);
     void On_enable_dev_tools(wxCommandEvent& evt);
+    
+    virtual void on_navigation_request(wxWebViewEvent &evt);
+    virtual void on_loaded(wxWebViewEvent &evt) {}
 
     void run_script(const wxString& javascript);
    
@@ -245,6 +248,23 @@ class SourceViewDialog : public wxDialog
 {
 public:
     SourceViewDialog(wxWindow* parent, wxString source);
+};
+
+class LoginWebViewDialog : public WebViewDialog
+{
+public:
+    LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url);
+    void on_navigation_request(wxWebViewEvent &evt) override;
+
+private:
+    std::string &m_ret_val;
+};
+
+class LogoutWebViewDialog : public WebViewDialog
+{
+public:
+    LogoutWebViewDialog(wxWindow* parent);
+    void on_loaded(wxWebViewEvent &evt) override;
 };
 
 } // GUI

@@ -10,6 +10,7 @@
 // FIXME: extract absolute units -> em
 
 #include "ConfigWizard_private.hpp"
+#include "ConfigWizardWebViewPage.hpp"
 
 #include <algorithm>
 #include <numeric>
@@ -677,7 +678,7 @@ PageUpdateManager::PageUpdateManager(ConfigWizard* parent_in)
 
         auto revert_page_selection = [this]() -> void {
             CallAfter([this]() { 
-                wizard_p()->index->go_to(1); 
+                wizard_p()->index->go_to(this);
                 if (!this->IsShown())
                     this->Show();
             });
@@ -2586,6 +2587,7 @@ void ConfigWizard::priv::load_pages()
     index->clear();
 
     index->add_page(page_welcome);
+    index->add_page(page_login);
     index->add_page(page_update_manager);
 
     if (is_config_from_archive) {
@@ -2772,7 +2774,7 @@ void ConfigWizard::priv::load_vendors()
 
 void ConfigWizard::priv::add_page(ConfigWizardPage *page)
 {
-    const int proportion = (page->shortname == _L("Filaments")) || (page->shortname == _L("SLA Materials")) ? 1 : 0;
+    const int proportion = (page == page_login || page == page_filaments || page == page_sla_materials);
     hscroll_sizer->Add(page, proportion, wxEXPAND);
     all_pages.push_back(page);
 }
@@ -3981,6 +3983,7 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
     wxGetApp().SetWindowVariantForButton(p->btn_cancel);
 
     p->add_page(p->page_welcome = new PageWelcome(this));
+    p->add_page(p->page_login = new ConfigWizardWebViewPage(this));
     p->add_page(p->page_update_manager = new PageUpdateManager(this));
 
     // other pages will be loaded later after confirm repositories selection
@@ -4033,8 +4036,9 @@ ConfigWizard::ConfigWizard(wxWindow *parent)
         	// In that case don't leave the page and the function above queried the user whether to install default materials.
             return;
         if (active_page == p->page_update_manager && p->index->active_is_last()) {
+            size_t next_active = p->index->pages_cnt();
             p->page_update_manager->Hide();
-            p->index->go_to(2);
+            p->index->go_to(next_active);
             return;
         }
         this->p->index->go_next();
@@ -4129,6 +4133,16 @@ bool ConfigWizard::run(RunReason reason, StartPage start_page)
     } else {
         BOOST_LOG_TRIVIAL(info) << "ConfigWizard cancelled";
         return false;
+    }
+}
+
+void ConfigWizard::update_login()
+{
+    if (p->page_login && p->page_login->login_changed()) {
+        // repos changed - we need rebuild
+        wxGetApp().plater()->get_preset_archive_database()->sync_blocking();
+        // now change PageUpdateManager
+        p->page_update_manager->manager->update();
     }
 }
 
