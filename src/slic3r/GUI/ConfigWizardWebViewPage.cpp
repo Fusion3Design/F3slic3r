@@ -15,7 +15,7 @@ wxDEFINE_EVENT(EVT_LOGIN_VIA_WIZARD, Event<std::string>);
 
 ConfigWizardWebViewPage::ConfigWizardWebViewPage(ConfigWizard *parent)
     // TRN Config wizard page headline.
-    : ConfigWizardPage(parent, _L("Log into the Prusa Account"), _L("Log in"))
+    : ConfigWizardPage(parent, _L("Log into the Prusa Account (optional)"), _L("Log in (optional)"))
 {
     p_user_account = wxGetApp().plater()->get_user_account();
     assert(p_user_account);
@@ -37,12 +37,8 @@ ConfigWizardWebViewPage::ConfigWizardWebViewPage(ConfigWizard *parent)
         // TRN Config wizard page with a log in web. first line of text.
         m_text = new wxStaticText(this, wxID_ANY, _L("Please log into your Prusa Account."));
         // TRN Config wizard page with a log in web. second line of text.
-        m_bold_text = new wxStaticText(this, wxID_ANY, _L("This step is optional."));
-        m_bold_text->SetFont(wxGetApp().bold_font());
-        m_bold_text->Wrap(WRAP_WIDTH);
     }
     append(m_text);
-    append(m_bold_text);
     m_browser_sizer->Add(m_browser, 1, wxEXPAND);
     append(m_browser_sizer, 1, wxEXPAND);
 
@@ -56,10 +52,9 @@ ConfigWizardWebViewPage::ConfigWizardWebViewPage(ConfigWizard *parent)
 
 bool ConfigWizardWebViewPage::login_changed()
 {
-    assert(p_user_account && m_browser_sizer && m_text && m_bold_text);
+    assert(p_user_account && m_browser_sizer && m_text);
     bool logged = p_user_account->is_logged();
     m_browser_sizer->Show(!logged);
-    m_bold_text->Show(!logged);
     if (logged) {
         // TRN Config wizard page with a log in web.
         m_text->SetLabel(format_wxstr("You are logged as %1%.", p_user_account->get_username()));

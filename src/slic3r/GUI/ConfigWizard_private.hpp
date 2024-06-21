@@ -550,6 +550,7 @@ public:
     size_t active_item() const { return item_active; }
     ConfigWizardPage* active_page() const;
     bool active_is_last() const { return item_active < items.size() && item_active == last_page; }
+    size_t pages_cnt()    const { return items.size(); }
 
     void go_prev();
     void go_next();
