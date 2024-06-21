@@ -55,6 +55,13 @@ RepositoryUpdateUIManager::RepositoryUpdateUIManager(wxWindow* parent, PresetArc
 
     fill_entries(true);
     fill_grids();
+
+    m_load_btn = new wxButton(m_parent, wxID_ANY, "  " + _L("Load") + "...  ");
+    wxGetApp().UpdateDarkUI(m_load_btn, true);
+    m_load_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) { load_offline_repos(); });
+    m_main_sizer->Add(m_load_btn, 0, wxLEFT, 2 * em);
+
+    m_main_sizer->Fit(parent);
 }
 
 void RepositoryUpdateUIManager::fill_entries(bool init_selection/* = false*/)
@@ -193,14 +200,6 @@ void RepositoryUpdateUIManager::fill_grids()
             }
         }
     }
-
-    {
-        wxButton* btn = new wxButton(m_parent, wxID_ANY, "  " + _L("Load") + "...  ");
-        wxGetApp().UpdateDarkUI(btn, true);
-        btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) { load_offline_repos(); });
-        m_offline_sizer->Add(btn);
-    }
-
 }
 
 void RepositoryUpdateUIManager::update()

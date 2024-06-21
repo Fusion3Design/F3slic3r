@@ -51,6 +51,8 @@ class RepositoryUpdateUIManager
     wxFlexGridSizer*            m_online_sizer  { nullptr };
     wxFlexGridSizer*            m_offline_sizer { nullptr };
 
+    wxButton*                   m_load_btn      { nullptr };
+
     std::vector<OnlineEntry>    m_online_entries;
     std::vector<OfflineEntry>   m_offline_entries;
 
