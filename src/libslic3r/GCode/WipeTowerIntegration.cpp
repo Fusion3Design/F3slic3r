@@ -68,18 +68,13 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
         gcode += gcodegen.retract_and_wipe();
         gcodegen.m_avoid_crossing_perimeters.use_external_mp_once = true;
         const std::string comment{"Travel to a Wipe Tower"};
-        if (gcodegen.m_current_layer_first_position) {
-            if (gcodegen.last_position) {
-                gcode += gcodegen.travel_to(
-                    *gcodegen.last_position, xy_point, ExtrusionRole::Mixed, comment, [](){return "";}
-                );
-            } else {
-                gcode += gcodegen.writer().travel_to_xy(gcodegen.point_to_gcode(xy_point), comment);
-                gcode += gcodegen.writer().get_travel_to_z_gcode(z, comment);
-            }
+        if (gcodegen.last_position) {
+            gcode += gcodegen.travel_to(
+                *gcodegen.last_position, xy_point, ExtrusionRole::Mixed, comment, [](){return "";}
+            );
         } else {
-            const Vec3crd point = to_3d(xy_point, scaled(z));
-            gcode += gcodegen.travel_to_first_position(point, current_z, ExtrusionRole::Mixed, [](){return "";});
+            gcode += gcodegen.writer().travel_to_xy(gcodegen.point_to_gcode(xy_point), comment);
+            gcode += gcodegen.writer().get_travel_to_z_gcode(z, comment);
         }
         gcode += gcodegen.unretract();
     } else {

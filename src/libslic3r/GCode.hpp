@@ -279,7 +279,9 @@ private:
     std::string change_layer(
         coordf_t previous_layer_z,
         coordf_t print_z,
-        bool vase_mode
+        bool vase_mode,
+        const Point &first_point,
+        const bool first_layer
     );
     std::string extrude_smooth_path(
         const GCode::SmoothPath &smooth_path, const bool is_loop, const std::string_view description, const double speed
@@ -429,12 +431,7 @@ private:
     std::optional<Vec3d>                m_previous_layer_last_position;
     std::optional<Vec3d>                m_previous_layer_last_position_before_wipe;
     // This needs to be populated during the layer processing!
-    std::optional<Vec3d>                m_current_layer_first_position;
-    std::optional<unsigned>             m_layer_change_extruder_id;
-    bool                                m_layer_change_used_external_mp{false};
-    const Layer*                        m_layer_change_layer{nullptr};
-    std::optional<Vec2d>                m_layer_change_origin;
-    bool                                m_already_unretracted{false};
+    bool                                m_already_extruded{false};
     std::unique_ptr<CoolingBuffer>      m_cooling_buffer;
     std::unique_ptr<SpiralVase>         m_spiral_vase;
     std::unique_ptr<GCodeFindReplace>   m_find_replace;

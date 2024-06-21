@@ -198,13 +198,13 @@ inline std::optional<InstancePoint> get_first_point(const std::vector<SliceExtru
 }
 
 inline std::optional<Point> get_first_point(const ExtruderExtrusions &extrusions) {
-    for (const BrimPath &brim_path : extrusions.brim) {
-        if (auto result = get_first_point(brim_path.path)) {
+    for (const auto&[_, path] : extrusions.skirt) {
+        if (auto result = get_first_point(path)) {
             return result->local_point;
         };
     }
-    for (const auto&[_, path] : extrusions.skirt) {
-        if (auto result = get_first_point(path)) {
+    for (const BrimPath &brim_path : extrusions.brim) {
+        if (auto result = get_first_point(brim_path.path)) {
             return result->local_point;
         };
     }
