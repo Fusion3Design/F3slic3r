@@ -207,6 +207,7 @@ protected:
     void on_connect_action_webapp_ready(const std::string& message_data) override {}
     void run_script_bridge(const wxString& script) override {run_script(script); }
     void on_page_will_load() override;
+    void on_connect_action_error(const std::string &message_data) override;
 private:
     static wxString get_login_script(bool refresh);
     void on_user_token(UserAccountSuccessEvent& e);

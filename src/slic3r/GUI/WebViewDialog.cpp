@@ -7,7 +7,7 @@
 #include "slic3r/GUI/UserAccount.hpp"
 #include "slic3r/GUI/format.hpp"
 #include "slic3r/GUI/WebView.hpp"
-
+#include "slic3r/GUI/MsgDialog.hpp"
 
 #include <wx/webview.h>
 
@@ -327,7 +327,7 @@ void WebViewPanel::run_script(const wxString& javascript)
     // Remember the script we run in any case, so the next time the user opens
     // the "Run Script" dialog box, it is shown there for convenient updating.
     m_javascript = javascript;
-    std::cout << "RunScript " << javascript << "\n";
+    BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript << "\n";
     m_browser->RunScriptAsync(javascript);
 }
 
@@ -363,7 +363,7 @@ void WebViewPanel::on_add_user_script(wxCommandEvent& WXUNUSED(evt))
         return;
 
     const wxString& javascript = dialog.GetValue();
-    std::cout << "RunScript " << javascript << "\n";
+    BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript << "\n";
     if (!m_browser->AddUserScript(javascript))
         wxLogError("Could not add user script");
 }
@@ -630,18 +630,21 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
         R"(
         console.log('Preparing login');
         function errorHandler(err) {
-            window._prusaSlicer.postMessage({
+            const msg = {
                 action: 'ERROR',
-                error: err
-            });
+                error: JSON.stringify(err),
+                critical: false
+            };
+            console.error('Login error occurred', msg);
+            window._prusaSlicer.postMessage(msg);
         };
-        window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
+        window.fetch('/slicer/loginx', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
             .then(function (resp) {
                 console.log('Login resp', resp);
                 resp.text()
                     .then(function (json) { console.log('Login resp body', json); })
                     .then(function (body) {
-                        if (resp.status >= 400) window._prusaSlicer.postMessage({action: 'ERROR', error: body});
+                        if (resp.status >= 400) errorHandler({status: resp.status, body});
                     });
             })
             .catch(errorHandler);
@@ -655,7 +658,7 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
 void ConnectWebViewPanel::on_page_will_load()
 {
     auto javascript = get_login_script(false);
-    std::cout << "RunScript " << javascript << "\n";
+    BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript << "\n";
     m_browser->AddUserScript(javascript);
 }
 
@@ -666,7 +669,7 @@ void ConnectWebViewPanel::on_user_token(UserAccountSuccessEvent& e)
     assert(!access_token.empty());
     wxString javascript = get_login_script(true);
     //m_browser->AddUserScript(javascript, wxWEBVIEW_INJECT_AT_DOCUMENT_END);
-    std::cout << "RunScript " << javascript << "\n";
+    BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript << "\n";
     m_browser->RunScriptAsync(javascript);
 }
 
@@ -689,6 +692,20 @@ void ConnectWebViewPanel::on_navigation_request(wxWebViewEvent &evt)
         evt.Veto();
     }
 }
+
+void ConnectWebViewPanel::on_connect_action_error(const std::string &message_data)
+{
+    ConnectRequestHandler::on_connect_action_error(message_data);
+    MessageDialog dialog(
+        this,
+        GUI::format_wxstr(_L("WebKit Runtime Error encountered:\n\n%s"), message_data),
+        "WebKit Runtime Error",
+        wxOK
+    );
+    dialog.ShowModal();
+
+}
+
 void ConnectWebViewPanel::logout()
 {
     wxString script = L"window._prusaConnect_v1.logout()";
@@ -706,7 +723,7 @@ void ConnectWebViewPanel::logout()
         )",
                      plater->get_user_account()->get_access_token()
     );
-    std::cout << "RunScript " << javascript << "\n";
+    BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript << "\n";
     m_browser->RunScript(javascript);
 
 }
@@ -767,7 +784,7 @@ void PrinterWebViewPanel::send_api_key()
     key);
 
     m_browser->RemoveAllUserScripts();
-    std::cout << "RunScript " << script << "\n";
+    BOOST_LOG_TRIVIAL(debug) << "RunScript " << script << "\n";
     m_browser->AddUserScript(script);
     m_browser->Reload();
     
@@ -793,7 +810,7 @@ void PrinterWebViewPanel::send_credentials()
 )", usr, psk);
     
     m_browser->RemoveAllUserScripts();
-    std::cout << "RunScript " << script << "\n";
+    BOOST_LOG_TRIVIAL(debug) << "RunScript " << script << "\n";
     m_browser->AddUserScript(script);
     
     m_browser->Reload();
@@ -1080,7 +1097,7 @@ void WebViewDialog::on_add_user_script(wxCommandEvent& WXUNUSED(evt))
         return;
 
     const wxString& javascript = dialog.GetValue();
-    std::cout << "RunScript " << javascript <<"\n";
+    BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript <<"\n";
     if (!m_browser->AddUserScript(javascript))
         wxLogError("Could not add user script");
 }
@@ -1188,7 +1205,7 @@ void WebViewDialog::run_script(const wxString& javascript)
     // Remember the script we run in any case, so the next time the user opens
     // the "Run Script" dialog box, it is shown there for convenient updating.
     m_javascript = javascript;
-    std::cout << "RunScript " << javascript << "\n";
+    BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript << "\n";
     m_browser->RunScriptAsync(javascript);
 }
 
