@@ -29,7 +29,7 @@ int get_extruder_id(
 }
 
 Point get_gcode_point(const InstancePoint &point, const Point &offset) {
-    return point.value + offset;
+    return point.local_point + offset;
 }
 
 InstancePoint get_instance_point(const Point &point, const Point &offset) {
@@ -173,7 +173,7 @@ std::vector<InfillRange> extract_infill_ranges(
         )};
 
         const std::optional<InstancePoint> previous_instance_point{get_instance_point(previous_position, offset)};
-        const Point* start_near{previous_instance_point ? &(previous_instance_point->value) : nullptr};
+        const Point* start_near{previous_instance_point ? &(previous_instance_point->local_point) : nullptr};
         const ExtrusionEntityReferences sorted_extrusions{sort_fill_extrusions(extrusions, start_near)};
 
         std::vector<SmoothPath> paths;
@@ -501,15 +501,17 @@ std::vector<ExtruderExtrusions> get_extrusions(
     std::vector<ExtruderExtrusions> extrusions;
     for (const unsigned int extruder_id : layer_tools.extruders)
     {
+        ExtruderExtrusions extruder_extrusions{extruder_id};
+
         if (layer_tools.has_wipe_tower && wipe_tower != nullptr) {
             if (is_toolchange_required(is_first_layer, layer_tools.extruders.back(), extruder_id, current_extruder_id)) {
                 const WipeTower::ToolChangeResult tool_change{wipe_tower->get_toolchange(toolchange_number++)};
                 previous_position = Point::new_scale(wipe_tower->transform_wt_pt(tool_change.end_pos));
                 current_extruder_id = tool_change.new_tool;
+                extruder_extrusions.wipe_tower_start = Point::new_scale(wipe_tower->transform_wt_pt(tool_change.start_pos));
             }
         }
 
-        ExtruderExtrusions extruder_extrusions{extruder_id};
 
         if (auto loops_it = skirt_loops_per_extruder.find(extruder_id); loops_it != skirt_loops_per_extruder.end()) {
             const std::pair<size_t, size_t> loops = loops_it->second;

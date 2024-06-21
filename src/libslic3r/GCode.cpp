@@ -2308,7 +2308,7 @@ std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorte
             GCode::SmoothPath result;
 
             if (auto loop = dynamic_cast<const ExtrusionLoop *>(extrusion_entity)) {
-                Point seam_point = previous_position ? previous_position->value : Point::Zero();
+                Point seam_point = previous_position ? previous_position->local_point : Point::Zero();
                 if (loop->role().is_perimeter() && layer != nullptr) {
                     seam_point = this->m_seam_placer.place_seam(layer, *loop, seam_point);
                 }
@@ -2457,6 +2457,8 @@ LayerResult GCodeGenerator::process_layer(
     const std::vector<ExtruderExtrusions> extrusions{
         this->get_sorted_extrusions(print, layers, layer_tools, instances_to_print, smooth_path_caches, first_layer)};
 
+    const std::optional<Point> first_point{GCode::ExtrusionOrder::get_first_point(extrusions)};
+
     std::string gcode;
     assert(is_decimal_separator_point()); // for the sprintfs
 
@@ -2551,6 +2553,7 @@ LayerResult GCodeGenerator::process_layer(
             gcode += custom_gcode;
         }
     }
+
 
     // Extrude the skirt, brim, support, perimeters, infill ordered by the extruders.
     for (const ExtruderExtrusions &extruder_extrusions : extrusions)
