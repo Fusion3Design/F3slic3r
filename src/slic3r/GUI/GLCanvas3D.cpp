@@ -5950,7 +5950,7 @@ void GLCanvas3D::_render_sequential_clearance()
 }
 
 
-bool GLCanvas3D::check_toolbar_icon_size(float init_scale, float& new_scale_to_save, int counter/* = 3*/)
+bool GLCanvas3D::check_toolbar_icon_size(float init_scale, float& new_scale_to_save, bool is_custom, int counter/* = 3*/)
 {
     const Size cnv_size = get_canvas_size();
 
@@ -6006,6 +6006,9 @@ bool GLCanvas3D::check_toolbar_icon_size(float init_scale, float& new_scale_to_s
 
     new_scale_to_save = std::min(new_scale / max_scale, 1.f);
 
+    if (is_custom && new_scale_to_save > init_scale)
+        return false;
+
     if (is_approx(init_scale, new_scale_to_save, 0.015f) || counter == 0)
         return true;
 
@@ -6022,9 +6025,10 @@ void GLCanvas3D::_check_and_update_toolbar_icon_scale()
     if (wxGetApp().plater()->is_preview_shown())
         return;
 
-    const float init_scale = wxGetApp().toolbar_icon_scale();
+    bool is_custom;
+    const float init_scale = wxGetApp().toolbar_icon_scale(is_custom);
     float new_scale_to_save;
-    if (check_toolbar_icon_size(init_scale, new_scale_to_save) &&
+    if (check_toolbar_icon_size(init_scale, new_scale_to_save, is_custom) &&
         !is_approx(init_scale, new_scale_to_save, 0.015f))
         wxGetApp().set_auto_toolbar_icon_scale(new_scale_to_save);
 }

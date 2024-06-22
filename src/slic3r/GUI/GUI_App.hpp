@@ -268,7 +268,7 @@ public:
     bool            suppress_round_corners() const;
     wxSize          get_min_size(wxWindow* display_win) const;
     int             get_max_font_pt_size();
-    float           toolbar_icon_scale(const bool is_limited = false) const;
+    float           toolbar_icon_scale(bool& is_custom) const;
     void            set_auto_toolbar_icon_scale(float scale) const;
     void            check_printer_presets();
 

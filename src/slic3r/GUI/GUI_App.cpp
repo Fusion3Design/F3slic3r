@@ -1965,7 +1965,7 @@ wxSize GUI_App::get_min_size(wxWindow* display_win) const
     return min_size;
 }
 
-float GUI_App::toolbar_icon_scale(const bool is_limited/* = false*/) const
+float GUI_App::toolbar_icon_scale(bool& is_custom) const
 {
 #ifdef __APPLE__
     const float icon_sc = 1.0f; // for Retina display will be used its own scale
@@ -1980,12 +1980,11 @@ float GUI_App::toolbar_icon_scale(const bool is_limited/* = false*/) const
     if (val.empty() || auto_val.empty() || use_val.empty())
         return icon_sc;
 
+    is_custom  = app_config->get_bool("use_custom_toolbar_size");
+
     int int_val = use_val == "0" ? 100 : atoi(val.c_str());
     // correct value in respect to auto_toolbar_size
     int_val = std::min(atoi(auto_val.c_str()), int_val);
-
-    if (is_limited && int_val < 50)
-        int_val = 50;
 
     return 0.01f * int_val;
 }
