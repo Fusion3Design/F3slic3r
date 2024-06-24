@@ -350,7 +350,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
                 append_table_row(_u8L("Type"), [&vertex]() {
                     ImGuiPureWrap::text(_u8L(to_string(vertex.type)));
                 });
-                append_table_row(_u8L("Extrusion role"), [&vertex]() {
+                append_table_row(_u8L("Feature type"), [&vertex]() {
                     std::string text;
                     if (vertex.is_extrusion())
                         text = _u8L(to_string(vertex.role));

@@ -3901,7 +3901,7 @@ void GUI_App::search_and_select_filaments(const std::string& material, size_t ex
         {
             out_message += /*(extruder_count == 1)
                 ? GUI::format(_L("Selected Filament:\n%1%"), filament_preset.preset->name)
-                : */GUI::format(_L("Extruder %1%: Selected filament %2%\n"), extruder_index + 1, filament.preset->name);
+                : */GUI::format(_L("Extruder %1%: Selected filament %2%"), extruder_index + 1, filament.preset->name) + "\n";
             return;
         }
     }
@@ -3918,7 +3918,7 @@ void GUI_App::search_and_select_filaments(const std::string& material, size_t ex
         {
             out_message += /*(extruder_count == 1)
                 ? GUI::format(_L("Selected Filament:\n%1%"), filament_preset.preset->name) 
-                : */GUI::format(_L("Extruder %1%: Selected filament %2%\n"), extruder_index + 1, filament.preset->name);
+                : */GUI::format(_L("Extruder %1%: Selected filament %2%"), extruder_index + 1, filament.preset->name) + "\n";
             return;
         }
     }
@@ -3933,11 +3933,11 @@ void GUI_App::search_and_select_filaments(const std::string& material, size_t ex
             && filament.preset->name.compare(0, 9, "Prusament") == 0
             && select_filament_preset(filament.preset, extruder_index))
         {
-            out_message += GUI::format(_L("Extruder %1%: Installed and selected filament %2%\n"), extruder_index + 1, filament.preset->name);
+            out_message += GUI::format(_L("Extruder %1%: Installed and selected filament %2%"), extruder_index + 1, filament.preset->name) + "\n";
             return;
         }
     }
-    out_message += GUI::format(_L("Extruder %2%: Failed to find and select filament type: %1%\n"), material, extruder_index + 1);
+    out_message += GUI::format(_L("Extruder %2%: Failed to find and select filament type: %1%"), material, extruder_index + 1) + "\n";
 }
 
 void GUI_App::select_filament_from_connect(const std::string& msg)
