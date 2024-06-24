@@ -2598,7 +2598,7 @@ void GUI_App::update_mode()
     plater()->canvas3D()->update_gizmos_on_off_state();
 }
 
-wxMenu* GUI_App::get_config_menu()
+wxMenu* GUI_App::get_config_menu(MainFrame* main_frame)
 {
     auto local_menu = new wxMenu();
     wxWindowID config_id_base = wxWindow::NewControlId(int(ConfigMenuCnt));
@@ -2618,13 +2618,12 @@ wxMenu* GUI_App::get_config_menu()
 #endif //(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION)        
         local_menu->AppendSeparator();
     }
-    local_menu->Append(config_id_base + ConfigMenuPreferences, _L("&Preferences") + dots +
 #ifdef __APPLE__
-        "\tCtrl+,",
+    local_menu->Append(config_id_base + ConfigMenuPreferences, _L("&Preferences") + dots + "\tCtrl+,", _L("Application preferences"));
 #else
-        "\tCtrl+P",
+    append_menu_item(local_menu, config_id_base + ConfigMenuPreferences, _L("&Preferences") + "\tCtrl+P", _L("Application preferences"),
+                    [](wxCommandEvent&) { wxGetApp().open_preferences(); }, "", nullptr, []() {return true; }, main_frame);
 #endif
-        _L("Application preferences"));
 
     local_menu->AppendSeparator();
     local_menu->Append(config_id_base + ConfigMenuLanguage, _L("&Language"));

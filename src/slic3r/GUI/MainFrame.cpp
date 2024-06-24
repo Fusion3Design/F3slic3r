@@ -1636,7 +1636,7 @@ void MainFrame::init_menubar_as_editor()
     if (viewMenu) 
         m_bar_menus.AppendMenuItem(viewMenu, _L("&View"));
     
-    m_bar_menus.AppendMenuItem(wxGetApp().get_config_menu(), _L("&Configuration"));
+    m_bar_menus.AppendMenuItem(wxGetApp().get_config_menu(this), _L("&Configuration"));
 
     m_bar_menus.AppendMenuSeparaorItem();
 
@@ -1654,7 +1654,7 @@ void MainFrame::init_menubar_as_editor()
     m_menubar->Append(windowMenu, _L("&Window"));
     if (viewMenu) m_menubar->Append(viewMenu, _L("&View"));
     // Add additional menus from C++
-    m_menubar->Append(wxGetApp().get_config_menu(), _L("&Configuration"));
+    m_menubar->Append(wxGetApp().get_config_menu(this), _L("&Configuration"));
     m_menubar->Append(helpMenu, _L("&Help"));
 
     SetMenuBar(m_menubar);
@@ -1747,7 +1747,7 @@ void MainFrame::init_menubar_as_gcodeviewer()
     m_menubar->Append(fileMenu, _L("&File"));
     if (viewMenu != nullptr) m_menubar->Append(viewMenu, _L("&View"));
     // Add additional menus from C++
-    m_menubar->Append(wxGetApp().get_config_menu(), _L("&Configuration"));
+    m_menubar->Append(wxGetApp().get_config_menu(this), _L("&Configuration"));
     m_menubar->Append(helpMenu, _L("&Help"));
     SetMenuBar(m_menubar);
 
