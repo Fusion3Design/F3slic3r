@@ -2389,7 +2389,7 @@ void TabFilament::toggle_options()
 
         bool dynamic_fan_speeds = m_config->opt_bool("enable_dynamic_fan_speeds", 0);
         for (int i = 0; i < 4; i++) {
-        toggle_option("overhang_fan_speed_"+std::to_string(i),dynamic_fan_speeds);
+            toggle_option("overhang_fan_speed_"+std::to_string(i),dynamic_fan_speeds);
         }
     }
 

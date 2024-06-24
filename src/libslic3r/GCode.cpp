@@ -3217,21 +3217,20 @@ std::string GCodeGenerator::_extrude(
     else if (this->object_layer_over_raft())
         speed = m_config.get_abs_value("first_layer_speed_over_raft", speed);
 
-    std::pair<float, float> dynamic_speed_and_fan_speed{-1, -1};
+    ExtrusionProcessor::OverhangSpeeds dynamic_print_and_fan_speeds = {-1.f, -1.f};
     if (path_attr.overhang_attributes.has_value()) {
-        double external_perim_reference_speed = m_config.get_abs_value("external_perimeter_speed");
-        if (external_perim_reference_speed == 0)
-            external_perim_reference_speed = m_volumetric_speed / path_attr.mm3_per_mm;
-        external_perim_reference_speed = cap_speed(
-            external_perim_reference_speed, m_config, m_writer.extruder()->id(), path_attr
-        );
+        double external_perimeter_reference_speed = m_config.get_abs_value("external_perimeter_speed");
+        if (external_perimeter_reference_speed == 0) {
+            external_perimeter_reference_speed = m_volumetric_speed / path_attr.mm3_per_mm;
+        }
 
-        dynamic_speed_and_fan_speed = ExtrusionProcessor::calculate_overhang_speed(path_attr, this->m_config, m_writer.extruder()->id(),
-                                                                                   external_perim_reference_speed, speed);
+        external_perimeter_reference_speed = cap_speed(external_perimeter_reference_speed, m_config, m_writer.extruder()->id(), path_attr);
+        dynamic_print_and_fan_speeds       = ExtrusionProcessor::calculate_overhang_speed(path_attr, this->m_config, m_writer.extruder()->id(),
+                                                                                          float(external_perimeter_reference_speed), float(speed));
     }
 
-    if (dynamic_speed_and_fan_speed.first > -1) {
-        speed = dynamic_speed_and_fan_speed.first;
+    if (dynamic_print_and_fan_speeds.print_speed > -1) {
+        speed = dynamic_print_and_fan_speeds.print_speed;
     }
 
     // cap speed with max_volumetric_speed anyway (even if user is not using autospeed)
@@ -3292,8 +3291,10 @@ std::string GCodeGenerator::_extrude(
 
     // F is mm per minute.
     gcode += m_writer.set_speed(F, "", cooling_marker_setspeed_comments);
-    if (dynamic_speed_and_fan_speed.second >= 0)
-        gcode += ";_SET_FAN_SPEED" + std::to_string(int(dynamic_speed_and_fan_speed.second)) + "\n";
+
+    if (dynamic_print_and_fan_speeds.fan_speed >= 0) {
+        gcode += ";_SET_FAN_SPEED" + std::to_string(int(dynamic_print_and_fan_speeds.fan_speed)) + "\n";
+    }
 
     std::string comment;
     if (m_config.gcode_comments) {
@@ -3343,11 +3344,13 @@ std::string GCodeGenerator::_extrude(
         }
     }
 
-    if (m_enable_cooling_markers)
+    if (m_enable_cooling_markers) {
         gcode += path_attr.role.is_bridge() ? ";_BRIDGE_FAN_END\n" : ";_EXTRUDE_END\n";
+    }
 
-    if (dynamic_speed_and_fan_speed.second >= 0)
+    if (dynamic_print_and_fan_speeds.fan_speed >= 0) {
         gcode += ";_RESET_FAN_SPEED\n";
+    }
 
     this->last_position = path.back().point;
     return gcode;

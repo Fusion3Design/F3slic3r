@@ -42,13 +42,19 @@ class CurledLine;
 class Linef;
 }  // namespace Slic3r
 
-namespace Slic3r { namespace ExtrusionProcessor {
+namespace Slic3r::ExtrusionProcessor {
 
 struct ExtendedPoint
 {
     Vec2d position;
     float distance;
     float curvature;
+};
+
+struct OverhangSpeeds
+{
+    float print_speed;
+    float fan_speed;
 };
 
 template<bool SCALED_INPUT, bool ADD_INTERSECTIONS, bool PREV_LAYER_BOUNDARY_OFFSET, bool SIGNED_DISTANCE, typename POINTS, typename L>
@@ -266,12 +272,12 @@ ExtrusionEntityCollection calculate_and_split_overhanging_extrusions(
     const AABBTreeLines::LinesDistancer<Linef>      &unscaled_prev_layer,
     const AABBTreeLines::LinesDistancer<CurledLine> &prev_layer_curled_lines);
 
-std::pair<float, float> calculate_overhang_speed(const ExtrusionAttributes &attributes,
-                                                 const FullPrintConfig     &config,
-                                                 size_t                     extruder_id,
-                                                 float                      external_perim_reference_speed,
-                                                 float                      default_speed);
+OverhangSpeeds calculate_overhang_speed(const ExtrusionAttributes  &attributes,
+                                        const FullPrintConfig      &config,
+                                        size_t                      extruder_id,
+                                        float                       external_perimeter_reference_speed,
+                                        float                       default_speed);
 
-}} // namespace Slic3r::ExtrusionProcessor
+} // namespace Slic3r::ExtrusionProcessor
 
 #endif // slic3r_ExtrusionProcessor_hpp_
