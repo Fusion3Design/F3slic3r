@@ -437,7 +437,7 @@ target_link_libraries(
 if (MSVC)
     target_link_libraries(libslic3r_gui PUBLIC Setupapi.lib)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(libslic3r_gui PUBLIC ${DBUS_LIBRARIES}) 
+    target_link_libraries(libslic3r_gui PUBLIC ${DBUS_LIBRARIES})
 elseif (APPLE)
     target_link_libraries(libslic3r_gui PUBLIC ${DISKARBITRATION_LIBRARY} ${COREWLAN_LIBRARY})
 endif()
@@ -457,8 +457,12 @@ endif ()
 # link these libraries.
 if (UNIX AND NOT APPLE)
     find_package(GTK${SLIC3R_GTK} REQUIRED)
-    target_include_directories(libslic3r_gui PRIVATE ${GTK${SLIC3R_GTK}_INCLUDE_DIRS})
-    target_link_libraries(libslic3r_gui PUBLIC ${GTK${SLIC3R_GTK}_LIBRARIES} fontconfig)
+    find_package(PkgConfig REQUIRED)
+
+    pkg_check_modules(WEBKIT2GTK REQUIRED webkit2gtk-4.0)
+
+    target_include_directories(libslic3r_gui PRIVATE ${GTK${SLIC3R_GTK}_INCLUDE_DIRS} ${WEBKIT2GTK_INCLUDE_DIRS})
+    target_link_libraries(libslic3r_gui PUBLIC ${GTK${SLIC3R_GTK}_LIBRARIES} fontconfig ${WEBKIT2GTK_LIBS})
 endif ()
 
 # Add a definition so that we can tell we are compiling slic3r.
