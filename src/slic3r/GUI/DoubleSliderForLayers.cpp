@@ -969,8 +969,7 @@ void DSForLayers::Render(const int canvas_width, const int canvas_height, float 
 
 void DSForLayers::force_ruler_update()
 {
-    if (m_show_ruler)
-        m_ruler.invalidate();
+    m_ruler.invalidate();
 }
 
 bool DSForLayers::is_wipe_tower_layer(int tick) const

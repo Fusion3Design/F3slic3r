@@ -408,7 +408,7 @@ void Preview::create_sliders()
 
     m_layers_slider->set_callback_on_thumb_move( [this]() -> void { Preview::on_layers_slider_scroll_changed(); } );
 
-    m_layers_slider->set_callback_on_change_app_config([this](const std::string& key, const std::string& val)   -> void {
+    m_layers_slider->set_callback_on_change_app_config([](const std::string& key, const std::string& val)   -> void {
         wxGetApp().app_config->set(key, val);
     });
 

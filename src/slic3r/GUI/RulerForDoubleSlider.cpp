@@ -4,6 +4,7 @@
 ///|/
 #include "RulerForDoubleSlider.hpp"
 #include "libslic3r/CustomGCode.hpp"
+#include "libslic3r/libslic3r.h"
 
 using namespace Slic3r;
 using namespace CustomGCode;
