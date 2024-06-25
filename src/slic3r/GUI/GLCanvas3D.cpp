@@ -2552,6 +2552,7 @@ void GLCanvas3D::load_gcode_preview(const GCodeProcessorResult& gcode_result, co
     m_gcode_viewer.set_view_type(m_gcode_viewer.get_view_type());
     m_gcode_viewer.load_as_gcode(gcode_result, *this->fff_print(), str_tool_colors, str_color_print_colors);
     m_gcode_layers_times_cache = m_gcode_viewer.get_layers_times();
+    m_gcode_viewer.set_force_shells_visible(false);
     if (wxGetApp().is_editor()) {
         _set_warning_notification_if_needed(EWarning::ToolpathOutside);
         _set_warning_notification_if_needed(EWarning::GCodeConflict);
@@ -2566,10 +2567,11 @@ void GLCanvas3D::load_sla_preview()
     const SLAPrint* print = sla_print();
     if (m_canvas != nullptr && print != nullptr) {
         _set_current();
-	    // Release OpenGL data before generating new data.
-	    reset_volumes();
+        // Release OpenGL data before generating new data.
+        reset_volumes();
         _load_sla_shells();
         _update_sla_shells_outside_state();
+        m_gcode_viewer.set_force_shells_visible(false);
         _set_warning_notification_if_needed(EWarning::ObjectClashed);
         _set_warning_notification_if_needed(EWarning::SlaSupportsOutside);
     }
