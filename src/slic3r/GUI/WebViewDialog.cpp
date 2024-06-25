@@ -635,7 +635,7 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
             console.error('Login error occurred', msg);
             window._prusaSlicer.postMessage(msg);
         };
-        window.fetch('/slicer/loginx', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
+        window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
             .then(function (resp) {
                 console.log('Login resp', resp);
                 resp.text()
