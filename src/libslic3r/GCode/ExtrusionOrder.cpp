@@ -118,7 +118,9 @@ std::vector<Perimeter> extract_perimeter_extrusions(
                 }
                 SmoothPath path{smooth_path(&layer, ExtrusionEntityReference{*ee, reverse_loop}, extruder_id, last_position)};
                 previous_position = get_gcode_point(last_position, offset);
-                result.push_back(Perimeter{std::move(path), reverse_loop, ee});
+                if (!path.empty()) {
+                    result.push_back(Perimeter{std::move(path), reverse_loop, ee});
+                }
             }
         }
     }
@@ -179,10 +181,15 @@ std::vector<InfillRange> extract_infill_ranges(
         std::vector<SmoothPath> paths;
         for (const ExtrusionEntityReference &extrusion_reference : sorted_extrusions) {
             std::optional<InstancePoint> last_position{get_instance_point(previous_position, offset)};
-            paths.push_back(smooth_path(&layer, extrusion_reference, extruder_id, last_position));
+            SmoothPath path{smooth_path(&layer, extrusion_reference, extruder_id, last_position)};
+            if (!path.empty()) {
+                paths.push_back(std::move(path));
+            }
             previous_position = get_gcode_point(last_position, offset);
         }
-        result.push_back({std::move(paths), &region});
+        if (!paths.empty()) {
+            result.push_back({std::move(paths), &region});
+        }
         it = it_end;
     }
     return result;
@@ -277,12 +284,17 @@ std::vector<SliceExtrusions> get_slices_extrusions(
 
     for (size_t idx : layer.lslice_indices_sorted_by_print_order) {
         const LayerSlice &lslice = layer.lslices_ex[idx];
-        result.emplace_back(SliceExtrusions{
-            extract_island_extrusions(
-                lslice, print, layer, predicate, smooth_path, offset, extruder_id, previous_position
-            ),
-            extract_ironing_extrusions(lslice, print, layer, predicate, smooth_path, offset, extruder_id, previous_position)
-        });
+        std::vector<IslandExtrusions> island_extrusions{extract_island_extrusions(
+            lslice, print, layer, predicate, smooth_path, offset, extruder_id, previous_position
+        )};
+        std::vector<InfillRange> ironing_extrusions{extract_ironing_extrusions(
+            lslice, print, layer, predicate, smooth_path, offset, extruder_id, previous_position
+        )};
+        if (!island_extrusions.empty() || !ironing_extrusions.empty()) {
+            result.emplace_back(
+                SliceExtrusions{std::move(island_extrusions), std::move(ironing_extrusions)}
+            );
+        }
     }
     return result;
 }
@@ -342,12 +354,18 @@ std::vector<SupportPath> get_support_extrusions(
                 if (collection != nullptr) {
                     for (const ExtrusionEntity * sub_entity : *collection) {
                         std::optional<InstancePoint> last_position{get_instance_point(previous_position, {0, 0})};
-                        paths.push_back({smooth_path(nullptr, {*sub_entity, entity_reference.flipped()}, extruder_id, last_position), is_interface});
+                        SmoothPath path{smooth_path(nullptr, {*sub_entity, entity_reference.flipped()}, extruder_id, last_position)};
+                        if (!path.empty()) {
+                            paths.push_back({std::move(path), is_interface});
+                        }
                         previous_position = get_gcode_point(last_position, {0, 0});
                     }
                 } else {
                     std::optional<InstancePoint> last_position{get_instance_point(previous_position, {0, 0})};
-                    paths.push_back({smooth_path(nullptr, entity_reference, extruder_id, last_position), is_interface});
+                    SmoothPath path{smooth_path(nullptr, entity_reference, extruder_id, last_position)};
+                    if (!path.empty()) {
+                        paths.push_back({std::move(path), is_interface});
+                    }
                     previous_position = get_gcode_point(last_position, {0, 0});
                 }
             }
@@ -387,9 +405,12 @@ std::vector<OverridenExtrusions> get_overriden_extrusions(
             const PrintObject &print_object = instance.print_object;
             const Point &offset = print_object.instances()[instance.instance_id].shift;
 
-            result.push_back({offset, get_slices_extrusions(
+            std::vector<SliceExtrusions> slices_extrusions{get_slices_extrusions(
                 print, *layer, predicate, smooth_path, offset, extruder_id, previous_position
-            )});
+            )};
+            if (!slices_extrusions.empty()) {
+                result.push_back({offset, std::move(slices_extrusions)});
+            }
         }
     }
     return result;
@@ -559,6 +580,148 @@ std::vector<ExtruderExtrusions> get_extrusions(
         extrusions.push_back(std::move(extruder_extrusions));
     }
     return extrusions;
+}
+
+std::optional<InstancePoint> get_first_point(const SmoothPath &path) {
+    for (const SmoothPathElement & element : path) {
+        if (!element.path.empty()) {
+            return InstancePoint{element.path.front().point};
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<InstancePoint> get_first_point(const std::vector<SmoothPath> &smooth_paths) {
+    for (const SmoothPath &path : smooth_paths) {
+        if (auto result = get_first_point(path)) {
+            return result;
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<InstancePoint> get_first_point(const std::vector<InfillRange> &infill_ranges) {
+    for (const InfillRange &infill_range : infill_ranges) {
+        if (auto result = get_first_point(infill_range.items)) {
+            return result;
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<InstancePoint> get_first_point(const std::vector<Perimeter> &perimeters) {
+    for (const Perimeter &perimeter : perimeters) {
+        if (auto result = get_first_point(perimeter.smooth_path)) {
+            return result;
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<InstancePoint> get_first_point(const std::vector<IslandExtrusions> &extrusions) {
+    for (const IslandExtrusions &island : extrusions) {
+        if (island.infill_first) {
+            if (auto result = get_first_point(island.infill_ranges)) {
+                return result;
+            }
+            if (auto result = get_first_point(island.perimeters)) {
+                return result;
+            }
+        } else {
+            if (auto result = get_first_point(island.perimeters)) {
+                return result;
+            }
+            if (auto result = get_first_point(island.infill_ranges)) {
+                return result;
+            }
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<InstancePoint> get_first_point(const std::vector<SliceExtrusions> &extrusions) {
+    for (const SliceExtrusions &slice : extrusions) {
+        if (auto result = get_first_point(slice.common_extrusions)) {
+            return result;
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<Point> get_first_point(const ExtruderExtrusions &extrusions) {
+    for (const auto&[_, path] : extrusions.skirt) {
+        if (auto result = get_first_point(path)) {
+            return result->local_point;
+        };
+    }
+    for (const BrimPath &brim_path : extrusions.brim) {
+        if (auto result = get_first_point(brim_path.path)) {
+            return result->local_point;
+        };
+    }
+    for (const OverridenExtrusions &overriden_extrusions : extrusions.overriden_extrusions) {
+        if (auto result = get_first_point(overriden_extrusions.slices_extrusions)) {
+            return result->local_point - overriden_extrusions.instance_offset;
+        }
+    }
+
+    for (const NormalExtrusions &normal_extrusions : extrusions.normal_extrusions) {
+        for (const SupportPath &support_path : normal_extrusions.support_extrusions) {
+            if (auto result = get_first_point(support_path.path)) {
+                return result->local_point + normal_extrusions.instance_offset;
+            }
+        }
+        if (auto result = get_first_point(normal_extrusions.slices_extrusions)) {
+            return result->local_point + normal_extrusions.instance_offset;
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<Point> get_first_point(const std::vector<ExtruderExtrusions> &extrusions) {
+    if (extrusions.empty()) {
+        return std::nullopt;
+    }
+
+    if (extrusions.front().wipe_tower_start) {
+        return extrusions.front().wipe_tower_start;
+    }
+
+    for (const ExtruderExtrusions &extruder_extrusions : extrusions) {
+        if (auto result = get_first_point(extruder_extrusions)) {
+            return result;
+        }
+    }
+
+    return std::nullopt;
+}
+
+const PrintInstance * get_first_instance(
+    const std::vector<ExtruderExtrusions> &extrusions,
+    const std::vector<InstanceToPrint> &instances_to_print
+) {
+    for (const ExtruderExtrusions &extruder_extrusions : extrusions) {
+        if (!extruder_extrusions.overriden_extrusions.empty()) {
+            for (std::size_t i{0}; i < instances_to_print.size(); ++i) {
+                const OverridenExtrusions &overriden_extrusions{extruder_extrusions.overriden_extrusions[i]};
+                if (!is_empty(overriden_extrusions.slices_extrusions)) {
+                    const InstanceToPrint &instance{instances_to_print[i]};
+                    return &instance.print_object.instances()[instance.instance_id];
+                }
+            }
+        }
+        for (std::size_t i{0}; i < instances_to_print.size(); ++i) {
+            const InstanceToPrint &instance{instances_to_print[i]};
+            const std::vector<SupportPath> &support_extrusions{extruder_extrusions.normal_extrusions[i].support_extrusions};
+            const std::vector<SliceExtrusions> &slices_extrusions{extruder_extrusions.normal_extrusions[i].slices_extrusions};
+
+            if (!support_extrusions.empty() || !is_empty(slices_extrusions)) {
+                return &instance.print_object.instances()[instance.instance_id];
+            }
+        }
+    }
+    return nullptr;
 }
 
 }

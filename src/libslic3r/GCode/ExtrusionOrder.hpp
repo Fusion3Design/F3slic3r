@@ -131,120 +131,12 @@ std::vector<ExtruderExtrusions> get_extrusions(
     std::optional<Point> previous_position
 );
 
-inline std::optional<InstancePoint> get_first_point(const SmoothPath &path) {
-    for (const SmoothPathElement & element : path) {
-        if (!element.path.empty()) {
-            return InstancePoint{element.path.front().point};
-        }
-    }
-    return std::nullopt;
-}
+std::optional<Point> get_first_point(const std::vector<ExtruderExtrusions> &extrusions);
 
-inline std::optional<InstancePoint> get_first_point(const std::vector<SmoothPath> &smooth_paths) {
-    for (const SmoothPath &path : smooth_paths) {
-        if (auto result = get_first_point(path)) {
-            return result;
-        }
-    }
-    return std::nullopt;
-}
-
-inline std::optional<InstancePoint> get_first_point(const std::vector<InfillRange> &infill_ranges) {
-    for (const InfillRange &infill_range : infill_ranges) {
-        if (auto result = get_first_point(infill_range.items)) {
-            return result;
-        }
-    }
-    return std::nullopt;
-}
-
-inline std::optional<InstancePoint> get_first_point(const std::vector<Perimeter> &perimeters) {
-    for (const Perimeter &perimeter : perimeters) {
-        if (auto result = get_first_point(perimeter.smooth_path)) {
-            return result;
-        }
-    }
-    return std::nullopt;
-}
-
-inline std::optional<InstancePoint> get_first_point(const std::vector<IslandExtrusions> &extrusions) {
-    for (const IslandExtrusions &island : extrusions) {
-        if (island.infill_first) {
-            if (auto result = get_first_point(island.infill_ranges)) {
-                return result;
-            }
-            if (auto result = get_first_point(island.perimeters)) {
-                return result;
-            }
-        } else {
-            if (auto result = get_first_point(island.perimeters)) {
-                return result;
-            }
-            if (auto result = get_first_point(island.infill_ranges)) {
-                return result;
-            }
-        }
-    }
-    return std::nullopt;
-}
-
-inline std::optional<InstancePoint> get_first_point(const std::vector<SliceExtrusions> &extrusions) {
-    for (const SliceExtrusions &slice : extrusions) {
-        if (auto result = get_first_point(slice.common_extrusions)) {
-            return result;
-        }
-    }
-    return std::nullopt;
-}
-
-inline std::optional<Point> get_first_point(const ExtruderExtrusions &extrusions) {
-    for (const auto&[_, path] : extrusions.skirt) {
-        if (auto result = get_first_point(path)) {
-            return result->local_point;
-        };
-    }
-    for (const BrimPath &brim_path : extrusions.brim) {
-        if (auto result = get_first_point(brim_path.path)) {
-            return result->local_point;
-        };
-    }
-    for (const OverridenExtrusions &overriden_extrusions : extrusions.overriden_extrusions) {
-        if (auto result = get_first_point(overriden_extrusions.slices_extrusions)) {
-            return result->local_point - overriden_extrusions.instance_offset;
-        }
-    }
-
-    for (const NormalExtrusions &normal_extrusions : extrusions.normal_extrusions) {
-        for (const SupportPath &support_path : normal_extrusions.support_extrusions) {
-            if (auto result = get_first_point(support_path.path)) {
-                return result->local_point + normal_extrusions.instance_offset;
-            }
-        }
-        if (auto result = get_first_point(normal_extrusions.slices_extrusions)) {
-            return result->local_point + normal_extrusions.instance_offset;
-        }
-    }
-
-    return std::nullopt;
-}
-
-inline std::optional<Point> get_first_point(const std::vector<ExtruderExtrusions> &extrusions) {
-    if (extrusions.empty()) {
-        return std::nullopt;
-    }
-
-    if (extrusions.front().wipe_tower_start) {
-        return extrusions.front().wipe_tower_start;
-    }
-
-    for (const ExtruderExtrusions &extruder_extrusions : extrusions) {
-        if (auto result = get_first_point(extruder_extrusions)) {
-            return result;
-        }
-    }
-
-    return std::nullopt;
-}
+const PrintInstance * get_first_instance(
+    const std::vector<ExtruderExtrusions> &extrusions,
+    const std::vector<InstanceToPrint> &instances_to_print
+);
 }
 
 #endif // slic3r_GCode_ExtrusionOrder_hpp_

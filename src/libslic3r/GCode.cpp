@@ -2408,9 +2408,6 @@ LayerResult GCodeGenerator::process_layer(
     unsigned int         first_extruder_id = layer_tools.extruders.front();
 
     const std::vector<InstanceToPrint> instances_to_print{sort_print_object_instances(layers, ordering, single_object_instance_idx)};
-    const PrintInstance* first_instance{instances_to_print.empty() ? nullptr : &instances_to_print.front().print_object.instances()[instances_to_print.front().instance_id]};
-    m_label_objects.update(first_instance);
-
 
     // Initialize config with the 1st object to be printed at this layer.
     m_config.apply(layer.object()->config(), true);
@@ -2442,8 +2439,11 @@ LayerResult GCodeGenerator::process_layer(
         return result;
     }
     const Point first_point{*GCode::ExtrusionOrder::get_first_point(extrusions)};
+    const PrintInstance* first_instance{get_first_instance(extrusions, instances_to_print)};
+    m_label_objects.update(first_instance);
 
     std::string gcode;
+
     assert(is_decimal_separator_point()); // for the sprintfs
 
     // add tag for processor
@@ -2461,7 +2461,6 @@ LayerResult GCodeGenerator::process_layer(
     m_last_layer_z = static_cast<float>(print_z);
     m_max_layer_z  = std::max(m_max_layer_z, m_last_layer_z);
     m_last_height = height;
-    m_already_extruded = false;
 
     // Set new layer - this will change Z and force a retraction if retract_layer_change is enabled.
     if (!first_layer && ! print.config().before_layer_gcode.value.empty()) {
@@ -2599,7 +2598,8 @@ LayerResult GCodeGenerator::process_layer(
             // Allow a straight travel move to the first object point.
             m_avoid_crossing_perimeters.disable_once();
         }
-        this->m_label_objects.update(first_instance);
+
+        m_label_objects.update(first_instance);
 
         if (!extruder_extrusions.overriden_extrusions.empty()) {
             // Extrude wipes.
@@ -2633,7 +2633,6 @@ LayerResult GCodeGenerator::process_layer(
             if (support_extrusions.empty() && is_empty(slices_extrusions)) {
                 continue;
             }
-
             this->initialize_instance(instance, layers[instance.object_layer_to_print_id]);
 
             if (!support_extrusions.empty()) {
@@ -3063,8 +3062,6 @@ std::string GCodeGenerator::travel_to_first_position(const Vec3crd& point, const
         this->last_position = point.head<2>();
         this->writer().update_position(gcode_point);
     }
-
-    m_already_extruded = true;
 
     return gcode;
 }

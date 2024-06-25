@@ -312,7 +312,6 @@ private:
         const ObjectLayerToPrint &layer_to_print
     );
 
-    // This function will be called for each printing extruder, possibly twice: First for wiping extrusions, second for normal extrusions.
     std::string extrude_slices(
         const InstanceToPrint &print_instance,
         const ObjectLayerToPrint &layer_to_print,
@@ -431,7 +430,6 @@ private:
     std::optional<Vec3d>                m_previous_layer_last_position;
     std::optional<Vec3d>                m_previous_layer_last_position_before_wipe;
     // This needs to be populated during the layer processing!
-    bool                                m_already_extruded{false};
     std::unique_ptr<CoolingBuffer>      m_cooling_buffer;
     std::unique_ptr<SpiralVase>         m_spiral_vase;
     std::unique_ptr<GCodeFindReplace>   m_find_replace;
