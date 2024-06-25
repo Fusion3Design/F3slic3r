@@ -1316,8 +1316,8 @@ void PrinterPickWebViewDialog::request_compatible_printers_SLA()
 LoginWebViewDialog::LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url) 
     : WebViewDialog(parent
         , url
-        , _L("Log in dialog")
-        , wxSize(parent->GetClientSize().x / 3, parent->GetClientSize().y / 4 * 3)
+        , _L("Log in dialog"),
+          wxSize(50 * wxGetApp().em_unit(), 80 * wxGetApp().em_unit())
         , {})
     , m_ret_val(ret_val)
 {
