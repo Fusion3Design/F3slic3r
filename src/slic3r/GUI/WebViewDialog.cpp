@@ -820,7 +820,7 @@ void PrinterWebViewPanel::sys_color_changed()
 }
 
 WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxString& dialog_name, const wxSize& size, const std::vector<std::string>& message_handler_names, const std::string& loading_html/* = "loading"*/)
-    : wxDialog(parent, wxID_ANY, dialog_name, wxDefaultPosition, size, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+    : DPIDialog(parent, wxID_ANY, dialog_name, wxDefaultPosition, size, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
     , m_loading_html(loading_html)
     , m_script_message_hadler_names (message_handler_names)
 {
@@ -1313,6 +1313,18 @@ void PrinterPickWebViewDialog::request_compatible_printers_SLA()
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.requestCompatiblePrinter(%1%)", request);
     run_script(script);
 }
+void PrinterPickWebViewDialog::on_dpi_changed(const wxRect &suggested_rect) 
+{
+    wxWindow *parent = GetParent();
+    const wxSize &size = wxSize(
+        std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()),
+        std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit())
+    );
+    SetMinSize(size);
+    Fit();
+    Refresh();
+}
+
 LoginWebViewDialog::LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url) 
     : WebViewDialog(parent
         , url
@@ -1332,6 +1344,13 @@ void LoginWebViewDialog::on_navigation_request(wxWebViewEvent &evt)
         EndModal(wxID_OK);
     }
 }
+void LoginWebViewDialog::on_dpi_changed(const wxRect &suggested_rect) 
+{
+    const wxSize &size = wxSize(50 * wxGetApp().em_unit(), 80 * wxGetApp().em_unit());
+    SetMinSize(size);
+    Fit();
+    Refresh();
+}
 
 LogoutWebViewDialog::LogoutWebViewDialog(wxWindow *parent)
     : WebViewDialog(parent
@@ -1342,6 +1361,7 @@ LogoutWebViewDialog::LogoutWebViewDialog(wxWindow *parent)
 {
     Centre();
 }
+
 void LogoutWebViewDialog::on_loaded(wxWebViewEvent &evt)
 {
      EndModal(wxID_OK);
