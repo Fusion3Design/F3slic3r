@@ -11,11 +11,14 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Point.hpp"
-#include "Line.hpp"
-#include "MultiPoint.hpp"
+
+#include <stdint.h>
+#include <string.h>
+#include <algorithm>
+
 #include "Int128.hpp"
 #include "BoundingBox.hpp"
-#include <algorithm>
+#include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
 

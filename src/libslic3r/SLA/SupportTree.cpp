@@ -7,19 +7,23 @@
  *
  */
 
-#include <numeric>
 #include <libslic3r/SLA/SupportTree.hpp>
-#include <libslic3r/SLA/SpatIndex.hpp>
 #include <libslic3r/SLA/SupportTreeBuilder.hpp>
 #include <libslic3r/SLA/DefaultSupportTree.hpp>
 #include <libslic3r/SLA/BranchingTreeSLA.hpp>
-
 #include <libslic3r/MTUtils.hpp>
-#include <libslic3r/ClipperUtils.hpp>
-#include <libslic3r/Model.hpp>
 #include <libslic3r/TriangleMeshSlicer.hpp>
-
 #include <boost/log/trivial.hpp>
+#include <stddef.h>
+#include <chrono>
+#include <iterator>
+
+#include "libslic3r/Point.hpp"
+#include "libslic3r/SLA/JobController.hpp"
+#include "libslic3r/SLA/Pad.hpp"
+#include "libslic3r/SLA/SupportTreeStrategies.hpp"
+#include "libslic3r/TriangleMesh.hpp"
+#include "libslic3r/libslic3r.h"
 
 
 namespace Slic3r { namespace sla {

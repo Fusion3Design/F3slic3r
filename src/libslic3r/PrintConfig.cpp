@@ -20,22 +20,28 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "PrintConfig.hpp"
-#include "Config.hpp"
-#include "I18N.hpp"
-#include "format.hpp"
 
-#include "SLA/SupportTree.hpp"
-#include "libslic3r/GCode/Thumbnails.hpp"
-
-#include <set>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/log/trivial.hpp>
-#include <boost/thread.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/lexical_cast/bad_lexical_cast.hpp>
+#include <boost/preprocessor/cat.hpp>
+#include <cereal/cereal.hpp>
+#include <set>
+#include <cmath>
+#include <optional>
+#include <string_view>
 
-#include <float.h>
+#include "Config.hpp"
+#include "I18N.hpp"
+#include "format.hpp"
+#include "libslic3r/GCode/Thumbnails.hpp"
+#include "libslic3r/SLA/SupportTreeStrategies.hpp"
+#include "libslic3r/enum_bitmask.hpp"
+#include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
 
@@ -6115,5 +6121,6 @@ bool is_XL_printer(const PrintConfig &cfg)
 } // namespace Slic3r
 
 #include <cereal/types/polymorphic.hpp> // IWYU pragma: keep
+
 CEREAL_REGISTER_TYPE(Slic3r::DynamicPrintConfig)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(Slic3r::DynamicConfig, Slic3r::DynamicPrintConfig)

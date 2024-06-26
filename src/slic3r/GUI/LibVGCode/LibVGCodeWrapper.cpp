@@ -2,13 +2,33 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
+#include <assert.h>
+#include <stdint.h>
+#include <Eigen/Geometry>
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <iterator>
+
 #include "libslic3r/libslic3r.h"
 #include "LibVGCodeWrapper.hpp"
-
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Color.hpp"
+#include "libslic3r/CustomGCode.hpp"
+#include "libslic3r/Exception.hpp"
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
+#include "libslic3r/GCode/WipeTower.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/LayerRegion.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/Polyline.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libvgcode/GCodeInputData.hpp"
+#include "libvgcode/PathVertex.hpp"
 
 namespace libvgcode {
+class Viewer;
 
 Vec3 convert(const Slic3r::Vec3f& v)
 {

@@ -1,11 +1,17 @@
-#include <fstream>
+#include <oneapi/tbb/blocked_range.h>
+#include <oneapi/tbb/parallel_for.h>
+#include <cstdint>
+#include <iterator>
+#include <tuple>
 
 #include "libslic3r/ClipperUtils.hpp"
-
 #include "libslic3r/Layer.hpp"
-
 #include "libslic3r/GCode/SeamGeometry.hpp"
 #include "libslic3r/GCode/SeamPerimeters.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/GCode/SeamPainting.hpp"
+#include "libslic3r/MultiPoint.hpp"
+#include "tcbspan/span.hpp"
 
 namespace Slic3r::Seams::Perimeters::Impl {
 

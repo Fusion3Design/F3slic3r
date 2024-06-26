@@ -5,12 +5,14 @@
 #ifndef slic3r_GUI_TickCodesManager_hpp_
 #define slic3r_GUI_TickCodesManager_hpp_
 
-#include "libslic3r/CustomGCode.hpp"
-
+#include <stddef.h>
 #include <array>
 #include <functional>
 #include <vector>
 #include <set>
+#include <string>
+
+#include "libslic3r/CustomGCode.hpp"
 
 using namespace Slic3r::CustomGCode;
 namespace Slic3r {

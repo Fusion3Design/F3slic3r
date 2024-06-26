@@ -8,14 +8,29 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "../GCode.hpp"
-#include "CoolingBuffer.hpp"
-#include <algorithm>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/log/trivial.hpp>
-#include <iostream>
 #include <float.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <algorithm>
+#include <charconv>
+#include <cmath>
+#include <iterator>
+#include <string_view>
+#include <system_error>
+#include <utility>
+
+#include "../GCode.hpp"
+#include "CoolingBuffer.hpp"
+#include "libslic3r/GCode/CoolingBuffer.hpp"
+#include "libslic3r/Extruder.hpp"
+#include "libslic3r/GCode/GCodeWriter.hpp"
+#include "libslic3r/Geometry/ArcWelder.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/libslic3r.h"
 
 #if 0
     #define DEBUG
@@ -24,7 +39,6 @@
 #endif
 
 #include <assert.h>
-
 #include <fast_float.h>
 
 namespace Slic3r {

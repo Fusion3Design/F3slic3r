@@ -1,5 +1,10 @@
 #include <stack>
+#include <algorithm>
+#include <cmath>
+
 #include "PerimeterOrder.hpp"
+#include "libslic3r/Arachne/utils/ExtrusionJunction.hpp"
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r::Arachne::PerimeterOrder {
 

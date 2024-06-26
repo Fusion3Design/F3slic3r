@@ -8,10 +8,20 @@
 
 //#define SLIC3R_USE_CLIPPER2
 
+#include <assert.h>
+#include <cstddef>
+#include <iterator>
+#include <utility>
+#include <vector>
+
 #include "libslic3r.h"
 #include "ExPolygon.hpp"
 #include "Polygon.hpp"
 #include "Surface.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Polyline.hpp"
 
 #ifdef SLIC3R_USE_CLIPPER2
 

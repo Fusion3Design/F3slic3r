@@ -3,11 +3,23 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "CameraUtils.hpp"
+
 #include <igl/project.h> // IWYU pragma: keep
 #include <igl/unproject.h> // IWYU pragma: keep
+#include <assert.h>
+#include <math.h>
+#include <stddef.h>
+#include <Eigen/Geometry>
+#include <algorithm>
+#include <limits>
 
 #include "slic3r/GUI/3DScene.hpp" // GLVolume
 #include "libslic3r/Geometry/ConvexHull.hpp"
+#include "admesh/stl.h"
+#include "libslic3r/Exception.hpp"
+#include "libslic3r/TriangleMesh.hpp"
+#include "slic3r/GUI/Camera.hpp"
+#include "slic3r/GUI/GLModel.hpp"
 
 using namespace Slic3r;
 using namespace GUI;

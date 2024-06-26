@@ -6,12 +6,17 @@
 #ifndef slic3r_BoundingBox_hpp_
 #define slic3r_BoundingBox_hpp_
 
+#include <assert.h>
+#include <algorithm>
+#include <vector>
+
 #include "libslic3r.h"
 #include "Exception.hpp"
 #include "Point.hpp"
 #include "Polygon.hpp"
 
 namespace Slic3r {
+class BoundingBox;
 
 template <typename PointType, typename APointsType = std::vector<PointType>>
 class BoundingBoxBase

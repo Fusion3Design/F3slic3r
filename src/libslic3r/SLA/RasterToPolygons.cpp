@@ -4,10 +4,17 @@
 ///|/
 #include "RasterToPolygons.hpp"
 
+#include <stddef.h>
+#include <stdint.h>
+#include <algorithm>
+#include <utility>
+#include <vector>
+
 #include "AGGRaster.hpp"
 #include "libslic3r/MarchingSquares.hpp"
-#include "libslic3r/MTUtils.hpp"
 #include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/libslic3r.h"
 
 namespace marchsq {
 

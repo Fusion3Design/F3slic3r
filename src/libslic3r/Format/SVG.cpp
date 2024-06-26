@@ -6,13 +6,23 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "libslic3r/libslic3r.h"
+#include <boost/log/trivial.hpp>
+#include <assert.h>
+#include <nanosvg/nanosvg.h>
+#include <stddef.h>
+#include <Eigen/Geometry>
+#include <memory>
+#include <string>
+#include <utility>
+
 #include "libslic3r/Model.hpp"
 #include "libslic3r/TriangleMesh.hpp"
 #include "libslic3r/NSVGUtils.hpp"
 #include "libslic3r/Emboss.hpp"
-
-#include <boost/log/trivial.hpp>
+#include "admesh/stl.h"
+#include "libslic3r/EmbossShape.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/Point.hpp"
 
 namespace {
 std::string get_file_name(const std::string &file_path)

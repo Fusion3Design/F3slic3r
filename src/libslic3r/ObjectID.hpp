@@ -7,6 +7,9 @@
 
 #include <cereal/access.hpp>
 #include <cereal/types/base_class.hpp>
+#include <stddef.h>
+#include <stdint.h>
+#include <cereal/cereal.hpp>
 
 namespace Slic3r {
 

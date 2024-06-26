@@ -10,27 +10,47 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
+#include <boost/log/trivial.hpp>
+#include <float.h>
+#include <oneapi/tbb/blocked_range.h>
+#include <oneapi/tbb/parallel_for.h>
+#include <oneapi/tbb/task_group.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <cmath>
+#include <memory>
+#include <algorithm>
+#include <iterator>
+#include <numeric>
+#include <tuple>
+#include <utility>
+
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Print.hpp"
-#include "libslic3r/Fill/FillBase.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/MutablePolygon.hpp"
-
 #include "libslic3r/Support/SupportCommon.hpp"
 #include "SupportMaterial.hpp"
-
-#include <clipper/clipper_z.hpp>
-
-#include <cmath>
-#include <memory>
-#include <boost/log/trivial.hpp>
-#include <boost/container/static_vector.hpp>
-
-#include <tbb/parallel_for.h>
-#include <tbb/task_group.h>
+#include "agg/agg_renderer_base.h"
+#include "agg/agg_rendering_buffer.h"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/ExtrusionRole.hpp"
+#include "libslic3r/Flow.hpp"
+#include "libslic3r/LayerRegion.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/MultiMaterialSegmentation.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/Slicing.hpp"
+#include "libslic3r/Support/SupportLayer.hpp"
+#include "libslic3r/Support/SupportParameters.hpp"
+#include "libslic3r/Surface.hpp"
+#include "libslic3r/TriangleSelector.hpp"
+#include "tcbspan/span.hpp"
 
 #define SUPPORT_USE_AGG_RASTERIZER
 
@@ -40,7 +60,6 @@
     #include <agg/agg_scanline_p.h>
     #include <agg/agg_rasterizer_scanline_aa.h>
     #include <agg/agg_path_storage.h>
-    #include "libslic3r/PNGReadWrite.hpp"
 #else
     #include "EdgeGrid.hpp"
 #endif // SUPPORT_USE_AGG_RASTERIZER

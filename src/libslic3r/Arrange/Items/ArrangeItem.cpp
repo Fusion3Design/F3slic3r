@@ -4,13 +4,13 @@
 ///|/
 #include "ArrangeItem.hpp"
 
-#include "libslic3r/Arrange/Core/NFP/NFPConcave_Tesselate.hpp"
+#include <numeric>
 
+#include "libslic3r/Arrange/Core/NFP/NFPConcave_Tesselate.hpp"
 #include "libslic3r/Arrange/ArrangeImpl.hpp" // IWYU pragma: keep
 #include "libslic3r/Arrange/Tasks/ArrangeTaskImpl.hpp" // IWYU pragma: keep
 #include "libslic3r/Arrange/Tasks/FillBedTaskImpl.hpp" // IWYU pragma: keep
 #include "libslic3r/Arrange/Tasks/MultiplySelectionTaskImpl.hpp" // IWYU pragma: keep
-
 #include "libslic3r/Geometry/ConvexHull.hpp"
 
 namespace Slic3r { namespace arr2 {

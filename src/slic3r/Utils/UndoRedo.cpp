@@ -4,34 +4,31 @@
 ///|/
 #include "UndoRedo.hpp"
 
-#include <algorithm>
-#include <iostream>
-#include <fstream>
-#include <memory>
-#include <typeinfo> 
-#include <cassert>
-#include <cstddef>
-
 #include <cereal/types/polymorphic.hpp> // IWYU pragma: keep
 #include <cereal/types/map.hpp> // IWYU pragma: keep
 #include <cereal/types/string.hpp> // IWYU pragma: keep
 #include <cereal/types/utility.hpp> // IWYU pragma: keep
 #include <cereal/types/vector.hpp> // IWYU pragma: keep
 #include <cereal/archives/binary.hpp> // IWYU pragma: keep
+#include <string.h>
+#include <boost/format.hpp>
+#include <cereal/cereal.hpp>
+#include <algorithm>
+#include <fstream>
+#include <memory>
+#include <cassert>
+#include <cstddef>
+#include <map>
+#include <type_traits>
+
 #define CEREAL_FUTURE_EXPERIMENTAL
 #include <cereal/archives/adapters.hpp>
-
-#include <libslic3r/PrintConfig.hpp>
 #include <libslic3r/ObjectID.hpp>
 #include <libslic3r/Utils.hpp>
 
 #include "slic3r/GUI/3DScene.hpp" // IWYU pragma: keep
-
-#include <boost/foreach.hpp>
-
-#ifndef NDEBUG
-// #define SLIC3R_UNDOREDO_DEBUG
-#endif /* NDEBUG */
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Exception.hpp"
 #if 0
 	// Stop at a fraction of the normal Undo / Redo stack size.
 	#define UNDO_REDO_DEBUG_LOW_MEM_FACTOR 10000
@@ -700,11 +697,6 @@ using OutputArchive = cereal::UserDataAdapter<StackImpl, cereal::BinaryOutputArc
 
 } // namespace UndoRedo
 
-class Model; // IWYU pragma: keep
-class ModelObject; // IWYU pragma: keep
-class ModelVolume; // IWYU pragma: keep
-class ModelInstance; // IWYU pragma: keep
-class ModelMaterial; // IWYU pragma: keep
 class DynamicPrintConfig; // IWYU pragma: keep
 class TriangleMesh; // IWYU pragma: keep
 

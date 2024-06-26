@@ -7,12 +7,22 @@
 
 #include "SceneBuilder.hpp"
 
+#include <cmath>
+#include <limits>
+#include <numeric>
+
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/SLAPrint.hpp"
-
 #include "libslic3r/Arrange/Core/ArrangeItemTraits.hpp"
 #include "libslic3r/Geometry/ConvexHull.hpp"
+#include "libslic3r/Arrange/Scene.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Geometry.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/SLA/Pad.hpp"
+#include "libslic3r/TriangleMesh.hpp"
+#include "libslic3r/TriangleMeshSlicer.hpp"
 
 namespace Slic3r { namespace arr2 {
 

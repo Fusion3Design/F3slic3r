@@ -6,13 +6,13 @@
 
 #include <libslic3r/ExPolygon.hpp>
 #include <libslic3r/BoundingBox.hpp>
+#include <stdint.h>
 
 #if defined(_MSC_VER) && defined(__clang__)
 #define BOOST_NO_CXX17_HDR_STRING_VIEW
 #endif
 
 #include <boost/rational.hpp>
-
 #include <Int128.hpp>
 
 #if !defined(HAS_INTRINSIC_128_TYPE) || defined(__APPLE__)
@@ -21,6 +21,12 @@
 
 #include <libnest2d/backends/libslic3r/geometries.hpp> // IWYU pragma: keep
 #include <libnest2d/utils/rotcalipers.hpp>
+#include <cmath>
+
+#include "libnest2d/common.hpp"
+#include "libnest2d/geometry_traits.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
 

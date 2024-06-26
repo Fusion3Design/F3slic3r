@@ -2,11 +2,21 @@
 #define libslic3r_SeamPerimeters_hpp_
 
 #include <tcbspan/span.hpp>
+#include <algorithm>
+#include <cstddef>
+#include <functional>
+#include <optional>
+#include <utility>
+#include <vector>
 
 #include "libslic3r/GCode/SeamPainting.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"
 #include "libslic3r/AABBTreeLines.hpp"
 #include "libslic3r/GCode/SeamGeometry.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Polygon.hpp"
 
 namespace Slic3r {
     class Layer;

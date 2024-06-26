@@ -4,16 +4,26 @@
 ///|/
 #include "DoubleSliderForLayers.hpp"
 
-#include "libslic3r/Utils.hpp"  // -> get_time_dhms()
-#include "libslic3r/format.hpp" // -> format()
-#include "I18N.hpp"
-
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <stdio.h>
+#include <boost/algorithm/string/constants.hpp>
+#include <boost/format.hpp>
 #include <cmath>
+#include <algorithm>
+#include <array>
+#include <set>
 
+#include "libslic3r/Utils.hpp"  // -> get_time_dhms()
+#include "libslic3r/format.hpp" // -> format()
+#include "I18N.hpp"
 #include "ImGuiWrapper.hpp"
+#include "libslic3r/libslic3r.h"
+#include "slic3r/GUI/ImGuiDoubleSlider.hpp"
+#include "slic3r/GUI/ImGuiPureWrap.hpp"
+#include "slic3r/GUI/RulerForDoubleSlider.hpp"
+#include "slic3r/GUI/TickCodesManager.hpp"
 
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS

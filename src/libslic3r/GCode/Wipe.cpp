@@ -1,9 +1,21 @@
 #include "Wipe.hpp"
-#include "../GCode.hpp"
 
+#include <stdint.h>
 #include <string_view>
-
 #include <Eigen/Geometry>
+#include <algorithm>
+#include <cmath>
+#include <iterator>
+
+#include "../GCode.hpp"
+#include "libslic3r/Extruder.hpp"
+#include "libslic3r/GCode/GCodeProcessor.hpp"
+#include "libslic3r/GCode/GCodeWriter.hpp"
+#include "libslic3r/GCode/SmoothPath.hpp"
+#include "libslic3r/Geometry/ArcWelder.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/libslic3r.h"
 
 using namespace std::string_view_literals;
 

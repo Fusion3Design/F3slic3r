@@ -1,6 +1,11 @@
 #ifndef ZCORRECTION_HPP
 #define ZCORRECTION_HPP
 
+#include <stddef.h>
+#include <algorithm>
+#include <map>
+#include <vector>
+
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Execution/Execution.hpp"
 

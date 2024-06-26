@@ -2,12 +2,13 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
+#include <float.h>
+#include <math.h>
 #include <algorithm>
 #include <vector>
-#include <float.h>
 #include <unordered_map>
-
-#include <png.h>
+#include <cstdint>
+#include <set>
 
 #include "libslic3r.h"
 #include "ClipperUtils.hpp"
@@ -15,6 +16,9 @@
 #include "Geometry.hpp"
 #include "SVG.hpp"
 #include "PNGReadWrite.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/Point.hpp"
 
 // #define EDGE_GRID_DEBUG_OUTPUT
 

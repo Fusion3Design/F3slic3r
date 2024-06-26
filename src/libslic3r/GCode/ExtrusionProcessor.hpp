@@ -5,6 +5,21 @@
 #ifndef slic3r_ExtrusionProcessor_hpp_
 #define slic3r_ExtrusionProcessor_hpp_
 
+#include <stdlib.h>
+#include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <cstddef>
+#include <iterator>
+#include <limits>
+#include <numeric>
+#include <optional>
+#include <ostream>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+#include <functional>
+
 #include "libslic3r/AABBTreeLines.hpp"
 #include "libslic3r/SupportSpotsGenerator.hpp"
 #include "libslic3r/libslic3r.h"
@@ -20,19 +35,12 @@
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Exception.hpp"
 #include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
 
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <cstddef>
-#include <iterator>
-#include <limits>
-#include <numeric>
-#include <optional>
-#include <ostream>
-#include <unordered_map>
-#include <utility>
-#include <vector>
+namespace Slic3r {
+class CurledLine;
+class Linef;
+}  // namespace Slic3r
 
 namespace Slic3r { namespace ExtrusionProcessor {
 

@@ -2,12 +2,15 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "libslic3r/libslic3r.h"
+#include <boost/multiprecision/integer.hpp>
+#include <assert.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include "ConvexHull.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Geometry.hpp"
-
-#include <boost/multiprecision/integer.hpp>
+#include "libslic3r/ExPolygon.hpp"
 
 namespace Slic3r { namespace Geometry {
 

@@ -5,10 +5,18 @@
 
 #include "FillEnsuring.hpp"
 
+#include <assert.h>
+#include <stdlib.h>
+#include <algorithm>
+#include <unordered_set>
+#include <vector>
+#include <cmath>
+#include <set>
+#include <utility>
+
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ShortestPath.hpp"
 #include "libslic3r/Arachne/WallToolPaths.hpp"
-
 #include "libslic3r/AABBTreeLines.hpp"
 #include "libslic3r/Algorithm/PathSorting.hpp"
 #include "libslic3r/BoundingBox.hpp"
@@ -18,16 +26,10 @@
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
-#include "libslic3r/SVG.hpp"
 #include "libslic3r/libslic3r.h"
-
-#include <algorithm>
-#include <boost/log/trivial.hpp>
-#include <functional>
-#include <string>
-#include <type_traits>
-#include <unordered_set>
-#include <vector>
+#include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
+#include "libslic3r/Fill/FillBase.hpp"
+#include "libslic3r/Surface.hpp"
 
 namespace Slic3r {
 

@@ -4,7 +4,10 @@
 #ifndef BEADING_STRATEGY_H
 #define BEADING_STRATEGY_H
 
+#include <math.h>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "libslic3r/libslic3r.h"
 

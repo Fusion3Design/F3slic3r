@@ -9,15 +9,20 @@
 #ifndef slic3r_GCodeWriter_hpp_
 #define slic3r_GCodeWriter_hpp_
 
+#include <string.h>
+#include <string>
+#include <string_view>
+#include <charconv>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <vector>
+
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Extruder.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/PrintConfig.hpp"
 #include "CoolingBuffer.hpp"
-
-#include <string>
-#include <string_view>
-#include <charconv>
 
 namespace Slic3r {
 

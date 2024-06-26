@@ -8,24 +8,28 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <stdlib.h>
-#include <stdint.h>
-
+#include <boost/container/small_vector.hpp>
+#include <boost/log/trivial.hpp>
+#include <oneapi/tbb/scalable_allocator.h>
+#include <boost/container/vector.hpp>
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <random>
-
-#include <boost/container/small_vector.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/static_assert.hpp>
+#include <cstdint>
+#include <numeric>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/ShortestPath.hpp"
-
 #include "FillRectilinear.hpp"
+#include "libslic3r/Fill/FillBase.hpp"
+#include "libslic3r/Utils.hpp"
 
 // #define SLIC3R_DEBUG
 // #define INFILL_DEBUG_OUTPUT

@@ -1,5 +1,15 @@
 #include "ExtrusionProcessor.hpp"
-#include <string>
+
+#include <cassert>
+#include <iterator>
+#include <map>
+#include <optional>
+
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Config.hpp"
+#include "libslic3r/Exception.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/Polygon.hpp"
 
 namespace Slic3r { namespace ExtrusionProcessor {
 

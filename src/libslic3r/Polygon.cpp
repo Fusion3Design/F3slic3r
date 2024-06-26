@@ -9,13 +9,22 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
+#include <ankerl/unordered_dense.h>
+#include <stdint.h>
+#include <string.h>
+#include <cmath>
+#include <limits>
+
 #include "BoundingBox.hpp"
 #include "ClipperUtils.hpp"
 #include "Exception.hpp"
 #include "Polygon.hpp"
 #include "Polyline.hpp"
-
-#include <ankerl/unordered_dense.h>
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/MultiPoint.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
 

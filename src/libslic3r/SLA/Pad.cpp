@@ -4,25 +4,23 @@
 ///|/
 #include <libslic3r/SLA/Pad.hpp>
 #include <libslic3r/SLA/SpatIndex.hpp>
-#include <libslic3r/BoostAdapter.hpp>
 //#include <libslic3r/SLA/Contour3D.hpp>
 #include <libslic3r/TriangleMeshSlicer.hpp>
+#include <boost/log/trivial.hpp>
+#include <stddef.h>
+#include <algorithm>
+#include <utility>
 
 #include "ConcaveHull.hpp"
-
-#include "boost/log/trivial.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Tesselate.hpp"
 #include "libslic3r/MTUtils.hpp"
-
 #include "libslic3r/TriangulateWall.hpp"
-
-// For debugging:
-// #include <fstream>
-#include "libslic3r/SVG.hpp"
-
 #include "libslic3r/I18N.hpp"
-#include <boost/log/trivial.hpp>
+#include "admesh/stl.h"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/TriangleMesh.hpp"
+#include "libslic3r/libslic3r.h"
 
 
 namespace Slic3r { namespace sla {

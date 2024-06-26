@@ -4,11 +4,17 @@
 ///|/
 #include "MedialAxis.hpp"
 
-#include "libslic3r/clipper.hpp"
+#include <boost/log/trivial.hpp>
+#include <assert.h>
+#include <math.h>
+#include <boost/polygon/polygon.hpp>
+#include <algorithm>
+
 #include "VoronoiOffset.hpp"
 #include "libslic3r/ClipperUtils.hpp"
-
-#include <boost/log/trivial.hpp>
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/libslic3r.h"
 
 #ifdef SLIC3R_DEBUG
 namespace boost { namespace polygon {

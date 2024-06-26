@@ -5,9 +5,15 @@
 #ifndef slic3r_AvoidCrossingPerimeters_hpp_
 #define slic3r_AvoidCrossingPerimeters_hpp_
 
+#include <vector>
+
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/EdgeGrid.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/Polyline.hpp"
 
 namespace Slic3r {
 

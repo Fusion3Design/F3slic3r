@@ -3,19 +3,23 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <memory.h>
-#include <cstring>
-#include <cfloat>
-#include <algorithm>
-
-#include "libslic3r/libslic3r.h"
-#include "libslic3r/PrintConfig.hpp"
-#include <LocalesUtils.hpp>
-#include "libslic3r/GCode.hpp"
-
-#include "PressureEqualizer.hpp"
 #include <fast_float.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <boost/algorithm/string/predicate.hpp>
+#include <cstring>
+#include <algorithm>
+#include <array>
+#include <iosfwd>
+#include <iterator>
+#include <limits>
+
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/GCode.hpp"
+#include "PressureEqualizer.hpp"
 #include "GCodeWriter.hpp"
+#include "libslic3r/GCode/PressureEqualizer.hpp"
+#include "libslic3r/Exception.hpp"
 
 namespace Slic3r {
 

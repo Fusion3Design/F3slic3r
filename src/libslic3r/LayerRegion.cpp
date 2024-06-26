@@ -3,6 +3,22 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
+#include <boost/log/trivial.hpp>
+#include <assert.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <algorithm>
+#include <string>
+#include <map>
+#include <array>
+#include <cmath>
+#include <initializer_list>
+#include <iterator>
+#include <optional>
+#include <stdexcept>
+#include <utility>
+#include <vector>
+
 #include "ExPolygon.hpp"
 #include "Flow.hpp"
 #include "Layer.hpp"
@@ -15,12 +31,17 @@
 #include "BoundingBox.hpp"
 #include "SVG.hpp"
 #include "Algorithm/RegionExpansion.hpp"
-
-#include <algorithm>
-#include <string>
-#include <map>
-
-#include <boost/log/trivial.hpp>
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/LayerRegion.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/MultiMaterialSegmentation.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/Polyline.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/SurfaceCollection.hpp"
+#include "libslic3r/Utils.hpp"
+#include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
 

@@ -3,9 +3,15 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "WxFontUtils.hpp"
-#include <boost/assign.hpp>
+
 #include <boost/log/trivial.hpp>
-#include "libslic3r/Utils.hpp"
+#include <wx/string.h>
+#include <boost/assign/list_of.hpp>
+#include <optional>
+#include <vector>
+
+#include "libslic3r/Emboss.hpp"
+#include "libslic3r/Exception.hpp"
 
 #if defined(__APPLE__)
 #include <CoreText/CTFont.h>

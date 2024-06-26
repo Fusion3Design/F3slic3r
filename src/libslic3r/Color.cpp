@@ -2,10 +2,11 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "libslic3r.h"
-#include "Color.hpp"
-
+#include <stdio.h>
 #include <random>
+#include <cmath>
+
+#include "Color.hpp"
 
 static const float INV_255 = 1.0f / 255.0f;
 

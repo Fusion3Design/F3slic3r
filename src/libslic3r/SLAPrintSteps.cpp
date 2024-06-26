@@ -2,41 +2,60 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <unordered_set>
-#include <chrono>
-
 #include <libslic3r/Exception.hpp>
 #include <libslic3r/SLAPrintSteps.hpp>
 #include <libslic3r/MeshBoolean.hpp>
 #include <libslic3r/TriangleMeshSlicer.hpp>
-
-// Need the cylinder method for the the drainholes in hollowing step
-#include <libslic3r/SLA/SupportTreeBuilder.hpp>
-
 #include <libslic3r/Execution/ExecutionTBB.hpp>
 #include <libslic3r/SLA/Pad.hpp>
 #include <libslic3r/SLA/SupportPointGenerator.hpp>
 #include <libslic3r/SLA/ZCorrection.hpp>
-
 #include <libslic3r/ElephantFootCompensation.hpp>
-#include <libslic3r/AABBTreeIndirect.hpp>
-#include <libslic3r/MeshSplitImpl.hpp>
-#include <libslic3r/SlicesToTriangleMesh.hpp>
 #include <libslic3r/CSGMesh/ModelToCSGMesh.hpp>
 #include <libslic3r/CSGMesh/SliceCSGMesh.hpp>
 #include <libslic3r/CSGMesh/VoxelizeCSGMesh.hpp>
 #include <libslic3r/CSGMesh/PerformCSGMeshBooleans.hpp>
 #include <libslic3r/OpenVDBUtils.hpp>
 #include <libslic3r/QuadricEdgeCollapse.hpp>
-
 #include <libslic3r/ClipperUtils.hpp>
+#include <assert.h>
+#include <chrono>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <functional>
+#include <iterator>
+#include <limits>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <numeric>
+#include <set>
+#include <tuple>
+#include <vector>
 //#include <libslic3r/ShortEdgeCollapse.hpp>
 
 #include <boost/log/trivial.hpp>
 
 #include "I18N.hpp"
-
 #include "format.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/CSGMesh/CSGMesh.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/Execution/Execution.hpp"
+#include "libslic3r/Model.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/PrintBase.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/SLA/Hollowing.hpp"
+#include "libslic3r/SLA/JobController.hpp"
+#include "libslic3r/SLA/RasterBase.hpp"
+#include "libslic3r/SLA/SupportPoint.hpp"
+#include "libslic3r/SLA/SupportTree.hpp"
+#include "libslic3r/SLA/SupportTreeStrategies.hpp"
+#include "libslic3r/SLAPrint.hpp"
+#include "libslic3r/TriangleMesh.hpp"
 
 namespace Slic3r {
 

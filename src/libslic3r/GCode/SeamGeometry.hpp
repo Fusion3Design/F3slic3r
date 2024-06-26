@@ -1,17 +1,30 @@
 #ifndef libslic3r_SeamGeometry_hpp_
 #define libslic3r_SeamGeometry_hpp_
 
+#include <oneapi/tbb/blocked_range.h>
+#include <oneapi/tbb/parallel_for.h>
+#include <vector>
+#include <algorithm>
+#include <cstddef>
+#include <functional>
+#include <numeric>
+#include <optional>
+#include <utility>
+
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/AABBTreeLines.hpp"
 #include "libslic3r/Point.hpp"
-#include <oneapi/tbb/blocked_range.h>
-#include <oneapi/tbb/parallel_for.h>
-#include <vector>
 #include "tcbspan/span.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/Polygon.hpp"
 
 namespace Slic3r {
 class Layer;
+namespace AABBTreeLines {
+template <typename LineType> class LinesDistancer;
+}  // namespace AABBTreeLines
 }
 
 namespace Slic3r::Seams::Geometry {
