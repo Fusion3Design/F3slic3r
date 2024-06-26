@@ -47,7 +47,7 @@ ConfigWizardWebViewPage::ConfigWizardWebViewPage(ConfigWizard *parent)
     // Connect the webview events
     Bind(wxEVT_WEBVIEW_ERROR, &ConfigWizardWebViewPage::on_error, this, m_browser->GetId());
     Bind(wxEVT_WEBVIEW_NAVIGATING, &ConfigWizardWebViewPage::on_navigation_request, this, m_browser->GetId());
-
+    Bind(wxEVT_IDLE, &ConfigWizardWebViewPage::on_idle, this);
 }
 
 bool ConfigWizardWebViewPage::login_changed()
@@ -85,14 +85,44 @@ case type: \
         WX_ERROR_CASE(wxWEBVIEW_NAV_ERR_OTHER);
     }
 
-    BOOST_LOG_TRIVIAL(error) << "WebViewPanel error: " << category;
+    BOOST_LOG_TRIVIAL(error) << "ConfigWizardWebViewPage error: " << category;
+    load_error_page();
 }
+
+void ConfigWizardWebViewPage::load_error_page() {
+    if (!m_browser)
+        return;
+    if (m_vetoed)
+        return;
+    m_browser->Stop();
+    m_load_error_page = true;
+}
+
+void ConfigWizardWebViewPage::on_idle(wxIdleEvent &WXUNUSED(evt)) {
+    if (!m_browser)
+        return;
+    if (m_browser->IsBusy()) {
+        wxSetCursor(wxCURSOR_ARROWWAIT);
+    } else {
+        wxSetCursor(wxNullCursor);
+
+        if (!m_vetoed && m_load_error_page) {
+            m_load_error_page = false;
+            m_browser->LoadURL(GUI::format_wxstr(
+                "file://%1%/web/connection_failed.html",
+                boost::filesystem::path(resources_dir()).generic_string()
+            ));
+        }
+    }
+}
+
 
 void ConfigWizardWebViewPage::on_navigation_request(wxWebViewEvent &evt) 
 {
     wxString url = evt.GetURL();
     if (url.starts_with(L"prusaslicer")) {
         evt.Veto();
+        m_vetoed = true;
         wxPostEvent(wxGetApp().plater(), Event<std::string>(EVT_LOGIN_VIA_WIZARD, into_u8(url)));	
     }
 }
