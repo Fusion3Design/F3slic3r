@@ -60,6 +60,7 @@ private:
     wxBoxSizer *m_browser_sizer{nullptr};
     wxStaticText *m_text{nullptr};
     bool m_load_error_page{false};
+    bool m_vetoed{false};
 };
 
 }} // namespace Slic3r::GUI
