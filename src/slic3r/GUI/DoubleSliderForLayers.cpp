@@ -344,12 +344,15 @@ void DSForLayers::draw_ruler(const ImRect& slideable_region)
     int tick = 0;
     double value = 0.0;
     size_t sequence = 0;
-    int prev_y_pos = -1;
+    float prev_y_pos = -1.f;
     int values_size = (int)m_values.size();
+
+    const float label_shift = 0.5f * label_height;
 
     if (m_ruler.long_step < 0) {
         // sequential print when long_step wasn't detected because of a lot of printed objects 
         if (m_ruler.max_values.size() > 1) {
+            float last_pos = get_tick_pos(m_ctrl.GetMaxPos());
             while (tick <= m_ctrl.GetMaxPos() && sequence < m_ruler.count()) {
                 // draw just ticks with max value
                 value = m_ruler.max_values[sequence];
@@ -369,7 +372,7 @@ void DSForLayers::draw_ruler(const ImRect& slideable_region)
 
                 float pos = get_tick_pos(tick);
                 draw_tick(pos, long_outer_x);
-                if (prev_y_pos < 0 || prev_y_pos - pos >= label_height) {
+                if (prev_y_pos < 0 || pos == last_pos || (prev_y_pos - pos >= label_shift && pos - last_pos >= label_shift)) {
                     draw_text(tick, pos);
                     prev_y_pos = pos;
                 }
@@ -391,6 +394,46 @@ void DSForLayers::draw_ruler(const ImRect& slideable_region)
         }
     }
     else {
+        std::vector<int> last_positions; 
+        if (m_ruler.count() == 1)
+            last_positions.emplace_back(m_ctrl.GetMaxPos());
+        else {
+            // fill last positions for each object in sequential print
+            last_positions.reserve(m_ruler.count());
+
+            int tick = 0;
+            double value = 0.0;
+            size_t sequence = 0;
+
+            while (tick <= m_ctrl.GetMaxPos()) {
+                value += m_ruler.long_step;
+
+                if (sequence < m_ruler.count() && value > m_ruler.max_values[sequence])
+                    value = m_ruler.max_values[sequence];
+
+                for (; tick < values_size; tick++) {
+                    if (m_values[tick] == value)
+                        break;
+                    if (m_values[tick] > value) {
+                        if (tick > 0)
+                            tick--;
+                        break;
+                    }
+                }
+                if (tick > m_ctrl.GetMaxPos())
+                    break;
+
+                if (sequence < m_ruler.count() && value == m_ruler.max_values[sequence]) {
+                    last_positions.emplace_back(tick);
+                    value = 0.0;
+                    sequence++;
+                    tick++;
+                }
+            }
+        }
+
+        float last_pos = get_tick_pos(last_positions[sequence]);
+
         while (tick <= m_ctrl.GetMaxPos()) {
             value += m_ruler.long_step;
 
@@ -413,7 +456,7 @@ void DSForLayers::draw_ruler(const ImRect& slideable_region)
 
             float pos = get_tick_pos(tick);
             draw_tick(pos, long_outer_x);
-            if (prev_y_pos < 0 || prev_y_pos - pos >= label_height) {
+            if (prev_y_pos < 0 || pos == last_pos || (prev_y_pos - pos >= label_shift && pos - last_pos >= label_shift) ) {
                 draw_text(tick, pos);
                 prev_y_pos = pos;
             }
@@ -424,6 +467,9 @@ void DSForLayers::draw_ruler(const ImRect& slideable_region)
                 value = 0.0;
                 sequence++;
                 tick++;
+
+                if (sequence < m_ruler.count())
+                    last_pos = get_tick_pos(last_positions[sequence]);
             }
         }
         // short ticks from the last tick to the end 
