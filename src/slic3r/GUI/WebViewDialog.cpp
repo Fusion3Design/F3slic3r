@@ -8,6 +8,7 @@
 #include "slic3r/GUI/format.hpp"
 #include "slic3r/GUI/WebView.hpp"
 #include "slic3r/GUI/MsgDialog.hpp"
+#include "slic3r/GUI/Field.hpp"
 
 #include <wx/webview.h>
 
@@ -1276,7 +1277,9 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF()
     //}
     const Preset& selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
     const Preset& selected_filament = wxGetApp().preset_bundle->filaments.get_selected_preset();
-    std::string nozzle_diameter_serialized = selected_printer.config.opt_string("printer_variant");
+    double nozzle_diameter = static_cast<const ConfigOptionFloats*>(selected_printer.config.option("nozzle_diameter"))->values[0];
+    wxString nozzle_diameter_serialized = double_to_string(nozzle_diameter);
+    nozzle_diameter_serialized.Replace(L",", L".");
     // Sending only first filament type for now. This should change to array of values
     const std::string filament_type_serialized = selected_filament.config.option("filament_type")->serialize();
     const std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
