@@ -215,9 +215,11 @@ bool GLGizmoSVG::create_volume(std::string_view svg_file, const Vec2d &mouse_pos
 }
 
 CreateVolumeParams GLGizmoSVG::create_input(ModelVolumeType volume_type, std::string_view svg_filepath) {
+    // Be carefull it must be before call create_emboss_data_base
+    const GLVolume *gl_volume = get_first_hovered_gl_volume(m_parent);
+    // NOTE: During selection of file it could change hovered volume
     DataBasePtr base = create_emboss_data_base(m_job_cancel, volume_type, svg_filepath);
     auto gizmo = static_cast<unsigned char>(GLGizmosManager::Svg);
-    const GLVolume *gl_volume = get_first_hovered_gl_volume(m_parent);
     Plater *plater = wxGetApp().plater();
     return CreateVolumeParams{std::move(base), m_parent, plater->get_camera(), plater->build_volume(),
         plater->get_ui_job_worker(), volume_type, m_raycast_manager, gizmo, gl_volume};
