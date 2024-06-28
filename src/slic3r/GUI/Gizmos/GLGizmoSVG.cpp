@@ -1909,21 +1909,18 @@ void GLGizmoSVG::draw_rotation()
     // minus create clock-wise roation from CCW
     float angle = m_angle.value_or(0.f);
     float angle_deg = static_cast<float>(-angle * 180 / M_PI);
-    if (m_imgui->slider_float("##angle", &angle_deg, limits.angle.min, limits.angle.max, u8"%.2f °", 1.f, false, _L("Rotate text Clock-wise."))){
+    if (m_imgui->slider_float("##angle", &angle_deg, limits.angle.min, limits.angle.max, u8"%.2f °", 1.f, false, _L("Rotate Clock-wise."))){
         // convert back to radians and CCW
         double angle_rad = -angle_deg * M_PI / 180.0;
         Geometry::to_range_pi_pi(angle_rad);                
 
         double diff_angle = angle_rad - angle;
-        
-        do_local_z_rotate(m_parent.get_selection(), diff_angle);
+        if (!is_approx(diff_angle, 0.)) {
+            do_local_z_rotate(m_parent.get_selection(), diff_angle);
 
-        // calc angle after rotation
-        m_angle = calc_angle(m_parent.get_selection());
-        
-        // recalculate for surface cut
-        if (m_volume->emboss_shape->projection.use_surface)
-            process();
+            // calc angle after rotation
+            m_angle = calc_angle(m_parent.get_selection());
+        }
     }
     bool is_stop_sliding = m_imgui->get_last_slider_status().deactivated_after_edit;
 
@@ -1933,19 +1930,19 @@ void GLGizmoSVG::draw_rotation()
         if (reset_button(m_icons)) {
             do_local_z_rotate(m_parent.get_selection(), -(*m_angle));
             m_angle.reset();
-
-            // recalculate for surface cut
-            if (m_volume->emboss_shape->projection.use_surface)
-                process();
-
             is_reseted = true;
         } else if (ImGui::IsItemHovered())
             ImGui::SetTooltip("%s", _u8L("Reset rotation").c_str());
     }
 
     // Apply rotation on model (backend)
-    if (is_stop_sliding || is_reseted)
-        m_parent.do_rotate(rotation_snapshot_name);    
+    if (is_stop_sliding || is_reseted) {
+        m_parent.do_rotate(rotation_snapshot_name);
+
+        // recalculate for surface cut
+        if (m_volume->emboss_shape->projection.use_surface)
+            process();
+    }
 
     // Keep up - lock button icon
     if (!m_volume->is_the_only_one_part()) {
