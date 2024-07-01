@@ -537,7 +537,12 @@ std::vector<ExtruderExtrusions> get_extrusions(
         if (auto loops_it = skirt_loops_per_extruder.find(extruder_id); loops_it != skirt_loops_per_extruder.end()) {
             const std::pair<size_t, size_t> loops = loops_it->second;
             for (std::size_t i = loops.first; i < loops.second; ++i) {
-                const ExtrusionEntityReference entity{*print.skirt().entities[i], false};
+                bool reverse{false};
+                if (auto loop = dynamic_cast<const ExtrusionLoop *>(print.skirt().entities[i])) {
+                    const bool is_hole = loop->is_clockwise();
+                    reverse = print.config().prefer_clockwise_movements ? !is_hole : is_hole;
+                }
+                const ExtrusionEntityReference entity{*print.skirt().entities[i], reverse};
                 std::optional<InstancePoint> last_position{get_instance_point(previous_position, {0, 0})};
                 SmoothPath path{smooth_path(nullptr, entity, extruder_id, last_position)};
                 previous_position = get_gcode_point(last_position, {0, 0});
@@ -548,11 +553,18 @@ std::vector<ExtruderExtrusions> get_extrusions(
         // Extrude brim with the extruder of the 1st region.
         if (get_brim) {
             for (const ExtrusionEntity *entity : print.brim().entities) {
-                const ExtrusionEntityReference entity_reference{*entity, false};
+                bool reverse{false};
+                bool is_loop{false};
+                if (auto loop = dynamic_cast<const ExtrusionLoop *>(entity)) {
+                    const bool is_hole = loop->is_clockwise();
+                    is_loop = true;
+                    reverse = print.config().prefer_clockwise_movements ? !is_hole : is_hole;
+                }
+                const ExtrusionEntityReference entity_reference{*entity, reverse};
+
                 std::optional<InstancePoint> last_position{get_instance_point(previous_position, {0, 0})};
                 SmoothPath path{smooth_path(nullptr, entity_reference, extruder_id, last_position)};
                 previous_position = get_gcode_point(last_position, {0, 0});
-                const bool is_loop{dynamic_cast<const ExtrusionLoop *>(entity) != nullptr};
                 extruder_extrusions.brim.push_back({std::move(path), is_loop});
             }
             get_brim = false;
