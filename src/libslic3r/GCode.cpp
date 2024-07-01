@@ -2264,6 +2264,79 @@ std::string GCodeGenerator::generate_ramping_layer_change_gcode(
     return travel_gcode;
 }
 
+#ifndef NDEBUG
+static inline bool validate_smooth_path(const GCode::SmoothPath &smooth_path, bool loop)
+{
+    for (auto it = std::next(smooth_path.begin()); it != smooth_path.end(); ++ it) {
+        assert(it->path.size() >= 2);
+        assert(std::prev(it)->path.back().point == it->path.front().point);
+    }
+    assert(! loop || smooth_path.front().path.front().point == smooth_path.back().path.back().point);
+    return true;
+}
+#endif //NDEBUG
+
+using GCode::ExtrusionOrder::InstancePoint;
+
+struct SmoothPathGenerator {
+    const Seams::Placer &seam_placer;
+    const GCode::SmoothPathCaches &smooth_path_caches;
+    double scaled_resolution;
+    const PrintConfig &config;
+    bool enable_loop_clipping;
+
+    GCode::SmoothPath operator()(const Layer *layer, const ExtrusionEntityReference &extrusion_reference, const unsigned extruder_id, std::optional<InstancePoint> &previous_position) {
+        const ExtrusionEntity *extrusion_entity{&extrusion_reference.extrusion_entity()};
+
+        GCode::SmoothPath result;
+
+        if (auto loop = dynamic_cast<const ExtrusionLoop *>(extrusion_entity)) {
+            Point seam_point = previous_position ? previous_position->local_point : Point::Zero();
+            if (loop->role().is_perimeter() && layer != nullptr) {
+                seam_point = this->seam_placer.place_seam(layer, *loop, seam_point);
+            }
+
+            const GCode::SmoothPathCache &smooth_path_cache{loop->role().is_perimeter() ? smooth_path_caches.layer_local() : smooth_path_caches.global()};
+            // Because the G-code export has 1um resolution, don't generate segments shorter
+            // than 1.5 microns, thus empty path segments will not be produced by G-code export.
+            GCode::SmoothPath smooth_path =
+                smooth_path_cache.resolve_or_fit_split_with_seam(
+                    *loop, extrusion_reference.flipped(), scaled_resolution, seam_point, scaled<double>(0.0015)
+                );
+
+            // Clip the path to avoid the extruder to get exactly on the first point of the
+            // loop; if polyline was shorter than the clipping distance we'd get a null
+            // polyline, so we discard it in that case.
+            const auto nozzle_diameter{config.nozzle_diameter.get_at(extruder_id)};
+            if (enable_loop_clipping) {
+                clip_end(
+                    smooth_path,
+                    scale_(nozzle_diameter) * LOOP_CLIPPING_LENGTH_OVER_NOZZLE_DIAMETER,
+                    scaled<double>(GCode::ExtrusionOrder::min_gcode_segment_length)
+                );
+            }
+
+            assert(validate_smooth_path(smooth_path, !m_enable_loop_clipping));
+
+            result = smooth_path;
+        } else if (auto multipath = dynamic_cast<const ExtrusionMultiPath *>(extrusion_entity)) {
+            result = smooth_path_caches.layer_local().resolve_or_fit(*multipath, extrusion_reference.flipped(), scaled_resolution);
+        } else if (auto path = dynamic_cast<const ExtrusionPath *>(extrusion_entity)) {
+            result = GCode::SmoothPath{GCode::SmoothPathElement{path->attributes(), smooth_path_caches.layer_local().resolve_or_fit(*path, extrusion_reference.flipped(), scaled_resolution)}};
+        }
+        using GCode::SmoothPathElement;
+        for (auto it{result.rbegin()}; it != result.rend(); ++it) {
+            if (!it->path.empty()) {
+                previous_position = InstancePoint{it->path.back().point};
+                break;
+            }
+        }
+
+        return result;
+    }
+
+};
+
 std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorted_extrusions(
     const Print &print,
     const ObjectsLayerToPrint &layers,
@@ -2280,58 +2353,13 @@ std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorte
             Skirt::make_skirt_loops_per_extruder_1st_layer(print, layer_tools, m_skirt_done) :
             Skirt::make_skirt_loops_per_extruder_other_layers(print, layer_tools, m_skirt_done)};
 
-    using GCode::ExtrusionOrder::InstancePoint;
-    const auto smooth_path{
-        [&](const Layer *layer, const ExtrusionEntityReference &extrusion_reference,
-            const unsigned extruder_id, std::optional<InstancePoint> &previous_position) {
-            const ExtrusionEntity *extrusion_entity{&extrusion_reference.extrusion_entity()};
-
-            GCode::SmoothPath result;
-
-            if (auto loop = dynamic_cast<const ExtrusionLoop *>(extrusion_entity)) {
-                Point seam_point = previous_position ? previous_position->local_point : Point::Zero();
-                if (loop->role().is_perimeter() && layer != nullptr) {
-                    seam_point = this->m_seam_placer.place_seam(layer, *loop, seam_point);
-                }
-
-                const GCode::SmoothPathCache &smooth_path_cache{loop->role().is_perimeter() ? smooth_path_caches.layer_local() : smooth_path_caches.global()};
-                // Because the G-code export has 1um resolution, don't generate segments shorter
-                // than 1.5 microns, thus empty path segments will not be produced by G-code export.
-                GCode::SmoothPath smooth_path =
-                    smooth_path_cache.resolve_or_fit_split_with_seam(
-                        *loop, extrusion_reference.flipped(), m_scaled_resolution, seam_point, scaled<double>(0.0015)
-                    );
-
-                // Clip the path to avoid the extruder to get exactly on the first point of the
-                // loop; if polyline was shorter than the clipping distance we'd get a null
-                // polyline, so we discard it in that case.
-                const auto nozzle_diameter{m_config.nozzle_diameter.get_at(extruder_id)};
-                if (m_enable_loop_clipping) {
-                    clip_end(
-                        smooth_path,
-                        scale_(nozzle_diameter) * LOOP_CLIPPING_LENGTH_OVER_NOZZLE_DIAMETER,
-                        scaled<double>(GCode::ExtrusionOrder::min_gcode_segment_length)
-                    );
-                }
-
-                assert(validate_smooth_path(smooth_path, !m_enable_loop_clipping));
-
-                result = smooth_path;
-            } else if (auto multipath = dynamic_cast<const ExtrusionMultiPath *>(extrusion_entity)) {
-                result = smooth_path_caches.layer_local().resolve_or_fit(*multipath, extrusion_reference.flipped(), m_scaled_resolution);
-            } else if (auto path = dynamic_cast<const ExtrusionPath *>(extrusion_entity)) {
-                result = GCode::SmoothPath{GCode::SmoothPathElement{path->attributes(), smooth_path_caches.layer_local().resolve_or_fit(*path, extrusion_reference.flipped(), m_scaled_resolution)}};
-            }
-            using GCode::SmoothPathElement;
-            for (auto it{result.rbegin()}; it != result.rend(); ++it) {
-                if (!it->path.empty()) {
-                    previous_position = InstancePoint{it->path.back().point};
-                    break;
-                }
-            }
-
-            return result;
-        }};
+    const SmoothPathGenerator smooth_path{
+        m_seam_placer,
+        smooth_path_caches,
+        m_scaled_resolution,
+        m_config,
+        m_enable_loop_clipping
+    };
 
     using GCode::ExtrusionOrder::ExtruderExtrusions;
     using GCode::ExtrusionOrder::get_extrusions;
@@ -2837,18 +2865,6 @@ std::string GCodeGenerator::change_layer(
 
     return gcode;
 }
-
-#ifndef NDEBUG
-static inline bool validate_smooth_path(const GCode::SmoothPath &smooth_path, bool loop)
-{
-    for (auto it = std::next(smooth_path.begin()); it != smooth_path.end(); ++ it) {
-        assert(it->path.size() >= 2);
-        assert(std::prev(it)->path.back().point == it->path.front().point);
-    }
-    assert(! loop || smooth_path.front().path.front().point == smooth_path.back().path.back().point);
-    return true;
-}
-#endif //NDEBUG
 
 std::string GCodeGenerator::extrude_smooth_path(
     const GCode::SmoothPath &smooth_path, const bool is_loop, const std::string_view description, const double speed

@@ -91,6 +91,11 @@ struct OverridenExtrusions {
     std::vector<SliceExtrusions> slices_extrusions;
 };
 
+/**
+ * Intentionally strong type representing a point in a coordinate system
+ * of an instance. Introduced to avoid confusion between local and
+ * global coordinate systems.
+ */
 struct InstancePoint {
     Point local_point;
 };
