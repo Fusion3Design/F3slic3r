@@ -57,7 +57,7 @@ ExtrusionEntitiesPtr extract_infill_extrusions(
     const ExtrusionEntityCollection &fills,
     const LayerExtrusionRanges::const_iterator& begin,
     const LayerExtrusionRanges::const_iterator& end,
-    const ExtractEntityPredicate &predicate
+    const ExtractEntityPredicate &should_pick_extrusion
 ) {
     ExtrusionEntitiesPtr result;
     for (auto it = begin; it != end; ++ it) {
@@ -67,7 +67,7 @@ ExtrusionEntitiesPtr extract_infill_extrusions(
             assert(dynamic_cast<ExtrusionEntityCollection*>(fills.entities[fill_id]));
 
             auto *eec{static_cast<ExtrusionEntityCollection*>(fills.entities[fill_id])};
-            if (eec == nullptr || eec->empty() || !predicate(*eec, region)) {
+            if (eec == nullptr || eec->empty() || !should_pick_extrusion(*eec, region)) {
                 continue;
             }
 
@@ -88,7 +88,7 @@ std::vector<Perimeter> extract_perimeter_extrusions(
     const Print &print,
     const Layer &layer,
     const LayerIsland &island,
-    const ExtractEntityPredicate &predicate,
+    const ExtractEntityPredicate &should_pick_extrusion,
     const unsigned extruder_id,
     const Point &offset,
     std::optional<Point> &previous_position,
@@ -104,7 +104,7 @@ std::vector<Perimeter> extract_perimeter_extrusions(
         // Don't reorder them.
         assert(dynamic_cast<ExtrusionEntityCollection*>(layerm.perimeters().entities[perimeter_id]));
         auto *eec = static_cast<ExtrusionEntityCollection*>(layerm.perimeters().entities[perimeter_id]);
-        if (eec == nullptr || eec->empty() || !predicate(*eec, region)) {
+        if (eec == nullptr || eec->empty() || !should_pick_extrusion(*eec, region)) {
             continue;
         }
 
@@ -152,7 +152,7 @@ std::vector<InfillRange> extract_infill_ranges(
     const LayerIsland &island,
     const Point &offset,
     std::optional<Point> &previous_position,
-    const ExtractEntityPredicate &predicate,
+    const ExtractEntityPredicate &should_pick_extrusion,
     const PathSmoothingFunction &smooth_path,
     const unsigned extruder_id
 ) {
@@ -171,7 +171,7 @@ std::vector<InfillRange> extract_infill_ranges(
             layerm.fills(),
             it,
             it_end,
-            predicate
+            should_pick_extrusion
         )};
 
         const std::optional<InstancePoint> previous_instance_point{get_instance_point(previous_position, offset)};
@@ -199,7 +199,7 @@ std::vector<IslandExtrusions> extract_island_extrusions(
     const LayerSlice &lslice,
     const Print &print,
     const Layer &layer,
-    const ExtractEntityPredicate &predicate,
+    const ExtractEntityPredicate &should_pick_extrusion,
     const PathSmoothingFunction &smooth_path,
     const Point &offset,
     const unsigned extruder_id,
@@ -213,8 +213,8 @@ std::vector<IslandExtrusions> extract_island_extrusions(
         // accross the whole print uniquely. Translate to a Print specific PrintRegion.
         const PrintRegion &region = print.get_print_region(layerm.region().print_region_id());
 
-        const auto infill_predicate = [&](const ExtrusionEntityCollection &eec, const PrintRegion &region) {
-            return predicate(eec, region) && eec.role() != ExtrusionRole::Ironing;
+        const auto should_pick_infill = [&should_pick_extrusion](const ExtrusionEntityCollection &eec, const PrintRegion &region) {
+            return should_pick_extrusion(eec, region) && eec.role() != ExtrusionRole::Ironing;
         };
 
         result.push_back(IslandExtrusions{&region});
@@ -223,15 +223,15 @@ std::vector<IslandExtrusions> extract_island_extrusions(
 
         if (print.config().infill_first) {
             island_extrusions.infill_ranges = extract_infill_ranges(
-                print, layer, island, offset, previous_position, infill_predicate, smooth_path, extruder_id
+                print, layer, island, offset, previous_position, should_pick_infill, smooth_path, extruder_id
             );
 
-            island_extrusions.perimeters = extract_perimeter_extrusions(print, layer, island, predicate, extruder_id, offset, previous_position, smooth_path);
+            island_extrusions.perimeters = extract_perimeter_extrusions(print, layer, island, should_pick_extrusion, extruder_id, offset, previous_position, smooth_path);
         } else {
-            island_extrusions.perimeters = extract_perimeter_extrusions(print, layer, island, predicate, extruder_id, offset, previous_position, smooth_path);
+            island_extrusions.perimeters = extract_perimeter_extrusions(print, layer, island, should_pick_extrusion, extruder_id, offset, previous_position, smooth_path);
 
             island_extrusions.infill_ranges = {extract_infill_ranges(
-                print, layer, island, offset, previous_position, infill_predicate, smooth_path, extruder_id
+                print, layer, island, offset, previous_position, should_pick_infill, smooth_path, extruder_id
             )};
         }
     }
@@ -242,7 +242,7 @@ std::vector<InfillRange> extract_ironing_extrusions(
     const LayerSlice &lslice,
     const Print &print,
     const Layer &layer,
-    const ExtractEntityPredicate &predicate,
+    const ExtractEntityPredicate &should_pick_extrusion,
     const PathSmoothingFunction &smooth_path,
     const Point &offset,
     const unsigned extruder_id,
@@ -251,12 +251,12 @@ std::vector<InfillRange> extract_ironing_extrusions(
     std::vector<InfillRange> result;
 
     for (const LayerIsland &island : lslice.islands) {
-        const auto ironing_predicate = [&](const auto &eec, const auto &region) {
-            return predicate(eec, region) && eec.role() == ExtrusionRole::Ironing;
+        const auto should_pick_ironing = [&should_pick_extrusion](const auto &eec, const auto &region) {
+            return should_pick_extrusion(eec, region) && eec.role() == ExtrusionRole::Ironing;
         };
 
         const std::vector<InfillRange> ironing_ranges{extract_infill_ranges(
-            print, layer, island, offset, previous_position, ironing_predicate, smooth_path, extruder_id
+            print, layer, island, offset, previous_position, should_pick_ironing, smooth_path, extruder_id
         )};
         result.insert(
             result.end(), ironing_ranges.begin(), ironing_ranges.end()
@@ -268,7 +268,7 @@ std::vector<InfillRange> extract_ironing_extrusions(
 std::vector<SliceExtrusions> get_slices_extrusions(
     const Print &print,
     const Layer &layer,
-    const ExtractEntityPredicate &predicate,
+    const ExtractEntityPredicate &should_pick_extrusion,
     const PathSmoothingFunction &smooth_path,
     const Point &offset,
     const unsigned extruder_id,
@@ -285,10 +285,10 @@ std::vector<SliceExtrusions> get_slices_extrusions(
     for (size_t idx : layer.lslice_indices_sorted_by_print_order) {
         const LayerSlice &lslice = layer.lslices_ex[idx];
         std::vector<IslandExtrusions> island_extrusions{extract_island_extrusions(
-            lslice, print, layer, predicate, smooth_path, offset, extruder_id, previous_position
+            lslice, print, layer, should_pick_extrusion, smooth_path, offset, extruder_id, previous_position
         )};
         std::vector<InfillRange> ironing_extrusions{extract_ironing_extrusions(
-            lslice, print, layer, predicate, smooth_path, offset, extruder_id, previous_position
+            lslice, print, layer, should_pick_extrusion, smooth_path, offset, extruder_id, previous_position
         )};
         if (!island_extrusions.empty() || !ironing_extrusions.empty()) {
             result.emplace_back(
@@ -388,7 +388,7 @@ std::vector<OverridenExtrusions> get_overriden_extrusions(
 
     for (const InstanceToPrint &instance : instances_to_print) {
         if (const Layer *layer = layers[instance.object_layer_to_print_id].object_layer; layer) {
-            const auto predicate = [&](const ExtrusionEntityCollection &entity_collection,
+            const auto should_pick_extrusion = [&layer_tools, &instance, &extruder_id](const ExtrusionEntityCollection &entity_collection,
                                        const PrintRegion &region) {
                 if (!is_overriden(entity_collection, layer_tools, instance.instance_id)) {
                     return false;
@@ -402,11 +402,11 @@ std::vector<OverridenExtrusions> get_overriden_extrusions(
                 return true;
             };
 
-            const PrintObject &print_object = instance.print_object;
-            const Point &offset = print_object.instances()[instance.instance_id].shift;
+            const PrintObject &print_object{instance.print_object};
+            const Point &offset{print_object.instances()[instance.instance_id].shift};
 
             std::vector<SliceExtrusions> slices_extrusions{get_slices_extrusions(
-                print, *layer, predicate, smooth_path, offset, extruder_id, previous_position
+                print, *layer, should_pick_extrusion, smooth_path, offset, extruder_id, previous_position
             )};
             if (!slices_extrusions.empty()) {
                 result.push_back({offset, std::move(slices_extrusions)});
@@ -447,7 +447,7 @@ std::vector<NormalExtrusions> get_normal_extrusions(
         }
 
         if (const Layer *layer = layers[instance.object_layer_to_print_id].object_layer; layer) {
-            const auto predicate = [&](const ExtrusionEntityCollection &entity_collection, const PrintRegion &region){
+            const auto should_pick_extrusion{[&layer_tools, &instance, &extruder_id](const ExtrusionEntityCollection &entity_collection, const PrintRegion &region){
                 if (is_overriden(entity_collection, layer_tools, instance.instance_id)) {
                     return false;
                 }
@@ -456,12 +456,12 @@ std::vector<NormalExtrusions> get_normal_extrusions(
                     return false;
                 }
                 return true;
-            };
+            }};
 
             result.back().slices_extrusions = get_slices_extrusions(
                 print,
                 *layer,
-                predicate,
+                should_pick_extrusion,
                 smooth_path,
                 offset,
                 extruder_id,

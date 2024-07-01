@@ -2324,7 +2324,6 @@ struct SmoothPathGenerator {
         } else if (auto path = dynamic_cast<const ExtrusionPath *>(extrusion_entity)) {
             result = GCode::SmoothPath{GCode::SmoothPathElement{path->attributes(), smooth_path_caches.layer_local().resolve_or_fit(*path, extrusion_reference.flipped(), scaled_resolution)}};
         }
-        using GCode::SmoothPathElement;
         for (auto it{result.rbegin()}; it != result.rend(); ++it) {
             if (!it->path.empty()) {
                 previous_position = InstancePoint{it->path.back().point};
@@ -2565,7 +2564,7 @@ LayerResult GCodeGenerator::process_layer(
     }
 
     const Vec3crd point{to_3d(first_point, scaled(print_z))};
-    gcode += this->travel_to_first_position(point, print_z, ExtrusionRole::Mixed, [&](){
+    gcode += this->travel_to_first_position(point, print_z, ExtrusionRole::Mixed, [this](){
         return m_writer.multiple_extruders ? "" : m_label_objects.maybe_change_instance(m_writer);
     });
 
@@ -3132,7 +3131,7 @@ std::string GCodeGenerator::_extrude(
         comment += description;
         comment += description_bridge;
         comment += " point";
-        const std::string travel_gcode{this->travel_to(*this->last_position, path.front().point, path_attr.role, comment, [&](){
+        const std::string travel_gcode{this->travel_to(*this->last_position, path.front().point, path_attr.role, comment, [this](){
             return m_writer.multiple_extruders ? "" : m_label_objects.maybe_change_instance(m_writer);
         })};
         gcode += travel_gcode;
