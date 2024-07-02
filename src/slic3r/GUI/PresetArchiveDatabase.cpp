@@ -1,6 +1,7 @@
 #include "PresetArchiveDatabase.hpp"
 
 #include "slic3r/Utils/Http.hpp"
+#include "slic3r/Utils/ServiceConfig.hpp"
 #include "slic3r/GUI/format.hpp"
 #include "slic3r/GUI/GUI_App.hpp"
 #include "slic3r/GUI/Plater.hpp"
@@ -866,11 +867,7 @@ namespace {
 bool sync_inner(std::string& manifest)
 {
 	bool ret = false;
-#ifdef SLIC3R_REPO_URL
-    std::string url = SLIC3R_REPO_URL;
-#else
-    std::string url = "https://preset-repo-api.prusa3d.com/v1/repos";
-#endif
+    std::string url = Utils::ServiceConfig::instance().preset_repo_repos_url();
     auto http = Http::get(std::move(url));
     add_authorization_header(http);
     http

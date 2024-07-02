@@ -5667,6 +5667,10 @@ CLIMiscConfigDef::CLIMiscConfigDef()
                      "For example. loglevel=2 logs fatal, error and warning level messages.");
     def->min = 0;
 
+    def = this->add("webdev", coBool);
+    def->label = L("Enable webdev tools");
+    def->tooltip = L("Enable webdev tools");
+
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && defined(SLIC3R_GUI)
     def = this->add("sw_renderer", coBool);
     def->label = L("Render with a software renderer");

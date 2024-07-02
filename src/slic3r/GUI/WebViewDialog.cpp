@@ -108,6 +108,10 @@ WebViewPanel::WebViewPanel(wxWindow *parent, const wxString& default_url, const 
 
     // Create the webview
     m_browser = WebView::CreateWebView(this, /*m_default_url*/ GUI::format_wxstr("file://%1%/web/%2%.html", boost::filesystem::path(resources_dir()).generic_string(), m_loading_html), m_script_message_hadler_names);
+    if (Utils::ServiceConfig::instance().webdev_enabled()) {
+        m_browser->EnableContextMenu();
+        m_browser->EnableAccessToDevTools();
+    }
     if (!m_browser) {
         wxStaticText* text = new wxStaticText(this, wxID_ANY, _L("Failed to load a web browser."));
         topsizer->Add(text, 0, wxALIGN_LEFT | wxBOTTOM, 10);
@@ -576,7 +580,7 @@ void ConnectRequestHandler::on_connect_action_request_open_in_browser(const std:
 }
 
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
-    : WebViewPanel(parent, L"https://connect.prusa3d.com/", { "_prusaSlicer" }, "connect_loading")
+    : WebViewPanel(parent, GUI::from_u8(Utils::ServiceConfig::instance().connect_url()), { "_prusaSlicer" }, "connect_loading")
 {  
     //m_browser->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new WebViewHandler("https")));
 
@@ -862,6 +866,10 @@ WebViewDialog::WebViewDialog(wxWindow* parent, const wxString& url, const wxStri
 
     // Create the webview
     m_browser = WebView::CreateWebView(this, GUI::format_wxstr("file://%1%/web/%2%.html", boost::filesystem::path(resources_dir()).generic_string(), m_loading_html), m_script_message_hadler_names);
+    if (Utils::ServiceConfig::instance().webdev_enabled()) {
+        m_browser->EnableContextMenu();
+        m_browser->EnableAccessToDevTools();
+    }
     if (!m_browser) {
         wxStaticText* text = new wxStaticText(this, wxID_ANY, _L("Failed to load a web browser."));
         topsizer->Add(text, 0, wxALIGN_LEFT | wxBOTTOM, 10);
@@ -1354,7 +1362,7 @@ void LoginWebViewDialog::on_dpi_changed(const wxRect &suggested_rect)
 
 LogoutWebViewDialog::LogoutWebViewDialog(wxWindow *parent)
     : WebViewDialog(parent
-        ,  L"https://account.prusa3d.com/logout"
+        ,  GUI::from_u8(Utils::ServiceConfig::instance().account_logout_url())
         , _L("Logout dialog")
         , wxSize(std::max(parent->GetClientSize().x / 4, 10 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 4, 10 * wxGetApp().em_unit()))
         , {})

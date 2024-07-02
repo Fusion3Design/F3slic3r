@@ -37,6 +37,7 @@
 #include "../Utils/PrintHost.hpp"
 #include "../Utils/FixModelByWin10.hpp"
 #include "../Utils/UndoRedo.hpp"
+#include "../Utils/ServiceConfig.hpp"
 #include "RemovableDriveManager.hpp"
 #include "BitmapCache.hpp"
 #include "BonjourDialog.hpp"
@@ -653,7 +654,7 @@ void PhysicalPrinterDialog::update(bool printer_change)
             text_ctrl* printhost_win = printhost_field ? dynamic_cast<text_ctrl*>(printhost_field->getWindow()) : nullptr;
             if (!m_opened_as_connect && printhost_win && m_last_host_type != htPrusaConnect){
                 m_stored_host = printhost_win->GetValue();
-                printhost_win->SetValue(L"https://connect.prusa3d.com");
+                printhost_win->SetValue(from_u8(Utils::ServiceConfig::instance().connect_url()));
             }
         } else {
             m_printhost_browse_btn->Show();
@@ -888,10 +889,11 @@ void PhysicalPrinterDialog::OnOK(wxEvent& event)
     text_ctrl* printhost_win = printhost_field ? dynamic_cast<text_ctrl*>(printhost_field->getWindow()) : nullptr;
     const auto opt = m_config->option<ConfigOptionEnum<PrintHostType>>("host_type");
     if (opt->value == htPrusaConnect) {
-        if (printhost_win && printhost_win->GetValue() != L"https://connect.prusa3d.com"){
-            InfoDialog msg(this, _L("Warning"), _L("URL of Prusa Connect is different from https://connect.prusa3d.com. Do you want to continue?"), true, wxYES_NO);
+        auto& sc = Utils::ServiceConfig::instance();
+        if (printhost_win && printhost_win->GetValue() != GUI::from_u8(sc.connect_url())){
+            InfoDialog msg(this, _L("Warning"), GUI::format(_L("URL of Prusa Connect is different from %1%. Do you want to continue?"), sc.connect_url()), true, wxYES_NO);
             if(msg.ShowModal() != wxID_YES){
-                printhost_win->SetValue(L"https://connect.prusa3d.com");
+                printhost_win->SetValue(GUI::from_u8(Utils::ServiceConfig::instance().connect_url()));
                 return;
             }
         }
