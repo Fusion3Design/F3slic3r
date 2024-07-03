@@ -649,12 +649,14 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
             .then(function (resp) {
                 console.log('Login resp', resp);
                 resp.text()
-                    .then(function (json) { console.log('Login resp body', json); })
+                    .then(function (json) { console.log('Login resp body', json); return json; })
                     .then(function (body) {
                         if (resp.status >= 400) errorHandler({status: resp.status, body});
                     });
             })
-            .catch(errorHandler);
+            .catch(function (err){
+                errorHandler({message: err.message, stack: err.stack});
+            });
         )",
 #endif
         access_token
@@ -1226,7 +1228,7 @@ void WebViewDialog::EndModal(int retCode)
 
 PrinterPickWebViewDialog::PrinterPickWebViewDialog(wxWindow* parent, std::string& ret_val)
     : WebViewDialog(parent
-        , L"https://connect.prusa3d.com/slicer-select-printer"
+        , GUI::from_u8(Utils::ServiceConfig::instance().connect_select_printer_url())
         , _L("Choose a printer")
         , wxSize(std::max(parent->GetClientSize().x / 2, 100 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 2, 50 * wxGetApp().em_unit()))
         ,{"_prusaSlicer"}
