@@ -2563,10 +2563,8 @@ LayerResult GCodeGenerator::process_layer(
         }
     }
 
-    const Vec3crd point{to_3d(first_point, scaled(print_z))};
-    gcode += this->travel_to_first_position(point, print_z, ExtrusionRole::Mixed, [this](){
-        return m_writer.multiple_extruders ? "" : m_label_objects.maybe_change_instance(m_writer);
-    });
+    this->set_origin({0, 0});
+    bool moved_to_first_point{false};
 
     // Extrude the skirt, brim, support, perimeters, infill ordered by the extruders.
     for (const ExtruderExtrusions &extruder_extrusions : extrusions)
@@ -2584,6 +2582,14 @@ LayerResult GCodeGenerator::process_layer(
             assert(m_pending_pre_extrusion_gcode.empty());
             // Now we have picked the right extruder, so we can emit the custom g-code.
             gcode += ProcessLayer::emit_custom_gcode_per_print_z(*this, *layer_tools.custom_gcode, m_writer.extruder()->id(), first_extruder_id, print.config());
+        }
+
+        if (!moved_to_first_point) {
+            const Vec3crd point{to_3d(first_point, scaled(print_z))};
+            gcode += this->travel_to_first_position(point, print_z, ExtrusionRole::Mixed, [this](){
+                return m_writer.multiple_extruders ? "" : m_label_objects.maybe_change_instance(m_writer);
+            });
+            moved_to_first_point = true;
         }
 
         if (!extruder_extrusions.skirt.empty()) {
