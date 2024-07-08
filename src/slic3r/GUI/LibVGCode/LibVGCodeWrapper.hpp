@@ -5,10 +5,12 @@
 #ifndef slic3r_LibVGCodeWrapper_hpp_
 #define slic3r_LibVGCodeWrapper_hpp_
 
-#include <libvgcode/Viewer.hpp>
-#include <libvgcode/PathVertex.hpp>
-#include <libvgcode/GCodeInputData.hpp>
-#include <libvgcode/ColorRange.hpp>
+#include <../../src/libvgcode/include/Viewer.hpp>
+#include <../../src/libvgcode/include/PathVertex.hpp>
+#include <../../src/libvgcode/include/GCodeInputData.hpp>
+#include <../../src/libvgcode/include/ColorRange.hpp>
+#include "../../src/libvgcode/include/Types.hpp"
+
 #include <stddef.h>
 #include <string>
 #include <vector>
@@ -18,7 +20,7 @@
 #include "slic3r/GUI/GUI_Preview.hpp"
 #include "libslic3r/ExtrusionRole.hpp"
 #include "libslic3r/Point.hpp"
-#include "libvgcode/Types.hpp"
+
 
 namespace Slic3r {
 class Print;

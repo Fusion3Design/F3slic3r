@@ -24,8 +24,8 @@
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/PrintConfig.hpp"
-#include "libvgcode/GCodeInputData.hpp"
-#include "libvgcode/PathVertex.hpp"
+#include "../../src/libvgcode/include/GCodeInputData.hpp"
+#include "../../src/libvgcode/include/PathVertex.hpp"
 
 namespace libvgcode {
 class Viewer;
