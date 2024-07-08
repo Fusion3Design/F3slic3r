@@ -2584,8 +2584,7 @@ LayerResult GCodeGenerator::process_layer(
             gcode += ProcessLayer::emit_custom_gcode_per_print_z(*this, *layer_tools.custom_gcode, m_writer.extruder()->id(), first_extruder_id, print.config());
         }
 
-        if (!this->m_config.complete_objects.value &&
-            (!extruder_extrusions.skirt.empty() || !extruder_extrusions.brim.empty())) {
+        if (!extruder_extrusions.skirt.empty() || !extruder_extrusions.brim.empty()) {
             gcode += m_label_objects.maybe_stop_instance();
             this->m_label_objects.update(nullptr);
         }
