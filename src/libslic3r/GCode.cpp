@@ -2363,8 +2363,8 @@ std::vector<GCode::ExtrusionOrder::ExtruderExtrusions> GCodeGenerator::get_sorte
     using GCode::ExtrusionOrder::ExtruderExtrusions;
     using GCode::ExtrusionOrder::get_extrusions;
 
-    const std::optional<Vec2d> previous_position{
-        this->last_position ? std::optional{this->point_to_gcode(*this->last_position)} :
+    const std::optional<Point> previous_position{
+        this->last_position ? std::optional{scaled(this->point_to_gcode(*this->last_position))} :
                               std::nullopt};
     std::vector<ExtruderExtrusions> extrusions{
         get_extrusions(
@@ -2584,18 +2584,25 @@ LayerResult GCodeGenerator::process_layer(
             gcode += ProcessLayer::emit_custom_gcode_per_print_z(*this, *layer_tools.custom_gcode, m_writer.extruder()->id(), first_extruder_id, print.config());
         }
 
+        if (!this->m_config.complete_objects.value &&
+            (!extruder_extrusions.skirt.empty() || !extruder_extrusions.brim.empty())) {
+            gcode += m_label_objects.maybe_stop_instance();
+            this->m_label_objects.update(nullptr);
+        }
+
         if (!moved_to_first_point) {
             const Vec3crd point{to_3d(first_point, scaled(print_z))};
-            gcode += this->travel_to_first_position(point, print_z, ExtrusionRole::Mixed, [this](){
-                return m_writer.multiple_extruders ? "" : m_label_objects.maybe_change_instance(m_writer);
+
+            gcode += this->travel_to_first_position(point, print_z, ExtrusionRole::Mixed, [this]() {
+                if (m_writer.multiple_extruders) {
+                    return std::string{""};
+                }
+                return m_label_objects.maybe_change_instance(m_writer);
             });
             moved_to_first_point = true;
         }
 
         if (!extruder_extrusions.skirt.empty()) {
-            if (!this->m_config.complete_objects.value) {
-                gcode += this->m_label_objects.maybe_stop_instance();
-            }
             this->m_label_objects.update(nullptr);
 
             m_avoid_crossing_perimeters.use_external_mp();
@@ -2616,12 +2623,6 @@ LayerResult GCodeGenerator::process_layer(
         }
 
         if (!extruder_extrusions.brim.empty()) {
-
-            if (!this->m_config.complete_objects.value) {
-                gcode += this->m_label_objects.maybe_stop_instance();
-            }
-            this->m_label_objects.update(nullptr);
-
             m_avoid_crossing_perimeters.use_external_mp();
 
             for (const GCode::ExtrusionOrder::BrimPath &brim_path : extruder_extrusions.brim) {
