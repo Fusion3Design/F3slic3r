@@ -10,6 +10,7 @@
 #include <optional>
 #include <vector>
 
+#include "libslic3r/Utils.hpp" // IWYU pragma: keep
 #include "libslic3r/Emboss.hpp"
 #include "libslic3r/Exception.hpp"
 

@@ -21,6 +21,10 @@
 #include "libslic3r/Arachne/utils/ExtrusionJunction.hpp"
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
 
+#ifndef NDEBUG
+    #include "libslic3r/EdgeGrid.hpp"
+#endif
+
 #define SKELETAL_TRAPEZOIDATION_BEAD_SEARCH_MAX 1000 //A limit to how long it'll keep searching for adjacent beads. Increasing will re-use beadings more often (saving performance), but search longer for beading (costing performance).
 
 namespace Slic3r::Arachne
