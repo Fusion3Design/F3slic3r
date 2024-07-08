@@ -19,6 +19,8 @@ if (SLIC3R_ENABLE_FORMAT_STEP)
 endif ()
 
 if (SLIC3R_GUI)
+    add_subdirectory(libvgcode)
+
     if(WIN32)
         message(STATUS "WXWIN environment set to: $ENV{WXWIN}")
     elseif(UNIX)
