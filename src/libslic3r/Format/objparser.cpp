@@ -4,14 +4,17 @@
 ///|/
 #include <stdlib.h>
 #include <string.h>
-
 #include <boost/log/trivial.hpp>
 #include <boost/nowide/cstdio.hpp>
+#include <LocalesUtils.hpp>
+#include <fast_float.h>
+#include <assert.h>
+#include <stdio.h>
+#include <new>
+#include <system_error>
+#include <utility>
 
 #include "objparser.hpp"
-
-#include "libslic3r/LocalesUtils.hpp"
-#include "fast_float/fast_float.h"
 
 namespace ObjParser {
 

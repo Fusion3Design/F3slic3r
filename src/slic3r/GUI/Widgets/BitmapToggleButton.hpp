@@ -2,6 +2,11 @@
 #define slic3r_GUI_BitmapToggleButton_hpp_
 
 #include <wx/tglbtn.h>
+#include <stddef.h>
+#include <wx/defs.h>
+#include <wx/string.h>
+
+class wxWindow;
 
 class BitmapToggleButton : public wxBitmapToggleButton
 {

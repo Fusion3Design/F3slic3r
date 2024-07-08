@@ -1,6 +1,14 @@
 #include "BitmapToggleButton.hpp"
 
 #include <wx/settings.h>
+#include <wx/button.h>
+#include <wx/event.h>
+#include <wx/gdicmn.h>
+#include <wx/setup.h>
+
+#include "wx/window.h"
+
+class wxWindow;
 
 BitmapToggleButton::BitmapToggleButton(wxWindow* parent, const wxString& label, wxWindowID id)
 {

@@ -9,9 +9,13 @@
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
-#include "imgui/imgui_internal.h"
-
 #include <sstream>
+#include <functional>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "imgui/imgui_internal.h"
 
 // this code is borrowed from https://stackoverflow.com/questions/16605967/set-precision-of-stdto-string-when-converting-floating-point-values
 template <typename T>

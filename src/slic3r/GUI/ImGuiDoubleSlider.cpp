@@ -5,6 +5,10 @@
 
 #include "ImGuiDoubleSlider.hpp"
 
+#include <algorithm>
+
+#include "slic3r/GUI/ImGuiPureWrap.hpp"
+
 namespace DoubleSlider {
 
 const ImU32 tooltip_bg_clr  = ImGui::ColorConvertFloat4ToU32(ImGuiPureWrap::COL_GREY_LIGHT);

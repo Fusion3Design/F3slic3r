@@ -50,6 +50,7 @@
 #include "Plater.hpp"
 #include "../Utils/Process.hpp"
 #include "format.hpp"
+#include "slic3r/GUI/InstanceCheck.hpp" // IWYU pragma: keep
 
 #include <fstream>
 #include <string_view>

@@ -7,13 +7,32 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
+#include <float.h>
+#include <oneapi/tbb/blocked_range.h>
+#include <oneapi/tbb/concurrent_vector.h>
+#include <oneapi/tbb/parallel_for.h>
+#include <boost/log/trivial.hpp>
+#include <assert.h>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <functional>
+#include <map>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+#include <Eigen/Geometry>
+#include <array>
+#include <initializer_list>
+#include <memory>
+
 #include "AABBTreeLines.hpp"
-#include "BridgeDetector.hpp"
 #include "ExPolygon.hpp"
-#include "Exception.hpp"
 #include "Flow.hpp"
-#include "GCode/ExtrusionProcessor.hpp"
-#include "KDTreeIndirect.hpp"
+#include "libslic3r/GCode/ExtrusionProcessor.hpp"
 #include "Line.hpp"
 #include "Point.hpp"
 #include "Polygon.hpp"
@@ -21,11 +40,9 @@
 #include "Print.hpp"
 #include "BoundingBox.hpp"
 #include "ClipperUtils.hpp"
-#include "ElephantFootCompensation.hpp"
 #include "Geometry.hpp"
 #include "I18N.hpp"
 #include "Layer.hpp"
-#include "MutablePolygon.hpp"
 #include "PrintBase.hpp"
 #include "PrintConfig.hpp"
 #include "Support/SupportMaterial.hpp"
@@ -36,37 +53,18 @@
 #include "Tesselate.hpp"
 #include "TriangleMeshSlicer.hpp"
 #include "Utils.hpp"
-#include "Fill/FillAdaptive.hpp"
-#include "Fill/FillLightning.hpp"
-#include "Format/STL.hpp"
-#include "Support/SupportMaterial.hpp"
+#include "libslic3r/Fill/FillAdaptive.hpp"
+#include "libslic3r/Fill/FillLightning.hpp"
 #include "SupportSpotsGenerator.hpp"
-#include "TriangleSelectorWrapper.hpp"
-#include "format.hpp"
 #include "libslic3r.h"
-
-#include <algorithm>
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <float.h>
-#include <functional>
-#include <limits>
-#include <map>
-#include <oneapi/tbb/blocked_range.h>
-#include <oneapi/tbb/concurrent_vector.h>
-#include <oneapi/tbb/parallel_for.h>
-#include <string>
-#include <string_view>
-#include <tuple>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-
-#include <boost/log/trivial.hpp>
-
-#include <tbb/parallel_for.h>
-#include <vector>
+#include "admesh/stl.h"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Config.hpp"
+#include "libslic3r/LayerRegion.hpp"
+#include "libslic3r/Model.hpp"
+#include "libslic3r/MultiMaterialSegmentation.hpp"
+#include "libslic3r/TriangleSelector.hpp"
+#include "tcbspan/span.hpp"
 
 using namespace std::literals;
 
@@ -76,7 +74,9 @@ using namespace std::literals;
     // time limit for one ClipperLib operation (union / diff / offset), in ms
     #define PRINT_OBJECT_TIME_LIMIT_DEFAULT 50
     #include <boost/current_function.hpp>
+
     #include "Timer.hpp"
+
     #define PRINT_OBJECT_TIME_LIMIT_SECONDS(limit) Timing::TimeLimitAlarm time_limit_alarm(uint64_t(limit) * 1000000000l, BOOST_CURRENT_FUNCTION)
     #define PRINT_OBJECT_TIME_LIMIT_MILLIS(limit) Timing::TimeLimitAlarm time_limit_alarm(uint64_t(limit) * 1000000l, BOOST_CURRENT_FUNCTION)
 #else
@@ -96,11 +96,10 @@ using namespace std::literals;
     #define DEBUG
     #define _DEBUG
     #include "SVG.hpp"
+
     #undef assert 
     #include <cassert>
 #endif
-
-    #include "SVG.hpp"
 
 namespace Slic3r {
 

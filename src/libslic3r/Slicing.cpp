@@ -3,12 +3,14 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <limits>
+#include <algorithm>
+#include <cmath>
 
 #include "libslic3r.h"
 #include "Slicing.hpp"
 #include "SlicingAdaptive.hpp"
 #include "PrintConfig.hpp"
-#include "Model.hpp"
+#include "libslic3r/Point.hpp"
 
 // #define SLIC3R_DEBUG
 
@@ -18,6 +20,7 @@
     #define DEBUG
     #define _DEBUG
     #include "SVG.hpp"
+
     #undef assert 
     #include <cassert>
 #endif

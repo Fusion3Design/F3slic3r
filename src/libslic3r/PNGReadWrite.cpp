@@ -7,13 +7,15 @@
 ///|/
 #include "PNGReadWrite.hpp"
 
-#include <memory>
-
-#include <cstdio>
 #include <png.h>
-
 #include <boost/log/trivial.hpp>
 #include <boost/nowide/cstdio.hpp>
+#include <assert.h>
+#include <pngconf.h>
+#include <pnglibconf.h>
+#include <setjmp.h>
+#include <string.h>
+#include <cstdio>
 
 namespace Slic3r { namespace png {
 

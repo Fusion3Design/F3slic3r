@@ -5,7 +5,9 @@
 #include "SpatIndex.hpp"
 
 // for concave hull merging decisions
-#include <libslic3r/BoostAdapter.hpp>
+#include <libslic3r/BoostAdapter.hpp> // IWYU pragma: keep
+#include <boost/geometry.hpp>
+#include <iterator>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -14,6 +16,7 @@
 #endif
 
 #include "boost/geometry/index/rtree.hpp"
+#include "libslic3r/BoundingBox.hpp"
 
 #ifdef _MSC_VER
 #pragma warning(pop)

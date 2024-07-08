@@ -4,8 +4,11 @@
 #ifndef BEADING_STRATEGY_FACTORY_H
 #define BEADING_STRATEGY_FACTORY_H
 
+#include <math.h>
+
 #include "BeadingStrategy.hpp"
 #include "../../Point.hpp"
+#include "libslic3r/libslic3r.h"
 
 namespace Slic3r::Arachne
 {

@@ -8,11 +8,26 @@
 // #define PRUSASLICER_TRIANGLE_SELECTOR_DEBUG
 
 
+#include <assert.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <cfloat>
+#include <algorithm>
+#include <array>
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "Point.hpp"
 #include "TriangleMesh.hpp"
+#include "admesh/stl.h"
+
+namespace cereal {
+class access;
+}  // namespace cereal
 
 namespace Slic3r {
+class TriangleMesh;
 
 enum class TriangleStateType : int8_t {
     // Maximum is 3. The value is serialized in TriangleSelector into 2 bits.

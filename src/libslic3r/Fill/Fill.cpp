@@ -9,7 +9,16 @@
 ///|/
 #include <assert.h>
 #include <stdio.h>
+#include <oneapi/tbb/scalable_allocator.h>
+#include <stdint.h>
+#include <boost/container/vector.hpp>
 #include <memory>
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <set>
+#include <utility>
+#include <vector>
 
 #include "../ClipperUtils.hpp"
 #include "../Geometry.hpp"
@@ -19,15 +28,30 @@
 #include "../Surface.hpp"
 // for Arachne based infills
 #include "../PerimeterGenerator.hpp"
-
 #include "FillBase.hpp"
 #include "FillRectilinear.hpp"
 #include "FillLightning.hpp"
-#include "FillConcentric.hpp"
 #include "FillEnsuring.hpp"
-#include "Polygon.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
+#include "libslic3r/ExtrusionRole.hpp"
+#include "libslic3r/Flow.hpp"
+#include "libslic3r/LayerRegion.hpp"
+#include "libslic3r/MultiMaterialSegmentation.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Polyline.hpp"
+#include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
+namespace FillAdaptive {
+struct Octree;
+}  // namespace FillAdaptive
+namespace FillLightning {
+class Generator;
+}  // namespace FillLightning
 
 //static constexpr const float NarrowInfillAreaThresholdMM = 3.f;
 
@@ -445,10 +469,6 @@ void Layer::clear_fills()
 void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive::Octree* support_fill_octree, FillLightning::Generator* lightning_generator)
 {
 	this->clear_fills();
-
-#ifdef SLIC3R_DEBUG_SLICE_PROCESSING
-//	this->export_region_fill_surfaces_to_svg_debug("10_fill-initial");
-#endif /* SLIC3R_DEBUG_SLICE_PROCESSING */
 
     std::vector<SurfaceFill>  surface_fills       = group_fills(*this);
     const Slic3r::BoundingBox bbox                = this->object()->bounding_box();

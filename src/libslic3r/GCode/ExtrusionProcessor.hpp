@@ -5,22 +5,7 @@
 #ifndef slic3r_ExtrusionProcessor_hpp_
 #define slic3r_ExtrusionProcessor_hpp_
 
-#include "../AABBTreeLines.hpp"
-#include "../SupportSpotsGenerator.hpp"
-#include "../libslic3r.h"
-#include "../ExtrusionEntity.hpp"
-#include "../Layer.hpp"
-#include "../Point.hpp"
-#include "../SVG.hpp"
-#include "../BoundingBox.hpp"
-#include "../Polygon.hpp"
-#include "../ClipperUtils.hpp"
-#include "../Flow.hpp"
-#include "../Config.hpp"
-#include "../Line.hpp"
-#include "../Exception.hpp"
-#include "../PrintConfig.hpp"
-
+#include <stdlib.h>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -33,6 +18,29 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <functional>
+
+#include "libslic3r/AABBTreeLines.hpp"
+#include "libslic3r/SupportSpotsGenerator.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/SVG.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Flow.hpp"
+#include "libslic3r/Config.hpp"
+#include "libslic3r/Line.hpp"
+#include "libslic3r/Exception.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
+
+namespace Slic3r {
+class CurledLine;
+class Linef;
+}  // namespace Slic3r
 
 namespace Slic3r { namespace ExtrusionProcessor {
 

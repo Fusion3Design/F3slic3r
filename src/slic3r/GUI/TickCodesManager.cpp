@@ -4,9 +4,18 @@
 ///|/
 #include "TickCodesManager.hpp"
 
+#include <math.h>
+#include <algorithm>
+#include <random>
+
 #include "I18N.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/Color.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/GCode/ToolOrdering.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/libslic3r.h"
 
 using namespace Slic3r;
 using namespace CustomGCode;

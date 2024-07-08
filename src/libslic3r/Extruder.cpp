@@ -8,8 +8,15 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "Extruder.hpp"
-#include "GCode/GCodeWriter.hpp"
+
+#include <assert.h>
+#include <math.h>
+#include <algorithm>
+
+#include "libslic3r/GCode/GCodeWriter.hpp"
 #include "PrintConfig.hpp"
+#include "libslic3r/Exception.hpp"
+#include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
 

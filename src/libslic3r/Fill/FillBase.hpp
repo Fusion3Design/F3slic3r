@@ -14,20 +14,30 @@
 #include <memory.h>
 #include <float.h>
 #include <stdint.h>
+#include <math.h>
+#include <stddef.h>
 #include <stdexcept>
-
 #include <type_traits>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "../libslic3r.h"
-#include "../BoundingBox.hpp"
-#include "../Exception.hpp"
-#include "../Utils.hpp"
-#include "../ExPolygon.hpp"
-#include "../PrintConfig.hpp"
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Exception.hpp"
+#include "libslic3r/Utils.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/Polyline.hpp"
 
 namespace Slic3r {
 
 class Surface;
+class PrintConfig;
+class PrintObjectConfig;
+
 enum InfillPattern : int;
 
 namespace FillAdaptive {

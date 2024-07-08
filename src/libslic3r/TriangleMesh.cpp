@@ -13,7 +13,31 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include "Exception.hpp"
+#include <libqhullcpp/Qhull.h>
+#include <libqhullcpp/QhullFacetList.h>
+#include <libqhullcpp/QhullVertexSet.h>
+#include <boost/log/trivial.hpp>
+#include <boost/nowide/cstdio.hpp>
+#include <boost/predef/other/endian.h>
+#include <assert.h>
+#include <libqhull_r/user_r.h>
+#include <libqhullcpp/QhullFacet.h>
+#include <libqhullcpp/QhullPoint.h>
+#include <libqhullcpp/QhullVertex.h>
+#include <oneapi/tbb/blocked_range.h>
+#include <oneapi/tbb/concurrent_vector.h>
+#include <oneapi/tbb/parallel_for.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <cmath>
+#include <vector>
+#include <utility>
+#include <algorithm>
+#include <Eigen/Core>
+#include <iterator>
+#include <map>
+
 #include "TriangleMesh.hpp"
 #include "TriangleMeshSlicer.hpp"
 #include "MeshSplitImpl.hpp"
@@ -24,29 +48,10 @@
 #include "Execution/ExecutionTBB.hpp"
 #include "Execution/ExecutionSeq.hpp"
 #include "Utils.hpp"
-
-#include <libqhullcpp/Qhull.h>
-#include <libqhullcpp/QhullFacetList.h>
-#include <libqhullcpp/QhullVertexSet.h>
-
-#include <cmath>
-#include <deque>
-#include <queue>
-#include <vector>
-#include <utility>
-#include <algorithm>
-#include <type_traits>
-
-#include <boost/log/trivial.hpp>
-#include <boost/nowide/cstdio.hpp>
-#include <boost/predef/other/endian.h>
-
-#include <tbb/concurrent_vector.h>
-
-#include <Eigen/Core>
-#include <Eigen/Dense>
-
-#include <assert.h>
+#include "admesh/stl.h"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/libslic3r.h"
 
 namespace Slic3r {
 

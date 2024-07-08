@@ -11,9 +11,17 @@
 #ifndef slic3r_FillRectilinear_hpp_
 #define slic3r_FillRectilinear_hpp_
 
-#include "../libslic3r.h"
+#include <stddef.h>
+#include <initializer_list>
 
+#include "libslic3r/libslic3r.h"
 #include "FillBase.hpp"
+#include "libslic3r/BoundingBox.hpp"
+#include "libslic3r/ExPolygon.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/Polygon.hpp"
+#include "libslic3r/Polyline.hpp"
+#include "libslic3r/ShortestPath.hpp"
 
 namespace Slic3r {
 

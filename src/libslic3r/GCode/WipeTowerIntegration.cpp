@@ -1,9 +1,24 @@
 #include "WipeTowerIntegration.hpp"
 
-#include "../GCode.hpp"
-#include "../libslic3r.h"
+#include <assert.h>
+#include <stddef.h>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/trim.hpp>
+#include <Eigen/Geometry>
+#include <cmath>
+#include <iomanip>
+#include <istream>
+#include <iterator>
+#include <utility>
 
+#include "libslic3r/GCode.hpp"
+#include "libslic3r/libslic3r.h"
 #include "boost/algorithm/string/replace.hpp"
+#include "libslic3r/Exception.hpp"
+#include "libslic3r/ExtrusionRole.hpp"
+#include "libslic3r/GCode/Wipe.hpp"
+#include "libslic3r/GCode/WipeTower.hpp"
+#include "libslic3r/Geometry/ArcWelder.hpp"
 
 namespace Slic3r::GCode {
 

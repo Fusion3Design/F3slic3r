@@ -31,7 +31,7 @@
 #include <wx/bmpcbox.h>
 #include <wx/statbox.h>
 #include <wx/statbmp.h>
-#include <wx/wupdlock.h>
+#include <wx/wupdlock.h> // IWYU pragma: keep
 #include "wx/generic/stattextg.h"
 #ifdef _WIN32
 #include <wx/richtooltip.h>

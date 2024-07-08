@@ -6,7 +6,12 @@
 #define SRC_LIBSLIC3R_TRIANGLESETSAMPLING_HPP_
 
 #include <admesh/stl.h>
+#include <stddef.h>
+#include <vector>
+
 #include "libslic3r/Point.hpp"
+
+struct indexed_triangle_set;
 
 namespace Slic3r {
 

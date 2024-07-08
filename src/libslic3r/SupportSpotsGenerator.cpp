@@ -5,11 +5,28 @@
 ///|/
 #include "SupportSpotsGenerator.hpp"
 
+#include <boost/log/trivial.hpp>
+#include <oneapi/tbb/concurrent_vector.h>
+#include <oneapi/tbb/parallel_for.h>
+#include <assert.h>
+#include <oneapi/tbb/blocked_range.h>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <optional>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+#include <Eigen/Core>
+#include <iostream>
+#include <stdexcept>
+
 #include "BoundingBox.hpp"
 #include "ExPolygon.hpp"
 #include "ExtrusionEntity.hpp"
 #include "ExtrusionEntityCollection.hpp"
-#include "GCode/ExtrusionProcessor.hpp"
+#include "libslic3r/GCode/ExtrusionProcessor.hpp"
 #include "Line.hpp"
 #include "Point.hpp"
 #include "Polygon.hpp"
@@ -17,42 +34,24 @@
 #include "Print.hpp"
 #include "PrintBase.hpp"
 #include "PrintConfig.hpp"
-#include "Tesselate.hpp"
-#include "Utils.hpp"
 #include "libslic3r.h"
-#include "tbb/parallel_for.h"
-#include "tbb/blocked_range.h"
-#include "tbb/blocked_range2d.h"
-#include "tbb/parallel_reduce.h"
-#include <algorithm>
-#include <boost/log/trivial.hpp>
-#include <cmath>
-#include <cstddef>
-#include <cstdio>
-#include <functional>
-#include <limits>
-#include <math.h>
-#include <oneapi/tbb/concurrent_vector.h>
-#include <oneapi/tbb/parallel_for.h>
-#include <optional>
-#include <unordered_map>
-#include <unordered_set>
-#include <stack>
-#include <utility>
-#include <vector>
-
 #include "AABBTreeLines.hpp"
 #include "KDTreeIndirect.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/ClipperUtils.hpp"
 #include "Geometry/ConvexHull.hpp"
+#include "libslic3r/ExtrusionRole.hpp"
+#include "libslic3r/Flow.hpp"
+#include "libslic3r/LayerRegion.hpp"
 
 // #define DETAILED_DEBUG_LOGS
 // #define DEBUG_FILES
 
 #ifdef DEBUG_FILES
 #include <boost/nowide/cstdio.hpp>
+
 #include "libslic3r/Color.hpp"
+
 constexpr bool debug_files = true;
 #else
 constexpr bool debug_files = false;

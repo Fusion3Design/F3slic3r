@@ -10,6 +10,9 @@
 #include "slic3r/GUI/MsgDialog.hpp"
 #include "slic3r/GUI/Field.hpp"
 
+#include <libslic3r/PresetBundle.hpp> // IWYU pragma: keep
+
+
 #include <wx/webview.h>
 
 #include <boost/log/trivial.hpp>

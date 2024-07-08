@@ -1,8 +1,12 @@
 #ifndef slic3r_GCode_WipeTowerIntegration_hpp_
 #define slic3r_GCode_WipeTowerIntegration_hpp_
 
+#include <string>
+#include <vector>
+
 #include "WipeTower.hpp"
 #include "../PrintConfig.hpp"
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r {
 

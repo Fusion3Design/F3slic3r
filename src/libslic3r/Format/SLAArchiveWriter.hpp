@@ -5,11 +5,15 @@
 #ifndef SLAARCHIVE_HPP
 #define SLAARCHIVE_HPP
 
+#include <stddef.h>
 #include <vector>
+#include <memory>
+#include <string>
 
 #include "libslic3r/SLA/RasterBase.hpp"
 #include "libslic3r/Execution/ExecutionTBB.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
+#include "libslic3r/Execution/Execution.hpp"
 
 namespace Slic3r {
 

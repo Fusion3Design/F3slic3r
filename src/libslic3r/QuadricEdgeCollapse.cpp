@@ -3,16 +3,29 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "QuadricEdgeCollapse.hpp"
+
+#include <assert.h>
+#include <oneapi/tbb/blocked_range.h>
+#include <oneapi/tbb/parallel_for.h>
+#include <stddef.h>
 #include <tuple>
 #include <optional>
+#include <Eigen/Geometry>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <iterator>
+#include <limits>
+#include <utility>
+#include <vector>
+
 #include "MutablePriorityQueue.hpp"
-#include <tbb/parallel_for.h>
+#include "admesh/stl.h"
+#include "libslic3r/Exception.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/libslic3r.h"
 
 using namespace Slic3r;
-
-#ifndef NDEBUG
-//    #define EXPENSIVE_DEBUG_CHECKS
-#endif // NDEBUG
 
 // only private namespace not neccessary be in .hpp
 namespace QuadricEdgeCollapse {

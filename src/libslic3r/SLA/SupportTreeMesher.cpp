@@ -4,6 +4,9 @@
 ///|/
 #include "SupportTreeMesher.hpp"
 
+#include <assert.h>
+#include <cmath>
+
 namespace Slic3r { namespace sla {
 
 indexed_triangle_set sphere(double rho, Portion portion, double fa) {

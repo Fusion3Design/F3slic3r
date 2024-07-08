@@ -3,13 +3,16 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "BranchingTree.hpp"
-#include "PointCloud.hpp"
 
-#include <numeric>
+#include <stddef.h>
 #include <optional>
 #include <algorithm>
 
+#include "PointCloud.hpp"
 #include "libslic3r/TriangleMesh.hpp"
+#include "libslic3r/BoundingBox.hpp"
+
+struct indexed_triangle_set;
 
 namespace Slic3r { namespace branchingtree {
 

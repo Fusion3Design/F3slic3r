@@ -1,11 +1,17 @@
 #include "libslic3r/GCode/SeamGeometry.hpp"
-#include "ClipperUtils.hpp"
-#include "KDTreeIndirect.hpp"
-#include "Layer.hpp"
-#include <fstream>
+
+#include <stdint.h>
 #include <numeric>
-#include <oneapi/tbb/blocked_range.h>
-#include <oneapi/tbb/parallel_for.h>
+#include <cmath>
+#include <iterator>
+#include <limits>
+
+#include "libslic3r/ClipperUtils.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/AABBTreeLines.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
+#include "libslic3r/Flow.hpp"
+#include "libslic3r/LayerRegion.hpp"
 
 namespace Slic3r::Seams::Geometry {
 

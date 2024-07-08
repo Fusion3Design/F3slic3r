@@ -8,9 +8,13 @@
 #ifndef slic3r_GLShader_hpp_
 #define slic3r_GLShader_hpp_
 
+#include <stddef.h>
 #include <array>
 #include <string>
 #include <string_view>
+#include <initializer_list>
+#include <utility>
+#include <vector>
 
 #include "libslic3r/Point.hpp"
 

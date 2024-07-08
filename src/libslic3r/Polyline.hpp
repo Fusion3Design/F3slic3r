@@ -11,16 +11,25 @@
 #ifndef slic3r_Polyline_hpp_
 #define slic3r_Polyline_hpp_
 
+#include <stddef.h>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <initializer_list>
+#include <iterator>
+#include <utility>
+
 #include "libslic3r.h"
 #include "Line.hpp"
 #include "MultiPoint.hpp"
-#include <string>
-#include <vector>
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r {
 
 class Polyline;
 struct ThickPolyline;
+class BoundingBox;
+
 typedef std::vector<Polyline> Polylines;
 typedef std::vector<ThickPolyline> ThickPolylines;
 

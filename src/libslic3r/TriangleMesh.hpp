@@ -12,10 +12,18 @@
 #ifndef slic3r_TriangleMesh_hpp_
 #define slic3r_TriangleMesh_hpp_
 
-#include "libslic3r.h"
 #include <admesh/stl.h>
+#include <assert.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <cereal/cereal.hpp>
 #include <functional>
 #include <vector>
+#include <Eigen/Geometry>
+#include <array>
+#include <utility>
+
+#include "libslic3r.h"
 #include "BoundingBox.hpp"
 #include "Line.hpp"
 #include "Point.hpp"
@@ -385,6 +393,7 @@ inline BoundingBoxf3 bounding_box(const indexed_triangle_set& its, const Transfo
 
 // Serialization through the Cereal library
 #include <cereal/access.hpp>
+
 namespace cereal {
     template <class Archive> struct specialize<Archive, Slic3r::TriangleMesh, cereal::specialization::non_member_load_save> {};
     template<class Archive> void load(Archive &archive, Slic3r::TriangleMesh &mesh) {
