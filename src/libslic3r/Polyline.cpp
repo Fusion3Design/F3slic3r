@@ -201,6 +201,10 @@ bool Polyline::is_straight() const
     return true;
 }
 
+BoundingBox ThickPolyline::bounding_box() const {
+    return BoundingBox(this->points);
+}
+
 BoundingBox get_extents(const Polyline &polyline)
 {
     return polyline.bounding_box();
@@ -333,6 +337,22 @@ Lines to_lines(const ThickPolylines &thick_polylines) {
     }
 
     return lines;
+}
+
+BoundingBox get_extents(const ThickPolyline &thick_polyline) {
+    return thick_polyline.bounding_box();
+}
+
+BoundingBox get_extents(const ThickPolylines &thick_polylines) {
+    BoundingBox bbox;
+    if (!thick_polylines.empty()) {
+        bbox = thick_polylines.front().bounding_box();
+        for (size_t i = 1; i < thick_polylines.size(); ++i) {
+            bbox.merge(thick_polylines[i].points);
+        }
+    }
+
+    return bbox;
 }
 
 ThickLines ThickPolyline::thicklines() const

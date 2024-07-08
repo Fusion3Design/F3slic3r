@@ -241,6 +241,8 @@ struct ThickPolyline {
     // On open ThickPolyline make no effect.
     void start_at_index(int index);
 
+    BoundingBox bounding_box() const;
+
     Points                  points;
     // vector of startpoint width and endpoint width of each line segment. The size should be always (points.size()-1) * 2
     // e.g. let four be points a,b,c,d. that are three lines ab, bc, cd. for each line, there should be start width, so the width vector is:
@@ -265,6 +267,9 @@ size_t total_lines_count(const ThickPolylines &thick_polylines);
 
 Lines to_lines(const ThickPolyline &thick_polyline);
 Lines to_lines(const ThickPolylines &thick_polylines);
+
+BoundingBox get_extents(const ThickPolyline &thick_polyline);
+BoundingBox get_extents(const ThickPolylines &thick_polylines);
 
 class Polyline3 : public MultiPoint3
 {
