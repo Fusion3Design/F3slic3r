@@ -13,6 +13,14 @@
 #include "SlicingAdaptive.hpp"
 #include "admesh/stl.h"
 
+#ifndef NDEBUG
+	#define ADAPTIVE_LAYER_HEIGHT_DEBUG
+#endif /* NDEBUG */
+
+#ifdef ADAPTIVE_LAYER_HEIGHT_DEBUG
+#include <boost/log/trivial.hpp>
+#endif
+
 // Based on the work of Florens Waserfall (@platch on github)
 // and his paper
 // Florens Wasserfall, Norman Hendrich, Jianwei Zhang:
@@ -34,10 +42,6 @@ xlabel("angle(deg), 0 - horizontal wall, 90 - vertical wall");
 ylabel("layer height");
 legend("tan(a) as cura - topographic lines distance limit", "sqrt(tan(a)) as PrusaSlicer - error triangle area limit", "old slic3r - max distance metric", "new slic3r - Waserfall paper");
 #endif
-
-#ifndef NDEBUG
-	#define ADAPTIVE_LAYER_HEIGHT_DEBUG
-#endif /* NDEBUG */
 
 namespace Slic3r
 {

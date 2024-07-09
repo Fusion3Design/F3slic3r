@@ -22,6 +22,10 @@
 #include "libslic3r/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"
 
+#ifndef NDEBUG
+#include "libslic3r/SVG.hpp"
+#endif
+
 
 namespace Slic3r { namespace sla {
 
