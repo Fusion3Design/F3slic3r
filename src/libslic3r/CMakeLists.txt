@@ -213,6 +213,8 @@ set(SLIC3R_SOURCES
     GCode/AvoidCrossingPerimeters.hpp
     GCode/Travels.cpp
     GCode/Travels.hpp
+    GCode/ExtrusionOrder.cpp
+    GCode/ExtrusionOrder.hpp
     GCode.cpp
     GCode.hpp
     GCodeReader.cpp

@@ -34,15 +34,6 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
 
     std::string gcode;
 
-    // Toolchangeresult.gcode assumes the wipe tower corner is at the origin (except for priming lines)
-    // We want to rotate and shift all extrusions (gcode postprocessing) and starting and ending position
-    float alpha = m_wipe_tower_rotation / 180.f * float(M_PI);
-
-    auto transform_wt_pt = [&alpha, this](const Vec2f& pt) -> Vec2f {
-        Vec2f out = Eigen::Rotation2Df(alpha) * pt;
-        out += m_wipe_tower_pos;
-        return out;
-    };
 
     Vec2f start_pos = tcr.start_pos;
     Vec2f end_pos = tcr.end_pos;
@@ -52,7 +43,7 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
     }
 
     Vec2f wipe_tower_offset = tcr.priming ? Vec2f::Zero() : m_wipe_tower_pos;
-    float wipe_tower_rotation = tcr.priming ? 0.f : alpha;
+    float wipe_tower_rotation = tcr.priming ? 0.f : this->get_alpha();
 
     std::string tcr_rotated_gcode = post_process_wipe_tower_moves(tcr, wipe_tower_offset, wipe_tower_rotation);
 
@@ -77,18 +68,13 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
         gcode += gcodegen.retract_and_wipe();
         gcodegen.m_avoid_crossing_perimeters.use_external_mp_once = true;
         const std::string comment{"Travel to a Wipe Tower"};
-        if (gcodegen.m_current_layer_first_position) {
-            if (gcodegen.last_position) {
-                gcode += gcodegen.travel_to(
-                    *gcodegen.last_position, xy_point, ExtrusionRole::Mixed, comment, [](){return "";}
-                );
-            } else {
-                gcode += gcodegen.writer().travel_to_xy(gcodegen.point_to_gcode(xy_point), comment);
-                gcode += gcodegen.writer().get_travel_to_z_gcode(z, comment);
-            }
+        if (gcodegen.last_position) {
+            gcode += gcodegen.travel_to(
+                *gcodegen.last_position, xy_point, ExtrusionRole::Mixed, comment, [](){return "";}
+            );
         } else {
-            const Vec3crd point = to_3d(xy_point, scaled(z));
-            gcode += gcodegen.travel_to_first_position(point, current_z, ExtrusionRole::Mixed, [](){return "";});
+            gcode += gcodegen.writer().travel_to_xy(gcodegen.point_to_gcode(xy_point), comment);
+            gcode += gcodegen.writer().get_travel_to_z_gcode(z, comment);
         }
         gcode += gcodegen.unretract();
     } else {
@@ -145,7 +131,7 @@ std::string WipeTowerIntegration::append_tcr(GCodeGenerator &gcodegen, const Wip
         Geometry::ArcWelder::Path path;
         path.reserve(tcr.wipe_path.size());
         std::transform(tcr.wipe_path.begin(), tcr.wipe_path.end(), std::back_inserter(path),
-            [&gcodegen, &transform_wt_pt](const Vec2f &wipe_pt) { 
+            [&gcodegen, this](const Vec2f &wipe_pt) {
                 return Geometry::ArcWelder::Segment{ wipe_tower_point_to_object_point(gcodegen, transform_wt_pt(wipe_pt)) };
             });
         // Pass to the wipe cache.

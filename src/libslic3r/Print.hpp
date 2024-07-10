@@ -493,6 +493,13 @@ private:
 	WipeTowerData &operator=(const WipeTowerData & /* rhs */) = delete;
 };
 
+bool is_toolchange_required(
+    const bool first_layer,
+    const unsigned last_extruder_id,
+    const unsigned extruder_id,
+    const unsigned current_extruder_id
+);
+
 struct PrintStatistics
 {
     PrintStatistics() { clear(); }
