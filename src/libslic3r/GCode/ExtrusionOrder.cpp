@@ -1,5 +1,5 @@
 #include "ExtrusionOrder.hpp"
-#include "GCode/SmoothPath.hpp"
+#include "libslic3r/GCode/SmoothPath.hpp"
 #include "libslic3r/ShortestPath.hpp"
 
 namespace Slic3r::GCode::ExtrusionOrder {

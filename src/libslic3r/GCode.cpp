@@ -2316,7 +2316,7 @@ struct SmoothPathGenerator {
                 );
             }
 
-            assert(validate_smooth_path(smooth_path, !m_enable_loop_clipping));
+            assert(validate_smooth_path(smooth_path, !enable_loop_clipping));
 
             result = smooth_path;
         } else if (auto multipath = dynamic_cast<const ExtrusionMultiPath *>(extrusion_entity)) {
