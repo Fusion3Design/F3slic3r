@@ -37,6 +37,7 @@ enum ConflictType
     ctModeConflict,
     ctMeaninglessColorChange,
     ctMeaninglessToolChange,
+    ctNotPossibleToolChange,
     ctRedundant
 };
 
