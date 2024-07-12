@@ -13,7 +13,7 @@
 #include <thread>
 #include <mutex>
 #include <memory>
-#include <wx/timer.h>
+#include <ctime>
 
 namespace Slic3r {
 namespace GUI {
@@ -97,6 +97,7 @@ private:
 
     wxTimer*                                m_token_timer;
     wxEvtHandler*                           m_timer_evt_handler;
+    std::time_t                             m_next_token_refresh_at;
 
     void wakeup_session_thread();
     void init_session_thread();

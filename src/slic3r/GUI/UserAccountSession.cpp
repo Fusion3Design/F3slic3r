@@ -123,6 +123,7 @@ void UserAccountSession::init_with_code(const std::string& code, const std::stri
 
 void UserAccountSession::token_success_callback(const std::string& body)
 {
+    BOOST_LOG_TRIVIAL(debug) << "Access token refreshed";
     // Data we need
     std::string access_token, refresh_token, shared_session_key;
     int expires_in = 300;
@@ -176,6 +177,7 @@ void UserAccountSession::token_success_callback(const std::string& body)
 
 void UserAccountSession::code_exchange_fail_callback(const std::string& body)
 {
+    BOOST_LOG_TRIVIAL(debug) << "Access token refresh failed, body: " << body;
     clear();
     cancel_queue();
     // Unlike refresh_fail_callback, no event was triggered so far, do it. (USER_ACCOUNT_ACTION_CODE_FOR_TOKEN does not send events)

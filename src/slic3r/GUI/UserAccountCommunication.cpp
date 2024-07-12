@@ -512,6 +512,14 @@ void UserAccountCommunication::on_activate_window(bool active)
         std::lock_guard<std::mutex> lck(m_thread_stop_mutex);
         m_window_is_active = active;
     }
+    auto now = std::time(nullptr);
+    BOOST_LOG_TRIVIAL(info) << "UserAccountCommunication activate: active " << active;
+    if (active && m_next_token_refresh_at - now < 60) {
+        BOOST_LOG_TRIVIAL(info) << "Enqueue access token refresh on activation";
+        enqueue_refresh();
+        m_token_timer->Stop();
+    }
+
 }
 
 void UserAccountCommunication::wakeup_session_thread()
@@ -527,12 +535,16 @@ void UserAccountCommunication::set_refresh_time(int seconds)
 {
     assert(m_token_timer);
     m_token_timer->Stop();
-    int miliseconds = std::max(seconds * 1000 - 66666, 60000);
-    m_token_timer->StartOnce(miliseconds);
+    const auto prior_expiration_secs = 5 * 60;
+    int milliseconds = std::max((seconds - prior_expiration_secs) * 1000, 60000);
+    m_next_token_refresh_at = std::time(nullptr) + milliseconds / 1000;
+    m_token_timer->StartOnce(milliseconds);
 }
+
 
 void UserAccountCommunication::on_token_timer(wxTimerEvent& evt)
 {
+    BOOST_LOG_TRIVIAL(info) << "UserAccountCommunication: Token refresh timer fired";
     enqueue_refresh();
 }
 void UserAccountCommunication::on_polling_timer(wxTimerEvent& evt)

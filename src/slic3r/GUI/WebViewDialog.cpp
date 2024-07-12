@@ -636,6 +636,30 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
             window.__access_token_version = 0;
         )",
 #else
+//        R"(
+//        console.log('Preparing login');
+//        function errorHandler(err) {
+//            const msg = {
+//                action: 'ERROR',
+//                error: JSON.stringify(err),
+//                critical: false
+//            };
+//            console.error('Login error occurred', msg);
+//            window._prusaSlicer.postMessage(msg);
+//        };
+//        window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
+//            .then(function (resp) {
+//                console.log('Login resp', resp);
+//                resp.text()
+//                    .then(function (json) { console.log('Login resp body', json); return json; })
+//                    .then(function (body) {
+//                        if (resp.status >= 400) errorHandler({status: resp.status, body});
+//                    });
+//            })
+//            .catch(function (err){
+//                errorHandler({message: err.message, stack: err.stack});
+//            });
+//        )",
         R"(
         console.log('Preparing login');
         function errorHandler(err) {
@@ -647,18 +671,46 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
             console.error('Login error occurred', msg);
             window._prusaSlicer.postMessage(msg);
         };
-        window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
-            .then(function (resp) {
-                console.log('Login resp', resp);
-                resp.text()
-                    .then(function (json) { console.log('Login resp body', json); return json; })
-                    .then(function (body) {
-                        if (resp.status >= 400) errorHandler({status: resp.status, body});
-                    });
-            })
-            .catch(function (err){
-                errorHandler({message: err.message, stack: err.stack});
+
+        function delay(ms) {
+            return new Promise((resolve, reject) => {
+                setTimeout(resolve, ms);
             });
+        }
+
+        (async () => {
+            let retry = false;
+            let backoff = 1000;
+            const maxBackoff = 64000;
+            do {
+
+                let error = false;
+
+                try {
+                    console.log('Slicer Login request');
+                    let resp = await fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}});
+                    let body = await resp.text();
+                    console.log('Slicer Login resp', resp.status, body);
+                    if (resp.status >= 500) {
+                        retry = true;
+                    } else {
+                        retry = false;
+                        if (resp.status >= 400)
+                            errorHandler({status: resp.status, body});
+                    }
+                } catch (e) {
+                    console.error('Slicer Login failed', e.toString());
+                    retry = true;
+                }
+
+                if (retry) {
+                    await delay(backoff + 1000 * Math.random());
+                    if (backoff < maxBackoff) {
+                        backoff *= 2;
+                    }
+                }
+            } while (retry);
+       })();
         )",
 #endif
         access_token
@@ -691,6 +743,7 @@ void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
 }
 void ConnectWebViewPanel::on_navigation_request(wxWebViewEvent &evt) 
 {
+    BOOST_LOG_TRIVIAL(debug) << "Navigation requested to: " << into_u8(evt.GetURL());
     if (evt.GetURL() == m_default_url) {
         m_reached_default_url = true;
         return;
