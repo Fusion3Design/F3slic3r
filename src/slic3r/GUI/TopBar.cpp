@@ -368,7 +368,7 @@ void TopBarItemsCtrl::UpdateSearch(const wxString& search)
 void TopBarItemsCtrl::update_margins()
 {
     int em = em_unit(this);
-    m_btn_margin  = std::lround(0.9 * em);
+    m_btn_margin  = std::lround(0.5 * em);
 }
 
 wxPoint TopBarItemsCtrl::ButtonWithPopup::get_popup_pos()
@@ -436,7 +436,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     this->SetSizer(m_sizer);
 
     wxBoxSizer* left_sizer = new wxBoxSizer(wxHORIZONTAL);
-
+/*
 #ifdef __APPLE__
     auto logo = new wxStaticBitmap(this, wxID_ANY, *get_bmp_bundle(wxGetApp().logo_name(), 40));
     left_sizer->Add(logo, 0, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
@@ -449,7 +449,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
         m_menus->Popup(this, &m_menus->main, m_menu_btn->get_popup_pos());
     });
 #endif
-
+*/
     if (m_cb_settings_btn) {
         m_settings_btn = new Button(this, _L("Settings"/*, "settings"*/));
         m_settings_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) { m_cb_settings_btn(); });
