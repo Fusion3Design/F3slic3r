@@ -5555,6 +5555,8 @@ void Plater::export_stl_obj(bool extended, bool selection_only)
             TriangleMesh vols_mesh(mesh);
             mesh = TriangleMesh();
             for (const ModelInstance* i : mo.instances) {
+                if (!i->is_printable())
+                    continue;
                 TriangleMesh m = vols_mesh;
                 m.transform(i->get_matrix(), true);
                 mesh.merge(m);
