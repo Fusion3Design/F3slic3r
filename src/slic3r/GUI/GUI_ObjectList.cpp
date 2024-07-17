@@ -228,6 +228,15 @@ ObjectList::ObjectList(wxWindow* parent) :
         set_tooltip_for_item(this->get_mouse_position_in_control());
         event.Skip();
     });
+
+    GetMainWindow()->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent& event) {
+        m_mouse_left_down = true;
+        event.Skip();
+    });
+    GetMainWindow()->Bind(wxEVT_LEFT_UP, [this](wxMouseEvent& event) {
+        m_mouse_left_down = false;
+        event.Skip();
+    });
 #endif //__WXMSW__
 
     Bind(wxEVT_DATAVIEW_ITEM_CONTEXT_MENU,  &ObjectList::OnContextMenu,     this);
@@ -1212,6 +1221,15 @@ void ObjectList::key_event(wxKeyEvent& event)
 
 void ObjectList::OnBeginDrag(wxDataViewEvent &event)
 {
+#ifdef __WXMSW__
+    if (!m_mouse_left_down) {
+        event.Veto();
+        return;
+    }
+    // Invalidate LeftDown flag emmidiately to avoid its unexpected using next time.
+    m_mouse_left_down = false;
+#endif // __WXMSW__
+
     if (m_is_editing_started)
         m_is_editing_started = false;
 #ifdef __WXGTK__
