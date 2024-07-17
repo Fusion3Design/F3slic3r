@@ -292,14 +292,14 @@ void GCodeProcessor::TimeMachine::calculate_time(GCodeProcessorResult& result, P
 
     assert(keep_last_n_blocks <= blocks.size());
 
-    // forward_pass
-    for (size_t i = 0; i + 1 < blocks.size(); ++i) {
-        planner_forward_pass_kernel(blocks[i], blocks[i + 1]);
-    }
-
     // reverse_pass
     for (int i = static_cast<int>(blocks.size()) - 1; i > 0; --i) {
         planner_reverse_pass_kernel(blocks[i - 1], blocks[i]);
+    }
+
+    // forward_pass
+    for (size_t i = 0; i + 1 < blocks.size(); ++i) {
+        planner_forward_pass_kernel(blocks[i], blocks[i + 1]);
     }
 
     recalculate_trapezoids(blocks);
