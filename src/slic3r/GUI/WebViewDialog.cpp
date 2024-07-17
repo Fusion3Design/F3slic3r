@@ -1311,14 +1311,27 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
 
     const std::string uuid = wxGetApp().plater()->get_user_account()->get_current_printer_uuid_from_connect(printer_model_serialized);
     const std::string filename = wxGetApp().plater()->get_upload_filename();
-    const std::string request = GUI::format(
+    std::string request = GUI::format(
         "{"
         "\"printerUuid\": \"%4%\", "
         "\"printerModel\": \"%3%\", "
         "\"nozzleDiameter\": %2%, "
         "\"material\": \"%1%\", "
-        "\"filename\": \"%5%\" "
-        "}", filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid, filename);
+        "\"filename\": \"%5%\", "
+        "\"config_options\": {"
+        , filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid, filename);
+
+    // std::map<t_config_option_key, std::unique_ptr<ConfigOption>>::const_iterator
+    for (auto it = selected_printer.config.cbegin(); it != selected_printer.config.cend(); ++it) {
+        std::string value = selected_printer.config.option(it->first)->serialize();
+        if (value.find('\"') != std::string::npos) {
+            continue;
+        }
+        request += it == selected_printer.config.cbegin() ? "" : ",";
+        request += GUI::format("\"%1%\": \"%2%\"", it->first, value);
+    }
+
+    request += "}}";
 
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.requestCompatiblePrinter(%1%)", request);
     run_script(script);
