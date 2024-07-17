@@ -201,6 +201,10 @@ bool Polyline::is_straight() const
     return true;
 }
 
+BoundingBox ThickPolyline::bounding_box() const {
+    return BoundingBox(this->points);
+}
+
 BoundingBox get_extents(const Polyline &polyline)
 {
     return polyline.bounding_box();
@@ -295,6 +299,60 @@ std::pair<int, Point> foot_pt(const Points &polyline, const Point &pt)
         prev = *it;
     }
     return std::make_pair(int(it_proj - polyline.begin()) - 1, foot_pt_min);
+}
+
+size_t total_lines_count(const ThickPolylines &thick_polylines) {
+    size_t lines_cnt = 0;
+    for (const ThickPolyline &thick_polyline : thick_polylines) {
+        if (thick_polyline.points.size() > 1) {
+            lines_cnt += thick_polyline.points.size() - 1;
+        }
+    }
+
+    return lines_cnt;
+}
+
+Lines to_lines(const ThickPolyline &thick_polyline) {
+    Lines lines;
+    if (thick_polyline.points.size() >= 2) {
+        lines.reserve(thick_polyline.points.size() - 1);
+
+        for (Points::const_iterator it = thick_polyline.points.begin(); it != thick_polyline.points.end() - 1; ++it) {
+            lines.emplace_back(*it, *(it + 1));
+        }
+    }
+
+    return lines;
+}
+
+Lines to_lines(const ThickPolylines &thick_polylines) {
+    const size_t lines_cnt = total_lines_count(thick_polylines);
+
+    Lines lines;
+    lines.reserve(lines_cnt);
+    for (const ThickPolyline &thick_polyline : thick_polylines) {
+        for (Points::const_iterator it = thick_polyline.points.begin(); it != thick_polyline.points.end() - 1; ++it) {
+            lines.emplace_back(*it, *(it + 1));
+        }
+    }
+
+    return lines;
+}
+
+BoundingBox get_extents(const ThickPolyline &thick_polyline) {
+    return thick_polyline.bounding_box();
+}
+
+BoundingBox get_extents(const ThickPolylines &thick_polylines) {
+    BoundingBox bbox;
+    if (!thick_polylines.empty()) {
+        bbox = thick_polylines.front().bounding_box();
+        for (size_t i = 1; i < thick_polylines.size(); ++i) {
+            bbox.merge(thick_polylines[i].points);
+        }
+    }
+
+    return bbox;
 }
 
 ThickLines ThickPolyline::thicklines() const

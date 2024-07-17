@@ -194,7 +194,7 @@ template<class L> bool intersection(const L &l1, const L &l2, Vec<Dim<L>, Scalar
 class Line
 {
 public:
-    Line() {}
+    Line() = default;
     Line(const Point& _a, const Point& _b) : a(_a), b(_b) {}
     explicit operator Lines() const { Lines lines; lines.emplace_back(*this); return lines; }
     void   scale(double factor) { this->a *= factor; this->b *= factor; }
