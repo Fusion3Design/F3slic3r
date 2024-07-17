@@ -3926,7 +3926,7 @@ bool GUI_App::select_printer_from_connect(const std::string& msg)
     }
     std::string nozzle = UserAccountUtils::get_nozzle_from_json(ptree);
     std::map<std::string, std::string> config_options_to_match; 
-    //UserAccountUtils::fill_config_options_from_json(ptree, config_options_to_match);
+    UserAccountUtils::fill_config_options_from_json(ptree, config_options_to_match);
     BOOST_LOG_TRIVIAL(info) << "Select printer from Connect. Model: " << model_name << "nozzle: " << nozzle;
     // select printer
     const Preset* printer_preset = find_preset_by_nozzle_and_options(preset_bundle->printers, model_name, nozzle, config_options_to_match);
