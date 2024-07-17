@@ -49,8 +49,15 @@ static bool behavior(ImGuiID id, const ImRect& region,
     if (ImGui::ItemHoverable(mouse_wheel_responsive_region, id)) {
         if (change_on_mouse_move)
             v_new = v_min + (ImS32)(v_range * mouse_pos_ratio + 0.5f);
-        else 
-            v_new = ImClamp(*out_value + (ImS32)(context.IO.MouseWheel/* * accer*/), v_min, v_max);
+        else {
+            float mw = context.IO.MouseWheel;
+#if defined(__APPLE__)
+            if (mw > 0.f) mw = 1.f;
+            if (mw < 0.f) mw = -1.f;
+#endif
+            const float accer = context.IO.KeyCtrl || context.IO.KeyShift ? 5.f : 1.f;
+            v_new = ImClamp(*out_value + (ImS32)(mw * accer), v_min, v_max);
+        }
     }
 
     // drag behavior

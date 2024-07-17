@@ -20,7 +20,6 @@
 #include "I18N.hpp"
 #include "ImGuiWrapper.hpp"
 #include "libslic3r/libslic3r.h"
-#include "slic3r/GUI/GUI.hpp"      // GUI::shortkey_ctrl_prefix()
 #include "slic3r/GUI/ImGuiDoubleSlider.hpp"
 #include "slic3r/GUI/ImGuiPureWrap.hpp"
 #include "slic3r/GUI/RulerForDoubleSlider.hpp"
@@ -1146,8 +1145,7 @@ std::string DSForLayers::get_tooltip(int tick/*=-1*/)
                   _u8L("Add color change - Left click")  ) + " " +
                   _u8L("or press \"+\" key") + "\n" + (
                      is_osx ? 
-                  // TRN %1% is shortkey Ctrl prefix in respect to the OS
-                  format(_u8L("Add another code - %1% Left click"), Slic3r::GUI::shortkey_ctrl_prefix()) :
+                  _u8L("Add another code - Ctrl + Left click") :
                   _u8L("Add another code - Right click") );
     }
 
@@ -1212,8 +1210,7 @@ std::string DSForLayers::get_tooltip(int tick/*=-1*/)
         if (m_focus == fiActionIcon)
         tooltip += "\n\n" + _u8L("Delete tick mark - Left click or press \"-\" key") + "\n" + (
                       is_osx ? 
-                   // TRN %1% is shortkey Ctrl prefix in respect to the OS
-                   format(_u8L("Edit tick mark - %1% Left click"), Slic3r::GUI::shortkey_ctrl_prefix()) :
+                   _u8L("Edit tick mark - Ctrl + Left click") :
                    _u8L("Edit tick mark - Right click") );
     }
 
