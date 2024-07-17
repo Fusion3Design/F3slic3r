@@ -2292,7 +2292,7 @@ struct SmoothPathGenerator {
 
         if (auto loop = dynamic_cast<const ExtrusionLoop *>(extrusion_entity)) {
             Point seam_point = previous_position ? previous_position->local_point : Point::Zero();
-            if (loop->role().is_perimeter() && layer != nullptr) {
+            if (!config.spiral_vase && loop->role().is_perimeter() && layer != nullptr) {
                 seam_point = this->seam_placer.place_seam(layer, *loop, seam_point);
             }
 
