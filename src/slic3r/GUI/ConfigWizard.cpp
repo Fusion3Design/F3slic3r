@@ -2877,13 +2877,9 @@ void ConfigWizard::priv::create_vendor_printers_page(const std::string& repo_id,
         // single vendor repository
         if (pageFFF) {
             pages_fff.emplace_back(pageFFF);
-            if (!pageFFF->any_selected())
-                pageFFF->printer_pickers[0]->select_one(0, true);// select first printer for them
         }
         if (pageSLA) {
             pages_msla.emplace_back(pageSLA);
-            if (!pageSLA->any_selected())
-                pageSLA->printer_pickers[0]->select_one(0, true);// select first printer for them
         }
     }
     if (pageFFF || pageSLA)
