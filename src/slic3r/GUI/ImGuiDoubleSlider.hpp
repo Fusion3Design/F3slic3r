@@ -90,6 +90,7 @@ public:
 
     bool    IsRClickOnThumb() const     { return m_rclick_on_selected_thumb; }
     bool    IsLClickOnThumb();
+    bool    IsLClickOnHoveredPos();
 
     bool    is_horizontal() const       { return !(m_flags & ImGuiSliderFlags_Vertical); }
     bool    render();
@@ -97,6 +98,9 @@ public:
     std::string get_label(int pos) const;
     float   rounding() const            { return m_draw_opts.rounding(); }
     ImVec2  left_dummy_sz() const       { return m_draw_opts.text_dummy_sz() + m_draw_opts.text_padding(); }
+
+    void    SetHoveredRegion(ImRect region) { m_hovered_region = region; }
+    void    InvalidateHoveredRegion()       { m_hovered_region = ImRect(0.f, 0.f, 0.f, 0.f); }
 
     void    set_get_label_on_move_cb(std::function<std::string(int)> cb)                    { m_cb_get_label_on_move = cb; }
     void    set_get_label_cb(std::function<std::string(int)> cb)                            { m_cb_get_label = cb; }
@@ -148,8 +152,10 @@ private:
 
     bool            m_rclick_on_selected_thumb{ false };
     bool            m_lclick_on_selected_thumb{ false };
+    bool            m_lclick_on_hovered_pos   { false };
     bool            m_suppress_process_behavior{ false };
     ImRect          m_active_thumb;
+    ImRect          m_hovered_region;
 
     bool            m_draw_lower_thumb{ true };
     bool            m_combine_thumbs  { false };

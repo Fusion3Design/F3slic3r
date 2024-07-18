@@ -207,6 +207,7 @@ void DSForLayers::draw_ticks(const ImRect& slideable_region)
     };
 
     std::set<TickCode>::const_iterator tick_it = m_ticks.ticks.begin();
+    bool is_hovered_tick = false;
     while (tick_it != m_ticks.ticks.end())
     {
         float tick_pos = get_tick_pos(tick_it->tick);
@@ -221,11 +222,17 @@ void DSForLayers::draw_ticks(const ImRect& slideable_region)
                 m_focus = fiTick;
                 ImGuiPureWrap::tooltip(get_tooltip(tick_it->tick), ImGui::GetFontSize() * 20.f);
             }
+            is_hovered_tick = true;
+            m_ctrl.SetHoveredRegion(tick_hover_box);
+            if (m_ctrl.IsLClickOnHoveredPos())
+                m_ctrl.IsActiveHigherThumb() ? SetHigherPos(tick_it->tick) : SetLowerPos(tick_it->tick);
             break;
         }
         ++tick_it;
     }
-     
+    if (!is_hovered_tick)
+        m_ctrl.InvalidateHoveredRegion();
+
     auto active_tick_it = m_ticks.ticks.find(TickCode{ m_ctrl.GetActivePos() });
 
     tick_it = m_ticks.ticks.begin();
