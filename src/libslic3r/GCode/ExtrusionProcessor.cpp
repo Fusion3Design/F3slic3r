@@ -215,7 +215,8 @@ OverhangSpeeds calculate_overhang_speed(const ExtrusionAttributes  &attributes,
                                         const FullPrintConfig      &config,
                                         const size_t                extruder_id,
                                         const float                 external_perimeter_reference_speed,
-                                        const float                 default_speed)
+                                        const float                 default_speed,
+                                        const std::optional<float> &current_fan_speed)
 {
     assert(attributes.overhang_attributes.has_value());
 
@@ -249,6 +250,9 @@ OverhangSpeeds calculate_overhang_speed(const ExtrusionAttributes  &attributes,
 
     if (!config.enable_dynamic_fan_speeds.get_at(extruder_id)) {
         overhang_speeds.fan_speed = -1;
+    } else if (current_fan_speed.has_value() && (fan_speed < *current_fan_speed) && (*current_fan_speed - fan_speed) <= MIN_FAN_SPEED_NEGATIVE_CHANGE_TO_EMIT) {
+        // Always allow the fan speed to be increased without any hysteresis, but the speed will be decreased only when it exceeds a limit for minimum change.
+        overhang_speeds.fan_speed = *current_fan_speed;
     }
 
     return overhang_speeds;

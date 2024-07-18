@@ -44,6 +44,10 @@ class Linef;
 
 namespace Slic3r::ExtrusionProcessor {
 
+// Minimum decrease of the fan speed in percents that will be emitted into g-code.
+// Decreases below this limit will be omitted to not overflow the g-code with fan speed changes.
+const constexpr float MIN_FAN_SPEED_NEGATIVE_CHANGE_TO_EMIT = 3.f;
+
 struct ExtendedPoint
 {
     Vec2d position;
@@ -276,7 +280,8 @@ OverhangSpeeds calculate_overhang_speed(const ExtrusionAttributes  &attributes,
                                         const FullPrintConfig      &config,
                                         size_t                      extruder_id,
                                         float                       external_perimeter_reference_speed,
-                                        float                       default_speed);
+                                        float                       default_speed,
+                                        const std::optional<float> &current_fan_speed);
 
 } // namespace Slic3r::ExtrusionProcessor
 
