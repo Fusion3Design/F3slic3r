@@ -204,6 +204,7 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
     }
 
     m_label = text;
+    Refresh();
     GetParent()->Layout();
 }
 
@@ -421,7 +422,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
     if (m_cb_settings_btn) {
         m_settings_btn = new Button(this, _L("Settings"/*, "settings"*/));
         m_settings_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& event) { m_cb_settings_btn(); });
-        left_sizer->Add(m_settings_btn, 0, wxALIGN_CENTER_VERTICAL);
+        left_sizer->Add(m_settings_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, m_btn_margin);
     }
 
     m_buttons_sizer = new wxFlexGridSizer(1, m_btn_margin, m_btn_margin);
