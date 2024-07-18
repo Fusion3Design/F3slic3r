@@ -1370,6 +1370,12 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBools { false });
 
+    def = this->add("filament_abrasive", coBools);
+    def->label = L("Abrasive material");
+    def->tooltip = L("TODO");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBools { false });
+
     def = this->add("filament_cost", coFloats);
     def->label = L("Cost");
     def->tooltip = L("Enter your filament cost per kg here. This is only for statistical information.");
@@ -2550,6 +2556,18 @@ void PrintConfigDef::init_fff_params()
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBools{false});
 
+    def = this->add("nozzle_high_flow", coBools);
+    def->label = L("High flow nozzle");
+    def->tooltip = L("TODO");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBools{false});
+
+    def = this->add("nozzle_high_temperature", coBools);
+    def->label = L("High temperature nozzle");
+    def->tooltip = L("TODO");
+    def->mode = comExpert;
+    def->set_default_value(new ConfigOptionBools{false});
+
     def = this->add("retract_lift", coFloats);
     def->label = L("Lift height");
     def->tooltip = L("Lift height applied before travel.");
@@ -3715,7 +3733,7 @@ void PrintConfigDef::init_extruder_option_keys()
         "retract_before_wipe", "retract_restart_extra", "retract_before_travel", "wipe",
         "travel_slope", "travel_max_lift", "travel_ramping_lift", "travel_lift_before_obstacle",
         "retract_layer_change", "retract_length_toolchange", "retract_restart_extra_toolchange", "extruder_colour",
-        "default_filament_profile"
+        "default_filament_profile", "nozzle_high_flow", "nozzle_high_temperature"
     };
 
     m_extruder_retract_keys = {
