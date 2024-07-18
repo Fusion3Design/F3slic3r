@@ -215,7 +215,7 @@ BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimet
             )};
 
             if (distance > max_bb_distance) {
-                Polygons expanded_extrusion{expand(external_perimeter.polygon, external_perimeter.width / 2.0)};
+                Polygons expanded_extrusion{expand(external_perimeter.polygon, Slic3r::scaled(external_perimeter.width / 2.0))};
                 if (!expanded_extrusion.empty()) {
                     return BoundedPolygon{
                         expanded_extrusion.front(), expanded_extrusion.front().bounding_box(), external_perimeter.polygon.is_clockwise(), 0.0
