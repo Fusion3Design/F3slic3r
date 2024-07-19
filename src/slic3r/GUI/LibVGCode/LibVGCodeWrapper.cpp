@@ -662,6 +662,7 @@ static void convert_object_to_vertices(const Slic3r::PrintObject& object, const 
     Slic3r::sort_remove_duplicates(data.layers_zs);
 
     for (const Slic3r::Layer* layer : layers) {
+        const size_t old_vertices_count = data.vertices.size();
         const float layer_z = static_cast<float>(layer->print_z);
         const auto it = std::find(data.layers_zs.begin(), data.layers_zs.end(), layer_z);
         assert(it != data.layers_zs.end());
@@ -712,6 +713,10 @@ static void convert_object_to_vertices(const Slic3r::PrintObject& object, const 
                 }
             }
         }
+        // filter out empty layers
+        const size_t new_vertices_count = data.vertices.size();
+        if (new_vertices_count == old_vertices_count)
+            data.layers_zs.erase(data.layers_zs.begin() + layer_id);
     }
 }
 
