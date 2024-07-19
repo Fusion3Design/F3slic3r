@@ -2,7 +2,7 @@
 #define slic3r_TopBar_hpp_
 
 #include <wx/bookctrl.h>
-#include "wxExtensions.hpp"
+#include <wx/panel.h>
 #include "Widgets/TextInput.hpp"
 
 class TopBarMenus;
