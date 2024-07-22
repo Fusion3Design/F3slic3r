@@ -734,6 +734,7 @@ void ConnectWebViewPanel::on_user_token(UserAccountSuccessEvent& e)
     //m_browser->AddUserScript(javascript, wxWEBVIEW_INJECT_AT_DOCUMENT_END);
     BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript << "\n";
     m_browser->RunScriptAsync(javascript);
+    resend_config();
 }
 
 void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
