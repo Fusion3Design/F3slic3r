@@ -1311,6 +1311,8 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
 
     const std::string uuid = wxGetApp().plater()->get_user_account()->get_current_printer_uuid_from_connect(printer_model_serialized);
     const std::string filename = wxGetApp().plater()->get_upload_filename();
+    //filament_abrasive
+    const std::string filament_abrasive = selected_filament.config.option("filament_abrasive")->serialize();
     std::string request = GUI::format(
         "{"
         "\"printerUuid\": \"%4%\", "
@@ -1318,8 +1320,9 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
         "\"nozzleDiameter\": %2%, "
         "\"material\": \"%1%\", "
         "\"filename\": \"%5%\", "
+        "\"filamentAbrasive\": \"%6%\", "
         "\"config_options\": {"
-        , filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid, filename);
+        , filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid, filename, filament_abrasive);
 
     // std::map<t_config_option_key, std::unique_ptr<ConfigOption>>::const_iterator
     for (auto it = selected_printer.config.cbegin(); it != selected_printer.config.cend(); ++it) {
