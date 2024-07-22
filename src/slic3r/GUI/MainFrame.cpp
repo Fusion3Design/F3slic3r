@@ -188,8 +188,8 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_S
     wxAcceleratorEntry entries[100];
 
     int id = 0;
-    for (const auto* entry : entries_cache)
-        entries[id++].Set(entry->GetFlags(), entry->GetKeyCode(), entry->GetMenuItem()->GetId());
+    //for (const auto* entry : entries_cache)
+    //    entries[id++].Set(entry->GetFlags(), entry->GetKeyCode(), entry->GetMenuItem()->GetId());
 
 #if _WIN32
     // This is needed on Windows to fake the CTRL+# of the window menu when using the numpad
@@ -1624,7 +1624,7 @@ void MainFrame::init_menubar_as_editor()
     // Help menu
     auto helpMenu = generate_help_menu();
 
-#ifndef __APPLE__
+#if 0//ndef__APPLE__
     // append menus for Menu button from TopBar
 
     m_bar_menus.AppendMenuItem(fileMenu, _L("&File"));
@@ -1660,9 +1660,11 @@ void MainFrame::init_menubar_as_editor()
 
     SetMenuBar(m_menubar);
 
+#ifdef __APPLE__
     init_macos_application_menu(m_menubar, this);
-
 #endif // __APPLE__
+
+#endif
 
     if (plater()->printer_technology() == ptSLA)
         update_menubar();
