@@ -123,6 +123,7 @@
 #include "Gizmos/GLGizmoCut.hpp"
 #include "FileArchiveDialog.hpp"
 #include "UserAccount.hpp"
+#include "UserAccountUtils.hpp"
 #include "DesktopIntegrationDialog.hpp"
 #include "WebViewDialog.hpp"
 #include "PresetArchiveDatabase.hpp"
@@ -2059,6 +2060,22 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
     if (full_config.has("binary_gcode")) // needed for SLA
         full_config.set("binary_gcode", bool(full_config.opt_bool("binary_gcode") & wxGetApp().app_config->get_bool("use_binary_gcode_when_supported")));
 
+    const Preset &selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
+    std::string printer_model_serialized = full_config.option("printer_model")->serialize();
+    std::string vendor_repo_prefix;
+    if (selected_printer.vendor) {
+        vendor_repo_prefix = selected_printer.vendor->repo_prefix;
+    } else if (std::string inherits = selected_printer.inherits(); !inherits.empty()) {
+        const Preset *parent = wxGetApp().preset_bundle->printers.find_preset(inherits);
+        if (parent && parent->vendor) {
+            vendor_repo_prefix = parent->vendor->repo_prefix;
+        }
+    }
+    if (printer_model_serialized.find(vendor_repo_prefix) == 0) {
+        printer_model_serialized = printer_model_serialized.substr(vendor_repo_prefix.size());
+        boost::trim_left(printer_model_serialized);
+        full_config.set("printer_model", printer_model_serialized);
+    }
     // If the update_background_process() was not called by the timer, kill the timer,
     // so the update_restart_background_process() will not be called again in vain.
     background_process_timer.Stop();
@@ -3648,7 +3665,9 @@ bool Plater::priv::can_show_upload_to_connect() const
             vendor_id = parent->vendor->id;
         }
     }    
-    return vendor_id.compare(0, 5, "Prusa") == 0;
+    // Upload to Connect should show only for prusa printers
+    // Some vendors might have prefixed name due to repository id.
+    return vendor_id.find("Prusa") != std::string::npos;
 } 
 
 void Plater::priv::show_action_buttons(const bool ready_to_slice_) const
@@ -6022,10 +6041,11 @@ void Plater::connect_gcode()
 */
     const Preset* selected_printer_preset = &wxGetApp().preset_bundle->printers.get_selected_preset();
 
-    const std::string filename = p->user_account->get_keyword_from_json(dialog_msg, "filename");
-    const std::string team_id = p->user_account->get_keyword_from_json(dialog_msg, "team_id");
+     boost::property_tree::ptree ptree;
+    const std::string filename = UserAccountUtils::get_keyword_from_json(ptree, dialog_msg, "filename");
+     const std::string team_id = UserAccountUtils::get_keyword_from_json(ptree, dialog_msg, "team_id");
 
-    std::string data_subtree = p->user_account->get_print_data_from_json(dialog_msg, "data");
+    std::string data_subtree = UserAccountUtils::get_print_data_from_json(dialog_msg, "data");
     if (filename.empty() || team_id.empty() || data_subtree.empty()) {
         std::string msg = _u8L("Failed to read response from Prusa Connect server. Upload is cancelled.");
         BOOST_LOG_TRIVIAL(error) << msg;

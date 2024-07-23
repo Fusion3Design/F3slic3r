@@ -165,6 +165,13 @@ VendorProfile VendorProfile::from_ini(const ptree &tree, const boost::filesystem
         res.repo_id = "";
     }
 
+    const auto repo_prefix = vendor_section.find("repo_prefix");
+    if (repo_prefix != vendor_section.not_found()) {
+         res.repo_prefix = repo_prefix->second.data();
+    } else {
+        res.repo_prefix = "";
+    }
+
     if (! load_all) {
         return res;
     }

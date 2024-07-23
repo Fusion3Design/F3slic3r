@@ -23,6 +23,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/UserAccountCommunication.hpp
     GUI/UserAccountSession.cpp
     GUI/UserAccountSession.hpp
+    GUI/UserAccountUtils.cpp
+    GUI/UserAccountUtils.hpp
     GUI/UserAccount.cpp
     GUI/UserAccount.hpp
     GUI/WebViewDialog.cpp

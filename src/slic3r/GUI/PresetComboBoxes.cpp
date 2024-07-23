@@ -970,7 +970,22 @@ static std::string get_connect_state_suffix_for_printer(const Preset& printer_pr
         !printer_state_map.empty()) {
         
         for (const auto& [printer_model_nozzle_pair, states] : printer_state_map) {
-            if (printer_model_nozzle_pair.first == printer_preset.config.opt_string("printer_model")
+            std::string printer_model = printer_preset.config.opt_string("printer_model");
+            std::string vendor_repo_prefix;
+            if (printer_preset.vendor) {
+                vendor_repo_prefix = printer_preset.vendor->repo_prefix;
+            } else if (std::string inherits = printer_preset.inherits(); !inherits.empty()) {
+                const Preset *parent = wxGetApp().preset_bundle->printers.find_preset(inherits);
+                if (parent && parent->vendor) {
+                    vendor_repo_prefix = parent->vendor->repo_prefix;
+                }
+            }
+            if (printer_model.find(vendor_repo_prefix) == 0) {
+                printer_model = printer_model.substr(vendor_repo_prefix.size());
+                boost::trim_left(printer_model);
+            }
+
+            if (printer_model_nozzle_pair.first == printer_model
                 && printer_model_nozzle_pair.second == printer_preset.config.opt_string("printer_variant")) 
             {
                 PrinterStatesCount states_cnt = get_printe_states_count(states);
@@ -1002,7 +1017,23 @@ static bool fill_data_to_connect_info_line(  const Preset& printer_preset,
         !printer_state_map.empty()) {
 
         for (const auto& [printer_model_nozzle_pair, states] : printer_state_map) {
-            if (printer_model_nozzle_pair.first == printer_preset.config.opt_string("printer_model")
+            // get printer_model without repo prefix
+            std::string printer_model = printer_preset.config.opt_string("printer_model");
+            std::string vendor_repo_prefix;
+            if (printer_preset.vendor) {
+                vendor_repo_prefix = printer_preset.vendor->repo_prefix;
+            } else if (std::string inherits = printer_preset.inherits(); !inherits.empty()) {
+                const Preset *parent = wxGetApp().preset_bundle->printers.find_preset(inherits);
+                if (parent && parent->vendor) {
+                    vendor_repo_prefix = parent->vendor->repo_prefix;
+                }
+            }
+            if (printer_model.find(vendor_repo_prefix) == 0) {
+                printer_model = printer_model.substr(vendor_repo_prefix.size());
+                boost::trim_left(printer_model);
+            }
+
+            if (printer_model_nozzle_pair.first == printer_model
                 &&  printer_model_nozzle_pair.second == printer_preset.config.opt_string("printer_variant")) 
             {
                 PrinterStatesCount states_cnt = get_printe_states_count(states);

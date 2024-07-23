@@ -101,6 +101,7 @@
 #include "PhysicalPrinterDialog.hpp"
 #include "WifiConfigDialog.hpp"
 #include "UserAccount.hpp"
+#include "UserAccountUtils.hpp"
 #include "WebViewDialog.hpp"
 #include "LoginDialog.hpp" // IWYU pragma: keep
 #include "PresetArchiveDatabase.hpp"
@@ -3823,14 +3824,98 @@ bool GUI_App::select_printer_preset(const Preset* preset)
     return is_installed;
 }
 
+namespace {
+const Preset* find_preset_by_nozzle_and_options(
+    const PrinterPresetCollection& collection
+    , const std::string& model_id
+    , const std::string& nozzle
+    , const std::map<std::string
+    , std::string>& options) 
+{
+    // find all matching presets when repo prefix is ommited
+    std::vector<const Preset*> results;
+    for (const Preset &preset : collection) {
+        // trim repo prefix
+        std::string printer_model = preset.config.opt_string("printer_model");
+        std::string vendor_repo_prefix;
+        if (preset.vendor) {
+            vendor_repo_prefix = preset.vendor->repo_prefix;
+        } else if (std::string inherits = preset.inherits(); !inherits.empty()) {
+            const Preset *parent = wxGetApp().preset_bundle->printers.find_preset(inherits);
+            if (parent && parent->vendor) {
+                vendor_repo_prefix = parent->vendor->repo_prefix;
+            }
+        }
+        if (printer_model.find(vendor_repo_prefix) == 0) {
+            printer_model = printer_model.substr(vendor_repo_prefix.size()
+            );
+            boost::trim_left(printer_model);
+        }
+       
+        if (!preset.is_system || printer_model != model_id)
+            continue;
+        // nozzle diameter
+        if (!nozzle.empty() && preset.config.has("nozzle_diameter")) {
+            double nozzle_diameter = static_cast<const ConfigOptionFloats*>(preset.config.option("nozzle_diameter"))->values[0];
+            std::string nozzle_diameter_serialized = into_u8(double_to_string(nozzle_diameter));
+            if (size_t pos = nozzle_diameter_serialized.find(",") != std::string::npos) {
+                nozzle_diameter_serialized.replace(pos, 1, 1, '.');
+            }
+            if (nozzle != nozzle_diameter_serialized) {
+                continue;
+            }
+        }
+        // other options
+        bool failed = false;
+        for (const auto& opt : options) {
+            if (!preset.config.has(opt.first)) {
+                failed = true;
+                break;
+            }
+            if (preset.config.option(opt.first)->serialize() != opt.second) {
+                failed = true;
+                break;
+            }
+        }
+        if (failed) {
+            continue;
+        }
+        results.push_back(&preset);
+    }
+    // find visible without prefix
+    for (const Preset *preset : results) {
+        if (preset->is_visible && preset->config.opt_string("printer_model") == model_id) {
+            return preset;
+        }
+    }
+    // find one visible
+    for (const Preset *preset : results) {
+        if (preset->is_visible) {
+            return preset;
+        }
+    }
+    // find one without prefix
+    for (const Preset* preset : results) {
+        if (preset->config.opt_string("printer_model") == model_id) {
+            return preset;
+        }
+    }
+    if (results.size() != 0) {
+       return results.front();
+    }
+    return nullptr;
+}
+}
+
 bool GUI_App::select_printer_from_connect(const std::string& msg)
 {
-    // parse message
-    std::string model_name = plater()->get_user_account()->get_keyword_from_json(msg, "printer_model");
-    std::string uuid = plater()->get_user_account()->get_keyword_from_json(msg, "uuid");
+    // parse message "binary_gcode"
+    boost::property_tree::ptree ptree;
+    std::string model_name = UserAccountUtils::get_keyword_from_json(ptree, msg, "printer_model");
+    std::string uuid = UserAccountUtils::get_keyword_from_json(ptree, msg, "uuid");
     if (model_name.empty()) {
         std::vector<std::string> compatible_printers;
-        plater()->get_user_account()->fill_supported_printer_models_from_json(msg, compatible_printers);
+        UserAccountUtils::fill_supported_printer_models_from_json(ptree, compatible_printers);
         if (!compatible_printers.empty())  {
             model_name = compatible_printers.front();
         }
@@ -3839,10 +3924,12 @@ bool GUI_App::select_printer_from_connect(const std::string& msg)
         BOOST_LOG_TRIVIAL(error) << "Failed to select printer from Connect. Printer_model is empty.";
         return false;
     }
-    std::string nozzle = plater()->get_user_account()->get_nozzle_from_json(msg);
+    std::string nozzle = UserAccountUtils::get_nozzle_from_json(ptree);
+    std::map<std::string, std::string> config_options_to_match; 
+    //UserAccountUtils::fill_config_options_from_json(ptree, config_options_to_match);
     BOOST_LOG_TRIVIAL(info) << "Select printer from Connect. Model: " << model_name << "nozzle: " << nozzle;
     // select printer
-    const Preset* printer_preset = preset_bundle->printers.find_system_preset_by_model_and_variant(model_name, nozzle);
+    const Preset* printer_preset = find_preset_by_nozzle_and_options(preset_bundle->printers, model_name, nozzle, config_options_to_match);
     bool is_installed = printer_preset && select_printer_preset(printer_preset);
     // notification
     std::string out = printer_preset ?
@@ -3935,7 +4022,7 @@ void GUI_App::select_filament_from_connect(const std::string& msg)
 {
     // parse message
     std::vector<std::string> materials;
-    plater()->get_user_account()->fill_material_from_json(msg, materials);
+    UserAccountUtils::fill_material_from_json(msg, materials);
     if (materials.empty()) {
         BOOST_LOG_TRIVIAL(error) << "Failed to select filament from Connect. No material data.";
         return;
@@ -3969,7 +4056,8 @@ void GUI_App::handle_connect_request_printer_select(const std::string& msg)
     // Here comes code from ConnectWebViewPanel
     // It only contains uuid of a printer to be selected
     // Lets queue it and wait on result. The result is send via event to plater, where it is send to handle_connect_request_printer_select_inner
-    std::string uuid = plater()->get_user_account()->get_keyword_from_json(msg, "uuid");
+    boost::property_tree::ptree ptree;
+    std::string uuid = UserAccountUtils::get_keyword_from_json(ptree, msg, "uuid");
     plater()->get_user_account()->enqueue_printer_data_action(uuid);
 }
 void GUI_App::handle_connect_request_printer_select_inner(const std::string & msg)

@@ -1274,22 +1274,41 @@ void PrinterPickWebViewDialog::on_connect_action_webapp_ready(const std::string&
     }
 }
 
-void PrinterPickWebViewDialog::request_compatible_printers_FFF()
-{
-    //PrinterParams: {
-    //material: Material;
-    //nozzleDiameter: number;
-    //printerType: string;
-    //filename: string;
-    //}
-    const Preset& selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
-    const Preset& selected_filament = wxGetApp().preset_bundle->filaments.get_selected_preset();
-    double nozzle_diameter = static_cast<const ConfigOptionFloats*>(selected_printer.config.option("nozzle_diameter"))->values[0];
+void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
+    // PrinterParams: {
+    // material: Material;
+    // nozzleDiameter: number;
+    // printerType: string;
+    // filename: string;
+    // }
+    const Preset &selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
+    const Preset &selected_filament = wxGetApp().preset_bundle->filaments.get_selected_preset();
+    double nozzle_diameter = static_cast<const ConfigOptionFloats *>(
+                                 selected_printer.config.option("nozzle_diameter")
+    )
+                                 ->values[0];
     wxString nozzle_diameter_serialized = double_to_string(nozzle_diameter);
     nozzle_diameter_serialized.Replace(L",", L".");
     // Sending only first filament type for now. This should change to array of values
-    const std::string filament_type_serialized = selected_filament.config.option("filament_type")->serialize();
-    const std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
+    const std::string filament_type_serialized = selected_filament.config.option("filament_type")
+                                                     ->serialize();
+    std::string printer_model_serialized = selected_printer.config.option("printer_model")
+                                               ->serialize();
+
+    std::string vendor_repo_prefix;
+    if (selected_printer.vendor) {
+        vendor_repo_prefix = selected_printer.vendor->repo_prefix;
+    } else if (std::string inherits = selected_printer.inherits(); !inherits.empty()) {
+        const Preset *parent = wxGetApp().preset_bundle->printers.find_preset(inherits);
+        if (parent && parent->vendor) {
+            vendor_repo_prefix = parent->vendor->repo_prefix;
+        }
+    }
+    if (printer_model_serialized.find(vendor_repo_prefix) == 0) {
+        printer_model_serialized = printer_model_serialized.substr(vendor_repo_prefix.size());
+        boost::trim_left(printer_model_serialized);
+    }
+
     const std::string uuid = wxGetApp().plater()->get_user_account()->get_current_printer_uuid_from_connect(printer_model_serialized);
     const std::string filename = wxGetApp().plater()->get_upload_filename();
     const std::string request = GUI::format(
@@ -1307,7 +1326,21 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF()
 void PrinterPickWebViewDialog::request_compatible_printers_SLA()
 {
     const Preset& selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
-    const std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
+    std::string printer_model_serialized = selected_printer.config.option("printer_model")->serialize();
+    
+    std::string vendor_repo_prefix;
+    if (selected_printer.vendor) {
+        vendor_repo_prefix = selected_printer.vendor->repo_prefix;
+    } else if (std::string inherits = selected_printer.inherits(); !inherits.empty()) {
+        const Preset *parent = wxGetApp().preset_bundle->printers.find_preset(inherits);
+        if (parent && parent->vendor) {
+            vendor_repo_prefix = parent->vendor->repo_prefix;
+        }
+    }
+    if (printer_model_serialized.find(vendor_repo_prefix) == 0) {
+        printer_model_serialized = printer_model_serialized.substr(vendor_repo_prefix.size());
+        boost::trim_left(printer_model_serialized);
+    }
     const Preset& selected_material = wxGetApp().preset_bundle->sla_materials.get_selected_preset();
     const std::string material_type_serialized = selected_material.config.option("material_type")->serialize();
     const std::string uuid = wxGetApp().plater()->get_user_account()->get_current_printer_uuid_from_connect(printer_model_serialized);
