@@ -105,7 +105,7 @@ void fill_supported_printer_models_from_json(boost::property_tree::ptree &ptree,
 void fill_config_options_from_json(boost::property_tree::ptree& ptree, std::map<std::string, std::string>& result) 
 {
     assert(!ptree.empty());
-    pt::ptree subtree = parse_tree_for_subtree(ptree, "config_options");
+    pt::ptree subtree = parse_tree_for_subtree(ptree, "printerConfig");
     for (const auto &item : subtree) {
         result[item.first] = item.second.data();
     }

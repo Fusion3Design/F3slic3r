@@ -1320,9 +1320,9 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
         "\"nozzleDiameter\": %2%, "
         "\"material\": \"%1%\", "
         "\"filename\": \"%5%\", "
-        "\"filamentAbrasive\": \"%6%\", "
-        "\"config_options\": {"
-        , filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid, filename, filament_abrasive);
+        //"\"filamentAbrasive\": \"%6%\", "
+        "\"printerConfig\": {"
+        , filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid, filename/*, filament_abrasive*/);
 
     // std::map<t_config_option_key, std::unique_ptr<ConfigOption>>::const_iterator
     for (auto it = selected_printer.config.cbegin(); it != selected_printer.config.cend(); ++it) {
@@ -1331,6 +1331,16 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
             continue;
         }
         request += it == selected_printer.config.cbegin() ? "" : ",";
+        request += GUI::format("\"%1%\": \"%2%\"", it->first, value);
+    }
+
+    request += "}, \"filamentConfig\": {";
+    for (auto it = selected_filament.config.cbegin(); it != selected_filament.config.cend(); ++it) {
+        std::string value = selected_filament.config.option(it->first)->serialize();
+        if (value.find('\"') != std::string::npos) {
+            continue;
+        }
+        request += it == selected_filament.config.cbegin() ? "" : ",";
         request += GUI::format("\"%1%\": \"%2%\"", it->first, value);
     }
 
