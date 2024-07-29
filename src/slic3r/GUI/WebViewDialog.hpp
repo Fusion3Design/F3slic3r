@@ -224,8 +224,8 @@ public:
 
     void send_api_key();
     void send_credentials();
-    void set_api_key(const std::string& key) { m_api_key = key; }
-    void set_credentials(const std::string& usr, const std::string& psk) { m_usr = usr; m_psk = psk; }
+    void set_api_key(const std::string& key) { m_api_key = key; m_usr.clear(); m_psk.clear(); }
+    void set_credentials(const std::string& usr, const std::string& psk) { m_usr = usr; m_psk = psk; m_api_key.clear(); }
     void clear() { m_api_key.clear(); m_usr.clear(); m_psk.clear(); m_api_key_sent = false; }
     void sys_color_changed() override;
 private:
