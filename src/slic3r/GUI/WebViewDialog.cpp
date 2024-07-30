@@ -1282,18 +1282,13 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
     // filename: string;
     // }
     const Preset &selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
-    const Preset &selected_filament = wxGetApp().preset_bundle->filaments.get_selected_preset();
-    double nozzle_diameter = static_cast<const ConfigOptionFloats *>(
-                                 selected_printer.config.option("nozzle_diameter")
-    )
-                                 ->values[0];
+    const DynamicPrintConfig full_config = wxGetApp().preset_bundle->full_config();
+    double nozzle_diameter = static_cast<const ConfigOptionFloats *>(full_config.option("nozzle_diameter"))->values[0];
     wxString nozzle_diameter_serialized = double_to_string(nozzle_diameter);
     nozzle_diameter_serialized.Replace(L",", L".");
     // Sending only first filament type for now. This should change to array of values
-    const std::string filament_type_serialized = selected_filament.config.option("filament_type")
-                                                     ->serialize();
-    std::string printer_model_serialized = selected_printer.config.option("printer_model")
-                                               ->serialize();
+    const std::string filament_type_serialized = full_config.option("filament_type")->serialize();
+    std::string printer_model_serialized = full_config.option("printer_model")->serialize();
 
     std::string vendor_repo_prefix;
     if (selected_printer.vendor) {
@@ -1312,7 +1307,6 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
     const std::string uuid = wxGetApp().plater()->get_user_account()->get_current_printer_uuid_from_connect(printer_model_serialized);
     const std::string filename = wxGetApp().plater()->get_upload_filename();
     //filament_abrasive
-    const std::string filament_abrasive = selected_filament.config.option("filament_abrasive")->serialize();
     std::string request = GUI::format(
         "{"
         "\"printerUuid\": \"%4%\", "
@@ -1320,30 +1314,15 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
         "\"nozzleDiameter\": %2%, "
         "\"material\": \"%1%\", "
         "\"filename\": \"%5%\", "
-        //"\"filamentAbrasive\": \"%6%\", "
-        "\"printerConfig\": {"
-        , filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid, filename/*, filament_abrasive*/);
+        "\"fullConfig\": {"
+        , filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid, filename);
 
-    // std::map<t_config_option_key, std::unique_ptr<ConfigOption>>::const_iterator
-    for (auto it = selected_printer.config.cbegin(); it != selected_printer.config.cend(); ++it) {
-        std::string value = selected_printer.config.option(it->first)->serialize();
-        if (value.find('\"') != std::string::npos) {
-            continue;
-        }
-        request += it == selected_printer.config.cbegin() ? "" : ",";
+    for (auto it = full_config.cbegin(); it != full_config.cend(); ++it) {
+        std::string value = full_config.option(it->first)->serialize();
+        boost::algorithm::replace_all(value, "\"", "\\\"");
+        request += it == full_config.cbegin() ? "" : ",";
         request += GUI::format("\"%1%\": \"%2%\"", it->first, value);
     }
-
-    request += "}, \"filamentConfig\": {";
-    for (auto it = selected_filament.config.cbegin(); it != selected_filament.config.cend(); ++it) {
-        std::string value = selected_filament.config.option(it->first)->serialize();
-        if (value.find('\"') != std::string::npos) {
-            continue;
-        }
-        request += it == selected_filament.config.cbegin() ? "" : ",";
-        request += GUI::format("\"%1%\": \"%2%\"", it->first, value);
-    }
-
     request += "}}";
 
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.requestCompatiblePrinter(%1%)", request);
