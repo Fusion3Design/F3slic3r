@@ -902,13 +902,17 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
             // There are multiple handlers and we want to notify all
             evt.Skip();
+            std::string who = user_account->get_username();
             std::string username;
             if (user_account->on_user_id_success(evt.data, username)) {
-                std::string text = format(_u8L("Logged to Prusa Account as %1%."), username);
-                // login notification
-                this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
-                // show connect tab
-                this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
+                // Do not show notification on refresh.
+                if (who != username) {
+                    std::string text = format(_u8L("Logged to Prusa Account as %1%."), username);
+                    // login notification
+                    this->notification_manager->close_notification_of_type(NotificationType::UserAccountID);
+                    // show connect tab
+                    this->notification_manager->push_notification(NotificationType::UserAccountID, NotificationManager::NotificationLevel::ImportantNotificationLevel, text);
+                }
                 this->main_frame->add_connect_webview_tab();
                 // Update User name in TopBar
                 this->main_frame->refresh_account_menu();
