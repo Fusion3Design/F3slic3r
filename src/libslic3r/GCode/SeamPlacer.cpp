@@ -39,9 +39,9 @@ ObjectLayerPerimeters get_perimeters(
             print_object->layers(), params.perimeter.elephant_foot_compensation
         )};
         const std::vector<Geometry::BoundedPolygons> projected{
-            print_object->config().seam_position == spAligned ?
-            Geometry::project_to_geometry(extrusions, params.max_distance) :
-            Geometry::convert_to_geometry(extrusions)
+            print_object->config().seam_position == spRandom ?
+            Geometry::convert_to_geometry(extrusions) :
+            Geometry::project_to_geometry(extrusions, params.max_distance)
         };
         Perimeters::LayerPerimeters perimeters{Perimeters::create_perimeters(projected, layer_infos, painting, params.perimeter)};
 
