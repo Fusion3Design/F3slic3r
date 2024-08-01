@@ -5,6 +5,7 @@
 #include <wrl.h>
 #include <atlbase.h>
 #include <boost/log/trivial.hpp>
+#include <unordered_map>
 
 #include "wx/msw/private/comptr.h"
 
@@ -14,11 +15,11 @@
 
 namespace Slic3r::GUI {
 
+std::unordered_map<ICoreWebView2*,EventRegistrationToken> g_basic_auth_handler_tokens;
+
 void setup_webview_with_credentials(wxWebView* webview, const std::string& username, const std::string& password)
 {
     ICoreWebView2 *webView2 = static_cast<ICoreWebView2 *>(webview->GetNativeBackend());
-
-
     wxCOMPtr<ICoreWebView2_10> wv2_10;
     HRESULT hr = webView2->QueryInterface(IID_PPV_ARGS(&wv2_10));
     if (FAILED(hr)) {
@@ -48,8 +49,31 @@ void setup_webview_with_credentials(wxWebView* webview, const std::string& usern
         ))) {
 
         BOOST_LOG_TRIVIAL(error) << "WebView: Cannot register authentication request handler";
+    } else {
+        g_basic_auth_handler_tokens[webView2] = basicAuthenticationRequestedToken;
     }
        
 }
-#endif
+
+void remove_webview_credentials(wxWebView* webview)
+{
+    ICoreWebView2 *webView2 = static_cast<ICoreWebView2 *>(webview->GetNativeBackend());
+    wxCOMPtr<ICoreWebView2_10> wv2_10;
+    HRESULT hr = webView2->QueryInterface(IID_PPV_ARGS(&wv2_10));
+    if (FAILED(hr)) {
+        return;
+    }
+
+    auto it = g_basic_auth_handler_tokens.find(webView2);
+    if (it != g_basic_auth_handler_tokens.end()) {
+        if (FAILED(wv2_10->remove_BasicAuthenticationRequested(it->second))) {
+            BOOST_LOG_TRIVIAL(error) << "WebView: Unregistering authentication request handler failed";
+        }
+    } else {
+        BOOST_LOG_TRIVIAL(error) << "WebView: Cannot unregister authentication request handler";
+    }
+
 }
+
+} // namespace Slic3r::GUI
+#endif // WIN32

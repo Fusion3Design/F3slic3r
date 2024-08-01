@@ -755,6 +755,10 @@ PrinterWebViewPanel::PrinterWebViewPanel(wxWindow* parent, const wxString& defau
         return;
 
     m_browser->Bind(wxEVT_WEBVIEW_LOADED, &PrinterWebViewPanel::on_loaded, this);
+#ifndef NDEBUG
+    m_browser->EnableAccessToDevTools();
+    m_browser->EnableContextMenu();
+#endif
 }
 
 void PrinterWebViewPanel::on_loaded(wxWebViewEvent& evt)
@@ -776,16 +780,18 @@ void PrinterWebViewPanel::send_api_key()
     wxString key = from_u8(m_api_key);
     wxString script = wxString::Format(R"(
     // Check if window.fetch exists before overriding
-    if (window.fetch) {
+    if (window.originalFetch === undefined) {
         console.log('Patching fetch with API key');
-        const originalFetch = window.fetch;
+        window.originalFetch = window.fetch;
         window.fetch = function(input, init = {}) {
             init.headers = init.headers || {};
-            init.headers['X-Api-Key'] = '%s';
+            init.headers['X-Api-Key'] = sessionStorage.getItem('apiKey');
             console.log('Patched fetch', input, init);
-            return originalFetch(input, init);
+            return window.originalFetch(input, init);
         };
     }
+    sessionStorage.setItem('authType', 'ApiKey');
+    sessionStorage.setItem('apiKey', '%s');
 )",
     key);
 
@@ -793,13 +799,16 @@ void PrinterWebViewPanel::send_api_key()
     BOOST_LOG_TRIVIAL(debug) << "RunScript " << script << "\n";
     m_browser->AddUserScript(script);
     m_browser->Reload();
-    
+    remove_webview_credentials(m_browser);
 }
 
 void PrinterWebViewPanel::send_credentials()
 {
     if (!m_browser || m_api_key_sent)
         return;
+    m_browser->RemoveAllUserScripts();
+    m_browser->AddUserScript("sessionStorage.removeItem('authType'); sessionStorage.removeItem('apiKey'); console.log('Session Storage cleared');");
+    m_browser->Reload();
     m_api_key_sent = true;
     setup_webview_with_credentials(m_browser, m_usr, m_psk);
 }

@@ -10,7 +10,11 @@
     NSString* _username;
     NSString* _passwd;
 }
+
 - (id) initWithOriginalDelegate: (id<WKNavigationDelegate>) delegate userName: (const char*) username password: (const char*) password;
+
+- (id<WKNavigationDelegate>) wrapped_delegate;
+
 @end
 
 @implementation MyNavigationDelegate
@@ -21,6 +25,10 @@
         _passwd = [[NSString alloc] initWithFormat:@"%s", password];
     }
     return self;
+}
+
+- (id<WKNavigationDelegate>) wrapped_delegate {
+    return _delegate;
 }
 
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
@@ -118,5 +126,15 @@ void setup_webview_with_credentials(wxWebView* web_view, const std::string& user
                             password:password.c_str()];
     }
 }
+
+void remove_webview_credentials(wxWebView* web_view)
+{
+    WKWebView* backend = static_cast<WKWebView*>(web_view->GetNativeBackend());
+    if ([backend.navigationDelegate isKindOfClass:MyNavigationDelegate.class]) {
+        MyNavigationDelegate* my_delegate = backend.navigationDelegate;
+        backend.navigationDelegate = my_delegate.wrapped_delegate;
+    }
+}
+
 }
 

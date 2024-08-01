@@ -37,7 +37,12 @@ void setup_webview_with_credentials(wxWebView* web_view, const std::string& user
         &free_credentials,
         static_cast<GConnectFlags>(0)
     );
+}
 
+void remove_webview_credentials(wxWebView* web_view)
+{
+    WebKitWebView* native_backend = static_cast<WebKitWebView *>(web_view->GetNativeBackend());
+    g_object_disconnect(native_backend, "authenticate");
 }
 
 }
