@@ -118,6 +118,7 @@
 namespace Slic3r::GUI {
 void setup_webview_with_credentials(wxWebView* web_view, const std::string& username, const std::string& password)
 {
+    remove_webview_credentials(web_view);
     WKWebView* backend = static_cast<WKWebView*>(web_view->GetNativeBackend());
     if (![backend.navigationDelegate isKindOfClass:MyNavigationDelegate.class]) {
         backend.navigationDelegate = [[MyNavigationDelegate alloc]

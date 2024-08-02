@@ -26,9 +26,10 @@ void setup_webview_with_credentials(wxWebView* webview, const std::string& usern
         return;        
     }
 
+    remove_webview_credentials(webview);
+
     // should it be stored?
     EventRegistrationToken basicAuthenticationRequestedToken = {};
-
     if (FAILED(wv2_10->add_BasicAuthenticationRequested(
             Microsoft::WRL::Callback<ICoreWebView2BasicAuthenticationRequestedEventHandler>(
                 [username, password](ICoreWebView2 *sender, ICoreWebView2BasicAuthenticationRequestedEventArgs *args) {
@@ -64,10 +65,13 @@ void remove_webview_credentials(wxWebView* webview)
         return;
     }
 
-    auto it = g_basic_auth_handler_tokens.find(webView2);
-    if (it != g_basic_auth_handler_tokens.end()) {
+    if (auto it = g_basic_auth_handler_tokens.find(webView2);
+        it != g_basic_auth_handler_tokens.end()) {
+
         if (FAILED(wv2_10->remove_BasicAuthenticationRequested(it->second))) {
             BOOST_LOG_TRIVIAL(error) << "WebView: Unregistering authentication request handler failed";
+        } else {
+            g_basic_auth_handler_tokens.erase(it);
         }
     } else {
         BOOST_LOG_TRIVIAL(error) << "WebView: Cannot unregister authentication request handler";

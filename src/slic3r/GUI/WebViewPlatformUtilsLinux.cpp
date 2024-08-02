@@ -11,6 +11,8 @@ struct Credentials {
     std::string password;
 };
 
+std::unordered_map<WebKitWebView*, gulong> g_webview_authorize_handlers;
+
 gboolean webkit_authorize_handler(WebKitWebView *web_view, WebKitAuthenticationRequest *request, gpointer user_data)
 {
     const Credentials& creds = *static_cast<const Credentials*>(user_data);
@@ -29,7 +31,8 @@ void setup_webview_with_credentials(wxWebView* web_view, const std::string& user
     WebKitWebView* native_backend = static_cast<WebKitWebView *>(web_view->GetNativeBackend());
     Credentials* user_data = new Credentials{username, password};
 
-    g_signal_connect_data(
+    remove_webview_credentials(web_view);
+    auto handler = g_signal_connect_data(
         native_backend,
         "authenticate",
         G_CALLBACK(webkit_authorize_handler),
@@ -37,12 +40,17 @@ void setup_webview_with_credentials(wxWebView* web_view, const std::string& user
         &free_credentials,
         static_cast<GConnectFlags>(0)
     );
+    g_webview_authorize_handlers[native_backend] = handler;
 }
 
 void remove_webview_credentials(wxWebView* web_view)
 {
     WebKitWebView* native_backend = static_cast<WebKitWebView *>(web_view->GetNativeBackend());
-    g_object_disconnect(native_backend, "authenticate");
+    if (auto it = g_webview_authorize_handlers.find(native_backend);
+        it != g_webview_authorize_handlers.end()) {
+        g_signal_handler_disconnect(native_backend, it->second);
+        g_webview_authorize_handlers.erase(it);
+    }
 }
 
 }
