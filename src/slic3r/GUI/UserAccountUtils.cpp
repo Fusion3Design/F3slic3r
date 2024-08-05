@@ -280,9 +280,6 @@ std::string get_print_data_from_json(const std::string& json, const std::string&
     size_t start_of_sub = json.find('{', start_of_keyword);
     if (start_of_sub == std::string::npos)
         return {};
-    size_t end_of_sub = json.find('}', start_of_sub);
-    if (end_of_sub == std::string::npos)
-        return {};
     size_t start_of_filename = json.find("\"filename\"", start_of_sub);
     if (start_of_filename == std::string::npos)
         return {};
@@ -294,6 +291,9 @@ std::string get_print_data_from_json(const std::string& json, const std::string&
         return {};
     size_t end_of_filename_data = json.find('\"', start_of_filename_data + 1);
     if (end_of_filename_data == std::string::npos)
+        return {};
+    size_t end_of_sub = json.find('}', end_of_filename_data);
+    if (end_of_sub == std::string::npos)
         return {};
     size_t size = json.size();
     std::string result = json.substr(start_of_sub, start_of_filename_data - start_of_sub + 1);
