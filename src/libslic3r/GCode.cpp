@@ -2861,7 +2861,11 @@ std::string GCodeGenerator::change_layer(
             gcode += this->retract_and_wipe();
         }
         if (!first_layer) {
+            // travel_to_z is not used as it may not generate the travel if the writter z == print_z.
             gcode += this->writer().get_travel_to_z_gcode(print_z, "simple layer change");
+            Vec3d position{this->writer().get_position()};
+            position.z() = print_z;
+            this->writer().update_position(position);
         }
     }
 
