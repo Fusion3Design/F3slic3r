@@ -601,10 +601,6 @@ std::vector<ExtruderExtrusions> get_extrusions(
             previous_position
         );
 
-        if (is_empty(extruder_extrusions)) {
-            continue;
-        }
-
         extrusions.push_back(std::move(extruder_extrusions));
     }
     return extrusions;
