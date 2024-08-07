@@ -2564,7 +2564,7 @@ LayerResult GCodeGenerator::process_layer(
     }
 
     this->set_origin({0, 0});
-    bool moved_to_first_point{false};
+    this->m_moved_to_first_layer_point = false;
 
     // Extrude the skirt, brim, support, perimeters, infill ordered by the extruders.
     for (const ExtruderExtrusions &extruder_extrusions : extrusions)
@@ -2589,7 +2589,7 @@ LayerResult GCodeGenerator::process_layer(
             this->m_label_objects.update(nullptr);
         }
 
-        if (!moved_to_first_point) {
+        if (!this->m_moved_to_first_layer_point) {
             const Vec3crd point{to_3d(first_point, scaled(print_z))};
 
             gcode += this->travel_to_first_position(point, print_z, ExtrusionRole::Mixed, [this]() {
@@ -2598,7 +2598,6 @@ LayerResult GCodeGenerator::process_layer(
                 }
                 return m_label_objects.maybe_change_instance(m_writer);
             });
-            moved_to_first_point = true;
         }
 
         if (!extruder_extrusions.skirt.empty()) {
@@ -3116,6 +3115,7 @@ std::string GCodeGenerator::travel_to_first_position(const Vec3crd& point, const
         this->writer().update_position(gcode_point);
     }
 
+    this->m_moved_to_first_layer_point = true;
     return gcode;
 }
 

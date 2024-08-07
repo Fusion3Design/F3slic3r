@@ -429,6 +429,8 @@ private:
 
     std::optional<Vec3d>                m_previous_layer_last_position;
     std::optional<Vec3d>                m_previous_layer_last_position_before_wipe;
+    bool                                m_moved_to_first_layer_point{false};
+
     // This needs to be populated during the layer processing!
     std::unique_ptr<CoolingBuffer>      m_cooling_buffer;
     std::unique_ptr<SpiralVase>         m_spiral_vase;
