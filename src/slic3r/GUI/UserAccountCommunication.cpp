@@ -334,7 +334,7 @@ wxString UserAccountCommunication::get_login_redirect_url() {
     BOOST_LOG_TRIVIAL(info) << "code verifier: " << m_code_verifier;
     BOOST_LOG_TRIVIAL(info) << "code challenge: " << code_challenge;
 
-    wxString url = GUI::format_wxstr(L"%1%/o/authorize/?embed=1&client_id=%2%&response_type=code&code_challenge=%3%&code_challenge_method=S256&scope=basic_info&redirect_uri=%4%&language=%5%", AUTH_HOST, CLIENT_ID, code_challenge, REDIRECT_URI, language);
+    wxString url = GUI::format_wxstr(L"%1%/o/authorize/?client_id=%2%&response_type=code&code_challenge=%3%&code_challenge_method=S256&scope=basic_info&redirect_uri=%4%&language=%5%&choose_account=1", AUTH_HOST, CLIENT_ID, code_challenge, REDIRECT_URI, language);
 
     return url;
 }

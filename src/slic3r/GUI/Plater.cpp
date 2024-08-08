@@ -876,12 +876,20 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         });
         this->q->Bind(EVT_OPEN_PRUSAAUTH, [this](OpenPrusaAuthEvent& evt) {
             BOOST_LOG_TRIVIAL(info)  << "open login browser: " << evt.data;
+            /*
             std::string dialog_msg;
             LoginWebViewDialog dialog(this->q, dialog_msg, evt.data);
             if (dialog.ShowModal() != wxID_OK) {
                 return;
             }
             user_account->on_login_code_recieved(dialog_msg);
+            */
+            DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
+    #ifdef __linux__
+           if (DownloaderUtils::Worker::perform_registration_linux) 
+               DesktopIntegrationDialog::perform_downloader_desktop_integration();
+    #endif // __linux__
+            wxGetApp().open_login_browser_with_dialog(evt.data);
         });
     
         this->q->Bind(EVT_UA_LOGGEDOUT, [this](UserAccountSuccessEvent& evt) {
@@ -895,9 +903,10 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             sidebar->update_printer_presets_combobox();
             wxGetApp().update_wizard_login_page();
             this->show_action_buttons(this->ready_to_slice);
-
-             LogoutWebViewDialog dlg(this->q);
+            // Needed only when using internal web browser to login (which is case of config wizard)
+            LogoutWebViewDialog dlg(this->q);
             dlg.ShowModal();
+            //
         });
 
         this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
