@@ -3828,9 +3828,7 @@ namespace {
 const Preset* find_preset_by_nozzle_and_options(
     const PrinterPresetCollection& collection
     , const std::string& model_id
-    , const std::string& nozzle
-    , const std::map<std::string
-    , std::string>& options) 
+    , std::map<std::string, std::vector<std::string>>& options) 
 {
     // find all matching presets when repo prefix is ommited
     std::vector<const Preset*> results;
@@ -3854,33 +3852,39 @@ const Preset* find_preset_by_nozzle_and_options(
        
         if (!preset.is_system || printer_model != model_id)
             continue;
-        // nozzle diameter
-        if (!nozzle.empty() && preset.config.has("nozzle_diameter")) {
-            double nozzle_diameter = static_cast<const ConfigOptionFloats*>(preset.config.option("nozzle_diameter"))->values[0];
-            std::string nozzle_diameter_serialized = into_u8(double_to_string(nozzle_diameter));
-            if (size_t pos = nozzle_diameter_serialized.find(",") != std::string::npos) {
-                nozzle_diameter_serialized.replace(pos, 1, 1, '.');
-            }
-            if (nozzle != nozzle_diameter_serialized) {
-                continue;
-            }
-        }
-        // other options
+        // options (including nozzle_diameter)
         bool failed = false;
         for (const auto& opt : options) {
-            if (!preset.config.has(opt.first)) {
-                failed = true;
-                break;
+            assert(preset.config.has(opt.first));
+            // We compare only first value now, but options contains data for all (some might be empty tho)
+            std::string opt_val;
+            if (preset.config.option(opt.first)->is_scalar()) {
+                opt_val = preset.config.option(opt.first)->serialize();
+            } else {
+                switch (preset.config.option(opt.first)->type()) {
+                case coInts:     opt_val = std::to_string(static_cast<const ConfigOptionInts*>(preset.config.option(opt.first))->values[0]); break;
+                case coFloats:   
+                    opt_val = into_u8(double_to_string(static_cast<const ConfigOptionFloats*>(preset.config.option(opt.first))->values[0]));
+                    if (size_t pos = opt_val.find(",") != std::string::npos)
+                        opt_val.replace(pos, 1, 1, '.');
+                    break;
+                case coStrings:  opt_val = static_cast<const ConfigOptionStrings*>(preset.config.option(opt.first))->values[0]; break;
+                case coBools:    opt_val = static_cast<const ConfigOptionBools*>(preset.config.option(opt.first))->values[0] ? "1" : "0"; break;
+                default:
+                   assert(true);
+                   continue;
+                }
             }
-            if (preset.config.option(opt.first)->serialize() != opt.second) {
+           
+            if (opt_val != opt.second[0])
+            {
                 failed = true;
                 break;
             }
         }
-        if (failed) {
-            continue;
+        if (!failed) {
+            results.push_back(&preset);
         }
-        results.push_back(&preset);
     }
     // find visible without prefix
     for (const Preset *preset : results) {
@@ -3924,12 +3928,23 @@ bool GUI_App::select_printer_from_connect(const std::string& msg)
         BOOST_LOG_TRIVIAL(error) << "Failed to select printer from Connect. Printer_model is empty.";
         return false;
     }
-    std::string nozzle = UserAccountUtils::get_nozzle_from_json(ptree);
-    std::map<std::string, std::string> config_options_to_match; 
+    std::map<std::string, std::vector<std::string>> config_options_to_match; 
     UserAccountUtils::fill_config_options_from_json(ptree, config_options_to_match);
-    BOOST_LOG_TRIVIAL(info) << "Select printer from Connect. Model: " << model_name << "nozzle: " << nozzle;
+    // prevent not having nozzle diameter
+    if (config_options_to_match.find("nozzle_diameter") == config_options_to_match.end()) {
+        std::string diameter = UserAccountUtils::get_keyword_from_json(ptree, msg, "nozzle_diameter");
+        if (!diameter.empty())
+             config_options_to_match["nozzle_diameter"] = {diameter};
+    }
+    // log
+    BOOST_LOG_TRIVIAL(info) << "Select printer from Connect. Model: " << model_name;
+    for(const auto& pair :config_options_to_match) {
+        std::string out;
+        for(const std::string& val :pair.second) { out += val + ",";}
+        BOOST_LOG_TRIVIAL(info) << pair.first << ": " << out;
+    }
     // select printer
-    const Preset* printer_preset = find_preset_by_nozzle_and_options(preset_bundle->printers, model_name, nozzle, config_options_to_match);
+    const Preset* printer_preset = find_preset_by_nozzle_and_options(preset_bundle->printers, model_name, config_options_to_match);
     bool is_installed = printer_preset && select_printer_preset(printer_preset);
     // notification
     std::string out = printer_preset ?
@@ -4031,6 +4046,9 @@ void GUI_App::select_filament_from_connect(const std::string& msg)
     size_t extruder_count = preset_bundle->extruders_filaments.size();
     if (extruder_count != materials.size()) {
         BOOST_LOG_TRIVIAL(error) << format("Failed to select filament from Connect. Selected printer has %1% extruders while data from Connect contains %2% materials.", extruder_count, materials.size());
+        plater()->get_notification_manager()->close_notification_of_type(NotificationType::SelectFilamentFromConnect);
+        // TRN: Notification text.
+        plater()->get_notification_manager()->push_notification(NotificationType::SelectFilamentFromConnect, NotificationManager::NotificationLevel::ImportantNotificationLevel, _u8L("Failed to select filament from Connect."));
         return;
     }
     std::string notification_text;
@@ -4065,7 +4083,6 @@ void GUI_App::handle_connect_request_printer_select_inner(const std::string & ms
     BOOST_LOG_TRIVIAL(debug) << "Handling web request: " << msg;
     // return to plater
     this->mainframe->select_tab(size_t(0));
-  
     if (!select_printer_from_connect(msg)) {
         // If printer was not selected, do not select filament.
         return;

@@ -15,7 +15,7 @@ std::string get_keyword_from_json(boost::property_tree::ptree& ptree, const std:
 // Only ptree is passed since these functions are called on places that already has the ptree from get_keyword_from_json call
 std::string get_nozzle_from_json(boost::property_tree::ptree &ptree);
 void fill_supported_printer_models_from_json(boost::property_tree::ptree& ptree, std::vector<std::string>& result);
-void fill_config_options_from_json(boost::property_tree::ptree& ptree, std::map<std::string, std::string>& result);
+void fill_config_options_from_json(boost::property_tree::ptree& ptree, std::map<std::string,std::vector<std::string>>& result);
 
 // Since fill_material_from_json is called only from one place where ptree doesnt need to be shared, it is not always read from json.
 void fill_material_from_json(const std::string& json, std::vector<std::string>& result);

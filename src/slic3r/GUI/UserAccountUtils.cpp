@@ -11,7 +11,7 @@ namespace pt = boost::property_tree;
 namespace Slic3r { namespace GUI { namespace UserAccountUtils {
 
 namespace {
-std::string parse_tree_for_param(const pt::ptree &tree, const std::string &param) {
+std::string parse_tree_for_param(const pt::ptree& tree, const std::string& param) {
     for (const auto &section : tree) {
         if (section.first == param) {
             return section.second.data();
@@ -24,8 +24,7 @@ std::string parse_tree_for_param(const pt::ptree &tree, const std::string &param
 }
 
 void parse_tree_for_param_vector(
-    const pt::ptree &tree, const std::string &param, std::vector<std::string> &results
-) {
+const pt::ptree &tree, const std::string& param, std::vector<std::string>& results) {
     for (const auto &section : tree) {
         if (section.first == param) {
             results.emplace_back(section.second.data());
@@ -35,7 +34,7 @@ void parse_tree_for_param_vector(
     }
 }
 
-pt::ptree parse_tree_for_subtree(const pt::ptree &tree, const std::string &param) {
+pt::ptree parse_tree_for_subtree(const pt::ptree& tree, const std::string& param) {
     for (const auto &section : tree) {
         if (section.first == param) {
             return section.second;
@@ -47,7 +46,7 @@ pt::ptree parse_tree_for_subtree(const pt::ptree &tree, const std::string &param
     return pt::ptree();
 }
 
-void json_to_ptree(boost::property_tree::ptree &ptree, const std::string &json) {
+void json_to_ptree(boost::property_tree::ptree& ptree, const std::string& json) {
     try {
         std::stringstream ss(json);
         pt::read_json(ss, ptree);
@@ -59,7 +58,7 @@ void json_to_ptree(boost::property_tree::ptree &ptree, const std::string &json) 
 
 } // namespace
 
-std::string get_nozzle_from_json(boost::property_tree::ptree &ptree) {
+std::string get_nozzle_from_json(boost::property_tree::ptree& ptree) {
     assert(!ptree.empty());
 
     std::string out = parse_tree_for_param(ptree, "nozzle_diameter");
@@ -74,7 +73,7 @@ std::string get_nozzle_from_json(boost::property_tree::ptree &ptree) {
     return out;
 }
 
-std::string get_keyword_from_json(boost::property_tree::ptree &ptree, const std::string &json, const std::string &keyword ) 
+std::string get_keyword_from_json(boost::property_tree::ptree& ptree, const std::string& json, const std::string& keyword ) 
 {
     if (ptree.empty()) {
         json_to_ptree(ptree, json);
@@ -83,7 +82,7 @@ std::string get_keyword_from_json(boost::property_tree::ptree &ptree, const std:
     return parse_tree_for_param(ptree, keyword);
 }
 
-void fill_supported_printer_models_from_json(boost::property_tree::ptree &ptree, std::vector<std::string> &result) 
+void fill_supported_printer_models_from_json(boost::property_tree::ptree& ptree, std::vector<std::string>& result) 
 {
     assert(!ptree.empty());
     std::string printer_model = parse_tree_for_param(ptree, "printer_model");
@@ -102,16 +101,87 @@ void fill_supported_printer_models_from_json(boost::property_tree::ptree &ptree,
     }
 }
 
-void fill_config_options_from_json(boost::property_tree::ptree& ptree, std::map<std::string, std::string>& result) 
+namespace {
+std::string json_var_to_opt_string(const std::string& json_var)
+{
+    if (json_var == "true")
+        return "1";
+    if (json_var == "false")
+        return "0";
+    return json_var;
+}
+}
+
+void fill_config_options_from_json(boost::property_tree::ptree& ptree, std::map<std::string, std::vector<std::string>>& result) 
 {
     assert(!ptree.empty());
-    pt::ptree subtree = parse_tree_for_subtree(ptree, "printerConfig");
-    for (const auto &item : subtree) {
-        result[item.first] = item.second.data();
+    /*
+    "slot": {
+        "active": 3,
+        "slots": {
+            "1": {
+                "material": "PETG",
+                "temp": 32.0,
+                "fan_hotend": 0.0,
+                "fan_print": 0.0,
+                "nozzle_diameter": 3.2,     // float
+                "high_flow": true,          // boolean
+                "high_temperature": false,  // boolean
+                "hardened": true,           // boolean
+            },
+            "3": {
+                "material": "ASA",
+                "temp": 35.0,
+                "fan_hotend": 0.0,
+                "fan_print": 0.0,
+                "nozzle_diameter": 3.2,     // float
+                "high_flow": true,          // boolean
+                "high_temperature": false,  // boolean
+                "hardened": true,           // boolean
+            },
+        }
+    }
+    */
+    const std::map<std::string, std::string> parameters = {
+        // first name from connect, second config option
+        {"nozzle_diameter","nozzle_diameter"},
+        {"high_flow","nozzle_high_flow"},
+        //{"",""}
+    };
+    pt::ptree slots = parse_tree_for_subtree(parse_tree_for_subtree(ptree, "slot"), "slots"); 
+    for (const auto &subtree : slots) {
+       size_t slot_id;
+        try {
+            slot_id = boost::lexical_cast<size_t>(subtree.first);
+        } catch (const boost::bad_lexical_cast&) {
+            continue;
+        }
+       for (const auto &item : subtree.second) {
+           if (parameters.find(item.first) == parameters.end()) {
+               continue;
+           }
+           std::string config_name = parameters.at(item.first);
+           // resolve value
+           std::string val;
+           if (item.second.size() > 0) {
+               for (const auto &subitem : item.second) {
+                   if (!val.empty()) {
+                       val += ",";
+                   }
+                   val += json_var_to_opt_string(subitem.second.data());
+               }
+           } else {
+               val = json_var_to_opt_string(item.second.data());
+           }
+           // insert value
+           while (result[config_name].size() < slot_id)
+               result[config_name].emplace_back();
+           result[config_name][slot_id - 1] = val;
+       }
     }
 }
 
-void fill_material_from_json(const std::string &json, std::vector<std::string> &result) 
+void fill_material_from_json(const std::string& json, std::vector<std::string>& result) 
 {
     pt::ptree ptree;
     json_to_ptree(ptree, json);
@@ -178,10 +248,26 @@ void fill_material_from_json(const std::string &json, std::vector<std::string> &
         return;
     }
     // search "slot" subtree for all "material"s
-    parse_tree_for_param_vector(slot_subtree, "material", result);
+    // this parses "slots" with respect to numbers of slots and adds empty string to missing numbers
+    // if only filled should be used. Use: parse_tree_for_param_vector(slot_subtree, "material", result);
+    pt::ptree slots = parse_tree_for_subtree(slot_subtree, "slots"); 
+    assert(!slots.empty());
+    for (const auto &subtree : slots) {
+        size_t slot_id;
+        try {
+            slot_id = boost::lexical_cast<size_t>(subtree.first);
+        } catch (const boost::bad_lexical_cast&) {
+            continue;
+        }
+        std::string val = parse_tree_for_param(subtree.second, "material");
+        // add empty for missing id
+        while (result.size() < slot_id)
+            result.emplace_back();
+        result[slot_id - 1] = val;
+    }
 }
 
-std::string get_print_data_from_json(const std::string &json, const std::string &keyword) {
+std::string get_print_data_from_json(const std::string& json, const std::string& keyword) {
     // copy subtree string f.e.
     // { "<keyword>": {"param1": "something", "filename":"abcd.gcode", "param3":true},
     // "something_else" : 0 } into: {"param1": "something", "filename":"%1%", "param3":true,

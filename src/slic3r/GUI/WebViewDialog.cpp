@@ -1288,8 +1288,10 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
     nozzle_diameter_serialized.Replace(L",", L".");
     // Sending only first filament type for now. This should change to array of values
     const std::string filament_type_serialized = full_config.option("filament_type")->serialize();
-    std::string printer_model_serialized = full_config.option("printer_model")->serialize();
+    const std::string nozzle_high_flow_serialized = static_cast<const ConfigOptionBools *>(full_config.option("nozzle_high_flow"))->values[0] ? "1" : "0";
+    const std::string filament_abrasive_serialized = static_cast<const ConfigOptionBools *>(full_config.option("filament_abrasive"))->values[0] ? "1" : "0";
 
+    std::string printer_model_serialized = full_config.option("printer_model")->serialize();
     std::string vendor_repo_prefix;
     if (selected_printer.vendor) {
         vendor_repo_prefix = selected_printer.vendor->repo_prefix;
@@ -1311,19 +1313,13 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
         "{"
         "\"printerUuid\": \"%4%\", "
         "\"printerModel\": \"%3%\", "
-        "\"nozzleDiameter\": %2%, "
+        "\"nozzle_diameter\": %2%, "
         "\"material\": \"%1%\", "
         "\"filename\": \"%5%\", "
-        "\"fullConfig\": {"
-        , filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid, filename);
-
-    for (auto it = full_config.cbegin(); it != full_config.cend(); ++it) {
-        std::string value = full_config.option(it->first)->serialize();
-        boost::algorithm::replace_all(value, "\"", "\\\"");
-        request += it == full_config.cbegin() ? "" : ",";
-        request += GUI::format("\"%1%\": \"%2%\"", it->first, value);
-    }
-    request += "}}";
+        "\"filament_abrasive\": \"%6%\","
+        "\"nozzle_high_flow\": \"%7%\""
+        "}"
+        , filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid, filename, nozzle_high_flow_serialized, filament_abrasive_serialized);
 
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.requestCompatiblePrinter(%1%)", request);
     run_script(script);
