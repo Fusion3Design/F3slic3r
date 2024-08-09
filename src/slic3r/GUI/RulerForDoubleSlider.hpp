@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <vector>
 #include <set>
+#include <cstddef>
 
 namespace DoubleSlider {
 

@@ -7,6 +7,8 @@
 #include "slic3r/GUI/UserAccount.hpp"
 #include "slic3r/GUI/format.hpp"
 #include "slic3r/GUI/WebView.hpp"
+#include "slic3r/GUI/WebViewPlatformUtils.hpp"
+
 #include "slic3r/GUI/MsgDialog.hpp"
 #include "slic3r/GUI/Field.hpp"
 
@@ -753,6 +755,10 @@ PrinterWebViewPanel::PrinterWebViewPanel(wxWindow* parent, const wxString& defau
         return;
 
     m_browser->Bind(wxEVT_WEBVIEW_LOADED, &PrinterWebViewPanel::on_loaded, this);
+#ifndef NDEBUG
+    m_browser->EnableAccessToDevTools();
+    m_browser->EnableContextMenu();
+#endif
 }
 
 void PrinterWebViewPanel::on_loaded(wxWebViewEvent& evt)
@@ -774,14 +780,18 @@ void PrinterWebViewPanel::send_api_key()
     wxString key = from_u8(m_api_key);
     wxString script = wxString::Format(R"(
     // Check if window.fetch exists before overriding
-    if (window.fetch) {
-        const originalFetch = window.fetch;
+    if (window.originalFetch === undefined) {
+        console.log('Patching fetch with API key');
+        window.originalFetch = window.fetch;
         window.fetch = function(input, init = {}) {
             init.headers = init.headers || {};
-            init.headers['X-API-Key'] = '%s';
-            return originalFetch(input, init);
+            init.headers['X-Api-Key'] = sessionStorage.getItem('apiKey');
+            console.log('Patched fetch', input, init);
+            return window.originalFetch(input, init);
         };
     }
+    sessionStorage.setItem('authType', 'ApiKey');
+    sessionStorage.setItem('apiKey', '%s');
 )",
     key);
 
@@ -789,34 +799,18 @@ void PrinterWebViewPanel::send_api_key()
     BOOST_LOG_TRIVIAL(debug) << "RunScript " << script << "\n";
     m_browser->AddUserScript(script);
     m_browser->Reload();
-    
+    remove_webview_credentials(m_browser);
 }
 
 void PrinterWebViewPanel::send_credentials()
 {
     if (!m_browser || m_api_key_sent)
         return;
-    m_api_key_sent = true;
-    wxString usr = from_u8(m_usr);
-    wxString psk = from_u8(m_psk);
-    wxString script = wxString::Format(R"(
-    // Check if window.fetch exists before overriding
-    if (window.fetch) {
-        const originalFetch = window.fetch;
-        window.fetch = function(input, init = {}) {
-            init.headers = init.headers || {};
-            init.headers['X-API-Key'] = 'Basic ' + btoa(`%s:%s`);
-            return originalFetch(input, init);
-        };
-    }
-)", usr, psk);
-    
     m_browser->RemoveAllUserScripts();
-    BOOST_LOG_TRIVIAL(debug) << "RunScript " << script << "\n";
-    m_browser->AddUserScript(script);
-    
+    m_browser->AddUserScript("sessionStorage.removeItem('authType'); sessionStorage.removeItem('apiKey'); console.log('Session Storage cleared');");
     m_browser->Reload();
-    
+    m_api_key_sent = true;
+    setup_webview_with_credentials(m_browser, m_usr, m_psk);
 }
 
 void PrinterWebViewPanel::sys_color_changed()
@@ -1006,7 +1000,7 @@ void WebViewDialog::on_reload_button(wxCommandEvent& WXUNUSED(evt))
 }
 
 
-void WebViewDialog::on_navigation_request(wxWebViewEvent &evt) 
+void WebViewDialog::on_navigation_request(wxWebViewEvent &evt)
 {
 }
 
@@ -1319,7 +1313,7 @@ void PrinterPickWebViewDialog::request_compatible_printers_SLA()
     wxString script = GUI::format_wxstr("window._prusaConnect_v1.requestCompatiblePrinter(%1%)", request);
     run_script(script);
 }
-void PrinterPickWebViewDialog::on_dpi_changed(const wxRect &suggested_rect) 
+void PrinterPickWebViewDialog::on_dpi_changed(const wxRect &suggested_rect)
 {
     wxWindow *parent = GetParent();
     const wxSize &size = wxSize(
@@ -1331,7 +1325,7 @@ void PrinterPickWebViewDialog::on_dpi_changed(const wxRect &suggested_rect)
     Refresh();
 }
 
-LoginWebViewDialog::LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url) 
+LoginWebViewDialog::LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url)
     : WebViewDialog(parent
         , url
         , _L("Log in dialog"),
@@ -1350,7 +1344,7 @@ void LoginWebViewDialog::on_navigation_request(wxWebViewEvent &evt)
         EndModal(wxID_OK);
     }
 }
-void LoginWebViewDialog::on_dpi_changed(const wxRect &suggested_rect) 
+void LoginWebViewDialog::on_dpi_changed(const wxRect &suggested_rect)
 {
     const wxSize &size = wxSize(50 * wxGetApp().em_unit(), 80 * wxGetApp().em_unit());
     SetMinSize(size);
