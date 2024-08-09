@@ -17,8 +17,14 @@ ExtrusionPaths calculate_and_split_overhanging_extrusions(const ExtrusionPath   
                                                           const AABBTreeLines::LinesDistancer<Linef>      &unscaled_prev_layer,
                                                           const AABBTreeLines::LinesDistancer<CurledLine> &prev_layer_curled_lines)
 {
-    std::vector<ExtendedPoint>           extended_points = estimate_points_properties<true, true, true, true>(path.polyline.points,
-                                                                                                    unscaled_prev_layer, path.width());
+    ExtrusionProcessor::PropertiesEstimationConfig config{};
+    config.add_corners = true;
+    config.prev_layer_boundary_offset = true;
+    config.flow_width = path.width();
+    std::vector<ExtendedPoint> extended_points = estimate_points_properties<true>(
+        path.polyline.points, unscaled_prev_layer, config
+    );
+
     std::vector<std::pair<float, float>> calculated_distances(extended_points.size());
 
     for (size_t i = 0; i < extended_points.size(); i++) {
@@ -118,9 +124,28 @@ ExtrusionEntityCollection calculate_and_split_overhanging_extrusions(const Extru
         } else if (auto *loop = dynamic_cast<const ExtrusionLoop *>(e)) {
             ExtrusionLoop new_loop = *loop;
             new_loop.paths.clear();
-            for (const ExtrusionPath &p : loop->paths) {
-                auto paths = calculate_and_split_overhanging_extrusions(p, unscaled_prev_layer, prev_layer_curled_lines);
-                new_loop.paths.insert(new_loop.paths.end(), paths.begin(), paths.end());
+
+            ExtrusionPaths paths{loop->paths};
+            if (!paths.empty()) {
+                ExtrusionPath& first_path{paths.front()};
+                ExtrusionPath& last_path{paths.back()};
+
+                if (first_path.attributes() == last_path.attributes()) {
+                    if (first_path.polyline.size() > 1 && last_path.polyline.size() > 2) {
+                        const Line start{first_path.polyline.front(), *std::next(first_path.polyline.begin())};
+                        const Line end{last_path.polyline.back(), *std::next(last_path.polyline.rbegin())};
+
+                        if (std::abs(start.direction() - end.direction()) < 1e-5) {
+                            first_path.polyline.points.front() = *std::next(last_path.polyline.points.rbegin());
+                            last_path.polyline.points.pop_back();
+                        }
+                    }
+                }
+            }
+
+            for (const ExtrusionPath &p : paths) {
+                auto resulting_paths = calculate_and_split_overhanging_extrusions(p, unscaled_prev_layer, prev_layer_curled_lines);
+                new_loop.paths.insert(new_loop.paths.end(), resulting_paths.begin(), resulting_paths.end());
             }
             result.append(new_loop);
         } else if (auto *mp = dynamic_cast<const ExtrusionMultiPath *>(e)) {
