@@ -436,6 +436,9 @@ private:
     std::unique_ptr<PressureEqualizer>  m_pressure_equalizer;
     std::unique_ptr<GCode::WipeTowerIntegration> m_wipe_tower;
 
+    // Current fan speed set by dynamic fan speed control.
+    std::optional<float>                m_current_dynamic_fan_speed;
+
     // Heights (print_z) at which the skirt has already been extruded.
     std::vector<coordf_t>               m_skirt_done;
     // Has the brim been extruded already? Brim is being extruded only for the first object of a multi-object print.
@@ -455,8 +458,24 @@ private:
     // Back-pointer to Print (const).
     const Print*                        m_print;
 
-    std::string                         _extrude(
-        const ExtrusionAttributes &attribs, const Geometry::ArcWelder::Path &path, const std::string_view description, double speed = -1);
+    struct EmitModifiers {
+        EmitModifiers(bool emit_fan_speed_reset, bool emit_bridge_fan_start, bool emit_bridge_fan_end)
+            : emit_fan_speed_reset(emit_fan_speed_reset), emit_bridge_fan_start(emit_bridge_fan_start), emit_bridge_fan_end(emit_bridge_fan_end) {}
+
+        EmitModifiers() : EmitModifiers(true, true, true) {};
+
+        static EmitModifiers create_with_disabled_emits() {
+            return {false, false, false};
+        }
+
+        bool emit_fan_speed_reset  = true;
+
+        bool emit_bridge_fan_start = true;
+        bool emit_bridge_fan_end   = true;
+    };
+
+    std::string                         _extrude(const ExtrusionAttributes &attribs, const Geometry::ArcWelder::Path &path, std::string_view description, double speed, const EmitModifiers &emit_modifiers = EmitModifiers());
+
     void                                print_machine_envelope(GCodeOutputStream &file, const Print &print);
     void                                _print_first_layer_chamber_temperature(GCodeOutputStream &file, const Print &print, const std::string &gcode, int temp, bool wait, bool accurate);
     void                                _print_first_layer_bed_temperature(GCodeOutputStream &file, const Print &print, const std::string &gcode, unsigned int first_printing_extruder_id, bool wait);

@@ -2874,10 +2874,37 @@ std::string GCodeGenerator::change_layer(
 std::string GCodeGenerator::extrude_smooth_path(
     const GCode::SmoothPath &smooth_path, const bool is_loop, const std::string_view description, const double speed
 ) {
-    // Extrude along the smooth path.
     std::string gcode;
-    for (const GCode::SmoothPathElement &el : smooth_path)
-        gcode += this->_extrude(el.path_attributes, el.path, description, speed);
+
+    // Extrude along the smooth path.
+    bool          is_bridge_extruded = false;
+    EmitModifiers emit_modifiers     = EmitModifiers::create_with_disabled_emits();
+    for (auto el_it = smooth_path.begin(); el_it != smooth_path.end(); ++el_it) {
+        const auto next_el_it = next(el_it);
+
+        // By default, GCodeGenerator::_extrude() emit markers _BRIDGE_FAN_START, _BRIDGE_FAN_END and _RESET_FAN_SPEED for every extrusion.
+        // Together with split extrusions because of different ExtrusionAttributes, this could flood g-code with those markers and then
+        // produce an unnecessary number of duplicity M106.
+        // To prevent this, we control when each marker should be emitted by EmitModifiers, which allows determining when a bridge starts and ends,
+        // even when it is split into several extrusions.
+        if (el_it->path_attributes.role.is_bridge()) {
+            emit_modifiers.emit_bridge_fan_start = !is_bridge_extruded;
+            emit_modifiers.emit_bridge_fan_end   = next_el_it == smooth_path.end() || !next_el_it->path_attributes.role.is_bridge();
+            is_bridge_extruded                   = true;
+        } else if (is_bridge_extruded) {
+            emit_modifiers.emit_bridge_fan_start = false;
+            emit_modifiers.emit_bridge_fan_end   = false;
+            is_bridge_extruded                   = false;
+        }
+
+        // Ensure that just for the last extrusion from the smooth path, the fan speed will be reset back
+        // to the value calculated by the CoolingBuffer.
+        if (next_el_it == smooth_path.end()) {
+            emit_modifiers.emit_fan_speed_reset = true;
+        }
+
+        gcode += this->_extrude(el_it->path_attributes, el_it->path, description, speed, emit_modifiers);
+    }
 
     // reset acceleration
     gcode += m_writer.set_print_acceleration(fast_round_up<unsigned int>(m_config.default_acceleration.value));
@@ -2889,6 +2916,7 @@ std::string GCodeGenerator::extrude_smooth_path(
         GCode::reverse(reversed_smooth_path);
         m_wipe.set_path(std::move(reversed_smooth_path));
     }
+
     return gcode;
 }
 
@@ -3115,7 +3143,8 @@ std::string GCodeGenerator::_extrude(
     const ExtrusionAttributes       &path_attr,
     const Geometry::ArcWelder::Path &path,
     const std::string_view           description,
-    double                           speed)
+    double                           speed,
+    const EmitModifiers             &emit_modifiers)
 {
     std::string gcode;
     const std::string_view description_bridge = path_attr.role.is_bridge() ? " (bridge)"sv : ""sv;
@@ -3217,21 +3246,21 @@ std::string GCodeGenerator::_extrude(
     else if (this->object_layer_over_raft())
         speed = m_config.get_abs_value("first_layer_speed_over_raft", speed);
 
-    std::pair<float, float> dynamic_speed_and_fan_speed{-1, -1};
+    ExtrusionProcessor::OverhangSpeeds dynamic_print_and_fan_speeds = {-1.f, -1.f};
     if (path_attr.overhang_attributes.has_value()) {
-        double external_perim_reference_speed = m_config.get_abs_value("external_perimeter_speed");
-        if (external_perim_reference_speed == 0)
-            external_perim_reference_speed = m_volumetric_speed / path_attr.mm3_per_mm;
-        external_perim_reference_speed = cap_speed(
-            external_perim_reference_speed, m_config, m_writer.extruder()->id(), path_attr
-        );
+        double external_perimeter_reference_speed = m_config.get_abs_value("external_perimeter_speed");
+        if (external_perimeter_reference_speed == 0) {
+            external_perimeter_reference_speed = m_volumetric_speed / path_attr.mm3_per_mm;
+        }
 
-        dynamic_speed_and_fan_speed = ExtrusionProcessor::calculate_overhang_speed(path_attr, this->m_config, m_writer.extruder()->id(),
-                                                                                   external_perim_reference_speed, speed);
+        external_perimeter_reference_speed = cap_speed(external_perimeter_reference_speed, m_config, m_writer.extruder()->id(), path_attr);
+        dynamic_print_and_fan_speeds       = ExtrusionProcessor::calculate_overhang_speed(path_attr, this->m_config, m_writer.extruder()->id(),
+                                                                                    float(external_perimeter_reference_speed), float(speed),
+                                                                                    m_current_dynamic_fan_speed);
     }
 
-    if (dynamic_speed_and_fan_speed.first > -1) {
-        speed = dynamic_speed_and_fan_speed.first;
+    if (dynamic_print_and_fan_speeds.print_speed > -1) {
+        speed = dynamic_print_and_fan_speeds.print_speed;
     }
 
     // cap speed with max_volumetric_speed anyway (even if user is not using autospeed)
@@ -3282,18 +3311,30 @@ std::string GCodeGenerator::_extrude(
 
     std::string cooling_marker_setspeed_comments;
     if (m_enable_cooling_markers) {
-        if (path_attr.role.is_bridge())
+        if (path_attr.role.is_bridge() && emit_modifiers.emit_bridge_fan_start) {
             gcode += ";_BRIDGE_FAN_START\n";
-        else
+        } else if (!path_attr.role.is_bridge()) {
             cooling_marker_setspeed_comments = ";_EXTRUDE_SET_SPEED";
-        if (path_attr.role == ExtrusionRole::ExternalPerimeter)
+        }
+
+        if (path_attr.role == ExtrusionRole::ExternalPerimeter) {
             cooling_marker_setspeed_comments += ";_EXTERNAL_PERIMETER";
+        }
     }
 
     // F is mm per minute.
     gcode += m_writer.set_speed(F, "", cooling_marker_setspeed_comments);
-    if (dynamic_speed_and_fan_speed.second >= 0)
-        gcode += ";_SET_FAN_SPEED" + std::to_string(int(dynamic_speed_and_fan_speed.second)) + "\n";
+
+    if (dynamic_print_and_fan_speeds.fan_speed >= 0) {
+        const int fan_speed = int(dynamic_print_and_fan_speeds.fan_speed);
+        if (!m_current_dynamic_fan_speed.has_value() || (m_current_dynamic_fan_speed.has_value() && m_current_dynamic_fan_speed != fan_speed)) {
+            m_current_dynamic_fan_speed = fan_speed;
+            gcode += ";_SET_FAN_SPEED" + std::to_string(fan_speed) + "\n";
+        }
+    } else if (m_current_dynamic_fan_speed.has_value() && dynamic_print_and_fan_speeds.fan_speed < 0) {
+        m_current_dynamic_fan_speed.reset();
+        gcode += ";_RESET_FAN_SPEED\n";
+    }
 
     std::string comment;
     if (m_config.gcode_comments) {
@@ -3343,11 +3384,18 @@ std::string GCodeGenerator::_extrude(
         }
     }
 
-    if (m_enable_cooling_markers)
-        gcode += path_attr.role.is_bridge() ? ";_BRIDGE_FAN_END\n" : ";_EXTRUDE_END\n";
+    if (m_enable_cooling_markers) {
+        if (path_attr.role.is_bridge() && emit_modifiers.emit_bridge_fan_end) {
+            gcode += ";_BRIDGE_FAN_END\n";
+        } else if (!path_attr.role.is_bridge()) {
+            gcode += ";_EXTRUDE_END\n";
+        }
+    }
 
-    if (dynamic_speed_and_fan_speed.second >= 0)
+    if (m_current_dynamic_fan_speed.has_value() && emit_modifiers.emit_fan_speed_reset) {
+        m_current_dynamic_fan_speed.reset();
         gcode += ";_RESET_FAN_SPEED\n";
+    }
 
     this->last_position = path.back().point;
     return gcode;
