@@ -1,6 +1,7 @@
 #include "ServiceConfig.hpp"
 
 #include <cstdlib>
+#include <cstring>
 
 namespace Slic3r::Utils {
 
