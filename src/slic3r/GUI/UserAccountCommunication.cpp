@@ -322,7 +322,8 @@ void UserAccountCommunication::on_uuid_map_success()
 }
 
 wxString UserAccountCommunication::get_login_redirect_url() {
-    const std::string AUTH_HOST = "https://account.prusa3d.com";
+    auto& sc = Utils::ServiceConfig::instance();
+    const std::string AUTH_HOST = sc.account_url();
     const std::string CLIENT_ID = client_id();
     const std::string REDIRECT_URI = "prusaslicer://login";
     CodeChalengeGenerator ccg;
