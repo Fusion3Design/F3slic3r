@@ -525,11 +525,14 @@ std::vector<ExtruderExtrusions> get_extrusions(
         ExtruderExtrusions extruder_extrusions{extruder_id};
 
         if (layer_tools.has_wipe_tower && wipe_tower != nullptr) {
-            if (is_toolchange_required(is_first_layer, layer_tools.extruders.back(), extruder_id, current_extruder_id)) {
-                const WipeTower::ToolChangeResult tool_change{wipe_tower->get_toolchange(toolchange_number++)};
-                previous_position = Point::new_scale(wipe_tower->transform_wt_pt(tool_change.end_pos));
-                current_extruder_id = tool_change.new_tool;
-                extruder_extrusions.wipe_tower_start = Point::new_scale(wipe_tower->transform_wt_pt(tool_change.start_pos));
+            const bool finish_wipe_tower{extruder_id == layer_tools.extruders.back()};
+            if (finish_wipe_tower || is_toolchange_required(is_first_layer, layer_tools.extruders.back(), extruder_id, current_extruder_id)) {
+                if (const auto tool_change{wipe_tower->get_toolchange(toolchange_number)}) {
+                    toolchange_number++;
+                    previous_position = Point::new_scale(wipe_tower->transform_wt_pt(tool_change->end_pos));
+                    current_extruder_id = tool_change->new_tool;
+                    extruder_extrusions.wipe_tower_start = Point::new_scale(wipe_tower->transform_wt_pt(tool_change->start_pos));
+                }
             }
         }
 

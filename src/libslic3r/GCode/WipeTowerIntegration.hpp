@@ -39,7 +39,10 @@ public:
     std::string tool_change(GCodeGenerator &gcodegen, int extruder_id, bool finish_layer);
     std::string finalize(GCodeGenerator &gcodegen);
     std::vector<float> used_filament_length() const;
-    WipeTower::ToolChangeResult get_toolchange(std::size_t index) const {
+    std::optional<WipeTower::ToolChangeResult> get_toolchange(std::size_t index) const {
+        if (m_layer_idx >= m_tool_changes.size()) {
+            return std::nullopt;
+        }
         return m_tool_changes.at(m_layer_idx).at(index);
     }
 
