@@ -292,14 +292,14 @@ void GCodeProcessor::TimeMachine::calculate_time(GCodeProcessorResult& result, P
 
     assert(keep_last_n_blocks <= blocks.size());
 
-    // forward_pass
-    for (size_t i = 0; i + 1 < blocks.size(); ++i) {
-        planner_forward_pass_kernel(blocks[i], blocks[i + 1]);
-    }
-
     // reverse_pass
     for (int i = static_cast<int>(blocks.size()) - 1; i > 0; --i) {
         planner_reverse_pass_kernel(blocks[i - 1], blocks[i]);
+    }
+
+    // forward_pass
+    for (size_t i = 0; i + 1 < blocks.size(); ++i) {
+        planner_forward_pass_kernel(blocks[i], blocks[i + 1]);
     }
 
     recalculate_trapezoids(blocks);
@@ -2730,8 +2730,9 @@ void GCodeProcessor::process_G1(const std::array<std::optional<double>, 4>& axes
 
         for (unsigned char a = X; a <= E; ++a) {
             const float axis_max_acceleration = get_axis_max_acceleration(static_cast<PrintEstimatedStatistics::ETimeMode>(i), static_cast<Axis>(a));
-            if (acceleration * std::abs(delta_pos[a]) * inv_distance > axis_max_acceleration)
-                acceleration = axis_max_acceleration;
+            const float scale = std::abs(delta_pos[a]) * inv_distance;
+            if (acceleration * scale > axis_max_acceleration)
+                acceleration = axis_max_acceleration / scale;
         }
 
         block.acceleration = acceleration;
