@@ -367,16 +367,8 @@ namespace Slic3r {
             struct Planner
             {
                 // Size of the firmware planner queue. The old 8-bit Marlins usually just managed 16 trapezoidal blocks.
-                // ! WARNING !
-                // The previous implementation:
-                //   Let's be conservative and plan for newer boards with more memory.
-                //   static constexpr size_t queue_size = 64;
-                // was generating artifacts, see: https://dev.prusa3d.com/browse/SPE-2397 because the time blocks shared by two consecutive batches
-                // may end up being processed multiple times, giving rise to discontinuities.
-                // Keeping all the time blocks in memory may result in a huge buffer (i.e. greater than 1GB for huge slices), so we set an arbitrary
-                // batch size of around 128MB.
-                // This should result in a reduced number of artifacts visible only for objects whose buffers exceed this size.
-                static constexpr size_t queue_size = 32 * 1024 * 1024 / sizeof(TimeBlock);
+                // Let's be conservative and plan for newer boards with more memory.
+                static constexpr size_t queue_size = 64;
                 // The firmware recalculates last planner_queue_size trapezoidal blocks each time a new block is added.
                 // We are not simulating the firmware exactly, we calculate a sequence of blocks once a reasonable number of blocks accumulate.
                 static constexpr size_t refresh_threshold = queue_size * 4;
