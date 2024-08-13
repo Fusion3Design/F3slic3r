@@ -5,10 +5,9 @@
 #include "MedialAxis.hpp"
 
 #include <boost/log/trivial.hpp>
-#include <assert.h>
-#include <math.h>
 #include <boost/polygon/polygon.hpp>
-#include <algorithm>
+#include <cassert>
+#include <cmath>
 
 #include "VoronoiOffset.hpp"
 #include "libslic3r/ClipperUtils.hpp"

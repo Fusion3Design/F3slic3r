@@ -5,10 +5,10 @@
 ///|/
 #include "MultiPoint.hpp"
 
-#include <stdlib.h>
 #include <cmath>
 #include <limits>
 #include <queue>
+#include <cstdlib>
 
 #include "BoundingBox.hpp"
 #include "libslic3r/Point.hpp"

@@ -2,17 +2,17 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <stdlib.h>
-#include <string.h>
 #include <boost/log/trivial.hpp>
 #include <boost/nowide/cstdio.hpp>
 #include <LocalesUtils.hpp>
 #include <fast_float.h>
-#include <assert.h>
-#include <stdio.h>
 #include <new>
 #include <system_error>
 #include <utility>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "objparser.hpp"
 

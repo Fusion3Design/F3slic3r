@@ -4,11 +4,8 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <boost/thread/lock_guard.hpp>
-#include <assert.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <algorithm>
 #include <numeric>
 #include <unordered_set>
@@ -17,6 +14,9 @@
 #include <functional>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cinttypes>
+#include <cstddef>
 
 #include "clipper/clipper_z.hpp"
 #include "ClipperUtils.hpp"

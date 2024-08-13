@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <cassert>
 
 #include "Point.hpp"
 

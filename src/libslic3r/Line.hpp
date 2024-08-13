@@ -15,6 +15,7 @@
 #include <cmath>
 #include <utility>
 #include <vector>
+#include <complex>
 
 #include "libslic3r.h"
 #include "Point.hpp"

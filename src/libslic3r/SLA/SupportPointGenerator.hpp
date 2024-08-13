@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <cinttypes>
 
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Polygon.hpp"

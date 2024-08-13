@@ -2,9 +2,10 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <stdio.h>
 #include <random>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 #include "Color.hpp"
 

@@ -7,9 +7,9 @@
 //#include <libslic3r/SLA/Contour3D.hpp>
 #include <libslic3r/TriangleMeshSlicer.hpp>
 #include <boost/log/trivial.hpp>
-#include <stddef.h>
 #include <algorithm>
 #include <utility>
+#include <cstdlib>
 
 #include "ConcaveHull.hpp"
 #include "libslic3r/ClipperUtils.hpp"

@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "libslic3r.h"
 #include "ExtrusionEntity.hpp"

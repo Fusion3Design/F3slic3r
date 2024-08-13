@@ -14,8 +14,6 @@
 #include <libslic3r/MeshBoolean.hpp>
 #include <boost/log/trivial.hpp>
 #include <libslic3r/I18N.hpp>
-#include <assert.h>
-#include <stdint.h>
 #include <functional>
 #include <numeric>
 #include <unordered_set>
@@ -23,6 +21,8 @@
 #include <cmath>
 #include <mutex>
 #include <string>
+#include <cassert>
+#include <cinttypes>
 
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Exception.hpp"

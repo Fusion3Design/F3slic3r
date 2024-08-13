@@ -20,6 +20,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cinttypes>
+#include <cstddef>
 
 #include "Line.hpp"
 #include "libslic3r.h"

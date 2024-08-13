@@ -17,6 +17,8 @@
 #include <limits>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cstddef>
 
 #include "libslic3r.h"
 #include "ExtrusionRole.hpp"

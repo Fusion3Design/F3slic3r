@@ -11,6 +11,9 @@
 #include <algorithm>
 #include <initializer_list>
 #include <vector>
+#include <cassert>
+#include <cinttypes>
+#include <cstddef>
 
 #include "Point.hpp"
 #include "Polygon.hpp"

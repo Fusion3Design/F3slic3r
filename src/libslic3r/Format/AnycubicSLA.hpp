@@ -10,6 +10,7 @@
 #include <string>
 #include <memory>
 #include <utility>
+#include <cinttypes>
 
 #include "SLAArchiveWriter.hpp"
 #include "SLAArchiveFormatRegistry.hpp"

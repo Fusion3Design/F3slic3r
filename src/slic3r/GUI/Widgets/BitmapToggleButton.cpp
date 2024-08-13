@@ -8,8 +8,6 @@
 
 #include "wx/window.h"
 
-class wxWindow;
-
 BitmapToggleButton::BitmapToggleButton(wxWindow* parent, const wxString& label, wxWindowID id)
 {
     const long style = wxBORDER_NONE | wxBU_EXACTFIT | wxBU_LEFT;

@@ -21,6 +21,8 @@
 #include <initializer_list>
 #include <iterator>
 #include <utility>
+#include <cassert>
+#include <cmath>
 
 #include "libslic3r.h"
 #include "Line.hpp"

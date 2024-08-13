@@ -1,8 +1,7 @@
 #include "Voronoi.hpp"
 
 #include <boost/log/trivial.hpp>
-#include <assert.h>
-#include <stddef.h>
+#include <cassert>
 
 #include "libslic3r/Arachne/utils/PolygonsSegmentIndex.hpp"
 #include "libslic3r/Geometry/VoronoiUtils.hpp"

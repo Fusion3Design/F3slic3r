@@ -3,17 +3,16 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <boost/log/trivial.hpp>
-#include <assert.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <stddef.h>
-#include <Eigen/Geometry>
 #include <algorithm>
 #include <functional>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cstddef>
 
 #include "ClipperUtils.hpp"
 #include "ElephantFootCompensation.hpp"

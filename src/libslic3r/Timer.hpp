@@ -9,6 +9,7 @@
 #include <string>
 #include <chrono>
 #include <string_view>
+#include <cinttypes>
 
 namespace Slic3r {
 

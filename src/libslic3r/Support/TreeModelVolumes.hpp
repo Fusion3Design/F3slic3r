@@ -24,6 +24,9 @@
 #include <optional>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cinttypes>
+#include <cstddef>
 
 #include "TreeSupportCommon.hpp"
 #include "../Point.hpp"

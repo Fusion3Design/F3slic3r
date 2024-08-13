@@ -12,6 +12,7 @@
 #include <random>
 #include <string>
 #include <utility>
+#include <cstddef>
 
 #include "admesh/stl.h"
 #include "libslic3r/libslic3r.h"

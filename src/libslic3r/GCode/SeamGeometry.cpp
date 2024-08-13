@@ -1,10 +1,10 @@
 #include "libslic3r/GCode/SeamGeometry.hpp"
 
-#include <stdint.h>
 #include <numeric>
 #include <cmath>
 #include <iterator>
 #include <limits>
+#include <cinttypes>
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Layer.hpp"

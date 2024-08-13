@@ -13,6 +13,8 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+#include <cassert>
+#include <cstddef>
 
 // There is an implementation of a hole-aware raycaster that was eventually
 // not used in production version. It is now hidden under following define

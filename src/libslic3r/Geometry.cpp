@@ -20,8 +20,8 @@
 #include <cmath>
 #include <utility>
 #include <vector>
-#include <Eigen/SVD>
 #include <array>
+#include <complex>
 
 #include "libslic3r.h"
 #include "Geometry.hpp"

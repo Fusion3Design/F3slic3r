@@ -3,10 +3,10 @@
 
 #include "TreeNode.hpp"
 
-#include <assert.h>
-#include <stdlib.h>
 #include <algorithm>
 #include <limits>
+#include <cassert>
+#include <cstdlib>
 
 #include "../../Geometry.hpp"
 #include "libslic3r/Line.hpp"

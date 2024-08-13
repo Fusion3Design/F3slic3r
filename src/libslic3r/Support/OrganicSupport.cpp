@@ -7,8 +7,6 @@
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/partitioner.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <boost/container/small_vector.hpp>
 #include <boost/container/vector.hpp>
 #include <cassert>
@@ -18,6 +16,8 @@
 #include <limits>
 #include <optional>
 #include <utility>
+#include <cinttypes>
+#include <cstddef>
 
 #include "../AABBTreeLines.hpp"
 #include "../ClipperUtils.hpp"

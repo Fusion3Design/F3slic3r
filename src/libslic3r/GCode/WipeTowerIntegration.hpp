@@ -3,6 +3,9 @@
 
 #include <string>
 #include <vector>
+#include <cmath>
+#include <cstddef>
+#include <optional>
 
 #include "WipeTower.hpp"
 #include "../PrintConfig.hpp"

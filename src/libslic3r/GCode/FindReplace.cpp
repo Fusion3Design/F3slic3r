@@ -5,7 +5,6 @@
 #include "FindReplace.hpp"
 
 #include <boost/algorithm/string/replace.hpp>
-#include <string.h>
 #include <boost/algorithm/string/find.hpp>
 #include <boost/range/iterator_range_core.hpp>
 #include <cctype> // isalpha
@@ -13,6 +12,7 @@
 #include <iterator>
 #include <tuple>
 #include <utility>
+#include <cstring>
 
 #include "../Utils.hpp"
 #include "libslic3r/Exception.hpp"

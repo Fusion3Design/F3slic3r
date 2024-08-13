@@ -1,10 +1,10 @@
 #include "SmoothPath.hpp"
 
-#include <assert.h>
 #include <algorithm>
 #include <cmath>
 #include <iterator>
 #include <utility>
+#include <cassert>
 
 #include "../ExtrusionEntity.hpp"
 #include "../ExtrusionEntityCollection.hpp"

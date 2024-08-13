@@ -17,6 +17,7 @@
 #include <array>
 #include <cmath>
 #include <vector>
+#include <cstring>
 
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Extruder.hpp"

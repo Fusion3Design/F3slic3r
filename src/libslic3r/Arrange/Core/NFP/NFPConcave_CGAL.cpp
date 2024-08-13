@@ -7,10 +7,10 @@
 #include <CGAL/Partition_traits_2.h>
 #include <CGAL/property_map.h>
 #include <CGAL/Polygon_vertical_decomposition_2.h>
-#include <stddef.h>
 #include <iterator>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "NFP.hpp"
 #include "NFPConcave_CGAL.hpp"

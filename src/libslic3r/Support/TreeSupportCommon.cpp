@@ -12,8 +12,8 @@
 
 #include "TreeSupportCommon.hpp"
 
-#include <stdio.h>
 #include <limits>
+#include <cstdio>
 
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/Print.hpp"

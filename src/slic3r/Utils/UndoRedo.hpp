@@ -15,6 +15,8 @@
 #include <vector>
 #include <cassert>
 #include <utility>
+#include <cinttypes>
+#include <cstddef>
 
 typedef double                          coordf_t;
 typedef std::pair<coordf_t, coordf_t>   t_layer_height_range;

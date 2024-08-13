@@ -3,11 +3,11 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <assert.h>
-#include <stddef.h>
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <cassert>
+#include <cstddef>
 
 #include "../ClipperUtils.hpp"
 #include "../ShortestPath.hpp"

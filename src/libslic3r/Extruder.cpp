@@ -9,9 +9,9 @@
 ///|/
 #include "Extruder.hpp"
 
-#include <assert.h>
-#include <math.h>
 #include <algorithm>
+#include <cassert>
+#include <cmath>
 
 #include "libslic3r/GCode/GCodeWriter.hpp"
 #include "PrintConfig.hpp"

@@ -4,7 +4,6 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "libslic3r/Print.hpp"
-#include "ToolOrdering.hpp"
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/GCode/ToolOrdering.hpp"
 #include "libslic3r/CustomGCode.hpp"
@@ -26,10 +25,10 @@
 
 #include <boost/log/trivial.hpp>
 #include <libslic3r/libslic3r.h>
-#include <string.h>
 #include <cassert>
 #include <limits>
 #include <cmath>
+#include <cstring>
 
 namespace Slic3r {
 

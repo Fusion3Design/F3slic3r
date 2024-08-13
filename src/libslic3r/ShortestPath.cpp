@@ -10,15 +10,14 @@
 
 #include <cmath>
 #include <cassert>
-#include <Eigen/Geometry>
 #include <iterator>
 #include <limits>
+#include <algorithm>
 
 #include "ShortestPath.hpp"
 #include "KDTreeIndirect.hpp"
 #include "MutablePriorityQueue.hpp"
 #include "Print.hpp"
-#include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/Line.hpp"

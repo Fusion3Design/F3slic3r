@@ -7,7 +7,6 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <stdlib.h>
 #include <boost/container/small_vector.hpp>
 #include <boost/log/trivial.hpp>
 #include <oneapi/tbb/scalable_allocator.h>
@@ -21,6 +20,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cstdlib>
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExPolygon.hpp"

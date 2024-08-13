@@ -7,13 +7,12 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <boost/log/trivial.hpp>
-#include <assert.h>
 #include <nanosvg/nanosvg.h>
-#include <stddef.h>
-#include <Eigen/Geometry>
 #include <memory>
 #include <string>
 #include <utility>
+#include <cassert>
+#include <cstddef>
 
 #include "libslic3r/Model.hpp"
 #include "libslic3r/TriangleMesh.hpp"

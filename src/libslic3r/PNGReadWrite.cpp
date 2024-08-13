@@ -10,12 +10,12 @@
 #include <png.h>
 #include <boost/log/trivial.hpp>
 #include <boost/nowide/cstdio.hpp>
-#include <assert.h>
 #include <pngconf.h>
 #include <pnglibconf.h>
-#include <setjmp.h>
-#include <string.h>
 #include <cstdio>
+#include <cassert>
+#include <csetjmp>
+#include <cstring>
 
 namespace Slic3r { namespace png {
 

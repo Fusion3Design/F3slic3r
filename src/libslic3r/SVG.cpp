@@ -11,9 +11,9 @@
 #include "SVG.hpp"
 
 #include <boost/nowide/cstdio.hpp>
-#include <math.h>
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Line.hpp"

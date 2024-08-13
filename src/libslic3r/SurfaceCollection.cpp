@@ -6,8 +6,8 @@
 ///|/
 #include "SurfaceCollection.hpp"
 
-#include <stdio.h>
 #include <algorithm>
+#include <cstdio>
 
 #include "BoundingBox.hpp"
 #include "SVG.hpp"

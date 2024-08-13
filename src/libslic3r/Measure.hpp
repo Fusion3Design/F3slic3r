@@ -13,6 +13,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cstdlib>
 
 #include "Point.hpp"
 #include "libslic3r/libslic3r.h"

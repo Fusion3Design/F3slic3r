@@ -11,7 +11,6 @@
 #include <iterator>
 
 #include "ExtrusionEntityCollection.hpp"
-#include "ExPolygon.hpp"
 #include "ClipperUtils.hpp"
 #include "Exception.hpp"
 #include "Flow.hpp"

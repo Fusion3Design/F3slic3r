@@ -7,6 +7,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cinttypes>
 
 #include "BoundingBox.hpp"
 #include "ExtrusionEntityCollection.hpp"

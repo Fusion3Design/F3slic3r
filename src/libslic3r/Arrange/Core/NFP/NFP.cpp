@@ -24,7 +24,6 @@ namespace Slic3r { using LargeInt = boost::multiprecision::int128_t; }
 #endif
 
 #include <boost/rational.hpp>
-#include <assert.h>
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -33,6 +32,7 @@ namespace Slic3r { using LargeInt = boost::multiprecision::int128_t; }
 #include <limits>
 #include <utility>
 #include <vector>
+#include <cassert>
 
 namespace Slic3r {
 

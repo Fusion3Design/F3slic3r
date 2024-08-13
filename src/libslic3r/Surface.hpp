@@ -16,6 +16,7 @@
 #include <iterator>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "libslic3r.h"
 #include "ExPolygon.hpp"

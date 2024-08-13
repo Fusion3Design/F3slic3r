@@ -2,13 +2,12 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <assert.h>
-#include <stdint.h>
-#include <Eigen/Geometry>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <iterator>
+#include <cassert>
+#include <cinttypes>
 
 #include "libslic3r/libslic3r.h"
 #include "LibVGCodeWrapper.hpp"
@@ -26,6 +25,7 @@
 #include "libslic3r/PrintConfig.hpp"
 #include "../../src/libvgcode/include/GCodeInputData.hpp"
 #include "../../src/libvgcode/include/PathVertex.hpp"
+#include "libvgcode/include/Types.hpp"
 
 namespace libvgcode {
 class Viewer;

@@ -10,6 +10,8 @@
 #include <cmath>
 #include <limits>
 #include <numeric>
+#include <cstdlib>
+#include <iterator>
 
 #include "libslic3r/Model.hpp"
 #include "libslic3r/Print.hpp"
@@ -23,6 +25,7 @@
 #include "libslic3r/SLA/Pad.hpp"
 #include "libslic3r/TriangleMesh.hpp"
 #include "libslic3r/TriangleMeshSlicer.hpp"
+#include "libslic3r/Arrange/Core/Beds.hpp"
 
 namespace Slic3r { namespace arr2 {
 

@@ -4,12 +4,12 @@
 ///|/
 #include "FontConfigHelp.hpp"
 
-#include <stddef.h>
 #include <wx/buffer.h>
 #include <wx/chartype.h>
 #include <wx/defs.h>
 #include <wx/string.h>
 #include <optional>
+#include <cstddef>
 
 #ifdef EXIST_FONT_CONFIG_INCLUDE
 

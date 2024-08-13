@@ -22,6 +22,9 @@
 #include <Eigen/Geometry>
 #include <array>
 #include <utility>
+#include <cassert>
+#include <cinttypes>
+#include <cstddef>
 
 #include "libslic3r.h"
 #include "BoundingBox.hpp"
@@ -29,6 +32,7 @@
 #include "Point.hpp"
 #include "Polygon.hpp"
 #include "ExPolygon.hpp"
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r {
 

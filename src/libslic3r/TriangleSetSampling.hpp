@@ -8,6 +8,7 @@
 #include <admesh/stl.h>
 #include <stddef.h>
 #include <vector>
+#include <cstddef>
 
 #include "libslic3r/Point.hpp"
 

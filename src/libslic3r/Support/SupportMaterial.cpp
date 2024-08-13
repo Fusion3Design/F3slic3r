@@ -11,12 +11,9 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <boost/log/trivial.hpp>
-#include <float.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/task_group.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <cmath>
 #include <memory>
 #include <algorithm>
@@ -24,6 +21,9 @@
 #include <numeric>
 #include <tuple>
 #include <utility>
+#include <cfloat>
+#include <cinttypes>
+#include <cstdlib>
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"

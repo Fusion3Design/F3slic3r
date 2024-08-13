@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <map>
 #include <vector>
+#include <cstddef>
 
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Execution/Execution.hpp"

@@ -3,9 +3,9 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <boost/multiprecision/integer.hpp>
-#include <assert.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <cassert>
+#include <cinttypes>
+#include <cstddef>
 
 #include "ConvexHull.hpp"
 #include "libslic3r/BoundingBox.hpp"

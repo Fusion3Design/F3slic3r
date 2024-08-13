@@ -4,7 +4,7 @@
 ///|/
 #include "Beds.hpp"
 
-#include <algorithm>
+#include <cstdlib>
 
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"

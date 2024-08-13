@@ -6,16 +6,15 @@
 #include <libslic3r/Execution/ExecutionTBB.hpp>
 #include <libslic3r/Optimize/BruteforceOptimizer.hpp>
 #include <libslic3r/Geometry.hpp>
-#include <stddef.h>
-#include <stdint.h>
 #include <limits>
 #include <thread>
-#include <Eigen/Geometry>
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <iterator>
 #include <vector>
+#include <cinttypes>
+#include <cstdlib>
 
 #include "libslic3r/PrintConfig.hpp"
 #include "admesh/stl.h"

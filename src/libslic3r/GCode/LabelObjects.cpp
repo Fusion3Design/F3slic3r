@@ -1,9 +1,9 @@
 #include "LabelObjects.hpp"
 
-#include <assert.h>
 #include <algorithm>
 #include <cstdio>
 #include <map>
+#include <cassert>
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/GCode/GCodeWriter.hpp"

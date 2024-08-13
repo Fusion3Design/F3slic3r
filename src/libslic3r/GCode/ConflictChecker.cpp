@@ -5,16 +5,17 @@
 ///|/
 #include "ConflictChecker.hpp"
 
-#include <assert.h>
-#include <float.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/concurrent_vector.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <stdlib.h>
 #include <map>
 #include <functional>
 #include <cmath>
 #include <cstdint>
+#include <algorithm>
+#include <cassert>
+#include <cfloat>
+#include <cstdlib>
 
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/GCode/WipeTower.hpp"

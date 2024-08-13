@@ -12,6 +12,9 @@
 #include <algorithm>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cinttypes>
+#include <cstddef>
 
 #include "ExtrusionJunction.hpp"
 #include "../../Polyline.hpp"

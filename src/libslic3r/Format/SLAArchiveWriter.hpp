@@ -9,6 +9,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <cstddef>
 
 #include "libslic3r/SLA/RasterBase.hpp"
 #include "libslic3r/Execution/ExecutionTBB.hpp"

@@ -14,6 +14,8 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cstddef>
 
 #include "Scene.hpp"
 #include "Core/ArrangeItemTraits.hpp"

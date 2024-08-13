@@ -13,6 +13,7 @@
 
 namespace Slic3r {
 class GLVolume;
+
 namespace GUI {
 struct Camera;
 }  // namespace GUI

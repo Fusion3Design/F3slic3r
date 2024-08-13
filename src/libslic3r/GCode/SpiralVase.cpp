@@ -8,8 +8,8 @@
 ///|/
 #include "SpiralVase.hpp"
 
-#include <stddef.h>
 #include <utility>
+#include <cstddef>
 
 #include "libslic3r/AABBTreeLines.hpp"
 #include "libslic3r/GCode/GCodeWriter.hpp"

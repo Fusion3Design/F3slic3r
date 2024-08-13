@@ -12,13 +12,13 @@
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/multi_array.hpp>
-#include <string.h>
 #include <cmath>
 #include <cassert>
 #include <algorithm>
 #include <complex>
 #include <utility>
 #include <vector>
+#include <cstring>
 
 #include "libslic3r.h"
 #include "ExtrusionSimulator.hpp"

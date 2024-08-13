@@ -8,14 +8,14 @@
 #include <libslic3r/SLA/Clustering.hpp>
 #include <libslic3r/MeshNormals.hpp>
 #include <libslic3r/Execution/ExecutionTBB.hpp>
-#include <assert.h>
-#include <stddef.h>
 #include <boost/log/trivial.hpp>
 #include <cmath>
 #include <functional>
 #include <iterator>
 #include <set>
 #include <string>
+#include <cassert>
+#include <cstddef>
 
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Optimize/Optimizer.hpp"

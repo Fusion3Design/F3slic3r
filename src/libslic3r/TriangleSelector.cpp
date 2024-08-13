@@ -5,10 +5,10 @@
 #include "TriangleSelector.hpp"
 
 #include <boost/container/small_vector.hpp>
-#include <string.h>
 #include <boost/container/vector.hpp>
 #include <cmath>
 #include <queue>
+#include <cstring>
 
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/Point.hpp"

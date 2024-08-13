@@ -4,7 +4,6 @@
 ///|/
 #include "../Print.hpp"
 #include "../ShortestPath.hpp"
-#include "FillLightning.hpp"
 #include "Lightning/Generator.hpp"
 #include "libslic3r/Fill/FillLightning.hpp"
 #include "libslic3r/Fill/FillBase.hpp"

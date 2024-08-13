@@ -13,11 +13,11 @@
 ///|/
 #include "GCodeWriter.hpp"
 
-#include <assert.h>
-#include <stdint.h>
 #include <algorithm>
 #include <iostream>
 #include <string_view>
+#include <cassert>
+#include <cinttypes>
 
 #include "libslic3r/libslic3r.h"
 

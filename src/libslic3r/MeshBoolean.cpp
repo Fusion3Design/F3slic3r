@@ -13,7 +13,6 @@
 // Include igl first. It defines "L" macro which then clashes with our localization
 #include <igl/copyleft/cgal/mesh_boolean.h> // IWYU pragma: keep
 #include <igl/MeshBooleanType.h>
-#include <signal.h>
 #include <boost/property_map/property_map.hpp>
 
 #undef L
@@ -25,6 +24,8 @@
 #include <CGAL/Cartesian_converter.h>
 #include <algorithm>
 #include <set>
+#include <csignal>
+#include <map>
 
 namespace Slic3r {
 namespace MeshBoolean {

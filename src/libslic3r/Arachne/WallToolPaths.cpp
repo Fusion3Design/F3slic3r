@@ -1,12 +1,12 @@
 // Copyright (c) 2022 Ultimaker B.V.
 // CuraEngine is released under the terms of the AGPLv3 or higher.
 
-#include <assert.h>
-#include <math.h>
-#include <stdint.h>
 #include <algorithm> //For std::partition_copy and std::min_element.
 #include <limits>
 #include <memory>
+#include <cassert>
+#include <cinttypes>
+#include <cmath>
 
 #include "WallToolPaths.hpp"
 #include "SkeletalTrapezoidation.hpp"

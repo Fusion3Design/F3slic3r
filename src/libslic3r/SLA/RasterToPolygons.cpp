@@ -4,11 +4,11 @@
 ///|/
 #include "RasterToPolygons.hpp"
 
-#include <stddef.h>
-#include <stdint.h>
 #include <algorithm>
 #include <utility>
 #include <vector>
+#include <cinttypes>
+#include <cstddef>
 
 #include "AGGRaster.hpp"
 #include "libslic3r/MarchingSquares.hpp"

@@ -5,14 +5,15 @@
 
 #include "FillEnsuring.hpp"
 
-#include <assert.h>
-#include <stdlib.h>
 #include <algorithm>
 #include <unordered_set>
 #include <vector>
 #include <cmath>
-#include <set>
 #include <utility>
+#include <cassert>
+#include <cstdlib>
+#include <iterator>
+#include <queue>
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ShortestPath.hpp"

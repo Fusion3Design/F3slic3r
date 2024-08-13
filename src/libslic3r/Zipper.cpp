@@ -3,7 +3,7 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <boost/log/trivial.hpp>
-#include <string.h>
+#include <cstring>
 
 #include "Exception.hpp"
 #include "Zipper.hpp"

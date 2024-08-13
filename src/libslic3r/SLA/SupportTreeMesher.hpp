@@ -7,6 +7,7 @@
 
 #include <stddef.h>
 #include <tuple>
+#include <cstddef>
 
 #include "libslic3r/Point.hpp"
 #include "libslic3r/SLA/SupportTreeBuilder.hpp"

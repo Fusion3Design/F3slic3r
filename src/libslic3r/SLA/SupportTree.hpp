@@ -16,6 +16,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <cmath>
 
 #include "admesh/stl.h"
 

@@ -1,6 +1,19 @@
 #include "ExtrusionOrder.hpp"
+
+#include <algorithm>
+#include <cassert>
+#include <cinttypes>
+
 #include "libslic3r/GCode/SmoothPath.hpp"
 #include "libslic3r/ShortestPath.hpp"
+#include "libslic3r/Config.hpp"
+#include "libslic3r/ExtrusionEntity.hpp"
+#include "libslic3r/ExtrusionEntityCollection.hpp"
+#include "libslic3r/ExtrusionRole.hpp"
+#include "libslic3r/GCode/WipeTowerIntegration.hpp"
+#include "libslic3r/Geometry/ArcWelder.hpp"
+#include "libslic3r/LayerRegion.hpp"
+#include "libslic3r/Print.hpp"
 
 namespace Slic3r::GCode::ExtrusionOrder {
 

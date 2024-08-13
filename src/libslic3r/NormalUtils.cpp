@@ -4,8 +4,8 @@
 ///|/
 #include "NormalUtils.hpp"
 
-#include <stddef.h>
 #include <cmath>
+#include <cstddef>
 
 #include "libslic3r/Exception.hpp"
 #include "libslic3r/Point.hpp"

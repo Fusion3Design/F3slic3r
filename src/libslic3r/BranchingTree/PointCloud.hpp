@@ -15,6 +15,8 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cstdlib>
 
 #include "BranchingTree.hpp"
 //#include "libslic3r/Execution/Execution.hpp"

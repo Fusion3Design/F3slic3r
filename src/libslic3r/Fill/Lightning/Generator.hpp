@@ -8,6 +8,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <cstddef>
 
 #include "Layer.hpp"
 #include "libslic3r/Polygon.hpp"

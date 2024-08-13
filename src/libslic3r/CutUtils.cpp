@@ -6,12 +6,11 @@
 #include "CutUtils.hpp"
 
 #include <boost/log/trivial.hpp>
-#include <assert.h>
-#include <stddef.h>
-#include <Eigen/Geometry>
 #include <cmath>
 #include <string>
 #include <utility>
+#include <cassert>
+#include <cstddef>
 
 #include "Geometry.hpp"
 #include "libslic3r.h"

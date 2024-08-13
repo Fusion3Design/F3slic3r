@@ -9,7 +9,6 @@
 ///|/
 #include "BoundingBox.hpp"
 
-#include <assert.h>
 #include <algorithm>
 
 #include "libslic3r/Point.hpp"

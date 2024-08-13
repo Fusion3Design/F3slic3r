@@ -21,6 +21,7 @@
 #include "libslic3r/SLA/Pad.hpp"
 #include "libslic3r/SLA/SupportTree.hpp"
 #include "libslic3r/SLA/SupportTreeBuilder.hpp"
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r { namespace sla {
 

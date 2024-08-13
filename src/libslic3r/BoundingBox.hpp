@@ -9,6 +9,9 @@
 #include <assert.h>
 #include <algorithm>
 #include <vector>
+#include <cassert>
+#include <cmath>
+#include <cstddef>
 
 #include "libslic3r.h"
 #include "Exception.hpp"

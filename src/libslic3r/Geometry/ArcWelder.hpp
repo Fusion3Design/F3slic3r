@@ -12,9 +12,14 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cinttypes>
+#include <complex>
+#include <cstddef>
 
 #include "../Point.hpp"
 #include "libslic3r/libslic3r.h"
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r { namespace Geometry { namespace ArcWelder {
 

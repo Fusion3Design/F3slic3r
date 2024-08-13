@@ -19,6 +19,7 @@
 #include "libslic3r/AABBTreeLines.hpp"
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
+#include "libslic3r/GCode/ExtrusionOrder.hpp"
 
 // Forward declarations.
 namespace Slic3r {

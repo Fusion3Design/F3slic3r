@@ -2,9 +2,9 @@
 //CuraEngine is released under the terms of the AGPLv3 or higher.
 
 #include <boost/log/trivial.hpp>
-#include <stddef.h>
 #include <cassert>
 #include <utility>
+#include <cstddef>
 
 #include "LimitedBeadingStrategy.hpp"
 #include "libslic3r/Point.hpp"

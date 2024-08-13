@@ -10,7 +10,6 @@
 ///|/
 #include "Flow.hpp"
 
-#include <assert.h>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/format.hpp>
 #include <cmath>

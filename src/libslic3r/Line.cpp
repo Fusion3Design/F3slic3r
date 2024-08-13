@@ -8,9 +8,10 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <string.h>
 #include <cmath>
 #include <limits>
+#include <cstdlib>
+#include <cstring>
 
 #include "Geometry.hpp"
 #include "Line.hpp"

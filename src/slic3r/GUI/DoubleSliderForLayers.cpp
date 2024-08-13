@@ -7,13 +7,13 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <stdio.h>
 #include <boost/algorithm/string/constants.hpp>
 #include <boost/format.hpp>
 #include <cmath>
 #include <algorithm>
 #include <array>
 #include <set>
+#include <cstdio>
 
 #include "libslic3r/Utils.hpp"  // -> get_time_dhms()
 #include "libslic3r/format.hpp" // -> format()

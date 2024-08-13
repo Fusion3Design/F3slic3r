@@ -6,8 +6,8 @@
 ///|/
 #include "BridgeDetector.hpp"
 
-#include <stddef.h>
 #include <algorithm>
+#include <cstddef>
 
 #include "ClipperUtils.hpp"
 #include "Geometry.hpp"

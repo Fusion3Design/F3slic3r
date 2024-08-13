@@ -5,11 +5,11 @@
 #include "BuildVolume.hpp"
 
 #include <boost/log/trivial.hpp>
-#include <assert.h>
-#include <stddef.h>
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <cassert>
+#include <cstddef>
 
 #include "ClipperUtils.hpp"
 #include "Geometry/ConvexHull.hpp"

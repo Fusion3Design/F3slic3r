@@ -7,10 +7,9 @@
 #include <libslic3r/SLA/SpatIndex.hpp>
 #include <libslic3r/BoostAdapter.hpp> // IWYU pragma: keep
 #include <boost/geometry.hpp>
+#include <boost/geometry/index/rtree.hpp>
 #include <iterator>
 #include <utility>
-
-#include "boost/geometry/index/rtree.hpp"
 
 namespace Slic3r { namespace sla {
 

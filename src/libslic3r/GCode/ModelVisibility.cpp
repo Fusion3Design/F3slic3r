@@ -2,8 +2,8 @@
 #include <igl/Hit.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <stdlib.h>
 #include <cmath>
+#include <cstdlib>
 
 #include "libslic3r/ShortEdgeCollapse.hpp"
 #include "libslic3r/GCode/ModelVisibility.hpp"

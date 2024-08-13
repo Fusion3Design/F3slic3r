@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <string>
+#include <cassert>
 
 #include "libslic3r.h"
 #include "Config.hpp"

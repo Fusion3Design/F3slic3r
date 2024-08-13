@@ -4,7 +4,6 @@
 ///|/
 #include <libslic3r/SLA/ConcaveHull.hpp>
 #include <libslic3r/SLA/SpatIndex.hpp>
-#include <libslic3r/ClipperUtils.hpp>
 #include <cmath>
 #include <iterator>
 #include <limits>

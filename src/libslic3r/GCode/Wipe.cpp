@@ -1,11 +1,10 @@
 #include "Wipe.hpp"
 
-#include <stdint.h>
 #include <string_view>
-#include <Eigen/Geometry>
 #include <algorithm>
 #include <cmath>
 #include <iterator>
+#include <cinttypes>
 
 #include "../GCode.hpp"
 #include "libslic3r/Extruder.hpp"

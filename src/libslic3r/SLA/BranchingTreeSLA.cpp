@@ -4,7 +4,6 @@
 ///|/
 #include "BranchingTreeSLA.hpp"
 
-#include <stddef.h>
 #include <boost/container/vector.hpp>
 #include <boost/geometry.hpp>
 #include <boost/log/trivial.hpp>
@@ -14,6 +13,7 @@
 #include <optional>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "libslic3r/Execution/ExecutionTBB.hpp"
 #include "libslic3r/KDTreeIndirect.hpp"

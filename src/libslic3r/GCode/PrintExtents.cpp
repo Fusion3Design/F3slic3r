@@ -8,10 +8,9 @@
 // to decide whether to pause the print after the priming towers are extruded
 // to let the operator remove them from the print bed.
 
-#include <stddef.h>
-#include <Eigen/Geometry>
 #include <algorithm>
 #include <vector>
+#include <cstddef>
 
 #include "../BoundingBox.hpp"
 #include "../ExtrusionEntity.hpp"

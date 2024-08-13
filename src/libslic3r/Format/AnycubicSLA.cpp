@@ -8,8 +8,6 @@
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/log/trivial.hpp>
-#include <assert.h>
-#include <stdio.h>
 #include <fstream> // IWYU pragma: keep
 #include <algorithm>
 #include <array>
@@ -19,6 +17,8 @@
 #include <iterator>
 #include <map>
 #include <vector>
+#include <cassert>
+#include <cstdio>
 
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/SLA/RasterBase.hpp"

@@ -7,6 +7,8 @@
 
 #include <math.h>
 #include <stddef.h>
+#include <cmath>
+#include <cstddef>
 
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Flow.hpp"

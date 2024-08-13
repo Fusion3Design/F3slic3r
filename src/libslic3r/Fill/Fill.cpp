@@ -7,10 +7,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <assert.h>
-#include <stdio.h>
 #include <oneapi/tbb/scalable_allocator.h>
-#include <stdint.h>
 #include <boost/container/vector.hpp>
 #include <memory>
 #include <algorithm>
@@ -19,6 +16,9 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cinttypes>
+#include <cstdlib>
 
 #include "../ClipperUtils.hpp"
 #include "../Geometry.hpp"
@@ -40,10 +40,10 @@
 #include "libslic3r/ExtrusionRole.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/LayerRegion.hpp"
-#include "libslic3r/MultiMaterialSegmentation.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"
+#include "libslic3r/ShortestPath.hpp"
 
 namespace Slic3r {
 namespace FillAdaptive {

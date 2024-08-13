@@ -9,12 +9,12 @@
 #include <../../src/libvgcode/include/PathVertex.hpp>
 #include <../../src/libvgcode/include/GCodeInputData.hpp>
 #include <../../src/libvgcode/include/ColorRange.hpp>
-#include "../../src/libvgcode/include/Types.hpp"
-
 #include <stddef.h>
 #include <string>
 #include <vector>
+#include <cstddef>
 
+#include "../../src/libvgcode/include/Types.hpp"
 #include "libslic3r/Color.hpp"
 #include "libslic3r/GCode/GCodeProcessor.hpp"
 #include "slic3r/GUI/GUI_Preview.hpp"
@@ -24,6 +24,7 @@
 
 namespace Slic3r {
 class Print;
+
 namespace CustomGCode {
 struct Item;
 }  // namespace CustomGCode

@@ -2,7 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <stdio.h>
+#include <cstdio>
 
 #include "miniz_extension.hpp"
 #include "miniz.h"

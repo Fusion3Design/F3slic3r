@@ -11,6 +11,7 @@
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include <cstddef>
 
 namespace Slic3r {
 

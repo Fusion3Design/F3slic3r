@@ -7,9 +7,6 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/nowide/convert.hpp>
-#include <assert.h>
-#include <stddef.h>
-#include <stdint.h>
 
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -18,6 +15,9 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <cassert>
+#include <cinttypes>
+#include <cstddef>
 
 namespace ImGuiPureWrap {
 

@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 #include <functional>
+#include <cstdlib>
 
 #include "libslic3r/AABBTreeLines.hpp"
 #include "libslic3r/SupportSpotsGenerator.hpp"

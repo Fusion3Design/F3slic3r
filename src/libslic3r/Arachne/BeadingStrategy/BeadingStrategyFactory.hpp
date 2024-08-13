@@ -5,6 +5,7 @@
 #define BEADING_STRATEGY_FACTORY_H
 
 #include <math.h>
+#include <cmath>
 
 #include "BeadingStrategy.hpp"
 #include "../../Point.hpp"

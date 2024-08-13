@@ -4,7 +4,6 @@
 ///|/
 // for indexed_triangle_set
 #include <admesh/stl.h>
-#include <assert.h>
 #include <boost/geometry/core/access.hpp>
 #include <boost/geometry/core/static_assert.hpp>
 #include <cstdlib>
@@ -15,6 +14,8 @@
 #include <iterator>
 #include <limits>
 #include <optional>
+#include <cassert>
+#include <complex>
 
 #include "../ClipperUtils.hpp"
 #include "../ExPolygon.hpp"
@@ -22,7 +23,6 @@
 #include "../Layer.hpp"
 #include "../Print.hpp"
 #include "../ShortestPath.hpp"
-#include "FillAdaptive.hpp"
 #include "libslic3r/Fill/FillAdaptive.hpp"
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/Fill/FillBase.hpp"

@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <wx/defs.h>
 #include <wx/string.h>
+#include <cstddef>
 
 class wxWindow;
 

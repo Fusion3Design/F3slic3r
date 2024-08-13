@@ -22,6 +22,7 @@
 
 namespace Slic3r {
 class Layer;
+
 namespace AABBTreeLines {
 template <typename LineType> class LinesDistancer;
 }  // namespace AABBTreeLines

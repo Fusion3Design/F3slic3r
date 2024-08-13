@@ -4,8 +4,6 @@
 ///|/
 #include "Subdivide.hpp"
 
-#include <assert.h>
-#include <stdlib.h>
 #include <algorithm>
 #include <cmath>
 #include <map>
@@ -13,6 +11,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cstddef>
 
 #include "Point.hpp"
 

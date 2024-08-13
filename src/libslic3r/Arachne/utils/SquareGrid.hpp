@@ -9,6 +9,7 @@
 #include <vector>
 #include <functional>
 #include <utility>
+#include <cinttypes>
 
 #include "../../Point.hpp"
 #include "libslic3r/libslic3r.h"

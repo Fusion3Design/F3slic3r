@@ -18,6 +18,9 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <cassert>
+#include <cinttypes>
+#include <cstddef>
 
 #include "Polygon.hpp"
 #include "ExPolygon.hpp"

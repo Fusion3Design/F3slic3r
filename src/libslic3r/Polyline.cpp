@@ -10,10 +10,10 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <assert.h>
 #include <utility>
 #include <cmath>
 #include <limits>
+#include <cassert>
 
 #include "BoundingBox.hpp"
 #include "Polyline.hpp"

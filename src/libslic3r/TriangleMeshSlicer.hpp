@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <functional>
 #include <vector>
+#include <cinttypes>
+#include <cstddef>
 
 #include "Polygon.hpp"
 #include "ExPolygon.hpp"

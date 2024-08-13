@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include <cinttypes>
 
 #include "ExPolygon.hpp"
 #include "libslic3r/Line.hpp"

@@ -18,7 +18,6 @@
 #include <openvdb/math/Vec3.h>
 #include <openvdb/math/Vec4.h>
 #include <openvdb/tools/Morphology.h>
-#include <stddef.h>
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif // _MSC_VER
@@ -27,11 +26,11 @@
 #include <openvdb/tools/Composite.h>
 #include <openvdb/tools/LevelSetRebuild.h>
 #include <openvdb/tools/FastSweeping.h>
-#include <Eigen/Geometry>
 #include <algorithm>
 #include <optional>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "libslic3r/TriangleMesh.hpp"
 #include "libslic3r/libslic3r.h"

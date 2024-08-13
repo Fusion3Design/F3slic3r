@@ -1,7 +1,10 @@
-#include "WebViewPlatformUtils.hpp"
-#include <unordered_map>
-#include <memory>
 #include <webkit2/webkit2.h>
+#include <wx/defs.h>
+#include <wx/webview.h>
+#include <unordered_map>
+#include <string>
+
+#include "WebViewPlatformUtils.hpp"
 
 
 namespace Slic3r::GUI {

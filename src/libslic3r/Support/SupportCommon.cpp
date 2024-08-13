@@ -5,13 +5,13 @@
 #include <boost/container/static_vector.hpp>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <stddef.h>
 #include <boost/log/trivial.hpp>
 #include <cmath>
 #include <initializer_list>
 #include <limits>
 #include <memory>
 #include <unordered_map>
+#include <cstdlib>
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/ClipperZUtils.hpp" // IWYU pragma: keep

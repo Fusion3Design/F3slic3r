@@ -4,9 +4,6 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <boost/log/trivial.hpp>
-#include <assert.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <algorithm>
 #include <string>
 #include <map>
@@ -14,10 +11,9 @@
 #include <cmath>
 #include <initializer_list>
 #include <iterator>
-#include <optional>
-#include <stdexcept>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "ExPolygon.hpp"
 #include "Flow.hpp"
@@ -42,6 +38,7 @@
 #include "libslic3r/SurfaceCollection.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
+#include "LayerRegion.hpp"
 
 namespace Slic3r {
 

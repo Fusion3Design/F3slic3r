@@ -28,9 +28,11 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
+#include <cassert>
 
 #include "libslic3r.h"
 #include "LocalesUtils.hpp"
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r {
 

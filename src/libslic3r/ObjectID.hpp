@@ -10,6 +10,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <cereal/cereal.hpp>
+#include <cinttypes>
+#include <cstddef>
 
 namespace Slic3r {
 

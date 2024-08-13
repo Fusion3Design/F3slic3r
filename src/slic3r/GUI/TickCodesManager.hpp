@@ -11,6 +11,7 @@
 #include <vector>
 #include <set>
 #include <string>
+#include <cstddef>
 
 #include "libslic3r/CustomGCode.hpp"
 

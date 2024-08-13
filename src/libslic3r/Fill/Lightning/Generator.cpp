@@ -3,10 +3,10 @@
 
 #include "Generator.hpp"
 
-#include <assert.h>
 #include <algorithm>
 #include <cmath>
 #include <utility>
+#include <cassert>
 
 #include "TreeNode.hpp"
 #include "../../ClipperUtils.hpp"

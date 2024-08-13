@@ -2,13 +2,12 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <float.h>
-#include <math.h>
 #include <algorithm>
 #include <vector>
 #include <unordered_map>
 #include <cstdint>
 #include <set>
+#include <cfloat>
 
 #include "libslic3r.h"
 #include "ClipperUtils.hpp"
@@ -28,8 +27,6 @@
 #define _DEBUG
 #undef NDEBUG
 #endif
-
-#include <assert.h>
 
 namespace Slic3r {
 

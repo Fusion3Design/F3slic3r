@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <vector>
+#include <cstddef>
 
 namespace Slic3r {
 namespace Algorithm {

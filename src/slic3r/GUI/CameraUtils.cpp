@@ -6,12 +6,11 @@
 
 #include <igl/project.h> // IWYU pragma: keep
 #include <igl/unproject.h> // IWYU pragma: keep
-#include <assert.h>
-#include <math.h>
-#include <stddef.h>
-#include <Eigen/Geometry>
 #include <algorithm>
 #include <limits>
+#include <cassert>
+#include <cmath>
+#include <cstddef>
 
 #include "slic3r/GUI/3DScene.hpp" // GLVolume
 #include "libslic3r/Geometry/ConvexHull.hpp"

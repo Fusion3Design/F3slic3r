@@ -8,12 +8,13 @@
 #include <libslic3r/ClipperZUtils.hpp>
 #include <libslic3r/ClipperUtils.hpp>
 #include <libslic3r/Utils.hpp>
-#include <assert.h>
 #include <clipper/clipper_z.hpp>
 #include <numeric>
 #include <cmath>
 #include <iterator>
 #include <utility>
+#include <algorithm>
+#include <cassert>
 
 #include "libslic3r/BoundingBox.hpp"
 #include "libslic3r/ExPolygon.hpp"

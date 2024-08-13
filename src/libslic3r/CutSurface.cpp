@@ -31,7 +31,6 @@ using namespace Slic3r;
 #include <CGAL/Exact_integer.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Cartesian_converter.h>
-#include <assert.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <boost/property_map/property_map.hpp>
@@ -48,12 +47,12 @@ using namespace Slic3r;
 #include <set>
 #include <tuple>
 #include <utility>
+#include <cassert>
 
 #include "ExPolygonsIndex.hpp"
 // libslic3r
 #include "TriangleMesh.hpp" // its_merge
 #include "Utils.hpp" // next_highest_power_of_2
-#include "ClipperUtils.hpp" // union_ex + offset_ex
 #include "admesh/stl.h"
 #include "libslic3r/AABBTreeIndirect.hpp"
 #include "libslic3r/ClipperUtils.hpp"

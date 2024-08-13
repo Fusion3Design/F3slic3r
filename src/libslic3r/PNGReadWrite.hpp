@@ -12,6 +12,7 @@
 #include <istream>
 #include <cstdint>
 #include <algorithm>
+#include <cstddef>
 
 namespace Slic3r { namespace png {
 

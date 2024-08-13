@@ -4,9 +4,9 @@
 ///|/
 #include "TickCodesManager.hpp"
 
-#include <math.h>
 #include <algorithm>
 #include <random>
+#include <cmath>
 
 #include "I18N.hpp"
 #include "libslic3r/Print.hpp"

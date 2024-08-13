@@ -2,6 +2,11 @@
 #define slic3r_GCode_ExtrusionOrder_hpp_
 
 #include <vector>
+#include <cstddef>
+#include <functional>
+#include <map>
+#include <optional>
+#include <utility>
 
 #include "libslic3r/GCode/SmoothPath.hpp"
 #include "libslic3r/GCode/WipeTowerIntegration.hpp"
@@ -9,6 +14,22 @@
 #include "libslic3r/GCode/SeamPlacer.hpp"
 #include "libslic3r/Print.hpp"
 #include "libslic3r/ShortestPath.hpp"
+#include "libslic3r/GCode/ToolOrdering.hpp"
+#include "libslic3r/Layer.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/libslic3r.h"
+
+namespace Slic3r {
+class ExtrusionEntity;
+class ExtrusionEntityReference;
+class Print;
+class PrintObject;
+class PrintRegion;
+namespace GCode {
+class WipeTowerIntegration;
+}  // namespace GCode
+struct PrintInstance;
+}  // namespace Slic3r
 
 namespace Slic3r::GCode {
 // Object and support extrusions of the same PrintObject at the same print_z.

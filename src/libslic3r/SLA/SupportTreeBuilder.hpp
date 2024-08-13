@@ -17,6 +17,8 @@
 #include <mutex>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cstddef>
 
 #include "admesh/stl.h"
 #include "libslic3r/Point.hpp"

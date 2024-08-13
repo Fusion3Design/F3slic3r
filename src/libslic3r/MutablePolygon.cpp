@@ -4,9 +4,9 @@
 ///|/
 #include "MutablePolygon.hpp"
 
-#include <math.h>
 #include <cstdint>
 #include <utility>
+#include <cmath>
 
 #include "libslic3r.h"
 #include "libslic3r/Point.hpp"

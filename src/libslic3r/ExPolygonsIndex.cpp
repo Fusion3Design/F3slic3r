@@ -1,8 +1,8 @@
 #include "ExPolygonsIndex.hpp"
 
-#include <assert.h>
 #include <algorithm>
 #include <utility>
+#include <cassert>
 
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/Exception.hpp"

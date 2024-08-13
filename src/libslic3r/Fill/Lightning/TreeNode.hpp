@@ -11,6 +11,8 @@
 #include <optional>
 #include <vector>
 #include <utility>
+#include <cinttypes>
+#include <cstddef>
 
 #include "libslic3r/EdgeGrid.hpp"
 #include "libslic3r/Polygon.hpp"

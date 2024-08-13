@@ -1,15 +1,14 @@
 #include "WipeTowerIntegration.hpp"
 
-#include <assert.h>
-#include <stddef.h>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
-#include <Eigen/Geometry>
 #include <cmath>
 #include <iomanip>
 #include <istream>
 #include <iterator>
 #include <utility>
+#include <cassert>
+#include <cstdlib>
 
 #include "libslic3r/GCode.hpp"
 #include "libslic3r/libslic3r.h"

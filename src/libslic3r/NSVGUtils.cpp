@@ -5,14 +5,13 @@
 #include "NSVGUtils.hpp"
 
 #include <boost/nowide/fstream.hpp>
-#include <assert.h>
 #include <nanosvg/nanosvg.h>
-#include <string.h>
 #include <array>
 #include <algorithm>
 #include <sstream>
+#include <cassert>
+#include <cstring>
 
-#include "ClipperUtils.hpp"
 #include "Emboss.hpp" // heal for shape
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/EmbossShape.hpp"

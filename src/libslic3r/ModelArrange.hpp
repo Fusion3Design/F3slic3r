@@ -8,6 +8,7 @@
 #include <libslic3r/Arrange/Scene.hpp>
 #include <stddef.h>
 #include <vector>
+#include <cstddef>
 
 #include "libslic3r/Arrange/Core/Beds.hpp"
 
@@ -15,6 +16,7 @@ namespace Slic3r {
 
 class Model;
 class ModelInstance;
+
 namespace arr2 {
 class ArrangeSettingsView;
 }  // namespace arr2

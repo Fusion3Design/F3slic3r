@@ -5,11 +5,11 @@
 #include "Tesselate.hpp"
 
 #include <glu-libtess.h>
-#include <assert.h>
-#include <string.h>
 #include <algorithm>
 #include <deque>
 #include <utility>
+#include <cassert>
+#include <cstring>
 
 #include "ExPolygon.hpp"
 #include "admesh/stl.h"

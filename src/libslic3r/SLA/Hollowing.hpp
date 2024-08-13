@@ -16,6 +16,7 @@
 #include <functional>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "admesh/stl.h"
 #include "libslic3r/CSGMesh/CSGMesh.hpp"

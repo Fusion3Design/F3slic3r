@@ -2,10 +2,7 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <assert.h>
-#include <stddef.h>
 #include <cfloat>
-#include <Eigen/Geometry>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -17,6 +14,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cstddef>
 
 #include "Model.hpp"
 #include "Print.hpp"

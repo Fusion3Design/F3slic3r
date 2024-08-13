@@ -6,10 +6,11 @@
 
 #include <boost/nowide/cstdio.hpp>
 #include <fast_float.h>
-#include <assert.h>
-#include <stdio.h>
 #include <iostream>
 #include <iomanip>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
 
 #include "Utils.hpp"
 #include "libslic3r/PrintConfig.hpp"

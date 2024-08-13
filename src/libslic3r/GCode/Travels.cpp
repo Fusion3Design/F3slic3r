@@ -1,13 +1,13 @@
 #include "Travels.hpp"
 
-#include <assert.h>
-#include <stdint.h>
 #include <boost/math/special_functions/pow.hpp>
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <tuple>
 #include <utility>
+#include <cassert>
+#include <cinttypes>
 
 #include "libslic3r/PrintConfig.hpp"
 #include "libslic3r/Layer.hpp"
@@ -18,11 +18,11 @@
 #include "libslic3r/ExtrusionEntity.hpp"
 #include "libslic3r/ExtrusionEntityCollection.hpp"
 #include "libslic3r/LayerRegion.hpp"
-#include "libslic3r/MultiMaterialSegmentation.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
 #include "libslic3r/libslic3r.h"
 #include "tcbspan/span.hpp"
+#include "libslic3r/ShortestPath.hpp"
 
 namespace Slic3r::GCode {
 

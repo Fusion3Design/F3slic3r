@@ -11,11 +11,11 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <ankerl/unordered_dense.h>
-#include <string.h>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <limits>
+#include <cstring>
 
 #include "BoundingBox.hpp"
 #include "ExPolygon.hpp"

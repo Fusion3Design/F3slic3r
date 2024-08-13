@@ -4,12 +4,10 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include "SupportSpotsGenerator.hpp"
-#include <fstream>
 
 #include <boost/log/trivial.hpp>
 #include <oneapi/tbb/concurrent_vector.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <assert.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <algorithm>
 #include <cmath>
@@ -19,9 +17,9 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <Eigen/Core>
 #include <iostream>
 #include <stdexcept>
+#include <cassert>
 
 #include "BoundingBox.hpp"
 #include "ExPolygon.hpp"

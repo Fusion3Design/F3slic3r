@@ -17,6 +17,9 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cinttypes>
+#include <cstddef>
 
 #include "Point.hpp"
 #include "TriangleMesh.hpp"

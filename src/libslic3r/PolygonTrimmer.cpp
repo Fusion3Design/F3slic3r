@@ -4,7 +4,7 @@
 ///|/
 #include "PolygonTrimmer.hpp"
 
-#include <assert.h>
+#include <cassert>
 
 #include "EdgeGrid.hpp"
 #include "Geometry.hpp"

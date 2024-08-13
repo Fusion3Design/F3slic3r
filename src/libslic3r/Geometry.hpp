@@ -27,6 +27,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cinttypes>
+#include <cstdlib>
 
 #include "libslic3r.h"
 #include "BoundingBox.hpp"

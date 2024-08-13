@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "admesh/stl.h"
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r {
 

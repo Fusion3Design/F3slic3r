@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <cstddef>
 
 #include "Polygon.hpp"
 #include "ExPolygon.hpp"

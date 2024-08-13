@@ -11,13 +11,12 @@
 #include <cmath>
 #include <mutex>
 #include <utility>
-#include <Eigen/Geometry>
 #include <array>
-#include <cstddef>
 #include <iterator>
 #include <limits>
+#include <cassert>
+#include <cstdlib>
 
-#include "ClipperUtils.hpp"
 #include "Tesselate.hpp"
 #include "TriangleMesh.hpp"
 #include "TriangleMeshSlicer.hpp"
@@ -38,7 +37,6 @@
 // #define SLIC3R_TRIANGLEMESH_DEBUG
 #endif
 
-#include <assert.h>
 #include <boost/thread/lock_guard.hpp>
 
 #if defined(__cpp_lib_hardware_interference_size) && ! defined(__APPLE__)

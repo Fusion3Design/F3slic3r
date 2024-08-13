@@ -4,9 +4,9 @@
 ///|/
 #include "BranchingTree.hpp"
 
-#include <stddef.h>
 #include <optional>
 #include <algorithm>
+#include <cstddef>
 
 #include "PointCloud.hpp"
 #include "libslic3r/TriangleMesh.hpp"

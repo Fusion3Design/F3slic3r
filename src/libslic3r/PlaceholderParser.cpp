@@ -16,6 +16,10 @@
 #include <cmath>
 #include <iterator>
 #include <utility>
+#include <cassert>
+#include <cinttypes>
+#include <cstdio>
+#include <cstdlib>
 
 #include "Exception.hpp"
 #include "Flow.hpp"
@@ -43,10 +47,6 @@
 #endif
 
 #include <boost/nowide/convert.hpp>
-#include <assert.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/fusion/container/vector/vector.hpp>

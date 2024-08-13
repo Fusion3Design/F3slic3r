@@ -53,6 +53,9 @@
 #include <optional>
 #include <utility>
 #include <variant>
+#include <cassert>
+#include <cctype>
+#include <cfloat>
 
 #include "libslic3r.h"
 #include "clonable_ptr.hpp"

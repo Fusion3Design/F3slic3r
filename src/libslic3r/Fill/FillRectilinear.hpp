@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 #include <initializer_list>
+#include <cstddef>
 
 #include "libslic3r/libslic3r.h"
 #include "FillBase.hpp"

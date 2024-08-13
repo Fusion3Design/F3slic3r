@@ -11,12 +11,12 @@
 #include "Layer.hpp"
 
 #include <boost/log/trivial.hpp>
-#include <assert.h>
 #include <clipper/clipper_z.hpp>
 #include <cstdint>
 #include <iterator>
 #include <numeric>
 #include <tuple>
+#include <cassert>
 
 #include "ClipperZUtils.hpp"
 #include "ClipperUtils.hpp"

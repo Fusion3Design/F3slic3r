@@ -14,6 +14,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cstdio>
 
 #include "libslic3r.h"
 #include "libslic3r/clipper.hpp"

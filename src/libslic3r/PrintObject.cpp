@@ -7,15 +7,12 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <float.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/concurrent_vector.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <boost/log/trivial.hpp>
-#include <assert.h>
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <functional>
 #include <map>
 #include <string>
@@ -24,10 +21,13 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <Eigen/Geometry>
 #include <array>
 #include <initializer_list>
 #include <memory>
+#include <cassert>
+#include <cfloat>
+#include <chrono>
+#include <cstdlib>
 
 #include "AABBTreeLines.hpp"
 #include "ExPolygon.hpp"
@@ -39,7 +39,6 @@
 #include "Polyline.hpp"
 #include "Print.hpp"
 #include "BoundingBox.hpp"
-#include "ClipperUtils.hpp"
 #include "Geometry.hpp"
 #include "I18N.hpp"
 #include "Layer.hpp"
@@ -65,6 +64,7 @@
 #include "libslic3r/MultiMaterialSegmentation.hpp"
 #include "libslic3r/TriangleSelector.hpp"
 #include "tcbspan/span.hpp"
+#include "libslic3r/Point.hpp"
 
 using namespace std::literals;
 

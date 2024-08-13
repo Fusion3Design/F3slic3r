@@ -8,11 +8,11 @@
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/spatial_sort.h>
-#include <assert.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <boost/variant/get.hpp>
 #include <limits>
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
 
 #include "IntersectionPoints.hpp"
 #include "libslic3r/ExPolygon.hpp"

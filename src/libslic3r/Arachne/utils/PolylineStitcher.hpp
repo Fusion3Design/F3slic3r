@@ -10,6 +10,8 @@
 #include <functional>
 #include <limits>
 #include <vector>
+#include <cinttypes>
+#include <cstddef>
 
 #include "SparsePointGrid.hpp"
 #include "PolygonsPointIndex.hpp"

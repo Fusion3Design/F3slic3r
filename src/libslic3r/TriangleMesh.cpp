@@ -19,7 +19,6 @@
 #include <boost/log/trivial.hpp>
 #include <boost/nowide/cstdio.hpp>
 #include <boost/predef/other/endian.h>
-#include <assert.h>
 #include <libqhull_r/user_r.h>
 #include <libqhullcpp/QhullFacet.h>
 #include <libqhullcpp/QhullPoint.h>
@@ -27,16 +26,15 @@
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/concurrent_vector.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <cmath>
 #include <vector>
 #include <utility>
 #include <algorithm>
-#include <Eigen/Core>
 #include <iterator>
 #include <map>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "TriangleMesh.hpp"
 #include "TriangleMeshSlicer.hpp"

@@ -11,7 +11,6 @@
 ///|/
 #include "ClipperUtils.hpp"
 
-#include <stddef.h>
 #include <cmath>
 
 #include "ShortestPath.hpp"

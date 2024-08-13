@@ -4,6 +4,7 @@
 #include <iterator>
 #include <map>
 #include <optional>
+#include <cstddef>
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/Config.hpp"

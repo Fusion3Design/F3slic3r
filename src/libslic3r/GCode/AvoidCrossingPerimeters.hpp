@@ -14,6 +14,7 @@
 #include "libslic3r/Layer.hpp"
 #include "libslic3r/Polygon.hpp"
 #include "libslic3r/Polyline.hpp"
+#include "libslic3r/ShortestPath.hpp"
 
 namespace Slic3r {
 

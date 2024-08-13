@@ -4,7 +4,7 @@
 ///|/
 #include "CustomGCode.hpp"
 
-#include <assert.h>
+#include <cassert>
 
 #include "Config.hpp"
 #include "GCode.hpp"

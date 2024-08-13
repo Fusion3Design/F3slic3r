@@ -13,6 +13,7 @@
 #include <iterator>
 #include <utility>
 #include <vector>
+#include <cassert>
 
 #include "libslic3r.h"
 #include "ExPolygon.hpp"
@@ -22,6 +23,7 @@
 #include "libslic3r/Line.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Polyline.hpp"
+#include "libslic3r/BoundingBox.hpp"
 
 #ifdef SLIC3R_USE_CLIPPER2
 

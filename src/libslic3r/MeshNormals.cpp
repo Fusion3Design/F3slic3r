@@ -5,11 +5,11 @@
 #include "MeshNormals.hpp"
 
 #include <boost/container/small_vector.hpp>
-#include <assert.h>
-#include <stddef.h>
 #include <numeric>
 #include <algorithm>
 #include <cmath>
+#include <cassert>
+#include <cstddef>
 
 #include "libslic3r/AABBMesh.hpp"
 #include "libslic3r/Execution/Execution.hpp"

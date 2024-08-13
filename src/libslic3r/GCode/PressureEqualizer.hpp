@@ -13,6 +13,8 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <cassert>
+#include <cstddef>
 
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/PrintConfig.hpp"

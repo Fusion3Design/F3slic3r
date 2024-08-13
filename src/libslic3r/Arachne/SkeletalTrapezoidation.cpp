@@ -4,8 +4,6 @@
 #include "SkeletalTrapezoidation.hpp"
 
 #include <boost/log/trivial.hpp>
-#include <assert.h>
-#include <stdlib.h>
 #include <boost/polygon/polygon.hpp>
 #include <queue>
 #include <algorithm>
@@ -13,6 +11,8 @@
 #include <cstdint>
 #include <limits>
 #include <utility>
+#include <cassert>
+#include <cstdlib>
 
 #include "libslic3r/Geometry/VoronoiUtils.hpp"
 #include "ankerl/unordered_dense.h"

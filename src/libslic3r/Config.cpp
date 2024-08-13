@@ -20,7 +20,6 @@
 ///|/
 #include "Config.hpp"
 
-#include <assert.h>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -30,7 +29,6 @@
 #include <boost/nowide/fstream.hpp>
 #include <boost/nowide/cstdio.hpp>
 #include <boost/property_tree/ini_parser.hpp>
-#include <string.h>
 #include <LibBGCode/binarize/binarize.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/multi_index_container.hpp>
@@ -40,6 +38,8 @@
 #include <iomanip>
 #include <cstddef>
 #include <set>
+#include <cstdlib>
+#include <cstring>
 
 #include "format.hpp"
 #include "Utils.hpp"

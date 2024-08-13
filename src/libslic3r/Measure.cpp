@@ -4,13 +4,13 @@
 ///|/
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <stdint.h>
 #include <boost/container/small_vector.hpp>
 #include <algorithm>
 #include <array>
 #include <iterator>
 #include <limits>
 #include <set>
+#include <cinttypes>
 
 #include "libslic3r/libslic3r.h"
 #include "Measure.hpp"

@@ -13,6 +13,9 @@
 #include <algorithm>
 #include <array>
 #include <functional>
+#include <cstddef>
+
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r { namespace sla {
 

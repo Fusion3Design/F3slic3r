@@ -11,10 +11,6 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/log/trivial.hpp>
-#include <float.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
 #include <algorithm>
 #include <charconv>
 #include <cmath>
@@ -22,9 +18,13 @@
 #include <string_view>
 #include <system_error>
 #include <utility>
+#include <cassert>
+#include <cfloat>
+#include <cinttypes>
+#include <cstdio>
+#include <cstring>
 
 #include "../GCode.hpp"
-#include "CoolingBuffer.hpp"
 #include "libslic3r/GCode/CoolingBuffer.hpp"
 #include "libslic3r/Extruder.hpp"
 #include "libslic3r/GCode/GCodeWriter.hpp"
@@ -38,7 +38,6 @@
     #undef NDEBUG
 #endif
 
-#include <assert.h>
 #include <fast_float.h>
 
 namespace Slic3r {

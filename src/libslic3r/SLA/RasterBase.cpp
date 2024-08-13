@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
+#include <cstdlib>
 
 #include "agg/agg_gamma_functions.h"
 

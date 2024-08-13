@@ -14,6 +14,8 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include <cinttypes>
+#include <cstring>
 
 #include "libslic3r.h"
 #include "PrintConfig.hpp"

@@ -17,6 +17,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "libslic3r/ObjectID.hpp"
 #include "libslic3r/AnyPtr.hpp"

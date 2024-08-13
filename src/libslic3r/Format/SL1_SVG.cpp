@@ -5,7 +5,6 @@
 #include "SL1_SVG.hpp"
 
 #include <LocalesUtils.hpp>
-#include <stddef.h>
 
 #include "libslic3r/SLA/RasterBase.hpp"
 #include "libslic3r/ClipperUtils.hpp"
@@ -27,6 +26,7 @@
 #include <iterator>
 #include <type_traits>
 #include <utility>
+#include <cstddef>
 
 #include "nanosvg/nanosvg.h"
 

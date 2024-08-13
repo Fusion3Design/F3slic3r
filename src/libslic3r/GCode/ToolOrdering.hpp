@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <map>
 #include <vector>
+#include <cinttypes>
 
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/PrintConfig.hpp"
@@ -26,6 +27,7 @@ class Print;
 class PrintObject;
 class LayerTools;
 class ToolOrdering;
+
 namespace CustomGCode {
 struct Item;
 }  // namespace CustomGCode

@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "Slicing.hpp"
 #include "admesh/stl.h"

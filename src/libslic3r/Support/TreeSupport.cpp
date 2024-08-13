@@ -12,13 +12,11 @@
 
 #include "TreeSupport.hpp"
 
-#include <stdio.h>
 #include <boost/log/trivial.hpp>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/partitioner.h>
 #include <oneapi/tbb/task_arena.h>
-#include <stdlib.h>
 #include <cassert>
 #include <chrono>
 #include <optional>
@@ -32,13 +30,13 @@
 #include <ratio>
 #include <tuple>
 #include <unordered_set>
+#include <cstdlib>
 
 #include "TreeSupportCommon.hpp"
 #include "SupportCommon.hpp"
 #include "OrganicSupport.hpp"
 #include "../AABBTreeIndirect.hpp"
 #include "../BuildVolume.hpp"
-#include "../ClipperUtils.hpp"
 #include "../EdgeGrid.hpp"
 #include "../Layer.hpp"
 #include "../Print.hpp"

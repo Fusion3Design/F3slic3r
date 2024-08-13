@@ -5,10 +5,10 @@
 
 #include <ankerl/unordered_dense.h>
 #include <boost/log/trivial.hpp>
-#include <assert.h>
-#include <stdint.h>
 #include <algorithm>
 #include <iostream>
+#include <cassert>
+#include <cinttypes>
 
 #include "../Line.hpp"
 #include "libslic3r/Arachne/SkeletalTrapezoidationEdge.hpp"

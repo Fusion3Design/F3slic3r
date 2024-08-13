@@ -6,10 +6,10 @@
 
 #include <libslic3r/ClipperUtils.hpp>
 #include <libslic3r/Tesselate.hpp>
-#include <stddef.h>
 #include <algorithm>
 #include <iterator>
 #include <vector>
+#include <cstddef>
 
 #include "NFP.hpp"
 #include "libslic3r/ExPolygon.hpp"

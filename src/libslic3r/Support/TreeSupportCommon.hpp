@@ -22,6 +22,9 @@
 #include <mutex>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cmath>
+#include <cstddef>
 
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/Polygon.hpp"

@@ -5,9 +5,9 @@
 
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <stdlib.h>
 #include <cmath>
 #include <utility>
+#include <cstdlib>
 
 #include "../FillRectilinear.hpp"
 #include "../../ClipperUtils.hpp"

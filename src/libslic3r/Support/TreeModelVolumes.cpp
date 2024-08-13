@@ -13,7 +13,6 @@
 #include "TreeModelVolumes.hpp"
 
 #include <boost/log/trivial.hpp>
-#include <math.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/task_arena.h>
@@ -24,10 +23,11 @@
 #include <numeric>
 #include <string>
 #include <unordered_map>
+#include <cmath>
+#include <string_view>
 
 #include "TreeSupportCommon.hpp"
 #include "../BuildVolume.hpp"
-#include "../ClipperUtils.hpp"
 #include "../Layer.hpp"
 #include "../Point.hpp"
 #include "../Print.hpp"

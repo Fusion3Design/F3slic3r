@@ -4,13 +4,10 @@
 ///|/
 #include "QuadricEdgeCollapse.hpp"
 
-#include <assert.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <stddef.h>
 #include <tuple>
 #include <optional>
-#include <Eigen/Geometry>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -18,6 +15,8 @@
 #include <limits>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cstddef>
 
 #include "MutablePriorityQueue.hpp"
 #include "admesh/stl.h"

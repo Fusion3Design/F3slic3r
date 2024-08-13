@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "Voronoi.hpp"
 #include "../ExPolygon.hpp"

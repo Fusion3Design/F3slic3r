@@ -9,12 +9,13 @@
 
 #include <LocalesUtils.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <stdio.h>
 #include <cassert>
 #include <vector>
 #include <numeric>
 #include <memory>
 #include <sstream>
+#include <cstdio>
+#include <cstdlib>
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/GCode/GCodeProcessor.hpp"

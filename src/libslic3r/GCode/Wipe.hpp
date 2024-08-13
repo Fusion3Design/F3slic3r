@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cmath>
 
 #include "SmoothPath.hpp"
 #include "../Geometry/ArcWelder.hpp"

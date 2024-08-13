@@ -13,16 +13,16 @@
 	#endif // __APPLE__
 #endif
 
-#include <assert.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
 #include <oneapi/tbb/task_arena.h>
-#include <stddef.h>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
 #include <algorithm>
 #include <ostream>
+#include <cassert>
+#include <cstddef>
 
 #include "Thread.hpp"
 #include "Utils.hpp"

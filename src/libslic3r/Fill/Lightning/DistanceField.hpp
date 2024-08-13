@@ -11,6 +11,9 @@
 #include <functional>
 #include <limits>
 #include <vector>
+#include <cassert>
+#include <cinttypes>
+#include <cstddef>
 
 #include "../../BoundingBox.hpp"
 #include "../../Point.hpp"

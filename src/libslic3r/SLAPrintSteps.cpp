@@ -18,7 +18,6 @@
 #include <libslic3r/OpenVDBUtils.hpp>
 #include <libslic3r/QuadricEdgeCollapse.hpp>
 #include <libslic3r/ClipperUtils.hpp>
-#include <assert.h>
 #include <chrono>
 #include <algorithm>
 #include <array>
@@ -33,6 +32,7 @@
 #include <set>
 #include <tuple>
 #include <vector>
+#include <cassert>
 //#include <libslic3r/ShortEdgeCollapse.hpp>
 
 #include <boost/log/trivial.hpp>

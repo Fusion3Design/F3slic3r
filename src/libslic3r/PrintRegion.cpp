@@ -4,10 +4,10 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <math.h>
-#include <stddef.h>
 #include <algorithm>
 #include <vector>
+#include <cmath>
+#include <cstddef>
 
 #include "Exception.hpp"
 #include "Print.hpp"

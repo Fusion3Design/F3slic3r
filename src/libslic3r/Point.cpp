@@ -12,9 +12,8 @@
 ///|/
 #include "Point.hpp"
 
-#include <stdint.h>
-#include <string.h>
 #include <algorithm>
+#include <cstring>
 
 #include "Int128.hpp"
 #include "BoundingBox.hpp"

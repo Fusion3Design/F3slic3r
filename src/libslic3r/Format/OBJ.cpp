@@ -7,10 +7,10 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <boost/log/trivial.hpp>
-#include <assert.h>
-#include <string.h>
 #include <string>
 #include <utility>
+#include <cassert>
+#include <cstring>
 
 #include "libslic3r/Model.hpp"
 #include "libslic3r/TriangleMesh.hpp"

@@ -10,6 +10,7 @@
 #include <initializer_list>
 #include <vector>
 #include <utility>
+#include <cstddef>
 
 #include "libslic3r.h"
 #include "Surface.hpp"

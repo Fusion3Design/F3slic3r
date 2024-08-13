@@ -7,15 +7,14 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <stdio.h>
 #include <boost/log/trivial.hpp>
-#include <assert.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include <numeric>
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <cassert>
+#include <cinttypes>
+#include <cstdlib>
 
 #include "libslic3r/ClipperUtils.hpp"
 #include "libslic3r/EdgeGrid.hpp"
@@ -38,6 +37,7 @@
 #include "FillEnsuring.hpp"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/Line.hpp"
+#include "libslic3r/ShortestPath.hpp"
 
 // #define INFILL_DEBUG_OUTPUT
 

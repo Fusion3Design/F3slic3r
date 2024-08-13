@@ -2,10 +2,10 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <assert.h>
-#include <stdlib.h>
 #include <algorithm>
 #include <cmath>
+#include <cassert>
+#include <cstdlib>
 
 #include "../ClipperUtils.hpp"
 #include "../ExPolygon.hpp"

@@ -14,9 +14,9 @@
 #include <libslic3r/MTUtils.hpp>
 #include <libslic3r/TriangleMeshSlicer.hpp>
 #include <boost/log/trivial.hpp>
-#include <stddef.h>
 #include <chrono>
 #include <iterator>
+#include <cstddef>
 
 #include "libslic3r/Point.hpp"
 #include "libslic3r/SLA/JobController.hpp"

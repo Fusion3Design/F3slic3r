@@ -10,16 +10,15 @@
 #include <cereal/types/utility.hpp> // IWYU pragma: keep
 #include <cereal/types/vector.hpp> // IWYU pragma: keep
 #include <cereal/archives/binary.hpp> // IWYU pragma: keep
-#include <string.h>
 #include <boost/format.hpp>
 #include <cereal/cereal.hpp>
 #include <algorithm>
 #include <fstream>
 #include <memory>
 #include <cassert>
-#include <cstddef>
 #include <map>
 #include <type_traits>
+#include <cstring>
 
 #define CEREAL_FUTURE_EXPERIMENTAL
 #include <cereal/archives/adapters.hpp>

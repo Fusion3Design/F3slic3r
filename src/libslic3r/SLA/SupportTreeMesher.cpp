@@ -4,8 +4,9 @@
 ///|/
 #include "SupportTreeMesher.hpp"
 
-#include <assert.h>
 #include <cmath>
+#include <cassert>
+#include <cstdlib>
 
 namespace Slic3r { namespace sla {
 

@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <limits>
 #include <vector>
+#include <cstddef>
 
 #include "libslic3r/Arachne/utils/ExtrusionLine.hpp"
 #include "libslic3r/BoundingBox.hpp"

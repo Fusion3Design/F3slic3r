@@ -7,9 +7,9 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <string.h>
 #include <string>
 #include <utility>
+#include <cstring>
 
 #include "libslic3r/Model.hpp"
 #include "libslic3r/TriangleMesh.hpp"

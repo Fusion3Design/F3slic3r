@@ -8,9 +8,9 @@
 #include <boost/nowide/fstream.hpp>
 #include <GL/glew.h>
 #include <boost/log/trivial.hpp>
-#include <string.h>
 #include <cassert>
 #include <algorithm>
+#include <cstring>
 
 #include "GLShader.hpp"
 #include "3DScene.hpp"

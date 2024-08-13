@@ -15,6 +15,7 @@
 #include <initializer_list>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "libslic3r/Point.hpp"
 

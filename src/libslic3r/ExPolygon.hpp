@@ -21,6 +21,8 @@
 #include <initializer_list>
 #include <iterator>
 #include <utility>
+#include <cassert>
+#include <cinttypes>
 
 #include "Point.hpp"
 #include "libslic3r.h"

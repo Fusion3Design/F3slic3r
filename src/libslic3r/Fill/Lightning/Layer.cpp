@@ -3,15 +3,15 @@
 
 #include "Layer.hpp" //The class we're implementing.
 
-#include <assert.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/blocked_range2d.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <stddef.h>
 #include <mutex>
 #include <algorithm>
 #include <limits>
 #include <utility>
+#include <cassert>
+#include <cstddef>
 
 #include "DistanceField.hpp"
 #include "TreeNode.hpp"

@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <functional>
 #include <vector>
+#include <cstddef>
 
 #include "libslic3r/KDTreeIndirect.hpp"
 #include "libslic3r/Point.hpp"

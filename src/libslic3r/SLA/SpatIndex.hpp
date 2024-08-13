@@ -12,6 +12,9 @@
 #include <vector>
 #include <Eigen/Geometry>
 #include <functional>
+#include <cstddef>
+
+#include "libslic3r/Point.hpp"
 
 namespace Slic3r {
 namespace sla {

@@ -15,6 +15,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cinttypes>
+#include <cstdlib>
 
 #include "Point.hpp"
 #include "BoundingBox.hpp"

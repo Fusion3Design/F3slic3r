@@ -3,9 +3,6 @@
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
 #include <boost/range/adaptor/reversed.hpp>
-#include <assert.h>
-#include <math.h>
-#include <stddef.h>
 #include <boost/container_hash/hash.hpp>
 #include <boost/iterator/reverse_iterator.hpp>
 #include <unordered_set>
@@ -13,6 +10,9 @@
 #include <iterator>
 #include <limits>
 #include <utility>
+#include <cassert>
+#include <cmath>
+#include <cstddef>
 
 #include "../Layer.hpp"
 #include "../GCode.hpp"
@@ -22,13 +22,11 @@
 #include "../ExPolygon.hpp"
 #include "../Geometry.hpp"
 #include "../ClipperUtils.hpp"
-#include "AvoidCrossingPerimeters.hpp"
 #include "libslic3r/GCode/AvoidCrossingPerimeters.hpp"
 #include "libslic3r/Config.hpp"
 #include "libslic3r/Flow.hpp"
 #include "libslic3r/LayerRegion.hpp"
 #include "libslic3r/Line.hpp"
-#include "libslic3r/MultiMaterialSegmentation.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Surface.hpp"
 #include "libslic3r/Utils.hpp"

@@ -4,15 +4,12 @@
 ///|/
 #include <boost/log/trivial.hpp>
 #include <boost/thread/lock_guard.hpp>
-#include <assert.h>
 #include <oneapi/tbb/blocked_range.h>
 #include <oneapi/tbb/parallel_for.h>
-#include <stddef.h>
 #include <boost/container_hash/hash.hpp>
 #include <utility>
 #include <unordered_set>
 #include <mutex>
-#include <Eigen/Geometry>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -20,6 +17,8 @@
 #include <limits>
 #include <queue>
 #include <vector>
+#include <cassert>
+#include <cstdlib>
 
 #include "BoundingBox.hpp"
 #include "ClipperUtils.hpp"
@@ -44,6 +43,7 @@
 #include "libslic3r/TriangleSelector.hpp"
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/libslic3r.h"
+#include "MultiMaterialSegmentation.hpp"
 
 //#define MM_SEGMENTATION_DEBUG_GRAPH
 //#define MM_SEGMENTATION_DEBUG_REGIONS

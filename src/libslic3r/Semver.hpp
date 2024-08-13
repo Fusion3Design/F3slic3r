@@ -16,6 +16,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <limits>
+#include <cstdlib>
 
 #include "Exception.hpp"
 

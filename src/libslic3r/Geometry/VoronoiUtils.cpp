@@ -2,12 +2,12 @@
 #include <libslic3r/Arachne/utils/PolygonsSegmentIndex.hpp>
 #include <libslic3r/MultiMaterialSegmentation.hpp>
 #include <libslic3r/Geometry.hpp>
-#include <assert.h>
-#include <stdlib.h>
 #include <cmath>
 #include <cstdint>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cstdlib>
 
 #include "VoronoiUtils.hpp"
 #include "libslic3r/Exception.hpp"

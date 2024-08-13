@@ -2,8 +2,8 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <assert.h>
 #include <algorithm>
+#include <cassert>
 
 #include "../Print.hpp"
 #include "../PrintConfig.hpp"

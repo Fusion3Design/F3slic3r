@@ -23,6 +23,7 @@
 #include <limits>
 #include <utility>
 #include <vector>
+#include <cstddef>
 
 #include "SupportLayer.hpp"
 #include "TreeModelVolumes.hpp"

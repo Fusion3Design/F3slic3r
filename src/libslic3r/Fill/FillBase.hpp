@@ -21,6 +21,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cfloat>
+#include <cmath>
+#include <cstddef>
 
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/BoundingBox.hpp"

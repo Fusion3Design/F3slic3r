@@ -2,11 +2,12 @@
 ///|/
 ///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
 ///|/
-#include <assert.h>
 #include <random>
 #include <cstdlib>
 #include <limits>
 #include <numeric>
+#include <algorithm>
+#include <cassert>
 
 #include "SupportPointGenerator.hpp"
 #include "libslic3r/Execution/ExecutionTBB.hpp"
@@ -21,6 +22,7 @@
 #include "libslic3r/AABBMesh.hpp"
 #include "libslic3r/Execution/Execution.hpp"
 #include "libslic3r/SLA/SupportPoint.hpp"
+#include "libslic3r/BoundingBox.hpp"
 
 namespace Slic3r {
 namespace sla {

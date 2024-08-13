@@ -17,6 +17,8 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <cassert>
+#include <cstddef>
 
 #include "libslic3r/ExPolygon.hpp"
 #include "libslic3r/BoundingBox.hpp"
