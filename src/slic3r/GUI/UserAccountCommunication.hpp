@@ -42,7 +42,7 @@ public:
     void do_login();
     void do_logout();
     void do_clear();
-    wxString get_login_redirect_url();
+    wxString get_login_redirect_url(bool internal);
     // Trigger function starts various remote operations
     void enqueue_connect_status_action();
     void enqueue_connect_printer_models_action();

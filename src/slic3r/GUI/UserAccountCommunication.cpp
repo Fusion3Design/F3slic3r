@@ -321,7 +321,7 @@ void UserAccountCommunication::on_uuid_map_success()
     }
 }
 
-wxString UserAccountCommunication::get_login_redirect_url() {
+wxString UserAccountCommunication::get_login_redirect_url(bool internal) {
     auto& sc = Utils::ServiceConfig::instance();
     const std::string AUTH_HOST = sc.account_url();
     const std::string CLIENT_ID = client_id();
@@ -334,14 +334,17 @@ wxString UserAccountCommunication::get_login_redirect_url() {
     BOOST_LOG_TRIVIAL(info) << "code verifier: " << m_code_verifier;
     BOOST_LOG_TRIVIAL(info) << "code challenge: " << code_challenge;
 
-    wxString url = GUI::format_wxstr(L"%1%/o/authorize/?client_id=%2%&response_type=code&code_challenge=%3%&code_challenge_method=S256&scope=basic_info&redirect_uri=%4%&language=%5%&choose_account=1", AUTH_HOST, CLIENT_ID, code_challenge, REDIRECT_URI, language);
-
+    wxString url = GUI::format_wxstr(L"%1%/o/authorize/?embed=1&client_id=%2%&response_type=code&code_challenge=%3%&code_challenge_method=S256&scope=basic_info&redirect_uri=%4%&language=%5%", AUTH_HOST, CLIENT_ID, code_challenge, REDIRECT_URI, language);
+    if (!internal) {
+        url += L"&choose_account=1";
+    }
     return url;
 }
 void UserAccountCommunication::login_redirect()
 {
-    wxString url = get_login_redirect_url();
-    wxQueueEvent(m_evt_handler,new OpenPrusaAuthEvent(GUI::EVT_OPEN_PRUSAAUTH, std::move(url)));
+    wxString url1 = get_login_redirect_url(true);
+    wxString url2 = get_login_redirect_url(false);
+    wxQueueEvent(m_evt_handler,new OpenPrusaAuthEvent(GUI::EVT_OPEN_PRUSAAUTH, {std::move(url1), std::move(url2)}));
 }
 
 bool UserAccountCommunication::is_logged()

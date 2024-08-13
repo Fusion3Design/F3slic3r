@@ -1370,22 +1370,22 @@ void PrinterPickWebViewDialog::on_dpi_changed(const wxRect &suggested_rect)
 }
 
 LoginWebViewDialog::LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url)
-    : WebViewDialog(parent
-        , url
-        , _L("Log in dialog"),
-          wxSize(50 * wxGetApp().em_unit(), 80 * wxGetApp().em_unit())
-        , {})
+    : WebViewDialog(parent, url, _L("Log in dialog"), wxSize(50 * wxGetApp().em_unit(), 80 * wxGetApp().em_unit()), {})
     , m_ret_val(ret_val)
 {
     Centre();
 }
 void LoginWebViewDialog::on_navigation_request(wxWebViewEvent &evt)
 {
+    BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << " " << evt.GetURL();
     wxString url = evt.GetURL();
     if (url.starts_with(L"prusaslicer")) {
         evt.Veto();
         m_ret_val = into_u8(url);
         EndModal(wxID_OK);
+    } else if (!url.starts_with(L"https://account.prusa3d.com")) {
+        m_ret_val = GUI::into_u8(url);
+        EndModal(wxID_EXECUTE);
     }
 }
 void LoginWebViewDialog::on_dpi_changed(const wxRect &suggested_rect)
