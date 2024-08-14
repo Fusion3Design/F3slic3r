@@ -885,18 +885,11 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                      if (DownloaderUtils::Worker::perform_registration_linux) 
                         DesktopIntegrationDialog::perform_downloader_desktop_integration();
 #endif // __linux__
-                     wxGetApp().open_login_browser_with_dialog(evt.data.second);
+                     wxGetApp().open_login_browser_with_dialog(/*dialog_msg*/evt.data.second);
                 }
-                return;
+            } else {
+                user_account->on_login_code_recieved(dialog_msg);
             }
-            user_account->on_login_code_recieved(dialog_msg);
-            */
-            DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
-    #ifdef __linux__
-           if (DownloaderUtils::Worker::perform_registration_linux) 
-               DesktopIntegrationDialog::perform_downloader_desktop_integration();
-    #endif // __linux__
-            wxGetApp().open_login_browser_with_dialog(evt.data);
         });
     
         this->q->Bind(EVT_UA_LOGGEDOUT, [this](UserAccountSuccessEvent& evt) {
