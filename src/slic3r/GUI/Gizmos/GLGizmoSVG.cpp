@@ -1595,7 +1595,7 @@ void GLGizmoSVG::draw_filename(){
             if (dlg.ShowModal() == wxID_OK ){
                 last_used_directory = dlg.GetDirectory();
                 wxString out_path = dlg.GetPath();
-                std::string path{out_path.c_str()};
+                std::string path{out_path.ToUTF8().data()};
                 //Slic3r::save(*m_volume_shape.svg_file.image, path);
 
                 std::ofstream stream(path);
