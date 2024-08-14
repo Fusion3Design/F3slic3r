@@ -186,7 +186,7 @@ std::string WxFontUtils::store_wxFont(const wxFont &font)
         "IsFixedWidth(" << font.IsFixedWidth() << "), " <<
         "IsUsingSizeInPixels(" << font.IsUsingSizeInPixels() << "), " <<
         "Encoding(" << (int)font.GetEncoding() << "), " ;
-    return std::string(font_descriptor.c_str());
+    return std::string(font_descriptor.ToUTF8().data());
 }
 
 wxFont WxFontUtils::load_wxFont(const std::string &font_descriptor)
