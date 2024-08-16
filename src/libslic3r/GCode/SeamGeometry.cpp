@@ -215,10 +215,10 @@ BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimet
             )};
 
             if (distance > max_bb_distance) {
-                Polygons expanded_extrusion{expand(external_perimeter.polygon, external_perimeter.width / 2.0)};
+                Polygons expanded_extrusion{expand(external_perimeter.polygon, Slic3r::scaled(external_perimeter.width / 2.0))};
                 if (!expanded_extrusion.empty()) {
                     return BoundedPolygon{
-                        expanded_extrusion.front(), expanded_extrusion.front().bounding_box(), external_perimeter.polygon.is_clockwise()
+                        expanded_extrusion.front(), expanded_extrusion.front().bounding_box(), external_perimeter.polygon.is_clockwise(), 0.0
                     };
                 }
             }
@@ -227,7 +227,7 @@ BoundedPolygons project_to_geometry(const Geometry::Extrusions &external_perimet
             const Polygon &adjacent_boundary{
                 !is_hole ? external_perimeter.island_boundary.contour :
                            external_perimeter.island_boundary.holes[choosen_index - 1]};
-            return BoundedPolygon{adjacent_boundary, external_perimeter.island_boundary_bounding_boxes[choosen_index], is_hole};
+            return BoundedPolygon{adjacent_boundary, external_perimeter.island_boundary_bounding_boxes[choosen_index], is_hole, 0.0};
         }
     );
     return result;
@@ -238,6 +238,27 @@ std::vector<BoundedPolygons> project_to_geometry(const std::vector<Geometry::Ext
 
     for (std::size_t layer_index{0}; layer_index < extrusions.size(); ++layer_index) {
         result[layer_index] = project_to_geometry(extrusions[layer_index], max_bb_distance);
+    }
+
+    return result;
+}
+
+std::vector<BoundedPolygons> convert_to_geometry(const std::vector<Geometry::Extrusions> &extrusions) {
+    std::vector<BoundedPolygons> result;
+    result.reserve(extrusions.size());
+
+    for (const Geometry::Extrusions &layer : extrusions) {
+        result.emplace_back();
+
+        using std::transform, std::back_inserter;
+        transform(
+            layer.begin(), layer.end(), back_inserter(result.back()),
+            [&](const Geometry::Extrusion &extrusion) {
+                return BoundedPolygon{
+                    extrusion.polygon, extrusion.bounding_box, extrusion.polygon.is_clockwise(), extrusion.width / 2.0
+                };
+            }
+        );
     }
 
     return result;

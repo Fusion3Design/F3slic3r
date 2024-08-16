@@ -151,7 +151,8 @@ struct Perimeter
         const Polygon &polygon,
         const ModelInfo::Painting &painting,
         const LayerInfo &layer_info,
-        const PerimeterParams &params
+        const PerimeterParams &params,
+        const double offset_inside
     );
 
     static Perimeter create_degenerate(
