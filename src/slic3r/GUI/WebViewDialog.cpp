@@ -1383,7 +1383,7 @@ void LoginWebViewDialog::on_navigation_request(wxWebViewEvent &evt)
         evt.Veto();
         m_ret_val = into_u8(url);
         EndModal(wxID_OK);
-    } else if (!url.starts_with(L"https://account.prusa3d.com")) {
+    } else if (!url.starts_with(L"https://account.prusa3d.com") && url.starts_with(L"http")) {
         m_ret_val = GUI::into_u8(url);
         EndModal(wxID_EXECUTE);
     }
