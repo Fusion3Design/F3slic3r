@@ -529,12 +529,12 @@ void DesktopIntegrationDialog::perform_downloader_desktop_integration()
     std::string version(SLIC3R_VERSION);
     if (version.find("alpha") != std::string::npos)
     {
-        version_suffix = "-alpha";
+        version_suffix = "_alpha";
         name_suffix = " - alpha";
     }
     else if (version.find("beta") != std::string::npos)
     {
-        version_suffix = "-beta";
+        version_suffix = "_beta";
         name_suffix = " - beta";
     }
 
@@ -660,7 +660,7 @@ void DesktopIntegrationDialog::undo_downloader_registration_rigid()
         if (apps_path.empty()) {
             continue;
         }
-        for (const std::string& suffix : {"" , "-beta", "-alpha"}) {
+        for (const std::string& suffix : {"" , "-beta", "-alpha" , "_beta", "_alpha"}) {
             boost::filesystem::path file_path = apps_path / GUI::format("PrusaSlicerURLProtocol%1%.desktop", suffix);
             boost::system::error_code ec;
             if (!boost::filesystem::exists(file_path, ec) || ec) {
