@@ -881,13 +881,13 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             if (dialog.ShowModal() != wxID_OK) {
                 if(!dialog_msg.empty()) {
                      DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
-#if defined(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION)
+#if defined(__linux__)
+                     // Remove all desktop files registering prusaslicer:// url done by previous versions.
+                    DesktopIntegrationDialog::undo_downloader_registration_rigid();
+#if defined(SLIC3R_DESKTOP_INTEGRATION)
                      if (DownloaderUtils::Worker::perform_registration_linux) 
                         DesktopIntegrationDialog::perform_downloader_desktop_integration();
-#elif defined(__linux__) && ! defined(SLIC3R_DESKTOP_INTEGRATION)
-                    // ! defined(SLIC3R_DESKTOP_INTEGRATION) means the desktop integration was done elswhere f.e. by flatpack
-                    // Remove all desktop files registering prusaslicer:// url done by previous versions.
-                    DesktopIntegrationDialog::undo_downloader_registration_rigid();
+#endif // SLIC3R_DESKTOP_INTEGRATION                
 #endif // __linux__
                      wxGetApp().open_login_browser_with_dialog(/*dialog_msg*/evt.data.second);
                 }
