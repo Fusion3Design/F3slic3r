@@ -8,6 +8,7 @@
 #include "slic3r/GUI/format.hpp"
 #include "slic3r/GUI/WebView.hpp"
 #include "slic3r/GUI/WebViewPlatformUtils.hpp"
+#include "slic3r/Utils/ServiceConfig.hpp"
 
 #include "slic3r/GUI/MsgDialog.hpp"
 #include "slic3r/GUI/Field.hpp"
@@ -1377,15 +1378,18 @@ LoginWebViewDialog::LoginWebViewDialog(wxWindow *parent, std::string &ret_val, c
 }
 void LoginWebViewDialog::on_navigation_request(wxWebViewEvent &evt)
 {
-    BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << " " << evt.GetURL();
     wxString url = evt.GetURL();
     if (url.starts_with(L"prusaslicer")) {
         evt.Veto();
         m_ret_val = into_u8(url);
         EndModal(wxID_OK);
-    } else if (!url.starts_with(L"https://account.prusa3d.com") && url.starts_with(L"http")) {
-        m_ret_val = GUI::into_u8(url);
-        EndModal(wxID_EXECUTE);
+    } else if (url.starts_with(L"http")) {
+        auto& sc = Utils::ServiceConfig::instance();
+        if (!url.starts_with(GUI::from_u8(sc.account_url()))) {
+            m_ret_val = GUI::into_u8(url);
+            EndModal(wxID_EXECUTE);
+        }
+
     }
 }
 void LoginWebViewDialog::on_dpi_changed(const wxRect &suggested_rect)
