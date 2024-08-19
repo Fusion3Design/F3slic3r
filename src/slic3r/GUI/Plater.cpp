@@ -878,16 +878,16 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             user_account->on_login_code_recieved(evt.data);
         });
         this->q->Bind(EVT_OPEN_PRUSAAUTH, [this](OpenPrusaAuthEvent& evt) {
-            if (login_dialog != nullptr) {
-                 this->q->RemoveChild(login_dialog);
-                login_dialog->Destroy();
-                login_dialog = nullptr;
-            }
             BOOST_LOG_TRIVIAL(info)  << "open login browser: " << evt.data.first;
             std::string dialog_msg;
             login_dialog = new LoginWebViewDialog(this->q, dialog_msg, evt.data.first, this->q);
             if (login_dialog->ShowModal() == wxID_OK) {
                 user_account->on_login_code_recieved(dialog_msg);
+            }
+            if (login_dialog != nullptr) {
+                this->q->RemoveChild(login_dialog);
+                login_dialog->Destroy();
+                login_dialog = nullptr;
             }
         });
         this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN, [this](wxCommandEvent& evt) {
@@ -923,11 +923,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
 
         this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
             if (login_dialog != nullptr) {
-                 this->q->RemoveChild(login_dialog);
-                login_dialog->Destroy();
-                login_dialog = nullptr;
+                login_dialog->EndModal(wxID_CANCEL);
             }
-
             // There are multiple handlers and we want to notify all
             evt.Skip();
             std::string who = user_account->get_username();
