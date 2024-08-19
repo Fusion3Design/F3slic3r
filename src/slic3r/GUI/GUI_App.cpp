@@ -3227,7 +3227,7 @@ wxString GUI_App::current_language_code_safe() const
 
 void GUI_App::open_web_page_localized(const std::string &http_address)
 {
-    open_browser_with_warning_dialog(http_address + "&lng=" + this->current_language_code_safe(), nullptr, false);
+    open_browser_with_warning_dialog(from_u8(http_address + "&lng=") + this->current_language_code_safe(), nullptr, false);
 }
 
 // If we are switching from the FFF-preset to the SLA, we should to control the printed objects if they have a part(s).
@@ -3701,7 +3701,7 @@ void GUI_App::app_updater(bool from_user)
     assert(!app_data.target_path.empty());
 
     // dialog with new version info
-    AppUpdateAvailableDialog dialog(*Semver::parse(SLIC3R_VERSION), *app_data.version, from_user);
+    AppUpdateAvailableDialog dialog(*Semver::parse(SLIC3R_VERSION), *app_data.version, from_user, app_data.action == AppUpdaterURLAction::AUUA_OPEN_IN_BROWSER);
     auto dialog_result = dialog.ShowModal();
     // checkbox "do not show again"
     if (dialog.disable_version_check()) {
@@ -3709,6 +3709,10 @@ void GUI_App::app_updater(bool from_user)
     }
     // Doesn't wish to update
     if (dialog_result != wxID_OK) {
+        return;
+    }
+    if (app_data.action == AppUpdaterURLAction::AUUA_OPEN_IN_BROWSER) {
+        open_browser_with_warning_dialog(from_u8(app_data.url));
         return;
     }
     // dialog with new version download (installer or app dependent on system) including path selection
