@@ -475,6 +475,11 @@ void UserAccountCommunication::enqueue_refresh()
             BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
             return;
         }
+        if (m_session->is_enqueued(UserAccountActionID::USER_ACCOUNT_ACTION_REFRESH_TOKEN)) 
+        {
+            BOOST_LOG_TRIVIAL(debug) << "User Account: Token refresh already enqueued, skipping...";
+            return;
+        }
         m_session->enqueue_refresh({});
     }
     wakeup_session_thread();
@@ -506,7 +511,7 @@ void UserAccountCommunication::init_session_thread()
     });
 }
 
-void UserAccountCommunication::on_activate_window(bool active)
+void UserAccountCommunication::on_activate_app(bool active)
 {
     {
         std::lock_guard<std::mutex> lck(m_thread_stop_mutex);
@@ -514,12 +519,11 @@ void UserAccountCommunication::on_activate_window(bool active)
     }
     auto now = std::time(nullptr);
     BOOST_LOG_TRIVIAL(info) << "UserAccountCommunication activate: active " << active;
-    if (active && m_next_token_refresh_at - now < 60) {
+    if (active && m_next_token_refresh_at > 0 && m_next_token_refresh_at - now < 60) {
         BOOST_LOG_TRIVIAL(info) << "Enqueue access token refresh on activation";
-        enqueue_refresh();
         m_token_timer->Stop();
+        enqueue_refresh();
     }
-
 }
 
 void UserAccountCommunication::wakeup_session_thread()

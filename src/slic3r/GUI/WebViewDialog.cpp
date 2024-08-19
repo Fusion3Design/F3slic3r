@@ -636,33 +636,9 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
             window.__access_token_version = 0;
         )",
 #else
-//        R"(
-//        console.log('Preparing login');
-//        function errorHandler(err) {
-//            const msg = {
-//                action: 'ERROR',
-//                error: JSON.stringify(err),
-//                critical: false
-//            };
-//            console.error('Login error occurred', msg);
-//            window._prusaSlicer.postMessage(msg);
-//        };
-//        window.fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
-//            .then(function (resp) {
-//                console.log('Login resp', resp);
-//                resp.text()
-//                    .then(function (json) { console.log('Login resp body', json); return json; })
-//                    .then(function (body) {
-//                        if (resp.status >= 400) errorHandler({status: resp.status, body});
-//                    });
-//            })
-//            .catch(function (err){
-//                errorHandler({message: err.message, stack: err.stack});
-//            });
-//        )",
+        refresh ? "console.log('Refreshing login'); _prusaSlicer_initLogin('%s');" :
         R"(
-        console.log('Preparing login');
-        function errorHandler(err) {
+        function _prusaSlicer_errorHandler(err) {
             const msg = {
                 action: 'ERROR',
                 error: JSON.stringify(err),
@@ -672,13 +648,21 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
             window._prusaSlicer.postMessage(msg);
         };
 
-        function delay(ms) {
+        function _prusaSlicer_delay(ms) {
             return new Promise((resolve, reject) => {
                 setTimeout(resolve, ms);
             });
         }
 
-        (async () => {
+        async function _prusaSlicer_initLogin(token) {
+            const parts = token.split('.');
+            const claims = JSON.parse(atob(parts[1]));
+            const now = new Date().getTime() / 1000;
+            if (claims.exp <= now) {
+                console.log('Skipping initLogin as token is expired');
+                return;
+            }
+
             let retry = false;
             let backoff = 1000;
             const maxBackoff = 64000;
@@ -688,15 +672,15 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
 
                 try {
                     console.log('Slicer Login request');
-                    let resp = await fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer %s'}});
+                    let resp = await fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer ' + token}});
                     let body = await resp.text();
                     console.log('Slicer Login resp', resp.status, body);
-                    if (resp.status >= 500) {
+                    if (resp.status >= 500 || resp.status == 408) {
                         retry = true;
                     } else {
                         retry = false;
                         if (resp.status >= 400)
-                            errorHandler({status: resp.status, body});
+                            _prusaSlicer_errorHandler({status: resp.status, body});
                     }
                 } catch (e) {
                     console.error('Slicer Login failed', e.toString());
@@ -704,13 +688,18 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
                 }
 
                 if (retry) {
-                    await delay(backoff + 1000 * Math.random());
+                    await _prusaSlicer_delay(backoff + 1000 * Math.random());
                     if (backoff < maxBackoff) {
                         backoff *= 2;
                     }
                 }
             } while (retry);
-       })();
+        }
+        if (window._prusaSlicer_initialLoad === undefined) {
+            console.log('Initial login');
+            _prusaSlicer_initLogin('%s');
+            window._prusaSlicer_initialLoad = true;
+        }
         )",
 #endif
         access_token

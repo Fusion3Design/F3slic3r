@@ -150,7 +150,8 @@ public:
     void enqueue_refresh(const std::string& body);
 
     void process_action_queue();
-    bool is_initialized() { return !m_access_token.empty() || !m_refresh_token.empty(); }
+    bool is_initialized() const { return !m_access_token.empty() || !m_refresh_token.empty(); }
+    bool is_enqueued(UserAccountActionID action_id) const;
     std::string get_access_token() const { return m_access_token; }
     std::string get_refresh_token() const { return m_refresh_token; }
     std::string get_shared_session_key() const { return m_shared_session_key; }
@@ -179,7 +180,7 @@ private:
     long long m_next_token_timeout; 
 
     std::queue<ActionQueueData>                                    m_action_queue;
-    std::queue<ActionQueueData>                                    m_priority_action_queue;
+    std::deque<ActionQueueData>                                    m_priority_action_queue;
     std::map<UserAccountActionID, std::unique_ptr<UserAction>>     m_actions;
 
     wxEvtHandler* p_evt_handler;

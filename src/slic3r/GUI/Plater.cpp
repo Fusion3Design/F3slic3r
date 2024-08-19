@@ -6473,7 +6473,6 @@ void Plater::force_print_bed_update()
 
 void Plater::on_activate(bool active)
 {
-    this->p->user_account->on_activate_window(active);
     if (active) {
 	    this->p->show_delayed_error_message();
     }

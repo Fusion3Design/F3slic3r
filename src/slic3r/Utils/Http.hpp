@@ -11,9 +11,19 @@
 #include <string>
 #include <functional>
 #include <boost/filesystem/path.hpp>
-
+#include <chrono>
 
 namespace Slic3r {
+
+struct HttpRetryOpt
+{
+    std::chrono::milliseconds initial_delay;
+    std::chrono::milliseconds max_delay;
+    size_t max_retries{0};
+
+	static const HttpRetryOpt& no_retry();
+    static const HttpRetryOpt& default_retry();
+};
 
 
 /// Represetns a Http request
@@ -133,9 +143,9 @@ public:
 	Http& set_referer(const std::string& referer);
 
 	// Starts performing the request in a background thread
-	Ptr perform();
+	Ptr perform(const HttpRetryOpt& retry_opts = HttpRetryOpt::no_retry());
 	// Starts performing the request on the current thread
-	void perform_sync();
+    void perform_sync(const HttpRetryOpt &retry_opts = HttpRetryOpt::no_retry());
 	// Cancels a request in progress
 	void cancel();
 
