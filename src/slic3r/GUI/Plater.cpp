@@ -272,6 +272,9 @@ struct Plater::priv
     std::unique_ptr<NotificationManager> notification_manager;
     std::unique_ptr<UserAccount> user_account;
     std::unique_ptr<PresetArchiveDatabase>  preset_archive_database;
+    // Login dialog needs to be kept somewhere.
+    // It is created inside evt Bind. But it might be closed from another event.
+    LoginWebViewDialog* login_dialog { nullptr };
 
     ProjectDirtyStateManager dirty_state;
      
@@ -875,25 +878,30 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             user_account->on_login_code_recieved(evt.data);
         });
         this->q->Bind(EVT_OPEN_PRUSAAUTH, [this](OpenPrusaAuthEvent& evt) {
+            if (login_dialog != nullptr) {
+                 this->q->RemoveChild(login_dialog);
+                login_dialog->Destroy();
+                login_dialog = nullptr;
+            }
             BOOST_LOG_TRIVIAL(info)  << "open login browser: " << evt.data.first;
             std::string dialog_msg;
-            LoginWebViewDialog dialog(this->q, dialog_msg, evt.data.first);
-            if (dialog.ShowModal() != wxID_OK) {
-                if(!dialog_msg.empty()) {
-                     DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
-#if defined(__linux__)
-                     // Remove all desktop files registering prusaslicer:// url done by previous versions.
-                    DesktopIntegrationDialog::undo_downloader_registration_rigid();
-#if defined(SLIC3R_DESKTOP_INTEGRATION)
-                     if (DownloaderUtils::Worker::perform_registration_linux) 
-                        DesktopIntegrationDialog::perform_downloader_desktop_integration();
-#endif // SLIC3R_DESKTOP_INTEGRATION                
-#endif // __linux__
-                     wxGetApp().open_login_browser_with_dialog(/*dialog_msg*/evt.data.second);
-                }
-            } else {
+            login_dialog = new LoginWebViewDialog(this->q, dialog_msg, evt.data.first, this->q);
+            if (login_dialog->ShowModal() == wxID_OK) {
                 user_account->on_login_code_recieved(dialog_msg);
             }
+        });
+        this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN, [this](wxCommandEvent& evt) {
+             DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
+#if defined(__linux__)
+            // Remove all desktop files registering prusaslicer:// url done by previous versions.
+            DesktopIntegrationDialog::undo_downloader_registration_rigid();
+#if defined(SLIC3R_DESKTOP_INTEGRATION)
+            if (DownloaderUtils::Worker::perform_registration_linux) 
+                DesktopIntegrationDialog::perform_downloader_desktop_integration();
+#endif // SLIC3R_DESKTOP_INTEGRATION                
+#endif // __linux__
+            wxString url = user_account->get_login_redirect_url()+ L"&choose_account=1";
+            wxGetApp().open_login_browser_with_dialog(into_u8(url));
         });
     
         this->q->Bind(EVT_UA_LOGGEDOUT, [this](UserAccountSuccessEvent& evt) {
@@ -914,6 +922,12 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         });
 
         this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+            if (login_dialog != nullptr) {
+                 this->q->RemoveChild(login_dialog);
+                login_dialog->Destroy();
+                login_dialog = nullptr;
+            }
+
             // There are multiple handlers and we want to notify all
             evt.Skip();
             std::string who = user_account->get_username();

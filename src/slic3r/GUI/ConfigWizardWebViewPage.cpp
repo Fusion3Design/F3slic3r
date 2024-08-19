@@ -23,7 +23,7 @@ ConfigWizardWebViewPage::ConfigWizardWebViewPage(ConfigWizard *parent)
 
     // Create the webview
     m_browser_sizer = new wxBoxSizer(wxHORIZONTAL);
-    m_browser = WebView::CreateWebView(this, p_user_account->get_login_redirect_url(), {});
+    m_browser = WebView::CreateWebView(this, p_user_account->generate_login_redirect_url(), {});
     if (!m_browser) {
         // TRN Config wizard page with a log in page.
         wxStaticText* fail_text = new wxStaticText(this, wxID_ANY, _L("Failed to load a web browser. Logging in is not possible in the moment."));

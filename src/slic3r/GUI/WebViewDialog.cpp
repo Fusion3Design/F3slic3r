@@ -27,6 +27,7 @@
 // to set authorization cookie for all WebKit requests to Connect
 #define AUTH_VIA_FETCH_OVERRIDE 0
 
+wxDEFINE_EVENT(EVT_OPEN_EXTERNAL_LOGIN, wxCommandEvent);
 
 namespace pt = boost::property_tree;
 
@@ -1370,9 +1371,10 @@ void PrinterPickWebViewDialog::on_dpi_changed(const wxRect &suggested_rect)
     Refresh();
 }
 
-LoginWebViewDialog::LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url)
+LoginWebViewDialog::LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url, wxEvtHandler* evt_handler)
     : WebViewDialog(parent, url, _L("Log in dialog"), wxSize(50 * wxGetApp().em_unit(), 80 * wxGetApp().em_unit()), {})
     , m_ret_val(ret_val)
+    , p_evt_handler(evt_handler)
 {
     Centre();
 }
@@ -1385,11 +1387,12 @@ void LoginWebViewDialog::on_navigation_request(wxWebViewEvent &evt)
         EndModal(wxID_OK);
     } else if (url.starts_with(L"http")) {
         auto& sc = Utils::ServiceConfig::instance();
-        if (!url.starts_with(GUI::from_u8(sc.account_url()))) {
-            m_ret_val = GUI::into_u8(url);
-            EndModal(wxID_EXECUTE);
+        if (!m_evt_sent && !url.starts_with(GUI::from_u8(sc.account_url()))) {
+            wxCommandEvent* evt = new wxCommandEvent(EVT_OPEN_EXTERNAL_LOGIN);
+            evt->SetString(url);
+            p_evt_handler->QueueEvent(evt);
+            m_evt_sent = true;
         }
-
     }
 }
 void LoginWebViewDialog::on_dpi_changed(const wxRect &suggested_rect)
