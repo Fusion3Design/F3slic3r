@@ -636,7 +636,17 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
             window.__access_token_version = 0;
         )",
 #else
-        refresh ? "console.log('Refreshing login'); _prusaSlicer_initLogin('%s');" :
+        refresh
+        ?
+        R"(
+        if (window._prusaSlicer_initLogin !== undefined) {
+            console.log('Refreshing login');
+            _prusaSlicer_initLogin('%s');
+        } else {
+            console.log('Refreshing login skipped as no _prusaSlicer_initLogin defined (yet?)');
+        }
+        )"
+        :
         R"(
         function _prusaSlicer_errorHandler(err) {
             const msg = {
