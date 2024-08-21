@@ -1595,20 +1595,21 @@ void GLGizmoSVG::draw_filename(){
             if (dlg.ShowModal() == wxID_OK ){
                 last_used_directory = dlg.GetDirectory();
                 wxString out_path = dlg.GetPath();
-                std::string path{out_path.ToUTF8().data()};
-                //Slic3r::save(*m_volume_shape.svg_file.image, path);
-
-                std::ofstream stream(path);
+                //Slic3r::save(*m_volume_shape.svg_file.image, out_path.ToUTF8().data());
+                
+                // Be carefull out_path_str is not UTF8 on purpose - storing into not ut6 filepath
+                std::string out_path_str(out_path.c_str()); 
+                std::ofstream stream(out_path_str);
                 if (stream.is_open()){
                     stream << *svg.file_data;
 
                     // change source file
                     m_filename_preview.clear();
-                    m_volume_shape.svg_file->path = path;
+                    m_volume_shape.svg_file->path = out_path.ToUTF8().data();
                     m_volume_shape.svg_file->path_in_3mf.clear(); // possible change name
                     m_volume->emboss_shape->svg_file = m_volume_shape.svg_file; // copy - write changes into volume
                 } else {
-                    BOOST_LOG_TRIVIAL(error) << "Opening file: \"" << path << "\" Failed";
+                    BOOST_LOG_TRIVIAL(error) << "Opening file: \"" << out_path_str << "\" Failed";
                 }
 
             }
