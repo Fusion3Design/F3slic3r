@@ -499,6 +499,7 @@ ConnectRequestHandler::ConnectRequestHandler()
     m_actions["PRINT"] = std::bind(&ConnectRequestHandler::on_connect_action_print, this, std::placeholders::_1);
     m_actions["REQUEST_OPEN_IN_BROWSER"] = std::bind(&ConnectRequestHandler::on_connect_action_request_open_in_browser, this, std::placeholders::_1);
     m_actions["ERROR"] = std::bind(&ConnectRequestHandler::on_connect_action_error, this, std::placeholders::_1);
+    m_actions["LOG"] = std::bind(&ConnectRequestHandler::on_connect_action_log, this, std::placeholders::_1);
 }
 ConnectRequestHandler::~ConnectRequestHandler()
 {
@@ -545,6 +546,11 @@ void ConnectRequestHandler::on_connect_action_error(const std::string &message_d
 void ConnectRequestHandler::resend_config()
 {
     on_connect_action_request_config({});
+}
+
+void ConnectRequestHandler::on_connect_action_log(const std::string& message_data)
+{
+    BOOST_LOG_TRIVIAL(info) << "WebKit log: " << message_data;
 }
 
 void ConnectRequestHandler::on_connect_action_request_config(const std::string& message_data)
@@ -641,17 +647,24 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
         R"(
         if (window._prusaSlicer_initLogin !== undefined) {
             console.log('Refreshing login');
+            _prusaSlicer.postMessage({action: 'LOG', message: 'Refreshing login'});
             _prusaSlicer_initLogin('%s');
         } else {
             console.log('Refreshing login skipped as no _prusaSlicer_initLogin defined (yet?)');
+            if (window._prusaSlicer === undefined) {
+                console.log('Message handler _prusaSlicer not defined yet');
+            } else {
+                _prusaSlicer.postMessage({action: 'LOG', message: 'Refreshing login skipped as no _prusaSlicer_initLogin defined (yet?)'});
+            }
         }
         )"
         :
         R"(
+        function _prusaSlicer_log(msg) { console.log(msg); _prusaSlicer.postMessage({action: 'LOG', message: msg}); }
         function _prusaSlicer_errorHandler(err) {
             const msg = {
                 action: 'ERROR',
-                error: JSON.stringify(err),
+                error: typeof(err) === 'string' ? err : JSON.stringify(err),
                 critical: false
             };
             console.error('Login error occurred', msg);
@@ -669,7 +682,7 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
             const claims = JSON.parse(atob(parts[1]));
             const now = new Date().getTime() / 1000;
             if (claims.exp <= now) {
-                console.log('Skipping initLogin as token is expired');
+                _prusaSlicer_log('Skipping initLogin as token is expired');
                 return;
             }
 
@@ -681,10 +694,10 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
                 let error = false;
 
                 try {
-                    console.log('Slicer Login request');
+                    _prusaSlicer_log('Slicer Login request');
                     let resp = await fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer ' + token}});
                     let body = await resp.text();
-                    console.log('Slicer Login resp', resp.status, body);
+                    _prusaSlicer_log('Slicer Login resp ' + resp.status + ' body: ' + body);
                     if (resp.status >= 500 || resp.status == 408) {
                         retry = true;
                     } else {
@@ -693,6 +706,7 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
                             _prusaSlicer_errorHandler({status: resp.status, body});
                     }
                 } catch (e) {
+                    _prusaSlicer_log('Slicer Login failed: ' + e.toString());
                     console.error('Slicer Login failed', e.toString());
                     retry = true;
                 }

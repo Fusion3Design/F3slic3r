@@ -1449,7 +1449,10 @@ bool GUI_App::on_init_inner()
         });
 
         Bind(wxEVT_ACTIVATE_APP, [this](const wxActivateEvent &evt) {
-            plater_->get_user_account()->on_activate_app(evt.GetActive());
+            if (plater_) {
+                if (auto user_account = plater_->get_user_account())
+                    user_account->on_activate_app(evt.GetActive());
+            }
         });
 
     }
