@@ -891,7 +891,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             }
         });
         this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN, [this](wxCommandEvent& evt) {
-             DownloaderUtils::Worker::perform_register(wxGetApp().app_config->get("url_downloader_dest"));
+            DownloaderUtils::Worker::perform_url_register();
 #if defined(__linux__)
             // Remove all desktop files registering prusaslicer:// url done by previous versions.
             DesktopIntegrationDialog::undo_downloader_registration_rigid();
@@ -900,7 +900,15 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                 DesktopIntegrationDialog::perform_downloader_desktop_integration();
 #endif // SLIC3R_DESKTOP_INTEGRATION                
 #endif // __linux__
-            wxString url = user_account->get_login_redirect_url()+ L"&choose_account=1";
+            std::string service;
+            if (evt.GetString().Find("accounts.google.com") != wxString::npos) {
+                service = "google";
+            } else if (evt.GetString().Find("appleid.apple.com") != wxString::npos) {
+                service  = "apple";
+            } else if (evt.GetString().Find("facebook.com") != wxString::npos) {
+                service = "facebook";
+            }
+            wxString url = user_account->get_login_redirect_url(service);
             wxGetApp().open_login_browser_with_dialog(into_u8(url));
         });
     

@@ -45,7 +45,7 @@ public:
     // Generates and stores Code Verifier - second call deletes previous one.
     wxString generate_login_redirect_url();
     // Only recreates the url with already existing url (if generate was not called before - url will be faulty)
-    wxString get_login_redirect_url() const;
+    wxString get_login_redirect_url(const std::string& service = std::string()) const;
     // Trigger function starts various remote operations
     void enqueue_connect_status_action();
     void enqueue_connect_printer_models_action();

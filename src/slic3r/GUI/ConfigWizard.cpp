@@ -1718,7 +1718,7 @@ bool PageDownloader::on_finish_downloader() const
 bool DownloaderUtils::Worker::perform_registration_linux = false;
 #endif // __linux__
 
-bool DownloaderUtils::Worker::perform_register(const std::string& path)
+bool DownloaderUtils::Worker::perform_download_register(const std::string& path)
 {
     boost::filesystem::path aux_dest (path);
     boost::system::error_code ec;
@@ -1734,6 +1734,10 @@ bool DownloaderUtils::Worker::perform_register(const std::string& path)
     }
     BOOST_LOG_TRIVIAL(info) << "Downloader registration: Directory for downloads: " << chosen_dest.string();
     wxGetApp().app_config->set("url_downloader_dest", chosen_dest.string());
+    perform_url_register();
+}
+bool DownloaderUtils::Worker::perform_url_register()
+{
 #ifdef _WIN32
     // Registry key creation for "prusaslicer://" URL
 
@@ -1793,12 +1797,12 @@ bool DownloaderUtils::Worker::on_finish() {
     BOOST_LOG_TRIVIAL(debug) << "PageDownloader::on_finish_downloader ac_value " << ac_value << " downloader_checked " << downloader_checked;
     if (ac_value && downloader_checked) {
         // already registered but we need to do it again
-        if (!perform_register(GUI::into_u8(path_name())))
+        if (!perform_download_register(GUI::into_u8(path_name())))
             return false;
         app_config->set("downloader_url_registered", "1");
     } else if (!ac_value && downloader_checked) {
         // register
-        if (!perform_register(GUI::into_u8(path_name())))
+        if (!perform_download_register(GUI::into_u8(path_name())))
             return false;
         app_config->set("downloader_url_registered", "1");
     } else if (ac_value && !downloader_checked) {

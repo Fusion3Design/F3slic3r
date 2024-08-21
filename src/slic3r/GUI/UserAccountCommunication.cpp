@@ -322,7 +322,7 @@ void UserAccountCommunication::on_uuid_map_success()
 }
 
 // Generates and stores Code Verifier - second call deletes previous one.
-wxString UserAccountCommunication::generate_login_redirect_url() 
+wxString UserAccountCommunication::generate_login_redirect_url()
 {
     auto& sc = Utils::ServiceConfig::instance();
     const std::string AUTH_HOST = sc.account_url();
@@ -339,7 +339,7 @@ wxString UserAccountCommunication::generate_login_redirect_url()
     wxString url = GUI::format_wxstr(L"%1%/o/authorize/?embed=1&client_id=%2%&response_type=code&code_challenge=%3%&code_challenge_method=S256&scope=basic_info&redirect_uri=%4%&language=%5%", AUTH_HOST, CLIENT_ID, code_challenge, REDIRECT_URI, language);
     return url;
 }
-wxString UserAccountCommunication::get_login_redirect_url() const
+wxString UserAccountCommunication::get_login_redirect_url(const std::string& service/* = std::string()*/) const
 {
     auto& sc = Utils::ServiceConfig::instance();
     const std::string AUTH_HOST = sc.account_url();
@@ -349,10 +349,10 @@ wxString UserAccountCommunication::get_login_redirect_url() const
     std::string code_challenge = ccg.generate_chalenge(m_code_verifier);
     wxString language = GUI::wxGetApp().current_language_code();
     language = language.SubString(0, 1);
-    BOOST_LOG_TRIVIAL(info) << "code verifier: " << m_code_verifier;
-    BOOST_LOG_TRIVIAL(info) << "code challenge: " << code_challenge;
 
-    wxString url = GUI::format_wxstr(L"%1%/o/authorize/?embed=1&client_id=%2%&response_type=code&code_challenge=%3%&code_challenge_method=S256&scope=basic_info&redirect_uri=%4%&language=%5%", AUTH_HOST, CLIENT_ID, code_challenge, REDIRECT_URI, language);
+    std::string params = GUI::format("embed=1&client_id=%1%&response_type=code&code_challenge=%2%&code_challenge_method=S256&scope=basic_info&redirect_uri=%3%&language=%4%", CLIENT_ID, code_challenge, REDIRECT_URI, language);
+    params = Http::url_encode(params);
+    wxString url = GUI::format_wxstr(L"%1%/login/%2%?next=/o/authorize/?%3%", AUTH_HOST, service, params);
     return url;
 }
 void UserAccountCommunication::login_redirect()
