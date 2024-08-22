@@ -2,6 +2,7 @@
 #include "GUI_App.hpp"
 #include "format.hpp"
 #include "../Utils/Http.hpp"
+#include "../Utils/Jwt.hpp"
 #include "I18N.hpp"
 
 #include <boost/log/trivial.hpp>
@@ -53,8 +54,17 @@ void UserActionGetWithEvent::perform(wxEvtHandler* evt_handler, const std::strin
 {
     std::string url = m_url + input;
     auto http = Http::get(std::move(url));
-    if (!access_token.empty())
+    if (!access_token.empty()) {
         http.header("Authorization", "Bearer " + access_token);
+#ifndef _NDEBUG
+        // In debug mode, also verify the token expiration
+        // This is here to help with "dev" accounts with shorten (sort of faked) expiration time
+        // The /api/v1/me will accept these tokens even if these are fake-marked as expired
+        if (!Utils::verify_exp(access_token)) {
+            fail_callback("Token Expired");
+        }
+#endif
+    }
     http.on_error([evt_handler, fail_callback, action_name = &m_action_name, fail_evt_type = m_fail_evt_type](std::string body, std::string error, unsigned status) {
         if (fail_callback)
             fail_callback(body);

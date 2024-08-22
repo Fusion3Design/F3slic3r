@@ -475,8 +475,7 @@ void UserAccountCommunication::enqueue_refresh()
             BOOST_LOG_TRIVIAL(error) << "Connect Printers endpoint connection failed - Not Logged in.";
             return;
         }
-        if (m_session->is_enqueued(UserAccountActionID::USER_ACCOUNT_ACTION_REFRESH_TOKEN)) 
-        {
+        if (m_session->is_enqueued(UserAccountActionID::USER_ACCOUNT_ACTION_REFRESH_TOKEN)) {
             BOOST_LOG_TRIVIAL(debug) << "User Account: Token refresh already enqueued, skipping...";
             return;
         }

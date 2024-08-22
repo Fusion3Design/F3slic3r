@@ -540,7 +540,7 @@ void ConnectRequestHandler::handle_message(const std::string& message)
 
 void ConnectRequestHandler::on_connect_action_error(const std::string &message_data)
 {
-    BOOST_LOG_TRIVIAL(error) << "WebKit runtime error: " << message_data;
+    BOOST_LOG_TRIVIAL(error) << "WebView runtime error: " << message_data;
 }
 
 void ConnectRequestHandler::resend_config()
@@ -550,7 +550,7 @@ void ConnectRequestHandler::resend_config()
 
 void ConnectRequestHandler::on_connect_action_log(const std::string& message_data)
 {
-    BOOST_LOG_TRIVIAL(info) << "WebKit log: " << message_data;
+    BOOST_LOG_TRIVIAL(info) << "WebView log: " << message_data;
 }
 
 void ConnectRequestHandler::on_connect_action_request_config(const std::string& message_data)
@@ -647,8 +647,9 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
         R"(
         if (window._prusaSlicer_initLogin !== undefined) {
             console.log('Refreshing login');
-            _prusaSlicer.postMessage({action: 'LOG', message: 'Refreshing login'});
-            _prusaSlicer_initLogin('%s');
+            if (window._prusaSlicer !== undefined)
+                _prusaSlicer.postMessage({action: 'LOG', message: 'Refreshing login'});
+            _prusaSlicer_initLogin('%s', 'refresh');
         } else {
             console.log('Refreshing login skipped as no _prusaSlicer_initLogin defined (yet?)');
             if (window._prusaSlicer === undefined) {
@@ -660,7 +661,11 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
         )"
         :
         R"(
-        function _prusaSlicer_log(msg) { console.log(msg); _prusaSlicer.postMessage({action: 'LOG', message: msg}); }
+        function _prusaSlicer_log(msg) {
+            console.log(msg);
+            if (window._prusaSlicer !== undefined)
+                _prusaSlicer.postMessage({action: 'LOG', message: msg});
+        }
         function _prusaSlicer_errorHandler(err) {
             const msg = {
                 action: 'ERROR',
@@ -677,7 +682,7 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
             });
         }
 
-        async function _prusaSlicer_initLogin(token) {
+        async function _prusaSlicer_initLogin(token, reason) {
             const parts = token.split('.');
             const claims = JSON.parse(atob(parts[1]));
             const now = new Date().getTime() / 1000;
@@ -694,10 +699,10 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
                 let error = false;
 
                 try {
-                    _prusaSlicer_log('Slicer Login request');
+                    _prusaSlicer_log('Slicer Login request (' + reason + ') ' + token.substring(token.length - 8));
                     let resp = await fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer ' + token}});
                     let body = await resp.text();
-                    _prusaSlicer_log('Slicer Login resp ' + resp.status + ' body: ' + body);
+                    _prusaSlicer_log('Slicer Login resp ' + resp.status + ' (' +reason + ' ' + token.substring(token.length - 8) + ') body: ' + body);
                     if (resp.status >= 500 || resp.status == 408) {
                         retry = true;
                     } else {
@@ -721,7 +726,7 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
         }
         if (window._prusaSlicer_initialLoad === undefined) {
             console.log('Initial login');
-            _prusaSlicer_initLogin('%s');
+            _prusaSlicer_initLogin('%s', 'init-load');
             window._prusaSlicer_initialLoad = true;
         }
         )",
@@ -743,7 +748,12 @@ void ConnectWebViewPanel::on_user_token(UserAccountSuccessEvent& e)
     e.Skip();
     auto access_token = wxGetApp().plater()->get_user_account()->get_access_token();
     assert(!access_token.empty());
-    wxString javascript = get_login_script(true);
+    wxString javascript = get_login_script(false);
+
+    m_browser->RemoveAllUserScripts();
+    m_browser->AddUserScript(javascript);
+
+    javascript = get_login_script(true);
     //m_browser->AddUserScript(javascript, wxWEBVIEW_INJECT_AT_DOCUMENT_END);
     BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript << "\n";
     m_browser->RunScriptAsync(javascript);
