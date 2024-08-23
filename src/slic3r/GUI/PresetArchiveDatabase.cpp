@@ -689,7 +689,7 @@ void PresetArchiveDatabase::clear_online_repos()
 {
 	auto it = m_archive_repositories.begin();
 	while (it != m_archive_repositories.end()) {
-		// Do not clean repos with local path (local repo) and with visibility filled (secret repo)
+		// Do not clean repos with local path (local repo).
         if ((*it)->get_manifest().tmp_path.empty()) {
 			it = m_archive_repositories.erase(it);
 		} else {
