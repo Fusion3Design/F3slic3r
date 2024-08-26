@@ -3151,7 +3151,8 @@ void TabPrinter::build_extruder_pages(size_t n_before_extruders)
         optgroup->on_change = [this, extruder_idx](const t_config_option_key&opt_key, boost::any value)
         {
             const bool is_single_extruder_MM = m_config->opt_bool("single_extruder_multi_material");
-            const bool is_nozzle_diameter_changed = opt_key.find_first_of("nozzle_diameter") != std::string::npos;
+            const bool is_nozzle_diameter_changed = opt_key.find("nozzle_diameter") != std::string::npos;
+            const bool is_high_flow_changed = opt_key.find("nozzle_high_flow") != std::string::npos;
 
             if (is_single_extruder_MM && m_extruders_count > 1 && is_nozzle_diameter_changed)
             {
@@ -3164,7 +3165,6 @@ void TabPrinter::build_extruder_pages(size_t n_before_extruders)
                 {
                     const wxString msg_text = _L("This is a single extruder multimaterial printer, diameters of all extruders "
                                                  "will be set to the new value. Do you want to proceed?");
-                    //wxMessageDialog dialog(parent(), msg_text, _(L("Nozzle diameter")), wxICON_WARNING | wxYES_NO);
                     MessageDialog dialog(parent(), msg_text, _L("Nozzle diameter"), wxICON_WARNING | wxYES_NO);
 
                     DynamicPrintConfig new_conf = *m_config;
@@ -3183,7 +3183,36 @@ void TabPrinter::build_extruder_pages(size_t n_before_extruders)
                 }
             }
 
-            if (is_nozzle_diameter_changed) {
+            if (is_single_extruder_MM && m_extruders_count > 1 && is_high_flow_changed)
+            {
+                SuppressBackgroundProcessingUpdate sbpu;
+                const unsigned char new_hf = boost::any_cast<unsigned char>(value);
+                std::vector<unsigned char> nozzle_high_flow = static_cast<const ConfigOptionBools*>(m_config->option("nozzle_high_flow"))->values;
+
+                // if value was changed
+                if (nozzle_high_flow[extruder_idx == 0 ? 1 : 0] != new_hf)
+                {
+                    const wxString msg_text = _L("This is a single extruder multimaterial printer, 'high_flow' state of all extruders "
+                                                 "will be set to the new value. Do you want to proceed?");
+                    MessageDialog dialog(parent(), msg_text, _L("High flow"), wxICON_WARNING | wxYES_NO);
+
+                    DynamicPrintConfig new_conf = *m_config;
+                    if (dialog.ShowModal() == wxID_YES) {
+                        for (size_t i = 0; i < nozzle_high_flow.size(); i++) {
+                            if (i==extruder_idx)
+                                continue;
+                            nozzle_high_flow[i] = new_hf;
+                        }
+                    }
+                    else
+                        nozzle_high_flow[extruder_idx] = nozzle_high_flow[extruder_idx == 0 ? 1 : 0];
+
+                    new_conf.set_key_value("nozzle_high_flow", new ConfigOptionBools(nozzle_high_flow));
+                    load_config(new_conf);
+                }
+            }
+
+            if (is_nozzle_diameter_changed || is_high_flow_changed) {
                 if (extruder_idx == 0)
                     // Mark the print & filament enabled if they are compatible with the currently selected preset.
                     // If saving the preset changes compatibility with other presets, keep the now incompatible dependent presets selected, however with a "red flag" icon showing that they are no more compatible.
