@@ -2990,8 +2990,18 @@ void ConfigWizard::priv::on_printer_pick(PagePrinters *page, const PrinterPicker
 
     if (page->technology & T_FFF) {
         page_filaments->clear();
+        if (!any_fff_selected) {
+            // clear all filament's info, when no one printer is selected
+            filaments.clear();
+            aliases_fff.clear();
+        }
     } else if (page->technology & T_SLA) {
         page_sla_materials->clear();
+        if (!any_sla_selected) {
+            // clear all material's info, when no one printer is selected
+            sla_materials.clear();
+            aliases_sla.clear();
+        }
     }
 }
 
