@@ -827,7 +827,6 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloats,              travel_slope))
     ((ConfigOptionBools,               travel_lift_before_obstacle))
     ((ConfigOptionBools,               nozzle_high_flow))
-    ((ConfigOptionBools,               nozzle_high_temperature))
     ((ConfigOptionPercents,            retract_before_wipe))
     ((ConfigOptionFloats,              retract_length))
     ((ConfigOptionFloats,              retract_length_toolchange))

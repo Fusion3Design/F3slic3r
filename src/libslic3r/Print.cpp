@@ -128,7 +128,6 @@ bool Print::invalidate_state_by_config_options(const ConfigOptionResolver & /* n
         "gcode_comments",
         "gcode_label_objects",
         "nozzle_high_flow",
-        "nozzle_high_temperature",
         "infill_acceleration",
         "layer_gcode",
         "min_fan_speed",

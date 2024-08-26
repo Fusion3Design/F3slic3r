@@ -3133,7 +3133,7 @@ const std::vector<std::string> extruder_options = {
     "retract_length", "retract_lift", "retract_lift_above", "retract_lift_below",
     "retract_speed", "deretract_speed", "retract_restart_extra", "retract_before_travel",
     "retract_layer_change", "wipe", "retract_before_wipe", "travel_ramping_lift",
-    "travel_slope", "travel_max_lift", "travel_lift_before_obstacle", "nozzle_high_flow", "nozzle_high_temperature",
+    "travel_slope", "travel_max_lift", "travel_lift_before_obstacle", "nozzle_high_flow",
     "retract_length_toolchange", "retract_restart_extra_toolchange",
 };
 
@@ -3197,8 +3197,6 @@ void TabPrinter::build_extruder_pages(size_t n_before_extruders)
         };
 
         optgroup->append_single_option_line("nozzle_high_flow", "", extruder_idx);
-        optgroup->append_single_option_line("nozzle_high_temperature", "", extruder_idx);
-        
 
         optgroup = page->new_optgroup(L("Preview"));
 
