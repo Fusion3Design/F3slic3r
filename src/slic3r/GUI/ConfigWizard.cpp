@@ -1734,7 +1734,7 @@ bool DownloaderUtils::Worker::perform_download_register(const std::string& path)
     }
     BOOST_LOG_TRIVIAL(info) << "Downloader registration: Directory for downloads: " << chosen_dest.string();
     wxGetApp().app_config->set("url_downloader_dest", chosen_dest.string());
-    perform_url_register();
+    return perform_url_register();
 }
 bool DownloaderUtils::Worker::perform_url_register()
 {
