@@ -110,44 +110,9 @@ std::string json_var_to_opt_string(const std::string& json_var)
         return "0";
     return json_var;
 }
-}
 
-void fill_config_options_from_json(boost::property_tree::ptree& ptree, std::map<std::string, std::vector<std::string>>& result) 
+void fill_config_options_from_json_inner(boost::property_tree::ptree& ptree, std::map<std::string, std::vector<std::string>>& result,  const std::map<std::string, std::string>& parameters) 
 {
-    assert(!ptree.empty());
-    /*
-    "slot": {
-        "active": 3,
-        "slots": {
-            "1": {
-                "material": "PETG",
-                "temp": 32.0,
-                "fan_hotend": 0.0,
-                "fan_print": 0.0,
-                "nozzle_diameter": 3.2,     // float
-                "high_flow": true,          // boolean
-                "high_temperature": false,  // boolean
-                "hardened": true,           // boolean
-            },
-            "3": {
-                "material": "ASA",
-                "temp": 35.0,
-                "fan_hotend": 0.0,
-                "fan_print": 0.0,
-                "nozzle_diameter": 3.2,     // float
-                "high_flow": true,          // boolean
-                "high_temperature": false,  // boolean
-                "hardened": true,           // boolean
-            },
-        }
-    }
-    */
-    const std::map<std::string, std::string> parameters = {
-        // first name from connect, second config option
-        {"nozzle_diameter","nozzle_diameter"},
-        {"high_flow","nozzle_high_flow"},
-        //{"",""}
-    };
     pt::ptree slots = parse_tree_for_subtree(parse_tree_for_subtree(ptree, "slot"), "slots"); 
     for (const auto &subtree : slots) {
        size_t slot_id;
@@ -180,8 +145,48 @@ void fill_config_options_from_json(boost::property_tree::ptree& ptree, std::map<
        }
     }
 }
+}
 
-void fill_material_from_json(const std::string& json, std::vector<std::string>& result) 
+void fill_config_options_from_json(boost::property_tree::ptree& ptree, std::map<std::string, std::vector<std::string>>& result) 
+{
+    assert(!ptree.empty());
+    /*
+    "slot": {
+        "active": 3,
+        "slots": {
+            "1": {
+                "material": "PETG",
+                "temp": 32.0,
+                "fan_hotend": 0.0,
+                "fan_print": 0.0,
+                "nozzle_diameter": 3.2,     // float
+                "high_flow": true,          // boolean
+                "high_temperature": false,  // boolean
+                "hardened": true,           // boolean
+            },
+            "3": {
+                "material": "ASA",
+                "temp": 35.0,
+                "fan_hotend": 0.0,
+                "fan_print": 0.0,
+                "nozzle_diameter": 3.2,     // float
+                "high_flow": true,          // boolean
+                "high_temperature": false,  // boolean
+                "hardened": true,           // boolean
+            },
+        }
+    }
+    */
+      const std::map<std::string, std::string> parameters = {
+        // first name from connect, second config option
+        {"nozzle_diameter","nozzle_diameter"},
+        {"high_flow","nozzle_high_flow"},
+        //{"",""}
+    };
+    fill_config_options_from_json_inner(ptree, result, parameters);
+}
+
+void fill_material_from_json(const std::string& json, std::vector<std::string>& material_result, std::vector<bool>& avoid_abrasive_result) 
 {
     pt::ptree ptree;
     json_to_ptree(ptree, json);
@@ -242,7 +247,8 @@ void fill_material_from_json(const std::string& json, std::vector<std::string>& 
         if (!filament_subtree.empty()) {
             std::string material = parse_tree_for_param(filament_subtree, "material");
             if (!material.empty()) {
-                result.emplace_back(std::move(material));
+                material_result.emplace_back(std::move(material));
+                avoid_abrasive_result.emplace_back(true);
             }
         }
         return;
@@ -250,6 +256,7 @@ void fill_material_from_json(const std::string& json, std::vector<std::string>& 
     // search "slot" subtree for all "material"s
     // this parses "slots" with respect to numbers of slots and adds empty string to missing numbers
     // if only filled should be used. Use: parse_tree_for_param_vector(slot_subtree, "material", result);
+    /*
     pt::ptree slots = parse_tree_for_subtree(slot_subtree, "slots"); 
     assert(!slots.empty());
     for (const auto &subtree : slots) {
@@ -264,6 +271,25 @@ void fill_material_from_json(const std::string& json, std::vector<std::string>& 
         while (result.size() < slot_id)
             result.emplace_back();
         result[slot_id - 1] = val;
+    }
+    */
+    const std::map<std::string, std::string> parameters = {
+        // first name from connect, second config option
+        {"material","material"},
+        {"hardened","hardened"},
+        //{"",""}
+    };
+    std::map<std::string, std::vector<std::string>> result_map;
+    fill_config_options_from_json_inner(ptree, result_map, parameters);
+    if (result_map.find("material") != result_map.end())  {
+        for (const std::string& val : result_map["material"]) {
+            material_result.emplace_back(val);
+        }
+    }
+    if (result_map.find("hardened") != result_map.end())  {
+        for (const std::string& val : result_map["hardened"]) {
+            avoid_abrasive_result.emplace_back(val == "false" ? 1 : 0);
+        }
     }
 }
 

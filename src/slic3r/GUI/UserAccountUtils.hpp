@@ -18,7 +18,7 @@ void fill_supported_printer_models_from_json(boost::property_tree::ptree& ptree,
 void fill_config_options_from_json(boost::property_tree::ptree& ptree, std::map<std::string,std::vector<std::string>>& result);
 
 // Since fill_material_from_json is called only from one place where ptree doesnt need to be shared, it is not always read from json.
-void fill_material_from_json(const std::string& json, std::vector<std::string>& result);
+void fill_material_from_json(const std::string& json, std::vector<std::string>& material_result, std::vector<bool>& avoid_abrasive_result);
 
 std::string get_print_data_from_json(const std::string &json, const std::string &keyword);
 

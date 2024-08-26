@@ -3973,7 +3973,7 @@ bool GUI_App::select_filament_preset(const Preset* preset, size_t extruder_index
     assert(preset->is_visible);
     return preset_bundle->extruders_filaments[extruder_index].select_filament(preset->name);
 }
-void GUI_App::search_and_select_filaments(const std::string& material, size_t extruder_index, std::string& out_message)
+void GUI_App::search_and_select_filaments(const std::string& material, bool avoid_abrasive, size_t extruder_index, std::string& out_message)
 {
     const Preset* preset = preset_bundle->extruders_filaments[extruder_index].get_selected_preset();
     // selected is ok
@@ -3987,6 +3987,7 @@ void GUI_App::search_and_select_filaments(const std::string& material, size_t ex
             && filament.preset->is_visible
             && (!filament.preset->vendor || !filament.preset->vendor->templates_profile)
             && filament.preset->config.has("filament_type")
+            && (!avoid_abrasive || filament.preset->config.opt_bool("filament_abrasive") == false)
             && filament.preset->config.option("filament_type")->serialize() == material
             && filament.preset->name.compare(0, 9, "Prusament") == 0
             && select_filament_preset(filament.preset, extruder_index)
@@ -4005,6 +4006,7 @@ void GUI_App::search_and_select_filaments(const std::string& material, size_t ex
             && filament.preset->is_visible
             && (!filament.preset->vendor || !filament.preset->vendor->templates_profile)
             && filament.preset->config.has("filament_type")
+            && (!avoid_abrasive || filament.preset->config.opt_bool("filament_abrasive") == false)
             && filament.preset->config.option("filament_type")->serialize() == material
             && select_filament_preset(filament.preset, extruder_index)
             )
@@ -4022,6 +4024,7 @@ void GUI_App::search_and_select_filaments(const std::string& material, size_t ex
             && !filament.preset->is_default
             && (!filament.preset->vendor || !filament.preset->vendor->templates_profile)
             && filament.preset->config.has("filament_type")
+            && (!avoid_abrasive || filament.preset->config.opt_bool("filament_abrasive") == false)
             && filament.preset->config.option("filament_type")->serialize() == material
             && filament.preset->name.compare(0, 9, "Prusament") == 0
             && select_filament_preset(filament.preset, extruder_index))
@@ -4037,7 +4040,8 @@ void GUI_App::select_filament_from_connect(const std::string& msg)
 {
     // parse message
     std::vector<std::string> materials;
-    UserAccountUtils::fill_material_from_json(msg, materials);
+    std::vector<bool> avoid_abrasive;
+    UserAccountUtils::fill_material_from_json(msg, materials, avoid_abrasive);
     if (materials.empty()) {
         BOOST_LOG_TRIVIAL(error) << "Failed to select filament from Connect. No material data.";
         return;
@@ -4053,7 +4057,7 @@ void GUI_App::select_filament_from_connect(const std::string& msg)
     }
     std::string notification_text;
     for (size_t i = 0; i < extruder_count; i++) {
-        search_and_select_filaments(materials[i], i, notification_text);
+        search_and_select_filaments(materials[i], avoid_abrasive.size() > i ? avoid_abrasive[i] : false, i, notification_text);
     }
 
     // When all filaments are selected/intalled, 
