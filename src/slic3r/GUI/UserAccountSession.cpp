@@ -60,7 +60,7 @@ void UserActionGetWithEvent::perform(wxEvtHandler* evt_handler, const std::strin
         // In debug mode, also verify the token expiration
         // This is here to help with "dev" accounts with shorten (sort of faked) expiration time
         // The /api/v1/me will accept these tokens even if these are fake-marked as expired
-        if (!Utils::verify_exp(access_token)) {
+        if (!Utils::verify_exp(access_token) && fail_callback) {
             fail_callback("Token Expired");
         }
 #endif
