@@ -1372,7 +1372,7 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("filament_abrasive", coBools);
     def->label = L("Abrasive material");
-    def->tooltip = L("TODO");
+    def->tooltip = L("This flag means that the material is abrasive and requires a hardened nozzle. The value is used by the printer to check it.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBools { false });
 
@@ -2558,7 +2558,7 @@ void PrintConfigDef::init_fff_params()
 
     def = this->add("nozzle_high_flow", coBools);
     def->label = L("High flow nozzle");
-    def->tooltip = L("TODO");
+    def->tooltip = L("High flow nozzles allow higher print speeds.");
     def->mode = comExpert;
     def->set_default_value(new ConfigOptionBools{false});
 
