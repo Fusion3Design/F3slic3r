@@ -985,16 +985,32 @@ static std::string get_connect_state_suffix_for_printer(const Preset& printer_pr
                 boost::trim_left(printer_model);
             }
 
-            if (printer_model_nozzle_pair.first == printer_model
-                && printer_model_nozzle_pair.second == printer_preset.config.opt_string("printer_variant")) 
-            {
-                PrinterStatesCount states_cnt = get_printe_states_count(states);
+            if (printer_preset.config.has("nozzle_diameter")) {
+                double nozzle_diameter = static_cast<const ConfigOptionFloats*>(printer_preset.config.option("nozzle_diameter"))->values[0];
+                wxString nozzle_diameter_serialized = double_to_string(nozzle_diameter);
+                nozzle_diameter_serialized.Replace(L",", L".");
 
-                if (states_cnt.available_cnt > 0)
-                    return "_available";
-                if (states_cnt.busy_cnt > 0)
-                    return "_busy";
-                return "_offline";
+                if (printer_model_nozzle_pair.first == printer_model
+                    && printer_model_nozzle_pair.second == GUI::into_u8(nozzle_diameter_serialized)) 
+                {
+                    PrinterStatesCount states_cnt = get_printe_states_count(states);
+
+                    if (states_cnt.available_cnt > 0)
+                        return "_available";
+                    if (states_cnt.busy_cnt > 0)
+                        return "_busy";
+                    return "_offline";
+                }
+            } else {
+                if (printer_model_nozzle_pair.first == printer_model) {
+                    PrinterStatesCount states_cnt = get_printe_states_count(states);
+
+                    if (states_cnt.available_cnt > 0)
+                        return "_available";
+                    if (states_cnt.busy_cnt > 0)
+                        return "_busy";
+                    return "_offline";
+                }
             }
         }
     }
@@ -1033,21 +1049,40 @@ static bool fill_data_to_connect_info_line(  const Preset& printer_preset,
                 boost::trim_left(printer_model);
             }
 
-            if (printer_model_nozzle_pair.first == printer_model
-                &&  printer_model_nozzle_pair.second == printer_preset.config.opt_string("printer_variant")) 
-            {
-                PrinterStatesCount states_cnt = get_printe_states_count(states);
+            if (printer_preset.config.has("nozzle_diameter")) {
+                double nozzle_diameter = static_cast<const ConfigOptionFloats*>(printer_preset.config.option("nozzle_diameter"))->values[0];
+                wxString nozzle_diameter_serialized = double_to_string(nozzle_diameter);
+                nozzle_diameter_serialized.Replace(L",", L".");
 
+                if (printer_model_nozzle_pair.first == printer_model
+                    &&  printer_model_nozzle_pair.second == GUI::into_u8(nozzle_diameter_serialized)) 
+                {
+                    PrinterStatesCount states_cnt = get_printe_states_count(states);
 #ifdef _WIN32
-                connect_available_info->SetLabelMarkup(format_wxstr("%1% %2%", format("<b>%1%</b>", states_cnt.available_cnt), _L("available")));
-                connect_offline_info  ->SetLabelMarkup(format_wxstr("%1% %2%", format("<b>%1%</b>", states_cnt.offline_cnt),   _L("offline")));
-                connect_printing_info ->SetLabelMarkup(format_wxstr("%1% %2%", format("<b>%1%</b>", states_cnt.busy_cnt),      _L("printing")));
+                    connect_available_info->SetLabelMarkup(format_wxstr("%1% %2%", format("<b>%1%</b>", states_cnt.available_cnt), _L("available")));
+                    connect_offline_info  ->SetLabelMarkup(format_wxstr("%1% %2%", format("<b>%1%</b>", states_cnt.offline_cnt),   _L("offline")));
+                    connect_printing_info ->SetLabelMarkup(format_wxstr("%1% %2%", format("<b>%1%</b>", states_cnt.busy_cnt),      _L("printing")));
 #else
-                connect_available_info->SetLabel(format_wxstr("%1% ", states_cnt.available_cnt));
-                connect_offline_info  ->SetLabel(format_wxstr("%1% ", states_cnt.offline_cnt));
-                connect_printing_info ->SetLabel(format_wxstr("%1% ", states_cnt.busy_cnt));
+                    connect_available_info->SetLabel(format_wxstr("%1% ", states_cnt.available_cnt));
+                    connect_offline_info  ->SetLabel(format_wxstr("%1% ", states_cnt.offline_cnt));
+                    connect_printing_info ->SetLabel(format_wxstr("%1% ", states_cnt.busy_cnt));
 #endif
-                return true;
+                    return true;
+                }
+            } else {
+                if (printer_model_nozzle_pair.first == printer_model) {
+                    PrinterStatesCount states_cnt = get_printe_states_count(states);
+#ifdef _WIN32
+                    connect_available_info->SetLabelMarkup(format_wxstr("%1% %2%", format("<b>%1%</b>", states_cnt.available_cnt), _L("available")));
+                    connect_offline_info  ->SetLabelMarkup(format_wxstr("%1% %2%", format("<b>%1%</b>", states_cnt.offline_cnt),   _L("offline")));
+                    connect_printing_info ->SetLabelMarkup(format_wxstr("%1% %2%", format("<b>%1%</b>", states_cnt.busy_cnt),      _L("printing")));
+#else
+                    connect_available_info->SetLabel(format_wxstr("%1% ", states_cnt.available_cnt));
+                    connect_offline_info  ->SetLabel(format_wxstr("%1% ", states_cnt.offline_cnt));
+                    connect_printing_info ->SetLabel(format_wxstr("%1% ", states_cnt.busy_cnt));
+#endif
+                    return true;
+                }
             }
         }
     }
