@@ -166,12 +166,12 @@ std::string WxFontUtils::get_human_readable_name(const wxFont &font)
     if (!font.IsOk()) return "Font is NOT ok.";
     // Face name is optional in wxFont
     if (!font.GetFaceName().empty()) {
-        return std::string(font.GetFaceName().c_str());
+        return std::string(font.GetFaceName().ToUTF8().data());
     } else {
         return std::string((font.GetFamilyString() + " " +
                             font.GetStyleString() + " " +
                             font.GetWeightString())
-                               .c_str());
+                               .ToUTF8().data());
     }
 }
 
@@ -186,14 +186,14 @@ std::string WxFontUtils::store_wxFont(const wxFont &font)
         "IsFixedWidth(" << font.IsFixedWidth() << "), " <<
         "IsUsingSizeInPixels(" << font.IsUsingSizeInPixels() << "), " <<
         "Encoding(" << (int)font.GetEncoding() << "), " ;
-    return std::string(font_descriptor.c_str());
+    return std::string(font_descriptor.ToUTF8().data());
 }
 
 wxFont WxFontUtils::load_wxFont(const std::string &font_descriptor)
 {
     BOOST_LOG_TRIVIAL(trace) << "'" << font_descriptor << "'font descriptor string param of load_wxFont()";
     wxString font_descriptor_wx(font_descriptor);
-    BOOST_LOG_TRIVIAL(trace) << "'" << font_descriptor_wx.c_str() << "' wx string descriptor";
+    BOOST_LOG_TRIVIAL(trace) << "'" << font_descriptor_wx.ToUTF8().data() << "' wx string descriptor";
     wxFont wx_font(font_descriptor_wx);
     BOOST_LOG_TRIVIAL(trace) << "loaded font is '" << get_human_readable_name(wx_font) << "'.";
     return wx_font;
