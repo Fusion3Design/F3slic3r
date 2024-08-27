@@ -3544,42 +3544,64 @@ bool GUI_App::check_updates(const bool invoked_by_user)
     // Applicaiton will continue.
     return true;
 }
+namespace {
+bool open_dialog_hyperlink_checkbox(wxWindow* parent, AppConfig* app_config)
+{
+    RichMessageDialog dialog(parent, _L("Open hyperlink in default browser?"), _L("PrusaSlicer: Open hyperlink"), wxICON_QUESTION | wxYES_NO);
+    dialog.ShowCheckBox(_L("Remember my choice"));
+    auto answer = dialog.ShowModal();
+    bool launch = answer == wxID_YES;
+    if (dialog.IsCheckBoxChecked()) {
+        wxString preferences_item = _L("Suppress to open hyperlink in browser");
+        wxString msg =
+            _L("PrusaSlicer will remember your choice.") + "\n\n" +
+            _L("You will not be asked about it again on hyperlinks hovering.") + "\n\n" +
+            format_wxstr(_L("Visit \"Preferences\" and check \"%1%\"\nto changes your choice."), preferences_item);
 
+        MessageDialog msg_dlg(parent, msg, _L("PrusaSlicer: Don't ask me again"), wxOK | wxCANCEL | wxICON_INFORMATION);
+        if (msg_dlg.ShowModal() == wxID_CANCEL)
+            return false;
+        app_config->set("suppress_hyperlinks", answer == wxID_NO ? "1" : "0");
+    }
+    return launch;
+}
+bool open_dialog_hyperlink(wxWindow* parent)
+{
+    MessageDialog dialog(parent, _L("Open hyperlink in default browser?"), _L("PrusaSlicer: Open hyperlink"), wxICON_QUESTION | wxYES_NO);
+    return dialog.ShowModal() == wxID_YES;
+}
+}
 bool GUI_App::open_browser_with_warning_dialog(const wxString& url, wxWindow* parent/* = nullptr*/, bool force_remember_choice /*= true*/, int flags/* = 0*/)
 {
+    enum class SupressHyperLinksOption{
+        SHLO_UNCHECKED,
+        SHLO_ALWAYS_SUPRESS,
+        SHLO_ALWAYS_ALLOW
+    };
+    bool empty = app_config->get("suppress_hyperlinks").empty();
+    bool checked = app_config->get_bool("suppress_hyperlinks");
+    SupressHyperLinksOption opt_val = 
+        (empty 
+            ? SupressHyperLinksOption::SHLO_UNCHECKED
+            : (checked  
+                ? SupressHyperLinksOption::SHLO_ALWAYS_SUPRESS 
+                : SupressHyperLinksOption::SHLO_ALWAYS_ALLOW));
     bool launch = true;
-
-    // warning dialog containes a "Remember my choice" checkbox
-    std::string option_key = "suppress_hyperlinks";
-    if (force_remember_choice || app_config->get(option_key).empty()) {
-        if (app_config->get(option_key).empty()) {
-            RichMessageDialog dialog(parent, _L("Open hyperlink in default browser?"), _L("PrusaSlicer: Open hyperlink"), wxICON_QUESTION | wxYES_NO);
-            dialog.ShowCheckBox(_L("Remember my choice"));
-            auto answer = dialog.ShowModal();
-            launch = answer == wxID_YES;
-            if (dialog.IsCheckBoxChecked()) {
-                wxString preferences_item = _L("Suppress to open hyperlink in browser");
-                wxString msg =
-                    _L("PrusaSlicer will remember your choice.") + "\n\n" +
-                    _L("You will not be asked about it again on hyperlinks hovering.") + "\n\n" +
-                    format_wxstr(_L("Visit \"Preferences\" and check \"%1%\"\nto changes your choice."), preferences_item);
-
-                MessageDialog msg_dlg(parent, msg, _L("PrusaSlicer: Don't ask me again"), wxOK | wxCANCEL | wxICON_INFORMATION);
-                if (msg_dlg.ShowModal() == wxID_CANCEL)
-                    return false;
-                app_config->set(option_key, answer == wxID_NO ? "1" : "0");
-            }
-        }
-        if (launch)
-            launch = !app_config->get_bool(option_key);
-    }
-    // warning dialog doesn't containe a "Remember my choice" checkbox
-    // and will be shown only when "Suppress to open hyperlink in browser" is ON.
-    else if (app_config->get_bool(option_key)) {
-        MessageDialog dialog(parent, _L("Open hyperlink in default browser?"), _L("PrusaSlicer: Open hyperlink"), wxICON_QUESTION | wxYES_NO);
-        launch = dialog.ShowModal() == wxID_YES;
-    }
-
+    if (opt_val == SupressHyperLinksOption::SHLO_UNCHECKED) {
+        // no previous action from user
+        // open dialog with remember checkbox
+        launch = open_dialog_hyperlink_checkbox(parent, app_config);
+    } else if (opt_val == SupressHyperLinksOption::SHLO_ALWAYS_ALLOW) {
+        // user already set checkbox to always open
+        launch = true;
+    } else if (opt_val == SupressHyperLinksOption::SHLO_ALWAYS_SUPRESS && force_remember_choice) {
+        // user already set checkbox or preferences to always supress
+        launch = false;
+    } else if (opt_val == SupressHyperLinksOption::SHLO_ALWAYS_SUPRESS && !force_remember_choice) {
+        // user already set checkbox or preferences to always supress but it is overriden
+        // no checkbox in dialog
+        launch = open_dialog_hyperlink(parent);
+    } 
     return  launch && wxLaunchDefaultBrowser(url, flags);
 }
 
@@ -3712,7 +3734,7 @@ void GUI_App::app_updater(bool from_user)
         return;
     }
     if (app_data.action == AppUpdaterURLAction::AUUA_OPEN_IN_BROWSER) {
-        open_browser_with_warning_dialog(from_u8(app_data.url));
+        open_browser_with_warning_dialog(from_u8(app_data.url), nullptr, false);
         return;
     }
     // dialog with new version download (installer or app dependent on system) including path selection
