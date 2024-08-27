@@ -126,6 +126,7 @@
 #include "UserAccountUtils.hpp"
 #include "DesktopIntegrationDialog.hpp"
 #include "WebViewDialog.hpp"
+#include "ConfigWizardWebViewPage.hpp"
 #include "PresetArchiveDatabase.hpp"
 
 #ifdef __APPLE__
@@ -890,8 +891,9 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                 login_dialog = nullptr;
             }
         });
-        this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN, [this](wxCommandEvent& evt) {
-            DownloaderUtils::Worker::perform_url_register();
+
+        auto open_external_login = [this](wxCommandEvent& evt){
+             DownloaderUtils::Worker::perform_url_register();
 #if defined(__linux__)
             // Remove all desktop files registering prusaslicer:// url done by previous versions.
             DesktopIntegrationDialog::undo_downloader_registration_rigid();
@@ -909,8 +911,11 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                 service = "facebook";
             }
             wxString url = user_account->get_login_redirect_url(service);
-            wxGetApp().open_login_browser_with_dialog(into_u8(url));
-        });
+            wxGetApp().open_login_browser_with_dialog(into_u8(url), nullptr, false);
+        };
+
+        this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN_WIZARD, open_external_login);
+        this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN, open_external_login);
     
         this->q->Bind(EVT_UA_LOGGEDOUT, [this](UserAccountSuccessEvent& evt) {
             user_account->clear();
