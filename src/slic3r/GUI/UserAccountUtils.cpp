@@ -288,7 +288,7 @@ void fill_material_from_json(const std::string& json, std::vector<std::string>& 
     }
     if (result_map.find("hardened") != result_map.end())  {
         for (const std::string& val : result_map["hardened"]) {
-            avoid_abrasive_result.emplace_back(val == "false" ? 1 : 0);
+            avoid_abrasive_result.emplace_back(val == "0" ? 1 : 0);
         }
     }
 }
