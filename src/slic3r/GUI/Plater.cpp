@@ -126,6 +126,7 @@
 #include "UserAccountUtils.hpp"
 #include "DesktopIntegrationDialog.hpp"
 #include "WebViewDialog.hpp"
+#include "ConfigWizardWebViewPage.hpp"
 #include "PresetArchiveDatabase.hpp"
 
 #ifdef __APPLE__
@@ -272,6 +273,9 @@ struct Plater::priv
     std::unique_ptr<NotificationManager> notification_manager;
     std::unique_ptr<UserAccount> user_account;
     std::unique_ptr<PresetArchiveDatabase>  preset_archive_database;
+    // Login dialog needs to be kept somewhere.
+    // It is created inside evt Bind. But it might be closed from another event.
+    LoginWebViewDialog* login_dialog { nullptr };
 
     ProjectDirtyStateManager dirty_state;
      
@@ -875,14 +879,43 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             user_account->on_login_code_recieved(evt.data);
         });
         this->q->Bind(EVT_OPEN_PRUSAAUTH, [this](OpenPrusaAuthEvent& evt) {
-            BOOST_LOG_TRIVIAL(info)  << "open login browser: " << evt.data;
+            BOOST_LOG_TRIVIAL(info)  << "open login browser: " << evt.data.first;
             std::string dialog_msg;
-            LoginWebViewDialog dialog(this->q, dialog_msg, evt.data);
-            if (dialog.ShowModal() != wxID_OK) {
-                return;
+            login_dialog = new LoginWebViewDialog(this->q, dialog_msg, evt.data.first, this->q);
+            if (login_dialog->ShowModal() == wxID_OK) {
+                user_account->on_login_code_recieved(dialog_msg);
             }
-            user_account->on_login_code_recieved(dialog_msg);
+            if (login_dialog != nullptr) {
+                this->q->RemoveChild(login_dialog);
+                login_dialog->Destroy();
+                login_dialog = nullptr;
+            }
         });
+
+        auto open_external_login = [this](wxCommandEvent& evt){
+             DownloaderUtils::Worker::perform_url_register();
+#if defined(__linux__)
+            // Remove all desktop files registering prusaslicer:// url done by previous versions.
+            DesktopIntegrationDialog::undo_downloader_registration_rigid();
+#if defined(SLIC3R_DESKTOP_INTEGRATION)
+            if (DownloaderUtils::Worker::perform_registration_linux) 
+                DesktopIntegrationDialog::perform_downloader_desktop_integration();
+#endif // SLIC3R_DESKTOP_INTEGRATION                
+#endif // __linux__
+            std::string service;
+            if (evt.GetString().Find("accounts.google.com") != wxString::npos) {
+                service = "google";
+            } else if (evt.GetString().Find("appleid.apple.com") != wxString::npos) {
+                service  = "apple";
+            } else if (evt.GetString().Find("facebook.com") != wxString::npos) {
+                service = "facebook";
+            }
+            wxString url = user_account->get_login_redirect_url(service);
+            wxGetApp().open_login_browser_with_dialog(into_u8(url), nullptr, false);
+        };
+
+        this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN_WIZARD, open_external_login);
+        this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN, open_external_login);
     
         this->q->Bind(EVT_UA_LOGGEDOUT, [this](UserAccountSuccessEvent& evt) {
             user_account->clear();
@@ -895,12 +928,16 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             sidebar->update_printer_presets_combobox();
             wxGetApp().update_wizard_login_page();
             this->show_action_buttons(this->ready_to_slice);
-
-             LogoutWebViewDialog dlg(this->q);
+            // Needed only when using internal web browser to login (which is case of config wizard)
+            LogoutWebViewDialog dlg(this->q);
             dlg.ShowModal();
+            //
         });
 
         this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {
+            if (login_dialog != nullptr) {
+                login_dialog->EndModal(wxID_CANCEL);
+            }
             // There are multiple handlers and we want to notify all
             evt.Skip();
             std::string who = user_account->get_username();

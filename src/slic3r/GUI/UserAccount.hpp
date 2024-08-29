@@ -38,8 +38,9 @@ public:
     bool is_logged();
     void do_login();
     void do_logout();
-    wxString get_login_redirect_url() { return m_communication->get_login_redirect_url();  }
-
+    wxString generate_login_redirect_url() { return m_communication->generate_login_redirect_url();  }
+    wxString get_login_redirect_url(const std::string& service = std::string()) { return m_communication->get_login_redirect_url(service);  }
+    
     void set_remember_session(bool remember);
     void toggle_remember_session();
     bool get_remember_session();

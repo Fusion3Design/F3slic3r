@@ -5664,6 +5664,10 @@ CLIMiscConfigDef::CLIMiscConfigDef()
                      "or an existing PrusaSlicer window is activated. "
                      "Overrides the \"single_instance\" configuration value from application preferences.");
 
+    def = this->add("single_instance_on_url", coBool);
+    def->label = L("Single instance mode for prusaslicer url");
+    def->tooltip = L("Works as single_instance but only if prusaslicer url is present.");
+
     def = this->add("datadir", coString);
     def->label = L("Data directory");
     def->tooltip = L("Load and store settings at the given directory. This is useful for maintaining different profiles or including configurations from a network storage.");

@@ -6,8 +6,10 @@
 #include "Plater.hpp"
 #include "slic3r/GUI/I18N.hpp"
 #include "format.hpp"
-
+#include "Event.hpp"
 #include <wx/webview.h>
+
+wxDEFINE_EVENT(EVT_OPEN_EXTERNAL_LOGIN_WIZARD, wxCommandEvent);
 
 namespace Slic3r { 
 namespace GUI {
@@ -23,7 +25,7 @@ ConfigWizardWebViewPage::ConfigWizardWebViewPage(ConfigWizard *parent)
 
     // Create the webview
     m_browser_sizer = new wxBoxSizer(wxHORIZONTAL);
-    m_browser = WebView::CreateWebView(this, p_user_account->get_login_redirect_url(), {});
+    m_browser = WebView::CreateWebView(this, p_user_account->generate_login_redirect_url(), {});
     if (!m_browser) {
         // TRN Config wizard page with a log in page.
         wxStaticText* fail_text = new wxStaticText(this, wxID_ANY, _L("Failed to load a web browser. Logging in is not possible in the moment."));
@@ -124,7 +126,17 @@ void ConfigWizardWebViewPage::on_navigation_request(wxWebViewEvent &evt)
         evt.Veto();
         m_vetoed = true;
         wxPostEvent(wxGetApp().plater(), Event<std::string>(EVT_LOGIN_VIA_WIZARD, into_u8(url)));	
+    } else if (url.Find("accounts.google.com") != wxString::npos 
+        || url.Find("appleid.apple.com") != wxString::npos 
+        || url.Find("facebook.com") != wxString::npos) 
+    {
+        auto& sc = Utils::ServiceConfig::instance();
+        if (!m_evt_sent && !url.starts_with(GUI::from_u8(sc.account_url()))) {
+            wxCommandEvent evt(EVT_OPEN_EXTERNAL_LOGIN_WIZARD);
+            evt.SetString(url);
+            wxPostEvent(wxGetApp().plater(), evt);
+            m_evt_sent = true;
+        }
     }
 }
-
 }} // namespace Slic3r::GUI

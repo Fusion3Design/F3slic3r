@@ -321,7 +321,9 @@ void UserAccountCommunication::on_uuid_map_success()
     }
 }
 
-wxString UserAccountCommunication::get_login_redirect_url() {
+// Generates and stores Code Verifier - second call deletes previous one.
+wxString UserAccountCommunication::generate_login_redirect_url()
+{
     auto& sc = Utils::ServiceConfig::instance();
     const std::string AUTH_HOST = sc.account_url();
     const std::string CLIENT_ID = client_id();
@@ -335,13 +337,29 @@ wxString UserAccountCommunication::get_login_redirect_url() {
     BOOST_LOG_TRIVIAL(info) << "code challenge: " << code_challenge;
 
     wxString url = GUI::format_wxstr(L"%1%/o/authorize/?embed=1&client_id=%2%&response_type=code&code_challenge=%3%&code_challenge_method=S256&scope=basic_info&redirect_uri=%4%&language=%5%", AUTH_HOST, CLIENT_ID, code_challenge, REDIRECT_URI, language);
+    return url;
+}
+wxString UserAccountCommunication::get_login_redirect_url(const std::string& service/* = std::string()*/) const
+{
+    auto& sc = Utils::ServiceConfig::instance();
+    const std::string AUTH_HOST = sc.account_url();
+    const std::string CLIENT_ID = client_id();
+    const std::string REDIRECT_URI = "prusaslicer://login";
+    CodeChalengeGenerator ccg;
+    std::string code_challenge = ccg.generate_chalenge(m_code_verifier);
+    wxString language = GUI::wxGetApp().current_language_code();
+    language = language.SubString(0, 1);
 
+    std::string params = GUI::format("embed=1&client_id=%1%&response_type=code&code_challenge=%2%&code_challenge_method=S256&scope=basic_info&redirect_uri=%3%&language=%4%", CLIENT_ID, code_challenge, REDIRECT_URI, language);
+    params = Http::url_encode(params);
+    wxString url = GUI::format_wxstr(L"%1%/login/%2%?next=/o/authorize/?%3%", AUTH_HOST, service, params);
     return url;
 }
 void UserAccountCommunication::login_redirect()
 {
-    wxString url = get_login_redirect_url();
-    wxQueueEvent(m_evt_handler,new OpenPrusaAuthEvent(GUI::EVT_OPEN_PRUSAAUTH, std::move(url)));
+    wxString url1 = generate_login_redirect_url();
+    wxString url2 = url1 + L"&choose_account=1";
+    wxQueueEvent(m_evt_handler,new OpenPrusaAuthEvent(GUI::EVT_OPEN_PRUSAAUTH, {std::move(url1), std::move(url2)}));
 }
 
 bool UserAccountCommunication::is_logged()

@@ -14,7 +14,7 @@
 namespace Slic3r {
 namespace GUI {
 
-using OpenPrusaAuthEvent = Event<wxString>;
+using OpenPrusaAuthEvent = Event<std::pair<wxString,wxString>>;
 using UserAccountSuccessEvent = Event<std::string>;
 using UserAccountFailEvent = Event<std::string>;
 using UserAccountTimeEvent = Event<int>;

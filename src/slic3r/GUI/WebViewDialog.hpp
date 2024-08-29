@@ -17,6 +17,8 @@
 class wxWebView;
 class wxWebViewEvent;
 
+wxDECLARE_EVENT(EVT_OPEN_EXTERNAL_LOGIN, wxCommandEvent);
+
 namespace Slic3r {
 namespace GUI {
 
@@ -276,12 +278,14 @@ public:
 class LoginWebViewDialog : public WebViewDialog
 {
 public:
-    LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url);
+    LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url, wxEvtHandler* evt_handler);
     void on_navigation_request(wxWebViewEvent &evt) override;
     void on_dpi_changed(const wxRect &suggested_rect) override;
 
 private:
-    std::string &m_ret_val;
+    std::string&    m_ret_val;
+    wxEvtHandler*   p_evt_handler;
+    bool            m_evt_sent{ false };
 };
 
 class LogoutWebViewDialog : public WebViewDialog
