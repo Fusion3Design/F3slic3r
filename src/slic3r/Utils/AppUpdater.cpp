@@ -221,8 +221,7 @@ boost::filesystem::path AppUpdater::priv::download_file(const DownloadAppData& d
 	boost::filesystem::path tmp_path = dest_path;
 	tmp_path += format(".%1%%2%", std::to_string(GUI::GLCanvas3D::timestamp_now()), ".download");
 	FILE* file;
-	wxString temp_path_wstring(tmp_path.wstring());
-	file = fopen(GUI::into_u8(temp_path_wstring).c_str(), "wb");
+	file = boost::nowide::fopen(tmp_path.string().c_str(), "wb");
 	assert(file != NULL);
 	if (file == NULL) {
 	    std::string line1 = GUI::format(_u8L("Download from %1% couldn't start:"), data.url);
