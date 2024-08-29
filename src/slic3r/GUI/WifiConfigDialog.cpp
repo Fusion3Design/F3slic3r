@@ -294,7 +294,7 @@ void WifiConfigDialog::on_ok(wxCommandEvent& e)
 
     m_used_path = boost::nowide::widen(file_path.string());
     FILE* file;
-    file = fopen(file_path.string().c_str(), "w");
+    file = boost::nowide::fopen(file_path.string().c_str(), "w");
     if (file == NULL) {
         BOOST_LOG_TRIVIAL(error) << "Failed to write to file " << file_path;
         // TODO show error
