@@ -1256,7 +1256,7 @@ std::string DSForLayers::get_tooltip(int tick/*=-1*/)
             tooltip += _u8L("There is an extruder change set to the same extruder.\n"
                            "This code won't be processed during G-code generation.");
         else if (conflict == ctNotPossibleToolChange)
-            tooltip += _u8L("There is an extruder change set to the not existing extruder.\n"
+            tooltip += _u8L("There is an extruder change set to a non-existing extruder.\n"
                            "This code won't be processed during G-code generation.");
         else if (conflict == ctRedundant)
             tooltip += _u8L("There is a color change for extruder that has not been used before.\n"

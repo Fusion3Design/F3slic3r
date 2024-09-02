@@ -2660,10 +2660,10 @@ void TabPrinter::build_fff()
                             for (size_t i = 1; i < nozzle_diameters.size(); ++i) {
                                 // if value is differs from first nozzle diameter value
                                 if (fabs(nozzle_diameters[i] - nozzle_diameters[0]) > EPSILON || high_flow_nozzles[i] != high_flow_nozzles[0]) {
-                                    const wxString msg_text = _(L("Single Extruder Multi Material is selected, \n"
-                                                                  "and all extruders must have the same diameter and 'High flow' state.\n"
+                                    const wxString msg_text = _(L("This is a single extruder multimaterial printer, \n"
+                                                                  "all extruders must have the same nozzle diameter and 'High flow' state.\n"
                                                                   "Do you want to change these values for all extruders to first extruder values?"));
-                                    MessageDialog dialog(parent(), msg_text, _(L("Nozzle settings mismatch")), wxICON_WARNING | wxYES_NO);
+                                    MessageDialog dialog(parent(), msg_text, _(L("Extruder settings do not match")), wxICON_WARNING | wxYES_NO);
 
                                     DynamicPrintConfig new_conf = *m_config;
                                     if (dialog.ShowModal() == wxID_YES) {
@@ -3198,7 +3198,7 @@ void TabPrinter::build_extruder_pages(size_t n_before_extruders)
                 {
                     const wxString msg_text = _L("This is a single extruder multimaterial printer, 'high_flow' state of all extruders "
                                                  "will be set to the new value. Do you want to proceed?");
-                    MessageDialog dialog(parent(), msg_text, _L("High flow"), wxICON_WARNING | wxYES_NO);
+                    MessageDialog dialog(parent(), msg_text, _L("Extruder settings do not match"), wxICON_WARNING | wxYES_NO);
 
                     DynamicPrintConfig new_conf = *m_config;
                     if (dialog.ShowModal() == wxID_YES) {

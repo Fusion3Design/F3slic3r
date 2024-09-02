@@ -897,7 +897,10 @@ void PhysicalPrinterDialog::OnOK(wxEvent& event)
     if (opt->value == htPrusaConnect) {
         auto& sc = Utils::ServiceConfig::instance();
         if (printhost_win && printhost_win->GetValue() != GUI::from_u8(sc.connect_url())){
-            InfoDialog msg(this, _L("Warning"), GUI::format(_L("URL of Prusa Connect is different from %1%. Do you want to continue?"), sc.connect_url()), true, wxYES_NO);
+            InfoDialog msg(this, _L("Warning"),
+                           // TRN: The placeholder expands to https://connect.prusa3d.com. The warning shows when someone select PrusaConnect physical printer, but enters different URL.
+                           GUI::format(_L("URL of Prusa Connect is different from %1%. Do you want to continue?"),
+                           sc.connect_url()), true, wxYES_NO);
             if(msg.ShowModal() != wxID_YES){
                 printhost_win->SetValue(GUI::from_u8(Utils::ServiceConfig::instance().connect_url()));
                 return;

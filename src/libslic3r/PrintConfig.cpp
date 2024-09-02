@@ -5665,8 +5665,8 @@ CLIMiscConfigDef::CLIMiscConfigDef()
                      "Overrides the \"single_instance\" configuration value from application preferences.");
 
     def = this->add("single_instance_on_url", coBool);
-    def->label = L("Single instance mode for prusaslicer url");
-    def->tooltip = L("Works as single_instance but only if prusaslicer url is present.");
+    def->label = "Single instance mode for prusaslicer url"; // Not translated on purpose - for internal use only.
+    def->tooltip = "Works as single_instance but only if prusaslicer url is present.";
 
     def = this->add("datadir", coString);
     def->label = L("Data directory");
@@ -5684,8 +5684,8 @@ CLIMiscConfigDef::CLIMiscConfigDef()
     def->min = 0;
 
     def = this->add("webdev", coBool);
-    def->label = L("Enable webdev tools");
-    def->tooltip = L("Enable webdev tools");
+    def->label = "Enable webdev tools"; // Not translated on purpose - for internal use only.
+    def->tooltip = "Enable webdev tools";
 
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && defined(SLIC3R_GUI)
     def = this->add("sw_renderer", coBool);

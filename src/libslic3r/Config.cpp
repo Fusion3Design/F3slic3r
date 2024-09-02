@@ -376,6 +376,9 @@ std::ostream& ConfigDef::print_cli_help(std::ostream& out, bool show_defaults, s
         return wrapped.str();
     };
 
+    // List of opt_keys that should be hidden from the CLI help.
+    const std::vector<std::string> silent_options = { "webdev", "single_instance_on_url" };
+
     // get the unique categories
     std::set<std::string> categories;
     for (const auto& opt : this->options) {
@@ -394,6 +397,9 @@ std::ostream& ConfigDef::print_cli_help(std::ostream& out, bool show_defaults, s
         for (const auto& opt : this->options) {
             const ConfigOptionDef& def = opt.second;
 			if (def.category != category || def.cli == ConfigOptionDef::nocli || !filter(def))
+                continue;
+
+            if (std::find(silent_options.begin(), silent_options.end(), opt.second.opt_key) != silent_options.end())
                 continue;
             
             // get all possible variations: --foo, --foobar, -f...
