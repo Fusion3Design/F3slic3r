@@ -409,21 +409,44 @@ void PresetArchiveDatabase::set_installed_printer_repositories(const std::vector
 	// set correct repos as having installed printer
     for (const std::string &used_id : used_ids) {
 		// find archive with id and is used
+        std::vector<std::string> selected_uuid;
+        std::vector<std::string> unselected_uuid;
         for (const auto &archive : m_archive_repositories) {
             if (archive->get_manifest().id != used_id) {
 				continue;
 			}	
 			const std::string uuid = archive->get_uuid();
-
-            const auto& it = m_selected_repositories_uuid.find(uuid);
-            assert(it != m_selected_repositories_uuid.end());
-            if (it->second == false) {
-				continue;
-			}
-
-			// set archive as has installed printer
-            m_has_installed_printer_repositories_uuid[uuid] = true;
+            if (m_selected_repositories_uuid[uuid]) {
+                selected_uuid.emplace_back(uuid);
+            } else {
+                unselected_uuid.emplace_back(uuid);
+            }
 		}
+        
+        if (selected_uuid.empty() && unselected_uuid.empty()) {
+            // there is id in used_ids that is not in m_archive_repositories - BAD
+            assert(true);
+            continue;
+        } else if (selected_uuid.size() == 1){
+            // regular case
+             m_has_installed_printer_repositories_uuid[selected_uuid.front()] = true;
+        } else if (selected_uuid.size() > 1) {
+            // this should not happen, only one repo of same id should be selected (online / local conflict)
+            assert(true);
+            // select first one to solve the conflict
+            m_has_installed_printer_repositories_uuid[selected_uuid.front()] = true;
+            // unselect the rest
+            for (size_t i = 1; i < selected_uuid.size(); i++) {
+                m_selected_repositories_uuid[selected_uuid[i]] = false;
+            }
+        } else if (selected_uuid.empty()) {
+            // This is a rare case, where there are no selected repos with matching id but id has installed printers
+            // Repro: install printer, unselect repo in the next run of wizard, next, cancel wizard, run wizard again and press finish.
+            // Solution: Select the first unselected 
+            m_has_installed_printer_repositories_uuid[unselected_uuid.front()] = true;
+            m_selected_repositories_uuid[unselected_uuid.front()] = true;
+        }
+
 	}
     save_app_manifest_json();
 }
