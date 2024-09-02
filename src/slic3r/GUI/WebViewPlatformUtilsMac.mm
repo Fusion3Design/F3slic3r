@@ -137,5 +137,10 @@ void remove_webview_credentials(wxWebView* web_view)
     }
 }
 
+void delete_cookies(wxWebView* web_view, const wxString& url)
+{
+    
+}
+
 }
 

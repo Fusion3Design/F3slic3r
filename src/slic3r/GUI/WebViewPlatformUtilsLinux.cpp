@@ -5,6 +5,7 @@
 #include <string>
 
 #include "WebViewPlatformUtils.hpp"
+#include <boost/log/trivial.hpp>
 
 
 namespace Slic3r::GUI {
@@ -55,5 +56,56 @@ void remove_webview_credentials(wxWebView* web_view)
         g_webview_authorize_handlers.erase(it);
     }
 }
+namespace {
+void delete_cookie_callback (GObject* source_object, GAsyncResult* result, void* user_data)
+{
+    WebKitCookieManager *cookie_manager = WEBKIT_COOKIE_MANAGER(source_object);
+    GError* err = nullptr;
+    gboolean b = webkit_cookie_manager_delete_cookie_finish(cookie_manager, result, &err);
+    if (err) {
+        BOOST_LOG_TRIVIAL(error) << "Error deleting cookies: " << err->message;
+        g_error_free(err);
+        return;
+    } 
+}
+void get_cookie_callback (GObject* source_object, GAsyncResult* result, void* user_data)
+{
+    GError* err = nullptr;
+    WebKitCookieManager *cookie_manager = WEBKIT_COOKIE_MANAGER(source_object);
+    GList * cookies = webkit_cookie_manager_get_cookies_finish(cookie_manager, result, &err);
 
+    if (err) {
+        BOOST_LOG_TRIVIAL(error) << "Error retrieving cookies: " << err->message;
+        g_error_free(err);
+        return;
+    } 
+    for (GList *l = cookies; l != nullptr; l = l->next) {
+        SoupCookie *cookie = static_cast<SoupCookie *>(l->data);
+        /*
+        printf("Cookie Name: %s\n", cookie->name);
+        printf("Cookie Value: %s\n", cookie->value);
+        printf("Domain: %s\n", cookie->domain);
+        printf("Path: %s\n", cookie->path);
+        printf("Expires: %s\n", soup_date_to_string(cookie->expires, SOUP_DATE_HTTP));
+        printf("Secure: %s\n", cookie->secure ? "true" : "false");
+        printf("HTTP Only: %s\n", cookie->http_only ? "true" : "false");
+        */
+        webkit_cookie_manager_delete_cookie(cookie_manager, cookie, nullptr, (GAsyncReadyCallback)Slic3r::GUI::delete_cookie_callback, nullptr);
+        soup_cookie_free(cookie);
+    }
+    g_list_free(cookies);
+}
+}
+void delete_cookies(wxWebView* web_view, const wxString& url)
+{
+    // Call webkit_cookie_manager_get_cookies
+    // set its callback to call webkit_cookie_manager_get_cookies_finish
+    // then for each cookie call webkit_cookie_manager_delete_cookie
+    // set callback to call webkit_cookie_manager_delete_cookie_finish
+    const gchar* uri = url.c_str(); 
+    WebKitWebView* native_backend = static_cast<WebKitWebView *>(web_view->GetNativeBackend());
+    WebKitWebContext* context= webkit_web_view_get_context(native_backend);
+    WebKitCookieManager* cookieManager = webkit_web_context_get_cookie_manager(context);
+    webkit_cookie_manager_get_cookies(cookieManager, uri, nullptr, (GAsyncReadyCallback)Slic3r::GUI::get_cookie_callback, nullptr);
+}
 }
