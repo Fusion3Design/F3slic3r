@@ -730,12 +730,18 @@ void PhysicalPrinterDialog::update_host_type(bool printer_change)
         if (Preset* preset = wxGetApp().preset_bundle->printers.find_preset(preset_name)) {
             std::string model_id = preset->config.opt_string("printer_model"); 
             if (preset->vendor) {
-                // No need to remove prefix from printer_model, family is not prefixed
+                std::string model_id_no_pref = model_id;
+                std::string vendor_repo_prefix;
+                vendor_repo_prefix = preset->vendor->repo_prefix;
+                if (model_id_no_pref.find(vendor_repo_prefix) == 0) {
+                    model_id_no_pref = model_id_no_pref.substr(vendor_repo_prefix.size());
+                    boost::trim_left(model_id_no_pref);
+                }
                 if (preset->vendor->name.find("Prusa Research") != std::string::npos) {
                     const std::vector<VendorProfile::PrinterModel>& models = preset->vendor->models;
                     auto it = std::find_if(models.begin(), models.end(),
                         [model_id](const VendorProfile::PrinterModel& model) { return model.id == model_id; });
-                    if (it != models.end() && model_supports_prusalink(it->family))
+                    if (it != models.end() && model_supports_prusalink(model_id_no_pref))
                         continue;
                 }
             }
