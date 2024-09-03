@@ -3333,17 +3333,6 @@ bool ConfigWizard::priv::apply_config(AppConfig *app_config, PresetBundle *prese
     const auto enabled_vendors = appconfig_new.vendors();
     const auto enabled_vendors_old = app_config->vendors();
 
-    std::vector<std::string> used_repo_ids;
-    for (const auto& vendor : enabled_vendors) {
-        const auto& it = bundles.find(vendor.first);
-        assert(it != bundles.end());
-        const std::string repo_id = it->second.vendor_profile->repo_id;
-        if (std::find(used_repo_ids.begin(), used_repo_ids.end(), repo_id) == used_repo_ids.end()) {
-            used_repo_ids.emplace_back(repo_id);
-        }
-    }
-    wxGetApp().plater()->get_preset_archive_database()->set_installed_printer_repositories(std::move(used_repo_ids));
-
     bool suppress_sla_printer = model_has_multi_part_objects(wxGetApp().model());
     PrinterTechnology preferred_pt = ptAny;
     auto get_preferred_printer_technology = [enabled_vendors, enabled_vendors_old, suppress_sla_printer](const std::string& bundle_name, const Bundle& bundle) {
@@ -3576,6 +3565,36 @@ bool ConfigWizard::priv::apply_config(AppConfig *app_config, PresetBundle *prese
             }
         }
     }
+
+    // Save used repo into manifest.
+    std::vector<std::string> used_repo_ids;
+    for (const auto& vendor : enabled_vendors) {
+        // here vendor might be empty - it causes false has_installed_printers : 1 entries in manifest.
+        if (vendor.second.empty()){
+            continue;
+        }
+        bool not_empty = false;
+        for (const auto& it : vendor.second) {
+            if (!it.second.empty())  {
+                not_empty = true;
+                break;
+            }
+        }
+        if (!not_empty) {
+            continue;
+        }
+
+        const auto& it = bundles.find(vendor.first);
+        // This is a last resort solution of missing secret repo in manifest while some of its printers are installed.
+        if (it == bundles.end()) { 
+            continue;
+        }
+        const std::string repo_id = it->second.vendor_profile->repo_id;
+        if (std::find(used_repo_ids.begin(), used_repo_ids.end(), repo_id) == used_repo_ids.end()) {
+            used_repo_ids.emplace_back(repo_id);
+        }
+    }
+    wxGetApp().plater()->get_preset_archive_database()->set_installed_printer_repositories(std::move(used_repo_ids));
 
     // apply materials in app_config
     for (const std::string& section_name : {AppConfig::SECTION_FILAMENTS, AppConfig::SECTION_MATERIALS})
