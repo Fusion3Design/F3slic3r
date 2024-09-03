@@ -150,7 +150,7 @@ bool contains_path_dir(const std::string& p, const std::string& dir_name)
 
 boost::filesystem::path get_existing_dir(const std::string& sub, const std::string& dir_name)
 {
-    assert(!p.empty() && !dir_name.empty());
+    assert(!sub.empty() && !dir_name.empty());
     boost::filesystem::path path = boost::filesystem::path(sub) / dir_name;
     boost::system::error_code ec;
     if (!boost::filesystem::exists(path, ec) || ec) {

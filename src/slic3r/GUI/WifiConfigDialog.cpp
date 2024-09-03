@@ -14,6 +14,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ini_parser.hpp>
+#include <boost/nowide/cstdio.hpp>
 
 #include "Widgets/ComboBox.hpp"
 

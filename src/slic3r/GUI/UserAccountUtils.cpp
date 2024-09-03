@@ -5,6 +5,7 @@
 #include <boost/regex.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace pt = boost::property_tree;
 
@@ -117,7 +118,7 @@ void fill_config_options_from_json_inner(boost::property_tree::ptree& ptree, std
     for (const auto &subtree : slots) {
        size_t slot_id;
         try {
-            slot_id = boost::lexical_cast<size_t>(subtree.first);
+            slot_id = boost::lexical_cast<std::size_t>(subtree.first);
         } catch (const boost::bad_lexical_cast&) {
             continue;
         }
