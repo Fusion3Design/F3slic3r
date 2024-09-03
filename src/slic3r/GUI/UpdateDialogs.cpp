@@ -118,7 +118,7 @@ AppUpdateAvailableDialog::AppUpdateAvailableDialog(const Semver& ver_current, co
 	
     if (browser_on_next)
     {
-        content_sizer->Add(new wxStaticText(this, wxID_ANY, _(L("Clicking \'Next\' will open a browser window to select your download."))));
+        content_sizer->Add(new wxStaticText(this, wxID_ANY, _L("Clicking \'Next\' will open a browser window where you can select which variant of PrusaSlicer you want to download.")));
         content_sizer->AddSpacer(VERT_SPACING);
     }
 
