@@ -13,7 +13,7 @@
 #include <thread>
 #include <mutex>
 #include <memory>
-#include <wx/timer.h>
+#include <ctime>
 
 namespace Slic3r {
 namespace GUI {
@@ -60,7 +60,7 @@ public:
     // Exchanges code for tokens and shared_session_key
     void on_login_code_recieved(const std::string& url_message);
 
-    void on_activate_window(bool active);
+    void on_activate_app(bool active);
 
     void set_username(const std::string& username);
     void set_remember_session(bool b);
@@ -97,6 +97,7 @@ private:
 
     wxTimer*                                m_token_timer;
     wxEvtHandler*                           m_timer_evt_handler;
+    std::time_t                             m_next_token_refresh_at{0};
 
     void wakeup_session_thread();
     void init_session_thread();

@@ -1448,6 +1448,13 @@ bool GUI_App::on_init_inner()
             this->check_updates(false);
         });
 
+        Bind(wxEVT_ACTIVATE_APP, [this](const wxActivateEvent &evt) {
+            if (plater_) {
+                if (auto user_account = plater_->get_user_account())
+                    user_account->on_activate_app(evt.GetActive());
+            }
+        });
+
     }
     else {
 #ifdef __WXMSW__ 

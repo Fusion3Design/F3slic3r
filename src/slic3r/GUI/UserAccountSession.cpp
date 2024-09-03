@@ -2,6 +2,7 @@
 #include "GUI_App.hpp"
 #include "format.hpp"
 #include "../Utils/Http.hpp"
+#include "../Utils/Jwt.hpp"
 #include "I18N.hpp"
 
 #include <boost/log/trivial.hpp>
@@ -46,15 +47,24 @@ void UserActionPost::perform(/*UNUSED*/ wxEvtHandler* evt_handler, /*UNUSED*/ co
         if (success_callback)
             success_callback(body);
     });
-    http.perform_sync();
+    http.perform_sync(HttpRetryOpt::default_retry());
 }
 
 void UserActionGetWithEvent::perform(wxEvtHandler* evt_handler, const std::string& access_token, UserActionSuccessFn success_callback, UserActionFailFn fail_callback, const std::string& input) const
 {
     std::string url = m_url + input;
     auto http = Http::get(std::move(url));
-    if (!access_token.empty())
+    if (!access_token.empty()) {
         http.header("Authorization", "Bearer " + access_token);
+#ifndef _NDEBUG
+        // In debug mode, also verify the token expiration
+        // This is here to help with "dev" accounts with shorten (sort of faked) expiration time
+        // The /api/v1/me will accept these tokens even if these are fake-marked as expired
+        if (!Utils::verify_exp(access_token) && fail_callback) {
+            fail_callback("Token Expired");
+        }
+#endif
+    }
     http.on_error([evt_handler, fail_callback, action_name = &m_action_name, fail_evt_type = m_fail_evt_type](std::string body, std::string error, unsigned status) {
         if (fail_callback)
             fail_callback(body);
@@ -69,8 +79,16 @@ void UserActionGetWithEvent::perform(wxEvtHandler* evt_handler, const std::strin
             wxQueueEvent(evt_handler, new UserAccountSuccessEvent(succ_evt_type, body));
     });
 
-    http.perform_sync();
+    http.perform_sync(HttpRetryOpt::default_retry());
 }
+
+bool UserAccountSession::is_enqueued(UserAccountActionID action_id) const {
+    return std::any_of(
+        std::begin(m_priority_action_queue), std::end(m_priority_action_queue),
+        [action_id](const ActionQueueData& item) { return item.action_id == action_id; }
+    );
+}
+
 
 void UserAccountSession::process_action_queue()
 {
@@ -84,7 +102,7 @@ void UserAccountSession::process_action_queue()
     while (!m_priority_action_queue.empty()) {
         m_actions[m_priority_action_queue.front().action_id]->perform(p_evt_handler, m_access_token, m_priority_action_queue.front().success_callback, m_priority_action_queue.front().fail_callback, m_priority_action_queue.front().input);
         if (!m_priority_action_queue.empty())
-            m_priority_action_queue.pop();
+            m_priority_action_queue.pop_front();
     }
     // regular queue has to wait until priority fills tokens
     if (!this->is_initialized())
@@ -115,7 +133,7 @@ void UserAccountSession::init_with_code(const std::string& code, const std::stri
 
     m_proccessing_enabled = true;
     // fail fn might be cancel_queue here
-    m_priority_action_queue.push({ UserAccountActionID::USER_ACCOUNT_ACTION_CODE_FOR_TOKEN
+    m_priority_action_queue.push_back({ UserAccountActionID::USER_ACCOUNT_ACTION_CODE_FOR_TOKEN
         , std::bind(&UserAccountSession::token_success_callback, this, std::placeholders::_1)
         , std::bind(&UserAccountSession::code_exchange_fail_callback, this, std::placeholders::_1)
         , post_fields });
@@ -123,6 +141,7 @@ void UserAccountSession::init_with_code(const std::string& code, const std::stri
 
 void UserAccountSession::token_success_callback(const std::string& body)
 {
+    BOOST_LOG_TRIVIAL(debug) << "Access token refreshed";
     // Data we need
     std::string access_token, refresh_token, shared_session_key;
     int expires_in = 300;
@@ -176,6 +195,7 @@ void UserAccountSession::token_success_callback(const std::string& body)
 
 void UserAccountSession::code_exchange_fail_callback(const std::string& body)
 {
+    BOOST_LOG_TRIVIAL(debug) << "Access token refresh failed, body: " << body;
     clear();
     cancel_queue();
     // Unlike refresh_fail_callback, no event was triggered so far, do it. (USER_ACCOUNT_ACTION_CODE_FOR_TOKEN does not send events)
@@ -186,7 +206,7 @@ void UserAccountSession::enqueue_test_with_refresh()
 {
     // on test fail - try refresh
     m_proccessing_enabled = true;
-    m_priority_action_queue.push({ UserAccountActionID::USER_ACCOUNT_ACTION_TEST_ACCESS_TOKEN, nullptr, std::bind(&UserAccountSession::enqueue_refresh, this, std::placeholders::_1), {} });
+    m_priority_action_queue.push_back({ UserAccountActionID::USER_ACCOUNT_ACTION_TEST_ACCESS_TOKEN, nullptr, std::bind(&UserAccountSession::enqueue_refresh, this, std::placeholders::_1), {} });
 }
 
 
@@ -197,7 +217,7 @@ void UserAccountSession::enqueue_refresh(const std::string& body)
         "&client_id=" + client_id() +
         "&refresh_token=" + m_refresh_token;
 
-    m_priority_action_queue.push({ UserAccountActionID::USER_ACCOUNT_ACTION_REFRESH_TOKEN
+    m_priority_action_queue.push_back({ UserAccountActionID::USER_ACCOUNT_ACTION_REFRESH_TOKEN
         , std::bind(&UserAccountSession::token_success_callback, this, std::placeholders::_1)
         , std::bind(&UserAccountSession::refresh_fail_callback, this, std::placeholders::_1)
         , post_fields });
@@ -216,9 +236,7 @@ void UserAccountSession::refresh_fail_callback(const std::string& body)
 
 void UserAccountSession::cancel_queue()
 {
-    while (!m_priority_action_queue.empty()) {
-        m_priority_action_queue.pop();
-    }
+    m_priority_action_queue.clear();
     while (!m_action_queue.empty()) {
         m_action_queue.pop();
     }

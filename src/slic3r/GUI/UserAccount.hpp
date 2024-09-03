@@ -60,7 +60,7 @@ public:
     bool on_connect_printers_success(const std::string& data, AppConfig* app_config, bool& out_printers_changed);
     bool on_connect_uiid_map_success(const std::string& data, AppConfig* app_config, bool& out_printers_changed);
 
-    void on_activate_window(bool active) { m_communication->on_activate_window(active); }
+    void on_activate_app(bool active) { m_communication->on_activate_app(active); }
 
     std::string get_username() const { return m_username; }
     std::string get_access_token();

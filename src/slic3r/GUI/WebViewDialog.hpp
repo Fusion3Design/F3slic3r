@@ -184,6 +184,7 @@ public:
     void resend_config();
 protected:
     // action callbacs stored in m_actions
+    virtual void on_connect_action_log(const std::string& message_data);
     virtual void on_connect_action_error(const std::string& message_data);
     virtual void on_connect_action_request_config(const std::string& message_data);
     virtual void on_connect_action_request_open_in_browser(const std::string& message_data);
