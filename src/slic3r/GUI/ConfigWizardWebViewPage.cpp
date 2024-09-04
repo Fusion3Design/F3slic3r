@@ -7,6 +7,8 @@
 #include "slic3r/GUI/I18N.hpp"
 #include "format.hpp"
 #include "Event.hpp"
+#include "slic3r/GUI/WebViewPlatformUtils.hpp"
+
 #include <wx/webview.h>
 
 wxDEFINE_EVENT(EVT_OPEN_EXTERNAL_LOGIN_WIZARD, wxCommandEvent);
@@ -123,6 +125,10 @@ void ConfigWizardWebViewPage::on_navigation_request(wxWebViewEvent &evt)
 {
     wxString url = evt.GetURL();
     if (url.starts_with(L"prusaslicer")) {
+        delete_cookies(m_browser, "https://account.prusa3d.com");
+        delete_cookies(m_browser, "https://accounts.google.com");
+        delete_cookies(m_browser, "https://appleid.apple.com");
+        delete_cookies(m_browser, "https://facebook.com");
         evt.Veto();
         m_vetoed = true;
         wxPostEvent(wxGetApp().plater(), Event<std::string>(EVT_LOGIN_VIA_WIZARD, into_u8(url)));	
