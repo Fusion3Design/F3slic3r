@@ -1459,10 +1459,10 @@ void LoginWebViewDialog::on_navigation_request(wxWebViewEvent &evt)
 {
     wxString url = evt.GetURL();
     if (url.starts_with(L"prusaslicer")) {
-        delete_cookies(m_browser, L"https://account.prusa3d.com");
-        delete_cookies(m_browser, L"https://accounts.google.com");
-        delete_cookies(m_browser, L"https://appleid.apple.com");
-        delete_cookies(m_browser, L"https://facebook.com");
+        delete_cookies(m_browser, "https://account.prusa3d.com");
+        delete_cookies(m_browser, "https://accounts.google.com");
+        delete_cookies(m_browser, "https://appleid.apple.com");
+        delete_cookies(m_browser, "https://facebook.com");
         evt.Veto();
         m_ret_val = into_u8(url);
         EndModal(wxID_OK);

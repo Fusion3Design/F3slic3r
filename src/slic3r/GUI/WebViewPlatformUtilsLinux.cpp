@@ -96,7 +96,7 @@ void get_cookie_callback (GObject* source_object, GAsyncResult* result, void* us
     g_list_free(cookies);
 }
 }
-void delete_cookies(wxWebView* web_view, const wxString& url)
+void delete_cookies(wxWebView* web_view, const std::string& url)
 {
     // Call webkit_cookie_manager_get_cookies
     // set its callback to call webkit_cookie_manager_get_cookies_finish

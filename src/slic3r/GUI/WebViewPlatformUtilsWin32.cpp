@@ -89,7 +89,7 @@ void remove_webview_credentials(wxWebView* webview)
     }
 
 }
-void delete_cookies(wxWebView* webview, const wxString& url)
+void delete_cookies(wxWebView* webview, const std::string& url)
 {
     ICoreWebView2 *webView2 = static_cast<ICoreWebView2 *>(webview->GetNativeBackend());
     if (!webView2) {
@@ -130,7 +130,6 @@ void delete_cookies(wxWebView* webview, const wxString& url)
                     BOOST_LOG_TRIVIAL(error) << "Failed to parse cookies json: " << e.what();
                     return S_OK;
                 }
-                BOOST_LOG_TRIVIAL(error) << url << " " << ptree.get_child("cookies").size(); 
                 for (const auto& cookie : ptree.get_child("cookies")) {
                     std::string name = cookie.second.get<std::string>("name");
                     std::string domain = cookie.second.get<std::string>("domain");
