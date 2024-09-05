@@ -903,15 +903,15 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
 #endif // SLIC3R_DESKTOP_INTEGRATION                
 #endif // __linux__
             std::string service;
-            if (evt.GetString().Find("accounts.google.com") != wxString::npos) {
+            if (evt.GetString().Find(L"accounts.google.com") != wxString::npos) {
                 service = "google";
-            } else if (evt.GetString().Find("appleid.apple.com") != wxString::npos) {
+            } else if (evt.GetString().Find(L"appleid.apple.com") != wxString::npos) {
                 service  = "apple";
-            } else if (evt.GetString().Find("facebook.com") != wxString::npos) {
+            } else if (evt.GetString().Find(L"facebook.com") != wxString::npos) {
                 service = "facebook";
             }
             wxString url = user_account->get_login_redirect_url(service);
-            wxGetApp().open_login_browser_with_dialog(into_u8(url), nullptr, false);
+            wxGetApp().open_login_browser_with_dialog(into_u8(url));
         };
 
         this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN_WIZARD, open_external_login);
@@ -928,10 +928,6 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             sidebar->update_printer_presets_combobox();
             wxGetApp().update_wizard_login_page();
             this->show_action_buttons(this->ready_to_slice);
-            // Needed only when using internal web browser to login (which is case of config wizard)
-            LogoutWebViewDialog dlg(this->q);
-            dlg.ShowModal();
-            //
         });
 
         this->q->Bind(EVT_UA_ID_USER_SUCCESS, [this](UserAccountSuccessEvent& evt) {

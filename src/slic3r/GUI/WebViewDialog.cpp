@@ -1459,13 +1459,16 @@ void LoginWebViewDialog::on_navigation_request(wxWebViewEvent &evt)
 {
     wxString url = evt.GetURL();
     if (url.starts_with(L"prusaslicer")) {
+        delete_cookies(m_browser, "https://account.prusa3d.com");
+        delete_cookies(m_browser, "https://accounts.google.com");
+        delete_cookies(m_browser, "https://appleid.apple.com");
+        delete_cookies(m_browser, "https://facebook.com");
         evt.Veto();
         m_ret_val = into_u8(url);
         EndModal(wxID_OK);
-    } else if (url.Find("accounts.google.com") != wxString::npos 
-        || url.Find("appleid.apple.com") != wxString::npos 
-        || url.Find("facebook.com") != wxString::npos) 
-    {
+    } else if (url.Find(L"accounts.google.com") != wxString::npos
+        || url.Find(L"appleid.apple.com") != wxString::npos
+        || url.Find(L"facebook.com") != wxString::npos) {         
         auto& sc = Utils::ServiceConfig::instance();
         if (!m_evt_sent && !url.starts_with(GUI::from_u8(sc.account_url()))) {
             wxCommandEvent* evt = new wxCommandEvent(EVT_OPEN_EXTERNAL_LOGIN);
@@ -1475,27 +1478,13 @@ void LoginWebViewDialog::on_navigation_request(wxWebViewEvent &evt)
         }
     }
 }
+
 void LoginWebViewDialog::on_dpi_changed(const wxRect &suggested_rect)
 {
     const wxSize &size = wxSize(50 * wxGetApp().em_unit(), 80 * wxGetApp().em_unit());
     SetMinSize(size);
     Fit();
     Refresh();
-}
-
-LogoutWebViewDialog::LogoutWebViewDialog(wxWindow *parent)
-    : WebViewDialog(parent
-        ,  GUI::from_u8(Utils::ServiceConfig::instance().account_logout_url())
-        , _L("Logout dialog")
-        , wxSize(std::max(parent->GetClientSize().x / 4, 10 * wxGetApp().em_unit()), std::max(parent->GetClientSize().y / 4, 10 * wxGetApp().em_unit()))
-        , {})
-{
-    Centre();
-}
-
-void LogoutWebViewDialog::on_loaded(wxWebViewEvent &evt)
-{
-     EndModal(wxID_OK);
 }
 } // GUI
 } // Slic3r

@@ -2,6 +2,8 @@
 
 #import <WebKit/WKWebView.h>
 #import <WebKit/WKNavigationDelegate.h>
+#import <WebKit/WKWebViewConfiguration.h>
+#import <WebKit/WKWebsiteDataStore.h>
 #import <Foundation/Foundation.h>
 #import <Foundation/NSURLSession.h>
 
@@ -114,7 +116,6 @@
 }
 @end
 
-
 namespace Slic3r::GUI {
 void setup_webview_with_credentials(wxWebView* web_view, const std::string& username, const std::string& password)
 {
@@ -137,5 +138,24 @@ void remove_webview_credentials(wxWebView* web_view)
     }
 }
 
+void delete_cookies(wxWebView* web_view, const std::string& url)
+{
+    WKWebView* backend = static_cast<WKWebView*>(web_view->GetNativeBackend());
+    NSString *url_string = [NSString stringWithCString:url.c_str() encoding:[NSString defaultCStringEncoding]];
+    WKWebsiteDataStore *data_store = backend.configuration.websiteDataStore;
+    NSSet *website_data_types = [NSSet setWithObject:WKWebsiteDataTypeCookies];
+    [data_store fetchDataRecordsOfTypes:website_data_types completionHandler:^(NSArray<WKWebsiteDataRecord *> *records) {
+        for (WKWebsiteDataRecord *record in records) {
+            if ([url_string containsString:record.displayName]) {
+                [data_store removeDataOfTypes:website_data_types
+                              forDataRecords:@[record]
+                           completionHandler:^{
+                    //NSLog(@"Deleted cookies for domain: %@", record.displayName);
+                }];
+            }
+        }
+    }];
+
+}
 }
 

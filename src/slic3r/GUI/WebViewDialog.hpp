@@ -282,19 +282,10 @@ public:
     LoginWebViewDialog(wxWindow *parent, std::string &ret_val, const wxString& url, wxEvtHandler* evt_handler);
     void on_navigation_request(wxWebViewEvent &evt) override;
     void on_dpi_changed(const wxRect &suggested_rect) override;
-
 private:
     std::string&    m_ret_val;
     wxEvtHandler*   p_evt_handler;
     bool            m_evt_sent{ false };
-};
-
-class LogoutWebViewDialog : public WebViewDialog
-{
-public:
-    LogoutWebViewDialog(wxWindow* parent);
-    void on_loaded(wxWebViewEvent &evt) override;
-    void on_dpi_changed(const wxRect &suggested_rect) override {}
 };
 
 } // GUI
