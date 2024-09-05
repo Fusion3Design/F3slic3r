@@ -1354,22 +1354,65 @@ void PrinterPickWebViewDialog::on_connect_action_webapp_ready(const std::string&
 }
 
 void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
-    // PrinterParams: {
-    // material: Material;
-    // nozzleDiameter: number;
-    // printerType: string;
-    // filename: string;
-    // }
+// {
+//  "printerUuid": "",
+//  "printerModel": "MK4S",
+//  "filename": "Shape-Box_0.4n_0.2mm_{..}_MK4S_{..}.bgcode",
+//  "nozzle_diameter": [0.4],     // array float
+//  "material": ["PLA", "ASA"],   // array string
+//  "filament_abrasive": [false], // array boolean
+//  "high_flow": [false],         // array boolean
+//}
     const Preset &selected_printer = wxGetApp().preset_bundle->printers.get_selected_preset();
     const DynamicPrintConfig full_config = wxGetApp().preset_bundle->full_config();
-    double nozzle_diameter = static_cast<const ConfigOptionFloats *>(full_config.option("nozzle_diameter"))->values[0];
-    wxString nozzle_diameter_serialized = double_to_string(nozzle_diameter);
-    nozzle_diameter_serialized.Replace(L",", L".");
-    // Sending only first filament type for now. This should change to array of values
-    const std::string filament_type_serialized = full_config.option("filament_type")->serialize();
-    const std::string nozzle_high_flow_serialized = static_cast<const ConfigOptionBools *>(full_config.option("nozzle_high_flow"))->values[0] ? "1" : "0";
-    const std::string filament_abrasive_serialized = static_cast<const ConfigOptionBools *>(full_config.option("filament_abrasive"))->values[0] ? "1" : "0";
+    
+    wxString nozzle_diameter_serialized = "[";
+    const auto nozzle_diameter_floats = static_cast<const ConfigOptionFloats *>(full_config.option("nozzle_diameter"));
+    for (size_t i = 0; i < nozzle_diameter_floats->size(); i++) {
+        double nozzle_diameter = nozzle_diameter_floats->values[i];
+        wxString value = double_to_string(nozzle_diameter);
+        value.Replace(L",", L".");
+        nozzle_diameter_serialized += value;
+        if (i <  nozzle_diameter_floats->size() - 1) {
+            nozzle_diameter_serialized += ", ";
+        }
+    }
+    nozzle_diameter_serialized += "]";
+    
+    std::string filament_type_serialized = "[";
+    const auto filament_type_strings =  static_cast<const ConfigOptionStrings *>(full_config.option("filament_type"));
+    for (size_t i = 0; i < filament_type_strings->size(); i++) {
+        std::string value = filament_type_strings->values[0];
+        filament_type_serialized += "\"" + value + "\"";
+        if (i <  filament_type_strings->size() - 1)
+        {
+            filament_type_serialized += ", ";
+        }
+    }
+    filament_type_serialized += "]";
+    
+    wxString nozzle_high_flow_serialized = "[";
+    const auto nozzle_high_flow_bools =  static_cast<const ConfigOptionBools *>(full_config.option("nozzle_high_flow"));
+    for (size_t i = 0; i < nozzle_high_flow_bools->size(); i++) {
+        wxString value = nozzle_high_flow_bools->values[0] ? "true" : "false";
+        nozzle_high_flow_serialized += value;
+        if (i <  nozzle_high_flow_bools->size() - 1) {
+            nozzle_high_flow_serialized += ", ";
+        }
+    }
+    nozzle_high_flow_serialized += "]";
 
+    wxString filament_abrasive_serialized = "[";
+    const auto filament_abrasive_bools =  static_cast<const ConfigOptionBools *>(full_config.option("filament_abrasive"));
+    for (size_t i = 0; i < filament_abrasive_bools->size(); i++) {
+        wxString value = filament_abrasive_bools->values[0] ? "true" : "false";
+        filament_abrasive_serialized += value;
+        if (i <  filament_abrasive_bools->size() - 1) {
+            filament_abrasive_serialized += ", ";
+        }
+    }
+    filament_abrasive_serialized += "]";
+    
     std::string printer_model_serialized = full_config.option("printer_model")->serialize();
     std::string vendor_repo_prefix;
     if (selected_printer.vendor) {
@@ -1393,10 +1436,10 @@ void PrinterPickWebViewDialog::request_compatible_printers_FFF() {
         "\"printerUuid\": \"%4%\", "
         "\"printerModel\": \"%3%\", "
         "\"nozzle_diameter\": %2%, "
-        "\"material\": \"%1%\", "
+        "\"material\": %1%, "
         "\"filename\": \"%5%\", "
-        "\"filament_abrasive\": \"%6%\","
-        "\"nozzle_high_flow\": \"%7%\""
+        "\"filament_abrasive\": %6%,"
+        "\"high_flow\": %7%"
         "}"
         , filament_type_serialized, nozzle_diameter_serialized, printer_model_serialized, uuid, filename, nozzle_high_flow_serialized, filament_abrasive_serialized);
 
