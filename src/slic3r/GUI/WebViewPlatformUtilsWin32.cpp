@@ -133,13 +133,13 @@ void delete_cookies(wxWebView* webview, const std::string& url)
                 for (const auto& cookie : ptree.get_child("cookies")) {
                     std::string name = cookie.second.get<std::string>("name");
                     std::string domain = cookie.second.get<std::string>("domain");
-                    //BOOST_LOG_TRIVIAL(debug) << "Deleting cookie: " << name << " : " << domain;
                     // Delete cookie by name and domain
                     wxString name_and_domain = GUI::format_wxstr(L"{\"name\": \"%1%\", \"domain\": \"%2%\"}", name, domain);
                     webView2->CallDevToolsProtocolMethod(L"Network.deleteCookies", name_and_domain.c_str(),
                         Microsoft::WRL::Callback<ICoreWebView2CallDevToolsProtocolMethodCompletedHandler>(
                             [](HRESULT errorCode, LPCWSTR resultJson) -> HRESULT { return S_OK; }).Get());
-                }                
+                }       
+                return S_OK;
             }
         ).Get());
     
