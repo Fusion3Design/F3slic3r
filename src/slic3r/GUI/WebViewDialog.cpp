@@ -493,6 +493,7 @@ SourceViewDialog::SourceViewDialog(wxWindow* parent, wxString source) :
 
 ConnectRequestHandler::ConnectRequestHandler()
 {
+    m_actions["REQUEST_LOGIN"] = std::bind(&ConnectRequestHandler::on_connect_action_request_login, this, std::placeholders::_1);
     m_actions["REQUEST_CONFIG"] = std::bind(&ConnectRequestHandler::on_connect_action_request_config, this, std::placeholders::_1);
     m_actions["WEBAPP_READY"] = std::bind(&ConnectRequestHandler::on_connect_action_webapp_ready,this, std::placeholders::_1);
     m_actions["SELECT_PRINTER"] = std::bind(&ConnectRequestHandler::on_connect_action_select_printer, this, std::placeholders::_1);
@@ -553,6 +554,10 @@ void ConnectRequestHandler::on_connect_action_log(const std::string& message_dat
     BOOST_LOG_TRIVIAL(info) << "WebView log: " << message_data;
 }
 
+void ConnectRequestHandler::on_connect_action_request_login(const std::string &message_data)
+{}
+
+
 void ConnectRequestHandler::on_connect_action_request_config(const std::string& message_data)
 {
     /*
@@ -590,9 +595,11 @@ void ConnectRequestHandler::on_connect_action_request_open_in_browser(const std:
 ConnectWebViewPanel::ConnectWebViewPanel(wxWindow* parent)
     : WebViewPanel(parent, GUI::from_u8(Utils::ServiceConfig::instance().connect_url()), { "_prusaSlicer" }, "connect_loading")
 {  
-    //m_browser->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new WebViewHandler("https")));
+    // m_browser->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new WebViewHandler("https")));
 
-    wxGetApp().plater()->Bind(EVT_UA_ID_USER_SUCCESS, &ConnectWebViewPanel::on_user_token, this);
+    auto* plater = wxGetApp().plater();
+    plater->Bind(EVT_UA_ID_USER_SUCCESS, &ConnectWebViewPanel::on_user_token, this);
+    plater->Bind(EVT_UA_LOGGEDOUT, &ConnectWebViewPanel::on_user_logged_out, this);
 }
 
 ConnectWebViewPanel::~ConnectWebViewPanel()
@@ -645,17 +652,19 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
         refresh
         ?
         R"(
-        if (window._prusaSlicer_initLogin !== undefined) {
-            console.log('Refreshing login');
-            if (window._prusaSlicer !== undefined)
-                _prusaSlicer.postMessage({action: 'LOG', message: 'Refreshing login'});
-            _prusaSlicer_initLogin('%s', 'refresh');
-        } else {
-            console.log('Refreshing login skipped as no _prusaSlicer_initLogin defined (yet?)');
-            if (window._prusaSlicer === undefined) {
-                console.log('Message handler _prusaSlicer not defined yet');
+        if (location.protocol === 'https:') {
+            if (window._prusaSlicer_initLogin !== undefined) {
+                console.log('Init login');
+                if (window._prusaSlicer !== undefined)
+                    _prusaSlicer.postMessage({action: 'LOG', message: 'Refreshing login'});
+                _prusaSlicer_initLogin('%s');
             } else {
-                _prusaSlicer.postMessage({action: 'LOG', message: 'Refreshing login skipped as no _prusaSlicer_initLogin defined (yet?)'});
+                console.log('Refreshing login skipped as no _prusaSlicer_login defined (yet?)');
+                if (window._prusaSlicer === undefined) {
+                    console.log('Message handler _prusaSlicer not defined yet');
+                } else {
+                    _prusaSlicer.postMessage({action: 'LOG', message: 'Refreshing login skipped as no _prusaSlicer_initLogin defined (yet?)'});
+                }
             }
         }
         )"
@@ -682,7 +691,7 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
             });
         }
 
-        async function _prusaSlicer_initLogin(token, reason) {
+        async function _prusaSlicer_initLogin(token) {
             const parts = token.split('.');
             const claims = JSON.parse(atob(parts[1]));
             const now = new Date().getTime() / 1000;
@@ -699,10 +708,10 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
                 let error = false;
 
                 try {
-                    _prusaSlicer_log('Slicer Login request (' + reason + ') ' + token.substring(token.length - 8));
+                    _prusaSlicer_log('Slicer Login request ' + token.substring(token.length - 8));
                     let resp = await fetch('/slicer/login', {method: 'POST', headers: {Authorization: 'Bearer ' + token}});
                     let body = await resp.text();
-                    _prusaSlicer_log('Slicer Login resp ' + resp.status + ' (' +reason + ' ' + token.substring(token.length - 8) + ') body: ' + body);
+                    _prusaSlicer_log('Slicer Login resp ' + resp.status + ' (' + token.substring(token.length - 8) + ') body: ' + body);
                     if (resp.status >= 500 || resp.status == 408) {
                         retry = true;
                     } else {
@@ -724,16 +733,21 @@ wxString ConnectWebViewPanel::get_login_script(bool refresh)
                 }
             } while (retry);
         }
-        if (window._prusaSlicer_initialLoad === undefined) {
-            console.log('Initial login');
-            _prusaSlicer_initLogin('%s', 'init-load');
-            window._prusaSlicer_initialLoad = true;
+
+        if (location.protocol === 'https:' && window._prusaSlicer) {
+            _prusaSlicer_log('Requesting login');
+            _prusaSlicer.postMessage({action: 'REQUEST_LOGIN'});
         }
         )",
 #endif
         access_token
     );
     return javascript;
+}
+
+wxString ConnectWebViewPanel::get_logout_script()
+{
+    return "sessionStorage.removeItem('_slicer_token');";
 }
 
 void ConnectWebViewPanel::on_page_will_load()
@@ -748,16 +762,18 @@ void ConnectWebViewPanel::on_user_token(UserAccountSuccessEvent& e)
     e.Skip();
     auto access_token = wxGetApp().plater()->get_user_account()->get_access_token();
     assert(!access_token.empty());
-    wxString javascript = get_login_script(false);
 
-    m_browser->RemoveAllUserScripts();
-    m_browser->AddUserScript(javascript);
-
-    javascript = get_login_script(true);
-    //m_browser->AddUserScript(javascript, wxWEBVIEW_INJECT_AT_DOCUMENT_END);
+    wxString javascript = get_login_script(true);
     BOOST_LOG_TRIVIAL(debug) << "RunScript " << javascript << "\n";
     m_browser->RunScriptAsync(javascript);
     resend_config();
+}
+
+void ConnectWebViewPanel::on_user_logged_out(UserAccountSuccessEvent& e)
+{
+    e.Skip();
+    // clear token from session storage
+    m_browser->RunScriptAsync(get_logout_script());
 }
 
 void ConnectWebViewPanel::on_script_message(wxWebViewEvent& evt)
@@ -803,11 +819,11 @@ void ConnectWebViewPanel::logout()
     Plater* plater = wxGetApp().plater();
     auto javascript = wxString::Format(
                      R"(
-            console.log('Preparing login');
+            console.log('Preparing logout');
             window.fetch('/slicer/logout', {method: 'POST', headers: {Authorization: 'Bearer %s'}})
                 .then(function (resp){
-                    console.log('Login resp', resp);
-                    resp.text().then(function (json) { console.log('Login resp body', json) });
+                    console.log('Logout resp', resp);
+                    resp.text().then(function (json) { console.log('Logout resp body', json) });
                 });
         )",
                      plater->get_user_account()->get_access_token()
@@ -821,6 +837,12 @@ void ConnectWebViewPanel::sys_color_changed()
 {
     resend_config();
 }
+
+void ConnectWebViewPanel::on_connect_action_request_login(const std::string &message_data)
+{
+    run_script_bridge(get_login_script(true));
+}
+
 
 void ConnectWebViewPanel::on_connect_action_select_printer(const std::string& message_data)
 {

@@ -186,6 +186,7 @@ protected:
     // action callbacs stored in m_actions
     virtual void on_connect_action_log(const std::string& message_data);
     virtual void on_connect_action_error(const std::string& message_data);
+    virtual void on_connect_action_request_login(const std::string& message_data);
     virtual void on_connect_action_request_config(const std::string& message_data);
     virtual void on_connect_action_request_open_in_browser(const std::string& message_data);
     virtual void on_connect_action_select_printer(const std::string& message_data) = 0;
@@ -206,6 +207,7 @@ public:
     void sys_color_changed() override;
     void on_navigation_request(wxWebViewEvent &evt) override;
 protected:
+    void on_connect_action_request_login(const std::string &message_data) override;
     void on_connect_action_select_printer(const std::string& message_data) override;
     void on_connect_action_print(const std::string& message_data) override;
     void on_connect_action_webapp_ready(const std::string& message_data) override {}
@@ -214,7 +216,9 @@ protected:
     void on_connect_action_error(const std::string &message_data) override;
 private:
     static wxString get_login_script(bool refresh);
+    static wxString get_logout_script();
     void on_user_token(UserAccountSuccessEvent& e);
+    void on_user_logged_out(UserAccountSuccessEvent& e);
     bool m_reached_default_url {false};
 };
 

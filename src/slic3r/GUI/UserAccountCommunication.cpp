@@ -518,7 +518,13 @@ void UserAccountCommunication::on_activate_app(bool active)
     }
     auto now = std::time(nullptr);
     BOOST_LOG_TRIVIAL(info) << "UserAccountCommunication activate: active " << active;
-    if (active && m_next_token_refresh_at > 0 && m_next_token_refresh_at - now < 60) {
+#ifndef _NDEBUG
+    // constexpr auto refresh_threshold = 110 * 60;
+    constexpr auto refresh_threshold = 60;
+#else
+    constexpr auto refresh_threshold = 60;
+#endif
+    if (active && m_next_token_refresh_at > 0 && m_next_token_refresh_at - now < refresh_threshold) {
         BOOST_LOG_TRIVIAL(info) << "Enqueue access token refresh on activation";
         m_token_timer->Stop();
         enqueue_refresh();
