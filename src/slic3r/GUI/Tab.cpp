@@ -3804,10 +3804,11 @@ void Tab::update_btns_enabling()
     // we can delete any preset from the physical printer
     // and any user preset
     const Preset& preset = m_presets->get_edited_preset();
-    m_btn_delete_preset->Show((m_type == Preset::TYPE_PRINTER && m_preset_bundle->physical_printers.has_selection())
-                              || (!preset.is_default && !preset.is_system));
-    m_btn_rename_preset->Show(!preset.is_default && !preset.is_system && !preset.is_external && 
-                              !wxGetApp().preset_bundle->physical_printers.has_selection());
+    const bool is_printer_and_selected_physical = m_type == Preset::TYPE_PRINTER && m_preset_bundle->physical_printers.has_selection();
+
+    m_btn_delete_preset->Show(is_printer_and_selected_physical || (!preset.is_default && !preset.is_system));
+
+    m_btn_rename_preset->Show(!is_printer_and_selected_physical && !preset.is_default && !preset.is_system && !preset.is_external);
 
     if (m_btn_edit_ph_printer)
         m_btn_edit_ph_printer->SetToolTip( m_preset_bundle->physical_printers.has_selection() ?
