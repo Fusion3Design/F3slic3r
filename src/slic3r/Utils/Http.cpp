@@ -398,8 +398,8 @@ void Http::priv::http_perform(const HttpRetryOpt& retry_opts)
 
 	    if (res == CURLE_OK)
 	        ::curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_status);
-	    retry = delay >= 0ms && is_transient_error(res, http_status);
-        if (retry && retry_opts.max_retries > 0 && num_retries >= retry_opts.max_retries)
+	    retry = is_transient_error(res, http_status);
+        if (retry && num_retries >= retry_opts.max_retries)
             retry = false;
         if (retry) {
             num_retries++;
