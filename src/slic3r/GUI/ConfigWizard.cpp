@@ -1503,7 +1503,7 @@ PageCustom::PageCustom(ConfigWizard *parent)
     auto *label = new wxStaticText(this, wxID_ANY, _L("Custom profile name:"));
 
     wxBoxSizer* profile_name_sizer = new wxBoxSizer(wxVERTICAL);
-    profile_name_editor = new SavePresetDialog::Item{ this, profile_name_sizer, default_profile_name, &wxGetApp().preset_bundle->printers};
+    profile_name_editor = new SavePresetDialog::Item{ this, profile_name_sizer, default_profile_name, wxGetApp().preset_bundle};
     profile_name_editor->Enable(false);
 
     cb_custom->Bind(wxEVT_CHECKBOX, [this](wxCommandEvent &) {
