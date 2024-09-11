@@ -17,8 +17,10 @@ namespace Slic3r {
 
 struct HttpRetryOpt
 {
+    // if set to zero, no retries at all
     std::chrono::milliseconds initial_delay;
     std::chrono::milliseconds max_delay;
+    // if set to zero, retries forever
     size_t max_retries{0};
 
 	static const HttpRetryOpt& no_retry();
