@@ -33,7 +33,7 @@ constexpr auto BORDER_W = 10;
 
 std::string SavePresetDialog::Item::get_init_preset_name(const std::string &suffix)
 {
-    PresetBundle*     preset_bundle = dynamic_cast<SavePresetDialog*>(m_parent)->get_preset_bundle();
+    const PresetBundle*     preset_bundle = dynamic_cast<SavePresetDialog*>(m_parent)->get_preset_bundle();
     if (!preset_bundle)
         preset_bundle = wxGetApp().preset_bundle;
     m_presets = &preset_bundle->get_presets(m_type);

@@ -74,8 +74,8 @@ public:
         wxTextCtrl*         m_text_ctrl     {nullptr};
         wxStaticText*       m_valid_label   {nullptr};
 
-        PresetCollection*   m_presets       {nullptr};
-        PresetBundle*       m_preset_bundle {nullptr};
+        const PresetCollection* m_presets       {nullptr};
+        const PresetBundle*     m_preset_bundle {nullptr};
 
         std::vector<PresetName> m_casei_preset_names;
 
@@ -112,7 +112,7 @@ public:
 
     void AddItem(Preset::Type type, const std::string& suffix, bool is_for_multiple_save);
 
-    PresetBundle*   get_preset_bundle() const { return m_preset_bundle; }
+    const PresetBundle* get_preset_bundle() const { return m_preset_bundle; }
     std::string     get_name();
     std::string     get_name(Preset::Type type);
 
