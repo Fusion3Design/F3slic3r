@@ -242,7 +242,8 @@ void UserAccountCommunication::set_username(const std::string& username)
 {
     m_username = username;
     {
-        std::lock_guard<std::mutex> lock(m_session_mutex);
+        // We don't need mutex lock here, as credentials are guarded by own mutex in m_session
+        //std::lock_guard<std::mutex> lock(m_session_mutex);
         if (is_secret_store_ok()) {
             std::string tokens;
             if (m_remember_session) {
@@ -292,7 +293,8 @@ void UserAccountCommunication::set_remember_session(bool b)
 std::string UserAccountCommunication::get_access_token()
 {
     {
-        std::lock_guard<std::mutex> lock(m_session_mutex);
+        // We don't need mutex lock here, as credentials are guarded by own mutex in m_session
+        //std::lock_guard<std::mutex> lock(m_session_mutex);
         return m_session->get_access_token();
     }
 }
@@ -300,7 +302,8 @@ std::string UserAccountCommunication::get_access_token()
 std::string UserAccountCommunication::get_shared_session_key()
 {
     {
-        std::lock_guard<std::mutex> lock(m_session_mutex);
+        // We don't need mutex lock here, as credentials are guarded by own mutex in m_session
+        //std::lock_guard<std::mutex> lock(m_session_mutex);
         return m_session->get_shared_session_key();
     }
 }
