@@ -514,7 +514,7 @@ void PresetArchiveDatabase::load_app_manifest_json()
 	if (!fs::exists(path, ec) || ec) {
 		copy_initial_manifest();
 	}
-	std::ifstream file(path.string());
+	boost::nowide::ifstream file(path.string());
 	std::string data;
 	if (file.is_open()) {
 		std::string line;
@@ -681,7 +681,7 @@ void PresetArchiveDatabase::save_app_manifest_json() const
 	data += "]";
 
 	std::string path = get_stored_manifest_path().string();
-	std::ofstream file(path);
+	boost::nowide::ofstream file(path);
 	if (file.is_open()) {
 		file << data;
 		file.close();

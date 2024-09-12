@@ -208,7 +208,7 @@ bool copy_icon(const std::string& icon_path, const std::string& dest_path)
 bool create_desktop_file(const std::string& path, const std::string& data)
 {    
     BOOST_LOG_TRIVIAL(debug) <<".desktop to "<< path;
-    std::ofstream output(path);
+    boost::nowide::ofstream output(path);
     output << data;
     struct stat buffer;
     if (stat(path.c_str(), &buffer) == 0)

@@ -908,9 +908,9 @@ bool GUI_App::init_opengl()
 }
 
 // gets path to PrusaSlicer.ini, returns semver from first line comment
-static boost::optional<Semver> parse_semver_from_ini(std::string path)
+static boost::optional<Semver> parse_semver_from_ini(const std::string& path)
 {
-    std::ifstream stream(path);
+    boost::nowide::ifstream stream(path);
     std::stringstream buffer;
     buffer << stream.rdbuf();
     std::string body = buffer.str();
