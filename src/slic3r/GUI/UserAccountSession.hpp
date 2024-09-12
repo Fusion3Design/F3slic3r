@@ -136,9 +136,12 @@ public:
         m_actions[UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_DATA_FROM_UUID].reset(nullptr);
     }
     void clear() {
-        m_access_token.clear();
-        m_refresh_token.clear();
-        m_shared_session_key.clear();
+        {
+            std::lock_guard<std::mutex> lock(m_credentials_mutex);
+            m_access_token.clear();
+            m_refresh_token.clear();
+            m_shared_session_key.clear();
+        }
         m_proccessing_enabled = false;
     }
 
@@ -150,12 +153,27 @@ public:
     void enqueue_refresh(const std::string& body);
 
     void process_action_queue();
-    bool is_initialized() const { return !m_access_token.empty() || !m_refresh_token.empty(); }
+    bool is_initialized() const {
+        std::lock_guard<std::mutex> lock(m_credentials_mutex);
+        return !m_access_token.empty() || !m_refresh_token.empty();
+    }
     bool is_enqueued(UserAccountActionID action_id) const;
-    std::string get_access_token() const { return m_access_token; }
-    std::string get_refresh_token() const { return m_refresh_token; }
-    std::string get_shared_session_key() const { return m_shared_session_key; }
-    long long get_next_token_timeout() const {return m_next_token_timeout; }
+    std::string get_access_token() const {
+        std::lock_guard<std::mutex> lock(m_credentials_mutex);
+        return m_access_token;
+    }
+    std::string get_refresh_token() const {
+        std::lock_guard<std::mutex> lock(m_credentials_mutex);
+        return m_refresh_token;
+    }
+    std::string get_shared_session_key() const {
+        std::lock_guard<std::mutex> lock(m_credentials_mutex);
+        return m_shared_session_key;
+    }
+    long long get_next_token_timeout() const {
+        std::lock_guard<std::mutex> lock(m_credentials_mutex);
+        return m_next_token_timeout;
+    }
 
     //void set_polling_enabled(bool enabled) {m_polling_action = enabled ? UserAccountActionID::USER_ACCOUNT_ACTION_CONNECT_PRINTER_MODELS : UserAccountActionID::USER_ACCOUNT_ACTION_DUMMY; }
     void set_polling_action(UserAccountActionID action) { m_polling_action = action; }
@@ -174,10 +192,13 @@ private:
     // set to USER_ACCOUNT_ACTION_DUMMY to switch off polling
     UserAccountActionID m_polling_action;
 
+    // Section of following vars is guarded by this mutex
+    mutable std::mutex m_credentials_mutex;
     std::string m_access_token;
     std::string m_refresh_token;
     std::string m_shared_session_key;
-    long long m_next_token_timeout; 
+    long long m_next_token_timeout;
+    // End of section guarded by m_credentials_mutex
 
     std::queue<ActionQueueData>                                    m_action_queue;
     std::deque<ActionQueueData>                                    m_priority_action_queue;
