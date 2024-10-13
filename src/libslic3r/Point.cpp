@@ -1,3 +1,15 @@
+///|/ Copyright (c) Prusa Research 2016 - 2023 Vojtěch Bubník @bubnikv, Pavel Mikuš @Godrak, Filip Sykala @Jony01, Lukáš Hejl @hejllukas, Enrico Turri @enricoturri1966, Lukáš Matěna @lukasmatena, Tomáš Mészáros @tamasmeszaros
+///|/ Copyright (c) Slic3r 2013 - 2016 Alessandro Ranellucci @alranel
+///|/ Copyright (c) 2014 Petr Ledvina @ledvinap
+///|/ Copyright (c) 2014 Kamil Kwolek
+///|/ Copyright (c) 2013 Jose Luis Perez Diez
+///|/
+///|/ ported from lib/Slic3r/Point.pm:
+///|/ Copyright (c) Prusa Research 2018 Vojtěch Bubník @bubnikv
+///|/ Copyright (c) Slic3r 2011 - 2015 Alessandro Ranellucci @alranel
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "Point.hpp"
 #include "Line.hpp"
 #include "MultiPoint.hpp"
@@ -47,17 +59,15 @@ Pointf3s transform(const Pointf3s& points, const Transform3d& t)
 
 void Point::rotate(double angle, const Point &center)
 {
-    double cur_x = (double)(*this)(0);
-    double cur_y = (double)(*this)(1);
-    double s     = ::sin(angle);
-    double c     = ::cos(angle);
-    double dx    = cur_x - (double)center(0);
-    double dy    = cur_y - (double)center(1);
-    (*this)(0) = (coord_t)round( (double)center(0) + c * dx - s * dy );
-    (*this)(1) = (coord_t)round( (double)center(1) + c * dy + s * dx );
+    Vec2d  cur = this->cast<double>();
+    double s   = ::sin(angle);
+    double c   = ::cos(angle);
+    auto   d   = cur - center.cast<double>();
+    this->x() = fast_round_up<coord_t>(center.x() + c * d.x() - s * d.y());
+    this->y() = fast_round_up<coord_t>(center.y() + s * d.x() + c * d.y());
 }
 
-bool has_duplicate_points(std::vector<Point> &&pts)
+bool has_duplicate_points(Points &&pts)
 {
     std::sort(pts.begin(), pts.end());
     for (size_t i = 1; i < pts.size(); ++ i)
@@ -84,18 +94,28 @@ Points collect_duplicates(Points pts /* Copy */)
     return duplicits;
 }
 
+template<bool IncludeBoundary>
 BoundingBox get_extents(const Points &pts)
 { 
-    return BoundingBox(pts);
+    BoundingBox out;
+    BoundingBox::construct<IncludeBoundary>(out, pts.begin(), pts.end());
+    return out;
 }
+template BoundingBox get_extents<false>(const Points &pts);
+template BoundingBox get_extents<true>(const Points &pts);
 
-BoundingBox get_extents(const std::vector<Points> &pts)
+// if IncludeBoundary, then a bounding box is defined even for a single point.
+// otherwise a bounding box is only defined if it has a positive area.
+template<bool IncludeBoundary>
+BoundingBox get_extents(const VecOfPoints &pts)
 {
     BoundingBox bbox;
     for (const Points &p : pts)
-        bbox.merge(get_extents(p));
+        bbox.merge(get_extents<IncludeBoundary>(p));
     return bbox;
 }
+template BoundingBox get_extents<false>(const VecOfPoints &pts);
+template BoundingBox get_extents<true>(const VecOfPoints &pts);
 
 BoundingBoxf get_extents(const std::vector<Vec2d> &pts)
 {

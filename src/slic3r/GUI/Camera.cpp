@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2019 - 2023 Oleksandra Iushchenko @YuSanka, Vojtěch Bubník @bubnikv, Enrico Turri @enricoturri1966, Filip Sykala @Jony01, Lukáš Matěna @lukasmatena
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "libslic3r/libslic3r.h"
 #include "libslic3r/AppConfig.hpp"
 
@@ -369,6 +373,8 @@ std::pair<double, double> Camera::calc_tight_frustrum_zs_around(const BoundingBo
     std::pair<double, double> ret;
     auto& [near_z, far_z] = ret;
 
+    set_distance(DefaultDistance);
+
     // box in eye space
     const BoundingBoxf3 eye_box = box.transformed(m_view_matrix);
     near_z = -eye_box.max.z();
@@ -392,15 +398,6 @@ std::pair<double, double> Camera::calc_tight_frustrum_zs_around(const BoundingBo
         near_z += delta;
         far_z += delta;
     }
-// The following is commented out because it causes flickering of the 3D scene GUI
-// when the bounding box of the scene gets large enough
-// We need to introduce some smarter code to move the camera back and forth in such case
-//    else if (near_z > 2.0 * FrustrumMinNearZ && m_distance > DefaultDistance) {
-//        float delta = m_distance - DefaultDistance;
-//        set_distance(DefaultDistance);
-//        near_z -= delta;
-//        far_z -= delta;
-//    }
 
     return ret;
 }

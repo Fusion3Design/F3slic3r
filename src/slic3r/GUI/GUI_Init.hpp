@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2020 - 2023 David Kocík @kocikdav, Enrico Turri @enricoturri1966, Vojtěch Bubník @bubnikv, Lukáš Matěna @lukasmatena
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #ifndef slic3r_GUI_Init_hpp_
 #define slic3r_GUI_Init_hpp_
 
@@ -10,11 +14,7 @@ namespace GUI {
 
 struct OpenGLVersions
 {
-	static const std::vector<std::string> core_str;
-	static const std::vector<std::string> precore_str;
-
 	static const std::vector<std::pair<int, int>> core;
-	static const std::vector<std::pair<int, int>> precore;
 };
 
 struct GUI_InitParams
@@ -29,15 +29,14 @@ struct GUI_InitParams
     DynamicPrintConfig          extra_config;
     std::vector<std::string>    input_files;
 
-	bool	                    start_as_gcodeviewer;
-	bool						start_downloader;
-	bool					    delete_after_load;
+    bool                        start_as_gcodeviewer;
+    bool                        start_downloader;
+    bool                        delete_after_load;
     std::string                 download_url;
 #if ENABLE_GL_CORE_PROFILE
-	std::pair<int, int>         opengl_version;
-#if ENABLE_OPENGL_DEBUG_OPTION
-	bool                        opengl_debug;
-#endif // ENABLE_OPENGL_DEBUG_OPTION
+		std::pair<int, int>         opengl_version;
+		bool                        opengl_debug;
+		bool                        opengl_compatibiity_profile;
 #endif // ENABLE_GL_CORE_PROFILE
 };
 

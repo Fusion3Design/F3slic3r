@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2018 - 2023 Enrico Turri @enricoturri1966, Oleksandra Iushchenko @YuSanka, Lukáš Matěna @lukasmatena, Lukáš Hejl @hejllukas, Vojtěch Bubník @bubnikv, Vojtěch Král @vojtechkral
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "libslic3r/libslic3r.h"
 #include "OpenGLManager.hpp"
 
@@ -7,6 +11,7 @@
 #endif // ENABLE_GL_CORE_PROFILE
 #include "I18N.hpp"
 #include "3DScene.hpp"
+#include "format.hpp"
 
 #include "libslic3r/Platform.hpp"
 
@@ -122,6 +127,10 @@ void OpenGLManager::GLInfo::detect() const
         float* max_anisotropy = const_cast<float*>(&m_max_anisotropy);
         glsafe(::glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, max_anisotropy));
     }
+
+    if (!GLEW_ARB_compatibility)
+        *const_cast<bool*>(&m_core_profile) = true;
+
     *const_cast<bool*>(&m_detected) = true;
 }
 
@@ -192,7 +201,7 @@ std::string OpenGLManager::GLInfo::to_string(bool for_github) const
     std::string line_end = format_as_html ? "<br>" : "\n";
 
     out << h2_start << "OpenGL installation" << h2_end << line_end;
-    out << b_start << "GL version:   " << b_end << m_version << line_end;
+    out << b_start << "GL version:   " << b_end << m_version << " (" << m_version_string << ")" << line_end;
 #if ENABLE_GL_CORE_PROFILE
     out << b_start << "Profile:      " << b_end << (is_core_profile() ? "Core" : "Compatibility") << line_end;
 #endif // ENABLE_GL_CORE_PROFILE
@@ -282,14 +291,14 @@ OpenGLManager::~OpenGLManager()
 #endif //__APPLE__
 }
 
-#if ENABLE_OPENGL_DEBUG_OPTION
+#if ENABLE_GL_CORE_PROFILE
 #ifdef _WIN32
 static void APIENTRY CustomGLDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char* message, const void* userParam)
 #else
 static void CustomGLDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char* message, const void* userParam)
 #endif // _WIN32
 {
-    if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
+    if (severity != GL_DEBUG_SEVERITY_HIGH)
         return;
 
     std::string out = "OpenGL DEBUG message [";
@@ -326,7 +335,7 @@ static void CustomGLDebugOutput(GLenum source, GLenum type, unsigned int id, GLe
     out += "]:\n";
     std::cout << out << "(" << id << "): " << message << "\n\n";
 }
-#endif // ENABLE_OPENGL_DEBUG_OPTION
+#endif // ENABLE_GL_CORE_PROFILE
 
 bool OpenGLManager::init_gl()
 {
@@ -364,26 +373,26 @@ bool OpenGLManager::init_gl()
 #if ENABLE_OPENGL_ES
         bool valid_version = s_gl_info.is_version_greater_or_equal_to(2, 0);
 #elif ENABLE_GL_CORE_PROFILE
-        bool valid_version = s_gl_info.is_core_profile() ? s_gl_info.is_version_greater_or_equal_to(3, 2) : s_gl_info.is_version_greater_or_equal_to(2, 0);
+        const bool valid_version = s_gl_info.is_version_greater_or_equal_to(3, 2);
 #else
         bool valid_version = s_gl_info.is_version_greater_or_equal_to(2, 0);
 #endif // ENABLE_OPENGL_ES
 
         if (!valid_version) {
             // Complain about the OpenGL version.
-            wxString message = from_u8((boost::format(
+            wxString message = format_wxstr(
 #if ENABLE_OPENGL_ES
-                _utf8(L("F3Slic3r requires OpenGL ES 2.0 capable graphics driver to run correctly, \n"
-                    "while OpenGL version %s, render %s, vendor %s was detected."))) % s_gl_info.get_version_string() % s_gl_info.get_renderer() % s_gl_info.get_vendor()).str());
+                _L("F3Slic3r requires OpenGL ES 2.0 capable graphics driver to run correctly, \n"
+                   "while OpenGL version %s, render %s, vendor %s was detected."), s_gl_info.get_version_string(), s_gl_info.get_renderer(), s_gl_info.get_vendor());
 #elif ENABLE_GL_CORE_PROFILE
-                _utf8(L("F3Slic3r requires OpenGL %s capable graphics driver to run correctly, \n"
-                    "while OpenGL version %s, render %s, vendor %s was detected."))) % (s_gl_info.is_core_profile() ? "3.3" : "2.0") % s_gl_info.get_version_string() % s_gl_info.get_renderer() % s_gl_info.get_vendor()).str());
+                _L("F3Slic3r requires OpenGL 3.2 capable graphics driver to run correctly,\n"
+                   "while OpenGL version %s, render %s, vendor %s was detected."), s_gl_info.get_version_string(), s_gl_info.get_renderer(), s_gl_info.get_vendor());
 #else
-                _utf8(L("F3Slic3r requires OpenGL 2.0 capable graphics driver to run correctly, \n"
-                    "while OpenGL version %s, render %s, vendor %s was detected."))) % s_gl_info.get_version_string() % s_gl_info.get_renderer() % s_gl_info.get_vendor()).str());
+                _L("F3Slic3r requires OpenGL 2.0 capable graphics driver to run correctly, \n"
+                   "while OpenGL version %s, render %s, vendor %s was detected."), s_gl_info.get_version_string(), s_gl_info.get_renderer(), s_gl_info.get_vendor());
 #endif // ENABLE_OPENGL_ES
             message += "\n";
-        	message += _L("You may need to update your graphics card driver.");
+          	message += _L("You may need to update your graphics card driver.");
 #ifdef _WIN32
             message += "\n";
             message += _L("As a workaround, you may run F3Slic3r with a software rendered 3D graphics by running prusa-slicer.exe with the --sw-renderer parameter.");
@@ -395,18 +404,18 @@ bool OpenGLManager::init_gl()
             // load shaders
             auto [result, error] = m_shaders_manager.init();
             if (!result) {
-                wxString message = from_u8((boost::format(
-                    _utf8(L("Unable to load the following shaders:\n%s"))) % error).str());
+                wxString message = format_wxstr(_L("Unable to load the following shaders:\n%s"), error);
                 wxMessageBox(message, wxString("F3Slic3r - ") + _L("Error loading shaders"), wxOK | wxICON_ERROR);
             }
-#if ENABLE_OPENGL_DEBUG_OPTION
-            if (m_debug_enabled && GLEW_KHR_debug) {
+#if ENABLE_GL_CORE_PROFILE
+            if (m_debug_enabled && s_gl_info.is_version_greater_or_equal_to(4, 3) && GLEW_KHR_debug) {
                 ::glEnable(GL_DEBUG_OUTPUT);
                 ::glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
                 ::glDebugMessageCallback(CustomGLDebugOutput, nullptr);
                 ::glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+                std::cout << "Enabled OpenGL debug output\n";
             }
-#endif // ENABLE_OPENGL_DEBUG_OPTION
+#endif // ENABLE_GL_CORE_PROFILE
         }
 
 #ifdef _WIN32
@@ -419,9 +428,12 @@ bool OpenGLManager::init_gl()
         // There is no an easy way to detect the driver version without using Win32 API because the strings returned by OpenGL
         // have no standardized format, only some of them contain the driver version.
         // Until we do not know that driver will be fixed (if ever) we force the use of power of two textures on all cards
-        // containing the string 'Radeon' in the string returned by glGetString(GL_RENDERER)
+        // 1) containing the string 'Radeon' in the string returned by glGetString(GL_RENDERER)
+        // 2) containing the string 'Custom' in the string returned by glGetString(GL_RENDERER)
         const auto& gl_info = OpenGLManager::get_gl_info();
-        if (boost::contains(gl_info.get_vendor(), "ATI Technologies Inc.") && boost::contains(gl_info.get_renderer(), "Radeon"))
+        if (boost::contains(gl_info.get_vendor(), "ATI Technologies Inc.") &&
+           (boost::contains(gl_info.get_renderer(), "Radeon") ||
+            boost::contains(gl_info.get_renderer(), "Custom")))
             s_force_power_of_two_textures = true;
 #endif // _WIN32
     }
@@ -430,11 +442,8 @@ bool OpenGLManager::init_gl()
 }
 
 #if ENABLE_GL_CORE_PROFILE
-#if ENABLE_OPENGL_DEBUG_OPTION
-wxGLContext* OpenGLManager::init_glcontext(wxGLCanvas& canvas, const std::pair<int, int>& required_opengl_version, bool enable_debug)
-#else
-wxGLContext* OpenGLManager::init_glcontext(wxGLCanvas& canvas, const std::pair<int, int>& required_opengl_version)
-#endif // ENABLE_OPENGL_DEBUG_OPTION
+wxGLContext* OpenGLManager::init_glcontext(wxGLCanvas& canvas, const std::pair<int, int>& required_opengl_version, bool enable_compatibility_profile,
+    bool enable_debug)
 #else
 wxGLContext* OpenGLManager::init_glcontext(wxGLCanvas& canvas)
 #endif // ENABLE_GL_CORE_PROFILE
@@ -445,33 +454,26 @@ wxGLContext* OpenGLManager::init_glcontext(wxGLCanvas& canvas)
         attrs.PlatformDefaults().ES2().MajorVersion(2).EndList();
         m_context = new wxGLContext(&canvas, nullptr, &attrs);
 #elif ENABLE_GL_CORE_PROFILE
-#if ENABLE_OPENGL_DEBUG_OPTION
         m_debug_enabled = enable_debug;
-#endif // ENABLE_OPENGL_DEBUG_OPTION
 
         const int gl_major = required_opengl_version.first;
         const int gl_minor = required_opengl_version.second;
-        const bool supports_core_profile = (gl_major < 3) ? false : (gl_major > 3) ? true : gl_minor >= 2;
+        const bool supports_core_profile =
+            std::find(OpenGLVersions::core.begin(), OpenGLVersions::core.end(), std::make_pair(gl_major, gl_minor)) != OpenGLVersions::core.end();
 
-        if (gl_major == 0) {
+        if (gl_major == 0 && !enable_compatibility_profile) {
             // search for highest supported core profile version
             // disable wxWidgets logging to avoid showing the log dialog in case the following code fails generating a valid gl context
             wxLogNull logNo;
             for (auto v = OpenGLVersions::core.rbegin(); v != OpenGLVersions::core.rend(); ++v) {
                 wxGLContextAttrs attrs;
-#if ENABLE_OPENGL_DEBUG_OPTION
                 attrs.PlatformDefaults().MajorVersion(v->first).MinorVersion(v->second).CoreProfile().ForwardCompatible();
                 if (m_debug_enabled)
                     attrs.DebugCtx();
                 attrs.EndList();
-#else
-                attrs.PlatformDefaults().MajorVersion(gl_major).MinorVersion(gl_minor).CoreProfile().ForwardCompatible().EndList();
-#endif // ENABLE_OPENGL_DEBUG_OPTION
                 m_context = new wxGLContext(&canvas, nullptr, &attrs);
-                if (m_context->IsOK()) {
-                    s_gl_info.set_core_profile(true);
+                if (m_context->IsOK())
                     break;
-                }
                 else {
                     delete m_context;
                     m_context = nullptr;
@@ -480,31 +482,38 @@ wxGLContext* OpenGLManager::init_glcontext(wxGLCanvas& canvas)
         }
 
         if (m_context == nullptr) {
-            // search for requested core profile version 
-            if (supports_core_profile) {
+            // search for requested compatibility profile version 
+            if (enable_compatibility_profile) {
                 // disable wxWidgets logging to avoid showing the log dialog in case the following code fails generating a valid gl context
                 wxLogNull logNo;
                 wxGLContextAttrs attrs;
-#if ENABLE_OPENGL_DEBUG_OPTION
+                attrs.PlatformDefaults().CompatibilityProfile();
+                if (m_debug_enabled)
+                    attrs.DebugCtx();
+                attrs.EndList();
+                m_context = new wxGLContext(&canvas, nullptr, &attrs);
+                if (!m_context->IsOK()) {
+                    delete m_context;
+                    m_context = nullptr;
+                }
+            }
+            // search for requested core profile version 
+            else if (supports_core_profile) {
+                // disable wxWidgets logging to avoid showing the log dialog in case the following code fails generating a valid gl context
+                wxLogNull logNo;
+                wxGLContextAttrs attrs;
                 attrs.PlatformDefaults().MajorVersion(gl_major).MinorVersion(gl_minor).CoreProfile().ForwardCompatible();
                 if (m_debug_enabled)
                     attrs.DebugCtx();
                 attrs.EndList();
-#else
-                attrs.PlatformDefaults().MajorVersion(gl_major).MinorVersion(gl_minor).CoreProfile().ForwardCompatible().EndList();
-#endif // ENABLE_OPENGL_DEBUG_OPTION
                 m_context = new wxGLContext(&canvas, nullptr, &attrs);
                 if (!m_context->IsOK()) {
-                    BOOST_LOG_TRIVIAL(error) << "Unable to create context for required OpenGL " << gl_major << "." << gl_minor;
                     delete m_context;
                     m_context = nullptr;
                 }
-                else
-                    s_gl_info.set_core_profile(true);
             }
         }
 
-#if ENABLE_OPENGL_DEBUG_OPTION
         if (m_context == nullptr) {
             wxGLContextAttrs attrs;
             attrs.PlatformDefaults();
@@ -514,11 +523,6 @@ wxGLContext* OpenGLManager::init_glcontext(wxGLCanvas& canvas)
             // if no valid context was created use the default one
             m_context = new wxGLContext(&canvas, nullptr, &attrs);
         }
-#else
-        if (m_context == nullptr)
-            // if no valid context was created use the default one
-            m_context = new wxGLContext(&canvas);
-#endif // ENABLE_OPENGL_DEBUG_OPTION
 #else
         m_context = new wxGLContext(&canvas);
 #endif // ENABLE_OPENGL_ES

@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2020 - 2023 Oleksandra Iushchenko @YuSanka, Lukáš Matěna @lukasmatena, Tomáš Mészáros @tamasmeszaros, Vojtěch Bubník @bubnikv, David Kocík @kocikdav
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "SLAImportJob.hpp"
 
 #include "libslic3r/SLAPrint.hpp"
@@ -157,13 +161,13 @@ void SLAImportJob::finalize(bool canceled, std::exception_ptr &eptr)
 
         if (Preset::printer_technology(config) == ptSLA) {
             wxGetApp().preset_bundle->load_config_model(name, std::move(config));
-            p->plater->check_selected_presets_visibility(ptSLA);
+            p->plater->notify_about_installed_presets();;
             wxGetApp().load_current_presets();
         } else {
             p->plater->get_notification_manager()->push_notification(
                 NotificationType::CustomNotification,
                 NotificationManager::NotificationLevel::WarningNotificationLevel,
-                _u8L("The profile in the imported archive is corrupt and will not be loaded."));
+                _u8L("The profile in the imported archive is corrupted and will not be loaded."));
         }
     }
 

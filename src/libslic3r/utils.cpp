@@ -1,3 +1,9 @@
+///|/ Copyright (c) Prusa Research 2016 - 2023 Pavel Mikuš @Godrak, Oleksandra Iushchenko @YuSanka, Vojtěch Bubník @bubnikv, Lukáš Matěna @lukasmatena, Filip Sykala @Jony01, David Kocík @kocikdav, Roman Beránek @zavorka, Enrico Turri @enricoturri1966, Tomáš Mészáros @tamasmeszaros, Vojtěch Král @vojtechkral
+///|/ Copyright (c) 2021 Justin Schuh @jschuh
+///|/ Copyright (c) Slic3r 2013 - 2015 Alessandro Ranellucci @alranel
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "Utils.hpp"
 #include "I18N.hpp"
 
@@ -9,6 +15,7 @@
 
 #include "Platform.hpp"
 #include "Time.hpp"
+#include "format.hpp"
 #include "libslic3r.h"
 
 #ifdef WIN32
@@ -117,23 +124,22 @@ unsigned get_logging_level()
 }
 
 // Force set_logging_level(<=error) after loading of the DLL.
-// This is currently only needed if libslic3r is loaded as a shared library into Perl interpreter
-// to perform unit and integration tests.
+// This is used ot disable logging for unit and integration tests.
 static struct RunOnInit {
-    RunOnInit() { 
+    RunOnInit() {
         set_logging_level(1);
     }
 } g_RunOnInit;
 
-void disable_multi_threading()
+void enforce_thread_count(const std::size_t count)
 {
     // Disable parallelization to simplify debugging.
 #ifdef TBB_HAS_GLOBAL_CONTROL
 	{
-		static tbb::global_control gc(tbb::global_control::max_allowed_parallelism, 1);
+		static tbb::global_control gc(tbb::global_control::max_allowed_parallelism, count);
 	}
 #else // TBB_HAS_GLOBAL_CONTROL
-    static tbb::task_scheduler_init *tbb_init = new tbb::task_scheduler_init(1);
+    static tbb::task_scheduler_init *tbb_init = new tbb::task_scheduler_init(count);
     UNUSED(tbb_init);
 #endif // TBB_HAS_GLOBAL_CONTROL
 }
@@ -190,6 +196,18 @@ void set_sys_shapes_dir(const std::string &dir)
 const std::string& sys_shapes_dir()
 {
 	return g_sys_shapes_dir;
+}
+
+static std::string g_custom_gcodes_dir;
+
+void set_custom_gcodes_dir(const std::string &dir)
+{
+    g_custom_gcodes_dir = dir;
+}
+
+const std::string& custom_gcodes_dir()
+{
+    return g_custom_gcodes_dir;
 }
 
 // Translate function callback, to call wxWidgets translate function to convert non-localized UTF8 string to a localized one.
@@ -688,7 +706,7 @@ CopyFileResult copy_file_inner(const std::string& from, const std::string& to, s
 	// That may happen when copying on some exotic file system, for example Linux on Chrome.
 	copy_file_linux(source, target, ec);
 #else // __linux__
-	boost::filesystem::copy_file(source, target, boost::filesystem::copy_option::overwrite_if_exists, ec);
+	boost::filesystem::copy_file(source, target, boost::filesystem::copy_options::overwrite_existing, ec);
 #endif // __linux__
 	if (ec) {
 		error_message = ec.message();
@@ -779,8 +797,9 @@ bool is_idx_file(const boost::filesystem::directory_entry &dir_entry)
 
 bool is_gcode_file(const std::string &path)
 {
-	return boost::iends_with(path, ".gcode") || boost::iends_with(path, ".gco") ||
-		   boost::iends_with(path, ".g")     || boost::iends_with(path, ".ngc");
+		return boost::iends_with(path, ".gcode") || boost::iends_with(path, ".gco") ||
+					 boost::iends_with(path, ".g") || boost::iends_with(path, ".ngc") ||
+					 boost::iends_with(path, ".bgcode") || boost::iends_with(path, ".bgc");
 }
 
 bool is_img_file(const std::string &path)
@@ -981,6 +1000,61 @@ std::string xml_escape_double_quotes_attribute_value(std::string text)
     }
 
     return text;
+}
+
+std::string short_time(const std::string &time, bool force_localization /*= false*/)
+{
+	// Parse the dhms time format.
+	int days = 0;
+	int hours = 0;
+	int minutes = 0;
+	int seconds = 0;
+	if (time.find('d') != std::string::npos)
+		::sscanf(time.c_str(), "%dd %dh %dm %ds", &days, &hours, &minutes, &seconds);
+	else if (time.find('h') != std::string::npos)
+		::sscanf(time.c_str(), "%dh %dm %ds", &hours, &minutes, &seconds);
+	else if (time.find('m') != std::string::npos)
+		::sscanf(time.c_str(), "%dm %ds", &minutes, &seconds);
+	else if (time.find('s') != std::string::npos)
+		::sscanf(time.c_str(), "%ds", &seconds);
+	// Round to full minutes.
+	if (days + hours + minutes > 0 && seconds >= 30) {
+		if (++minutes == 60) {
+			minutes = 0;
+			if (++hours == 24) {
+				hours = 0;
+				++days;
+			}
+		}
+	}
+
+	// Format the dhm time
+
+	if (force_localization) {
+		auto get_d = [days]() { return format(_u8L("%1%d"), days); };
+		auto get_h = [hours]() { return format(_u8L("%1%h"), hours); };
+		// TRN "m" means "minutes"
+		auto get_m = [minutes]() { return format(_u8L("%1%m"), minutes); };
+
+		if (days > 0)
+			return get_d() + get_h() + get_m();
+		if (hours > 0)
+			return get_h() + get_m();
+		if (minutes > 0)
+			return get_m();
+		return format(_u8L("%1%s"), seconds);
+	}
+
+	char buffer[64];
+	if (days > 0)
+		::sprintf(buffer, "%dd%dh%dm", days, hours, minutes);
+	else if (hours > 0)
+		::sprintf(buffer, "%dh%dm", hours, minutes);
+	else if (minutes > 0)
+		::sprintf(buffer, "%dm", minutes);
+	else
+		::sprintf(buffer, "%ds", seconds);
+    return buffer;
 }
 
 std::string format_memsize_MB(size_t n) 

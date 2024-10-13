@@ -1,7 +1,13 @@
+///|/ Copyright (c) Prusa Research 2019 - 2023 Oleksandra Iushchenko @YuSanka, Lukáš Matěna @lukasmatena, Enrico Turri @enricoturri1966, Filip Sykala @Jony01, Vojtěch Bubník @bubnikv, Lukáš Hejl @hejllukas
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #ifndef slic3r_GLGizmoMmuSegmentation_hpp_
 #define slic3r_GLGizmoMmuSegmentation_hpp_
 
 #include "GLGizmoPainterBase.hpp"
+
+#include "slic3r/GUI/I18N.hpp"
 
 namespace Slic3r::GUI {
 
@@ -64,9 +70,11 @@ public:
 
 class TriangleSelectorMmGui : public TriangleSelectorGUI {
 public:
+    TriangleSelectorMmGui() = delete;
     // Plus 1 in the initialization of m_gizmo_scene is because the first position is allocated for non-painted triangles, and the indices above colors.size() are allocated for seed fill.
-    TriangleSelectorMmGui(const TriangleMesh& mesh, const std::vector<ColorRGBA>& colors, const ColorRGBA& default_volume_color)
+    explicit TriangleSelectorMmGui(const TriangleMesh& mesh, const std::vector<ColorRGBA>& colors, const ColorRGBA& default_volume_color)
         : TriangleSelectorGUI(mesh), m_colors(colors), m_default_volume_color(default_volume_color), m_gizmo_scene(2 * (colors.size() + 1)) {}
+
     ~TriangleSelectorMmGui() override = default;
 
     void render(ImGuiWrapper* imgui, const Transform3d& matrix) override;
@@ -88,7 +96,7 @@ public:
 
     void render_painter_gizmo() override;
 
-    void data_changed() override;
+    void data_changed(bool is_serializing) override;
 
     void render_triangles(const Selection& selection) const override;
 
@@ -117,7 +125,7 @@ protected:
 
     std::string get_gizmo_entering_text() const override { return _u8L("Entering Multimaterial painting"); }
     std::string get_gizmo_leaving_text() const override { return _u8L("Leaving Multimaterial painting"); }
-    std::string get_action_snapshot_name() override { return _u8L("Multimaterial painting editing"); }
+    std::string get_action_snapshot_name() const override { return _u8L("Multimaterial painting editing"); }
 
     size_t                            m_first_selected_extruder_idx  = 0;
     size_t                            m_second_selected_extruder_idx = 1;
@@ -145,6 +153,16 @@ private:
     // etc. When language changes, GUI is recreated and this class constructed again, so the change takes effect.
     std::map<std::string, wxString> m_desc;
 };
+
+std::vector<ColorRGBA> get_extruders_colors();
+
+inline size_t get_extruder_color_idx(const ModelVolume &model_volume, const int extruders_count)
+{
+    if (const int extruder_id = model_volume.extruder_id(); extruder_id <= 0 || extruder_id > extruders_count)
+        return 0;
+    else
+        return extruder_id - 1;
+}
 
 } // namespace Slic3r
 

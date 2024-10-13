@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2020 - 2023 Vojtěch Bubník @bubnikv, Lukáš Hejl @hejllukas, Lukáš Matěna @lukasmatena, Roman Beránek @zavorka
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #ifdef _WIN32
 	#include <windows.h>
 	#include <boost/nowide/convert.hpp>
@@ -211,6 +215,12 @@ bool is_main_thread_active()
 	return get_main_thread_id() == boost::this_thread::get_id();
 }
 
+static thread_local ThreadData s_thread_data;
+ThreadData& thread_data()
+{
+	return s_thread_data;
+}
+
 // Spawn (n - 1) worker threads on Intel TBB thread pool and name them by an index and a system thread ID.
 // Also it sets locale of the worker threads to "C" for the G-code generator to produce "." as a decimal separator.
 void name_tbb_thread_pool_threads_set_locale()
@@ -225,12 +235,11 @@ void name_tbb_thread_pool_threads_set_locale()
 //	const size_t nthreads_hw = std::thread::hardware_concurrency();
 	const size_t nthreads_hw = tbb::this_task_arena::max_concurrency();
 	size_t       nthreads    = nthreads_hw;
+    if (thread_count) {
+        nthreads = std::min(nthreads_hw, *thread_count);
+    }
 
-#if 0
-	// Shiny profiler is not thread safe, thus disable parallelization.
-	disable_multi_threading();
-	nthreads = 1;
-#endif
+    enforce_thread_count(nthreads);
 
 	size_t                  nthreads_running(0);
 	std::condition_variable cv;
@@ -274,16 +283,16 @@ void set_current_thread_qos()
 #endif // __APPLE__
 }
 
-void TBBLocalesSetter::on_scheduler_entry(bool is_worker)
+void ThreadData::tbb_worker_thread_set_c_locales()
 {
 //    static std::atomic<int> cnt = 0;
 //    std::cout << "TBBLocalesSetter Entering " << cnt ++ << " ID " << std::this_thread::get_id() << "\n";
-    if (bool& is_locales_sets = m_is_locales_sets.local(); !is_locales_sets) {
+    if (! m_tbb_worker_thread_c_locales_set) {
         // Set locales of the worker thread to "C".
         set_c_locales();
         // OSX specific: Elevate QOS on Apple Silicon.
         set_current_thread_qos();
-        is_locales_sets = true;
+        m_tbb_worker_thread_c_locales_set = true;
     }
 }
 

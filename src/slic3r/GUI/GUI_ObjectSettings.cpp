@@ -1,3 +1,7 @@
+///|/ Copyright (c) Prusa Research 2018 - 2023 Oleksandra Iushchenko @YuSanka, Vojtěch Bubník @bubnikv, Lukáš Matěna @lukasmatena, Vojtěch Král @vojtechkral, Enrico Turri @enricoturri1966
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #include "GUI_ObjectSettings.hpp"
 #include "GUI_ObjectList.hpp"
 #include "GUI_Factories.hpp"
@@ -12,6 +16,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "I18N.hpp"
+#include "format.hpp"
 #include "ConfigManipulation.hpp"
 
 #include <wx/wupdlock.h>
@@ -102,7 +107,7 @@ bool ObjectSettings::update_settings_list()
             btn->SetBitmapCurrent(m_bmp_delete_focus.bmp());
 
 			btn->Bind(wxEVT_BUTTON, [opt_key, config, this](wxEvent &event) {
-                wxGetApp().plater()->take_snapshot(from_u8((boost::format(_utf8(L("Delete Option %s"))) % opt_key).str()));
+                wxGetApp().plater()->take_snapshot(format_wxstr(_L("Delete Option %s"), opt_key));
 				config->erase(opt_key);
                 wxGetApp().obj_list()->changed_object();
                 wxTheApp->CallAfter([this]() {
@@ -151,7 +156,7 @@ bool ObjectSettings::update_settings_list()
             for (auto& opt : cat.second)
                 optgroup->get_field(opt)->m_on_change = [optgroup](const std::string& opt_id, const boost::any& value) {
                     // first of all take a snapshot and then change value in configuration
-                    wxGetApp().plater()->take_snapshot(from_u8((boost::format(_utf8(L("Change Option %s"))) % opt_id).str()));
+                    wxGetApp().plater()->take_snapshot(format_wxstr(_L("Change Option %s"), opt_id));
                     optgroup->on_change_OG(opt_id, value);
                 };
 
@@ -256,8 +261,8 @@ void ObjectSettings::update_config_values(ModelConfig* config)
     }
 
     main_config.apply(config->get(), true);
-    printer_technology == ptFFF  ?  config_manipulation.update_print_fff_config(&main_config) :
-                                    config_manipulation.update_print_sla_config(&main_config) ;
+    if (printer_technology == ptFFF) 
+        config_manipulation.update_print_fff_config(&main_config);
 
     printer_technology == ptFFF  ?  config_manipulation.toggle_print_fff_options(&main_config) :
                                     config_manipulation.toggle_print_sla_options(&main_config) ;

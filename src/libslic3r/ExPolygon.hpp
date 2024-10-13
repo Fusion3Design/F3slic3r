@@ -1,3 +1,14 @@
+///|/ Copyright (c) Prusa Research 2016 - 2023 Pavel Mikuš @Godrak, Vojtěch Bubník @bubnikv, Lukáš Matěna @lukasmatena, Enrico Turri @enricoturri1966, Filip Sykala @Jony01, Lukáš Hejl @hejllukas, Tomáš Mészáros @tamasmeszaros
+///|/ Copyright (c) 2016 Sakari Kapanen @Flannelhead
+///|/ Copyright (c) Slic3r 2013 - 2016 Alessandro Ranellucci @alranel
+///|/
+///|/ ported from lib/Slic3r/ExPolygon.pm:
+///|/ Copyright (c) Prusa Research 2017 - 2022 Vojtěch Bubník @bubnikv
+///|/ Copyright (c) Slic3r 2011 - 2014 Alessandro Ranellucci @alranel
+///|/ Copyright (c) 2012 Mark Hindess
+///|/
+///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
+///|/
 #ifndef slic3r_ExPolygon_hpp_
 #define slic3r_ExPolygon_hpp_
 
@@ -372,6 +383,11 @@ inline Points to_points(const ExPolygon &expoly)
     return out;
 }
 
+inline void translate(ExPolygons &expolys, const Point &p) {
+    for (ExPolygon &expoly : expolys)
+        expoly.translate(p);
+}
+
 inline void polygons_append(Polygons &dst, const ExPolygon &src) 
 { 
     dst.reserve(dst.size() + src.holes.size() + 1);
@@ -430,7 +446,7 @@ inline void expolygons_rotate(ExPolygons &expolys, double angle)
         expoly.rotate(angle);
 }
 
-inline bool expolygons_contain(ExPolygons &expolys, const Point &pt, bool border_result = true)
+inline bool expolygons_contain(const ExPolygons &expolys, const Point &pt, bool border_result = true)
 {
     for (const ExPolygon &expoly : expolys)
         if (expoly.contains(pt, border_result))
@@ -460,6 +476,9 @@ std::vector<BoundingBox> get_extents_vector(const ExPolygons &polygons);
 // Test for duplicate points. The points are copied, sorted and checked for duplicates globally.
 bool has_duplicate_points(const ExPolygon &expoly);
 bool has_duplicate_points(const ExPolygons &expolys);
+
+// Return True when erase some otherwise False.
+bool remove_same_neighbor(ExPolygons &expolys);
 
 bool remove_sticks(ExPolygon &poly);
 void keep_largest_contour_only(ExPolygons &polygons);
