@@ -28,6 +28,7 @@
 #include "Format/3mf.hpp"
 #include "Format/STEP.hpp"
 #include "Format/SVG.hpp"
+#include "Format/PrintRequest.hpp"
 
 #include <float.h>
 
@@ -41,7 +42,7 @@
 
 #include "SVG.hpp"
 #include <Eigen/Dense>
-#include "GCode/GCodeWriter.hpp"
+#include "libslic3r/GCode/GCodeWriter.hpp"
 
 namespace Slic3r {
 
@@ -140,6 +141,8 @@ Model Model::read_from_file(const std::string& input_file, DynamicPrintConfig* c
         result = load_3mf(input_file.c_str(), *config, *config_substitutions, &model, false);
     else if (boost::algorithm::iends_with(input_file, ".svg"))
         result = load_svg(input_file, model);
+    else if (boost::ends_with(input_file, ".printRequest"))
+        result = load_printRequest(input_file.c_str(), &model);
     else
         throw Slic3r::RuntimeError("Unknown file format. Input file must have .stl, .obj, .step/.stp, .svg, .amf(.xml) or extension .3mf(.zip).");
 
@@ -148,9 +151,10 @@ Model Model::read_from_file(const std::string& input_file, DynamicPrintConfig* c
 
     if (model.objects.empty())
         throw Slic3r::RuntimeError("The supplied file couldn't be read because it's empty");
-    
-    for (ModelObject *o : model.objects)
-        o->input_file = input_file;
+   
+    if (!boost::ends_with(input_file, ".printRequest"))
+        for (ModelObject *o : model.objects)
+            o->input_file = input_file;
     
     if (options & LoadAttribute::AddDefaultInstances)
         model.add_default_instances();
@@ -1998,6 +2002,22 @@ void ModelVolume::convert_from_meters()
     this->source.is_converted_from_meters = true;
 }
 
+std::vector<size_t> ModelVolume::get_extruders_from_multi_material_painting() const {
+    if (!this->is_mm_painted())
+        return {};
+
+    assert(static_cast<size_t>(TriangleStateType::Extruder1) - 1 == 0);
+    const TriangleSelector::TriangleSplittingData &data = this->mm_segmentation_facets.get_data();
+
+    std::vector<size_t> extruders;
+    for (size_t state_idx = static_cast<size_t>(TriangleStateType::Extruder1); state_idx < data.used_states.size(); ++state_idx) {
+        if (data.used_states[state_idx])
+            extruders.emplace_back(state_idx - 1);
+    }
+
+    return extruders;
+}
+
 void ModelInstance::transform_mesh(TriangleMesh* mesh, bool dont_translate) const
 {
     mesh->transform(dont_translate ? get_matrix_no_offset() : get_matrix());
@@ -2021,7 +2041,7 @@ void ModelInstance::transform_polygon(Polygon* polygon) const
     polygon->scale(get_scaling_factor(X), get_scaling_factor(Y)); // scale around polygon origin
 }
 
-indexed_triangle_set FacetsAnnotation::get_facets(const ModelVolume& mv, EnforcerBlockerType type) const
+indexed_triangle_set FacetsAnnotation::get_facets(const ModelVolume& mv, TriangleStateType type) const
 {
     TriangleSelector selector(mv.mesh());
     // Reset of TriangleSelector is done inside TriangleSelector's constructor, so we don't need it to perform it again in deserialize().
@@ -2029,7 +2049,7 @@ indexed_triangle_set FacetsAnnotation::get_facets(const ModelVolume& mv, Enforce
     return selector.get_facets(type);
 }
 
-indexed_triangle_set FacetsAnnotation::get_facets_strict(const ModelVolume& mv, EnforcerBlockerType type) const
+indexed_triangle_set FacetsAnnotation::get_facets_strict(const ModelVolume& mv, TriangleStateType type) const
 {
     TriangleSelector selector(mv.mesh());
     // Reset of TriangleSelector is done inside TriangleSelector's constructor, so we don't need it to perform it again in deserialize().
@@ -2037,14 +2057,14 @@ indexed_triangle_set FacetsAnnotation::get_facets_strict(const ModelVolume& mv, 
     return selector.get_facets_strict(type);
 }
 
-bool FacetsAnnotation::has_facets(const ModelVolume& mv, EnforcerBlockerType type) const
+bool FacetsAnnotation::has_facets(const ModelVolume& mv, TriangleStateType type) const
 {
     return TriangleSelector::has_facets(m_data, type);
 }
 
 bool FacetsAnnotation::set(const TriangleSelector& selector)
 {
-    std::pair<std::vector<std::pair<int, int>>, std::vector<bool>> sel_map = selector.serialize();
+    TriangleSelector::TriangleSplittingData sel_map = selector.serialize();
     if (sel_map != m_data) {
         m_data = std::move(sel_map);
         this->touch();
@@ -2055,8 +2075,8 @@ bool FacetsAnnotation::set(const TriangleSelector& selector)
 
 void FacetsAnnotation::reset()
 {
-    m_data.first.clear();
-    m_data.second.clear();
+    m_data.triangles_to_split.clear();
+    m_data.bitstream.clear();
     this->touch();
 }
 
@@ -2067,15 +2087,15 @@ std::string FacetsAnnotation::get_triangle_as_string(int triangle_idx) const
 {
     std::string out;
 
-    auto triangle_it = std::lower_bound(m_data.first.begin(), m_data.first.end(), triangle_idx, [](const std::pair<int, int> &l, const int r) { return l.first < r; });
-    if (triangle_it != m_data.first.end() && triangle_it->first == triangle_idx) {
-        int offset = triangle_it->second;
-        int end    = ++ triangle_it == m_data.first.end() ? int(m_data.second.size()) : triangle_it->second;
+    auto triangle_it = std::lower_bound(m_data.triangles_to_split.begin(), m_data.triangles_to_split.end(), triangle_idx, [](const TriangleSelector::TriangleBitStreamMapping &l, const int r) { return l.triangle_idx < r; });
+    if (triangle_it != m_data.triangles_to_split.end() && triangle_it->triangle_idx == triangle_idx) {
+        int offset = triangle_it->bitstream_start_idx;
+        int end    = ++ triangle_it == m_data.triangles_to_split.end() ? int(m_data.bitstream.size()) : triangle_it->bitstream_start_idx;
         while (offset < end) {
             int next_code = 0;
             for (int i=3; i>=0; --i) {
                 next_code = next_code << 1;
-                next_code |= int(m_data.second[offset + i]);
+                next_code |= int(m_data.bitstream[offset + i]);
             }
             offset += 4;
 
@@ -2092,9 +2112,10 @@ std::string FacetsAnnotation::get_triangle_as_string(int triangle_idx) const
 void FacetsAnnotation::set_triangle_from_string(int triangle_id, const std::string& str)
 {
     assert(! str.empty());
-    assert(m_data.first.empty() || m_data.first.back().first < triangle_id);
-    m_data.first.emplace_back(triangle_id, int(m_data.second.size()));
+    assert(m_data.triangles_to_split.empty() || m_data.triangles_to_split.back().triangle_idx < triangle_id);
+    m_data.triangles_to_split.emplace_back(triangle_id, int(m_data.bitstream.size()));
 
+    const size_t bitstream_start_idx = m_data.bitstream.size();
     for (auto it = str.crbegin(); it != str.crend(); ++it) {
         const char ch = *it;
         int dec = 0;
@@ -2106,9 +2127,11 @@ void FacetsAnnotation::set_triangle_from_string(int triangle_id, const std::stri
             assert(false);
 
         // Convert to binary and append into code.
-        for (int i=0; i<4; ++i)
-            m_data.second.insert(m_data.second.end(), bool(dec & (1 << i)));
+        for (int i = 0; i < 4; ++i)
+            m_data.bitstream.insert(m_data.bitstream.end(), bool(dec & (1 << i)));
     }
+
+    m_data.update_used_states(bitstream_start_idx);
 }
 
 // Test whether the two models contain the same number of ModelObjects with the same set of IDs

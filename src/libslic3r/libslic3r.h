@@ -15,9 +15,14 @@
 #define _libslic3r_h_
 
 #include "libslic3r_version.h"
+
+// Profiles for the alpha are stored into the PrusaSlicer-alpha directory to not mix with the current release.
+#define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY
+//#define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY "-alpha"
+//#define SLIC3R_APP_FULL_NAME SLIC3R_APP_KEY "-beta"
+
 #define GCODEVIEWER_APP_NAME "F3Slic3r G-code Viewer"
 #define GCODEVIEWER_APP_KEY  "F3Slic3rGcodeViewer"
-
 // this needs to be included early for MSVC (listing it in Build.PL is not enough)
 #include <memory>
 #include <array>

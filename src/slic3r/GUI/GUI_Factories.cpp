@@ -27,6 +27,33 @@
 #include "slic3r/Utils/MacDarkMode.hpp"
 #endif
 
+// ----------------------------------------------------------------------------
+// MenuWithSeparators
+// ----------------------------------------------------------------------------
+
+void MenuWithSeparators::DestroySeparators()
+{
+    if (m_separator_frst) {
+        Destroy(m_separator_frst);
+        m_separator_frst = nullptr;
+    }
+
+    if (m_separator_scnd) {
+        Destroy(m_separator_scnd);
+        m_separator_scnd = nullptr;
+    }
+}
+
+void MenuWithSeparators::SetFirstSeparator()
+{
+    m_separator_frst = this->AppendSeparator();
+}
+
+void MenuWithSeparators::SetSecondSeparator()
+{
+    m_separator_scnd = this->AppendSeparator();
+}
+
 namespace Slic3r
 {
 namespace GUI
@@ -1451,18 +1478,24 @@ static void update_menu_item_def_colors(T* item)
 
 void MenuFactory::sys_color_changed()
 {
-    for (MenuWithSeparators* menu : { &m_object_menu, &m_sla_object_menu, &m_part_menu, &m_default_menu }) {
-        sys_color_changed_menu(dynamic_cast<wxMenu*>(menu));// msw_rescale_menu updates just icons, so use it
+    for (MenuWithSeparators* menu : { &m_object_menu, &m_sla_object_menu, &m_part_menu, &m_default_menu })
+        sys_color_changed(dynamic_cast<wxMenu*>(menu));
+}
+
+void MenuFactory::sys_color_changed(wxMenu* menu)
+{
+    sys_color_changed_menu(menu);// msw_rescale_menu updates just icons, so use it
 #ifdef _WIN32 
-        // but under MSW we have to update item's bachground color
-        for (wxMenuItem* item : menu->GetMenuItems())
-            update_menu_item_def_colors(item);
+    // but under MSW we have to update item's bachground color
+    for (wxMenuItem* item : menu->GetMenuItems())
+        update_menu_item_def_colors(item);
 #endif
-    }
 }
 
 void MenuFactory::sys_color_changed(wxMenuBar* menubar)
 {
+    if (!menubar)
+        return;
     for (size_t id = 0; id < menubar->GetMenuCount(); id++) {
         wxMenu* menu = menubar->GetMenu(id);
         sys_color_changed_menu(menu);

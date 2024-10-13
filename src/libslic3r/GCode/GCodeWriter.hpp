@@ -9,15 +9,21 @@
 #ifndef slic3r_GCodeWriter_hpp_
 #define slic3r_GCodeWriter_hpp_
 
-#include "../libslic3r.h"
-#include "../Extruder.hpp"
-#include "../Point.hpp"
-#include "../PrintConfig.hpp"
-#include "CoolingBuffer.hpp"
-
+#include <string.h>
 #include <string>
 #include <string_view>
 #include <charconv>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <vector>
+#include <cstring>
+
+#include "libslic3r/libslic3r.h"
+#include "libslic3r/Extruder.hpp"
+#include "libslic3r/Point.hpp"
+#include "libslic3r/PrintConfig.hpp"
+#include "CoolingBuffer.hpp"
 
 namespace Slic3r {
 
@@ -52,6 +58,7 @@ public:
     std::string postamble() const;
     std::string set_temperature(unsigned int temperature, bool wait = false, int tool = -1) const;
     std::string set_bed_temperature(unsigned int temperature, bool wait = false);
+    std::string set_chamber_temperature(unsigned int temperature, bool wait, bool accurate) const;
     std::string set_print_acceleration(unsigned int acceleration)   { return set_acceleration_internal(Acceleration::Print, acceleration); }
     std::string set_travel_acceleration(unsigned int acceleration)  { return set_acceleration_internal(Acceleration::Travel, acceleration); }
     std::string reset_e(bool force = false);

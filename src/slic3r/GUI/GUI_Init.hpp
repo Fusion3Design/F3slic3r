@@ -33,11 +33,12 @@ struct GUI_InitParams
     bool                        start_downloader;
     bool                        delete_after_load;
     std::string                 download_url;
-#if ENABLE_GL_CORE_PROFILE
+#if !SLIC3R_OPENGL_ES
 		std::pair<int, int>         opengl_version;
 		bool                        opengl_debug;
 		bool                        opengl_compatibiity_profile;
-#endif // ENABLE_GL_CORE_PROFILE
+#endif // !SLIC3R_OPENGL_ES
+		bool                        opengl_aa;
 };
 
 int GUI_Run(GUI_InitParams &params);
