@@ -9,8 +9,8 @@ using namespace Slic3r::GUI;
 
 TopBarMenus::TopBarMenus()
 {
-    CreateAccountMenu();
-    UpdateAccountMenu();
+    //CreateAccountMenu();
+    //UpdateAccountMenu();
 
     BindEvtClose();
 }

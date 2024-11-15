@@ -2593,7 +2593,7 @@ void ConfigWizard::priv::load_pages()
     index->clear();
 
     index->add_page(page_welcome);
-    index->add_page(page_login);
+    //index->add_page(page_login);
     index->add_page(page_update_manager);
 
     if (is_config_from_archive) {
@@ -2607,7 +2607,7 @@ void ConfigWizard::priv::load_pages()
             index->add_page(page);
 
         if (!only_sla_mode) {
-
+            /*
             for (const auto& repos : repositories) {
                 if (!repos.vendors_page)
                     continue;
@@ -2630,16 +2630,16 @@ void ConfigWizard::priv::load_pages()
                         if (page && page->install)
                             index->add_page(page);
                 }
-            }
+            }*/
 
-            index->add_page(page_custom);
+          /*  index->add_page(page_custom);
             if (page_custom->custom_wanted()) {
                 index->add_page(page_firmware);
                 index->add_page(page_bed);
                 index->add_page(page_bvolume);
                 index->add_page(page_diams);
                 index->add_page(page_temps);
-            }
+            }*/
 
             // Filaments & Materials
             if (any_fff_selected) { index->add_page(page_filaments); }
@@ -2651,8 +2651,8 @@ void ConfigWizard::priv::load_pages()
             }
         }
 
-        if (any_sla_selected) 
-            index->add_page(page_sla_materials);
+        //if (any_sla_selected) 
+         //   index->add_page(page_sla_materials);
 
         index->add_page(page_update);
         index->add_page(page_downloader);

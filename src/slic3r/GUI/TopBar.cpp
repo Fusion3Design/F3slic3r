@@ -209,7 +209,7 @@ void TopBarItemsCtrl::ButtonWithPopup::SetLabel(const wxString& label)
 }
 
 void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
-{
+{/*
     TopBarMenus::UserAccountInfo  user_account = m_menus->get_user_account_info();
     const wxString user_name = user_account.is_logged ? from_u8(user_account.user_name) : _L("Log in");
     m_account_btn->SetToolTip(user_name);
@@ -227,7 +227,7 @@ void TopBarItemsCtrl::UpdateAccountButton(bool avatar/* = false*/)
     }
 
     m_account_btn->SetLabel(m_collapsed_btns ? "" : user_name);
-    this->Layout();
+    this->Layout();*/
 }
 
 void TopBarItemsCtrl::UnselectPopupButtons()
@@ -235,7 +235,7 @@ void TopBarItemsCtrl::UnselectPopupButtons()
     if (m_menu_btn)
         m_menu_btn  ->set_selected(false);
     m_workspace_btn ->set_selected(false);
-    m_account_btn   ->set_selected(false);
+    //m_account_btn   ->set_selected(false);
 }
 
 void TopBarItemsCtrl::CreateSearch()
@@ -301,7 +301,7 @@ void TopBarItemsCtrl::CreateSearch()
 
 void TopBarItemsCtrl::UpdateSearchSizeAndPosition()
 {
-    if (!m_workspace_btn || !m_account_btn)
+    if (!m_workspace_btn )//|| !m_account_btn)
         return;
 
     int em = em_unit(this);
@@ -448,7 +448,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
         m_workspace_btn->set_selected(true);
         m_menus->Popup(this, &m_menus->workspaces, m_workspace_btn->get_popup_pos());
     });
-
+    /*
     m_account_btn = new ButtonWithPopup(this, _L("Log in"), "user", login_icon_sz, wxSize(180, -1));
     right_sizer->Add(m_account_btn, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxRIGHT, m_btn_margin);
     
@@ -456,7 +456,7 @@ TopBarItemsCtrl::TopBarItemsCtrl(wxWindow *parent, TopBarMenus* menus/* = nullpt
         m_account_btn->set_selected(true);
         m_menus->Popup(this, &m_menus->account, m_account_btn->get_popup_pos());
     });
-
+    */
     m_sizer->Add(right_sizer, 0, wxALIGN_CENTER_VERTICAL);
 
     m_sizer->SetItemMinSize(1, wxSize(42 * wxGetApp().em_unit(), -1));
@@ -475,7 +475,7 @@ void TopBarItemsCtrl::UpdateMode()
 
 void TopBarItemsCtrl::ShowUserAccount(bool show)
 {
-    m_account_btn->Show(show);
+    //m_account_btn->Show(show);
     this->Layout();
 }
 
@@ -512,7 +512,7 @@ void TopBarItemsCtrl::OnColorsChanged()
         m_settings_btn->sys_color_changed();
 
     m_workspace_btn->sys_color_changed();
-    m_account_btn->sys_color_changed();
+    //m_account_btn->sys_color_changed();
     UpdateAccountButton(true);
 
     m_search->SysColorsChanged();
@@ -606,7 +606,7 @@ void TopBarItemsCtrl::ShowFull()
         m_menu_btn->Show();
     if (m_settings_btn)
         m_settings_btn->Show();
-    m_account_btn->Show();
+   // m_account_btn->Show();
     update_btns_width();
     UpdateSearchSizeAndPosition();
 }
@@ -617,7 +617,7 @@ void TopBarItemsCtrl::ShowJustMode()
         m_menu_btn->Hide();
     if (m_settings_btn)
         m_settings_btn->Hide();
-    m_account_btn->Hide();
+    //m_account_btn->Hide();
     update_btns_width();
     UpdateSearchSizeAndPosition();
 }

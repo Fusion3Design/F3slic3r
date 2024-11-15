@@ -111,7 +111,7 @@ private:
     wxFlexGridSizer*                m_sizer;
     ButtonWithPopup*                m_menu_btn      {nullptr};
     ButtonWithPopup*                m_workspace_btn {nullptr};
-    ButtonWithPopup*                m_account_btn   {nullptr};
+    //ButtonWithPopup*                m_account_btn   {nullptr};
     Button*                         m_settings_btn  {nullptr};
     std::vector<Button*>            m_pageButtons;
     int                             m_selection {-1};
