@@ -3278,9 +3278,9 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
     // in UI thread, so displaying a nice modal dialog and letting the CW start in a worker thread
     // is not an option. Let's at least show a modeless dialog before the UI thread freezes.
     // TRN: Text showing while the ConfigWizard is loading, so the user knows something is happening.
-    auto cw_loading_dlg =  new ConfigWizardLoadingDialog(mainframe, _L("Loading Configuration Wizard..."));
-    cw_loading_dlg->CenterOnParent();
-    cw_loading_dlg->Show();
+   // auto cw_loading_dlg =  new ConfigWizardLoadingDialog(mainframe, _L("Loading Configuration Wizard..."));
+    //cw_loading_dlg->CenterOnParent();
+    //cw_loading_dlg->Show();
     wxYield();
 
     // We have to update repos
@@ -3296,7 +3296,7 @@ bool GUI_App::run_wizard(ConfigWizard::RunReason reason, ConfigWizard::StartPage
     }
 
     m_config_wizard = new ConfigWizard(mainframe);
-    cw_loading_dlg->Close();
+   // cw_loading_dlg->Close();
 
     const bool res = m_config_wizard->run(reason, start_page);
 
@@ -3331,7 +3331,7 @@ void GUI_App::update_wizard_login_page()
     if (!m_config_wizard) {
         return;
     }
-    m_config_wizard->update_login();
+   // m_config_wizard->update_login();
 }
 
 void GUI_App::show_desktop_integration_dialog()
@@ -3355,7 +3355,7 @@ void GUI_App::show_downloader_registration_dialog()
         , true, wxYES_NO);
     if (msg.ShowModal() == wxID_YES) {
         auto downloader_worker = new DownloaderUtils::Worker(nullptr);
-        downloader_worker->perform_download_register(app_config->get("url_downloader_dest"));
+       // downloader_worker->perform_download_register(app_config->get("url_downloader_dest"));
 #if defined(__linux__) && defined(SLIC3R_DESKTOP_INTEGRATION) 
         if (DownloaderUtils::Worker::perform_registration_linux)
             DesktopIntegrationDialog::perform_downloader_desktop_integration();

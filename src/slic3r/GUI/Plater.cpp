@@ -891,7 +891,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                 login_dialog = nullptr;
             }
         });
-
+        /*
         auto open_external_login = [this](wxCommandEvent& evt){
              DownloaderUtils::Worker::perform_url_register();
 #if defined(__linux__)
@@ -912,10 +912,10 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             }
             wxString url = user_account->get_login_redirect_url(service);
             wxGetApp().open_login_browser_with_dialog(into_u8(url));
-        };
+        };*/
 
-        this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN_WIZARD, open_external_login);
-        this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN, open_external_login);
+       // this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN_WIZARD, open_external_login);
+       // this->q->Bind(EVT_OPEN_EXTERNAL_LOGIN, open_external_login);
     
         this->q->Bind(EVT_UA_LOGGEDOUT, [this](UserAccountSuccessEvent& evt) {
             user_account->clear();
