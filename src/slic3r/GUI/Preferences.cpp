@@ -139,7 +139,7 @@ void PreferencesDialog::show(const std::string& highlight_opt_key /*= std::strin
 			m_optgroup_other->set_value(opt_key, app_config->get_bool(opt_key));
 		// by default "Log in" button is visible
 		if (!app_config->has("show_login_button"))
-			m_optgroup_other->set_value("show_login_button", true);
+			m_optgroup_other->set_value("show_login_button", false);
 
 		for (const std::string& opt_key : { "default_action_on_close_application"
 										   ,"default_action_on_new_project"
