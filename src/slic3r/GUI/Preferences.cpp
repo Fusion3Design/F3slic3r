@@ -633,10 +633,12 @@ void PreferencesDialog::build()
 			//  "If disabled, the descriptions of configuration parameters in settings tabs will work as hyperlinks."),
 			app_config->get_bool("suppress_hyperlinks"));
 
+		/*
 		append_bool_option(m_optgroup_other, "show_login_button",
 			L("Show \"Log in\" button in application top bar"),
 			L("If enabled, PrusaSlicer will show up \"Log in\" button in application top bar."),
 			app_config->get_bool("show_login_button"));
+		*/
 		
 		append_bool_option(m_optgroup_other, "downloader_url_registered",
 			L("Allow downloads from Printables.com"),
