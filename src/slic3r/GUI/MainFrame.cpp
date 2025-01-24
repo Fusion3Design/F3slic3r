@@ -1264,7 +1264,7 @@ static wxMenu* generate_help_menu()
         [](wxCommandEvent&) { wxGetApp().open_web_page_localized("https://www.prusa3d.com/downloads"); });
     */
     append_menu_item(helpMenu, wxID_ANY, _L("Software &Releases"), _L("Open the software releases page in your browser"),
-        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog("https://github.com/prusa3d/PrusaSlicer/releases", nullptr, false); });
+        [](wxCommandEvent&) { wxGetApp().open_browser_with_warning_dialog("https://github.com/machineworksllc/F3slic3r/releases", nullptr, false); });
 //#        my $versioncheck = $self->_append_menu_item($helpMenu, "Check for &Updates...", "Check for new Slic3r versions", sub{
 //#            wxTheApp->check_version(1);
 //#        });
