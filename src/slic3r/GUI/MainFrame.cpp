@@ -579,11 +579,12 @@ void MainFrame::update_title()
     std::string build_id = SLIC3R_BUILD_ID;
     if (! wxGetApp().is_editor())
         boost::replace_first(build_id, SLIC3R_APP_NAME, GCODEVIEWER_APP_NAME);
+    /*
     size_t 		idx_plus = build_id.find('+');
     if (idx_plus != build_id.npos) {
     	// Parse what is behind the '+'. If there is a number, then it is a build number after the label, and full build ID is shown.
-    	int commit_after_label;
-    	if (! boost::starts_with(build_id.data() + idx_plus + 1, "UNKNOWN") && 
+        int commit_after_label;
+        if (! boost::starts_with(build_id.data() + idx_plus + 1, "UNKNOWN") && 
             (build_id.at(idx_plus + 1) == '-' || sscanf(build_id.data() + idx_plus + 1, "%d-", &commit_after_label) == 0)) {
     		// It is a release build.
     		build_id.erase(build_id.begin() + idx_plus, build_id.end());    		
@@ -593,6 +594,7 @@ void MainFrame::update_title()
 #endif
     	}
     }
+    */
 
     title += wxString(build_id);
     if (wxGetApp().is_editor())
