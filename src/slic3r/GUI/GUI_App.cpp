@@ -3512,7 +3512,7 @@ bool GUI_App::config_wizard_startup()
     } 
 #ifndef __APPLE__    
     else if (is_editor() && m_last_app_conf_lower_version && app_config->get_bool("downloader_url_registered")) {
-        show_downloader_registration_dialog();
+        // show_downloader_registration_dialog();
         return true;
     }
 #endif
