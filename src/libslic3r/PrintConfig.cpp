@@ -1125,7 +1125,7 @@ void PrintConfigDef::init_fff_params()
     def->label = L("Color");
     def->tooltip = L("This is only used in the Slic3r interface as a visual help.");
     def->gui_type = ConfigOptionDef::GUIType::color;
-    def->set_default_value(new ConfigOptionStrings { "#29B2B2" });
+    def->set_default_value(new ConfigOptionStrings { "#FF8000" });
 
     def = this->add("filament_notes", coStrings);
     def->label = L("Filament notes");
@@ -4111,7 +4111,7 @@ void PrintConfigDef::init_sla_params()
     def->label = L("Color");
     def->tooltip = L("This is only used in the Slic3r interface as a visual help.");
     def->gui_type = ConfigOptionDef::GUIType::color;
-    def->set_default_value(new ConfigOptionString("#29B2B2"));
+    def->set_default_value(new ConfigOptionString("#FF8000"));
 
     def = this->add("material_type", coString);
     def->label = L("SLA material type");
