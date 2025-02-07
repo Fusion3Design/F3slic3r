@@ -90,7 +90,7 @@ void AppConfig::set_defaults()
             set("drop_project_action", "1");
 
         if (get("preset_update").empty())
-            set("preset_update", "1");
+            set("preset_update", "0");
 
         if (get("export_sources_full_pathnames").empty())
             set("export_sources_full_pathnames", "0");
