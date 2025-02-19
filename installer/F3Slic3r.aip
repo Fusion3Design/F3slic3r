@@ -38,17 +38,20 @@
     <ROW Directory="ES_Dir" Directory_Parent="shaders_Dir" DefaultDir="ES"/>
     <ROW Directory="F3Slic3r_1_Dir" Directory_Parent="profiles_Dir" DefaultDir="F3Slic3r"/>
     <ROW Directory="F3Slic3r_Dir" Directory_Parent="AppDataFolder" DefaultDir="F3Slic3r"/>
+    <ROW Directory="PrusaResearchSLA_Dir" Directory_Parent="profiles_Dir" DefaultDir="PRUSAR~2|PrusaResearchSLA"/>
     <ROW Directory="PrusaResearch_Dir" Directory_Parent="profiles_Dir" DefaultDir="PRUSAR~1|PrusaResearch"/>
     <ROW Directory="SHORTCUTDIR" Directory_Parent="TARGETDIR" DefaultDir="SHORTC~1|SHORTCUTDIR" IsPseudoRoot="1"/>
     <ROW Directory="TARGETDIR" DefaultDir="SourceDir"/>
     <ROW Directory="__1_Dir" Directory_Parent="shaders_Dir" DefaultDir="140"/>
     <ROW Directory="__Dir" Directory_Parent="shaders_Dir" DefaultDir="110"/>
+    <ROW Directory="be_Dir" Directory_Parent="localization_Dir" DefaultDir="be"/>
     <ROW Directory="ca_Dir" Directory_Parent="localization_Dir" DefaultDir="ca"/>
     <ROW Directory="cs_Dir" Directory_Parent="localization_Dir" DefaultDir="cs"/>
     <ROW Directory="data_Dir" Directory_Parent="resources_Dir" DefaultDir="data"/>
     <ROW Directory="de_Dir" Directory_Parent="localization_Dir" DefaultDir="de"/>
     <ROW Directory="en_Dir" Directory_Parent="localization_Dir" DefaultDir="en"/>
     <ROW Directory="es_Dir" Directory_Parent="localization_Dir" DefaultDir="es"/>
+    <ROW Directory="fi_Dir" Directory_Parent="localization_Dir" DefaultDir="fi"/>
     <ROW Directory="fonts_Dir" Directory_Parent="resources_Dir" DefaultDir="fonts"/>
     <ROW Directory="fr_Dir" Directory_Parent="localization_Dir" DefaultDir="fr"/>
     <ROW Directory="hu_Dir" Directory_Parent="localization_Dir" DefaultDir="hu"/>
@@ -67,9 +70,11 @@
     <ROW Directory="ru_Dir" Directory_Parent="localization_Dir" DefaultDir="ru"/>
     <ROW Directory="shaders_Dir" Directory_Parent="resources_Dir" DefaultDir="shaders"/>
     <ROW Directory="shapes_Dir" Directory_Parent="resources_Dir" DefaultDir="shapes"/>
+    <ROW Directory="sl_Dir" Directory_Parent="localization_Dir" DefaultDir="sl"/>
     <ROW Directory="tr_Dir" Directory_Parent="localization_Dir" DefaultDir="tr"/>
     <ROW Directory="udev_Dir" Directory_Parent="resources_Dir" DefaultDir="udev"/>
     <ROW Directory="uk_Dir" Directory_Parent="localization_Dir" DefaultDir="uk"/>
+    <ROW Directory="web_Dir" Directory_Parent="resources_Dir" DefaultDir="web"/>
     <ROW Directory="wx_locale_Dir" Directory_Parent="localization_Dir" DefaultDir="WX_LOC~1|wx_locale"/>
     <ROW Directory="zh_CN_Dir" Directory_Parent="localization_Dir" DefaultDir="zh_CN"/>
     <ROW Directory="zh_TW_Dir" Directory_Parent="localization_Dir" DefaultDir="zh_TW"/>
@@ -96,7 +101,10 @@
     <ROW Component="PrusaSlicer.mo_16" ComponentId="{62076086-A86D-4714-BB10-28605CB2112C}" Directory_="uk_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_16" Type="0"/>
     <ROW Component="PrusaSlicer.mo_17" ComponentId="{053DA28D-C834-4C4A-B714-BAADD19EB372}" Directory_="zh_CN_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_17" Type="0"/>
     <ROW Component="PrusaSlicer.mo_18" ComponentId="{B5A77A94-AAAE-479A-AA4F-78769F877269}" Directory_="zh_TW_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_18" Type="0"/>
+    <ROW Component="PrusaSlicer.mo_19" ComponentId="{0C2E43CB-CBC7-4DAF-9996-A374286D1AE0}" Directory_="be_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_19" Type="0"/>
     <ROW Component="PrusaSlicer.mo_2" ComponentId="{E52675E6-09FA-4D7F-B13F-65466B9C1D3E}" Directory_="de_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_2" Type="0"/>
+    <ROW Component="PrusaSlicer.mo_20" ComponentId="{CFDA3898-F1D6-4CC7-A0C4-742B3A7ED3D0}" Directory_="fi_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_20" Type="0"/>
+    <ROW Component="PrusaSlicer.mo_21" ComponentId="{AA3D24BF-7310-424A-83C4-CEF0EB05895E}" Directory_="sl_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_21" Type="0"/>
     <ROW Component="PrusaSlicer.mo_3" ComponentId="{3D1E81A8-A56B-423A-B3BC-6B030393825A}" Directory_="en_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_3" Type="0"/>
     <ROW Component="PrusaSlicer.mo_4" ComponentId="{95DA535A-01A8-4782-9030-9BA6230CD165}" Directory_="es_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_4" Type="0"/>
     <ROW Component="PrusaSlicer.mo_5" ComponentId="{E0760E7C-69FF-4F04-9BF0-5634CE400197}" Directory_="fr_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_5" Type="0"/>
@@ -111,6 +119,7 @@
     <ROW Component="background.fs_1" ComponentId="{0790B6C3-5FD2-4065-B569-32D5E1F1D912}" Directory_="__1_Dir" Attributes="0" KeyPath="background.fs_1" Type="0"/>
     <ROW Component="background.fs_2" ComponentId="{ECD6BE3C-FA12-4C89-938E-A2F9C2778F94}" Directory_="ES_Dir" Attributes="0" KeyPath="background.fs_2" Type="0"/>
     <ROW Component="box.png" ComponentId="{51393945-0347-48E9-B870-132C7C7851A5}" Directory_="shapes_Dir" Attributes="0" KeyPath="box.png" Type="0"/>
+    <ROW Component="connection_failed.html" ComponentId="{A2D4FBCA-6CC1-4C24-B846-DB917C43C9FE}" Directory_="web_Dir" Attributes="0" KeyPath="connection_failed.html" Type="0"/>
     <ROW Component="dconnexion.rules" ComponentId="{C3B3D8BD-A558-4512-8237-782BF0C99B9C}" Directory_="udev_Dir" Attributes="0" KeyPath="dconnexion.rules" Type="0"/>
     <ROW Component="embossed_text.obj" ComponentId="{7BF59D7C-446B-41F2-8417-A449E1672741}" Directory_="data_Dir" Attributes="0" KeyPath="embossed_text.obj" Type="0"/>
     <ROW Component="libgmp10.dll" ComponentId="{7B646215-CF29-4B35-9FE5-D6EBB5738648}" Directory_="APPDIR" Attributes="256" KeyPath="libgmp10.dll"/>
@@ -122,6 +131,7 @@
     <ROW Component="prusagcodeviewer.exe" ComponentId="{0E8F92B7-7A0E-47C7-A532-1B9A63913913}" Directory_="APPDIR" Attributes="0" KeyPath="prusagcodeviewer.exe"/>
     <ROW Component="prusaslicer.exe" ComponentId="{4FDCABFA-93DA-42FC-83B5-3FAD34828BCC}" Directory_="APPDIR" Attributes="0" KeyPath="prusaslicer.exe"/>
     <ROW Component="prusaslicerconsole.exe" ComponentId="{3239CE8B-6E87-4359-A536-83D1BF5910FB}" Directory_="APPDIR" Attributes="256" KeyPath="prusaslicerconsole.exe"/>
+    <ROW Component="sl1.svg" ComponentId="{70288988-31D4-4C78-9C2D-C57402D5CDDD}" Directory_="PrusaResearchSLA_Dir" Attributes="0" KeyPath="sl1.svg" Type="0"/>
     <ROW Component="updater.exe" ComponentId="{D6EEBA84-30A7-4C85-8C40-149FED1297A1}" Directory_="APPDIR" Attributes="0" KeyPath="updater.exe"/>
     <ROW Component="vcruntime140.dll" ComponentId="{A7696C76-D45F-4CCD-8017-DEBD1EC47CEB}" Directory_="APPDIR" Attributes="256" KeyPath="vcruntime140.dll"/>
     <ROW Component="vcruntime140_1.dll" ComponentId="{FB850B5B-56E7-411C-AD76-74BCA60087B6}" Directory_="APPDIR" Attributes="256" KeyPath="vcruntime140_1.dll"/>
@@ -623,6 +633,137 @@
     <ROW File="F3Slic3r.ini" Component_="Anker.idx" FileName="F3Slic3r.ini" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r.ini" SelfReg="false"/>
     <ROW File="F3Edge_thumbnail.png" Component_="F3Edge_thumbnail.png" FileName="F3EDGE~1.PNG|F3 Edge_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 Edge_thumbnail.png" SelfReg="false"/>
     <ROW File="f3slic3r_r4.STL" Component_="F3Edge_thumbnail.png" FileName="F3SLIC~1.STL|f3slic3r_r4.STL" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\f3slic3r_r4.STL" SelfReg="false"/>
+    <ROW File="align_horizontal_center.svg" Component_="add.svg" FileName="ALIGN_~1.SVG|align_horizontal_center.svg" Attributes="0" SourcePath="..\resources\icons\align_horizontal_center.svg" SelfReg="false"/>
+    <ROW File="align_horizontal_left.svg" Component_="add.svg" FileName="ALIGN_~2.SVG|align_horizontal_left.svg" Attributes="0" SourcePath="..\resources\icons\align_horizontal_left.svg" SelfReg="false"/>
+    <ROW File="align_horizontal_right.svg" Component_="add.svg" FileName="ALIGN_~3.SVG|align_horizontal_right.svg" Attributes="0" SourcePath="..\resources\icons\align_horizontal_right.svg" SelfReg="false"/>
+    <ROW File="align_vertical_bottom.svg" Component_="add.svg" FileName="ALIGN_~4.SVG|align_vertical_bottom.svg" Attributes="0" SourcePath="..\resources\icons\align_vertical_bottom.svg" SelfReg="false"/>
+    <ROW File="align_vertical_center.svg" Component_="add.svg" FileName="ALIGN_~5.SVG|align_vertical_center.svg" Attributes="0" SourcePath="..\resources\icons\align_vertical_center.svg" SelfReg="false"/>
+    <ROW File="align_vertical_top.svg" Component_="add.svg" FileName="ALIGN_~6.SVG|align_vertical_top.svg" Attributes="0" SourcePath="..\resources\icons\align_vertical_top.svg" SelfReg="false"/>
+    <ROW File="burn.svg" Component_="add.svg" FileName="burn.svg" Attributes="0" SourcePath="..\resources\icons\burn.svg" SelfReg="false"/>
+    <ROW File="checked.svg" Component_="add.svg" FileName="checked.svg" Attributes="0" SourcePath="..\resources\icons\checked.svg" SelfReg="false"/>
+    <ROW File="check_off.svg" Component_="add.svg" FileName="CHECK_~1.SVG|check_off.svg" Attributes="0" SourcePath="..\resources\icons\check_off.svg" SelfReg="false"/>
+    <ROW File="check_off_disabled.svg" Component_="add.svg" FileName="CHECK_~2.SVG|check_off_disabled.svg" Attributes="0" SourcePath="..\resources\icons\check_off_disabled.svg" SelfReg="false"/>
+    <ROW File="check_off_focused.svg" Component_="add.svg" FileName="CHECK_~3.SVG|check_off_focused.svg" Attributes="0" SourcePath="..\resources\icons\check_off_focused.svg" SelfReg="false"/>
+    <ROW File="check_on.svg" Component_="add.svg" FileName="check_on.svg" Attributes="0" SourcePath="..\resources\icons\check_on.svg" SelfReg="false"/>
+    <ROW File="check_on_disabled.svg" Component_="add.svg" FileName="CHECK_~4.SVG|check_on_disabled.svg" Attributes="0" SourcePath="..\resources\icons\check_on_disabled.svg" SelfReg="false"/>
+    <ROW File="check_on_focused.svg" Component_="add.svg" FileName="CHECK_~5.SVG|check_on_focused.svg" Attributes="0" SourcePath="..\resources\icons\check_on_focused.svg" SelfReg="false"/>
+    <ROW File="cog_f.svg" Component_="add.svg" FileName="cog_f.svg" Attributes="0" SourcePath="..\resources\icons\cog_f.svg" SelfReg="false"/>
+    <ROW File="connect_gcode.svg" Component_="add.svg" FileName="CONNEC~1.SVG|connect_gcode.svg" Attributes="0" SourcePath="..\resources\icons\connect_gcode.svg" SelfReg="false"/>
+    <ROW File="connect_status.svg" Component_="add.svg" FileName="CONNEC~2.SVG|connect_status.svg" Attributes="0" SourcePath="..\resources\icons\connect_status.svg" SelfReg="false"/>
+    <ROW File="convert_file.svg" Component_="add.svg" FileName="CONVER~1.SVG|convert_file.svg" Attributes="0" SourcePath="..\resources\icons\convert_file.svg" SelfReg="false"/>
+    <ROW File="customgcode_gcode.svg" Component_="add.svg" FileName="CUSTOM~1.SVG|custom-gcode_gcode.svg" Attributes="0" SourcePath="..\resources\icons\custom-gcode_gcode.svg" SelfReg="false"/>
+    <ROW File="customgcode_measure.svg" Component_="add.svg" FileName="CUSTOM~2.SVG|custom-gcode_measure.svg" Attributes="0" SourcePath="..\resources\icons\custom-gcode_measure.svg" SelfReg="false"/>
+    <ROW File="customgcode_objectinfo.svg" Component_="add.svg" FileName="CUSTOM~3.SVG|custom-gcode_object-info.svg" Attributes="0" SourcePath="..\resources\icons\custom-gcode_object-info.svg" SelfReg="false"/>
+    <ROW File="customgcode_single.svg" Component_="add.svg" FileName="CUSTOM~4.SVG|custom-gcode_single.svg" Attributes="0" SourcePath="..\resources\icons\custom-gcode_single.svg" SelfReg="false"/>
+    <ROW File="customgcode_slicingstate.svg" Component_="add.svg" FileName="CUSTOM~5.SVG|custom-gcode_slicing-state.svg" Attributes="0" SourcePath="..\resources\icons\custom-gcode_slicing-state.svg" SelfReg="false"/>
+    <ROW File="customgcode_slicingstate_global.svg" Component_="add.svg" FileName="CUSTOM~6.SVG|custom-gcode_slicing-state_global.svg" Attributes="0" SourcePath="..\resources\icons\custom-gcode_slicing-state_global.svg" SelfReg="false"/>
+    <ROW File="customgcode_stats.svg" Component_="add.svg" FileName="CUSTOM~7.SVG|custom-gcode_stats.svg" Attributes="0" SourcePath="..\resources\icons\custom-gcode_stats.svg" SelfReg="false"/>
+    <ROW File="customgcode_vectorindex.svg" Component_="add.svg" FileName="CUSTOM~8.SVG|custom-gcode_vector-index.svg" Attributes="0" SourcePath="..\resources\icons\custom-gcode_vector-index.svg" SelfReg="false"/>
+    <ROW File="customgcode_vector.svg" Component_="add.svg" FileName="CUSTOM~9.SVG|custom-gcode_vector.svg" Attributes="0" SourcePath="..\resources\icons\custom-gcode_vector.svg" SelfReg="false"/>
+    <ROW File="drop_down.svg" Component_="add.svg" FileName="DROP_D~1.SVG|drop_down.svg" Attributes="0" SourcePath="..\resources\icons\drop_down.svg" SelfReg="false"/>
+    <ROW File="horizontal_hide.svg" Component_="add.svg" FileName="HORIZO~1.SVG|horizontal_hide.svg" Attributes="0" SourcePath="..\resources\icons\horizontal_hide.svg" SelfReg="false"/>
+    <ROW File="horizontal_show.svg" Component_="add.svg" FileName="HORIZO~2.SVG|horizontal_show.svg" Attributes="0" SourcePath="..\resources\icons\horizontal_show.svg" SelfReg="false"/>
+    <ROW File="login.svg" Component_="add.svg" FileName="login.svg" Attributes="0" SourcePath="..\resources\icons\login.svg" SelfReg="false"/>
+    <ROW File="logout.svg" Component_="add.svg" FileName="logout.svg" Attributes="0" SourcePath="..\resources\icons\logout.svg" SelfReg="false"/>
+    <ROW File="printer_available.svg" Component_="add.svg" FileName="PRINTE~2.SVG|printer_available.svg" Attributes="0" SourcePath="..\resources\icons\printer_available.svg" SelfReg="false"/>
+    <ROW File="printer_busy.svg" Component_="add.svg" FileName="PRINTE~3.SVG|printer_busy.svg" Attributes="0" SourcePath="..\resources\icons\printer_busy.svg" SelfReg="false"/>
+    <ROW File="printer_offline.svg" Component_="add.svg" FileName="PRINTE~4.SVG|printer_offline.svg" Attributes="0" SourcePath="..\resources\icons\printer_offline.svg" SelfReg="false"/>
+    <ROW File="PrusaSlicerinstaller.bmp" Component_="add.svg" FileName="PRUSAS~1.BMP|PrusaSlicer-installer.bmp" Attributes="0" SourcePath="..\resources\icons\PrusaSlicer-installer.bmp" SelfReg="false"/>
+    <ROW File="PrusaSlicerorig.svg" Component_="add.svg" FileName="PRUSAS~3.SVG|PrusaSlicer-orig.svg" Attributes="0" SourcePath="..\resources\icons\PrusaSlicer-orig.svg" SelfReg="false"/>
+    <ROW File="reflection_x.svg" Component_="add.svg" FileName="REFLEC~1.SVG|reflection_x.svg" Attributes="0" SourcePath="..\resources\icons\reflection_x.svg" SelfReg="false"/>
+    <ROW File="reflection_y.svg" Component_="add.svg" FileName="REFLEC~2.SVG|reflection_y.svg" Attributes="0" SourcePath="..\resources\icons\reflection_y.svg" SelfReg="false"/>
+    <ROW File="refresh.svg" Component_="add.svg" FileName="refresh.svg" Attributes="0" SourcePath="..\resources\icons\refresh.svg" SelfReg="false"/>
+    <ROW File="scalar_param.svg" Component_="add.svg" FileName="SCALAR~1.SVG|scalar_param.svg" Attributes="0" SourcePath="..\resources\icons\scalar_param.svg" SelfReg="false"/>
+    <ROW File="sla_printer_available.svg" Component_="add.svg" FileName="SLA_PR~2.SVG|sla_printer_available.svg" Attributes="0" SourcePath="..\resources\icons\sla_printer_available.svg" SelfReg="false"/>
+    <ROW File="sla_printer_busy.svg" Component_="add.svg" FileName="SLA_PR~3.SVG|sla_printer_busy.svg" Attributes="0" SourcePath="..\resources\icons\sla_printer_busy.svg" SelfReg="false"/>
+    <ROW File="sla_printer_offline.svg" Component_="add.svg" FileName="SLA_PR~4.SVG|sla_printer_offline.svg" Attributes="0" SourcePath="..\resources\icons\sla_printer_offline.svg" SelfReg="false"/>
+    <ROW File="sla_view_original.svg" Component_="add.svg" FileName="SLA_VI~1.SVG|sla_view_original.svg" Attributes="0" SourcePath="..\resources\icons\sla_view_original.svg" SelfReg="false"/>
+    <ROW File="sla_view_processed.svg" Component_="add.svg" FileName="SLA_VI~2.SVG|sla_view_processed.svg" Attributes="0" SourcePath="..\resources\icons\sla_view_processed.svg" SelfReg="false"/>
+    <ROW File="snap.svg" Component_="add.svg" FileName="snap.svg" Attributes="0" SourcePath="..\resources\icons\snap.svg" SelfReg="false"/>
+    <ROW File="spin_dec.svg" Component_="add.svg" FileName="spin_dec.svg" Attributes="0" SourcePath="..\resources\icons\spin_dec.svg" SelfReg="false"/>
+    <ROW File="spin_dec_act.svg" Component_="add.svg" FileName="SPIN_D~1.SVG|spin_dec_act.svg" Attributes="0" SourcePath="..\resources\icons\spin_dec_act.svg" SelfReg="false"/>
+    <ROW File="spin_inc.svg" Component_="add.svg" FileName="spin_inc.svg" Attributes="0" SourcePath="..\resources\icons\spin_inc.svg" SelfReg="false"/>
+    <ROW File="spin_inc_act.svg" Component_="add.svg" FileName="SPIN_I~1.SVG|spin_inc_act.svg" Attributes="0" SourcePath="..\resources\icons\spin_inc_act.svg" SelfReg="false"/>
+    <ROW File="svg_modifier.svg" Component_="add.svg" FileName="SVG_MO~1.SVG|svg_modifier.svg" Attributes="0" SourcePath="..\resources\icons\svg_modifier.svg" SelfReg="false"/>
+    <ROW File="svg_negative.svg" Component_="add.svg" FileName="SVG_NE~1.SVG|svg_negative.svg" Attributes="0" SourcePath="..\resources\icons\svg_negative.svg" SelfReg="false"/>
+    <ROW File="svg_part.svg" Component_="add.svg" FileName="svg_part.svg" Attributes="0" SourcePath="..\resources\icons\svg_part.svg" SelfReg="false"/>
+    <ROW File="toggle_off.svg" Component_="add.svg" FileName="TOGGLE~1.SVG|toggle_off.svg" Attributes="0" SourcePath="..\resources\icons\toggle_off.svg" SelfReg="false"/>
+    <ROW File="toggle_on.svg" Component_="add.svg" FileName="TOGGLE~2.SVG|toggle_on.svg" Attributes="0" SourcePath="..\resources\icons\toggle_on.svg" SelfReg="false"/>
+    <ROW File="undo_f.svg" Component_="add.svg" FileName="undo_f.svg" Attributes="0" SourcePath="..\resources\icons\undo_f.svg" SelfReg="false"/>
+    <ROW File="user.svg" Component_="add.svg" FileName="user.svg" Attributes="0" SourcePath="..\resources\icons\user.svg" SelfReg="false"/>
+    <ROW File="user_mask.svg" Component_="add.svg" FileName="USER_M~1.SVG|user_mask.svg" Attributes="0" SourcePath="..\resources\icons\user_mask.svg" SelfReg="false"/>
+    <ROW File="vector_filament_param.svg" Component_="add.svg" FileName="VECTOR~1.SVG|vector_filament_param.svg" Attributes="0" SourcePath="..\resources\icons\vector_filament_param.svg" SelfReg="false"/>
+    <ROW File="vector_param.svg" Component_="add.svg" FileName="VECTOR~2.SVG|vector_param.svg" Attributes="0" SourcePath="..\resources\icons\vector_param.svg" SelfReg="false"/>
+    <ROW File="PrusaSlicer.mo_19" Component_="PrusaSlicer.mo_19" FileName="PRUSAS~1.MO|PrusaSlicer.mo" Attributes="0" SourcePath="..\resources\localization\be\PrusaSlicer.mo" SelfReg="false"/>
+    <ROW File="PrusaSlicer_be.po" Component_="PrusaSlicer.mo_19" FileName="PRUSAS~1.PO|PrusaSlicer_be.po" Attributes="0" SourcePath="..\resources\localization\be\PrusaSlicer_be.po" SelfReg="false"/>
+    <ROW File="PrusaSlicer.mo_20" Component_="PrusaSlicer.mo_20" FileName="PRUSAS~1.MO|PrusaSlicer.mo" Attributes="0" SourcePath="..\resources\localization\fi\PrusaSlicer.mo" SelfReg="false"/>
+    <ROW File="PrusaSlicer_fi.po" Component_="PrusaSlicer.mo_20" FileName="PRUSAS~1.PO|PrusaSlicer_fi.po" Attributes="0" SourcePath="..\resources\localization\fi\PrusaSlicer_fi.po" SelfReg="false"/>
+    <ROW File="PrusaSlicer.mo_21" Component_="PrusaSlicer.mo_21" FileName="PRUSAS~1.MO|PrusaSlicer.mo" Attributes="0" SourcePath="..\resources\localization\sl\PrusaSlicer.mo" SelfReg="false"/>
+    <ROW File="PrusaSlicer.po" Component_="PrusaSlicer.mo_21" FileName="PRUSAS~1.PO|PrusaSlicer.po" Attributes="0" SourcePath="..\resources\localization\sl\PrusaSlicer.po" SelfReg="false"/>
+    <ROW File="be.po" Component_="af.po" FileName="be.po" Attributes="0" SourcePath="..\resources\localization\wx_locale\be.po" SelfReg="false"/>
+    <ROW File="ArchiveRepositoryManifest.json" Component_="Anker.idx" FileName="ARCHIV~1.JSO|ArchiveRepositoryManifest.json" Attributes="0" SourcePath="..\resources\profiles\ArchiveRepositoryManifest.json" SelfReg="false"/>
+    <ROW File="bedTxt.svg" Component_="F3Edge_thumbnail.png" FileName="bedTxt.svg" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\bedTxt.svg" SelfReg="false"/>
+    <ROW File="F3F400_thumbnail.jpg" Component_="F3Edge_thumbnail.png" FileName="F3F400~1.JPG|F3 F400_thumbnail.jpg" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F400_thumbnail.jpg" SelfReg="false"/>
+    <ROW File="F3F410_thumbnail.png" Component_="F3Edge_thumbnail.png" FileName="F3F410~1.PNG|F3 F410_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F410_thumbnail.png" SelfReg="false"/>
+    <ROW File="f400f410_bed.stl" Component_="F3Edge_thumbnail.png" FileName="F400F4~1.STL|f400f410_bed.stl" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\f400f410_bed.stl" SelfReg="false"/>
+    <ROW File="miniIS.svg" Component_="mini.svg" FileName="miniIS.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\miniIS.svg" SelfReg="false"/>
+    <ROW File="miniISbeta.svg" Component_="mini.svg" FileName="MINIIS~1.SVG|miniISbeta.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\miniISbeta.svg" SelfReg="false"/>
+    <ROW File="MINIIS_ALPHA_thumbnail.png" Component_="mini.svg" FileName="MINIIS~1.PNG|MINIIS_ALPHA_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MINIIS_ALPHA_thumbnail.png" SelfReg="false"/>
+    <ROW File="MINIIS_BETA_thumbnail.png" Component_="mini.svg" FileName="MINIIS~2.PNG|MINIIS_BETA_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MINIIS_BETA_thumbnail.png" SelfReg="false"/>
+    <ROW File="MINIIS_thumbnail.png" Component_="mini.svg" FileName="MINIIS~3.PNG|MINIIS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MINIIS_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK3.5MMU3_thumbnail.png" Component_="mini.svg" FileName="MK35MM~1.PNG|MK3.5MMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3.5MMU3_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK3.9MMU3_thumbnail.png" Component_="mini.svg" FileName="MK39MM~1.PNG|MK3.9MMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3.9MMU3_thumbnail.png" SelfReg="false"/>
+    <ROW File="mk35.svg" Component_="mini.svg" FileName="mk35.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk35.svg" SelfReg="false"/>
+    <ROW File="MK35_thumbnail.png" Component_="mini.svg" FileName="MK35_T~1.PNG|MK35_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK35_thumbnail.png" SelfReg="false"/>
+    <ROW File="mk39.svg" Component_="mini.svg" FileName="mk39.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk39.svg" SelfReg="false"/>
+    <ROW File="MK39IS_thumbnail.png" Component_="mini.svg" FileName="MK39IS~1.PNG|MK39IS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK39IS_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK39IS_thumbnail_v2.png" Component_="mini.svg" FileName="MK39IS~2.PNG|MK39IS_thumbnail_v2.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK39IS_thumbnail_v2.png" SelfReg="false"/>
+    <ROW File="mk39s.svg" Component_="mini.svg" FileName="mk39s.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk39s.svg" SelfReg="false"/>
+    <ROW File="MK39_thumbnail.png" Component_="mini.svg" FileName="MK39_T~1.PNG|MK39_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK39_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK3SMMU3_thumbnail.png" Component_="mini.svg" FileName="MK3SMM~2.PNG|MK3SMMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3SMMU3_thumbnail.png" SelfReg="false"/>
+    <ROW File="mk4.svg" Component_="mini.svg" FileName="mk4.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk4.svg" SelfReg="false"/>
+    <ROW File="mk4is.svg" Component_="mini.svg" FileName="mk4is.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk4is.svg" SelfReg="false"/>
+    <ROW File="MK4ISMMU3_thumbnail.png" Component_="mini.svg" FileName="MK4ISM~1.PNG|MK4ISMMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4ISMMU3_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK4IS_thumbnail.png" Component_="mini.svg" FileName="MK4IS_~1.PNG|MK4IS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4IS_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK4IS_thumbnail_v2.png" Component_="mini.svg" FileName="MK4IS_~2.PNG|MK4IS_thumbnail_v2.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4IS_thumbnail_v2.png" SelfReg="false"/>
+    <ROW File="mk4s.svg" Component_="mini.svg" FileName="mk4s.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk4s.svg" SelfReg="false"/>
+    <ROW File="MK4SMMU3_thumbnail.png" Component_="mini.svg" FileName="MK4SMM~1.PNG|MK4SMMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4SMMU3_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK4S_thumbnail.png" Component_="mini.svg" FileName="MK4S_T~1.PNG|MK4S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4S_thumbnail.png" SelfReg="false"/>
+    <ROW File="mk4_bed.stl" Component_="mini.svg" FileName="mk4_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk4_bed.stl" SelfReg="false"/>
+    <ROW File="MK4_thumbnail.png" Component_="mini.svg" FileName="MK4_TH~1.PNG|MK4_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4_thumbnail.png" SelfReg="false"/>
+    <ROW File="xl.svg" Component_="mini.svg" FileName="xl.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\xl.svg" SelfReg="false"/>
+    <ROW File="XL2IS_alpha_thumbnail.png" Component_="mini.svg" FileName="XL2IS_~1.PNG|XL2IS_alpha_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL2IS_alpha_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL2IS_beta_thumbnail.png" Component_="mini.svg" FileName="XL2IS_~2.PNG|XL2IS_beta_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL2IS_beta_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL2IS_thumbnail.png" Component_="mini.svg" FileName="XL2IS_~3.PNG|XL2IS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL2IS_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL2_thumbnail.png" Component_="mini.svg" FileName="XL2_TH~1.PNG|XL2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL2_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL5IS_alpha_thumbnail.png" Component_="mini.svg" FileName="XL5IS_~1.PNG|XL5IS_alpha_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL5IS_alpha_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL5IS_beta_thumbnail.png" Component_="mini.svg" FileName="XL5IS_~2.PNG|XL5IS_beta_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL5IS_beta_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL5IS_thumbnail.png" Component_="mini.svg" FileName="XL5IS_~3.PNG|XL5IS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL5IS_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL5_thumbnail.png" Component_="mini.svg" FileName="XL5_TH~1.PNG|XL5_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL5_thumbnail.png" SelfReg="false"/>
+    <ROW File="xlis_alpha.svg" Component_="mini.svg" FileName="XLIS_A~1.SVG|xlis_alpha.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\xlis_alpha.svg" SelfReg="false"/>
+    <ROW File="XLIS_alpha_thumbnail.png" Component_="mini.svg" FileName="XLIS_A~1.PNG|XLIS_alpha_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XLIS_alpha_thumbnail.png" SelfReg="false"/>
+    <ROW File="xlis_beta.svg" Component_="mini.svg" FileName="XLIS_B~1.SVG|xlis_beta.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\xlis_beta.svg" SelfReg="false"/>
+    <ROW File="XLIS_beta_thumbnail.png" Component_="mini.svg" FileName="XLIS_B~1.PNG|XLIS_beta_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XLIS_beta_thumbnail.png" SelfReg="false"/>
+    <ROW File="XLIS_thumbnail.png" Component_="mini.svg" FileName="XLIS_T~1.PNG|XLIS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XLIS_thumbnail.png" SelfReg="false"/>
+    <ROW File="xl_bed.stl" Component_="mini.svg" FileName="xl_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\xl_bed.stl" SelfReg="false"/>
+    <ROW File="XL_thumbnail.png" Component_="mini.svg" FileName="XL_THU~1.PNG|XL_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL_thumbnail.png" SelfReg="false"/>
+    <ROW File="sl1.svg" Component_="sl1.svg" FileName="sl1.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA\sl1.svg" SelfReg="false"/>
+    <ROW File="sl1s.svg" Component_="sl1.svg" FileName="sl1s.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA\sl1s.svg" SelfReg="false"/>
+    <ROW File="sl1s_bed.stl" Component_="sl1.svg" FileName="sl1s_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA\sl1s_bed.stl" SelfReg="false"/>
+    <ROW File="SL1S_thumbnail.png" Component_="sl1.svg" FileName="SL1S_T~1.PNG|SL1S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA\SL1S_thumbnail.png" SelfReg="false"/>
+    <ROW File="sl1_bed.stl" Component_="sl1.svg" FileName="sl1_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA\sl1_bed.stl" SelfReg="false"/>
+    <ROW File="SL1_thumbnail.png" Component_="sl1.svg" FileName="SL1_TH~1.PNG|SL1_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA\SL1_thumbnail.png" SelfReg="false"/>
+    <ROW File="PrusaResearchSLA.idx" Component_="Anker.idx" FileName="PRUSAR~2.IDX|PrusaResearchSLA.idx" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA.idx" SelfReg="false"/>
+    <ROW File="PrusaResearchSLA.ini" Component_="Anker.idx" FileName="PRUSAR~2.INI|PrusaResearchSLA.ini" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA.ini" SelfReg="false"/>
+    <ROW File="DBenchy.png" Component_="box.png" FileName="3DBenchy.png" Attributes="0" SourcePath="..\resources\shapes\3DBenchy.png" SelfReg="false"/>
+    <ROW File="DBenchy.stl" Component_="box.png" FileName="3DBenchy.stl" Attributes="0" SourcePath="..\resources\shapes\3DBenchy.stl" SelfReg="false"/>
+    <ROW File="sign_base.png" Component_="box.png" FileName="SIGN_B~1.PNG|sign_base.png" Attributes="0" SourcePath="..\resources\shapes\sign_base.png" SelfReg="false"/>
+    <ROW File="sign_base.stl" Component_="box.png" FileName="SIGN_B~1.STL|sign_base.stl" Attributes="0" SourcePath="..\resources\shapes\sign_base.stl" SelfReg="false"/>
+    <ROW File="sign_base_rounded.png" Component_="box.png" FileName="SIGN_B~2.PNG|sign_base_rounded.png" Attributes="0" SourcePath="..\resources\shapes\sign_base_rounded.png" SelfReg="false"/>
+    <ROW File="sign_base_rounded.stl" Component_="box.png" FileName="SIGN_B~2.STL|sign_base_rounded.stl" Attributes="0" SourcePath="..\resources\shapes\sign_base_rounded.stl" SelfReg="false"/>
+    <ROW File="connection_failed.html" Component_="connection_failed.html" FileName="CONNEC~1.HTM|connection_failed.html" Attributes="0" SourcePath="..\resources\web\connection_failed.html" SelfReg="false"/>
+    <ROW File="connect_loading.html" Component_="connection_failed.html" FileName="CONNEC~2.HTM|connect_loading.html" Attributes="0" SourcePath="..\resources\web\connect_loading.html" SelfReg="false"/>
+    <ROW File="loading.html" Component_="connection_failed.html" FileName="LOADIN~1.HTM|loading.html" Attributes="0" SourcePath="..\resources\web\loading.html" SelfReg="false"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
     <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2"/>
@@ -834,6 +975,11 @@
     <ROW Feature_="MainFeature" Component_="AI_CustomARPName"/>
     <ROW Feature_="MainFeature" Component_="SHORTCUTDIR"/>
     <ROW Feature_="MainFeature" Component_="F3Slic3r"/>
+    <ROW Feature_="MainFeature" Component_="PrusaSlicer.mo_19"/>
+    <ROW Feature_="MainFeature" Component_="PrusaSlicer.mo_20"/>
+    <ROW Feature_="MainFeature" Component_="PrusaSlicer.mo_21"/>
+    <ROW Feature_="MainFeature" Component_="sl1.svg"/>
+    <ROW Feature_="MainFeature" Component_="connection_failed.html"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFileHashComponent">
     <ATTRIBUTE name="HashFiles" value="1"/>
