@@ -38,8 +38,6 @@
     <ROW Directory="ES_Dir" Directory_Parent="shaders_Dir" DefaultDir="ES"/>
     <ROW Directory="F3Slic3r_1_Dir" Directory_Parent="profiles_Dir" DefaultDir="F3Slic3r"/>
     <ROW Directory="F3Slic3r_Dir" Directory_Parent="AppDataFolder" DefaultDir="F3Slic3r"/>
-    <ROW Directory="PrusaResearchSLA_Dir" Directory_Parent="profiles_Dir" DefaultDir="PRUSAR~2|PrusaResearchSLA"/>
-    <ROW Directory="PrusaResearch_Dir" Directory_Parent="profiles_Dir" DefaultDir="PRUSAR~1|PrusaResearch"/>
     <ROW Directory="SHORTCUTDIR" Directory_Parent="TARGETDIR" DefaultDir="SHORTC~1|SHORTCUTDIR" IsPseudoRoot="1"/>
     <ROW Directory="TARGETDIR" DefaultDir="SourceDir"/>
     <ROW Directory="__1_Dir" Directory_Parent="shaders_Dir" DefaultDir="140"/>
@@ -83,7 +81,7 @@
     <ROW Component="AI_CustomARPName" ComponentId="{2A99C594-E1E1-4399-BDED-99F4011E4973}" Directory_="APPDIR" Attributes="260" KeyPath="DisplayName" Options="1"/>
     <ROW Component="AI_ExePath" ComponentId="{A4289296-8B99-4132-AF74-51935FF4306D}" Directory_="APPDIR" Attributes="260" KeyPath="AI_ExePath"/>
     <ROW Component="APPDIR" ComponentId="{474D491E-FF73-421C-815B-79394243B4AB}" Directory_="APPDIR" Attributes="0"/>
-    <ROW Component="Anker.idx" ComponentId="{F6FB69D7-017B-4013-883E-D60477DEA132}" Directory_="profiles_Dir" Attributes="0" KeyPath="PrusaResearch.idx_1" Type="0"/>
+    <ROW Component="Anker.idx" ComponentId="{F6FB69D7-017B-4013-883E-D60477DEA132}" Directory_="profiles_Dir" Attributes="0" KeyPath="F3Slic3r.idx" Type="0"/>
     <ROW Component="F3Edge_thumbnail.png" ComponentId="{9D16C4BF-9EBE-4ABD-A6D9-6B4DF069DEEE}" Directory_="F3Slic3r_1_Dir" Attributes="0" KeyPath="F3Edge_thumbnail.png" Type="0"/>
     <ROW Component="F3Slic3r" ComponentId="{C8094E42-728A-4BB5-8957-DC632F6DD80E}" Directory_="F3Slic3r_Dir" Attributes="0"/>
     <ROW Component="NotoSansRegular.ttf" ComponentId="{759F6AA5-EA33-4906-BE86-6E43C5F9679C}" Directory_="fonts_Dir" Attributes="0" Type="0"/>
@@ -125,13 +123,11 @@
     <ROW Component="libgmp10.dll" ComponentId="{7B646215-CF29-4B35-9FE5-D6EBB5738648}" Directory_="APPDIR" Attributes="256" KeyPath="libgmp10.dll"/>
     <ROW Component="libmpfr4.dll" ComponentId="{C51BB43E-AED2-4040-873F-AAC3D0BCC08B}" Directory_="APPDIR" Attributes="256" KeyPath="libmpfr4.dll"/>
     <ROW Component="list.txt" ComponentId="{3ED9F3A2-8F4B-4869-94CA-949E254534A4}" Directory_="localization_Dir" Attributes="0" KeyPath="list.txt" Type="0"/>
-    <ROW Component="mini.svg" ComponentId="{DEA50475-7950-40D6-AC41-D031B99616CE}" Directory_="PrusaResearch_Dir" Attributes="0" KeyPath="mini.svg" Type="0"/>
     <ROW Component="msvcp140.dll" ComponentId="{22B07D1C-312C-4924-B858-72F97677D978}" Directory_="APPDIR" Attributes="256" KeyPath="msvcp140.dll"/>
     <ROW Component="opengl32.dll" ComponentId="{F172C944-4791-498E-815E-35618A67C581}" Directory_="mesa_Dir" Attributes="256" KeyPath="opengl32.dll"/>
     <ROW Component="prusagcodeviewer.exe" ComponentId="{0E8F92B7-7A0E-47C7-A532-1B9A63913913}" Directory_="APPDIR" Attributes="0" KeyPath="prusagcodeviewer.exe"/>
     <ROW Component="prusaslicer.exe" ComponentId="{4FDCABFA-93DA-42FC-83B5-3FAD34828BCC}" Directory_="APPDIR" Attributes="0" KeyPath="prusaslicer.exe"/>
     <ROW Component="prusaslicerconsole.exe" ComponentId="{3239CE8B-6E87-4359-A536-83D1BF5910FB}" Directory_="APPDIR" Attributes="256" KeyPath="prusaslicerconsole.exe"/>
-    <ROW Component="sl1.svg" ComponentId="{70288988-31D4-4C78-9C2D-C57402D5CDDD}" Directory_="PrusaResearchSLA_Dir" Attributes="0" KeyPath="sl1.svg" Type="0"/>
     <ROW Component="updater.exe" ComponentId="{D6EEBA84-30A7-4C85-8C40-149FED1297A1}" Directory_="APPDIR" Attributes="0" KeyPath="updater.exe"/>
     <ROW Component="vcruntime140.dll" ComponentId="{A7696C76-D45F-4CCD-8017-DEBD1EC47CEB}" Directory_="APPDIR" Attributes="256" KeyPath="vcruntime140.dll"/>
     <ROW Component="vcruntime140_1.dll" ComponentId="{FB850B5B-56E7-411C-AD76-74BCA60087B6}" Directory_="APPDIR" Attributes="256" KeyPath="vcruntime140_1.dll"/>
@@ -490,25 +486,6 @@
     <ROW File="PrusaSlicer_zh_CN.po" Component_="PrusaSlicer.mo_17" FileName="PRUSAS~1.PO|PrusaSlicer_zh_CN.po" Attributes="0" SourcePath="..\resources\localization\zh_CN\PrusaSlicer_zh_CN.po" SelfReg="false"/>
     <ROW File="PrusaSlicer.mo_18" Component_="PrusaSlicer.mo_18" FileName="PRUSAS~1.MO|PrusaSlicer.mo" Attributes="0" SourcePath="..\resources\localization\zh_TW\PrusaSlicer.mo" SelfReg="false"/>
     <ROW File="PrusaSlicer_zh_TW.po" Component_="PrusaSlicer.mo_18" FileName="PRUSAS~1.PO|PrusaSlicer_zh_TW.po" Attributes="0" SourcePath="..\resources\localization\zh_TW\PrusaSlicer_zh_TW.po" SelfReg="false"/>
-    <ROW File="mini.svg" Component_="mini.svg" FileName="mini.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mini.svg" SelfReg="false"/>
-    <ROW File="mini_bed.stl" Component_="mini.svg" FileName="mini_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mini_bed.stl" SelfReg="false"/>
-    <ROW File="MINI_thumbnail.png" Component_="mini.svg" FileName="MINI_T~1.PNG|MINI_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MINI_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK2.5MMU2_thumbnail.png" Component_="mini.svg" FileName="MK25MM~1.PNG|MK2.5MMU2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK2.5MMU2_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK2.5SMMU2S_thumbnail.png" Component_="mini.svg" FileName="MK25SM~1.PNG|MK2.5SMMU2S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK2.5SMMU2S_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK2.5S_thumbnail.png" Component_="mini.svg" FileName="MK25S_~1.PNG|MK2.5S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK2.5S_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK2.5_thumbnail.png" Component_="mini.svg" FileName="MK25_T~1.PNG|MK2.5_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK2.5_thumbnail.png" SelfReg="false"/>
-    <ROW File="mk2.svg" Component_="mini.svg" FileName="mk2.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk2.svg" SelfReg="false"/>
-    <ROW File="MK2SMM_thumbnail.png" Component_="mini.svg" FileName="MK2SMM~1.PNG|MK2SMM_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK2SMM_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK2S_thumbnail.png" Component_="mini.svg" FileName="MK2S_T~1.PNG|MK2S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK2S_thumbnail.png" SelfReg="false"/>
-    <ROW File="mk2_bed.stl" Component_="mini.svg" FileName="mk2_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk2_bed.stl" SelfReg="false"/>
-    <ROW File="mk3.svg" Component_="mini.svg" FileName="mk3.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk3.svg" SelfReg="false"/>
-    <ROW File="MK3MMU2_thumbnail.png" Component_="mini.svg" FileName="MK3MMU~1.PNG|MK3MMU2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3MMU2_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK3SMMU2S_thumbnail.png" Component_="mini.svg" FileName="MK3SMM~1.PNG|MK3SMMU2S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3SMMU2S_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK3S_thumbnail.png" Component_="mini.svg" FileName="MK3S_T~1.PNG|MK3S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3S_thumbnail.png" SelfReg="false"/>
-    <ROW File="mk3_bed.stl" Component_="mini.svg" FileName="mk3_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk3_bed.stl" SelfReg="false"/>
-    <ROW File="MK3_thumbnail.png" Component_="mini.svg" FileName="MK3_TH~1.PNG|MK3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3_thumbnail.png" SelfReg="false"/>
-    <ROW File="PrusaResearch.idx_1" Component_="Anker.idx" FileName="PRUSAR~1.IDX|PrusaResearch.idx" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch.idx" SelfReg="false"/>
-    <ROW File="PrusaResearch.ini_1" Component_="Anker.idx" FileName="PRUSAR~1.INI|PrusaResearch.ini" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch.ini" SelfReg="false"/>
     <ROW File="background.fs" Component_="background.fs" FileName="BACKGR~1.FS|background.fs" Attributes="0" SourcePath="..\resources\shaders\110\background.fs" SelfReg="false"/>
     <ROW File="background.vs" Component_="background.fs" FileName="BACKGR~1.VS|background.vs" Attributes="0" SourcePath="..\resources\shaders\110\background.vs" SelfReg="false"/>
     <ROW File="flat.fs" Component_="background.fs" FileName="flat.fs" Attributes="0" SourcePath="..\resources\shaders\110\flat.fs" SelfReg="false"/>
@@ -706,55 +683,6 @@
     <ROW File="F3F400_thumbnail.jpg" Component_="F3Edge_thumbnail.png" FileName="F3F400~1.JPG|F3 F400_thumbnail.jpg" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F400_thumbnail.jpg" SelfReg="false"/>
     <ROW File="F3F410_thumbnail.png" Component_="F3Edge_thumbnail.png" FileName="F3F410~1.PNG|F3 F410_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F410_thumbnail.png" SelfReg="false"/>
     <ROW File="f400f410_bed.stl" Component_="F3Edge_thumbnail.png" FileName="F400F4~1.STL|f400f410_bed.stl" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\f400f410_bed.stl" SelfReg="false"/>
-    <ROW File="miniIS.svg" Component_="mini.svg" FileName="miniIS.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\miniIS.svg" SelfReg="false"/>
-    <ROW File="miniISbeta.svg" Component_="mini.svg" FileName="MINIIS~1.SVG|miniISbeta.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\miniISbeta.svg" SelfReg="false"/>
-    <ROW File="MINIIS_ALPHA_thumbnail.png" Component_="mini.svg" FileName="MINIIS~1.PNG|MINIIS_ALPHA_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MINIIS_ALPHA_thumbnail.png" SelfReg="false"/>
-    <ROW File="MINIIS_BETA_thumbnail.png" Component_="mini.svg" FileName="MINIIS~2.PNG|MINIIS_BETA_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MINIIS_BETA_thumbnail.png" SelfReg="false"/>
-    <ROW File="MINIIS_thumbnail.png" Component_="mini.svg" FileName="MINIIS~3.PNG|MINIIS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MINIIS_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK3.5MMU3_thumbnail.png" Component_="mini.svg" FileName="MK35MM~1.PNG|MK3.5MMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3.5MMU3_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK3.9MMU3_thumbnail.png" Component_="mini.svg" FileName="MK39MM~1.PNG|MK3.9MMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3.9MMU3_thumbnail.png" SelfReg="false"/>
-    <ROW File="mk35.svg" Component_="mini.svg" FileName="mk35.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk35.svg" SelfReg="false"/>
-    <ROW File="MK35_thumbnail.png" Component_="mini.svg" FileName="MK35_T~1.PNG|MK35_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK35_thumbnail.png" SelfReg="false"/>
-    <ROW File="mk39.svg" Component_="mini.svg" FileName="mk39.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk39.svg" SelfReg="false"/>
-    <ROW File="MK39IS_thumbnail.png" Component_="mini.svg" FileName="MK39IS~1.PNG|MK39IS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK39IS_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK39IS_thumbnail_v2.png" Component_="mini.svg" FileName="MK39IS~2.PNG|MK39IS_thumbnail_v2.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK39IS_thumbnail_v2.png" SelfReg="false"/>
-    <ROW File="mk39s.svg" Component_="mini.svg" FileName="mk39s.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk39s.svg" SelfReg="false"/>
-    <ROW File="MK39_thumbnail.png" Component_="mini.svg" FileName="MK39_T~1.PNG|MK39_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK39_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK3SMMU3_thumbnail.png" Component_="mini.svg" FileName="MK3SMM~2.PNG|MK3SMMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3SMMU3_thumbnail.png" SelfReg="false"/>
-    <ROW File="mk4.svg" Component_="mini.svg" FileName="mk4.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk4.svg" SelfReg="false"/>
-    <ROW File="mk4is.svg" Component_="mini.svg" FileName="mk4is.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk4is.svg" SelfReg="false"/>
-    <ROW File="MK4ISMMU3_thumbnail.png" Component_="mini.svg" FileName="MK4ISM~1.PNG|MK4ISMMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4ISMMU3_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK4IS_thumbnail.png" Component_="mini.svg" FileName="MK4IS_~1.PNG|MK4IS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4IS_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK4IS_thumbnail_v2.png" Component_="mini.svg" FileName="MK4IS_~2.PNG|MK4IS_thumbnail_v2.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4IS_thumbnail_v2.png" SelfReg="false"/>
-    <ROW File="mk4s.svg" Component_="mini.svg" FileName="mk4s.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk4s.svg" SelfReg="false"/>
-    <ROW File="MK4SMMU3_thumbnail.png" Component_="mini.svg" FileName="MK4SMM~1.PNG|MK4SMMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4SMMU3_thumbnail.png" SelfReg="false"/>
-    <ROW File="MK4S_thumbnail.png" Component_="mini.svg" FileName="MK4S_T~1.PNG|MK4S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4S_thumbnail.png" SelfReg="false"/>
-    <ROW File="mk4_bed.stl" Component_="mini.svg" FileName="mk4_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk4_bed.stl" SelfReg="false"/>
-    <ROW File="MK4_thumbnail.png" Component_="mini.svg" FileName="MK4_TH~1.PNG|MK4_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4_thumbnail.png" SelfReg="false"/>
-    <ROW File="xl.svg" Component_="mini.svg" FileName="xl.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\xl.svg" SelfReg="false"/>
-    <ROW File="XL2IS_alpha_thumbnail.png" Component_="mini.svg" FileName="XL2IS_~1.PNG|XL2IS_alpha_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL2IS_alpha_thumbnail.png" SelfReg="false"/>
-    <ROW File="XL2IS_beta_thumbnail.png" Component_="mini.svg" FileName="XL2IS_~2.PNG|XL2IS_beta_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL2IS_beta_thumbnail.png" SelfReg="false"/>
-    <ROW File="XL2IS_thumbnail.png" Component_="mini.svg" FileName="XL2IS_~3.PNG|XL2IS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL2IS_thumbnail.png" SelfReg="false"/>
-    <ROW File="XL2_thumbnail.png" Component_="mini.svg" FileName="XL2_TH~1.PNG|XL2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL2_thumbnail.png" SelfReg="false"/>
-    <ROW File="XL5IS_alpha_thumbnail.png" Component_="mini.svg" FileName="XL5IS_~1.PNG|XL5IS_alpha_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL5IS_alpha_thumbnail.png" SelfReg="false"/>
-    <ROW File="XL5IS_beta_thumbnail.png" Component_="mini.svg" FileName="XL5IS_~2.PNG|XL5IS_beta_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL5IS_beta_thumbnail.png" SelfReg="false"/>
-    <ROW File="XL5IS_thumbnail.png" Component_="mini.svg" FileName="XL5IS_~3.PNG|XL5IS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL5IS_thumbnail.png" SelfReg="false"/>
-    <ROW File="XL5_thumbnail.png" Component_="mini.svg" FileName="XL5_TH~1.PNG|XL5_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL5_thumbnail.png" SelfReg="false"/>
-    <ROW File="xlis_alpha.svg" Component_="mini.svg" FileName="XLIS_A~1.SVG|xlis_alpha.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\xlis_alpha.svg" SelfReg="false"/>
-    <ROW File="XLIS_alpha_thumbnail.png" Component_="mini.svg" FileName="XLIS_A~1.PNG|XLIS_alpha_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XLIS_alpha_thumbnail.png" SelfReg="false"/>
-    <ROW File="xlis_beta.svg" Component_="mini.svg" FileName="XLIS_B~1.SVG|xlis_beta.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\xlis_beta.svg" SelfReg="false"/>
-    <ROW File="XLIS_beta_thumbnail.png" Component_="mini.svg" FileName="XLIS_B~1.PNG|XLIS_beta_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XLIS_beta_thumbnail.png" SelfReg="false"/>
-    <ROW File="XLIS_thumbnail.png" Component_="mini.svg" FileName="XLIS_T~1.PNG|XLIS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XLIS_thumbnail.png" SelfReg="false"/>
-    <ROW File="xl_bed.stl" Component_="mini.svg" FileName="xl_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\xl_bed.stl" SelfReg="false"/>
-    <ROW File="XL_thumbnail.png" Component_="mini.svg" FileName="XL_THU~1.PNG|XL_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL_thumbnail.png" SelfReg="false"/>
-    <ROW File="sl1.svg" Component_="sl1.svg" FileName="sl1.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA\sl1.svg" SelfReg="false"/>
-    <ROW File="sl1s.svg" Component_="sl1.svg" FileName="sl1s.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA\sl1s.svg" SelfReg="false"/>
-    <ROW File="sl1s_bed.stl" Component_="sl1.svg" FileName="sl1s_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA\sl1s_bed.stl" SelfReg="false"/>
-    <ROW File="SL1S_thumbnail.png" Component_="sl1.svg" FileName="SL1S_T~1.PNG|SL1S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA\SL1S_thumbnail.png" SelfReg="false"/>
-    <ROW File="sl1_bed.stl" Component_="sl1.svg" FileName="sl1_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA\sl1_bed.stl" SelfReg="false"/>
-    <ROW File="SL1_thumbnail.png" Component_="sl1.svg" FileName="SL1_TH~1.PNG|SL1_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA\SL1_thumbnail.png" SelfReg="false"/>
-    <ROW File="PrusaResearchSLA.idx" Component_="Anker.idx" FileName="PRUSAR~2.IDX|PrusaResearchSLA.idx" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA.idx" SelfReg="false"/>
-    <ROW File="PrusaResearchSLA.ini" Component_="Anker.idx" FileName="PRUSAR~2.INI|PrusaResearchSLA.ini" Attributes="0" SourcePath="..\resources\profiles\PrusaResearchSLA.ini" SelfReg="false"/>
     <ROW File="DBenchy.png" Component_="box.png" FileName="3DBenchy.png" Attributes="0" SourcePath="..\resources\shapes\3DBenchy.png" SelfReg="false"/>
     <ROW File="DBenchy.stl" Component_="box.png" FileName="3DBenchy.stl" Attributes="0" SourcePath="..\resources\shapes\3DBenchy.stl" SelfReg="false"/>
     <ROW File="sign_base.png" Component_="box.png" FileName="SIGN_B~1.PNG|sign_base.png" Attributes="0" SourcePath="..\resources\shapes\sign_base.png" SelfReg="false"/>
@@ -965,7 +893,6 @@
     <ROW Feature_="MainFeature" Component_="PrusaSlicer.mo_18"/>
     <ROW Feature_="MainFeature" Component_="Anker.idx"/>
     <ROW Feature_="MainFeature" Component_="F3Edge_thumbnail.png"/>
-    <ROW Feature_="MainFeature" Component_="mini.svg"/>
     <ROW Feature_="MainFeature" Component_="background.fs"/>
     <ROW Feature_="MainFeature" Component_="background.fs_1"/>
     <ROW Feature_="MainFeature" Component_="background.fs_2"/>
@@ -978,7 +905,6 @@
     <ROW Feature_="MainFeature" Component_="PrusaSlicer.mo_19"/>
     <ROW Feature_="MainFeature" Component_="PrusaSlicer.mo_20"/>
     <ROW Feature_="MainFeature" Component_="PrusaSlicer.mo_21"/>
-    <ROW Feature_="MainFeature" Component_="sl1.svg"/>
     <ROW Feature_="MainFeature" Component_="connection_failed.html"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFileHashComponent">
