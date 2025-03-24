@@ -680,7 +680,6 @@
     <ROW File="be.po" Component_="af.po" FileName="be.po" Attributes="0" SourcePath="..\resources\localization\wx_locale\be.po" SelfReg="false"/>
     <ROW File="ArchiveRepositoryManifest.json" Component_="Anker.idx" FileName="ARCHIV~1.JSO|ArchiveRepositoryManifest.json" Attributes="0" SourcePath="..\resources\profiles\ArchiveRepositoryManifest.json" SelfReg="false"/>
     <ROW File="bedTxt.svg" Component_="F3Edge_thumbnail.png" FileName="bedTxt.svg" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\bedTxt.svg" SelfReg="false"/>
-    <ROW File="F3F400_thumbnail.jpg" Component_="F3Edge_thumbnail.png" FileName="F3F400~1.JPG|F3 F400_thumbnail.jpg" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F400_thumbnail.jpg" SelfReg="false"/>
     <ROW File="F3F410_thumbnail.png" Component_="F3Edge_thumbnail.png" FileName="F3F410~1.PNG|F3 F410_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F410_thumbnail.png" SelfReg="false"/>
     <ROW File="f400f410_bed.stl" Component_="F3Edge_thumbnail.png" FileName="F400F4~1.STL|f400f410_bed.stl" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\f400f410_bed.stl" SelfReg="false"/>
     <ROW File="DBenchy.png" Component_="box.png" FileName="3DBenchy.png" Attributes="0" SourcePath="..\resources\shapes\3DBenchy.png" SelfReg="false"/>
@@ -692,6 +691,9 @@
     <ROW File="connection_failed.html" Component_="connection_failed.html" FileName="CONNEC~1.HTM|connection_failed.html" Attributes="0" SourcePath="..\resources\web\connection_failed.html" SelfReg="false"/>
     <ROW File="connect_loading.html" Component_="connection_failed.html" FileName="CONNEC~2.HTM|connect_loading.html" Attributes="0" SourcePath="..\resources\web\connect_loading.html" SelfReg="false"/>
     <ROW File="loading.html" Component_="connection_failed.html" FileName="LOADIN~1.HTM|loading.html" Attributes="0" SourcePath="..\resources\web\loading.html" SelfReg="false"/>
+    <ROW File="F200_bed.STL" Component_="F3Edge_thumbnail.png" FileName="F200_bed.STL" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F200_bed.STL" SelfReg="false"/>
+    <ROW File="F3F200_thumbnail.png" Component_="F3Edge_thumbnail.png" FileName="F3F200~1.PNG|F3 F200_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F200_thumbnail.png" SelfReg="false"/>
+    <ROW File="F3F400_thumbnail.png" Component_="F3Edge_thumbnail.png" FileName="F3F400~1.PNG|F3 F400_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F400_thumbnail.png" SelfReg="false"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
     <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2"/>
@@ -1020,6 +1022,9 @@
   <COMPONENT cid="caphyon.advinst.msicomp.MsiUpgradeComponent">
     <ROW UpgradeCode="[|UpgradeCode]" VersionMin="0.0.1" VersionMax="[|ProductVersion]" Attributes="257" ActionProperty="OLDPRODUCTS"/>
     <ROW UpgradeCode="[|UpgradeCode]" VersionMin="[|ProductVersion]" Attributes="2" ActionProperty="AI_NEWERPRODUCTFOUND"/>
+  </COMPONENT>
+  <COMPONENT cid="caphyon.advinst.msicomp.SynchronizedFolderComponent">
+    <ROW Directory_="profiles_Dir" SourcePath="..\resources\profiles" Feature="MainFeature" ExcludePattern="*~|#*#|%*%|._|CVS|.cvsignore|SCCS|vssver.scc|mssccprj.scc|vssver2.scc|.svn|.DS_Store" ExcludeFlags="6" FileAddOptions="4"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.UpdaterComponent">
     <ROW Updater="updater.exe" URL="URL" SearchFreq="CheckFrequency" DownloadsFolder="DownloadsFolder" ID="ID" TargetDir="AppDir" AppName="ApplicationName" AppVersion="ApplicationVersion" CompanyName="CompanyName" DefCommandLine="DefaultCommandLine" Flags="Flags" IconIndex="0" UnistallCASeq="AI_UPDATER_UNINSTALL" Description="[|UpdaterName] [|ProductVersion]"/>
