@@ -33,13 +33,25 @@
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiDirsComponent">
     <ROW Directory="APPDIR" Directory_Parent="TARGETDIR" DefaultDir="APPDIR:." IsPseudoRoot="1"/>
+    <ROW Directory="Anker_Dir" Directory_Parent="profiles_Dir" DefaultDir="Anker"/>
+    <ROW Directory="Anycubic_Dir" Directory_Parent="profiles_Dir" DefaultDir="Anycubic"/>
     <ROW Directory="AppDataFolder" Directory_Parent="TARGETDIR" DefaultDir="APPDAT~1|AppDataFolder" IsPseudoRoot="1"/>
+    <ROW Directory="Artillery_Dir" Directory_Parent="profiles_Dir" DefaultDir="ARTILL~1|Artillery"/>
+    <ROW Directory="CocoaPress_Dir" Directory_Parent="profiles_Dir" DefaultDir="COCOAP~1|CocoaPress"/>
     <ROW Directory="DesktopFolder" Directory_Parent="TARGETDIR" DefaultDir="DESKTO~1|DesktopFolder" IsPseudoRoot="1"/>
     <ROW Directory="ES_Dir" Directory_Parent="shaders_Dir" DefaultDir="ES"/>
     <ROW Directory="F3Slic3r_1_Dir" Directory_Parent="profiles_Dir" DefaultDir="F3Slic3r"/>
     <ROW Directory="F3Slic3r_Dir" Directory_Parent="AppDataFolder" DefaultDir="F3Slic3r"/>
+    <ROW Directory="LNL3D_Dir" Directory_Parent="profiles_Dir" DefaultDir="LNL3D"/>
+    <ROW Directory="PapapiuLab_Dir" Directory_Parent="profiles_Dir" DefaultDir="PAPAPI~1|PapapiuLab"/>
+    <ROW Directory="PrusaResearch_Dir" Directory_Parent="profiles_Dir" DefaultDir="PRUSAR~1|PrusaResearch"/>
     <ROW Directory="SHORTCUTDIR" Directory_Parent="TARGETDIR" DefaultDir="SHORTC~1|SHORTCUTDIR" IsPseudoRoot="1"/>
+    <ROW Directory="Snapmaker_Dir" Directory_Parent="profiles_Dir" DefaultDir="SNAPMA~1|Snapmaker"/>
+    <ROW Directory="Sovol_Dir" Directory_Parent="profiles_Dir" DefaultDir="Sovol"/>
     <ROW Directory="TARGETDIR" DefaultDir="SourceDir"/>
+    <ROW Directory="TriLAB_Dir" Directory_Parent="profiles_Dir" DefaultDir="TriLAB"/>
+    <ROW Directory="Trimaker_Dir" Directory_Parent="profiles_Dir" DefaultDir="Trimaker"/>
+    <ROW Directory="Voron_Dir" Directory_Parent="profiles_Dir" DefaultDir="Voron"/>
     <ROW Directory="__1_Dir" Directory_Parent="shaders_Dir" DefaultDir="140"/>
     <ROW Directory="__Dir" Directory_Parent="shaders_Dir" DefaultDir="110"/>
     <ROW Directory="be_Dir" Directory_Parent="localization_Dir" DefaultDir="be"/>
@@ -81,11 +93,18 @@
     <ROW Component="AI_CustomARPName" ComponentId="{2A99C594-E1E1-4399-BDED-99F4011E4973}" Directory_="APPDIR" Attributes="260" KeyPath="DisplayName" Options="1"/>
     <ROW Component="AI_ExePath" ComponentId="{A4289296-8B99-4132-AF74-51935FF4306D}" Directory_="APPDIR" Attributes="260" KeyPath="AI_ExePath"/>
     <ROW Component="APPDIR" ComponentId="{474D491E-FF73-421C-815B-79394243B4AB}" Directory_="APPDIR" Attributes="0"/>
+    <ROW Component="AQD_thumbnail.png" ComponentId="{A1104F62-629F-4DB2-8540-03831905B2F2}" Directory_="TriLAB_Dir" Attributes="0" KeyPath="AQD_thumbnail.png" Type="0"/>
     <ROW Component="Anker.idx" ComponentId="{F6FB69D7-017B-4013-883E-D60477DEA132}" Directory_="profiles_Dir" Attributes="0" KeyPath="F3Slic3r.idx" Type="0"/>
+    <ROW Component="CocoaPress_MiniChef.png" ComponentId="{C7E133D2-2AED-4B9F-881A-49336A5E97C1}" Directory_="CocoaPress_Dir" Attributes="0" KeyPath="CocoaPress_MiniChef.png" Type="0"/>
+    <ROW Component="CosmosII_bed.stl" ComponentId="{A76AA398-D68B-467C-AC70-92B4BCCC8D37}" Directory_="Trimaker_Dir" Attributes="0" KeyPath="CosmosII_bed.stl" Type="0"/>
     <ROW Component="F3Edge_thumbnail.png" ComponentId="{9D16C4BF-9EBE-4ABD-A6D9-6B4DF069DEEE}" Directory_="F3Slic3r_1_Dir" Attributes="0" KeyPath="F3Edge_thumbnail.png" Type="0"/>
     <ROW Component="F3Slic3r" ComponentId="{C8094E42-728A-4BB5-8957-DC632F6DD80E}" Directory_="F3Slic3r_Dir" Attributes="0"/>
+    <ROW Component="LNL3D_D3_bed.stl" ComponentId="{9E754592-0346-450F-89F9-328E2CDFFD72}" Directory_="LNL3D_Dir" Attributes="0" KeyPath="LNL3D_D3_bed.stl" Type="0"/>
+    <ROW Component="M5texture_v2.svg" ComponentId="{D16F3197-7897-47A4-BC21-EDF996177741}" Directory_="Anker_Dir" Attributes="0" KeyPath="M5texture_v2.svg" Type="0"/>
     <ROW Component="NotoSansRegular.ttf" ComponentId="{759F6AA5-EA33-4906-BE86-6E43C5F9679C}" Directory_="fonts_Dir" Attributes="0" Type="0"/>
     <ROW Component="OCCTWrapper.dll" ComponentId="{00737D01-D763-4460-B77E-8E9504BE4CD7}" Directory_="APPDIR" Attributes="0" KeyPath="OCCTWrapper.dll"/>
+    <ROW Component="PHOTONMONOSE_thumbnail.png" ComponentId="{1B057B4D-EFEF-45F2-B167-6C23DEA03F6A}" Directory_="Anycubic_Dir" Attributes="0" KeyPath="PHOTONMONOSE_thumbnail.png" Type="0"/>
+    <ROW Component="Papapiu_N1S_Bed.stl" ComponentId="{A548D13D-3007-4429-9509-24DA94EF3479}" Directory_="PapapiuLab_Dir" Attributes="0" KeyPath="Papapiu_N1S_Bed.stl" Type="0"/>
     <ROW Component="ProductInformation" ComponentId="{C7B038B5-701C-48DD-A263-5F3D72F0FD81}" Directory_="APPDIR" Attributes="260" KeyPath="Version"/>
     <ROW Component="PrusaSlicer.dll" ComponentId="{1091C055-BCEC-4280-A7B8-6A0D42AE33BF}" Directory_="APPDIR" Attributes="0" KeyPath="PrusaSlicer.dll"/>
     <ROW Component="PrusaSlicer.mo" ComponentId="{B9B3D5E0-CCB0-47B2-8173-97EE07F24EBD}" Directory_="ca_Dir" Attributes="0" KeyPath="PrusaSlicer.mo" Type="0"/>
@@ -111,11 +130,15 @@
     <ROW Component="PrusaSlicer.mo_8" ComponentId="{30761EBF-3642-4324-A837-BC8B1AD6CCA9}" Directory_="ja_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_8" Type="0"/>
     <ROW Component="PrusaSlicer.mo_9" ComponentId="{48B64147-B619-48CF-9997-FEF9AE5023E6}" Directory_="ko_Dir" Attributes="0" KeyPath="PrusaSlicer.mo_9" Type="0"/>
     <ROW Component="SHORTCUTDIR" ComponentId="{7489D54E-2336-41FE-936F-C43A25ECF170}" Directory_="SHORTCUTDIR" Attributes="0"/>
+    <ROW Component="SnapmakerA250DualQSKit_cover.png" ComponentId="{75444858-C667-4662-AC61-0E0F332F291C}" Directory_="Snapmaker_Dir" Attributes="0" KeyPath="SnapmakerA250DualQSKit_cover.png" Type="0"/>
+    <ROW Component="Sovol.ini" ComponentId="{2202AD2A-9EBD-4E68-B4DB-7D01F30DE265}" Directory_="Sovol_Dir" Attributes="0" KeyPath="Sovol.ini" Type="0"/>
     <ROW Component="add.svg" ComponentId="{A009E2C9-772E-4E11-B691-D83C08DE5DC7}" Directory_="icons_Dir" Attributes="0" KeyPath="add.svg" Type="0"/>
     <ROW Component="af.po" ComponentId="{671A19FD-8DAC-456B-BC4F-3A5D4027FB90}" Directory_="wx_locale_Dir" Attributes="0" KeyPath="af.po" Type="0"/>
     <ROW Component="background.fs" ComponentId="{963AB7D4-FB0D-4657-9BE3-3B562803F9F0}" Directory_="__Dir" Attributes="0" KeyPath="background.fs" Type="0"/>
     <ROW Component="background.fs_1" ComponentId="{0790B6C3-5FD2-4065-B569-32D5E1F1D912}" Directory_="__1_Dir" Attributes="0" KeyPath="background.fs_1" Type="0"/>
     <ROW Component="background.fs_2" ComponentId="{ECD6BE3C-FA12-4C89-938E-A2F9C2778F94}" Directory_="ES_Dir" Attributes="0" KeyPath="background.fs_2" Type="0"/>
+    <ROW Component="bedtextureSW250x210.png" ComponentId="{D5F89FFF-F947-45C9-AEFA-E29F24CC583E}" Directory_="Voron_Dir" Attributes="0" KeyPath="bedtextureSW250x210.png" Type="0"/>
+    <ROW Component="bedx3plus.stl" ComponentId="{F97F35A5-6029-4BEF-9086-43ADCCD51F02}" Directory_="Artillery_Dir" Attributes="0" KeyPath="bedx3plus.stl" Type="0"/>
     <ROW Component="box.png" ComponentId="{51393945-0347-48E9-B870-132C7C7851A5}" Directory_="shapes_Dir" Attributes="0" KeyPath="box.png" Type="0"/>
     <ROW Component="connection_failed.html" ComponentId="{A2D4FBCA-6CC1-4C24-B846-DB917C43C9FE}" Directory_="web_Dir" Attributes="0" KeyPath="connection_failed.html" Type="0"/>
     <ROW Component="dconnexion.rules" ComponentId="{C3B3D8BD-A558-4512-8237-782BF0C99B9C}" Directory_="udev_Dir" Attributes="0" KeyPath="dconnexion.rules" Type="0"/>
@@ -123,6 +146,7 @@
     <ROW Component="libgmp10.dll" ComponentId="{7B646215-CF29-4B35-9FE5-D6EBB5738648}" Directory_="APPDIR" Attributes="256" KeyPath="libgmp10.dll"/>
     <ROW Component="libmpfr4.dll" ComponentId="{C51BB43E-AED2-4040-873F-AAC3D0BCC08B}" Directory_="APPDIR" Attributes="256" KeyPath="libmpfr4.dll"/>
     <ROW Component="list.txt" ComponentId="{3ED9F3A2-8F4B-4869-94CA-949E254534A4}" Directory_="localization_Dir" Attributes="0" KeyPath="list.txt" Type="0"/>
+    <ROW Component="mini.svg" ComponentId="{9F219BB4-BF0E-4CAB-9D32-E2F7F300BE23}" Directory_="PrusaResearch_Dir" Attributes="0" KeyPath="mini.svg" Type="0"/>
     <ROW Component="msvcp140.dll" ComponentId="{22B07D1C-312C-4924-B858-72F97677D978}" Directory_="APPDIR" Attributes="256" KeyPath="msvcp140.dll"/>
     <ROW Component="opengl32.dll" ComponentId="{F172C944-4791-498E-815E-35618A67C581}" Directory_="mesa_Dir" Attributes="256" KeyPath="opengl32.dll"/>
     <ROW Component="prusagcodeviewer.exe" ComponentId="{0E8F92B7-7A0E-47C7-A532-1B9A63913913}" Directory_="APPDIR" Attributes="0" KeyPath="prusagcodeviewer.exe"/>
@@ -145,9 +169,9 @@
     <ROW File="libgmp10.dll" Component_="libgmp10.dll" FileName="LIBGMP~1.DLL|libgmp-10.dll" Attributes="0" SourcePath="..\build\src\Release\libgmp-10.dll" SelfReg="false"/>
     <ROW File="libmpfr4.dll" Component_="libmpfr4.dll" FileName="LIBMPF~1.DLL|libmpfr-4.dll" Attributes="0" SourcePath="..\build\src\Release\libmpfr-4.dll" SelfReg="false"/>
     <ROW File="prusaslicerconsole.exe" Component_="prusaslicerconsole.exe" FileName="PRUSA-~1.EXE|prusa-slicer-console.exe" Attributes="0" SourcePath="..\build\src\Release\prusa-slicer-console.exe" SelfReg="false" DigSign="true"/>
-    <ROW File="msvcp140.dll" Component_="msvcp140.dll" FileName="msvcp140.dll" Attributes="0" SourcePath="..\..\PrusaSliver-deps\usr\local\bin\msvcp140.dll" SelfReg="false"/>
-    <ROW File="vcruntime140.dll" Component_="vcruntime140.dll" FileName="VCRUNT~1.DLL|vcruntime140.dll" Attributes="0" SourcePath="..\..\PrusaSliver-deps\usr\local\bin\vcruntime140.dll" SelfReg="false"/>
-    <ROW File="vcruntime140_1.dll" Component_="vcruntime140_1.dll" FileName="VCRUNT~2.DLL|vcruntime140_1.dll" Attributes="0" SourcePath="..\..\PrusaSliver-deps\usr\local\bin\vcruntime140_1.dll" SelfReg="false"/>
+    <ROW File="msvcp140.dll" Component_="msvcp140.dll" FileName="msvcp140.dll" Attributes="0" SourcePath="..\deps\build\destdir\usr\local\bin\msvcp140.dll" SelfReg="false"/>
+    <ROW File="vcruntime140.dll" Component_="vcruntime140.dll" FileName="VCRUNT~1.DLL|vcruntime140.dll" Attributes="0" SourcePath="..\deps\build\destdir\usr\local\bin\vcruntime140.dll" SelfReg="false"/>
+    <ROW File="vcruntime140_1.dll" Component_="vcruntime140_1.dll" FileName="VCRUNT~2.DLL|vcruntime140_1.dll" Attributes="0" SourcePath="..\deps\build\destdir\usr\local\bin\vcruntime140_1.dll" SelfReg="false"/>
     <ROW File="opengl32.dll" Component_="opengl32.dll" FileName="opengl32.dll" Attributes="0" SourcePath="..\opengl32.dll" SelfReg="false"/>
     <ROW File="embossed_text.obj" Component_="embossed_text.obj" FileName="EMBOSS~1.OBJ|embossed_text.obj" Attributes="0" SourcePath="..\resources\data\embossed_text.obj" SelfReg="false"/>
     <ROW File="hints.ini" Component_="embossed_text.obj" FileName="hints.ini" Attributes="0" SourcePath="..\resources\data\hints.ini" SelfReg="false"/>
@@ -694,6 +718,191 @@
     <ROW File="F200_bed.STL" Component_="F3Edge_thumbnail.png" FileName="F200_bed.STL" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F200_bed.STL" SelfReg="false"/>
     <ROW File="F3F200_thumbnail.png" Component_="F3Edge_thumbnail.png" FileName="F3F200~1.PNG|F3 F200_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F200_thumbnail.png" SelfReg="false"/>
     <ROW File="F3F400_thumbnail.png" Component_="F3Edge_thumbnail.png" FileName="F3F400~1.PNG|F3 F400_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F400_thumbnail.png" SelfReg="false"/>
+    <ROW File="M5texture_v2.svg" Component_="M5texture_v2.svg" FileName="M5-TEX~1.SVG|M5-texture_v2.svg" Attributes="0" SourcePath="..\resources\profiles\Anker\M5-texture_v2.svg" SelfReg="false"/>
+    <ROW File="M5Cbed.stl" Component_="M5texture_v2.svg" FileName="M5C-bed.stl" Attributes="0" SourcePath="..\resources\profiles\Anker\M5C-bed.stl" SelfReg="false"/>
+    <ROW File="M5Ctexture.svg" Component_="M5texture_v2.svg" FileName="M5C-TE~1.SVG|M5C-texture.svg" Attributes="0" SourcePath="..\resources\profiles\Anker\M5C-texture.svg" SelfReg="false"/>
+    <ROW File="M5Ctexture_v2.svg" Component_="M5texture_v2.svg" FileName="M5C-TE~2.SVG|M5C-texture_v2.svg" Attributes="0" SourcePath="..\resources\profiles\Anker\M5C-texture_v2.svg" SelfReg="false"/>
+    <ROW File="M5C_thumbnail.png" Component_="M5texture_v2.svg" FileName="M5C_TH~1.PNG|M5C_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anker\M5C_thumbnail.png" SelfReg="false"/>
+    <ROW File="M5C_thumbnail_v2.png" Component_="M5texture_v2.svg" FileName="M5C_TH~2.PNG|M5C_thumbnail_v2.png" Attributes="0" SourcePath="..\resources\profiles\Anker\M5C_thumbnail_v2.png" SelfReg="false"/>
+    <ROW File="M5_thumbnail_v2.png" Component_="M5texture_v2.svg" FileName="M5_THU~1.PNG|M5_thumbnail_v2.png" Attributes="0" SourcePath="..\resources\profiles\Anker\M5_thumbnail_v2.png" SelfReg="false"/>
+    <ROW File="Anker.idx" Component_="Anker.idx" FileName="Anker.idx" Attributes="0" SourcePath="..\resources\profiles\Anker.idx" SelfReg="false"/>
+    <ROW File="Anker.ini" Component_="Anker.idx" FileName="Anker.ini" Attributes="0" SourcePath="..\resources\profiles\Anker.ini" SelfReg="false"/>
+    <ROW File="PHOTONMONOSE_thumbnail.png" Component_="PHOTONMONOSE_thumbnail.png" FileName="PHOTON~1.PNG|PHOTON MONO SE_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anycubic\PHOTON MONO SE_thumbnail.png" SelfReg="false"/>
+    <ROW File="PHOTONMONOX6K_thumbnail.png" Component_="PHOTONMONOSE_thumbnail.png" FileName="PHOTON~2.PNG|PHOTON MONO X 6K_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anycubic\PHOTON MONO X 6K_thumbnail.png" SelfReg="false"/>
+    <ROW File="PHOTONMONO_thumbnail.png" Component_="PHOTONMONOSE_thumbnail.png" FileName="PHOTON~3.PNG|PHOTON MONO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Anycubic\PHOTON MONO_thumbnail.png" SelfReg="false"/>
+    <ROW File="Anycubic.ini" Component_="Anker.idx" FileName="Anycubic.ini" Attributes="0" SourcePath="..\resources\profiles\Anycubic.ini" SelfReg="false"/>
+    <ROW File="bedx3plus.stl" Component_="bedx3plus.stl" FileName="BED-X3~1.STL|bed-x3-plus.stl" Attributes="0" SourcePath="..\resources\profiles\Artillery\bed-x3-plus.stl" SelfReg="false"/>
+    <ROW File="bedx3pro.stl" Component_="bedx3plus.stl" FileName="BED-X3~2.STL|bed-x3-pro.stl" Attributes="0" SourcePath="..\resources\profiles\Artillery\bed-x3-pro.stl" SelfReg="false"/>
+    <ROW File="bedx4max.stl" Component_="bedx3plus.stl" FileName="BED-X4~1.STL|bed-x4-max.stl" Attributes="0" SourcePath="..\resources\profiles\Artillery\bed-x4-max.stl" SelfReg="false"/>
+    <ROW File="bedx4plus.stl" Component_="bedx3plus.stl" FileName="BED-X4~2.STL|bed-x4-plus.stl" Attributes="0" SourcePath="..\resources\profiles\Artillery\bed-x4-plus.stl" SelfReg="false"/>
+    <ROW File="bedx4pro.stl" Component_="bedx3plus.stl" FileName="BED-X4~3.STL|bed-x4-pro.stl" Attributes="0" SourcePath="..\resources\profiles\Artillery\bed-x4-pro.stl" SelfReg="false"/>
+    <ROW File="X3Plus_thumbnail.png" Component_="bedx3plus.stl" FileName="X3PLUS~1.PNG|X3 Plus_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Artillery\X3 Plus_thumbnail.png" SelfReg="false"/>
+    <ROW File="X3Pro_thumbnail.png" Component_="bedx3plus.stl" FileName="X3PRO_~1.PNG|X3 Pro_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Artillery\X3 Pro_thumbnail.png" SelfReg="false"/>
+    <ROW File="X4Max_thumbnail.png" Component_="bedx3plus.stl" FileName="X4MAX_~1.PNG|X4 Max_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Artillery\X4 Max_thumbnail.png" SelfReg="false"/>
+    <ROW File="X4Plus_thumbnail.png" Component_="bedx3plus.stl" FileName="X4PLUS~1.PNG|X4 Plus_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Artillery\X4 Plus_thumbnail.png" SelfReg="false"/>
+    <ROW File="X4Pro_thumbnail.png" Component_="bedx3plus.stl" FileName="X4PRO_~1.PNG|X4 Pro_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Artillery\X4 Pro_thumbnail.png" SelfReg="false"/>
+    <ROW File="Artillery.ini" Component_="Anker.idx" FileName="ARTILL~1.INI|Artillery.ini" Attributes="0" SourcePath="..\resources\profiles\Artillery.ini" SelfReg="false"/>
+    <ROW File="BIBO.ini" Component_="Anker.idx" FileName="BIBO.ini" Attributes="0" SourcePath="..\resources\profiles\BIBO.ini" SelfReg="false"/>
+    <ROW File="CocoaPress_MiniChef.png" Component_="CocoaPress_MiniChef.png" FileName="COCOAP~1.PNG|CocoaPress_MiniChef.png" Attributes="0" SourcePath="..\resources\profiles\CocoaPress\CocoaPress_MiniChef.png" SelfReg="false"/>
+    <ROW File="minichef_bed.stl" Component_="CocoaPress_MiniChef.png" FileName="MINICH~1.STL|minichef_bed.stl" Attributes="0" SourcePath="..\resources\profiles\CocoaPress\minichef_bed.stl" SelfReg="false"/>
+    <ROW File="minichef_texture.svg" Component_="CocoaPress_MiniChef.png" FileName="MINICH~1.SVG|minichef_texture.svg" Attributes="0" SourcePath="..\resources\profiles\CocoaPress\minichef_texture.svg" SelfReg="false"/>
+    <ROW File="CocoaPress.idx" Component_="Anker.idx" FileName="COCOAP~1.IDX|CocoaPress.idx" Attributes="0" SourcePath="..\resources\profiles\CocoaPress.idx" SelfReg="false"/>
+    <ROW File="CocoaPress.ini" Component_="Anker.idx" FileName="COCOAP~1.INI|CocoaPress.ini" Attributes="0" SourcePath="..\resources\profiles\CocoaPress.ini" SelfReg="false"/>
+    <ROW File="F3F400_thumbnail.jpg" Component_="F3Edge_thumbnail.png" FileName="F3F400~1.JPG|F3 F400_thumbnail.jpg" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F400_thumbnail.jpg" SelfReg="false"/>
+    <ROW File="LNL3D_D3_bed.stl" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~1.STL|LNL3D_D3_bed.stl" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D3_bed.stl" SelfReg="false"/>
+    <ROW File="LNL3D_D3_texture.svg" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~1.SVG|LNL3D_D3_texture.svg" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D3_texture.svg" SelfReg="false"/>
+    <ROW File="LNL3D_D3_thumbnail.png" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~1.PNG|LNL3D_D3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D3_thumbnail.png" SelfReg="false"/>
+    <ROW File="LNL3D_D3_V2_bed.stl" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~2.STL|LNL3D_D3_V2_bed.stl" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D3_V2_bed.stl" SelfReg="false"/>
+    <ROW File="LNL3D_D3_V2_texture.svg" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~2.SVG|LNL3D_D3_V2_texture.svg" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D3_V2_texture.svg" SelfReg="false"/>
+    <ROW File="LNL3D_D3_V2_thumbnail.png" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~2.PNG|LNL3D_D3_V2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D3_V2_thumbnail.png" SelfReg="false"/>
+    <ROW File="LNL3D_D3_VULCAN_bed.stl" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~3.STL|LNL3D_D3_VULCAN_bed.stl" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D3_VULCAN_bed.stl" SelfReg="false"/>
+    <ROW File="LNL3D_D3_VULCAN_texture.svg" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~3.SVG|LNL3D_D3_VULCAN_texture.svg" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D3_VULCAN_texture.svg" SelfReg="false"/>
+    <ROW File="LNL3D_D3_VULCAN_thumbnail.png" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~3.PNG|LNL3D_D3_VULCAN_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D3_VULCAN_thumbnail.png" SelfReg="false"/>
+    <ROW File="LNL3D_D5_bed.stl" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~4.STL|LNL3D_D5_bed.stl" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D5_bed.stl" SelfReg="false"/>
+    <ROW File="LNL3D_D5_texture.svg" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~4.SVG|LNL3D_D5_texture.svg" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D5_texture.svg" SelfReg="false"/>
+    <ROW File="LNL3D_D5_thumbnail.png" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~4.PNG|LNL3D_D5_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D5_thumbnail.png" SelfReg="false"/>
+    <ROW File="LNL3D_D6_bed.stl" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~5.STL|LNL3D_D6_bed.stl" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D6_bed.stl" SelfReg="false"/>
+    <ROW File="LNL3D_D6_texture.svg" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~5.SVG|LNL3D_D6_texture.svg" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D6_texture.svg" SelfReg="false"/>
+    <ROW File="LNL3D_D6_thumbnail.png" Component_="LNL3D_D3_bed.stl" FileName="LNL3D_~5.PNG|LNL3D_D6_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\LNL3D\LNL3D_D6_thumbnail.png" SelfReg="false"/>
+    <ROW File="LNL3D.idx" Component_="Anker.idx" FileName="LNL3D.idx" Attributes="0" SourcePath="..\resources\profiles\LNL3D.idx" SelfReg="false"/>
+    <ROW File="LNL3D.ini" Component_="Anker.idx" FileName="LNL3D.ini" Attributes="0" SourcePath="..\resources\profiles\LNL3D.ini" SelfReg="false"/>
+    <ROW File="Papapiu_N1S_Bed.stl" Component_="Papapiu_N1S_Bed.stl" FileName="PAPAPI~1.STL|Papapiu_N1S_Bed.stl" Attributes="0" SourcePath="..\resources\profiles\PapapiuLab\Papapiu_N1S_Bed.stl" SelfReg="false"/>
+    <ROW File="Papapiu_N1S_thumbnail.png" Component_="Papapiu_N1S_Bed.stl" FileName="PAPAPI~1.PNG|Papapiu_N1S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PapapiuLab\Papapiu_N1S_thumbnail.png" SelfReg="false"/>
+    <ROW File="Papapiu_N1_Texture.png" Component_="Papapiu_N1S_Bed.stl" FileName="PAPAPI~2.PNG|Papapiu_N1_Texture.png" Attributes="0" SourcePath="..\resources\profiles\PapapiuLab\Papapiu_N1_Texture.png" SelfReg="false"/>
+    <ROW File="PapapiuLab.idx" Component_="Anker.idx" FileName="PAPAPI~1.IDX|PapapiuLab.idx" Attributes="0" SourcePath="..\resources\profiles\PapapiuLab.idx" SelfReg="false"/>
+    <ROW File="PapapiuLab.ini" Component_="Anker.idx" FileName="PAPAPI~1.INI|PapapiuLab.ini" Attributes="0" SourcePath="..\resources\profiles\PapapiuLab.ini" SelfReg="false"/>
+    <ROW File="mini.svg" Component_="mini.svg" FileName="mini.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mini.svg" SelfReg="false"/>
+    <ROW File="miniIS.svg" Component_="mini.svg" FileName="miniIS.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\miniIS.svg" SelfReg="false"/>
+    <ROW File="miniISbeta.svg" Component_="mini.svg" FileName="MINIIS~1.SVG|miniISbeta.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\miniISbeta.svg" SelfReg="false"/>
+    <ROW File="MINIIS_ALPHA_thumbnail.png" Component_="mini.svg" FileName="MINIIS~1.PNG|MINIIS_ALPHA_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MINIIS_ALPHA_thumbnail.png" SelfReg="false"/>
+    <ROW File="MINIIS_BETA_thumbnail.png" Component_="mini.svg" FileName="MINIIS~2.PNG|MINIIS_BETA_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MINIIS_BETA_thumbnail.png" SelfReg="false"/>
+    <ROW File="MINIIS_thumbnail.png" Component_="mini.svg" FileName="MINIIS~3.PNG|MINIIS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MINIIS_thumbnail.png" SelfReg="false"/>
+    <ROW File="mini_bed.stl" Component_="mini.svg" FileName="mini_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mini_bed.stl" SelfReg="false"/>
+    <ROW File="MINI_thumbnail.png" Component_="mini.svg" FileName="MINI_T~1.PNG|MINI_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MINI_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK2.5MMU2_thumbnail.png" Component_="mini.svg" FileName="MK25MM~1.PNG|MK2.5MMU2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK2.5MMU2_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK2.5SMMU2S_thumbnail.png" Component_="mini.svg" FileName="MK25SM~1.PNG|MK2.5SMMU2S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK2.5SMMU2S_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK2.5S_thumbnail.png" Component_="mini.svg" FileName="MK25S_~1.PNG|MK2.5S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK2.5S_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK2.5_thumbnail.png" Component_="mini.svg" FileName="MK25_T~1.PNG|MK2.5_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK2.5_thumbnail.png" SelfReg="false"/>
+    <ROW File="mk2.svg" Component_="mini.svg" FileName="mk2.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk2.svg" SelfReg="false"/>
+    <ROW File="MK2SMM_thumbnail.png" Component_="mini.svg" FileName="MK2SMM~1.PNG|MK2SMM_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK2SMM_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK2S_thumbnail.png" Component_="mini.svg" FileName="MK2S_T~1.PNG|MK2S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK2S_thumbnail.png" SelfReg="false"/>
+    <ROW File="mk2_bed.stl" Component_="mini.svg" FileName="mk2_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk2_bed.stl" SelfReg="false"/>
+    <ROW File="MK3.5MMU3_thumbnail.png" Component_="mini.svg" FileName="MK35MM~1.PNG|MK3.5MMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3.5MMU3_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK3.9MMU3_thumbnail.png" Component_="mini.svg" FileName="MK39MM~1.PNG|MK3.9MMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3.9MMU3_thumbnail.png" SelfReg="false"/>
+    <ROW File="mk3.svg" Component_="mini.svg" FileName="mk3.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk3.svg" SelfReg="false"/>
+    <ROW File="mk35.svg" Component_="mini.svg" FileName="mk35.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk35.svg" SelfReg="false"/>
+    <ROW File="MK35_thumbnail.png" Component_="mini.svg" FileName="MK35_T~1.PNG|MK35_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK35_thumbnail.png" SelfReg="false"/>
+    <ROW File="mk39.svg" Component_="mini.svg" FileName="mk39.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk39.svg" SelfReg="false"/>
+    <ROW File="MK39IS_thumbnail.png" Component_="mini.svg" FileName="MK39IS~1.PNG|MK39IS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK39IS_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK39IS_thumbnail_v2.png" Component_="mini.svg" FileName="MK39IS~2.PNG|MK39IS_thumbnail_v2.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK39IS_thumbnail_v2.png" SelfReg="false"/>
+    <ROW File="MK39_thumbnail.png" Component_="mini.svg" FileName="MK39_T~1.PNG|MK39_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK39_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK3MMU2_thumbnail.png" Component_="mini.svg" FileName="MK3MMU~1.PNG|MK3MMU2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3MMU2_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK3SMMU2S_thumbnail.png" Component_="mini.svg" FileName="MK3SMM~1.PNG|MK3SMMU2S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3SMMU2S_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK3SMMU3_thumbnail.png" Component_="mini.svg" FileName="MK3SMM~2.PNG|MK3SMMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3SMMU3_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK3S_thumbnail.png" Component_="mini.svg" FileName="MK3S_T~1.PNG|MK3S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3S_thumbnail.png" SelfReg="false"/>
+    <ROW File="mk3_bed.stl" Component_="mini.svg" FileName="mk3_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk3_bed.stl" SelfReg="false"/>
+    <ROW File="MK3_thumbnail.png" Component_="mini.svg" FileName="MK3_TH~1.PNG|MK3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK3_thumbnail.png" SelfReg="false"/>
+    <ROW File="mk4.svg" Component_="mini.svg" FileName="mk4.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk4.svg" SelfReg="false"/>
+    <ROW File="mk4is.svg" Component_="mini.svg" FileName="mk4is.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk4is.svg" SelfReg="false"/>
+    <ROW File="MK4ISMMU3_thumbnail.png" Component_="mini.svg" FileName="MK4ISM~1.PNG|MK4ISMMU3_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4ISMMU3_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK4IS_thumbnail.png" Component_="mini.svg" FileName="MK4IS_~1.PNG|MK4IS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4IS_thumbnail.png" SelfReg="false"/>
+    <ROW File="MK4IS_thumbnail_v2.png" Component_="mini.svg" FileName="MK4IS_~2.PNG|MK4IS_thumbnail_v2.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4IS_thumbnail_v2.png" SelfReg="false"/>
+    <ROW File="mk4_bed.stl" Component_="mini.svg" FileName="mk4_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\mk4_bed.stl" SelfReg="false"/>
+    <ROW File="MK4_thumbnail.png" Component_="mini.svg" FileName="MK4_TH~1.PNG|MK4_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\MK4_thumbnail.png" SelfReg="false"/>
+    <ROW File="sl1.svg" Component_="mini.svg" FileName="sl1.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\sl1.svg" SelfReg="false"/>
+    <ROW File="sl1s.svg" Component_="mini.svg" FileName="sl1s.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\sl1s.svg" SelfReg="false"/>
+    <ROW File="sl1s_bed.stl" Component_="mini.svg" FileName="sl1s_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\sl1s_bed.stl" SelfReg="false"/>
+    <ROW File="SL1S_thumbnail.png" Component_="mini.svg" FileName="SL1S_T~1.PNG|SL1S_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\SL1S_thumbnail.png" SelfReg="false"/>
+    <ROW File="sl1_bed.stl" Component_="mini.svg" FileName="sl1_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\sl1_bed.stl" SelfReg="false"/>
+    <ROW File="SL1_thumbnail.png" Component_="mini.svg" FileName="SL1_TH~1.PNG|SL1_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\SL1_thumbnail.png" SelfReg="false"/>
+    <ROW File="xl.svg" Component_="mini.svg" FileName="xl.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\xl.svg" SelfReg="false"/>
+    <ROW File="XL2IS_alpha_thumbnail.png" Component_="mini.svg" FileName="XL2IS_~1.PNG|XL2IS_alpha_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL2IS_alpha_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL2IS_beta_thumbnail.png" Component_="mini.svg" FileName="XL2IS_~2.PNG|XL2IS_beta_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL2IS_beta_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL2IS_thumbnail.png" Component_="mini.svg" FileName="XL2IS_~3.PNG|XL2IS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL2IS_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL2_thumbnail.png" Component_="mini.svg" FileName="XL2_TH~1.PNG|XL2_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL2_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL5IS_alpha_thumbnail.png" Component_="mini.svg" FileName="XL5IS_~1.PNG|XL5IS_alpha_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL5IS_alpha_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL5IS_beta_thumbnail.png" Component_="mini.svg" FileName="XL5IS_~2.PNG|XL5IS_beta_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL5IS_beta_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL5IS_thumbnail.png" Component_="mini.svg" FileName="XL5IS_~3.PNG|XL5IS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL5IS_thumbnail.png" SelfReg="false"/>
+    <ROW File="XL5_thumbnail.png" Component_="mini.svg" FileName="XL5_TH~1.PNG|XL5_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL5_thumbnail.png" SelfReg="false"/>
+    <ROW File="xlis_alpha.svg" Component_="mini.svg" FileName="XLIS_A~1.SVG|xlis_alpha.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\xlis_alpha.svg" SelfReg="false"/>
+    <ROW File="XLIS_alpha_thumbnail.png" Component_="mini.svg" FileName="XLIS_A~1.PNG|XLIS_alpha_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XLIS_alpha_thumbnail.png" SelfReg="false"/>
+    <ROW File="xlis_beta.svg" Component_="mini.svg" FileName="XLIS_B~1.SVG|xlis_beta.svg" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\xlis_beta.svg" SelfReg="false"/>
+    <ROW File="XLIS_beta_thumbnail.png" Component_="mini.svg" FileName="XLIS_B~1.PNG|XLIS_beta_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XLIS_beta_thumbnail.png" SelfReg="false"/>
+    <ROW File="XLIS_thumbnail.png" Component_="mini.svg" FileName="XLIS_T~1.PNG|XLIS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XLIS_thumbnail.png" SelfReg="false"/>
+    <ROW File="xl_bed.stl" Component_="mini.svg" FileName="xl_bed.stl" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\xl_bed.stl" SelfReg="false"/>
+    <ROW File="XL_thumbnail.png" Component_="mini.svg" FileName="XL_THU~1.PNG|XL_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch\XL_thumbnail.png" SelfReg="false"/>
+    <ROW File="PrusaResearch.idx" Component_="Anker.idx" FileName="PRUSAR~1.IDX|PrusaResearch.idx" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch.idx" SelfReg="false"/>
+    <ROW File="PrusaResearch.ini" Component_="Anker.idx" FileName="PRUSAR~1.INI|PrusaResearch.ini" Attributes="0" SourcePath="..\resources\profiles\PrusaResearch.ini" SelfReg="false"/>
+    <ROW File="RatRig.idx" Component_="Anker.idx" FileName="RatRig.idx" Attributes="0" SourcePath="..\resources\profiles\RatRig.idx" SelfReg="false"/>
+    <ROW File="RatRig.ini" Component_="Anker.idx" FileName="RatRig.ini" Attributes="0" SourcePath="..\resources\profiles\RatRig.ini" SelfReg="false"/>
+    <ROW File="Rigid3D.idx" Component_="Anker.idx" FileName="Rigid3D.idx" Attributes="0" SourcePath="..\resources\profiles\Rigid3D.idx" SelfReg="false"/>
+    <ROW File="Rigid3D.ini" Component_="Anker.idx" FileName="Rigid3D.ini" Attributes="0" SourcePath="..\resources\profiles\Rigid3D.ini" SelfReg="false"/>
+    <ROW File="SnapmakerA250DualQSKit_cover.png" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~1.PNG|Snapmaker A250 Dual QSKit_cover.png" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A250 Dual QSKit_cover.png" SelfReg="false"/>
+    <ROW File="SnapmakerA250Dual_cover.png" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~2.PNG|Snapmaker A250 Dual_cover.png" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A250 Dual_cover.png" SelfReg="false"/>
+    <ROW File="SnapmakerA250QSKit_cover.png" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~3.PNG|Snapmaker A250 QSKit_cover.png" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A250 QSKit_cover.png" SelfReg="false"/>
+    <ROW File="SnapmakerA250QSKit_texture.svg" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~1.SVG|Snapmaker A250 QSKit_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A250 QSKit_texture.svg" SelfReg="false"/>
+    <ROW File="SnapmakerA250_bed.stl" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~1.STL|Snapmaker A250_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A250_bed.stl" SelfReg="false"/>
+    <ROW File="SnapmakerA250_cover.png" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~4.PNG|Snapmaker A250_cover.png" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A250_cover.png" SelfReg="false"/>
+    <ROW File="SnapmakerA250_texture.svg" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~2.SVG|Snapmaker A250_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A250_texture.svg" SelfReg="false"/>
+    <ROW File="SnapmakerA350DualQSKit_cover.png" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~5.PNG|Snapmaker A350 Dual QSKit_cover.png" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A350 Dual QSKit_cover.png" SelfReg="false"/>
+    <ROW File="SnapmakerA350Dual_cover.png" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~6.PNG|Snapmaker A350 Dual_cover.png" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A350 Dual_cover.png" SelfReg="false"/>
+    <ROW File="SnapmakerA350QSKit_cover.png" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~7.PNG|Snapmaker A350 QSKit_cover.png" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A350 QSKit_cover.png" SelfReg="false"/>
+    <ROW File="SnapmakerA350QSKit_texture.svg" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~3.SVG|Snapmaker A350 QSKit_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A350 QSKit_texture.svg" SelfReg="false"/>
+    <ROW File="SnapmakerA350_bed.stl" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~2.STL|Snapmaker A350_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A350_bed.stl" SelfReg="false"/>
+    <ROW File="SnapmakerA350_cover.png" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~8.PNG|Snapmaker A350_cover.png" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A350_cover.png" SelfReg="false"/>
+    <ROW File="SnapmakerA350_texture.svg" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~4.SVG|Snapmaker A350_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker A350_texture.svg" SelfReg="false"/>
+    <ROW File="SnapmakerJ1_bed.stl" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~3.STL|Snapmaker J1_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker J1_bed.stl" SelfReg="false"/>
+    <ROW File="SnapmakerJ1_cover.png" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~9.PNG|Snapmaker J1_cover.png" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker J1_cover.png" SelfReg="false"/>
+    <ROW File="SnapmakerJ1_texture.svg" Component_="SnapmakerA250DualQSKit_cover.png" FileName="SNAPMA~5.SVG|Snapmaker J1_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Snapmaker\Snapmaker J1_texture.svg" SelfReg="false"/>
+    <ROW File="Snapmaker.ini" Component_="Anker.idx" FileName="SNAPMA~1.INI|Snapmaker.ini" Attributes="0" SourcePath="..\resources\profiles\Snapmaker.ini" SelfReg="false"/>
+    <ROW File="Sovol.ini" Component_="Sovol.ini" FileName="Sovol.ini" Attributes="0" SourcePath="..\resources\profiles\Sovol\Sovol.ini" SelfReg="false"/>
+    <ROW File="SV01PRO_thumbnail.png" Component_="Sovol.ini" FileName="SV01PR~1.PNG|SV01 PRO_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV01 PRO_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV01_bed.stl" Component_="Sovol.ini" FileName="SV01_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV01_bed.stl" SelfReg="false"/>
+    <ROW File="SV01_BLTouch_thumbnail.png" Component_="Sovol.ini" FileName="SV01_B~1.PNG|SV01_BLTouch_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV01_BLTouch_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV01_texture.svg" Component_="Sovol.ini" FileName="SV01_T~1.SVG|SV01_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV01_texture.svg" SelfReg="false"/>
+    <ROW File="SV01_thumbnail.png" Component_="Sovol.ini" FileName="SV01_T~1.PNG|SV01_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV01_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV02_BLTouch_thumbnail.png" Component_="Sovol.ini" FileName="SV02_B~1.PNG|SV02_BLTouch_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV02_BLTouch_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV02_texture.svg" Component_="Sovol.ini" FileName="SV02_T~1.SVG|SV02_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV02_texture.svg" SelfReg="false"/>
+    <ROW File="SV02_thumbnail.png" Component_="Sovol.ini" FileName="SV02_T~1.PNG|SV02_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV02_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV03_bed.stl" Component_="Sovol.ini" FileName="SV03_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV03_bed.stl" SelfReg="false"/>
+    <ROW File="SV03_BLTouch_thumbnail.png" Component_="Sovol.ini" FileName="SV03_B~1.PNG|SV03_BLTouch_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV03_BLTouch_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV03_texture.svg" Component_="Sovol.ini" FileName="SV03_T~1.SVG|SV03_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV03_texture.svg" SelfReg="false"/>
+    <ROW File="SV03_thumbnail.png" Component_="Sovol.ini" FileName="SV03_T~1.PNG|SV03_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV03_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV04CopyMode_thumbnail.png" Component_="Sovol.ini" FileName="SV04CO~1.PNG|SV04 Copy Mode_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV04 Copy Mode_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV04DualMode_thumbnail.png" Component_="Sovol.ini" FileName="SV04DU~1.PNG|SV04 Dual Mode_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV04 Dual Mode_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV04MirrorMode_thumbnail.png" Component_="Sovol.ini" FileName="SV04MI~1.PNG|SV04 Mirror Mode_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV04 Mirror Mode_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV04SingleMode01_thumbnail.png" Component_="Sovol.ini" FileName="SV04SI~1.PNG|SV04 Single Mode 01_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV04 Single Mode 01_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV04SingleMode02_thumbnail.png" Component_="Sovol.ini" FileName="SV04SI~2.PNG|SV04 Single Mode 02_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV04 Single Mode 02_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV04_bed.stl" Component_="Sovol.ini" FileName="SV04_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV04_bed.stl" SelfReg="false"/>
+    <ROW File="SV04_texture.svg" Component_="Sovol.ini" FileName="SV04_T~1.SVG|SV04_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV04_texture.svg" SelfReg="false"/>
+    <ROW File="SV04_thumbnail.png" Component_="Sovol.ini" FileName="SV04_T~1.PNG|SV04_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV04_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV05_bed.stl" Component_="Sovol.ini" FileName="SV05_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV05_bed.stl" SelfReg="false"/>
+    <ROW File="SV05_texture.svg" Component_="Sovol.ini" FileName="SV05_T~1.SVG|SV05_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV05_texture.svg" SelfReg="false"/>
+    <ROW File="SV05_thumbnail.png" Component_="Sovol.ini" FileName="SV05_T~1.PNG|SV05_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV05_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV06PLUS_thumbnail.png" Component_="Sovol.ini" FileName="SV06PL~1.PNG|SV06 PLUS_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV06 PLUS_thumbnail.png" SelfReg="false"/>
+    <ROW File="SV06PLUS_bed.stl" Component_="Sovol.ini" FileName="SV06PL~1.STL|SV06PLUS_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV06PLUS_bed.stl" SelfReg="false"/>
+    <ROW File="SV06PLUS_texture.svg" Component_="Sovol.ini" FileName="SV06PL~1.SVG|SV06PLUS_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV06PLUS_texture.svg" SelfReg="false"/>
+    <ROW File="SV06_bed.stl" Component_="Sovol.ini" FileName="SV06_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV06_bed.stl" SelfReg="false"/>
+    <ROW File="SV06_texture.svg" Component_="Sovol.ini" FileName="SV06_T~1.SVG|SV06_texture.svg" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV06_texture.svg" SelfReg="false"/>
+    <ROW File="SV06_thumbnail.png" Component_="Sovol.ini" FileName="SV06_T~1.PNG|SV06_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Sovol\SV06_thumbnail.png" SelfReg="false"/>
+    <ROW File="Sovol.idx" Component_="Anker.idx" FileName="Sovol.idx" Attributes="0" SourcePath="..\resources\profiles\Sovol.idx" SelfReg="false"/>
+    <ROW File="Sovol.ini_1" Component_="Anker.idx" FileName="Sovol.ini" Attributes="0" SourcePath="..\resources\profiles\Sovol.ini" SelfReg="false"/>
+    <ROW File="Templates.idx" Component_="Anker.idx" FileName="TEMPLA~1.IDX|Templates.idx" Attributes="0" SourcePath="..\resources\profiles\Templates.idx" SelfReg="false"/>
+    <ROW File="Templates.ini" Component_="Anker.idx" FileName="TEMPLA~1.INI|Templates.ini" Attributes="0" SourcePath="..\resources\profiles\Templates.ini" SelfReg="false"/>
+    <ROW File="AQD_thumbnail.png" Component_="AQD_thumbnail.png" FileName="AQD_TH~1.PNG|AQD_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\TriLAB\AQD_thumbnail.png" SelfReg="false"/>
+    <ROW File="CosmosII_bed.stl" Component_="CosmosII_bed.stl" FileName="COSMOS~1.STL|CosmosII_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Trimaker\CosmosII_bed.stl" SelfReg="false"/>
+    <ROW File="Cosmos_II_thumbnail.png" Component_="CosmosII_bed.stl" FileName="COSMOS~1.PNG|Cosmos_II_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Trimaker\Cosmos_II_thumbnail.png" SelfReg="false"/>
+    <ROW File="NebulaCloud.svg" Component_="CosmosII_bed.stl" FileName="NEBULA~1.SVG|NebulaCloud.svg" Attributes="0" SourcePath="..\resources\profiles\Trimaker\NebulaCloud.svg" SelfReg="false"/>
+    <ROW File="NebulaCloud_bed.stl" Component_="CosmosII_bed.stl" FileName="NEBULA~1.STL|NebulaCloud_bed.stl" Attributes="0" SourcePath="..\resources\profiles\Trimaker\NebulaCloud_bed.stl" SelfReg="false"/>
+    <ROW File="Nebula_thumbnail.png" Component_="CosmosII_bed.stl" FileName="NEBULA~1.PNG|Nebula_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Trimaker\Nebula_thumbnail.png" SelfReg="false"/>
+    <ROW File="NPC_thumbnail.png" Component_="CosmosII_bed.stl" FileName="NPC_TH~1.PNG|NPC_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Trimaker\NPC_thumbnail.png" SelfReg="false"/>
+    <ROW File="Trimaker.idx" Component_="Anker.idx" FileName="Trimaker.idx" Attributes="0" SourcePath="..\resources\profiles\Trimaker.idx" SelfReg="false"/>
+    <ROW File="Trimaker.ini" Component_="Anker.idx" FileName="Trimaker.ini" Attributes="0" SourcePath="..\resources\profiles\Trimaker.ini" SelfReg="false"/>
+    <ROW File="bedtextureSW250x210.png" Component_="bedtextureSW250x210.png" FileName="BEDTEX~1.PNG|bedtexture-SW-250x210.png" Attributes="0" SourcePath="..\resources\profiles\Voron\bedtexture-SW-250x210.png" SelfReg="false"/>
+    <ROW File="printbedSWMK52.stl" Component_="bedtextureSW250x210.png" FileName="PRINTB~1.STL|printbed-SW-MK52.stl" Attributes="0" SourcePath="..\resources\profiles\Voron\printbed-SW-MK52.stl" SelfReg="false"/>
+    <ROW File="Voron_SW_thumbnail.png" Component_="bedtextureSW250x210.png" FileName="VORON_~1.PNG|Voron_SW_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\Voron\Voron_SW_thumbnail.png" SelfReg="false"/>
+    <ROW File="Voron.idx" Component_="Anker.idx" FileName="Voron.idx" Attributes="0" SourcePath="..\resources\profiles\Voron.idx" SelfReg="false"/>
+    <ROW File="Voron.ini" Component_="Anker.idx" FileName="Voron.ini" Attributes="0" SourcePath="..\resources\profiles\Voron.ini" SelfReg="false"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
     <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2"/>
@@ -908,6 +1117,18 @@
     <ROW Feature_="MainFeature" Component_="PrusaSlicer.mo_20"/>
     <ROW Feature_="MainFeature" Component_="PrusaSlicer.mo_21"/>
     <ROW Feature_="MainFeature" Component_="connection_failed.html"/>
+    <ROW Feature_="MainFeature" Component_="M5texture_v2.svg"/>
+    <ROW Feature_="MainFeature" Component_="PHOTONMONOSE_thumbnail.png"/>
+    <ROW Feature_="MainFeature" Component_="bedx3plus.stl"/>
+    <ROW Feature_="MainFeature" Component_="CocoaPress_MiniChef.png"/>
+    <ROW Feature_="MainFeature" Component_="LNL3D_D3_bed.stl"/>
+    <ROW Feature_="MainFeature" Component_="Papapiu_N1S_Bed.stl"/>
+    <ROW Feature_="MainFeature" Component_="mini.svg"/>
+    <ROW Feature_="MainFeature" Component_="SnapmakerA250DualQSKit_cover.png"/>
+    <ROW Feature_="MainFeature" Component_="Sovol.ini"/>
+    <ROW Feature_="MainFeature" Component_="AQD_thumbnail.png"/>
+    <ROW Feature_="MainFeature" Component_="CosmosII_bed.stl"/>
+    <ROW Feature_="MainFeature" Component_="bedtextureSW250x210.png"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFileHashComponent">
     <ATTRIBUTE name="HashFiles" value="1"/>
