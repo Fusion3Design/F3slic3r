@@ -609,7 +609,6 @@
     <ROW File="F3Slic3r.idx" Component_="Anker.idx" FileName="F3Slic3r.idx" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r.idx" SelfReg="false"/>
     <ROW File="F3Slic3r.ini" Component_="Anker.idx" FileName="F3Slic3r.ini" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r.ini" SelfReg="false"/>
     <ROW File="F3Edge_thumbnail.png" Component_="F3Edge_thumbnail.png" FileName="F3EDGE~1.PNG|F3 Edge_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 Edge_thumbnail.png" SelfReg="false"/>
-    <ROW File="f3slic3r_r4.STL" Component_="F3Edge_thumbnail.png" FileName="F3SLIC~1.STL|f3slic3r_r4.STL" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\f3slic3r_r4.STL" SelfReg="false"/>
     <ROW File="align_horizontal_center.svg" Component_="add.svg" FileName="ALIGN_~1.SVG|align_horizontal_center.svg" Attributes="0" SourcePath="..\resources\icons\align_horizontal_center.svg" SelfReg="false"/>
     <ROW File="align_horizontal_left.svg" Component_="add.svg" FileName="ALIGN_~2.SVG|align_horizontal_left.svg" Attributes="0" SourcePath="..\resources\icons\align_horizontal_left.svg" SelfReg="false"/>
     <ROW File="align_horizontal_right.svg" Component_="add.svg" FileName="ALIGN_~3.SVG|align_horizontal_right.svg" Attributes="0" SourcePath="..\resources\icons\align_horizontal_right.svg" SelfReg="false"/>
@@ -691,10 +690,12 @@
     <ROW File="connection_failed.html" Component_="connection_failed.html" FileName="CONNEC~1.HTM|connection_failed.html" Attributes="0" SourcePath="..\resources\web\connection_failed.html" SelfReg="false"/>
     <ROW File="connect_loading.html" Component_="connection_failed.html" FileName="CONNEC~2.HTM|connect_loading.html" Attributes="0" SourcePath="..\resources\web\connect_loading.html" SelfReg="false"/>
     <ROW File="loading.html" Component_="connection_failed.html" FileName="LOADIN~1.HTM|loading.html" Attributes="0" SourcePath="..\resources\web\loading.html" SelfReg="false"/>
-    <ROW File="F200_bed.STL" Component_="F3Edge_thumbnail.png" FileName="F200_bed.STL" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F200_bed.STL" SelfReg="false"/>
     <ROW File="F3F200_thumbnail.png" Component_="F3Edge_thumbnail.png" FileName="F3F200~1.PNG|F3 F200_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F200_thumbnail.png" SelfReg="false"/>
     <ROW File="F3F400_thumbnail.png" Component_="F3Edge_thumbnail.png" FileName="F3F400~1.PNG|F3 F400_thumbnail.png" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F400_thumbnail.png" SelfReg="false"/>
     <ROW File="F3F400_thumbnail.jpg" Component_="F3Edge_thumbnail.png" FileName="F3F400~1.JPG|F3 F400_thumbnail.jpg" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F3 F400_thumbnail.jpg" SelfReg="false"/>
+    <ROW File="EDGE_bed.stl" Component_="F3Edge_thumbnail.png" FileName="EDGE_bed.stl" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\EDGE_bed.stl" SelfReg="false"/>
+    <ROW File="f3slic3r_r4.stl" Component_="F3Edge_thumbnail.png" FileName="F3SLIC~1.STL|f3slic3r_r4.stl" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\f3slic3r_r4.stl" SelfReg="false"/>
+    <ROW File="F200_bed.stl" Component_="F3Edge_thumbnail.png" FileName="F200_bed.stl" Attributes="0" SourcePath="..\resources\profiles\F3Slic3r\F200_bed.stl" SelfReg="false"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BootstrOptComponent">
     <ROW BootstrOptKey="GlobalOptions" DownloadFolder="[AppDataFolder][|Manufacturer]\[|ProductName]\prerequisites" Options="2"/>
