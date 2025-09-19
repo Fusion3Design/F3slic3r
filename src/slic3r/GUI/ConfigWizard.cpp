@@ -3079,7 +3079,7 @@ bool ConfigWizard::priv::apply_config(AppConfig *app_config, PresetBundle *prese
         // Don't create snapshot - we've already done that above if applicable.
         GUI_App& app = wxGetApp();
         const PresetArchiveDatabase* archive_db = app.plater()->get_preset_archive_database();
-        bool install_result = updater->install_bundles_rsrc_or_cache_vendor(std::move(install_bundles), archive_db->get_selected_archive_repositories(), false);
+        bool install_result = updater->install_bundles_rsrc_or_cache_vendor(std::move(install_bundles), false);
         if (!install_result)
             return false;
     } else {

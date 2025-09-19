@@ -33,6 +33,8 @@ public:
 	void sync(const PresetBundle *preset_bundle, wxEvtHandler* evt_handler);
 	void cancel_sync();
 
+	void sync_blocking(const PresetBundle* preset_bundle, wxEvtHandler* evt_handler);
+
 	// If version check is enabled, check if chaced online slic3r version is newer, notify if so.
 	void slic3r_update_notify();
 

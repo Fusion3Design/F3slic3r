@@ -1128,6 +1128,17 @@ PresetUpdater::~PresetUpdater()
 	}
 }
 
+void PresetUpdater::sync_blocking(const PresetBundle* preset_bundle, wxEvtHandler* evt_handler)
+{
+	p->set_download_prefs(GUI::wxGetApp().app_config);
+	if (!p->enabled_config_update) { return; }
+
+	//this->p->clear_cache_vendor();
+	this->p->prune_tmps();
+	   // this->p->sync_config(preset_bundle->vendors);
+	
+}
+
 void PresetUpdater::sync(const PresetBundle *preset_bundle, wxEvtHandler* evt_handler)
 {
 	p->set_download_prefs(GUI::wxGetApp().app_config);
