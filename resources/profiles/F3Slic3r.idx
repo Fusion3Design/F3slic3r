@@ -1,4 +1,5 @@
 min_slic3r_version = 2.8.0
+1.1.0 Prep F200 profiles for 0.2mm nozzle.
 1.0.15 Fix the bed models and textures not showing up for all printers.
 1.0.14 Update F200 PPS profile; other misc minor updates.
 1.0.13 Add BASF 316L for F200; F200 now checks for a fault at the start of a print job.
