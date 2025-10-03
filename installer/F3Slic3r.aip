@@ -16,10 +16,10 @@
     <ROW Property="ARPSYSTEMCOMPONENT" Value="1"/>
     <ROW Property="AppLogoIcon" Value="applogoicon.bmp" MultiBuildValue="x64_Release:PrusaSlicerinstaller.bmp" Type="1" MsiKey="AppLogoIcon"/>
     <ROW Property="Manufacturer" Value="Fusion3"/>
-    <ROW Property="ProductCode" Value="1033:{0B8CBAC5-560C-4E74-BB0A-7684C1F8DB5A} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{0D033157-EAD6-4B3F-BBD7-B49EC7183715} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="F3Slic3r"/>
-    <ROW Property="ProductVersion" Value="2.9.1.0" Options="16"/>
+    <ROW Property="ProductVersion" Value="2.8.2.0"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND;AI_SETUPEXEPATH;SETUPEXEDIR"/>
     <ROW Property="UpgradeCode" Value="{CB697882-2A97-44B2-A06B-DB1B95C036A7}"/>
     <ROW Property="WindowsType9X" MultiBuildValue="x64_Release:Windows 9x/ME" ValueLocId="-"/>
@@ -78,7 +78,7 @@
     <ROW Directory="zh_TW_Dir" Directory_Parent="localization_Dir" DefaultDir="zh_TW"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
-    <ROW Component="AI_CustomARPName" ComponentId="{9170702B-7C28-442B-ACA7-2D02DD42A482}" Directory_="APPDIR" Attributes="260" KeyPath="DisplayName" Options="1"/>
+    <ROW Component="AI_CustomARPName" ComponentId="{486FCB61-54E9-4FA7-A8B5-9A5D4EA12F74}" Directory_="APPDIR" Attributes="260" KeyPath="DisplayName" Options="1"/>
     <ROW Component="AI_ExePath" ComponentId="{A4289296-8B99-4132-AF74-51935FF4306D}" Directory_="APPDIR" Attributes="260" KeyPath="AI_ExePath"/>
     <ROW Component="APPDIR" ComponentId="{474D491E-FF73-421C-815B-79394243B4AB}" Directory_="APPDIR" Attributes="0"/>
     <ROW Component="Anker.idx" ComponentId="{F6FB69D7-017B-4013-883E-D60477DEA132}" Directory_="profiles_Dir" Attributes="0" KeyPath="F3Slic3r.idx" Type="0"/>
@@ -709,9 +709,6 @@
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.DigCertStoreComponent">
     <ROW SignerDescription="[|ProductName]" SignOptions="7" SignTool="0" EnableLUAPatching="1" UseSha256="1" Subject="E=kate@fusion3design.com, CN=Fusion3 Design LLC, O=Fusion3 Design LLC, L=Greensboro, S=North Carolina, C=US, OID.1.3.6.1.4.1.311.60.2.1.2=North Carolina, OID.1.3.6.1.4.1.311.60.2.1.3=US, SERIALNUMBER=1326813, OID.2.5.4.15=Private Organization"/>
-  </COMPONENT>
-  <COMPONENT cid="caphyon.advinst.msicomp.DynamicPropertyComponent">
-    <ROW Property="ProductVersion" Type="2" SourcePath="prusaslicer.exe"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.FragmentComponent">
     <ROW Fragment="CommonUI.aip" Path="&lt;AI_FRAGS&gt;CommonUI.aip"/>
