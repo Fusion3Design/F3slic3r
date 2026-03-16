@@ -1,4 +1,9 @@
-min_slic3r_version = 2.8.0
+min_slic3r_version = 2.8.2
+1.3.4 Public release
+1.3.3 bugfix release
+1.3.2 F200: Change overhang slowdowns to % for all nozzle sizes; updated AFC profiles; update FLEXIBLE profile
+1.3.1 Update F3AFC profiles
+1.3.0 Add F200 0.2 nozzle; Add preliminary F200+F3AFC profiles
 1.2.0 Updated EDGE generic flexible profiles
 1.1.0 Prep F200 profiles for 0.2mm nozzle.
 1.0.15 Fix the bed models and textures not showing up for all printers.
